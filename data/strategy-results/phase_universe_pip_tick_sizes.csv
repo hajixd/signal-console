@@ -1,0 +1,25 @@
+market,symbol,pip_or_tick_size,unit_type
+forex,EURUSD,0.0001,spot pip
+forex,GBPUSD,0.0001,spot pip
+forex,AUDUSD,0.0001,spot pip
+forex,NZDUSD,0.0001,spot pip
+forex,USDCAD,0.0001,spot pip
+forex,USDCHF,0.0001,spot pip
+forex,USDJPY,0.01,spot pip
+gold_spot,XAUUSD,0.01,gold spot pip
+futures,6A,5e-05,minimum tick
+futures,6B,0.0001,minimum tick
+futures,6C,5e-05,minimum tick
+futures,6E,5e-05,minimum tick
+futures,6J,5e-07,minimum tick
+futures,CL,0.01,minimum tick
+futures,ES,0.25,minimum tick
+futures,GC,0.1,minimum tick
+futures,HG,0.0005,minimum tick
+futures,NG,0.001,minimum tick
+futures,NQ,0.25,minimum tick
+futures,RTY,0.1,minimum tick
+futures,SI,0.005,minimum tick
+futures,YM,1.0,minimum tick
+futures,ZB,0.03125,minimum tick
+futures,ZN,0.015625,minimum tick

@@ -1,0 +1,2771 @@
+:root {
+  color-scheme: dark;
+  --bg: #080b10;
+  --bg-elev: #0b0b0b;
+  --bg-soft: #101318;
+  --line: rgba(255, 255, 255, 0.1);
+  --line-soft: rgba(255, 255, 255, 0.06);
+  --text: #e8ecf3;
+  --text-dim: rgba(232, 236, 243, 0.66);
+  --text-faint: rgba(232, 236, 243, 0.42);
+  --up: #34d399;
+  --down: #f87171;
+  --neutral: #7aa7ff;
+  --accent: #60a5fa;
+  --amber: #d4af37;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: "Soehne", "Avenir Next", "Segoe UI", Arial, sans-serif;
+  line-height: 1.24;
+}
+
+a {
+  color: inherit;
+}
+
+button,
+input,
+select {
+  font: inherit;
+}
+
+button {
+  color: inherit;
+}
+
+.terminal {
+  min-height: 100svh;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.02), transparent 180px),
+    #080b10;
+}
+
+.surface-strip {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  min-height: 42px;
+  display: flex;
+  align-items: center;
+  padding: 0 0.85rem;
+  border-bottom: 1px solid #171e2a;
+  background: rgba(10, 15, 22, 0.95);
+  backdrop-filter: blur(16px);
+}
+
+.surface-brand {
+  flex: 0 0 auto;
+}
+
+.site-tag,
+.terminal-kicker,
+.count-pill,
+.status,
+.sidePill,
+.pickerHeader > span,
+.pickerActions button,
+.backtest-stat-card span,
+.telegram-grid span,
+.terminal-table th,
+.mono-cell {
+  font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+  letter-spacing: 0;
+}
+
+.site-tag {
+  color: #aab4cb;
+  font-size: 0.72rem;
+  text-transform: lowercase;
+  white-space: nowrap;
+}
+
+.surface-tabs {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: stretch;
+  height: 100%;
+}
+
+.surface-actions {
+  margin-left: auto;
+  position: relative;
+  z-index: 1;
+}
+
+.surface-tab {
+  height: 100%;
+  display: inline-flex;
+  align-items: center;
+  border: 0;
+  background: transparent;
+  color: var(--text-dim);
+  padding: 0 0.8rem;
+  font-size: 0.73rem;
+  text-decoration: none;
+  text-transform: uppercase;
+  box-shadow: inset 0 -2px 0 transparent;
+}
+
+.surface-tab:hover {
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.surface-tab.active {
+  color: #f3f6fb;
+  box-shadow: inset 0 -2px 0 var(--accent);
+}
+
+.terminal-workspace {
+  width: min(1480px, calc(100% - 28px));
+  margin: 0 auto;
+  padding: 0.55rem 0 2.4rem;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.terminal-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  min-height: 78px;
+  padding: 0.72rem 0.8rem;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: #0b0b0b;
+  box-shadow: 0 18px 45px rgba(0, 0, 0, 0.72);
+}
+
+.asset-meta {
+  min-width: 0;
+  display: grid;
+  gap: 0.16rem;
+}
+
+.terminal-kicker {
+  margin: 0;
+  color: rgba(212, 175, 55, 0.82);
+  font-size: 0.62rem;
+  text-transform: uppercase;
+}
+
+.asset-meta h1 {
+  margin: 0;
+  color: #f5f7fb;
+  font-size: 1.42rem;
+  line-height: 1.03;
+  font-weight: 900;
+}
+
+.asset-meta span {
+  color: var(--text-dim);
+  font-size: 0.74rem;
+}
+
+.terminal-actions {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+.terminal-action,
+.themeToggle {
+  min-height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(96, 165, 250, 0.32);
+  border-radius: 10px;
+  background: rgba(96, 165, 250, 0.1);
+  color: #bcd4ff;
+  padding: 0 0.8rem;
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.themeToggle {
+  cursor: pointer;
+}
+
+.themeDarkLabel {
+  display: none;
+}
+
+html[data-theme="light"] .themeLightLabel {
+  display: none;
+}
+
+html[data-theme="light"] .themeDarkLabel {
+  display: inline;
+}
+
+.terminal-action:hover,
+.themeToggle:hover {
+  border-color: rgba(96, 165, 250, 0.56);
+  background: rgba(96, 165, 250, 0.16);
+  color: #eef5ff;
+}
+
+.backtest-grid {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.backtest-grid.two-up {
+  grid-template-columns: minmax(0, 1.25fr) minmax(320px, 0.75fr);
+}
+
+.backtest-card {
+  min-width: 0;
+  display: grid;
+  gap: 0.7rem;
+  padding: 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: #0b0b0b;
+  box-shadow: 0 18px 45px rgba(0, 0, 0, 0.75);
+}
+
+.backtest-card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.backtest-card-head > div {
+  min-width: 0;
+  display: grid;
+  gap: 0.22rem;
+}
+
+.backtest-card-head h2 {
+  margin: 0;
+  color: #f5f5f5;
+  font-size: 0.98rem;
+  line-height: 1.08;
+  font-weight: 900;
+}
+
+.backtest-card-head p {
+  margin: 0;
+  color: var(--text-dim);
+  font-size: 0.71rem;
+  line-height: 1.45;
+}
+
+.count-pill {
+  flex: 0 0 auto;
+  min-height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(255, 255, 255, 0.78);
+  padding: 0 0.65rem;
+  font-size: 0.62rem;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.strategyPicker {
+  display: grid;
+  gap: 0.62rem;
+}
+
+.pickerHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.pickerHeader > span {
+  color: var(--text-faint);
+  font-size: 0.58rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.pickerActions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.42rem;
+}
+
+.challenge-method-head span,
+.challenge-method-grid span,
+.challenge-footnote span {
+  color: var(--text-faint);
+  font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+  font-size: 0.58rem;
+  font-weight: 900;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.pickerActions button {
+  min-height: 28px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.03);
+  color: rgba(255, 255, 255, 0.78);
+  padding: 0 0.62rem;
+  font-size: 0.62rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.pickerActions button:hover:not(:disabled) {
+  border-color: rgba(96, 165, 250, 0.38);
+  background: rgba(96, 165, 250, 0.1);
+  color: #eaf2ff;
+}
+
+.pickerActions button:disabled {
+  cursor: default;
+  opacity: 0.42;
+}
+
+.strategyToolbar {
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) auto auto;
+  gap: 0.5rem;
+  align-items: end;
+}
+
+.strategySearch,
+.bulkScale {
+  min-width: 0;
+  display: grid;
+  gap: 0.18rem;
+}
+
+.strategySearch span,
+.bulkScale > span,
+.strategySearchCount {
+  color: var(--text-faint);
+  font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+  font-size: 0.58rem;
+  font-weight: 900;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.strategySearch input {
+  min-width: 0;
+  min-height: 32px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.035);
+  color: rgba(255, 255, 255, 0.9);
+  padding: 0 0.58rem;
+  font-size: 0.68rem;
+  outline: none;
+}
+
+.strategySearch input:focus {
+  border-color: rgba(96, 165, 250, 0.5);
+  box-shadow: inset 0 0 0 1px rgba(96, 165, 250, 0.28);
+}
+
+.strategySearch input::placeholder {
+  color: rgba(255, 255, 255, 0.36);
+}
+
+.strategySearchCount {
+  min-height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  white-space: nowrap;
+}
+
+.strategyChecks {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(176px, 1fr));
+  gap: 0.5rem;
+}
+
+.strategyCheck {
+  min-width: 0;
+  min-height: 48px;
+  display: grid;
+  grid-template-columns: auto auto minmax(0, 1fr);
+  align-items: center;
+  gap: 0.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  padding: 0.58rem 0.64rem;
+  color: rgba(255, 255, 255, 0.84);
+  cursor: pointer;
+}
+
+.strategyCheck:hover {
+  border-color: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.strategyCheck.active {
+  border-color: rgba(96, 165, 250, 0.4);
+  background: rgba(96, 165, 250, 0.1);
+}
+
+.strategyCheck input {
+  width: 15px;
+  height: 15px;
+  margin: 0;
+  accent-color: var(--accent);
+}
+
+.strategyCheck span {
+  color: var(--accent);
+  font-size: 0.74rem;
+  font-weight: 900;
+}
+
+.strategyCheck strong {
+  min-width: 0;
+  overflow: hidden;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 0.76rem;
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.basketList {
+  max-height: 560px;
+  overflow: auto;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.02);
+  scrollbar-color: rgba(255, 255, 255, 0.22) transparent;
+  scrollbar-width: thin;
+}
+
+.basketListHeader,
+.basketListRow {
+  display: grid;
+  grid-template-columns:
+    76px
+    minmax(210px, 1fr)
+    72px
+    72px
+    78px
+    132px
+    132px
+    86px;
+  gap: 0.55rem;
+  align-items: center;
+  min-width: 990px;
+}
+
+.basketListHeader {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  padding: 0.55rem 0.62rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  background: #111111;
+}
+
+.basketListHeader span {
+  color: rgba(255, 255, 255, 0.58);
+  font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+  font-size: 0.58rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.basketSortButton {
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.35rem;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  padding: 0;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.basketSortButton strong {
+  flex: 0 0 auto;
+  color: rgba(255, 255, 255, 0.34);
+  font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+  font-size: 0.58rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.basketSortButton:hover span,
+.basketSortButton.isActive span {
+  color: rgba(255, 255, 255, 0.88);
+}
+
+.basketSortButton.isActive strong {
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.basketListRow {
+  min-height: 52px;
+  padding: 0.58rem 0.62rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.82);
+  cursor: pointer;
+  font-size: 0.68rem;
+  outline: none;
+}
+
+.basketListRow:last-child {
+  border-bottom: 0;
+}
+
+.basketListRow:hover {
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.basketListRow:focus-visible {
+  box-shadow: inset 0 0 0 1px rgba(96, 165, 250, 0.48);
+}
+
+.basketListRow.isDisabled {
+  background: rgba(255, 255, 255, 0.006);
+}
+
+.basketListRow.hasCustom {
+  box-shadow: inset 2px 0 0 rgba(96, 165, 250, 0.72);
+}
+
+.basketListRow.isDisabled .basketTicker,
+.basketListRow.isDisabled .basketModel strong,
+.basketListRow.isDisabled > span {
+  color: rgba(255, 255, 255, 0.42) !important;
+}
+
+.basketListEmpty {
+  min-width: 990px;
+  padding: 0.82rem;
+  color: rgba(255, 255, 255, 0.52);
+  font-size: 0.68rem;
+}
+
+.basketTicker {
+  color: rgba(255, 255, 255, 0.9);
+  font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+  font-size: 0.66rem;
+  font-weight: 900;
+  letter-spacing: 0;
+}
+
+.basketModel {
+  min-width: 0;
+  display: grid;
+  gap: 0.14rem;
+}
+
+.basketModel strong {
+  overflow: hidden;
+  color: rgba(255, 255, 255, 0.92);
+  font-size: 0.75rem;
+  font-weight: 900;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.basketModel span {
+  overflow: hidden;
+  color: var(--text-faint);
+  font-size: 0.61rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.strategyToggle {
+  min-height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0.42rem;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.66rem;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.strategyToggle input {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: var(--up);
+  cursor: pointer;
+}
+
+.strategyToggle input:disabled {
+  cursor: default;
+}
+
+.strategyToggle span {
+  color: rgba(255, 255, 255, 0.72);
+  font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+  font-size: 0.6rem;
+  text-transform: uppercase;
+}
+
+.strategyModalBackdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  background: rgba(0, 0, 0, 0.58);
+  backdrop-filter: blur(12px);
+}
+
+.strategyModal {
+  width: min(680px, 100%);
+  display: grid;
+  gap: 0.85rem;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: #0b0e13;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.46);
+  padding: 1rem;
+}
+
+.strategyModalHead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.strategyModalHead div {
+  display: grid;
+  gap: 0.18rem;
+}
+
+.strategyModalHead span,
+.fieldControl span,
+.strategyModalSummary span {
+  color: var(--text-faint);
+  font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+  font-size: 0.58rem;
+  font-weight: 900;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.strategyModalHead strong {
+  color: rgba(255, 255, 255, 0.94);
+  font-size: 1.05rem;
+  font-weight: 900;
+}
+
+.strategyModalHead button,
+.strategyModalActions button {
+  min-height: 32px;
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  background: rgba(255, 255, 255, 0.035);
+  color: rgba(255, 255, 255, 0.78);
+  padding: 0 0.72rem;
+  font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+  font-size: 0.6rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.strategyModalHead button:hover,
+.strategyModalActions button:hover {
+  border-color: rgba(96, 165, 250, 0.38);
+  background: rgba(96, 165, 250, 0.1);
+  color: #eaf2ff;
+}
+
+.strategyModalGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.62rem;
+}
+
+.fieldControl {
+  min-width: 0;
+  display: grid;
+  gap: 0.28rem;
+}
+
+.fieldControl.wide {
+  grid-column: 1 / -1;
+}
+
+.fieldControl input {
+  min-width: 0;
+  min-height: 38px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.035);
+  color: rgba(255, 255, 255, 0.9);
+  padding: 0 0.62rem;
+  outline: none;
+}
+
+.lockedField {
+  min-width: 0;
+  min-height: 38px;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.02);
+  color: rgba(255, 255, 255, 0.76);
+  padding: 0 0.62rem;
+  font-size: 0.74rem;
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.scaleButtons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.42rem;
+}
+
+.scaleButtons button {
+  min-height: 30px;
+  border: 1px solid rgba(96, 165, 250, 0.24);
+  background: rgba(96, 165, 250, 0.08);
+  color: #cfe1ff;
+  padding: 0 0.62rem;
+  font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+  font-size: 0.6rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.scaleButtons button:hover {
+  border-color: rgba(96, 165, 250, 0.45);
+  background: rgba(96, 165, 250, 0.14);
+  color: #ffffff;
+}
+
+.fieldControl input:focus {
+  border-color: rgba(96, 165, 250, 0.5);
+  box-shadow: inset 0 0 0 1px rgba(96, 165, 250, 0.28);
+}
+
+.strategyModalSummary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding-top: 0.75rem;
+}
+
+.strategyModalSummary span {
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  background: rgba(255, 255, 255, 0.025);
+  padding: 0.48rem 0.55rem;
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.strategyModalActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+.strategyModalActions button[type="submit"] {
+  border-color: rgba(52, 211, 153, 0.34);
+  background: rgba(52, 211, 153, 0.1);
+  color: var(--up);
+}
+
+.tradeModalBackdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  background: rgba(0, 0, 0, 0.58);
+  backdrop-filter: blur(12px);
+}
+
+.tradeModal {
+  width: min(860px, 100%);
+  max-height: calc(100svh - 2rem);
+  overflow: auto;
+  display: grid;
+  gap: 0.8rem;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: #0b0e13;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.46);
+  padding: 1rem;
+}
+
+.tradeModal.up-row {
+  border-color: rgba(52, 211, 153, 0.24);
+  background: linear-gradient(135deg, rgba(52, 211, 153, 0.08), rgba(11, 14, 19, 0.98) 34%);
+}
+
+.tradeModal.down-row {
+  border-color: rgba(248, 113, 113, 0.24);
+  background: linear-gradient(135deg, rgba(248, 113, 113, 0.08), rgba(11, 14, 19, 0.98) 34%);
+}
+
+.tradeModal.neutral-row {
+  border-color: rgba(96, 165, 250, 0.24);
+  background: linear-gradient(135deg, rgba(96, 165, 250, 0.08), rgba(11, 14, 19, 0.98) 34%);
+}
+
+.tradeModalHead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.tradeModalHead div {
+  min-width: 0;
+  display: grid;
+  gap: 0.16rem;
+}
+
+.tradeModalHead span,
+.tradeModalHead small,
+.tradeModalHero span,
+.tradeModalCell span {
+  color: var(--text-faint);
+  font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+  font-size: 0.58rem;
+  font-weight: 900;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.tradeModalHead strong {
+  overflow: hidden;
+  color: rgba(255, 255, 255, 0.94);
+  font-size: 1.08rem;
+  font-weight: 900;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tradeModalHead button {
+  min-height: 32px;
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  background: rgba(255, 255, 255, 0.035);
+  color: rgba(255, 255, 255, 0.78);
+  padding: 0 0.72rem;
+  font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+  font-size: 0.6rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.tradeModalHead button:hover {
+  border-color: rgba(96, 165, 250, 0.38);
+  background: rgba(96, 165, 250, 0.1);
+  color: #eaf2ff;
+}
+
+.tradeModalHero {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr 1fr;
+  gap: 0.55rem;
+}
+
+.tradeModalHero div,
+.tradeModalCell {
+  min-width: 0;
+  display: grid;
+  gap: 0.22rem;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  background: rgba(255, 255, 255, 0.03);
+  padding: 0.65rem;
+}
+
+.tradeModalHero strong,
+.tradeModalCell strong {
+  min-width: 0;
+  overflow: hidden;
+  color: rgba(255, 255, 255, 0.9);
+  font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+  font-size: 0.78rem;
+  font-weight: 900;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tradeModalHero strong {
+  font-size: 1.08rem;
+}
+
+.tradeChart {
+  min-width: 0;
+  display: grid;
+  gap: 0.46rem;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  background: rgba(255, 255, 255, 0.025);
+  padding: 0.68rem;
+}
+
+.tradeChart.isEmpty {
+  min-height: 180px;
+  place-items: center;
+  color: rgba(255, 255, 255, 0.52);
+  font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+  font-size: 0.62rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.tradeChartHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+}
+
+.tradeChartHead span,
+.tradeChartHead strong {
+  font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+  font-size: 0.58rem;
+  font-weight: 900;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.tradeChartHead span {
+  color: var(--text-faint);
+}
+
+.tradeChartHead strong {
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.tradeChart svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.tradeChartBg {
+  fill: rgba(0, 0, 0, 0.12);
+}
+
+.tradeChartGrid {
+  stroke: rgba(255, 255, 255, 0.08);
+  stroke-width: 1;
+}
+
+.tradeChartAxis,
+.tradeChartTime,
+.tradeChartLabel {
+  fill: rgba(255, 255, 255, 0.52);
+  font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.candle line {
+  stroke-width: 1.25;
+}
+
+.candle rect {
+  stroke-width: 1;
+}
+
+.candle.up line,
+.candle.up rect {
+  stroke: rgba(52, 211, 153, 0.72);
+}
+
+.candle.up rect {
+  fill: rgba(52, 211, 153, 0.22);
+}
+
+.candle.down line,
+.candle.down rect {
+  stroke: rgba(248, 113, 113, 0.72);
+}
+
+.candle.down rect {
+  fill: rgba(248, 113, 113, 0.22);
+}
+
+.tradeClosePath {
+  fill: none;
+  stroke: rgba(147, 197, 253, 0.72);
+  stroke-width: 1.5;
+}
+
+.tradeLevel {
+  stroke-width: 1.2;
+  stroke-dasharray: 5 5;
+}
+
+.tradeLevel.entry {
+  stroke: rgba(147, 197, 253, 0.8);
+}
+
+.tradeLevel.target {
+  stroke: rgba(52, 211, 153, 0.82);
+}
+
+.tradeLevel.stop {
+  stroke: rgba(248, 113, 113, 0.82);
+}
+
+.tradeWindow {
+  stroke: rgba(255, 255, 255, 0.18);
+  stroke-width: 1;
+}
+
+.tradeWindow.exit {
+  stroke: rgba(255, 255, 255, 0.28);
+}
+
+.tradePath {
+  stroke: rgba(255, 255, 255, 0.86);
+  stroke-width: 2;
+}
+
+.tradeMarker {
+  stroke: #0b0e13;
+  stroke-width: 2;
+}
+
+.tradeMarker.entry {
+  fill: #93c5fd;
+}
+
+.tradeMarker.exit {
+  fill: #ffffff;
+}
+
+.tradeChartLabel.entry {
+  fill: #93c5fd;
+}
+
+.tradeChartLabel.target {
+  fill: var(--up);
+}
+
+.tradeChartLabel.stop {
+  fill: var(--down);
+}
+
+.tradeModalGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.55rem;
+}
+
+.telegram-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.55rem;
+}
+
+.telegram-grid div {
+  min-width: 0;
+  display: grid;
+  gap: 0.2rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  padding: 0.68rem;
+}
+
+.telegram-grid span,
+.backtest-stat-card span {
+  color: var(--text-faint);
+  font-size: 0.58rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.telegram-grid strong {
+  min-width: 0;
+  overflow: hidden;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 0.78rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.backtest-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 0.6rem;
+}
+
+.backtest-stat-card {
+  min-width: 0;
+  display: grid;
+  gap: 0.26rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.03);
+  padding: 0.68rem;
+}
+
+.backtest-stat-card strong {
+  color: rgba(255, 255, 255, 0.92);
+  font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+  font-size: 1.08rem;
+  font-weight: 900;
+  letter-spacing: 0;
+}
+
+.backtest-stat-card.tone-up {
+  border-color: rgba(52, 211, 153, 0.24);
+  background: linear-gradient(135deg, rgba(52, 211, 153, 0.08), rgba(52, 211, 153, 0.03));
+}
+
+.backtest-stat-card.tone-up strong {
+  color: var(--up);
+}
+
+.backtest-stat-card.tone-down {
+  border-color: rgba(248, 113, 113, 0.24);
+  background: linear-gradient(135deg, rgba(248, 113, 113, 0.08), rgba(248, 113, 113, 0.03));
+}
+
+.backtest-stat-card.tone-down strong {
+  color: var(--down);
+}
+
+.backtest-stat-card.tone-neutral {
+  border-color: rgba(96, 165, 250, 0.2);
+  background: linear-gradient(135deg, rgba(96, 165, 250, 0.07), rgba(96, 165, 250, 0.02));
+}
+
+.backtest-stat-card.tone-neutral strong {
+  color: #93bbfc;
+}
+
+.challenge-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.6rem;
+}
+
+.challenge-pass-rates {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.55rem;
+}
+
+.challenge-method .challenge-pass-rates {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.challenge-pass-card {
+  min-width: 0;
+  display: grid;
+  gap: 0.22rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.03);
+  padding: 0.68rem 0.72rem;
+}
+
+.challenge-pass-card.tone-up {
+  border-color: rgba(52, 211, 153, 0.26);
+  background: linear-gradient(135deg, rgba(52, 211, 153, 0.09), rgba(52, 211, 153, 0.025));
+}
+
+.challenge-pass-card.tone-down {
+  border-color: rgba(248, 113, 113, 0.22);
+  background: linear-gradient(135deg, rgba(248, 113, 113, 0.08), rgba(248, 113, 113, 0.025));
+}
+
+.challenge-pass-card.tone-neutral {
+  border-color: rgba(96, 165, 250, 0.2);
+  background: linear-gradient(135deg, rgba(96, 165, 250, 0.07), rgba(96, 165, 250, 0.02));
+}
+
+.challenge-pass-card span,
+.challenge-pass-card small {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--text-faint);
+  font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+  font-size: 0.56rem;
+  font-weight: 900;
+  letter-spacing: 0;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.challenge-pass-card strong {
+  min-width: 0;
+  overflow: hidden;
+  color: rgba(255, 255, 255, 0.94);
+  font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+  font-size: 1.28rem;
+  font-weight: 950;
+  line-height: 1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.challenge-pass-card.tone-up strong {
+  color: var(--up);
+}
+
+.challenge-pass-card.tone-down strong {
+  color: var(--down);
+}
+
+.challenge-rule-form {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(140px, 1fr)) auto;
+  gap: 0.5rem;
+  align-items: end;
+}
+
+.challenge-rule-form label {
+  min-width: 0;
+  display: grid;
+  gap: 0.22rem;
+}
+
+.challenge-rule-form span {
+  color: var(--text-faint);
+  font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+  font-size: 0.56rem;
+  font-weight: 900;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.challenge-rule-form input {
+  min-width: 0;
+  min-height: 32px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.035);
+  color: rgba(255, 255, 255, 0.9);
+  padding: 0 0.52rem;
+  font-size: 0.68rem;
+  outline: none;
+}
+
+.challenge-rule-form input:focus {
+  border-color: rgba(96, 165, 250, 0.5);
+  box-shadow: inset 0 0 0 1px rgba(96, 165, 250, 0.28);
+}
+
+.challenge-rule-form button {
+  min-height: 32px;
+  border: 1px solid rgba(52, 211, 153, 0.34);
+  background: rgba(52, 211, 153, 0.1);
+  color: var(--up);
+  padding: 0 0.75rem;
+  font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+  font-size: 0.6rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.challenge-rule-form button:hover {
+  border-color: rgba(52, 211, 153, 0.52);
+  background: rgba(52, 211, 153, 0.16);
+}
+
+.challenge-method {
+  min-width: 0;
+  display: grid;
+  gap: 0.55rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.03);
+  padding: 0.72rem;
+}
+
+.challenge-method.tone-up {
+  border-color: rgba(52, 211, 153, 0.24);
+  background: linear-gradient(135deg, rgba(52, 211, 153, 0.08), rgba(52, 211, 153, 0.025));
+}
+
+.challenge-method.tone-down {
+  border-color: rgba(248, 113, 113, 0.22);
+  background: linear-gradient(135deg, rgba(248, 113, 113, 0.08), rgba(248, 113, 113, 0.025));
+}
+
+.challenge-method.tone-neutral {
+  border-color: rgba(96, 165, 250, 0.2);
+  background: linear-gradient(135deg, rgba(96, 165, 250, 0.07), rgba(96, 165, 250, 0.02));
+}
+
+.challenge-method-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.65rem;
+}
+
+.challenge-method-head strong {
+  color: rgba(255, 255, 255, 0.94);
+  font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+  font-size: 1.18rem;
+  font-weight: 900;
+}
+
+.challenge-progress-track {
+  height: 6px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.challenge-progress-track div {
+  height: 100%;
+  min-width: 2px;
+}
+
+.challenge-progress-track div.up {
+  background: var(--up);
+}
+
+.challenge-progress-track div.down {
+  background: var(--down);
+}
+
+.challenge-method-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+
+.challenge-method-grid div {
+  min-width: 0;
+  display: grid;
+  gap: 0.18rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding-top: 0.5rem;
+}
+
+.challenge-method-grid strong {
+  min-width: 0;
+  overflow: hidden;
+  color: rgba(255, 255, 255, 0.9);
+  font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+  font-size: 0.76rem;
+  font-weight: 900;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.challenge-footnote {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.challenge-footnote span {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.025);
+  padding: 0.42rem 0.5rem;
+  color: rgba(255, 255, 255, 0.64);
+}
+
+.terminal-table-wrap {
+  min-width: 0;
+  overflow: auto;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.02);
+  scrollbar-color: rgba(255, 255, 255, 0.22) transparent;
+  scrollbar-width: thin;
+}
+
+.terminal-table-wrap.compact {
+  max-height: 280px;
+}
+
+.terminal-table-wrap.live {
+  max-height: 360px;
+}
+
+.terminal-table-wrap.tall {
+  max-height: 620px;
+}
+
+.terminal-table {
+  width: 100%;
+  min-width: 920px;
+  border-collapse: collapse;
+  font-size: 0.68rem;
+}
+
+.live-alert-table,
+.history-table {
+  table-layout: fixed;
+}
+
+.live-alert-table {
+  min-width: 1200px;
+}
+
+.history-table {
+  min-width: 1120px;
+}
+
+.live-col-index,
+.history-col-index {
+  width: 46px;
+}
+
+.live-col-ticker,
+.history-col-ticker {
+  width: 76px;
+}
+
+.live-col-model {
+  width: 220px;
+}
+
+.history-col-model {
+  width: 165px;
+}
+
+.live-col-direction,
+.history-col-direction {
+  width: 92px;
+}
+
+.live-col-price,
+.history-col-price {
+  width: 106px;
+}
+
+.live-col-money,
+.history-col-pnl,
+.history-col-risk {
+  width: 112px;
+}
+
+.live-col-odds {
+  width: 74px;
+}
+
+.live-col-status {
+  width: 90px;
+}
+
+.live-col-time {
+  width: 160px;
+}
+
+.history-col-duration {
+  width: 165px;
+}
+
+.history-col-exit {
+  width: 82px;
+}
+
+.history-col-size {
+  width: 132px;
+}
+
+.terminal-table th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  padding: 0.6rem 0.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  background: #111111;
+  color: rgba(255, 255, 255, 0.58);
+  font-size: 0.58rem;
+  font-weight: 900;
+  text-align: left;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.terminal-table td {
+  padding: 0.58rem 0.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.84);
+  vertical-align: middle;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.terminal-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.terminal-table tbody tr {
+  transition: background 0.12s, box-shadow 0.12s;
+}
+
+.historyTradeRow {
+  cursor: pointer;
+  outline: none;
+}
+
+.historyTradeRow:focus-visible {
+  box-shadow: inset 0 0 0 1px rgba(96, 165, 250, 0.54);
+}
+
+.terminal-table tbody tr:hover {
+  background: rgba(255, 255, 255, 0.045);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+
+.terminal-table tbody tr.up-row {
+  background: rgba(52, 211, 153, 0.045);
+}
+
+.terminal-table tbody tr.up-row:hover {
+  background: rgba(52, 211, 153, 0.085);
+}
+
+.terminal-table tbody tr.down-row {
+  background: rgba(248, 113, 113, 0.045);
+}
+
+.terminal-table tbody tr.down-row:hover {
+  background: rgba(248, 113, 113, 0.085);
+}
+
+.terminal-table tbody tr.neutral-row {
+  background: rgba(96, 165, 250, 0.035);
+}
+
+.main-cell {
+  min-width: 190px;
+}
+
+.main-cell span,
+.main-cell small {
+  display: block;
+  max-width: 260px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.main-cell span {
+  color: rgba(255, 255, 255, 0.92);
+  font-weight: 900;
+}
+
+.main-cell small {
+  margin-top: 0.14rem;
+  color: var(--text-faint);
+  font-size: 0.61rem;
+}
+
+.mono-cell {
+  color: rgba(255, 255, 255, 0.58);
+}
+
+.ticker-cell {
+  color: rgba(255, 255, 255, 0.9);
+  font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+  font-weight: 900;
+  letter-spacing: 0;
+}
+
+.durationDetail {
+  color: rgba(255, 255, 255, 0.48);
+}
+
+.up {
+  color: var(--up) !important;
+  font-weight: 900;
+}
+
+.down {
+  color: var(--down) !important;
+  font-weight: 900;
+}
+
+.neutral {
+  color: #93bbfc !important;
+  font-weight: 900;
+}
+
+.sidePill,
+.status {
+  display: inline-flex;
+  min-width: 54px;
+  min-height: 22px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 999px;
+  padding: 0.18rem 0.48rem;
+  font-size: 0.58rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.sideLong,
+.sent {
+  border-color: rgba(52, 211, 153, 0.28);
+  background: rgba(52, 211, 153, 0.1);
+  color: var(--up);
+}
+
+.sideShort,
+.failed {
+  border-color: rgba(248, 113, 113, 0.28);
+  background: rgba(248, 113, 113, 0.1);
+  color: var(--down);
+}
+
+.skipped {
+  border-color: rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.05);
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.empty-state {
+  min-height: 190px;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 0.34rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.02);
+  padding: 1.25rem;
+  text-align: center;
+}
+
+.empty-state strong {
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 0.9rem;
+}
+
+.empty-state span {
+  color: var(--text-dim);
+  font-size: 0.72rem;
+}
+
+html[data-theme="light"] {
+  color-scheme: light;
+  --bg: #f5f7fb;
+  --bg-elev: #ffffff;
+  --bg-soft: #eef2f7;
+  --line: rgba(15, 23, 42, 0.15);
+  --line-soft: rgba(15, 23, 42, 0.08);
+  --text: #111827;
+  --text-dim: rgba(17, 24, 39, 0.68);
+  --text-faint: rgba(17, 24, 39, 0.44);
+  --up: #047857;
+  --down: #be123c;
+  --neutral: #2563eb;
+  --accent: #2563eb;
+  --amber: #8a5b00;
+}
+
+html[data-theme="light"] body {
+  background: var(--bg);
+  color: var(--text);
+}
+
+html[data-theme="light"] .terminal {
+  background: #f5f7fb;
+}
+
+html[data-theme="light"] .terminal-head,
+html[data-theme="light"] .backtest-card {
+  border-color: var(--line);
+  background: #ffffff;
+  box-shadow: none;
+}
+
+html[data-theme="light"] .terminal-kicker {
+  color: #8a5b00;
+}
+
+html[data-theme="light"] .asset-meta h1,
+html[data-theme="light"] .backtest-card-head h2,
+html[data-theme="light"] .empty-state strong {
+  color: #0f172a;
+}
+
+html[data-theme="light"] .asset-meta span,
+html[data-theme="light"] .backtest-card-head p,
+html[data-theme="light"] .empty-state span,
+html[data-theme="light"] .durationDetail {
+  color: var(--text-dim);
+}
+
+html[data-theme="light"] .terminal-action,
+html[data-theme="light"] .themeToggle {
+  border-color: rgba(37, 99, 235, 0.28);
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+html[data-theme="light"] .terminal-action:hover,
+html[data-theme="light"] .themeToggle:hover {
+  border-color: rgba(37, 99, 235, 0.48);
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+html[data-theme="light"] .count-pill,
+html[data-theme="light"] .pickerActions button,
+html[data-theme="light"] .skipped {
+  border-color: var(--line);
+  background: #f8fafc;
+  color: rgba(15, 23, 42, 0.7);
+}
+
+html[data-theme="light"] .pickerActions button:hover:not(:disabled) {
+  border-color: rgba(37, 99, 235, 0.35);
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+html[data-theme="light"] .strategySearch input {
+  border-color: rgba(15, 23, 42, 0.14);
+  background: #ffffff;
+  color: rgba(15, 23, 42, 0.88);
+}
+
+html[data-theme="light"] .strategySearch input::placeholder {
+  color: rgba(15, 23, 42, 0.38);
+}
+
+html[data-theme="light"] .backtest-stat-card,
+html[data-theme="light"] .telegram-grid div,
+html[data-theme="light"] .basketList,
+html[data-theme="light"] .terminal-table-wrap,
+html[data-theme="light"] .empty-state {
+  border-color: var(--line);
+  background: #ffffff;
+}
+
+html[data-theme="light"] .backtest-stat-card strong,
+html[data-theme="light"] .telegram-grid strong {
+  color: #0f172a;
+}
+
+html[data-theme="light"] .backtest-stat-card.tone-up {
+  border-color: rgba(4, 120, 87, 0.24);
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(16, 185, 129, 0.035));
+}
+
+html[data-theme="light"] .backtest-stat-card.tone-down {
+  border-color: rgba(190, 18, 60, 0.22);
+  background: linear-gradient(135deg, rgba(244, 63, 94, 0.1), rgba(244, 63, 94, 0.035));
+}
+
+html[data-theme="light"] .backtest-stat-card.tone-neutral {
+  border-color: rgba(37, 99, 235, 0.2);
+  background: linear-gradient(135deg, rgba(37, 99, 235, 0.08), rgba(37, 99, 235, 0.025));
+}
+
+html[data-theme="light"] .backtest-stat-card.tone-neutral strong,
+html[data-theme="light"] .neutral {
+  color: #2563eb !important;
+}
+
+html[data-theme="light"] .challenge-method {
+  border-color: var(--line);
+  background: #ffffff;
+}
+
+html[data-theme="light"] .challenge-pass-card {
+  border-color: var(--line);
+  background: #ffffff;
+}
+
+html[data-theme="light"] .challenge-pass-card.tone-up {
+  border-color: rgba(4, 120, 87, 0.24);
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(16, 185, 129, 0.03));
+}
+
+html[data-theme="light"] .challenge-pass-card.tone-down {
+  border-color: rgba(190, 18, 60, 0.22);
+  background: linear-gradient(135deg, rgba(244, 63, 94, 0.1), rgba(244, 63, 94, 0.03));
+}
+
+html[data-theme="light"] .challenge-pass-card.tone-neutral {
+  border-color: rgba(37, 99, 235, 0.2);
+  background: linear-gradient(135deg, rgba(37, 99, 235, 0.08), rgba(37, 99, 235, 0.02));
+}
+
+html[data-theme="light"] .challenge-method.tone-up {
+  border-color: rgba(4, 120, 87, 0.24);
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(16, 185, 129, 0.03));
+}
+
+html[data-theme="light"] .challenge-method.tone-down {
+  border-color: rgba(190, 18, 60, 0.22);
+  background: linear-gradient(135deg, rgba(244, 63, 94, 0.1), rgba(244, 63, 94, 0.03));
+}
+
+html[data-theme="light"] .challenge-method.tone-neutral {
+  border-color: rgba(37, 99, 235, 0.2);
+  background: linear-gradient(135deg, rgba(37, 99, 235, 0.08), rgba(37, 99, 235, 0.02));
+}
+
+html[data-theme="light"] .challenge-method-head strong,
+html[data-theme="light"] .challenge-pass-card strong,
+html[data-theme="light"] .challenge-method-grid strong {
+  color: #0f172a;
+}
+
+html[data-theme="light"] .challenge-progress-track {
+  background: rgba(15, 23, 42, 0.08);
+}
+
+html[data-theme="light"] .challenge-rule-form input {
+  border-color: rgba(15, 23, 42, 0.14);
+  background: #ffffff;
+  color: rgba(15, 23, 42, 0.88);
+}
+
+html[data-theme="light"] .challenge-method-grid div {
+  border-top-color: var(--line-soft);
+}
+
+html[data-theme="light"] .challenge-footnote span {
+  border-color: rgba(15, 23, 42, 0.1);
+  background: rgba(15, 23, 42, 0.035);
+  color: rgba(15, 23, 42, 0.62);
+}
+
+html[data-theme="light"] .basketListHeader,
+html[data-theme="light"] .terminal-table th {
+  border-bottom-color: var(--line);
+  background: #eef2f7;
+  color: #475569;
+}
+
+html[data-theme="light"] .basketListHeader span {
+  color: #475569;
+}
+
+html[data-theme="light"] .basketSortButton strong {
+  color: rgba(71, 85, 105, 0.42);
+}
+
+html[data-theme="light"] .basketSortButton:hover span,
+html[data-theme="light"] .basketSortButton.isActive span {
+  color: rgba(15, 23, 42, 0.88);
+}
+
+html[data-theme="light"] .basketSortButton.isActive strong {
+  color: rgba(15, 23, 42, 0.62);
+}
+
+html[data-theme="light"] .basketListRow {
+  border-bottom-color: var(--line-soft);
+  color: rgba(15, 23, 42, 0.84);
+}
+
+html[data-theme="light"] .basketListRow:hover,
+html[data-theme="light"] .terminal-table tbody tr:hover {
+  background: rgba(37, 99, 235, 0.035);
+  box-shadow: inset 0 0 0 1px rgba(37, 99, 235, 0.1);
+}
+
+html[data-theme="light"] .basketListRow.hasCustom {
+  box-shadow: inset 2px 0 0 rgba(37, 99, 235, 0.72);
+}
+
+html[data-theme="light"] .basketListRow.isDisabled {
+  background: rgba(15, 23, 42, 0.015);
+}
+
+html[data-theme="light"] .basketListRow.isDisabled .basketTicker,
+html[data-theme="light"] .basketListRow.isDisabled .basketModel strong,
+html[data-theme="light"] .basketListRow.isDisabled > span {
+  color: rgba(15, 23, 42, 0.4) !important;
+}
+
+html[data-theme="light"] .basketListEmpty {
+  color: rgba(15, 23, 42, 0.52);
+}
+
+html[data-theme="light"] .basketTicker,
+html[data-theme="light"] .basketModel strong,
+html[data-theme="light"] .main-cell span,
+html[data-theme="light"] .terminal-table td {
+  color: rgba(15, 23, 42, 0.88);
+}
+
+html[data-theme="light"] .basketModel span,
+html[data-theme="light"] .main-cell small,
+html[data-theme="light"] .mono-cell,
+html[data-theme="light"] .strategyToggle span {
+  color: rgba(15, 23, 42, 0.5);
+}
+
+html[data-theme="light"] .strategyModalBackdrop {
+  background: rgba(226, 232, 240, 0.72);
+}
+
+html[data-theme="light"] .tradeModalBackdrop {
+  background: rgba(226, 232, 240, 0.72);
+}
+
+html[data-theme="light"] .strategyModal {
+  border-color: rgba(15, 23, 42, 0.14);
+  background: #f8fafc;
+  box-shadow: 0 24px 80px rgba(15, 23, 42, 0.16);
+}
+
+html[data-theme="light"] .tradeModal {
+  border-color: rgba(15, 23, 42, 0.14);
+  background: #f8fafc;
+  box-shadow: 0 24px 80px rgba(15, 23, 42, 0.16);
+}
+
+html[data-theme="light"] .tradeModal.up-row {
+  border-color: rgba(4, 120, 87, 0.24);
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), #f8fafc 34%);
+}
+
+html[data-theme="light"] .tradeModal.down-row {
+  border-color: rgba(190, 18, 60, 0.22);
+  background: linear-gradient(135deg, rgba(244, 63, 94, 0.1), #f8fafc 34%);
+}
+
+html[data-theme="light"] .tradeModal.neutral-row {
+  border-color: rgba(37, 99, 235, 0.2);
+  background: linear-gradient(135deg, rgba(37, 99, 235, 0.08), #f8fafc 34%);
+}
+
+html[data-theme="light"] .strategyModalHead strong {
+  color: rgba(15, 23, 42, 0.92);
+}
+
+html[data-theme="light"] .tradeModalHead strong,
+html[data-theme="light"] .tradeModalHero strong,
+html[data-theme="light"] .tradeModalCell strong {
+  color: rgba(15, 23, 42, 0.9);
+}
+
+html[data-theme="light"] .strategyModalHead button,
+html[data-theme="light"] .strategyModalActions button,
+html[data-theme="light"] .tradeModalHead button {
+  border-color: rgba(15, 23, 42, 0.14);
+  background: rgba(255, 255, 255, 0.76);
+  color: rgba(15, 23, 42, 0.72);
+}
+
+html[data-theme="light"] .strategyModalHead button:hover,
+html[data-theme="light"] .strategyModalActions button:hover,
+html[data-theme="light"] .tradeModalHead button:hover {
+  border-color: rgba(37, 99, 235, 0.32);
+  background: rgba(37, 99, 235, 0.08);
+  color: #1d4ed8;
+}
+
+html[data-theme="light"] .tradeModalHero div,
+html[data-theme="light"] .tradeModalCell,
+html[data-theme="light"] .tradeChart {
+  border-color: rgba(15, 23, 42, 0.1);
+  background: rgba(255, 255, 255, 0.72);
+}
+
+html[data-theme="light"] .tradeChart.isEmpty {
+  color: rgba(15, 23, 42, 0.52);
+}
+
+html[data-theme="light"] .tradeChartHead strong {
+  color: rgba(15, 23, 42, 0.68);
+}
+
+html[data-theme="light"] .tradeChartBg {
+  fill: rgba(15, 23, 42, 0.025);
+}
+
+html[data-theme="light"] .tradeChartGrid {
+  stroke: rgba(15, 23, 42, 0.09);
+}
+
+html[data-theme="light"] .tradeChartAxis,
+html[data-theme="light"] .tradeChartTime,
+html[data-theme="light"] .tradeChartLabel {
+  fill: rgba(15, 23, 42, 0.54);
+}
+
+html[data-theme="light"] .tradeWindow {
+  stroke: rgba(15, 23, 42, 0.16);
+}
+
+html[data-theme="light"] .tradeWindow.exit {
+  stroke: rgba(15, 23, 42, 0.28);
+}
+
+html[data-theme="light"] .tradePath {
+  stroke: rgba(15, 23, 42, 0.78);
+}
+
+html[data-theme="light"] .tradeMarker {
+  stroke: #f8fafc;
+}
+
+html[data-theme="light"] .fieldControl input {
+  border-color: rgba(15, 23, 42, 0.14);
+  background: #ffffff;
+  color: rgba(15, 23, 42, 0.88);
+}
+
+html[data-theme="light"] .lockedField {
+  border-color: rgba(15, 23, 42, 0.1);
+  background: rgba(15, 23, 42, 0.035);
+  color: rgba(15, 23, 42, 0.72);
+}
+
+html[data-theme="light"] .scaleButtons button {
+  border-color: rgba(37, 99, 235, 0.2);
+  background: rgba(37, 99, 235, 0.06);
+  color: #1d4ed8;
+}
+
+html[data-theme="light"] .scaleButtons button:hover {
+  border-color: rgba(37, 99, 235, 0.34);
+  background: rgba(37, 99, 235, 0.1);
+  color: #1e40af;
+}
+
+html[data-theme="light"] .strategyModalSummary {
+  border-top-color: rgba(15, 23, 42, 0.1);
+}
+
+html[data-theme="light"] .strategyModalSummary span {
+  border-color: rgba(15, 23, 42, 0.1);
+  background: rgba(15, 23, 42, 0.035);
+  color: rgba(15, 23, 42, 0.62);
+}
+
+html[data-theme="light"] .ticker-cell {
+  color: rgba(15, 23, 42, 0.88);
+}
+
+html[data-theme="light"] .terminal-table td {
+  border-bottom-color: var(--line-soft);
+}
+
+html[data-theme="light"] .terminal-table tbody tr.up-row {
+  background: rgba(16, 185, 129, 0.065);
+}
+
+html[data-theme="light"] .terminal-table tbody tr.up-row:hover {
+  background: rgba(16, 185, 129, 0.11);
+}
+
+html[data-theme="light"] .terminal-table tbody tr.down-row {
+  background: rgba(244, 63, 94, 0.06);
+}
+
+html[data-theme="light"] .terminal-table tbody tr.down-row:hover {
+  background: rgba(244, 63, 94, 0.105);
+}
+
+html[data-theme="light"] .terminal-table tbody tr.neutral-row {
+  background: rgba(37, 99, 235, 0.045);
+}
+
+html[data-theme="light"] .sidePill,
+html[data-theme="light"] .status {
+  border-color: var(--line);
+}
+
+html[data-theme="light"] .sideLong,
+html[data-theme="light"] .sent {
+  border-color: rgba(4, 120, 87, 0.25);
+  background: rgba(16, 185, 129, 0.1);
+  color: #047857;
+}
+
+html[data-theme="light"] .sideShort,
+html[data-theme="light"] .failed {
+  border-color: rgba(190, 18, 60, 0.24);
+  background: rgba(244, 63, 94, 0.1);
+  color: #be123c;
+}
+
+html[data-theme="light"] .strategyToggle input {
+  accent-color: #047857;
+}
+
+@media (max-width: 1080px) {
+  .backtest-grid.two-up,
+  .backtest-stats-grid,
+  .challenge-grid,
+  .challenge-pass-rates {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .challenge-rule-form {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .telegram-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 760px) {
+  .surface-strip {
+    align-items: stretch;
+    gap: 0.55rem;
+    overflow-x: auto;
+  }
+
+  .surface-brand,
+  .surface-actions {
+    display: none;
+  }
+
+  .surface-tabs {
+    position: static;
+    transform: none;
+    min-width: max-content;
+  }
+
+  .terminal-workspace {
+    width: min(100% - 18px, 1480px);
+    padding-top: 0.5rem;
+  }
+
+  .terminal-head,
+  .backtest-card-head {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .terminal-actions,
+  .terminal-action,
+  .count-pill {
+    width: 100%;
+  }
+
+  .backtest-grid.two-up,
+  .backtest-stats-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .strategyChecks {
+    grid-template-columns: 1fr;
+  }
+
+  .pickerHeader {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .pickerActions,
+  .strategyToolbar {
+    width: 100%;
+  }
+
+  .strategyToolbar {
+    grid-template-columns: 1fr;
+    align-items: stretch;
+  }
+
+  .bulkScale .scaleButtons {
+    width: 100%;
+  }
+
+  .bulkScale .scaleButtons button {
+    flex: 1;
+  }
+
+  .strategySearchCount {
+    justify-content: flex-start;
+  }
+
+  .challenge-grid,
+  .challenge-pass-rates,
+  .challenge-method-grid,
+  .challenge-rule-form {
+    grid-template-columns: 1fr;
+  }
+
+  .basketListHeader {
+    display: none;
+  }
+
+  .basketListRow {
+    grid-template-columns: 1fr;
+    gap: 0.36rem;
+    align-items: stretch;
+  }
+
+  .basketListRow > span,
+  .basketListRow > .strategyToggle {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.75rem;
+  }
+
+  .basketListRow > span::before,
+  .basketListRow > .strategyToggle::before {
+    content: attr(data-label);
+    color: rgba(255, 255, 255, 0.45);
+    font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+    font-size: 0.58rem;
+    font-weight: 900;
+    text-transform: uppercase;
+  }
+
+  .strategyModal {
+    max-height: calc(100svh - 2rem);
+    overflow: auto;
+    padding: 0.82rem;
+  }
+
+  .strategyModalHead {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .strategyModalGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .tradeModalHead {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .tradeModalHero,
+  .tradeModalGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .fieldControl.wide {
+    grid-column: auto;
+  }
+
+  .strategyModalActions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+* {
+  border-radius: 0 !important;
+}
+
+.tradeModalBackdrop {
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 18px;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(6px);
+}
+
+.tradeModal,
+html[data-theme="light"] .tradeModal,
+.tradeModal.up-row,
+.tradeModal.down-row,
+.tradeModal.neutral-row,
+html[data-theme="light"] .tradeModal.up-row,
+html[data-theme="light"] .tradeModal.down-row,
+html[data-theme="light"] .tradeModal.neutral-row {
+  width: min(1120px, 96vw);
+  height: min(820px, 84vh);
+  max-height: min(820px, 84vh);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(12, 12, 12, 0.96);
+  box-shadow: 0 28px 120px rgba(0, 0, 0, 0.65);
+  padding: 0;
+  font-weight: 900;
+}
+
+.tradeModalHead {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 14px 16px;
+}
+
+.tradeModalTitle {
+  min-width: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.tradeModalTitle strong,
+html[data-theme="light"] .tradeModalTitle strong {
+  color: rgba(255, 255, 255, 0.92);
+  font-size: 16px;
+  font-weight: 900;
+}
+
+.tradeModalTitle span {
+  color: rgba(255, 255, 255, 0.58);
+  font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.tradeModalHeadActions {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.tradeOutcomeBadge {
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.06);
+  padding: 3px 10px;
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.tradeOutcomeBadge.up {
+  border-color: rgba(52, 211, 153, 0.95);
+  color: rgba(52, 211, 153, 0.95);
+}
+
+.tradeOutcomeBadge.down {
+  border-color: rgba(248, 113, 113, 0.95);
+  color: rgba(248, 113, 113, 0.95);
+}
+
+.tradeModalHead button,
+html[data-theme="light"] .tradeModalHead button {
+  height: 34px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.86);
+  padding: 0 12px;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.tradeModalBody {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px 16px;
+}
+
+.tradeModalMetrics,
+.tradeModalDetailsStrip {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.tradeModalMetrics.four {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.tradeModalMetrics.two {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.tradeModalDetailsStrip {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin-top: 12px;
+  margin-bottom: 0;
+}
+
+.tradeInfoBox,
+html[data-theme="light"] .tradeInfoBox {
+  min-height: 58px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.03);
+  box-shadow: inset 0 10px 30px rgba(0, 0, 0, 0.35);
+  padding: 10px 12px;
+}
+
+.tradeInfoBox.tone-green {
+  border-color: rgba(52, 211, 153, 0.22);
+  background: linear-gradient(180deg, rgba(52, 211, 153, 0.1), rgba(255, 255, 255, 0.02));
+}
+
+.tradeInfoBox.tone-red {
+  border-color: rgba(248, 113, 113, 0.22);
+  background: linear-gradient(180deg, rgba(248, 113, 113, 0.1), rgba(255, 255, 255, 0.02));
+}
+
+.tradeInfoBox.tone-blue {
+  border-color: rgba(96, 165, 250, 0.22);
+  background: linear-gradient(180deg, rgba(96, 165, 250, 0.1), rgba(255, 255, 255, 0.02));
+}
+
+.tradeInfoBox.tone-amber {
+  border-color: rgba(251, 191, 36, 0.22);
+  background: linear-gradient(180deg, rgba(251, 191, 36, 0.1), rgba(255, 255, 255, 0.02));
+}
+
+.tradeInfoBox span {
+  overflow: hidden;
+  color: rgba(255, 255, 255, 0.72);
+  font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 0;
+  line-height: 1.1;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.tradeInfoBox strong,
+html[data-theme="light"] .tradeInfoBox strong {
+  min-width: 0;
+  overflow: hidden;
+  color: rgba(255, 255, 255, 0.88);
+  font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+  font-size: 12px;
+  font-weight: 850;
+  line-height: 1.15;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tradeInfoBox.tone-green strong {
+  color: rgba(167, 243, 208, 0.98);
+}
+
+.tradeInfoBox.tone-red strong {
+  color: rgba(254, 202, 202, 0.98);
+}
+
+.tradeInfoBox.tone-blue strong {
+  color: rgba(191, 219, 254, 0.98);
+}
+
+.tradeInfoBox .up,
+.tradeInfoBox strong.up {
+  color: var(--up);
+}
+
+.tradeInfoBox .down,
+.tradeInfoBox strong.down {
+  color: var(--down);
+}
+
+.tradeCandlestickPanel,
+html[data-theme="light"] .tradeCandlestickPanel {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.8);
+  box-shadow: inset 0 18px 60px rgba(0, 0, 0, 0.55);
+}
+
+.tradeCandlestickPanel.isEmpty {
+  min-height: 360px;
+  display: grid;
+  align-content: start;
+}
+
+.tradeCandlestickPanel.isEmpty > span {
+  display: grid;
+  min-height: 300px;
+  place-items: center;
+  color: rgba(255, 255, 255, 0.58);
+  font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+  font-size: 11px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.tradeCandlestickHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 10px 14px;
+}
+
+.tradeCandlestickHead strong {
+  color: rgba(255, 255, 255, 0.92);
+  font-size: 14px;
+  font-weight: 900;
+}
+
+.tradeCandlestickHead span {
+  color: rgba(255, 255, 255, 0.62);
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.tradeCandlestickSvg {
+  width: 100%;
+  height: 360px;
+  display: block;
+  background: rgba(0, 0, 0, 0.92);
+  cursor: crosshair;
+  touch-action: none;
+  user-select: none;
+}
+
+.tradePriceChartWrap {
+  position: relative;
+  min-height: 390px;
+  overflow: hidden;
+  background: #030303;
+}
+
+.tradePriceChart {
+  width: 100%;
+  height: 390px;
+}
+
+.tradeChartLegend,
+.tradeChartLevels {
+  position: absolute;
+  z-index: 2;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  pointer-events: none;
+}
+
+.tradeChartLegend {
+  top: 8px;
+  left: 10px;
+  right: 10px;
+}
+
+.tradeChartLevels {
+  left: 10px;
+  right: 10px;
+  bottom: 8px;
+}
+
+.tradeChartLegend > strong,
+.tradeChartLegend span,
+.tradeChartLevels span {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(5, 5, 5, 0.74);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.35);
+  color: rgba(255, 255, 255, 0.68);
+  font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+  font-size: 10px;
+  font-weight: 900;
+  line-height: 1;
+  padding: 6px 7px;
+  white-space: nowrap;
+}
+
+.tradeChartLegend > strong,
+.tradeChartLegend span strong,
+.tradeChartLevels span strong {
+  color: rgba(255, 255, 255, 0.96);
+  font-weight: 950;
+}
+
+.tradeChartLegend .up,
+.tradeChartLegend .up strong {
+  color: var(--up);
+}
+
+.tradeChartLegend .down,
+.tradeChartLegend .down strong {
+  color: var(--down);
+}
+
+.tradeModal span,
+.tradeModal small,
+.tradeModal strong,
+.tradeModal button,
+.tradeModal text,
+.tradeCandleContextMenu,
+.tradeCandleContextMenu span,
+.tradeCandleContextMenu strong {
+  font-weight: 900;
+}
+
+.tradeCandleContextMenu {
+  position: fixed;
+  z-index: 99999;
+  min-width: 230px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(10, 10, 14, 0.97);
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(20px);
+  padding: 14px 18px;
+  font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+  font-size: 12px;
+}
+
+.tradeCandleContextHead,
+.tradeCandleContextRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.tradeCandleContextHead {
+  margin-bottom: 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding-bottom: 8px;
+}
+
+.tradeCandleContextHead span,
+.tradeCandleContextRow span {
+  color: rgba(255, 255, 255, 0.45);
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.tradeCandleContextTone {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.tradeCandleContextTone i {
+  width: 8px;
+  height: 8px;
+  border-radius: 50% !important;
+}
+
+.tradeCandleContextTone strong {
+  font-family: "Soehne", "Avenir Next", "Segoe UI", Arial, sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.tradeCandleContextRow {
+  padding: 3px 0;
+}
+
+.tradeCandleContextRow strong {
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+
+.tradeCandleContextRule {
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  margin: 8px 0;
+}
+
+@media (max-width: 920px) {
+  .tradeModal,
+  html[data-theme="light"] .tradeModal,
+  .tradeModal.up-row,
+  .tradeModal.down-row,
+  .tradeModal.neutral-row,
+  html[data-theme="light"] .tradeModal.up-row,
+  html[data-theme="light"] .tradeModal.down-row,
+  html[data-theme="light"] .tradeModal.neutral-row {
+    width: min(1120px, 99vw);
+    height: min(680px, 78vh);
+    max-height: min(680px, 78vh);
+  }
+
+  .tradeModalBackdrop {
+    padding: 10px;
+  }
+
+  .tradeModalHead {
+    align-items: stretch;
+    padding: 12px;
+  }
+
+  .tradeModalHeadActions {
+    justify-content: space-between;
+  }
+
+  .tradeModalBody {
+    padding: 10px 12px;
+  }
+
+  .tradeModalMetrics.four,
+  .tradeModalDetailsStrip {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 620px) {
+  .tradeModalMetrics.four,
+  .tradeModalMetrics.two,
+  .tradeModalDetailsStrip {
+    grid-template-columns: 1fr;
+  }
+
+  .tradeCandlestickSvg {
+    height: 320px;
+  }
+
+  .tradePriceChartWrap,
+  .tradePriceChart {
+    min-height: 340px;
+    height: 340px;
+  }
+
+  .tradeChartLegend,
+  .tradeChartLevels {
+    gap: 4px;
+  }
+
+  .tradeChartLegend > strong,
+  .tradeChartLegend span,
+  .tradeChartLevels span {
+    max-width: 100%;
+    overflow: hidden;
+    padding: 5px 6px;
+    text-overflow: ellipsis;
+  }
+}

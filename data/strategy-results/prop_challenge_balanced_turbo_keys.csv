@@ -1,0 +1,16 @@
+selection_key
+CL	ict_sweep_fvg	precision_sprint
+CL	momentum	precision_sprint
+GC	ict_sweep_fvg	precision_sprint
+GC	reddit_ema_pullback	reddit_ema_pullback|ny|range=15|entry=150|rr=1.5|sl_atr=1|tp_atr=1.5|threshold=2|adx_max=none|adx_min=none|rsi2=none|trend=both|max_bars=24
+GC	reddit_orb_breakout	reddit_orb_breakout|ny|range=15|entry=150|rr=1.5|sl_atr=1|tp_atr=1.5|threshold=2|adx_max=none|adx_min=none|rsi2=none|trend=all|max_bars=24
+HG	reddit_capitulation_reversion	reddit_capitulation_reversion|ny|range=15|entry=150|rr=2.5|sl_atr=1|tp_atr=1.5|threshold=1.75|adx_max=none|adx_min=none|rsi2=10.0|trend=both|max_bars=24
+HG	reddit_orb_breakout	reddit_orb_breakout|london|range=15|entry=150|rr=1.5|sl_atr=1|tp_atr=1.5|threshold=2|adx_max=none|adx_min=none|rsi2=none|trend=all|max_bars=24
+NQ	ict_sweep_fvg	precision_sprint
+NQ	momentum	precision_sprint
+RTY	ict_sweep_fvg	precision_sprint
+RTY	reddit_orb_retest	reddit_orb_retest|ny|range=15|entry=150|rr=2|sl_atr=1|tp_atr=1.5|threshold=2|adx_max=none|adx_min=none|rsi2=none|trend=all|max_bars=24
+SI	reddit_capitulation_reversion	reddit_capitulation_reversion|ny|range=15|entry=150|rr=2.5|sl_atr=1|tp_atr=1.5|threshold=1.75|adx_max=none|adx_min=none|rsi2=10.0|trend=both|max_bars=24
+YM	ict_sweep_fvg	precision_sprint
+YM	reddit_capitulation_reversion	reddit_capitulation_reversion|ny|range=15|entry=150|rr=2.5|sl_atr=1|tp_atr=1.5|threshold=1.75|adx_max=none|adx_min=none|rsi2=10.0|trend=long_only|max_bars=24
+YM	reddit_ema_pullback	reddit_ema_pullback|ny|range=15|entry=150|rr=1.5|sl_atr=1|tp_atr=1.5|threshold=2|adx_max=none|adx_min=none|rsi2=none|trend=both|max_bars=24

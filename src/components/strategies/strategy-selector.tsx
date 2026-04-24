@@ -1,0 +1,682 @@
+"use client";
+
+import type { Route } from "next";
+import { usePathname, useRouter } from "next/navigation";
+import { useEffect, useState, useTransition } from "react";
+import { emitStrategyEditsChanged, STRATEGY_EDITS_STORAGE_KEY } from "@/components/strategies/strategy-edits-store";
+
+type StrategyOption = {
+  key: string;
+  label: string;
+  datasetLabel: string;
+  symbol: string;
+  phase: string;
+  market?: string;
+  winRatePct: number;
+  profitFactor: number;
+  trades: number;
+  tradesPerWeek: number;
+  tpUnits: number;
+  slUnits: number;
+  unitLabel: string;
+  dollarPerUnit: number;
+  targetDollars: number;
+  riskDollars: number;
+  sizeLabel: string;
+  liveSupported: boolean;
+};
+
+type StrategySelectorProps = {
+  strategies: StrategyOption[];
+  selectedKeys: string[];
+  defaultKeys: string[];
+};
+
+type SortColumn = "ticker" | "model" | "profitFactor" | "winRate" | "trades" | "targetRisk" | "size" | "enabled";
+type SortDirection = "asc" | "desc";
+
+type StrategyEdit = {
+  modelName: string;
+  contracts: number;
+  sizeName: string;
+  tpUnits: number;
+  slUnits: number;
+  targetDollars: number;
+  riskDollars: number;
+};
+
+type StrategyEditMap = Record<string, StrategyEdit>;
+
+const STORAGE_KEY = STRATEGY_EDITS_STORAGE_KEY;
+const STRATEGY_SIZES_PARAM = "strategySizes";
+
+function formatMoney(value: number): string {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    minimumFractionDigits: Math.abs(value) < 100 ? 2 : 0,
+    maximumFractionDigits: Math.abs(value) < 100 ? 2 : 0
+  }).format(value);
+}
+
+function formatNumber(value: number): string {
+  if (!Number.isFinite(value)) return "inf";
+  return new Intl.NumberFormat("en-US", {
+    minimumFractionDigits: Number.isInteger(value) ? 0 : 2,
+    maximumFractionDigits: 2
+  }).format(value);
+}
+
+function formatPct(value: number): string {
+  return `${new Intl.NumberFormat("en-US", {
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 1
+  }).format(value)}%`;
+}
+
+function formatMarket(value: string | undefined): string {
+  if (!value) return "Market";
+  return value.charAt(0).toUpperCase() + value.slice(1);
+}
+
+function splitSizeLabel(value: string): { contracts: number; sizeName: string } {
+  const match = value.trim().match(/^(\d+(?:\.\d+)?)\s+(.+)$/);
+  if (!match) return { contracts: 1, sizeName: value.trim() || "contract" };
+  return {
+    contracts: Number(match[1]),
+    sizeName: match[2]
+  };
+}
+
+function formatSizeLabel(contracts: number, sizeName: string): string {
+  return `${formatNumber(contracts)} ${sizeName.trim() || "contract"}`;
+}
+
+function roundControlValue(value: number): number {
+  return Math.round(value * 100) / 100;
+}
+
+function defaultEdit(strategy: StrategyOption): StrategyEdit {
+  const size = splitSizeLabel(strategy.sizeLabel);
+  return {
+    modelName: strategy.label,
+    contracts: roundControlValue(size.contracts),
+    sizeName: size.sizeName,
+    tpUnits: roundControlValue(strategy.tpUnits),
+    slUnits: roundControlValue(strategy.slUnits),
+    targetDollars: roundControlValue(strategy.targetDollars),
+    riskDollars: roundControlValue(strategy.riskDollars)
+  };
+}
+
+function scaleForContracts(strategy: StrategyOption, contracts: number): number {
+  const baseContracts = defaultEdit(strategy).contracts || 1;
+  return contracts / baseContracts;
+}
+
+function dollarsFromUnits(strategy: StrategyOption, units: number, contracts: number): number {
+  return roundControlValue(Math.abs(units * strategy.dollarPerUnit * scaleForContracts(strategy, contracts)));
+}
+
+function unitsFromDollars(strategy: StrategyOption, dollars: number, contracts: number): number {
+  const dollarValue = Math.abs(strategy.dollarPerUnit * scaleForContracts(strategy, contracts));
+  return dollarValue ? roundControlValue(Math.abs(dollars) / dollarValue) : 0;
+}
+
+function normalizeEdit(strategy: StrategyOption, edit: StrategyEdit): StrategyEdit {
+  const fallback = defaultEdit(strategy);
+  return {
+    modelName: fallback.modelName,
+    contracts: Number.isFinite(edit.contracts) && edit.contracts > 0 ? roundControlValue(edit.contracts) : fallback.contracts,
+    sizeName: fallback.sizeName,
+    tpUnits: Number.isFinite(edit.tpUnits) && edit.tpUnits >= 0 ? roundControlValue(edit.tpUnits) : fallback.tpUnits,
+    slUnits: Number.isFinite(edit.slUnits) && edit.slUnits >= 0 ? roundControlValue(edit.slUnits) : fallback.slUnits,
+    targetDollars: Number.isFinite(edit.targetDollars) && edit.targetDollars >= 0 ? roundControlValue(edit.targetDollars) : fallback.targetDollars,
+    riskDollars: Number.isFinite(edit.riskDollars) && edit.riskDollars >= 0 ? roundControlValue(edit.riskDollars) : fallback.riskDollars
+  };
+}
+
+function nearlyEqual(left: number, right: number): boolean {
+  return Math.abs(left - right) < 0.005;
+}
+
+function isDefaultEdit(strategy: StrategyOption, edit: StrategyEdit): boolean {
+  const normalized = normalizeEdit(strategy, edit);
+  const fallback = defaultEdit(strategy);
+  return (
+    normalized.modelName === fallback.modelName &&
+    normalized.sizeName === fallback.sizeName &&
+    nearlyEqual(normalized.contracts, fallback.contracts) &&
+    nearlyEqual(normalized.tpUnits, fallback.tpUnits) &&
+    nearlyEqual(normalized.slUnits, fallback.slUnits) &&
+    nearlyEqual(normalized.targetDollars, fallback.targetDollars) &&
+    nearlyEqual(normalized.riskDollars, fallback.riskDollars)
+  );
+}
+
+function sameSelection(left: string[], right: string[]): boolean {
+  if (left.length !== right.length) return false;
+  return left.every((key, index) => key === right[index]);
+}
+
+function parseStrategySizesParam(value: string | undefined): Map<string, number> {
+  const sizes = new Map<string, number>();
+  if (!value) return sizes;
+
+  for (const entry of value.split(",")) {
+    const splitIndex = entry.lastIndexOf(":");
+    if (splitIndex <= 0) continue;
+    const key = decodeURIComponent(entry.slice(0, splitIndex));
+    const contracts = Number(entry.slice(splitIndex + 1));
+    if (key && Number.isFinite(contracts) && contracts > 0) {
+      sizes.set(key, contracts);
+    }
+  }
+
+  return sizes;
+}
+
+function editWithContracts(strategy: StrategyOption, edit: StrategyEdit, contractsValue: number): StrategyEdit {
+  const normalized = normalizeEdit(strategy, edit);
+  const contracts = roundControlValue(Math.max(0.01, contractsValue));
+  return {
+    ...normalized,
+    contracts,
+    targetDollars: dollarsFromUnits(strategy, normalized.tpUnits, contracts),
+    riskDollars: dollarsFromUnits(strategy, normalized.slUnits, contracts)
+  };
+}
+
+function applyStrategySizesParam(strategies: StrategyOption[], current: StrategyEditMap, value: string | undefined): StrategyEditMap {
+  const sizes = parseStrategySizesParam(value);
+  if (!sizes.size) return current;
+
+  const next: StrategyEditMap = { ...current };
+  for (const strategy of strategies) {
+    const contracts = sizes.get(strategy.key);
+    if (!contracts) continue;
+    const currentEdit = current[strategy.key] ? normalizeEdit(strategy, current[strategy.key]) : defaultEdit(strategy);
+    const adjusted = editWithContracts(strategy, currentEdit, contracts);
+    if (isDefaultEdit(strategy, adjusted)) {
+      delete next[strategy.key];
+    } else {
+      next[strategy.key] = adjusted;
+    }
+  }
+
+  return next;
+}
+
+function scaledEdit(strategy: StrategyOption, edit: StrategyEdit, multiplier: number): StrategyEdit {
+  const normalized = normalizeEdit(strategy, edit);
+  const contracts = roundControlValue(Math.max(0.01, normalized.contracts * multiplier));
+  return {
+    ...normalized,
+    contracts,
+    targetDollars: dollarsFromUnits(strategy, normalized.tpUnits, contracts),
+    riskDollars: dollarsFromUnits(strategy, normalized.slUnits, contracts)
+  };
+}
+
+function strategyMatchesSearch(strategy: StrategyOption, edit: StrategyEdit, query: string): boolean {
+  if (!query) return true;
+  return [
+    strategy.symbol,
+    strategy.key,
+    strategy.datasetLabel,
+    edit.modelName,
+    formatMarket(strategy.market),
+    edit.sizeName
+  ].some((value) => value.toLowerCase().includes(query));
+}
+
+function compareText(left: string, right: string): number {
+  return left.localeCompare(right, "en-US", {
+    numeric: true,
+    sensitivity: "base"
+  });
+}
+
+function defaultSortDirection(column: SortColumn): SortDirection {
+  if (column === "ticker" || column === "model") return "asc";
+  return "desc";
+}
+
+export default function StrategySelector({ strategies, selectedKeys, defaultKeys }: StrategySelectorProps) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const [isPending, startTransition] = useTransition();
+  const [isLoaded, setIsLoaded] = useState(false);
+  const [edits, setEdits] = useState<StrategyEditMap>({});
+  const [activeKey, setActiveKey] = useState<string | null>(null);
+  const [draft, setDraft] = useState<StrategyEdit | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [sortColumn, setSortColumn] = useState<SortColumn | null>(null);
+  const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
+  const selected = new Set(selectedKeys);
+  const activeStrategy = strategies.find((strategy) => strategy.key === activeKey);
+  const hasEdits = Object.keys(edits).length > 0;
+  const normalizedSearchQuery = searchQuery.trim().toLowerCase();
+  const orderByKey = new Map(strategies.map((strategy, index) => [strategy.key, index]));
+
+  useEffect(() => {
+    if (isLoaded) return;
+    try {
+      const raw = window.localStorage.getItem(STORAGE_KEY);
+      const stored = raw ? (JSON.parse(raw) as StrategyEditMap) : {};
+      const urlParams = new URLSearchParams(window.location.search);
+      const next = applyStrategySizesParam(strategies, stored, urlParams.get(STRATEGY_SIZES_PARAM) ?? "");
+      setEdits(next);
+    } catch {
+      const urlParams = new URLSearchParams(window.location.search);
+      setEdits(applyStrategySizesParam(strategies, {}, urlParams.get(STRATEGY_SIZES_PARAM) ?? ""));
+    } finally {
+      setIsLoaded(true);
+    }
+  }, [isLoaded, strategies]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (!params.has(STRATEGY_SIZES_PARAM)) return;
+    params.delete(STRATEGY_SIZES_PARAM);
+    const nextQuery = params.toString();
+    window.history.replaceState(window.history.state, "", nextQuery ? `${pathname}?${nextQuery}` : pathname);
+  }, [pathname]);
+
+  useEffect(() => {
+    if (!isLoaded) return;
+    if (Object.keys(edits).length) {
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(edits));
+    } else {
+      window.localStorage.removeItem(STORAGE_KEY);
+    }
+    emitStrategyEditsChanged(edits);
+  }, [edits, isLoaded]);
+
+  function navigate(nextKeys: string[], nextDefaultKeys = defaultKeys) {
+    startTransition(() => {
+      const params = new URLSearchParams(typeof window !== "undefined" ? window.location.search : "");
+      params.delete(STRATEGY_SIZES_PARAM);
+      if (nextKeys.length === 0) {
+        params.set("strategies", "none");
+      } else if (!sameSelection(nextKeys, nextDefaultKeys)) {
+        params.delete("strategies");
+        params.set("strategies", nextKeys.join(","));
+      } else {
+        params.delete("strategies");
+      }
+      const query = params.toString();
+      router.push((query ? `${pathname}?${query}` : pathname) as Route, { scroll: false });
+    });
+  }
+
+  function toggleStrategy(key: string) {
+    const nextKeys = selected.has(key) ? selectedKeys.filter((item) => item !== key) : [...selectedKeys, key];
+    navigate(nextKeys);
+  }
+
+  function currentEdit(strategy: StrategyOption): StrategyEdit {
+    return edits[strategy.key] ? normalizeEdit(strategy, edits[strategy.key]) : defaultEdit(strategy);
+  }
+
+  const visibleStrategies = strategies.filter((strategy) => strategyMatchesSearch(strategy, currentEdit(strategy), normalizedSearchQuery));
+  const sortedStrategies = [...visibleStrategies].sort((left, right) => {
+    if (!sortColumn) {
+      return (orderByKey.get(left.key) ?? 0) - (orderByKey.get(right.key) ?? 0);
+    }
+
+    const leftEdit = currentEdit(left);
+    const rightEdit = currentEdit(right);
+    let comparison = 0;
+
+    if (sortColumn === "ticker") comparison = compareText(left.symbol, right.symbol);
+    if (sortColumn === "model") comparison = compareText(leftEdit.modelName, rightEdit.modelName);
+    if (sortColumn === "profitFactor") comparison = left.profitFactor - right.profitFactor;
+    if (sortColumn === "winRate") comparison = left.winRatePct - right.winRatePct;
+    if (sortColumn === "trades") comparison = left.trades - right.trades;
+    if (sortColumn === "targetRisk") {
+      comparison = leftEdit.targetDollars - rightEdit.targetDollars;
+      if (comparison === 0) comparison = leftEdit.riskDollars - rightEdit.riskDollars;
+    }
+    if (sortColumn === "size") comparison = leftEdit.contracts - rightEdit.contracts;
+    if (sortColumn === "enabled") comparison = Number(selected.has(left.key)) - Number(selected.has(right.key));
+
+    if (comparison === 0) {
+      comparison = (orderByKey.get(left.key) ?? 0) - (orderByKey.get(right.key) ?? 0);
+    }
+
+    return sortDirection === "asc" ? comparison : -comparison;
+  });
+
+  function toggleSort(column: SortColumn) {
+    if (sortColumn === column) {
+      setSortDirection((current) => (current === "asc" ? "desc" : "asc"));
+      return;
+    }
+    setSortColumn(column);
+    setSortDirection(defaultSortDirection(column));
+  }
+
+  function sortIndicator(column: SortColumn): string {
+    if (sortColumn !== column) return "";
+    return sortDirection === "asc" ? "^" : "v";
+  }
+
+  function sortButtonClass(column: SortColumn): string {
+    return sortColumn === column ? "basketSortButton isActive" : "basketSortButton";
+  }
+
+  function openEditor(strategy: StrategyOption) {
+    setActiveKey(strategy.key);
+    setDraft(currentEdit(strategy));
+  }
+
+  function closeEditor() {
+    setActiveKey(null);
+    setDraft(null);
+  }
+
+  function saveEditor() {
+    if (!activeStrategy || !draft) return;
+    const normalized = normalizeEdit(activeStrategy, draft);
+    setEdits((current) => {
+      const next = { ...current };
+      if (isDefaultEdit(activeStrategy, normalized)) {
+        delete next[activeStrategy.key];
+      } else {
+        next[activeStrategy.key] = normalized;
+      }
+      return next;
+    });
+    closeEditor();
+  }
+
+  function resetActiveStrategy() {
+    if (!activeStrategy) return;
+    setEdits((current) => {
+      const next = { ...current };
+      delete next[activeStrategy.key];
+      return next;
+    });
+    setDraft(defaultEdit(activeStrategy));
+  }
+
+  function resetAllEdits() {
+    setEdits({});
+    if (activeStrategy) setDraft(defaultEdit(activeStrategy));
+  }
+
+  function scaleAllContracts(multiplier: number) {
+    setEdits((current) => {
+      const next: StrategyEditMap = { ...current };
+      for (const strategy of strategies) {
+        const currentStrategyEdit = current[strategy.key] ? normalizeEdit(strategy, current[strategy.key]) : defaultEdit(strategy);
+        const scaled = scaledEdit(strategy, currentStrategyEdit, multiplier);
+        if (isDefaultEdit(strategy, scaled)) {
+          delete next[strategy.key];
+        } else {
+          next[strategy.key] = scaled;
+        }
+      }
+      return next;
+    });
+    if (activeStrategy) setDraft((current) => (current ? scaledEdit(activeStrategy, current, multiplier) : current));
+  }
+
+  function updateContracts(value: number) {
+    if (!activeStrategy) return;
+    setDraft((current) => {
+      if (!current) return current;
+      const contracts = Number.isFinite(value) && value > 0 ? roundControlValue(value) : current.contracts;
+      return {
+        ...current,
+        contracts,
+        targetDollars: dollarsFromUnits(activeStrategy, current.tpUnits, contracts),
+        riskDollars: dollarsFromUnits(activeStrategy, current.slUnits, contracts)
+      };
+    });
+  }
+
+  function scaleContracts(multiplier: number) {
+    if (!activeStrategy) return;
+    setDraft((current) => (current ? scaledEdit(activeStrategy, current, multiplier) : current));
+  }
+
+  function updateUnits(field: "tpUnits" | "slUnits", value: number) {
+    if (!activeStrategy) return;
+    setDraft((current) => {
+      if (!current) return current;
+      const units = Number.isFinite(value) && value >= 0 ? roundControlValue(value) : 0;
+      if (field === "tpUnits") {
+        return { ...current, tpUnits: units, targetDollars: dollarsFromUnits(activeStrategy, units, current.contracts) };
+      }
+      return { ...current, slUnits: units, riskDollars: dollarsFromUnits(activeStrategy, units, current.contracts) };
+    });
+  }
+
+  function updateDollars(field: "targetDollars" | "riskDollars", value: number) {
+    if (!activeStrategy) return;
+    setDraft((current) => {
+      if (!current) return current;
+      const dollars = Number.isFinite(value) && value >= 0 ? roundControlValue(value) : 0;
+      if (field === "targetDollars") {
+        return { ...current, targetDollars: dollars, tpUnits: unitsFromDollars(activeStrategy, dollars, current.contracts) };
+      }
+      return { ...current, riskDollars: dollars, slUnits: unitsFromDollars(activeStrategy, dollars, current.contracts) };
+    });
+  }
+
+  return (
+    <div className="strategyPicker">
+      <div className="pickerHeader">
+        <span>Strategies</span>
+        <div className="pickerActions">
+          <button type="button" onClick={() => navigate([])} disabled={isPending || selectedKeys.length === 0}>
+            Clear
+          </button>
+          <button type="button" onClick={resetAllEdits} disabled={!hasEdits}>
+            Reset edits
+          </button>
+        </div>
+      </div>
+
+      <div className="strategyToolbar">
+        <label className="strategySearch">
+          <span>Search</span>
+          <input
+            type="search"
+            placeholder="Ticker, model, or dataset"
+            value={searchQuery}
+            onChange={(event) => setSearchQuery(event.target.value)}
+          />
+        </label>
+        <div className="bulkScale">
+          <span>All contracts</span>
+          <div className="scaleButtons" aria-label="Scale all strategy contracts">
+            <button type="button" onClick={() => scaleAllContracts(0.5)}>
+              0.5x
+            </button>
+            <button type="button" onClick={() => scaleAllContracts(2)}>
+              2x
+            </button>
+            <button type="button" onClick={() => scaleAllContracts(4)}>
+              4x
+            </button>
+          </div>
+        </div>
+        <span className="strategySearchCount">
+          {formatNumber(visibleStrategies.length)} / {formatNumber(strategies.length)}
+        </span>
+      </div>
+
+      <div className="basketList" role="list" aria-label="Strategy enable list">
+        <div className="basketListHeader">
+          <button className={sortButtonClass("ticker")} type="button" onClick={() => toggleSort("ticker")}>
+            <span>Ticker</span>
+            <strong>{sortIndicator("ticker")}</strong>
+          </button>
+          <button className={sortButtonClass("model")} type="button" onClick={() => toggleSort("model")}>
+            <span>Model</span>
+            <strong>{sortIndicator("model")}</strong>
+          </button>
+          <button className={sortButtonClass("profitFactor")} type="button" onClick={() => toggleSort("profitFactor")}>
+            <span>PF</span>
+            <strong>{sortIndicator("profitFactor")}</strong>
+          </button>
+          <button className={sortButtonClass("winRate")} type="button" onClick={() => toggleSort("winRate")}>
+            <span>Win</span>
+            <strong>{sortIndicator("winRate")}</strong>
+          </button>
+          <button className={sortButtonClass("trades")} type="button" onClick={() => toggleSort("trades")}>
+            <span>Trades</span>
+            <strong>{sortIndicator("trades")}</strong>
+          </button>
+          <button className={sortButtonClass("targetRisk")} type="button" onClick={() => toggleSort("targetRisk")}>
+            <span>Take Profit / Stop Loss</span>
+            <strong>{sortIndicator("targetRisk")}</strong>
+          </button>
+          <button className={sortButtonClass("size")} type="button" onClick={() => toggleSort("size")}>
+            <span>Size</span>
+            <strong>{sortIndicator("size")}</strong>
+          </button>
+          <button className={sortButtonClass("enabled")} type="button" onClick={() => toggleSort("enabled")}>
+            <span>Enabled</span>
+            <strong>{sortIndicator("enabled")}</strong>
+          </button>
+        </div>
+
+        {sortedStrategies.map((strategy) => {
+          const checked = selected.has(strategy.key);
+          const custom = Boolean(edits[strategy.key]);
+          const effective = currentEdit(strategy);
+          const hasBacktestTrades = strategy.trades > 0;
+          return (
+            <div
+              className={`basketListRow ${checked ? "isEnabled" : "isDisabled"} ${custom ? "hasCustom" : ""}`}
+              role="button"
+              tabIndex={0}
+              key={strategy.key}
+              onClick={() => openEditor(strategy)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault();
+                  openEditor(strategy);
+                }
+              }}
+            >
+              <span className="basketTicker" data-label="Ticker">
+                {strategy.symbol}
+              </span>
+              <div className="basketModel">
+                <strong>{effective.modelName}</strong>
+                <span>
+                  {strategy.datasetLabel} / {formatMarket(strategy.market)} / {strategy.liveSupported ? "live" : "backtest only"}
+                  {custom ? " / custom" : ""}
+                </span>
+              </div>
+              <span className={hasBacktestTrades ? (strategy.profitFactor >= 1 ? "up" : "down") : "neutral"} data-label="PF">
+                {hasBacktestTrades ? formatNumber(strategy.profitFactor) : "--"}
+              </span>
+              <span data-label="Win">{hasBacktestTrades ? formatPct(strategy.winRatePct) : "--"}</span>
+              <span data-label="Trades">{formatNumber(strategy.trades)}</span>
+              <span data-label="Take Profit / Stop Loss">
+                {formatMoney(effective.targetDollars)} / {formatMoney(effective.riskDollars)}
+              </span>
+              <span data-label="Size">{formatSizeLabel(effective.contracts, effective.sizeName)}</span>
+              <label className="strategyToggle" data-label="Enabled" onClick={(event) => event.stopPropagation()}>
+                <input type="checkbox" checked={checked} disabled={isPending} onChange={() => toggleStrategy(strategy.key)} />
+                <span>{checked ? "On" : "Off"}</span>
+              </label>
+            </div>
+          );
+        })}
+        {sortedStrategies.length === 0 ? (
+          <div className="basketListEmpty">No strategies match that search.</div>
+        ) : null}
+      </div>
+
+      {activeStrategy && draft ? (
+        <div className="strategyModalBackdrop" role="presentation" onMouseDown={closeEditor}>
+          <form
+            className="strategyModal"
+            aria-label={`${activeStrategy.symbol} strategy settings`}
+            onSubmit={(event) => {
+              event.preventDefault();
+              saveEditor();
+            }}
+            onMouseDown={(event) => event.stopPropagation()}
+          >
+            <div className="strategyModalHead">
+              <div>
+                <span>{activeStrategy.symbol}</span>
+                <strong>{draft.modelName}</strong>
+              </div>
+              <button type="button" onClick={closeEditor}>
+                Close
+              </button>
+            </div>
+
+            <div className="strategyModalGrid">
+              <div className="fieldControl wide">
+                <span>Model</span>
+                <strong className="lockedField">{draft.modelName}</strong>
+              </div>
+              <label className="fieldControl">
+                <span>Contracts</span>
+                <input type="number" min="0.01" step="0.01" value={draft.contracts} onChange={(event) => updateContracts(Number(event.target.value))} />
+              </label>
+              <div className="fieldControl">
+                <span>Size label</span>
+                <strong className="lockedField">{draft.sizeName}</strong>
+              </div>
+              <div className="fieldControl wide">
+                <span>Quick size</span>
+                <div className="scaleButtons" aria-label="Quick contract size multipliers">
+                  <button type="button" onClick={() => scaleContracts(0.5)}>
+                    0.5x
+                  </button>
+                  <button type="button" onClick={() => scaleContracts(2)}>
+                    2x
+                  </button>
+                  <button type="button" onClick={() => scaleContracts(4)}>
+                    4x
+                  </button>
+                </div>
+              </div>
+              <label className="fieldControl">
+                <span>Take Profit {activeStrategy.unitLabel}</span>
+                <input type="number" min="0" step="0.01" value={draft.tpUnits} onChange={(event) => updateUnits("tpUnits", Number(event.target.value))} />
+              </label>
+              <label className="fieldControl">
+                <span>Take Profit $</span>
+                <input type="number" min="0" step="0.01" value={draft.targetDollars} onChange={(event) => updateDollars("targetDollars", Number(event.target.value))} />
+              </label>
+              <label className="fieldControl">
+                <span>Stop Loss {activeStrategy.unitLabel}</span>
+                <input type="number" min="0" step="0.01" value={draft.slUnits} onChange={(event) => updateUnits("slUnits", Number(event.target.value))} />
+              </label>
+              <label className="fieldControl">
+                <span>Stop Loss $</span>
+                <input type="number" min="0" step="0.01" value={draft.riskDollars} onChange={(event) => updateDollars("riskDollars", Number(event.target.value))} />
+              </label>
+            </div>
+
+            <div className="strategyModalSummary">
+              <span>Size: {formatSizeLabel(draft.contracts, draft.sizeName)}</span>
+              <span>
+                Take Profit / Stop Loss: {formatMoney(draft.targetDollars)} / {formatMoney(draft.riskDollars)}
+              </span>
+            </div>
+
+            <div className="strategyModalActions">
+              <button type="button" onClick={resetActiveStrategy}>
+                Reset
+              </button>
+              <button type="submit">Save</button>
+            </div>
+          </form>
+        </div>
+      ) : null}
+    </div>
+  );
+}

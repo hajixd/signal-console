@@ -1,0 +1,111 @@
+{
+  "name": "best_cross_asset_balanced",
+  "variant": "balanced",
+  "selection_reason": "Core uses the futures mean-reversion asset/phases that had the strongest train-to-holdout PF. Balanced adds CL momentum and SI momentum for more trade frequency.",
+  "execution_rules": {
+    "signal_timing": "Signals are evaluated only after a 15m candle is complete.",
+    "entry_timing": "Enter on the next candle open after the signal.",
+    "exit_timing": "TP/SL can trigger from the entry candle onward; signal exit also exits on next open.",
+    "same_bar_tp_sl": "If TP and SL touch in the same candle, count it as SL.",
+    "sizing": "Equal risk per trade; stats are reported in R.",
+    "cost_model": "Uses the live-realistic replay cost_units already embedded in the selected parameter rows."
+  },
+  "rules": [
+    {
+      "market": "futures",
+      "symbol": "CL",
+      "phase": "momentum",
+      "signal_atr_mult": 2.5,
+      "recent_signal_lookback": 24,
+      "abs_close_ema200_atr_max": 1.0,
+      "trade_rsi_min": null,
+      "trade_rsi_max": null,
+      "tp_units": 500,
+      "sl_units": 500,
+      "cost_units": 3.0
+    },
+    {
+      "market": "futures",
+      "symbol": "ES",
+      "phase": "mean_reversion",
+      "signal_atr_mult": 2.5,
+      "recent_signal_lookback": 6,
+      "abs_close_ema200_atr_max": 2.0,
+      "trade_rsi_min": -0.1,
+      "trade_rsi_max": 0.1,
+      "tp_units": 200,
+      "sl_units": 500,
+      "cost_units": 3.0
+    },
+    {
+      "market": "futures",
+      "symbol": "SI",
+      "phase": "momentum",
+      "signal_atr_mult": 2.5,
+      "recent_signal_lookback": 24,
+      "abs_close_ema200_atr_max": 1.0,
+      "trade_rsi_min": null,
+      "trade_rsi_max": null,
+      "tp_units": 150,
+      "sl_units": 500,
+      "cost_units": 3.0
+    },
+    {
+      "market": "futures",
+      "symbol": "YM",
+      "phase": "mean_reversion",
+      "signal_atr_mult": 3.0,
+      "recent_signal_lookback": 24,
+      "abs_close_ema200_atr_max": 2.0,
+      "trade_rsi_min": -0.1,
+      "trade_rsi_max": 0.1,
+      "tp_units": 300,
+      "sl_units": 500,
+      "cost_units": 3.0
+    },
+    {
+      "market": "futures",
+      "symbol": "ZN",
+      "phase": "mean_reversion",
+      "signal_atr_mult": 3.0,
+      "recent_signal_lookback": 16,
+      "abs_close_ema200_atr_max": 2.0,
+      "trade_rsi_min": -0.1,
+      "trade_rsi_max": 0.1,
+      "tp_units": 75,
+      "sl_units": 150,
+      "cost_units": 3.0
+    }
+  ],
+  "test_2022_to_present_summary": {
+    "trades": 651,
+    "wins": 508,
+    "losses": 143,
+    "win_rate_pct": 78.03379416282642,
+    "profit_factor_r": 0.9891447259134439,
+    "total_r": -0.8278953728608918,
+    "avg_r": -0.0012717286833500642,
+    "max_drawdown_r": 9.571304200938162,
+    "trades_per_day": 0.4178769156703843,
+    "trades_per_week": 2.92513840969269,
+    "max_concurrent_positions": 4
+  },
+  "holdout_from_configured_start_summary": {
+    "trades": 651,
+    "wins": 508,
+    "losses": 143,
+    "win_rate_pct": 78.03379416282642,
+    "profit_factor_r": 0.9891447259134439,
+    "total_r": -0.8278953728608918,
+    "avg_r": -0.0012717286833500642,
+    "max_drawdown_r": 9.571304200938162,
+    "trades_per_day": 0.4178769156703843,
+    "trades_per_week": 2.92513840969269,
+    "max_concurrent_positions": 4
+  },
+  "outputs": {
+    "trades": "C:\\Users\\elhad\\Desktop\\projects\\trading\\artifacts\\machine_learning\\best_cross_asset_strategy_balanced_trades_2022_to_present.csv",
+    "summary": "C:\\Users\\elhad\\Desktop\\projects\\trading\\artifacts\\machine_learning\\best_cross_asset_strategy_balanced_summary_2022_to_present.csv",
+    "asset_phase": "C:\\Users\\elhad\\Desktop\\projects\\trading\\artifacts\\machine_learning\\best_cross_asset_strategy_balanced_by_asset_phase_2022_to_present.csv"
+  }
+}
