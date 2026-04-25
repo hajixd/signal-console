@@ -21,11 +21,13 @@ import eurUsdNySweepLogitOnEuroFuturesStrategy from "@strategy/eur_usd_ny_sweep_
 import eurUsdNySweepStumpStrategy from "@strategy/eur_usd_ny_sweep_stump/strategy";
 import eurUsdNySweepStumpPriorDayTargetStrategy from "@strategy/eur_usd_ny_sweep_stump_prior_day_target/strategy";
 import gbpUsdIctTurtleSoupStrategy from "@strategy/gbp_usd_ict_turtle_soup/strategy";
+import gbpUsdMeanReversionStrategy from "@strategy/gbp_usd_mean_reversion/strategy";
 import gbpUsdNySweepBayesStrategy from "@strategy/gbp_usd_ny_sweep_bayes/strategy";
 import gbpUsdNySweepBayesPriorDayTargetOnSp500FuturesStrategy from "@strategy/gbp_usd_ny_sweep_bayes_prior_day_target_on_sp_500_futures/strategy";
 import gbpUsdNySweepLogitStrategy from "@strategy/gbp_usd_ny_sweep_logit/strategy";
 import gbpUsdNySweepStumpOnBritishPoundFuturesStrategy from "@strategy/gbp_usd_ny_sweep_stump_on_british_pound_futures/strategy";
 import gbpUsdNySweepStumpOnEuroFuturesStrategy from "@strategy/gbp_usd_ny_sweep_stump_on_euro_futures/strategy";
+import goldFuturesIctSweepFvgStrategy from "@strategy/gold_futures_ict_sweep_fvg/strategy";
 import goldFuturesRedditEmaPullbackStrategy from "@strategy/gold_futures_reddit_ema_pullback/strategy";
 import goldFuturesRedditOrbBreakoutStrategy from "@strategy/gold_futures_reddit_orb_breakout/strategy";
 import nasdaq100FuturesMomentumStrategy from "@strategy/nasdaq_100_futures_momentum/strategy";
@@ -36,6 +38,7 @@ import nasdaq100FuturesToriTradesTrendlineBreakRetestStrategy from "@strategy/na
 import nzdUsdNySweepBayesStrategy from "@strategy/nzd_usd_ny_sweep_bayes/strategy";
 import nzdUsdNySweepLogitStrategy from "@strategy/nzd_usd_ny_sweep_logit/strategy";
 import nzdUsdNySweepStumpStrategy from "@strategy/nzd_usd_ny_sweep_stump/strategy";
+import russell2000FuturesIctSweepFvgStrategy from "@strategy/russell_2000_futures_ict_sweep_fvg/strategy";
 import russell2000FuturesRedditOrbRetestStrategy from "@strategy/russell_2000_futures_reddit_orb_retest/strategy";
 import silverFuturesRedditCapitulationReversionStrategy from "@strategy/silver_futures_reddit_capitulation_reversion/strategy";
 import sp500FuturesRedditOrbBreakoutStrategy from "@strategy/sp_500_futures_reddit_orb_breakout/strategy";
@@ -82,11 +85,13 @@ export const STRATEGY_DEFINITIONS: StrategyDefinition[] = [
   eurUsdNySweepStumpStrategy,
   eurUsdNySweepStumpPriorDayTargetStrategy,
   gbpUsdIctTurtleSoupStrategy,
+  gbpUsdMeanReversionStrategy,
   gbpUsdNySweepBayesStrategy,
   gbpUsdNySweepBayesPriorDayTargetOnSp500FuturesStrategy,
   gbpUsdNySweepLogitStrategy,
   gbpUsdNySweepStumpOnBritishPoundFuturesStrategy,
   gbpUsdNySweepStumpOnEuroFuturesStrategy,
+  goldFuturesIctSweepFvgStrategy,
   goldFuturesRedditEmaPullbackStrategy,
   goldFuturesRedditOrbBreakoutStrategy,
   nasdaq100FuturesMomentumStrategy,
@@ -97,6 +102,7 @@ export const STRATEGY_DEFINITIONS: StrategyDefinition[] = [
   nzdUsdNySweepBayesStrategy,
   nzdUsdNySweepLogitStrategy,
   nzdUsdNySweepStumpStrategy,
+  russell2000FuturesIctSweepFvgStrategy,
   russell2000FuturesRedditOrbRetestStrategy,
   silverFuturesRedditCapitulationReversionStrategy,
   sp500FuturesRedditOrbBreakoutStrategy,
