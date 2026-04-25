@@ -4,6 +4,7 @@ import StrategySelector from "@/components/strategies/strategy-selector";
 import EditableTradeHistory from "@/components/trades/editable-trade-history";
 import { type TradeHistoryRow } from "@/components/trades/trade-history";
 import ThemeToggle from "@/components/ui/theme-toggle";
+import { syncLiveSelection } from "@/app/live-selection-actions";
 import {
   aggregateBacktest,
   getBacktestStats,
@@ -576,7 +577,7 @@ export default async function Home({ searchParams }: HomeProps) {
   const telegramLink = telegramBotUsername ? `https://t.me/${telegramBotUsername}` : "https://t.me/BotFather";
   const alertStore = storageMode();
   const assetStore = projectAssetMode();
-  const liveSelectionCount = liveConfig.enabledDatasetIds.length || liveRules.length;
+  const liveSelectionCount = liveConfig.enabledDatasetIds.length || liveConfig.dashboardSelectedDatasetIds.length;
 
   return (
     <main className="terminal">
@@ -603,7 +604,13 @@ export default async function Home({ searchParams }: HomeProps) {
 
           <SelectedStrategyStats strategies={strategyOptions} trades={selectedBasketTrades} />
 
-          <StrategySelector strategies={strategyOptions} selectedKeys={selectedKeys} defaultKeys={defaultSelectedKeys} />
+          <StrategySelector
+            strategies={strategyOptions}
+            selectedKeys={selectedKeys}
+            defaultKeys={defaultSelectedKeys}
+            persistedLiveKeys={liveConfig.enabledDatasetIds}
+            persistLiveSelection={syncLiveSelection}
+          />
         </section>
 
         <section className="backtest-card challenge-card">

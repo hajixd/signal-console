@@ -90,8 +90,11 @@ export async function allRules(): Promise<StrategyRule[]> {
 
 export async function activeRules(): Promise<StrategyRule[]> {
   const [rules, config] = await Promise.all([allRules(), getLiveConfig()]);
-  const enabled = new Set(config.enabledDatasetIds);
-  return enabled.size ? rules.filter((rule) => rule.datasetId && enabled.has(rule.datasetId)) : rules;
+  const selectedDatasetIds = config.enabledDatasetIds.length ? config.enabledDatasetIds : config.dashboardSelectedDatasetIds;
+  if (!selectedDatasetIds.length) return [];
+
+  const enabled = new Set(selectedDatasetIds);
+  return rules.filter((rule) => rule.datasetId && enabled.has(rule.datasetId));
 }
 
 export function evaluateLatestSignal(rule: StrategyRule, rawBars: Bar[]): TradeAlert | null {

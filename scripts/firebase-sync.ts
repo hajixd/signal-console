@@ -24,6 +24,31 @@ const UPLOAD_ROOTS: UploadRoot[] = [
   }
 ];
 
+function selectedUploadRoots(): UploadRoot[] {
+  const raw = process.argv.find((value) => value.startsWith("--roots="));
+  if (!raw) return UPLOAD_ROOTS;
+
+  const selectedNames = raw
+    .slice("--roots=".length)
+    .split(",")
+    .map((value) => value.trim())
+    .filter(Boolean);
+
+  if (!selectedNames.length) {
+    throw new Error("The --roots argument must include at least one of: config, data, strategy.");
+  }
+
+  const roots = selectedNames.map((name) => {
+    const match = UPLOAD_ROOTS.find((entry) => entry.root === name);
+    if (!match) {
+      throw new Error(`Unknown upload root "${name}". Expected one of: config, data, strategy.`);
+    }
+    return match;
+  });
+
+  return unique(roots);
+}
+
 function contentType(filePath: string): string {
   const ext = path.extname(filePath).toLowerCase();
   if (ext === ".json") return "application/json";
@@ -88,7 +113,7 @@ async function main(): Promise<void> {
   const files = unique(
     (
       await Promise.all(
-        UPLOAD_ROOTS.map((entry) => walk(entry.root, entry.include))
+        selectedUploadRoots().map((entry) => walk(entry.root, entry.include))
       )
     ).flat()
   );

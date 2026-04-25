@@ -2,7 +2,7 @@
 
 import type { Route } from "next";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { emitStrategyEditsChanged, STRATEGY_EDITS_STORAGE_KEY } from "@/components/strategies/strategy-edits-store";
 
 type StrategyOption = {
@@ -36,6 +36,8 @@ type StrategySelectorProps = {
   strategies: StrategyOption[];
   selectedKeys: string[];
   defaultKeys: string[];
+  persistedLiveKeys: string[];
+  persistLiveSelection: (selectedKeys: string[]) => Promise<void>;
 };
 
 type SortColumn = "ticker" | "model" | "profitFactor" | "winRate" | "trades" | "target" | "risk" | "rrr" | "size" | "scale" | "enabled";
@@ -302,10 +304,17 @@ function defaultSortDirection(column: SortColumn): SortDirection {
   return "desc";
 }
 
-export default function StrategySelector({ strategies, selectedKeys, defaultKeys }: StrategySelectorProps) {
+export default function StrategySelector({
+  strategies,
+  selectedKeys,
+  defaultKeys,
+  persistedLiveKeys,
+  persistLiveSelection
+}: StrategySelectorProps) {
   const router = useRouter();
   const pathname = usePathname();
   const [isPending, startTransition] = useTransition();
+  const [isSavingSelection, startSavingSelection] = useTransition();
   const [isLoaded, setIsLoaded] = useState(false);
   const [edits, setEdits] = useState<StrategyEditMap>({});
   const [activeKey, setActiveKey] = useState<string | null>(null);
@@ -318,6 +327,9 @@ export default function StrategySelector({ strategies, selectedKeys, defaultKeys
   const hasEdits = Object.keys(edits).length > 0;
   const normalizedSearchQuery = searchQuery.trim().toLowerCase();
   const orderByKey = new Map(strategies.map((strategy, index) => [strategy.key, index]));
+  const selectionSignature = selectedKeys.join("|");
+  const persistedLiveSelectionSignature = persistedLiveKeys.join("|");
+  const lastSyncedSelectionRef = useRef<string>("");
 
   useEffect(() => {
     if (isLoaded) return;
@@ -352,6 +364,25 @@ export default function StrategySelector({ strategies, selectedKeys, defaultKeys
     }
     emitStrategyEditsChanged(edits);
   }, [edits, isLoaded]);
+
+  useEffect(() => {
+    if (selectionSignature === persistedLiveSelectionSignature) {
+      lastSyncedSelectionRef.current = selectionSignature;
+      return;
+    }
+    if (lastSyncedSelectionRef.current === selectionSignature) return;
+
+    lastSyncedSelectionRef.current = selectionSignature;
+    startSavingSelection(async () => {
+      try {
+        await persistLiveSelection(selectedKeys);
+        router.refresh();
+      } catch (error) {
+        console.error("Failed to sync live strategy selection", error);
+        lastSyncedSelectionRef.current = "";
+      }
+    });
+  }, [persistLiveSelection, persistedLiveSelectionSignature, router, selectedKeys, selectionSignature]);
 
   function navigate(nextKeys: string[], nextDefaultKeys = defaultKeys) {
     startTransition(() => {
@@ -663,7 +694,12 @@ export default function StrategySelector({ strategies, selectedKeys, defaultKeys
               <span data-label="Unit/contract size">{displaySizeLabel(strategy, effective.contracts, effective.sizeName)}</span>
               <span data-label="Scale">{formatScaleRatio(scaleForContracts(strategy, effective.contracts))}</span>
               <label className="strategyToggle" data-label="Enabled" onClick={(event) => event.stopPropagation()}>
-                <input type="checkbox" checked={checked} disabled={isPending} onChange={() => toggleStrategy(strategy.key)} />
+                <input
+                  type="checkbox"
+                  checked={checked}
+                  disabled={isPending || isSavingSelection}
+                  onChange={() => toggleStrategy(strategy.key)}
+                />
                 <span>{checked ? "On" : "Off"}</span>
               </label>
             </div>

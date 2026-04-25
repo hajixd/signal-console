@@ -27,6 +27,13 @@ type OandaResponse = {
   candles?: OandaCandle[];
 };
 
+type TwelveDataResponse = {
+  code?: number;
+  message?: string;
+  status?: string;
+  values?: Array<Record<string, string>>;
+};
+
 function normalizePrice(value: number | string | undefined): number {
   const numeric = Number(value);
   if (!Number.isFinite(numeric)) return Number.NaN;
@@ -139,24 +146,44 @@ async function fetchDatabentoBars(databentoSymbol: string | undefined, symbol: s
 async function fetchTwelveDataBars(symbol: string): Promise<Bar[]> {
   const keys = (process.env.TWELVEDATA_API_KEYS ?? "").split(",").map((item) => item.trim()).filter(Boolean);
   if (!keys.length) throw new Error("Missing TWELVEDATA_API_KEYS");
-  const apiKey = keys[Math.floor(Date.now() / 60_000) % keys.length];
-  const params = new URLSearchParams({
-    symbol,
-    interval: "15min",
-    outputsize: "500",
-    order: "ASC",
-    apikey: apiKey
-  });
-  const response = await fetch(`https://api.twelvedata.com/time_series?${params.toString()}`, { cache: "no-store" });
-  const data = (await response.json()) as { values?: Array<Record<string, string>>; message?: string };
-  if (!response.ok || !data.values) throw new Error(data.message ?? `TwelveData ${response.status}`);
-  return data.values.map((item) => ({
-    time: new Date(`${item.datetime}Z`).toISOString(),
-    open: Number(item.open),
-    high: Number(item.high),
-    low: Number(item.low),
-    close: Number(item.close)
-  }));
+  const startIndex = Math.floor(Date.now() / 60_000) % keys.length;
+  const orderedKeys = keys.map((_, index) => keys[(startIndex + index) % keys.length]!);
+  const failures: string[] = [];
+
+  for (const apiKey of orderedKeys) {
+    const params = new URLSearchParams({
+      symbol,
+      interval: "15min",
+      outputsize: "500",
+      order: "ASC",
+      apikey: apiKey
+    });
+    const response = await fetch(`https://api.twelvedata.com/time_series?${params.toString()}`, { cache: "no-store" });
+    const raw = await response.text();
+
+    let data: TwelveDataResponse;
+    try {
+      data = JSON.parse(raw) as TwelveDataResponse;
+    } catch {
+      failures.push(`...${apiKey.slice(-4)}: invalid JSON response (${response.status})`);
+      continue;
+    }
+
+    if (response.ok && data.values?.length) {
+      return data.values.map((item) => ({
+        time: new Date(`${item.datetime}Z`).toISOString(),
+        open: Number(item.open),
+        high: Number(item.high),
+        low: Number(item.low),
+        close: Number(item.close)
+      }));
+    }
+
+    const reason = data.message ?? data.status ?? `HTTP ${response.status}`;
+    failures.push(`...${apiKey.slice(-4)}: ${reason}`);
+  }
+
+  throw new Error(`TwelveData failed for all API keys: ${failures.join(" | ")}`);
 }
 
 async function fetchOandaBars(instrument: string): Promise<Bar[]> {

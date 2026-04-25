@@ -10,7 +10,7 @@ export default createStrategyDefinition({
   backtestFileName: "backtest_trades.csv",
   assetKey: "nasdaq_100_futures",
   phase: "trendline_break",
-  liveEnabled: false,
+  liveEnabled: true,
   evaluator: evaluateTrendlineBreak,
   defaults: runtimeDefaultsFromMetadata(parameters)
 });
