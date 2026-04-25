@@ -2,6 +2,9 @@ import { assetForKey } from "@/lib/assets";
 import type { Bar, StrategyRule } from "@/lib/types";
 
 type DatabentoRecord = {
+  hd?: {
+    ts_event?: number | string;
+  };
   ts_event?: string;
   time?: string;
   open?: number | string;
@@ -45,12 +48,40 @@ function normalizeVolume(value: number | string | undefined): number {
   return Number.isFinite(numeric) ? numeric : 0;
 }
 
+function normalizeDatabentoTime(record: DatabentoRecord): string | null {
+  if (record.time) return record.time;
+  if (record.ts_event) return record.ts_event;
+
+  const raw = record.hd?.ts_event;
+  if (raw == null) return null;
+  try {
+    const rawText = String(raw).trim();
+    const millisecondsText = /^\d+$/.test(rawText) && rawText.length > 13 ? rawText.slice(0, -6) : rawText;
+    const milliseconds = Number(millisecondsText);
+    return Number.isFinite(milliseconds) ? new Date(milliseconds).toISOString() : null;
+  } catch {
+    return null;
+  }
+}
+
 function floorTo15Minutes(date: Date): string {
   const copy = new Date(date);
   copy.setUTCSeconds(0, 0);
   const minutes = copy.getUTCMinutes();
   copy.setUTCMinutes(minutes - (minutes % 15));
   return copy.toISOString();
+}
+
+function closed15MinuteCutoff(): number {
+  return Date.now() - 75_000;
+}
+
+function filterClosed15MinuteBars<T extends { time: string }>(bars: T[]): T[] {
+  const cutoff = closed15MinuteCutoff();
+  return bars.filter((bar) => {
+    const start = Date.parse(bar.time);
+    return Number.isFinite(start) && start + 15 * 60_000 <= cutoff;
+  });
 }
 
 function aggregateTo15m(records: Array<{ time: string; open: number; high: number; low: number; close: number; volume: number }>): Bar[] {
@@ -75,8 +106,7 @@ function aggregateTo15m(records: Array<{ time: string; open: number; high: numbe
     current.volume = (current.volume ?? 0) + record.volume;
   }
 
-  const cutoff = Date.now() - 75_000;
-  return [...buckets.values()].filter((bar) => Date.parse(bar.time) + 15 * 60_000 <= cutoff);
+  return filterClosed15MinuteBars([...buckets.values()]);
 }
 
 function parseDatabentoJson(text: string): Bar[] {
@@ -86,7 +116,7 @@ function parseDatabentoJson(text: string): Bar[] {
     if (!trimmed || trimmed.startsWith("{\"symbol_mapping\"")) continue;
     try {
       const item = JSON.parse(trimmed) as DatabentoRecord;
-      const time = item.ts_event ?? item.time;
+      const time = normalizeDatabentoTime(item);
       if (!time) continue;
 
       const open = normalizePrice(item.open);
@@ -111,13 +141,24 @@ export async function fetchMarketBars(rule: StrategyRule): Promise<Bar[]> {
   return fetchTwelveDataBars(asset.twelveDataSymbol ?? asset.symbol);
 }
 
+async function requestDatabentoBars(apiKey: string, params: URLSearchParams): Promise<Response> {
+  return fetch(`https://hist.databento.com/v0/timeseries.get_range?${params.toString()}`, {
+    headers: {
+      Authorization: `Basic ${Buffer.from(`${apiKey}:`).toString("base64")}`
+    },
+    cache: "no-store"
+  });
+}
+
 async function fetchDatabentoBars(databentoSymbol: string | undefined, symbol: string): Promise<Bar[]> {
   const apiKey = process.env.DATABENTO_API_KEY;
   if (!apiKey) throw new Error("Missing DATABENTO_API_KEY");
   if (!databentoSymbol) throw new Error(`Missing Databento symbol for ${symbol}`);
 
+  const start = new Date(Date.now() - 12 * 24 * 60 * 60 * 1000);
   const end = new Date();
-  const start = new Date(end.getTime() - 12 * 24 * 60 * 60 * 1000);
+  start.setUTCSeconds(0, 0);
+  end.setUTCSeconds(0, 0);
   const params = new URLSearchParams({
     dataset: "GLBX.MDP3",
     schema: "ohlcv-1m",
@@ -128,12 +169,18 @@ async function fetchDatabentoBars(databentoSymbol: string | undefined, symbol: s
     encoding: "json"
   });
 
-  const response = await fetch(`https://hist.databento.com/v0/timeseries.get_range?${params.toString()}`, {
-    headers: {
-      Authorization: `Basic ${Buffer.from(`${apiKey}:`).toString("base64")}`
-    },
-    cache: "no-store"
-  });
+  let response = await requestDatabentoBars(apiKey, params);
+  if (!response.ok) {
+    const body = await response.text();
+    const availableEndMatch = body.match(/available up to '([^']+)'/);
+    if (response.status === 422 && availableEndMatch?.[1]) {
+      const retryParams = new URLSearchParams(params);
+      retryParams.set("end", new Date(availableEndMatch[1]).toISOString());
+      response = await requestDatabentoBars(apiKey, retryParams);
+    } else {
+      throw new Error(`Databento ${response.status}: ${body.slice(0, 240)}`);
+    }
+  }
 
   if (!response.ok) {
     const body = await response.text();
@@ -170,13 +217,18 @@ async function fetchTwelveDataBars(symbol: string): Promise<Bar[]> {
     }
 
     if (response.ok && data.values?.length) {
-      return data.values.map((item) => ({
-        time: new Date(`${item.datetime}Z`).toISOString(),
-        open: Number(item.open),
-        high: Number(item.high),
-        low: Number(item.low),
-        close: Number(item.close)
-      }));
+      return filterClosed15MinuteBars(
+        data.values
+          .map((item) => ({
+            time: new Date(`${item.datetime}Z`).toISOString(),
+            open: Number(item.open),
+            high: Number(item.high),
+            low: Number(item.low),
+            close: Number(item.close)
+          }))
+          .filter((bar) => [bar.open, bar.high, bar.low, bar.close].every(Number.isFinite))
+          .sort((left, right) => Date.parse(left.time) - Date.parse(right.time))
+      );
     }
 
     const reason = data.message ?? data.status ?? `HTTP ${response.status}`;
@@ -204,16 +256,18 @@ async function fetchOandaBars(instrument: string): Promise<Bar[]> {
   const data = (await response.json()) as OandaResponse & { errorMessage?: string };
   if (!response.ok || !data.candles) throw new Error(data.errorMessage ?? `OANDA ${response.status}`);
 
-  return data.candles
-    .filter((candle) => candle.complete && candle.time && candle.mid)
-    .map((candle) => ({
-      time: candle.time!,
-      open: Number(candle.mid!.o),
-      high: Number(candle.mid!.h),
-      low: Number(candle.mid!.l),
-      close: Number(candle.mid!.c),
-      volume: Number(candle.volume ?? 0)
-    }))
-    .filter((bar) => [bar.open, bar.high, bar.low, bar.close].every(Number.isFinite))
-    .sort((left, right) => Date.parse(left.time) - Date.parse(right.time));
+  return filterClosed15MinuteBars(
+    data.candles
+      .filter((candle) => candle.complete && candle.time && candle.mid)
+      .map((candle) => ({
+        time: candle.time!,
+        open: Number(candle.mid!.o),
+        high: Number(candle.mid!.h),
+        low: Number(candle.mid!.l),
+        close: Number(candle.mid!.c),
+        volume: Number(candle.volume ?? 0)
+      }))
+      .filter((bar) => [bar.open, bar.high, bar.low, bar.close].every(Number.isFinite))
+      .sort((left, right) => Date.parse(left.time) - Date.parse(right.time))
+  );
 }

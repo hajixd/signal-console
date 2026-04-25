@@ -6,6 +6,7 @@ import {
   strategyContractScale,
   strategyHasContractEdit,
   type StrategyEditOption,
+  type StrategyEditSeedMap,
   useStrategyEdits
 } from "@/components/strategies/strategy-edits-store";
 import {
@@ -26,6 +27,7 @@ type ChallengeReplayProps = {
   seedPrefix: string;
   strategies: StrategyEditOption[];
   trades: ChallengeReplayInputTrade[];
+  persistedStrategyEdits?: StrategyEditSeedMap;
 };
 
 const STORAGE_KEY = "trading-bot:challenge-rules:v1";
@@ -189,9 +191,9 @@ function rulesSeed(rules: ChallengeRules): string {
   ].join("|");
 }
 
-export default function ChallengeReplay({ initialRules, seedPrefix, strategies, trades }: ChallengeReplayProps) {
+export default function ChallengeReplay({ initialRules, seedPrefix, strategies, trades, persistedStrategyEdits }: ChallengeReplayProps) {
   const [rules, setRules] = useState(() => normalizeRules(initialRules, DEFAULT_CHALLENGE_RULES));
-  const edits = useStrategyEdits(strategies);
+  const edits = useStrategyEdits(strategies, persistedStrategyEdits);
   const strategyByKey = useMemo(() => new Map(strategies.map((strategy) => [strategy.key, strategy])), [strategies]);
 
   useEffect(() => {

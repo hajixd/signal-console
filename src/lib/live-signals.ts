@@ -2,7 +2,7 @@ import { enrichBars } from "@/lib/indicators";
 import { assetForKey, defaultTickSize } from "@/lib/assets";
 import { getBacktestStats, type BacktestStat } from "@/lib/backtest";
 import { recommendedSizeMultiplier } from "@/lib/instruments";
-import { getLiveConfig } from "@/lib/live-config";
+import { getLiveConfig, type SavedStrategyEdit } from "@/lib/live-config";
 import { STRATEGY_DEFINITIONS } from "@/lib/strategy-loader";
 import { planTradeAlert } from "@/lib/trade-planner";
 import type { Bar, StrategyRule, TradeAlert } from "@/lib/types";
@@ -30,13 +30,33 @@ function uniqueRules(rules: StrategyRule[]): StrategyRule[] {
   return [...ruleByKey.values()];
 }
 
-function statToRule(stat: BacktestStat): StrategyRule | null {
+function positiveNumber(value: unknown): number | undefined {
+  const numeric = Number(value);
+  return Number.isFinite(numeric) && numeric > 0 ? numeric : undefined;
+}
+
+function applyStrategyEdit(rule: StrategyRule, edit: SavedStrategyEdit | undefined): StrategyRule {
+  if (!edit) return rule;
+
+  const tpUnits = positiveNumber(edit.tpUnits);
+  const slUnits = positiveNumber(edit.slUnits);
+  const sizeMultiplier = positiveNumber(edit.contracts);
+
+  return {
+    ...rule,
+    tpUnits: tpUnits ?? rule.tpUnits,
+    slUnits: slUnits ?? rule.slUnits,
+    sizeMultiplier: sizeMultiplier ?? rule.sizeMultiplier
+  };
+}
+
+function statToRule(stat: BacktestStat, strategyEdits: Record<string, SavedStrategyEdit> = {}): StrategyRule | null {
   const strategy = STRATEGY_DEFINITIONS.find((item) => item.id === stat.datasetId);
   if (!strategy || !strategy.liveEnabled) return null;
   const asset = assetForKey(strategy.assetKey);
   const defaults = strategy.defaults ?? {};
 
-  return {
+  const baseRule: StrategyRule = {
     key: stat.key,
     logicalKey: stat.logicalKey,
     datasetId: stat.datasetId,
@@ -78,18 +98,23 @@ function statToRule(stat: BacktestStat): StrategyRule | null {
     liveProfitFactor: stat.profitFactor,
     invertSignal: stat.invertSignal ?? defaults.invertSignal ?? false
   };
+
+  return applyStrategyEdit(baseRule, strategyEdits[stat.datasetId]);
 }
 
 export async function allRules(): Promise<StrategyRule[]> {
   try {
-    return uniqueRules((await getBacktestStats()).map(statToRule).filter((rule): rule is StrategyRule => Boolean(rule)));
+    return uniqueRules((await getBacktestStats()).map((stat) => statToRule(stat)).filter((rule): rule is StrategyRule => Boolean(rule)));
   } catch {
     return [];
   }
 }
 
 export async function activeRules(): Promise<StrategyRule[]> {
-  const [rules, config] = await Promise.all([allRules(), getLiveConfig()]);
+  const [stats, config] = await Promise.all([getBacktestStats(), getLiveConfig()]);
+  const rules = uniqueRules(
+    stats.map((stat) => statToRule(stat, config.strategyEdits)).filter((rule): rule is StrategyRule => Boolean(rule))
+  );
   const selectedDatasetIds = config.enabledDatasetIds.length ? config.enabledDatasetIds : config.dashboardSelectedDatasetIds;
   if (!selectedDatasetIds.length) return [];
 

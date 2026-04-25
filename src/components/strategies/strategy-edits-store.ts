@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 export type StrategyEditOption = {
   key: string;
@@ -25,7 +25,9 @@ export type StrategyEdit = {
   riskDollars: number;
 };
 
+export type StrategyEditSeed = Partial<StrategyEdit>;
 export type StrategyEditMap = Record<string, StrategyEdit>;
+export type StrategyEditSeedMap = Record<string, StrategyEditSeed>;
 
 export const STRATEGY_EDITS_STORAGE_KEY = "trading-bot:strategy-edits:v1";
 export const STRATEGY_EDITS_CHANGE_EVENT = "trading-bot:strategy-edits-changed";
@@ -131,14 +133,17 @@ export function strategyHasContractEdit(strategy: StrategyEditOption, edits: Str
   return !nearlyEqual(effective.contracts, fallback.contracts);
 }
 
-function normalizeStrategyEdits(strategies: StrategyEditOption[], edits: StrategyEditMap): StrategyEditMap {
+function normalizeStrategyEdits(strategies: StrategyEditOption[], edits: StrategyEditSeedMap): StrategyEditMap {
   const optionByKey = new Map(strategies.map((strategy) => [strategy.key, strategy]));
   const normalized: StrategyEditMap = {};
 
   for (const [key, edit] of Object.entries(edits)) {
     const strategy = optionByKey.get(key);
     if (!strategy) continue;
-    normalized[key] = normalizeStrategyEdit(strategy, edit);
+    normalized[key] = normalizeStrategyEdit(strategy, {
+      ...defaultStrategyEdit(strategy),
+      ...edit
+    });
   }
 
   return normalized;
@@ -147,24 +152,37 @@ function normalizeStrategyEdits(strategies: StrategyEditOption[], edits: Strateg
 export function readStoredStrategyEdits(strategies: StrategyEditOption[]): StrategyEditMap {
   try {
     const raw = window.localStorage.getItem(STRATEGY_EDITS_STORAGE_KEY);
-    return normalizeStrategyEdits(strategies, raw ? (JSON.parse(raw) as StrategyEditMap) : {});
+    return normalizeStrategyEdits(strategies, raw ? (JSON.parse(raw) as StrategyEditSeedMap) : {});
   } catch {
     return {};
   }
+}
+
+export function loadClientStrategyEdits(strategies: StrategyEditOption[], initialEdits: StrategyEditSeedMap = {}): StrategyEditMap {
+  const normalizedInitial = normalizeStrategyEdits(strategies, initialEdits);
+  if (Object.keys(normalizedInitial).length > 0) {
+    return normalizedInitial;
+  }
+
+  return readStoredStrategyEdits(strategies);
 }
 
 export function emitStrategyEditsChanged(edits: StrategyEditMap): void {
   window.dispatchEvent(new CustomEvent<StrategyEditMap>(STRATEGY_EDITS_CHANGE_EVENT, { detail: edits }));
 }
 
-export function useStrategyEdits(strategies: StrategyEditOption[]): StrategyEditMap {
-  const [edits, setEdits] = useState<StrategyEditMap>({});
+export function useStrategyEdits(strategies: StrategyEditOption[], initialEdits: StrategyEditSeedMap = {}): StrategyEditMap {
+  const normalizedInitialEdits = useMemo(() => normalizeStrategyEdits(strategies, initialEdits), [initialEdits, strategies]);
+  const [edits, setEdits] = useState<StrategyEditMap>(normalizedInitialEdits);
 
   useEffect(() => {
-    setEdits(readStoredStrategyEdits(strategies));
+    setEdits(loadClientStrategyEdits(strategies, initialEdits));
 
     const onEditsChanged = (event: Event) => {
-      const detail = event instanceof CustomEvent && event.detail ? (event.detail as StrategyEditMap) : readStoredStrategyEdits(strategies);
+      const detail =
+        event instanceof CustomEvent && event.detail
+          ? (event.detail as StrategyEditSeedMap)
+          : readStoredStrategyEdits(strategies);
       setEdits(normalizeStrategyEdits(strategies, detail));
     };
     const onStorage = (event: StorageEvent) => {
@@ -179,7 +197,7 @@ export function useStrategyEdits(strategies: StrategyEditOption[]): StrategyEdit
       window.removeEventListener(STRATEGY_EDITS_CHANGE_EVENT, onEditsChanged);
       window.removeEventListener("storage", onStorage);
     };
-  }, [strategies]);
+  }, [initialEdits, strategies]);
 
   return edits;
 }

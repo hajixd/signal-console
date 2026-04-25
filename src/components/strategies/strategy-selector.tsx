@@ -3,7 +3,14 @@
 import type { Route } from "next";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
-import { emitStrategyEditsChanged, STRATEGY_EDITS_STORAGE_KEY } from "@/components/strategies/strategy-edits-store";
+import {
+  emitStrategyEditsChanged,
+  loadClientStrategyEdits,
+  STRATEGY_EDITS_STORAGE_KEY,
+  type StrategyEdit,
+  type StrategyEditMap,
+  type StrategyEditSeedMap
+} from "@/components/strategies/strategy-edits-store";
 
 type StrategyOption = {
   key: string;
@@ -37,23 +44,13 @@ type StrategySelectorProps = {
   selectedKeys: string[];
   defaultKeys: string[];
   persistedLiveKeys: string[];
+  persistedStrategyEdits: StrategyEditSeedMap;
   persistLiveSelection: (selectedKeys: string[]) => Promise<void>;
+  persistStrategyEdits: (edits: StrategyEditSeedMap) => Promise<void>;
 };
 
 type SortColumn = "ticker" | "model" | "profitFactor" | "winRate" | "trades" | "target" | "risk" | "rrr" | "size" | "scale" | "enabled";
 type SortDirection = "asc" | "desc";
-
-type StrategyEdit = {
-  modelName: string;
-  contracts: number;
-  sizeName: string;
-  tpUnits: number;
-  slUnits: number;
-  targetDollars: number;
-  riskDollars: number;
-};
-
-type StrategyEditMap = Record<string, StrategyEdit>;
 
 const STORAGE_KEY = STRATEGY_EDITS_STORAGE_KEY;
 const STRATEGY_SIZES_PARAM = "strategySizes";
@@ -215,6 +212,27 @@ function isDefaultEdit(strategy: StrategyOption, edit: StrategyEdit): boolean {
   );
 }
 
+function normalizeEditMap(strategies: StrategyOption[], edits: StrategyEditSeedMap): StrategyEditMap {
+  const next: StrategyEditMap = {};
+  for (const strategy of strategies) {
+    const edit = edits[strategy.key];
+    if (!edit) continue;
+    const normalized = normalizeEdit(strategy, { ...defaultEdit(strategy), ...edit });
+    if (!isDefaultEdit(strategy, normalized)) {
+      next[strategy.key] = normalized;
+    }
+  }
+  return next;
+}
+
+function serializeEdits(edits: StrategyEditMap): string {
+  return JSON.stringify(
+    Object.keys(edits)
+      .sort()
+      .map((key) => [key, edits[key]])
+  );
+}
+
 function sameSelection(left: string[], right: string[]): boolean {
   if (left.length !== right.length) return false;
   return left.every((key, index) => key === right[index]);
@@ -309,12 +327,15 @@ export default function StrategySelector({
   selectedKeys,
   defaultKeys,
   persistedLiveKeys,
-  persistLiveSelection
+  persistedStrategyEdits,
+  persistLiveSelection,
+  persistStrategyEdits
 }: StrategySelectorProps) {
   const router = useRouter();
   const pathname = usePathname();
   const [isPending, startTransition] = useTransition();
   const [isSavingSelection, startSavingSelection] = useTransition();
+  const [isSavingEdits, startSavingEdits] = useTransition();
   const [isLoaded, setIsLoaded] = useState(false);
   const [edits, setEdits] = useState<StrategyEditMap>({});
   const [activeKey, setActiveKey] = useState<string | null>(null);
@@ -329,23 +350,20 @@ export default function StrategySelector({
   const orderByKey = new Map(strategies.map((strategy, index) => [strategy.key, index]));
   const selectionSignature = selectedKeys.join("|");
   const persistedLiveSelectionSignature = persistedLiveKeys.join("|");
+  const normalizedPersistedEdits = normalizeEditMap(strategies, persistedStrategyEdits);
+  const persistedEditsSignature = serializeEdits(normalizedPersistedEdits);
+  const currentEditSignature = serializeEdits(edits);
   const lastSyncedSelectionRef = useRef<string>("");
+  const lastSyncedEditsRef = useRef<string>("");
+  const controlsDisabled = isPending || isSavingSelection || isSavingEdits;
 
   useEffect(() => {
     if (isLoaded) return;
-    try {
-      const raw = window.localStorage.getItem(STORAGE_KEY);
-      const stored = raw ? (JSON.parse(raw) as StrategyEditMap) : {};
-      const urlParams = new URLSearchParams(window.location.search);
-      const next = applyStrategySizesParam(strategies, stored, urlParams.get(STRATEGY_SIZES_PARAM) ?? "");
-      setEdits(next);
-    } catch {
-      const urlParams = new URLSearchParams(window.location.search);
-      setEdits(applyStrategySizesParam(strategies, {}, urlParams.get(STRATEGY_SIZES_PARAM) ?? ""));
-    } finally {
-      setIsLoaded(true);
-    }
-  }, [isLoaded, strategies]);
+    const urlParams = new URLSearchParams(window.location.search);
+    const stored = loadClientStrategyEdits(strategies, persistedStrategyEdits);
+    setEdits(applyStrategySizesParam(strategies, stored, urlParams.get(STRATEGY_SIZES_PARAM) ?? ""));
+    setIsLoaded(true);
+  }, [isLoaded, persistedStrategyEdits, strategies]);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -383,6 +401,26 @@ export default function StrategySelector({
       }
     });
   }, [persistLiveSelection, persistedLiveSelectionSignature, router, selectedKeys, selectionSignature]);
+
+  useEffect(() => {
+    if (!isLoaded) return;
+    if (currentEditSignature === persistedEditsSignature) {
+      lastSyncedEditsRef.current = currentEditSignature;
+      return;
+    }
+    if (lastSyncedEditsRef.current === currentEditSignature) return;
+
+    lastSyncedEditsRef.current = currentEditSignature;
+    startSavingEdits(async () => {
+      try {
+        await persistStrategyEdits(edits);
+        router.refresh();
+      } catch (error) {
+        console.error("Failed to sync strategy edits", error);
+        lastSyncedEditsRef.current = "";
+      }
+    });
+  }, [currentEditSignature, edits, isLoaded, persistStrategyEdits, persistedEditsSignature, router]);
 
   function navigate(nextKeys: string[], nextDefaultKeys = defaultKeys) {
     startTransition(() => {
@@ -567,10 +605,10 @@ export default function StrategySelector({
       <div className="pickerHeader">
         <span>Strategies</span>
         <div className="pickerActions">
-          <button type="button" onClick={() => navigate([])} disabled={isPending || selectedKeys.length === 0}>
+          <button type="button" onClick={() => navigate([])} disabled={controlsDisabled || selectedKeys.length === 0}>
             Clear
           </button>
-          <button type="button" onClick={resetAllEdits} disabled={!hasEdits}>
+          <button type="button" onClick={resetAllEdits} disabled={controlsDisabled || !hasEdits}>
             Reset edits
           </button>
         </div>
@@ -697,7 +735,7 @@ export default function StrategySelector({
                 <input
                   type="checkbox"
                   checked={checked}
-                  disabled={isPending || isSavingSelection}
+                  disabled={controlsDisabled}
                   onChange={() => toggleStrategy(strategy.key)}
                 />
                 <span>{checked ? "On" : "Off"}</span>

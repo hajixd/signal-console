@@ -3,8 +3,10 @@ import SelectedStrategyStats from "@/components/strategies/selected-strategy-sta
 import StrategySelector from "@/components/strategies/strategy-selector";
 import EditableTradeHistory from "@/components/trades/editable-trade-history";
 import { type TradeHistoryRow } from "@/components/trades/trade-history";
+import TestAlertButton from "@/components/ui/test-alert-button";
 import ThemeToggle from "@/components/ui/theme-toggle";
-import { syncLiveSelection } from "@/app/live-selection-actions";
+import { syncLiveSelection, syncStrategyEdits } from "@/app/live-selection-actions";
+import { sendTestTelegramAlert } from "@/app/telegram-actions";
 import {
   aggregateBacktest,
   getBacktestStats,
@@ -26,7 +28,6 @@ import type { TradeAlert } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 const DEFAULT_SELECTED_STRATEGY_COUNT = 1;
-const DEFAULT_TRADE_HISTORY_LIMIT = 200;
 
 type HomeProps = {
   searchParams?: Promise<{
@@ -479,6 +480,7 @@ export default async function Home({ searchParams }: HomeProps) {
     });
   const optionByKey = new Map(strategyOptions.map((option) => [option.key, option]));
   const allKeys = strategyOptions.map((option) => option.key);
+  const persistedLiveEnabledKeys = liveConfig.enabledDatasetIds.filter((key) => allKeys.includes(key));
   const persistedSelectedKeys = liveConfig.dashboardSelectedDatasetIds.filter((key) => allKeys.includes(key));
   const defaultSelectedKeys = persistedSelectedKeys.length ? persistedSelectedKeys : allKeys.slice(0, DEFAULT_SELECTED_STRATEGY_COUNT);
   const selectedKeys = parseSelection(params?.strategies, allKeys, defaultSelectedKeys);
@@ -504,8 +506,7 @@ export default async function Home({ searchParams }: HomeProps) {
     basePnlDollars: tradeDollarPnl(trade, optionByKey.get(trade.datasetId)?.sizeMultiplier ?? 1),
     rMultiple: trade.rMultiple
   }));
-  const visibleSelectedBacktestTrades = selectedBacktestTrades.slice(0, DEFAULT_TRADE_HISTORY_LIMIT);
-  const tradeHistoryRows: TradeHistoryRow[] = visibleSelectedBacktestTrades.map((trade, index) => {
+  const tradeHistoryRows: TradeHistoryRow[] = selectedBacktestTrades.map((trade, index) => {
     const sizeMultiplier = optionByKey.get(trade.datasetId)?.sizeMultiplier ?? 1;
     const tradeMultiplier = tradeSizeMultiplier(trade, sizeMultiplier);
     const dollarPnl = tradeDollarPnl(trade, sizeMultiplier);
@@ -577,7 +578,7 @@ export default async function Home({ searchParams }: HomeProps) {
   const telegramLink = telegramBotUsername ? `https://t.me/${telegramBotUsername}` : "https://t.me/BotFather";
   const alertStore = storageMode();
   const assetStore = projectAssetMode();
-  const liveSelectionCount = liveConfig.enabledDatasetIds.length || liveConfig.dashboardSelectedDatasetIds.length;
+  const liveSelectionCount = persistedLiveEnabledKeys.length || persistedSelectedKeys.length;
 
   return (
     <main className="terminal">
@@ -591,6 +592,7 @@ export default async function Home({ searchParams }: HomeProps) {
             <a className="terminal-action" href={telegramLink} target="_blank" rel="noreferrer">
               {telegramBotUsername ? "Open Telegram bot" : "Open BotFather"}
             </a>
+            <TestAlertButton disabled={!telegramConfigured} sendTestAlert={sendTestTelegramAlert} />
           </div>
         </header>
 
@@ -602,14 +604,20 @@ export default async function Home({ searchParams }: HomeProps) {
             <span className="count-pill">{fmtNumber(strategyOptions.length)} strategies / {fmtNumber(selectedBacktestTrades.length)} trades</span>
           </div>
 
-          <SelectedStrategyStats strategies={strategyOptions} trades={selectedBasketTrades} />
+          <SelectedStrategyStats
+            strategies={strategyOptions}
+            trades={selectedBasketTrades}
+            persistedStrategyEdits={liveConfig.strategyEdits}
+          />
 
           <StrategySelector
             strategies={strategyOptions}
             selectedKeys={selectedKeys}
             defaultKeys={defaultSelectedKeys}
-            persistedLiveKeys={liveConfig.enabledDatasetIds}
+            persistedLiveKeys={persistedLiveEnabledKeys}
+            persistedStrategyEdits={liveConfig.strategyEdits}
             persistLiveSelection={syncLiveSelection}
+            persistStrategyEdits={syncStrategyEdits}
           />
         </section>
 
@@ -622,7 +630,13 @@ export default async function Home({ searchParams }: HomeProps) {
               {fmtNumber(challengeReplayTrades.length)} trades / {fmtNumber(challengeHistoricalSessions)} starts
             </span>
           </div>
-          <ChallengeReplay initialRules={challengeRules} seedPrefix={challengeReplaySeed} strategies={strategyOptions} trades={challengeReplayTrades} />
+          <ChallengeReplay
+            initialRules={challengeRules}
+            seedPrefix={challengeReplaySeed}
+            strategies={strategyOptions}
+            trades={challengeReplayTrades}
+            persistedStrategyEdits={liveConfig.strategyEdits}
+          />
         </section>
 
         <section className="backtest-card telegram-card">
@@ -756,11 +770,9 @@ export default async function Home({ searchParams }: HomeProps) {
           <div className="backtest-card-head">
             <div>
               <h2>Backtest History</h2>
-              <p>Trade-by-trade dollar history for the selected strategies. Loading the most recent trades first keeps the page fast.</p>
+              <p>Trade-by-trade dollar history for the selected strategies, including every stored backtest trade.</p>
             </div>
-            <span className="count-pill">
-              Showing {fmtNumber(visibleTradeHistoryRows.length)} of {fmtNumber(selectedBacktestTrades.length)} trades
-            </span>
+            <span className="count-pill">Showing {fmtNumber(visibleTradeHistoryRows.length)} trades</span>
           </div>
 
           {selectedBacktestTrades.length === 0 ? (
@@ -769,7 +781,11 @@ export default async function Home({ searchParams }: HomeProps) {
               <span>Select at least one strategy to see historical trades.</span>
             </div>
           ) : (
-            <EditableTradeHistory rows={visibleTradeHistoryRows} strategies={strategyOptions} />
+            <EditableTradeHistory
+              rows={visibleTradeHistoryRows}
+              strategies={strategyOptions}
+              persistedStrategyEdits={liveConfig.strategyEdits}
+            />
           )}
         </section>
       </section>

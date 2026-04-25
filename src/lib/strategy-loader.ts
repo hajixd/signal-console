@@ -24,7 +24,6 @@ import gbpUsdIctTurtleSoupStrategy from "@strategy/gbp_usd_ict_turtle_soup/strat
 import gbpUsdNySweepBayesStrategy from "@strategy/gbp_usd_ny_sweep_bayes/strategy";
 import gbpUsdNySweepBayesPriorDayTargetOnSp500FuturesStrategy from "@strategy/gbp_usd_ny_sweep_bayes_prior_day_target_on_sp_500_futures/strategy";
 import gbpUsdNySweepLogitStrategy from "@strategy/gbp_usd_ny_sweep_logit/strategy";
-import gbpUsdNySweepStumpStrategy from "@strategy/gbp_usd_ny_sweep_stump/strategy";
 import gbpUsdNySweepStumpOnBritishPoundFuturesStrategy from "@strategy/gbp_usd_ny_sweep_stump_on_british_pound_futures/strategy";
 import gbpUsdNySweepStumpOnEuroFuturesStrategy from "@strategy/gbp_usd_ny_sweep_stump_on_euro_futures/strategy";
 import goldFuturesRedditEmaPullbackStrategy from "@strategy/gold_futures_reddit_ema_pullback/strategy";
@@ -49,7 +48,6 @@ import usdCadNySweepLogitPriorDayTargetOnCanadianDollarFuturesOppositeStrategy f
 import usdCadNySweepStumpStrategy from "@strategy/usd_cad_ny_sweep_stump/strategy";
 import usdChfNySweepStumpStrategy from "@strategy/usd_chf_ny_sweep_stump/strategy";
 import usdJpyNySweepBayesStrategy from "@strategy/usd_jpy_ny_sweep_bayes/strategy";
-import usdJpyNySweepBayesOnCopperFuturesStrategy from "@strategy/usd_jpy_ny_sweep_bayes_on_copper_futures/strategy";
 import usdJpyNySweepBayesOnDowJonesFuturesStrategy from "@strategy/usd_jpy_ny_sweep_bayes_on_dow_jones_futures/strategy";
 import usdJpyNySweepLogitStrategy from "@strategy/usd_jpy_ny_sweep_logit/strategy";
 import usdJpyNySweepLogitOnSp500FuturesStrategy from "@strategy/usd_jpy_ny_sweep_logit_on_sp_500_futures/strategy";
@@ -87,7 +85,6 @@ export const STRATEGY_DEFINITIONS: StrategyDefinition[] = [
   gbpUsdNySweepBayesStrategy,
   gbpUsdNySweepBayesPriorDayTargetOnSp500FuturesStrategy,
   gbpUsdNySweepLogitStrategy,
-  gbpUsdNySweepStumpStrategy,
   gbpUsdNySweepStumpOnBritishPoundFuturesStrategy,
   gbpUsdNySweepStumpOnEuroFuturesStrategy,
   goldFuturesRedditEmaPullbackStrategy,
@@ -112,7 +109,6 @@ export const STRATEGY_DEFINITIONS: StrategyDefinition[] = [
   usdCadNySweepStumpStrategy,
   usdChfNySweepStumpStrategy,
   usdJpyNySweepBayesStrategy,
-  usdJpyNySweepBayesOnCopperFuturesStrategy,
   usdJpyNySweepBayesOnDowJonesFuturesStrategy,
   usdJpyNySweepLogitStrategy,
   usdJpyNySweepLogitOnSp500FuturesStrategy,

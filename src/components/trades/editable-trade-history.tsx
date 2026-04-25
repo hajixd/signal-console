@@ -4,6 +4,7 @@ import { useMemo } from "react";
 import {
   strategyContractScale,
   type StrategyEditOption,
+  type StrategyEditSeedMap,
   useStrategyEdits
 } from "@/components/strategies/strategy-edits-store";
 import TradeHistory, { type TradeHistoryRow } from "@/components/trades/trade-history";
@@ -12,6 +13,7 @@ import { instrumentSizeLabel } from "@/lib/instruments";
 type EditableTradeHistoryProps = {
   rows: TradeHistoryRow[];
   strategies: StrategyEditOption[];
+  persistedStrategyEdits?: StrategyEditSeedMap;
 };
 
 function fmtMoney(value: number, signed = false): string {
@@ -37,8 +39,8 @@ function resultRowClass(value: number): string {
   return "neutral-row";
 }
 
-export default function EditableTradeHistory({ rows, strategies }: EditableTradeHistoryProps) {
-  const edits = useStrategyEdits(strategies);
+export default function EditableTradeHistory({ rows, strategies, persistedStrategyEdits }: EditableTradeHistoryProps) {
+  const edits = useStrategyEdits(strategies, persistedStrategyEdits);
   const strategyByKey = useMemo(() => new Map(strategies.map((strategy) => [strategy.key, strategy])), [strategies]);
 
   const adjustedRows = useMemo(

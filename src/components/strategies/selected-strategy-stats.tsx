@@ -1,6 +1,11 @@
 "use client";
 
-import { strategyContractScale, type StrategyEditOption, useStrategyEdits } from "@/components/strategies/strategy-edits-store";
+import {
+  strategyContractScale,
+  type StrategyEditOption,
+  type StrategyEditSeedMap,
+  useStrategyEdits
+} from "@/components/strategies/strategy-edits-store";
 
 type BasketTrade = {
   key: string;
@@ -22,6 +27,7 @@ type DollarAggregate = {
 type SelectedStrategyStatsProps = {
   strategies: StrategyEditOption[];
   trades: BasketTrade[];
+  persistedStrategyEdits?: StrategyEditSeedMap;
 };
 
 function fmtNumber(value: number): string {
@@ -122,8 +128,8 @@ function tradeCadence(trades: BasketTrade[]) {
   };
 }
 
-export default function SelectedStrategyStats({ strategies, trades }: SelectedStrategyStatsProps) {
-  const edits = useStrategyEdits(strategies);
+export default function SelectedStrategyStats({ strategies, trades, persistedStrategyEdits }: SelectedStrategyStatsProps) {
+  const edits = useStrategyEdits(strategies, persistedStrategyEdits);
   const strategyByKey = new Map(strategies.map((strategy) => [strategy.key, strategy]));
   const selectedDollarAggregate = aggregateDollars(trades, (trade) => {
     const strategy = strategyByKey.get(trade.key);
