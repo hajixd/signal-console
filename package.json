@@ -10,10 +10,12 @@
     "build": "next build",
     "start": "next start",
     "typecheck": "tsc --noEmit",
+    "simple:import": "node --env-file=.env.local --import tsx scripts/import-simple-strategies.ts",
     "firebase:sync": "node --env-file=.env.local --import tsx scripts/firebase-sync.ts",
     "firebase:live-config": "node --env-file=.env.local --import tsx scripts/save-live-config.ts",
     "prepare:data": "python backtest-engine/runner.py prepare-data",
     "backtest": "python backtest-engine/runner.py run-backtests",
+    "find:op": "python backtest-engine/report_high_pf_candidates.py",
     "refresh": "python backtest-engine/runner.py prepare-data && python backtest-engine/runner.py run-backtests",
     "import:legacy": "python backtest-engine/runner.py prepare-data --source ..\\signal-console\\data"
   },

@@ -66,6 +66,7 @@ const MINUTES_TO_FLATTEN_BY_PHASE: Record<StrategyPhase, number> = {
   reddit_ema_pullback: 180,
   reddit_orb_breakout: 120,
   reddit_orb_retest: 120,
+  tori_trendline_mtf: 240,
   trendline_break: 240,
   squeeze_breakout: 180
 };

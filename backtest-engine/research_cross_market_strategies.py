@@ -131,7 +131,7 @@ def run_strategy(
         if not candle_path.exists():
             raise FileNotFoundError(f"Missing 15m candle file: {candle_path}. Run prepare-data first.")
         frame = runner.load_candle_csv(candle_path)
-        enriched_cache[asset.key] = runner.build_enriched_data(frame)
+        enriched_cache[asset.key] = runner.build_enriched_data(frame, asset)
     return runner.run_single_strategy(
         strategy,
         asset,

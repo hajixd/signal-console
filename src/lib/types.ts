@@ -26,12 +26,12 @@ export type SizePolicy = {
 };
 
 export type DynamicStopLossPolicy = {
-  mode: "trail_prior_bar";
+  mode: "trail_prior_bar" | "trail_hourly_pivot";
   bufferUnits?: number;
 };
 
 export type DynamicTakeProfitPolicy = {
-  mode: "trail_prior_bar" | "risk_multiple";
+  mode: "trail_prior_bar" | "risk_multiple" | "trail_hourly_extreme";
   bufferUnits?: number;
   rewardMultiple?: number;
 };

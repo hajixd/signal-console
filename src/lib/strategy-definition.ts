@@ -172,7 +172,7 @@ function normalizeSizePolicy(policy: StrategyMetadataSizePolicy | null | undefin
 function normalizeDynamicStopLossPolicy(
   policy: StrategyMetadataDynamicStopLossPolicy | null | undefined
 ): DynamicStopLossPolicy | undefined {
-  if (!policy || policy.mode !== "trail_prior_bar") return undefined;
+  if (!policy || (policy.mode !== "trail_prior_bar" && policy.mode !== "trail_hourly_pivot")) return undefined;
   const bufferUnits = definedNumber(policy.bufferUnits);
   return {
     mode: policy.mode,
@@ -183,7 +183,12 @@ function normalizeDynamicStopLossPolicy(
 function normalizeDynamicTakeProfitPolicy(
   policy: StrategyMetadataDynamicTakeProfitPolicy | null | undefined
 ): DynamicTakeProfitPolicy | undefined {
-  if (!policy || (policy.mode !== "trail_prior_bar" && policy.mode !== "risk_multiple")) return undefined;
+  if (
+    !policy ||
+    (policy.mode !== "trail_prior_bar" && policy.mode !== "risk_multiple" && policy.mode !== "trail_hourly_extreme")
+  ) {
+    return undefined;
+  }
   const bufferUnits = definedNumber(policy.bufferUnits);
   const rewardMultiple = definedNumber(policy.rewardMultiple);
   return {

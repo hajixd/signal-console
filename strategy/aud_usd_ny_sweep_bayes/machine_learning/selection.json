@@ -1,0 +1,24 @@
+{
+  "strategyId": "aud_usd_ny_sweep_bayes",
+  "label": "AUD/USD NY Sweep V4 Naive Bayes",
+  "folder": "aud_usd_ny_sweep_bayes",
+  "assetKey": "aud_usd",
+  "phase": "ny_sweep_playbook",
+  "variantId": "ny_sweep_v4|model=bayes|min=0.5|start=420|end=510|max_tests=3|risk_min=10|risk_max=20|min_wick=0.35|rr=2|max_bars=144|one_trade=1",
+  "source": "metadata_tuner_holdout_2026",
+  "selectionMethod": "metadata_tuner_holdout_pf_gt_2_trades_gt_50",
+  "recoveredFrom": "strategy/tuning_summary.csv",
+  "recoveredForwardProfitFactor": 2.357143,
+  "recoveredForwardTrades": 61,
+  "sourceUrls": [
+    "https://www.tjrtrades.com/lto/opt-in-a?dub_id=87GnBNgzxXlKVEen&el=tiktok-indicators",
+    "https://liquidityfinder.com/news/mastering-the-new-york-session-smart-money-concepts-guide-f37d0",
+    "https://liquidityfinder.com/news/the-confirmation-model-ob-fvg-liquidity-sweep-smart-money-concepts-50fe3",
+    "https://fxopen.com/blog/en/liquidity-sweep-in-trading-basics-components-and-application/"
+  ],
+  "researchSummary": "Public NY-session liquidity-sweep motif mapped onto the repo's NY Sweep V4 Bayes playbook. Added only after local holdout tuning cleared PF > 2 with more than 50 forward trades.",
+  "trader": "Public NY Session / SMC",
+  "playbook": "Liquidity Sweep Reversal",
+  "oneTradePerDay": true,
+  "costUnits": 0.0
+}

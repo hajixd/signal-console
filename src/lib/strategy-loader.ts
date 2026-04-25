@@ -1,3 +1,4 @@
+import audUsdNySweepBayesStrategy from "@strategy/aud_usd_ny_sweep_bayes/strategy";
 import audUsdNySweepBayesPriorDayTargetStrategy from "@strategy/aud_usd_ny_sweep_bayes_prior_day_target/strategy";
 import audUsdNySweepLogitStrategy from "@strategy/aud_usd_ny_sweep_logit/strategy";
 import audUsdNySweepLogitOnBritishPoundFuturesStrategy from "@strategy/aud_usd_ny_sweep_logit_on_british_pound_futures/strategy";
@@ -30,6 +31,8 @@ import gbpUsdNySweepStumpOnEuroFuturesStrategy from "@strategy/gbp_usd_ny_sweep_
 import goldFuturesIctSweepFvgStrategy from "@strategy/gold_futures_ict_sweep_fvg/strategy";
 import goldFuturesRedditEmaPullbackStrategy from "@strategy/gold_futures_reddit_ema_pullback/strategy";
 import goldFuturesRedditOrbBreakoutStrategy from "@strategy/gold_futures_reddit_orb_breakout/strategy";
+import goldFuturesToriTradesTrendlineBreakRetestStrategy from "@strategy/gold_futures_tori_trades_trendline_break_retest/strategy";
+import goldSpotToriTradesTrendlineBreakRetestStrategy from "@strategy/gold_spot_tori_trades_trendline_break_retest/strategy";
 import nasdaq100FuturesMomentumStrategy from "@strategy/nasdaq_100_futures_momentum/strategy";
 import nasdaq100FuturesRedditEmaPullbackStrategy from "@strategy/nasdaq_100_futures_reddit_ema_pullback/strategy";
 import nasdaq100FuturesRedditOrbBreakoutStrategy from "@strategy/nasdaq_100_futures_reddit_orb_breakout/strategy";
@@ -62,6 +65,7 @@ import type { StrategyDefinition } from "@/lib/strategy-definition";
 export type { StrategyDefinition, StrategySignal } from "@/lib/strategy-definition";
 
 export const STRATEGY_DEFINITIONS: StrategyDefinition[] = [
+  audUsdNySweepBayesStrategy,
   audUsdNySweepBayesPriorDayTargetStrategy,
   audUsdNySweepLogitStrategy,
   audUsdNySweepLogitOnBritishPoundFuturesStrategy,
@@ -94,6 +98,8 @@ export const STRATEGY_DEFINITIONS: StrategyDefinition[] = [
   goldFuturesIctSweepFvgStrategy,
   goldFuturesRedditEmaPullbackStrategy,
   goldFuturesRedditOrbBreakoutStrategy,
+  goldFuturesToriTradesTrendlineBreakRetestStrategy,
+  goldSpotToriTradesTrendlineBreakRetestStrategy,
   nasdaq100FuturesMomentumStrategy,
   nasdaq100FuturesRedditEmaPullbackStrategy,
   nasdaq100FuturesRedditOrbBreakoutStrategy,

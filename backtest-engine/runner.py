@@ -496,6 +496,8 @@ class BacktestStrategy:
     signal_atr_mult: float | None = None
     recent_signal_lookback: int | None = None
     abs_close_ema200_atr_max: float | None = None
+    trade_rsi_min: float | None = None
+    trade_rsi_max: float | None = None
     ict_risk_reward: float | None = None
     tp_units: float | None = None
     sl_units: float | None = None
@@ -564,6 +566,24 @@ class DynamicTakeProfitPolicy:
 
 
 @dataclass(frozen=True)
+class TimeframeData:
+    times: np.ndarray
+    open: np.ndarray
+    high: np.ndarray
+    low: np.ndarray
+    close: np.ndarray
+    ema20: np.ndarray
+    ema21: np.ndarray
+    ema50: np.ndarray
+    ema200: np.ndarray
+    atr14: np.ndarray
+    pivot_high_1: np.ndarray
+    pivot_low_1: np.ndarray
+    pivot_high_2: np.ndarray
+    pivot_low_2: np.ndarray
+
+
+@dataclass(frozen=True)
 class EnrichedData:
     times: np.ndarray
     open: np.ndarray
@@ -593,6 +613,8 @@ class EnrichedData:
     ret3_atr: np.ndarray
     body_atr: np.ndarray
     close_ema200_atr: np.ndarray
+    hourly: TimeframeData | None
+    daily: TimeframeData | None
 
 
 @dataclass
@@ -682,6 +704,8 @@ ALLOWED_METADATA_KEYS = {
     "signalAtrMult",
     "recentSignalLookback",
     "absCloseEma200AtrMax",
+    "tradeRsiMin",
+    "tradeRsiMax",
     "ictRiskReward",
     "tpUnits",
     "slUnits",
@@ -725,8 +749,8 @@ ALLOWED_METADATA_KEYS = {
 STOP_LOSS_POLICY_MODES = {"signal_extreme", "prior_day_extreme"}
 TAKE_PROFIT_POLICY_MODES = {"risk_multiple", "signal_extreme", "prior_day_extreme"}
 SIZE_POLICY_MODES = {"confidence"}
-DYNAMIC_STOP_LOSS_POLICY_MODES = {"trail_prior_bar"}
-DYNAMIC_TAKE_PROFIT_POLICY_MODES = {"trail_prior_bar", "risk_multiple"}
+DYNAMIC_STOP_LOSS_POLICY_MODES = {"trail_prior_bar", "trail_hourly_pivot"}
+DYNAMIC_TAKE_PROFIT_POLICY_MODES = {"trail_prior_bar", "risk_multiple", "trail_hourly_extreme"}
 ENTRY_MODES = {"market", "limit"}
 PRICE_MODE_FIXED = "fixed"
 PRICE_MODE_CUSTOM = "custom"
@@ -870,17 +894,23 @@ def parse_dynamic_take_profit_policy(payload: dict[str, Any], metadata_path: Pat
 def strategy_from_metadata(metadata_path: Path) -> BacktestStrategy:
     payload = json.loads(metadata_path.read_text(encoding="utf-8"))
     validate_metadata_keys(payload, metadata_path)
+    strategy_id = required_text(payload, "strategyId", metadata_path)
+    variant_id = payload.get("variantId")
+    if not isinstance(variant_id, str) or not variant_id:
+        variant_id = strategy_id
     return BacktestStrategy(
-        id=required_text(payload, "strategyId", metadata_path),
+        id=strategy_id,
         label=required_text(payload, "label", metadata_path),
         folder=required_text(payload, "folder", metadata_path),
         asset_key=required_text(payload, "assetKey", metadata_path),
         phase=required_text(payload, "phase", metadata_path),
-        variant_id=required_text(payload, "variantId", metadata_path),
+        variant_id=variant_id,
         source=required_text(payload, "source", metadata_path),
         signal_atr_mult=optional_payload_float(payload, "signalAtrMult"),
         recent_signal_lookback=optional_payload_int(payload, "recentSignalLookback"),
         abs_close_ema200_atr_max=optional_payload_float(payload, "absCloseEma200AtrMax"),
+        trade_rsi_min=optional_payload_float(payload, "tradeRsiMin"),
+        trade_rsi_max=optional_payload_float(payload, "tradeRsiMax"),
         ict_risk_reward=optional_payload_float(payload, "ictRiskReward"),
         tp_units=optional_payload_float(payload, "tpUnits"),
         sl_units=optional_payload_float(payload, "slUnits"),
@@ -1021,7 +1051,75 @@ def rolling_std(values: np.ndarray, length: int) -> np.ndarray:
     return output
 
 
-def build_enriched_data(frame: pl.DataFrame) -> EnrichedData:
+def pivot_flags(high: np.ndarray, low: np.ndarray, swing: int) -> tuple[np.ndarray, np.ndarray]:
+    pivot_high = np.zeros(high.shape[0], dtype=np.bool_)
+    pivot_low = np.zeros(low.shape[0], dtype=np.bool_)
+    if swing <= 0 or high.shape[0] <= swing * 2:
+        return pivot_high, pivot_low
+
+    for index in range(swing, high.shape[0] - swing):
+        if high[index] > np.max(high[index - swing : index]) and high[index] >= np.max(high[index + 1 : index + swing + 1]):
+            pivot_high[index] = True
+        if low[index] < np.min(low[index - swing : index]) and low[index] <= np.min(low[index + 1 : index + swing + 1]):
+            pivot_low[index] = True
+    return pivot_high, pivot_low
+
+
+def build_timeframe_data(frame: pl.DataFrame) -> TimeframeData:
+    times = frame["time"].to_numpy().astype(np.int64)
+    open_ = frame["open"].to_numpy().astype(np.float64)
+    high = frame["high"].to_numpy().astype(np.float64)
+    low = frame["low"].to_numpy().astype(np.float64)
+    close = frame["close"].to_numpy().astype(np.float64)
+    atr14 = rma(build_true_range(high, low, close), 14)
+    pivot_high_1, pivot_low_1 = pivot_flags(high, low, 1)
+    pivot_high_2, pivot_low_2 = pivot_flags(high, low, 2)
+    return TimeframeData(
+        times=times,
+        open=open_,
+        high=high,
+        low=low,
+        close=close,
+        ema20=ema(close, 20),
+        ema21=ema(close, 21),
+        ema50=ema(close, 50),
+        ema200=ema(close, 200),
+        atr14=atr14,
+        pivot_high_1=pivot_high_1,
+        pivot_low_1=pivot_low_1,
+        pivot_high_2=pivot_high_2,
+        pivot_low_2=pivot_low_2,
+    )
+
+
+def load_timeframe_data(asset: AssetConfig, timeframe: str) -> TimeframeData:
+    csv_path = DATA_ROOT / timeframe / asset.data_file
+    return build_timeframe_data(load_candle_csv(csv_path))
+
+
+def slice_timeframe_data(data: TimeframeData | None, stop_time: int) -> TimeframeData | None:
+    if data is None:
+        return None
+    stop = int(np.searchsorted(data.times, stop_time, side="right"))
+    return TimeframeData(
+        times=data.times[:stop],
+        open=data.open[:stop],
+        high=data.high[:stop],
+        low=data.low[:stop],
+        close=data.close[:stop],
+        ema20=data.ema20[:stop],
+        ema21=data.ema21[:stop],
+        ema50=data.ema50[:stop],
+        ema200=data.ema200[:stop],
+        atr14=data.atr14[:stop],
+        pivot_high_1=data.pivot_high_1[:stop],
+        pivot_low_1=data.pivot_low_1[:stop],
+        pivot_high_2=data.pivot_high_2[:stop],
+        pivot_low_2=data.pivot_low_2[:stop],
+    )
+
+
+def build_enriched_data(frame: pl.DataFrame, asset: AssetConfig | None = None) -> EnrichedData:
     times = frame["time"].to_numpy().astype(np.int64)
     open_ = frame["open"].to_numpy().astype(np.float64)
     high = frame["high"].to_numpy().astype(np.float64)
@@ -1130,6 +1228,9 @@ def build_enriched_data(frame: pl.DataFrame) -> EnrichedData:
         if cumulative_volume > 0:
             session_vwap[index] = cumulative_value / cumulative_volume
 
+    hourly = load_timeframe_data(asset, "1h") if asset is not None else None
+    daily = load_timeframe_data(asset, "1d") if asset is not None else None
+
     return EnrichedData(
         times=times,
         open=open_,
@@ -1159,6 +1260,8 @@ def build_enriched_data(frame: pl.DataFrame) -> EnrichedData:
         ret3_atr=ret3_atr,
         body_atr=body_atr,
         close_ema200_atr=close_ema200_atr,
+        hourly=hourly,
+        daily=daily,
     )
 
 
@@ -1166,6 +1269,7 @@ def anti_cheat_window(data: EnrichedData, end_index: int) -> EnrichedData:
     stop = end_index + 1
     if stop <= 0 or stop > data.times.shape[0]:
         raise IndexError(f"Signal window end {end_index} is outside the available candle history")
+    stop_time = int(data.times[stop - 1])
 
     day_bounds = {
         day: (start, min(end, stop))
@@ -1202,6 +1306,8 @@ def anti_cheat_window(data: EnrichedData, end_index: int) -> EnrichedData:
         ret3_atr=data.ret3_atr[:stop],
         body_atr=data.body_atr[:stop],
         close_ema200_atr=data.close_ema200_atr[:stop],
+        hourly=slice_timeframe_data(data.hourly, stop_time),
+        daily=slice_timeframe_data(data.daily, stop_time),
     )
 
 
@@ -1288,6 +1394,259 @@ def price_target_signal(entry_price: float, stop_loss: float, side: int, rr: flo
         "reference_entry_price": round_price(entry_price, asset.tick_size),
         "stop_loss": round_price(stop_loss, asset.tick_size),
         "risk_reward": rr,
+    }
+
+
+def variant_int(variant_id: str, key: str, fallback: int) -> int:
+    return int(round(variant_float(variant_id, key, float(fallback))))
+
+
+def timeframe_pivot_arrays(data: TimeframeData, swing: int) -> tuple[np.ndarray, np.ndarray]:
+    if swing <= 1:
+        return data.pivot_high_1, data.pivot_low_1
+    return data.pivot_high_2, data.pivot_low_2
+
+
+def select_descending_pivots(indices: list[int], prices: np.ndarray, touches: int, min_gap: int) -> list[int]:
+    selected: list[int] = []
+    last_price = math.inf
+    last_index = math.inf
+    for index in reversed(indices):
+        price = float(prices[index])
+        if price < last_price and (not selected or last_index - index >= min_gap):
+            selected.append(index)
+            last_price = price
+            last_index = index
+            if len(selected) == touches:
+                break
+    return list(reversed(selected)) if len(selected) == touches else []
+
+
+def select_ascending_pivots(indices: list[int], prices: np.ndarray, touches: int, min_gap: int) -> list[int]:
+    selected: list[int] = []
+    last_price = -math.inf
+    last_index = math.inf
+    for index in reversed(indices):
+        price = float(prices[index])
+        if price > last_price and (not selected or last_index - index >= min_gap):
+            selected.append(index)
+            last_price = price
+            last_index = index
+            if len(selected) == touches:
+                break
+    return list(reversed(selected)) if len(selected) == touches else []
+
+
+def trendline_value(index_a: int, price_a: float, index_b: int, price_b: float, target_index: int) -> float:
+    if index_b == index_a:
+        return price_b
+    return price_a + (price_b - price_a) * ((target_index - index_a) / (index_b - index_a))
+
+
+def touches_near_line(indices: list[int], prices: np.ndarray, atr_values: np.ndarray, tolerance_mult: float) -> bool:
+    if len(indices) < 2:
+        return False
+    index_a = indices[0]
+    index_b = indices[-1]
+    price_a = float(prices[index_a])
+    price_b = float(prices[index_b])
+    for index in indices[1:-1]:
+        tolerance = float(atr_values[index]) * tolerance_mult
+        if not maybe_number(tolerance) or abs(float(prices[index]) - trendline_value(index_a, price_a, index_b, price_b, index)) > tolerance:
+            return False
+    return True
+
+
+def prior_completed_daily_index(daily: TimeframeData, current_time: int) -> int:
+    current_day_start = current_time - (current_time % 86_400)
+    return int(np.searchsorted(daily.times, current_day_start - 1, side="right") - 1)
+
+
+def signal_confidence_tori(hourly: TimeframeData, hour_index: int, risk_atr: float, touches: int) -> float:
+    trend_strength = 0.0
+    ema50 = float(hourly.ema50[hour_index])
+    ema200 = float(hourly.ema200[hour_index])
+    atr = float(hourly.atr14[hour_index])
+    if maybe_number(ema50) and maybe_number(ema200) and maybe_number(atr) and atr > 0:
+        trend_strength = min(abs(ema50 - ema200) / atr, 2.0) / 2.0
+
+    confidence = 0.45
+    confidence += 0.12 if touches >= 3 else 0.07
+    confidence += max(0.0, 0.18 - max(0.0, risk_atr - 1.5) * 0.08)
+    confidence += trend_strength * 0.18
+    return max(0.35, min(confidence, 0.92))
+
+
+def evaluate_tori_trendline_mtf(
+    strategy: BacktestStrategy, data: EnrichedData, index: int, asset: AssetConfig
+) -> dict[str, Any] | None:
+    hourly = data.hourly
+    daily = data.daily
+    if hourly is None or daily is None or index <= 0:
+        return None
+
+    current_time = int(data.times[index])
+    if current_time % 3600 != 2700:
+        return None
+
+    hour_start = current_time - (current_time % 3600)
+    hour_index = int(np.searchsorted(hourly.times, hour_start, side="left"))
+    if hour_index <= 0 or hour_index >= hourly.times.shape[0] or int(hourly.times[hour_index]) != hour_start:
+        return None
+
+    daily_index = prior_completed_daily_index(daily, hour_start)
+    if daily_index < 60:
+        return None
+
+    swing = max(1, min(2, variant_int(strategy.variant_id, "swing", 2)))
+    lookback = max(12, variant_int(strategy.variant_id, "lookback", 24))
+    touch_count = max(2, variant_int(strategy.variant_id, "touch", 2))
+    min_gap = max(1, variant_int(strategy.variant_id, "gap", 1))
+    lead_bars = max(1, variant_int(strategy.variant_id, "lead", 4))
+    target_lookback = max(12, variant_int(strategy.variant_id, "target_lookback", 48))
+    break_buffer = max(0.0, variant_float(strategy.variant_id, "break", 0.02))
+    touch_tolerance = max(0.05, variant_float(strategy.variant_id, "tol", 0.30))
+    stop_buffer = max(0.0, variant_float(strategy.variant_id, "stop_buf", 0.10))
+    max_risk_atr = max(0.5, variant_float(strategy.variant_id, "risk", 3.0))
+    reward_multiple = max(1.0, variant_float(strategy.variant_id, "rr", 2.0))
+
+    hour_atr = float(hourly.atr14[hour_index])
+    if not maybe_number(hour_atr) or hour_atr <= 0:
+        return None
+
+    macro_up = (
+        float(daily.close[daily_index]) > float(daily.ema20[daily_index]) > float(daily.ema50[daily_index])
+        and float(hourly.ema21[hour_index]) > float(hourly.ema50[hour_index]) > float(hourly.ema200[hour_index])
+    )
+    macro_down = (
+        float(daily.close[daily_index]) < float(daily.ema20[daily_index]) < float(daily.ema50[daily_index])
+        and float(hourly.ema21[hour_index]) < float(hourly.ema50[hour_index]) < float(hourly.ema200[hour_index])
+    )
+    if not macro_up and not macro_down:
+        return None
+
+    confirmed_limit = hour_index - swing
+    window_start = max(0, hour_index - lookback)
+    if confirmed_limit <= window_start:
+        return None
+
+    pivot_high, pivot_low = timeframe_pivot_arrays(hourly, swing)
+    high_indices = [cursor for cursor in range(window_start, confirmed_limit + 1) if bool(pivot_high[cursor])]
+    low_indices = [cursor for cursor in range(window_start, confirmed_limit + 1) if bool(pivot_low[cursor])]
+    if len(high_indices) < touch_count or len(low_indices) < 2:
+        return None
+
+    side = 0
+    action_indices: list[int] = []
+    safety_indices: list[int] = []
+    action_now = math.nan
+    action_prev = math.nan
+    safety_now = math.nan
+
+    if macro_up:
+        action_indices = select_descending_pivots(high_indices, hourly.high, touch_count, min_gap)
+        safety_indices = select_descending_pivots(low_indices, hourly.low, 2, min_gap)
+        if action_indices and safety_indices and action_indices[0] < safety_indices[0] < action_indices[-1]:
+            if touches_near_line(action_indices, hourly.high, hourly.atr14, touch_tolerance) and touches_near_line(
+                safety_indices, hourly.low, hourly.atr14, touch_tolerance
+            ):
+                action_now = trendline_value(
+                    action_indices[0],
+                    float(hourly.high[action_indices[0]]),
+                    action_indices[-1],
+                    float(hourly.high[action_indices[-1]]),
+                    hour_index,
+                )
+                action_prev = trendline_value(
+                    action_indices[0],
+                    float(hourly.high[action_indices[0]]),
+                    action_indices[-1],
+                    float(hourly.high[action_indices[-1]]),
+                    hour_index - 1,
+                )
+                safety_now = trendline_value(
+                    safety_indices[0],
+                    float(hourly.low[safety_indices[0]]),
+                    safety_indices[-1],
+                    float(hourly.low[safety_indices[-1]]),
+                    hour_index + lead_bars,
+                )
+                if (
+                    float(hourly.close[hour_index - 1]) <= action_prev
+                    and float(hourly.close[hour_index]) > action_now + hour_atr * break_buffer
+                    and (action_now - safety_now) > hour_atr * 0.2
+                ):
+                    side = 1
+
+    if macro_down and side == 0:
+        action_indices = select_ascending_pivots(low_indices, hourly.low, touch_count, min_gap)
+        safety_indices = select_ascending_pivots(high_indices, hourly.high, 2, min_gap)
+        if action_indices and safety_indices and action_indices[0] < safety_indices[0] < action_indices[-1]:
+            if touches_near_line(action_indices, hourly.low, hourly.atr14, touch_tolerance) and touches_near_line(
+                safety_indices, hourly.high, hourly.atr14, touch_tolerance
+            ):
+                action_now = trendline_value(
+                    action_indices[0],
+                    float(hourly.low[action_indices[0]]),
+                    action_indices[-1],
+                    float(hourly.low[action_indices[-1]]),
+                    hour_index,
+                )
+                action_prev = trendline_value(
+                    action_indices[0],
+                    float(hourly.low[action_indices[0]]),
+                    action_indices[-1],
+                    float(hourly.low[action_indices[-1]]),
+                    hour_index - 1,
+                )
+                safety_now = trendline_value(
+                    safety_indices[0],
+                    float(hourly.high[safety_indices[0]]),
+                    safety_indices[-1],
+                    float(hourly.high[safety_indices[-1]]),
+                    hour_index + lead_bars,
+                )
+                if (
+                    float(hourly.close[hour_index - 1]) >= action_prev
+                    and float(hourly.close[hour_index]) < action_now - hour_atr * break_buffer
+                    and (safety_now - action_now) > hour_atr * 0.2
+                ):
+                    side = -1
+
+    if side == 0:
+        return None
+
+    reference_entry = float(data.close[index])
+    stop_loss = safety_now - hour_atr * stop_buffer if side == 1 else safety_now + hour_atr * stop_buffer
+    risk = abs(reference_entry - stop_loss)
+    if not maybe_number(risk) or risk <= 0 or risk > hour_atr * max_risk_atr:
+        return None
+
+    history_start = max(0, action_indices[0] - target_lookback)
+    if side == 1:
+        prior_structure = float(np.max(hourly.high[history_start : action_indices[0] + 1]))
+        take_profit = max(reference_entry + risk * reward_multiple, prior_structure)
+        if take_profit <= reference_entry:
+            return None
+    else:
+        prior_structure = float(np.min(hourly.low[history_start : action_indices[0] + 1]))
+        take_profit = min(reference_entry - risk * reward_multiple, prior_structure)
+        if take_profit >= reference_entry:
+            return None
+
+    confidence = signal_confidence_tori(hourly, hour_index, risk / hour_atr, touch_count)
+    direction_text = "daily bias + hourly descending channel break" if side == 1 else "daily bias + hourly ascending channel break"
+    return {
+        "entry_mode": "market",
+        "side": side,
+        "reference_entry_price": round_price(reference_entry, asset.tick_size),
+        "stop_loss": round_price(stop_loss, asset.tick_size),
+        "take_profit": round_price(take_profit, asset.tick_size),
+        "confidence": confidence,
+        "notes": (
+            f"Tori MTF proxy: prior-day trend filter, hourly action/safety lines, and next-15m execution after the hourly break. "
+            f"Setup={direction_text}."
+        ),
     }
 
 
@@ -1440,24 +1799,49 @@ def evaluate_trendline_break(
     return price_target_signal(entry_price, stop_loss, side, config.rr, asset)
 
 
-def evaluate_momentum(strategy: BacktestStrategy, data: EnrichedData, index: int, asset: AssetConfig) -> dict[str, Any] | None:
+def passes_echo_filters(strategy: BacktestStrategy, data: EnrichedData, index: int, side: int) -> bool:
     if np.isnan(data.ema30[index]) or np.isnan(data.ema200[index]) or np.isnan(data.close_ema200_atr[index]):
-        return None
+        return False
     abs_limit = strategy.abs_close_ema200_atr_max
     if abs_limit is not None and abs(data.close_ema200_atr[index]) > abs_limit:
-        return None
+        return False
+    if strategy.phase == "mean_reversion":
+        if np.isnan(data.rsi14_centered[index]):
+            return False
+        trade_rsi = side * float(data.rsi14_centered[index])
+        if strategy.trade_rsi_min is not None and trade_rsi < strategy.trade_rsi_min:
+            return False
+        if strategy.trade_rsi_max is not None and trade_rsi > strategy.trade_rsi_max:
+            return False
+    return True
+
+
+def echo_style_signal(strategy: BacktestStrategy, side: int) -> dict[str, Any]:
+    return {
+        "entry_mode": "market",
+        "side": side,
+        "tp_units": float(strategy.tp_units or 0.0),
+        "sl_units": float(strategy.sl_units or 0.0),
+    }
+
+
+def evaluate_momentum(strategy: BacktestStrategy, data: EnrichedData, index: int, asset: AssetConfig) -> dict[str, Any] | None:
+    long_allowed = passes_echo_filters(strategy, data, index, 1)
+    short_allowed = passes_echo_filters(strategy, data, index, -1)
 
     multiplier = strategy.signal_atr_mult or 2.0
     lookback = strategy.recent_signal_lookback or 10
     side = 0
     if (
-        data.ema30[index] > data.ema200[index]
+        long_allowed
+        and data.ema30[index] > data.ema200[index]
         and move_signal(data, index, multiplier, upward=False)
         and no_recent_move_signal(data, index, lookback, multiplier, upward=False)
     ):
         side = 1
     elif (
-        data.ema30[index] < data.ema200[index]
+        short_allowed
+        and data.ema30[index] < data.ema200[index]
         and move_signal(data, index, multiplier, upward=True)
         and no_recent_move_signal(data, index, lookback, multiplier, upward=True)
     ):
@@ -1465,12 +1849,36 @@ def evaluate_momentum(strategy: BacktestStrategy, data: EnrichedData, index: int
     if side == 0:
         return None
 
-    return {
-        "entry_mode": "market",
-        "side": side,
-        "tp_units": float(strategy.tp_units or 0.0),
-        "sl_units": float(strategy.sl_units or 0.0),
-    }
+    return echo_style_signal(strategy, side)
+
+
+def evaluate_mean_reversion(
+    strategy: BacktestStrategy, data: EnrichedData, index: int, asset: AssetConfig
+) -> dict[str, Any] | None:
+    long_allowed = passes_echo_filters(strategy, data, index, 1)
+    short_allowed = passes_echo_filters(strategy, data, index, -1)
+
+    multiplier = strategy.signal_atr_mult or 2.0
+    lookback = strategy.recent_signal_lookback or 10
+    side = 0
+    if (
+        long_allowed
+        and data.ema30[index] < data.ema200[index]
+        and move_signal(data, index, multiplier, upward=True)
+        and no_recent_move_signal(data, index, lookback, multiplier, upward=True)
+    ):
+        side = 1
+    elif (
+        short_allowed
+        and data.ema30[index] > data.ema200[index]
+        and move_signal(data, index, multiplier, upward=False)
+        and no_recent_move_signal(data, index, lookback, multiplier, upward=False)
+    ):
+        side = -1
+    if side == 0:
+        return None
+
+    return echo_style_signal(strategy, side)
 
 
 def evaluate_reddit_capitulation_reversion(
@@ -2007,6 +2415,8 @@ def evaluate_strategy_signal(
     signal: dict[str, Any] | None = None
     if strategy.phase == "momentum":
         signal = evaluate_momentum(strategy, data, index, asset)
+    elif strategy.phase == "mean_reversion":
+        signal = evaluate_mean_reversion(strategy, data, index, asset)
     elif strategy.phase == "parabolic_fade":
         signal = evaluate_parabolic_fade(strategy, data, index, asset, config)
     elif strategy.phase == "vwap_pullback":
@@ -2015,6 +2425,8 @@ def evaluate_strategy_signal(
         signal = evaluate_support_resistance_retest(strategy, data, index, asset, config)
     elif strategy.phase == "trendline_break":
         signal = evaluate_trendline_break(strategy, data, index, asset, config)
+    elif strategy.phase == "tori_trendline_mtf":
+        signal = evaluate_tori_trendline_mtf(strategy, data, index, asset)
     if strategy.phase == "ict_sweep_fvg":
         signal = evaluate_ict_sweep_fvg(strategy, data, index, asset, config)
     elif strategy.phase == "ict_turtle_soup":
@@ -2029,7 +2441,15 @@ def evaluate_strategy_signal(
         signal = evaluate_reddit_orb_breakout(strategy, data, index, asset, config)
     elif strategy.phase == "reddit_orb_retest":
         signal = evaluate_reddit_orb_retest(strategy, data, index, asset, config)
-    elif signal is None and strategy.phase not in {"momentum", "parabolic_fade", "vwap_pullback", "support_resistance_retest", "trendline_break"}:
+    elif signal is None and strategy.phase not in {
+        "momentum",
+        "mean_reversion",
+        "parabolic_fade",
+        "vwap_pullback",
+        "support_resistance_retest",
+        "trendline_break",
+        "tori_trendline_mtf",
+    }:
         raise ValueError(f"Unsupported strategy phase: {strategy.phase}")
 
     if signal is None or not strategy.invert_signal:
@@ -2305,6 +2725,7 @@ def build_pending_order(signal: dict[str, Any], data: EnrichedData, signal_index
 
 
 def dynamic_stop_loss_price(
+    strategy: BacktestStrategy,
     policy: DynamicStopLossPolicy,
     open_trade: OpenTrade,
     data: EnrichedData,
@@ -2313,6 +2734,27 @@ def dynamic_stop_loss_price(
 ) -> float | None:
     if policy.mode == "trail_prior_bar":
         reference = float(data.low[reference_index]) if open_trade.side == 1 else float(data.high[reference_index])
+    elif policy.mode == "trail_hourly_pivot":
+        if data.hourly is None:
+            return None
+        swing = max(1, min(2, variant_int(strategy.variant_id, "swing", 2)))
+        pivot_high, pivot_low = timeframe_pivot_arrays(data.hourly, swing)
+        hour_index = int(np.searchsorted(data.hourly.times, int(data.times[reference_index]), side="right") - 1)
+        entry_hour_index = int(np.searchsorted(data.hourly.times, int(data.times[open_trade.entry_index]), side="right") - 1)
+        confirmed_limit = hour_index - swing
+        if confirmed_limit <= entry_hour_index:
+            return None
+        reference = math.nan
+        if open_trade.side == 1:
+            for cursor in range(confirmed_limit, entry_hour_index, -1):
+                if bool(pivot_low[cursor]):
+                    reference = float(data.hourly.low[cursor])
+                    break
+        else:
+            for cursor in range(confirmed_limit, entry_hour_index, -1):
+                if bool(pivot_high[cursor]):
+                    reference = float(data.hourly.high[cursor])
+                    break
     else:
         return None
     if not maybe_number(reference):
@@ -2324,6 +2766,7 @@ def dynamic_stop_loss_price(
 
 
 def dynamic_take_profit_price(
+    strategy: BacktestStrategy,
     policy: DynamicTakeProfitPolicy,
     open_trade: OpenTrade,
     data: EnrichedData,
@@ -2347,6 +2790,33 @@ def dynamic_take_profit_price(
             return None
         candidate = open_trade.entry_price + open_trade.side * current_risk * reward_multiple
         return round_price(candidate, asset.tick_size)
+    if policy.mode == "trail_hourly_extreme":
+        if data.hourly is None:
+            return None
+        swing = max(1, min(2, variant_int(strategy.variant_id, "swing", 2)))
+        pivot_high, pivot_low = timeframe_pivot_arrays(data.hourly, swing)
+        hour_index = int(np.searchsorted(data.hourly.times, int(data.times[reference_index]), side="right") - 1)
+        entry_hour_index = int(np.searchsorted(data.hourly.times, int(data.times[open_trade.entry_index]), side="right") - 1)
+        confirmed_limit = hour_index - swing
+        if confirmed_limit <= entry_hour_index:
+            return None
+        reference = math.nan
+        if open_trade.side == 1:
+            for cursor in range(confirmed_limit, entry_hour_index, -1):
+                if bool(pivot_high[cursor]):
+                    reference = float(data.hourly.high[cursor])
+                    break
+        else:
+            for cursor in range(confirmed_limit, entry_hour_index, -1):
+                if bool(pivot_low[cursor]):
+                    reference = float(data.hourly.low[cursor])
+                    break
+        if not maybe_number(reference):
+            return None
+        adjustment = policy.buffer_units * asset.tick_size
+        candidate = reference + adjustment if open_trade.side == 1 else reference - adjustment
+        candidate = round_price(candidate, asset.tick_size)
+        return max(open_trade.take_profit, candidate) if open_trade.side == 1 else min(open_trade.take_profit, candidate)
     return None
 
 
@@ -2362,14 +2832,14 @@ def apply_dynamic_trade_management(
         return
 
     if strategy.dynamic_stop_loss_policy is not None:
-        candidate_stop = dynamic_stop_loss_price(strategy.dynamic_stop_loss_policy, open_trade, data, reference_index, asset)
+        candidate_stop = dynamic_stop_loss_price(strategy, strategy.dynamic_stop_loss_policy, open_trade, data, reference_index, asset)
         if candidate_stop is not None and candidate_stop != open_trade.stop_loss:
             if trade_levels_valid(open_trade.side, open_trade.entry_price, candidate_stop, open_trade.take_profit, asset.tick_size):
                 open_trade.stop_loss = candidate_stop
                 open_trade.sl_units = signal_units(open_trade.entry_price, candidate_stop, asset.tick_size)
 
     if strategy.dynamic_take_profit_policy is not None:
-        candidate_take_profit = dynamic_take_profit_price(strategy.dynamic_take_profit_policy, open_trade, data, reference_index, asset)
+        candidate_take_profit = dynamic_take_profit_price(strategy, strategy.dynamic_take_profit_policy, open_trade, data, reference_index, asset)
         if candidate_take_profit is not None and candidate_take_profit != open_trade.take_profit:
             if trade_levels_valid(open_trade.side, open_trade.entry_price, open_trade.stop_loss, candidate_take_profit, asset.tick_size):
                 open_trade.take_profit = candidate_take_profit
@@ -2804,7 +3274,7 @@ def run_backtests(
                     frame = frame.tail(tail_bars)
                     if timings:
                         print(f"  tail-bars {tail_bars}")
-                enriched_cache[asset.key] = build_enriched_data(frame)
+                enriched_cache[asset.key] = build_enriched_data(frame, asset)
                 if timings:
                     print(f"  enriched {asset.key}")
 
@@ -2862,7 +3332,7 @@ def audit_anti_cheat(
             frame = load_candle_csv(candle_path)
             if tail_bars is not None and tail_bars > 0:
                 frame = frame.tail(tail_bars)
-            enriched_cache[asset.key] = build_enriched_data(frame)
+            enriched_cache[asset.key] = build_enriched_data(frame, asset)
 
         data = enriched_cache[asset.key]
         fast_trades = run_single_strategy(

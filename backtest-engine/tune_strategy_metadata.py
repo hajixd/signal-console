@@ -525,7 +525,7 @@ def main() -> None:
         asset = assets[strategy.asset_key]
         if asset.key not in data_cache:
             candle_path = runner.DATA_ROOT / "15m" / asset.data_file
-            data_cache[asset.key] = runner.build_enriched_data(runner.load_candle_csv(candle_path))
+            data_cache[asset.key] = runner.build_enriched_data(runner.load_candle_csv(candle_path), asset)
         data = data_cache[asset.key]
 
         baseline_eval = evaluate_strategy(strategy, asset, data, "keep", 0)

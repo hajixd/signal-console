@@ -491,7 +491,7 @@ def main() -> None:
             asset = assets[asset_key]
             if asset.key not in data_cache:
                 candle_path = runner.DATA_ROOT / "15m" / asset.data_file
-                data_cache[asset.key] = runner.build_enriched_data(runner.load_candle_csv(candle_path))
+                data_cache[asset.key] = runner.build_enriched_data(runner.load_candle_csv(candle_path), asset)
             data = data_cache[asset.key]
 
             direct = evaluate_selected(playbook, asset, data, invert_signal=False)
