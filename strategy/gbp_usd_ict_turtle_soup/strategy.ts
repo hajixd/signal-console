@@ -10,7 +10,7 @@ export default createStrategyDefinition({
   backtestFileName: "backtest_trades.csv",
   assetKey: "gbp_usd",
   phase: "ict_turtle_soup",
-  liveEnabled: true,
+  liveEnabled: false,
   evaluator: evaluateIctTurtleSoup,
   defaults: runtimeDefaultsFromMetadata(parameters)
 });

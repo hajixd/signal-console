@@ -10,7 +10,7 @@ export default createStrategyDefinition({
   backtestFileName: "backtest_trades.csv",
   assetKey: "dow_jones_futures",
   phase: "reddit_orb_retest",
-  liveEnabled: true,
+  liveEnabled: false,
   evaluator: evaluateRedditOrbRetest,
   defaults: runtimeDefaultsFromMetadata(parameters)
 });
