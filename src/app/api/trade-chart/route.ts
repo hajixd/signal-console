@@ -1,7 +1,6 @@
-import path from "node:path";
 import { NextResponse } from "next/server";
 import { assetForSymbol, isMarket } from "@/lib/assets";
-import { readProjectText } from "@/lib/project-assets";
+import { readDataText } from "@/lib/project-data";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -23,16 +22,15 @@ function marketDataPath(symbolValue: string, marketValue: string): string | null
   const market = marketValue.trim().toLowerCase();
   if (!asset) return null;
   if (market && isMarket(market) && market !== asset.market) return null;
-  return path.join(process.cwd(), "data", "15m", asset.dataFile);
+  return `15m/${asset.dataFile}`;
 }
 
-async function marketLines(filePath: string): Promise<string[]> {
-  const cached = lineCache.get(filePath);
+async function marketLines(relativePath: string): Promise<string[]> {
+  const cached = lineCache.get(relativePath);
   if (cached) return cached;
-  const relativePath = path.relative(process.cwd(), filePath).replace(/\\/g, "/");
-  const text = await readProjectText(relativePath);
+  const text = await readDataText(relativePath);
   const lines = text.trim().split(/\r?\n/);
-  lineCache.set(filePath, lines);
+  lineCache.set(relativePath, lines);
   return lines;
 }
 
