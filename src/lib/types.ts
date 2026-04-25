@@ -1,6 +1,40 @@
+import type { Market } from "./assets";
+
 export type Side = "long" | "short";
-export type Market = "futures" | "forex" | "gold_spot";
 export type StrategyPhase = string;
+export type EntryType = "market" | "limit";
+export type BacktestPriceMode = "fixed" | "custom";
+export type BacktestSizeMode = "auto" | "custom";
+
+export type StopLossPolicy = {
+  mode: "signal_extreme" | "prior_day_extreme";
+  bufferUnits?: number;
+};
+
+export type TakeProfitPolicy = {
+  mode: "risk_multiple" | "signal_extreme" | "prior_day_extreme";
+  bufferUnits?: number;
+  rewardMultiple?: number;
+};
+
+export type SizePolicy = {
+  mode: "confidence";
+  minMultiplier: number;
+  maxMultiplier: number;
+  minConfidence?: number;
+  maxConfidence?: number;
+};
+
+export type DynamicStopLossPolicy = {
+  mode: "trail_prior_bar";
+  bufferUnits?: number;
+};
+
+export type DynamicTakeProfitPolicy = {
+  mode: "trail_prior_bar" | "risk_multiple";
+  bufferUnits?: number;
+  rewardMultiple?: number;
+};
 
 export type Bar = {
   time: string;
@@ -11,10 +45,20 @@ export type Bar = {
   volume?: number;
 };
 
+export type StrategyParameters = {
+  signalAtrMult: number;
+  recentSignalLookback: number;
+  absCloseEma200AtrMax: number;
+  tpUnits: number;
+  slUnits: number;
+};
+
 export type StrategyRule = {
   key: string;
   logicalKey: string;
   datasetId?: string;
+  strategyId: string;
+  assetKey: string;
   market: Market;
   symbol: string;
   databentoSymbol?: string;
@@ -35,6 +79,13 @@ export type StrategyRule = {
   tickSize: number;
   unitLabel: string;
   sizeMultiplier?: number;
+  stopLossPolicy?: StopLossPolicy;
+  takeProfitPolicy?: TakeProfitPolicy;
+  sizePolicy?: SizePolicy;
+  dynamicStopLossPolicy?: DynamicStopLossPolicy;
+  dynamicTakeProfitPolicy?: DynamicTakeProfitPolicy;
+  oneTradePerDay?: boolean;
+  costUnits?: number;
   estimatedWinRatePct: number;
   liveProfitFactor: number;
   invertSignal?: boolean;
@@ -47,7 +98,10 @@ export type TradeAlert = {
   strategyKey?: string;
   logicalStrategyKey?: string;
   datasetId?: string;
+  strategyId?: string;
+  assetKey?: string;
   entryMode: string;
+  entryType?: EntryType;
   market: string;
   symbol: string;
   strategy: string;
@@ -57,6 +111,9 @@ export type TradeAlert = {
   stopLossPrice: number;
   tpUnits: number;
   slUnits: number;
+  tpMode?: BacktestPriceMode;
+  slMode?: BacktestPriceMode;
+  sizeMode?: BacktestSizeMode;
   unitLabel: string;
   sizeMultiplier?: number;
   estimatedWinRatePct: number;

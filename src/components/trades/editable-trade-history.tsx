@@ -2,13 +2,12 @@
 
 import { useMemo } from "react";
 import {
-  effectiveStrategyEdit,
-  formatSizeLabel,
   strategyContractScale,
   type StrategyEditOption,
   useStrategyEdits
 } from "@/components/strategies/strategy-edits-store";
 import TradeHistory, { type TradeHistoryRow } from "@/components/trades/trade-history";
+import { instrumentSizeLabel } from "@/lib/instruments";
 
 type EditableTradeHistoryProps = {
   rows: TradeHistoryRow[];
@@ -49,7 +48,6 @@ export default function EditableTradeHistory({ rows, strategies }: EditableTrade
         if (!strategy) return row;
 
         const scale = strategyContractScale(strategy, edits);
-        const effective = effectiveStrategyEdit(strategy, edits);
         const pnlDollars = row.pnlDollars * scale;
         const targetDollars = row.targetDollars * scale;
         const riskDollars = row.riskDollars * scale;
@@ -60,7 +58,7 @@ export default function EditableTradeHistory({ rows, strategies }: EditableTrade
           pnlClassName: resultClass(pnlDollars),
           pnlDollars,
           pnlLabel: fmtMoney(pnlDollars, true),
-          sizeLabel: formatSizeLabel(effective.contracts, effective.sizeName),
+          sizeLabel: instrumentSizeLabel(row.symbol, row.sizeMultiplier * scale),
           targetRiskLabel: `${fmtMoney(targetDollars)} / ${fmtMoney(-riskDollars)}`,
           targetLabel: fmtMoney(targetDollars),
           riskLabel: fmtMoney(-riskDollars),

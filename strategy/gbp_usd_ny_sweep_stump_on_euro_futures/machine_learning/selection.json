@@ -1,0 +1,11 @@
+{
+  "strategyId": "gbp_usd_ny_sweep_stump_on_euro_futures",
+  "label": "GBP/USD NY Sweep V4 Stump on Euro Futures",
+  "folder": "gbp_usd_ny_sweep_stump_on_euro_futures",
+  "assetKey": "euro_futures",
+  "phase": "ny_sweep_playbook",
+  "variantId": "ny_sweep_v4|model=stump|min=0.60|start=420|end=510|max_tests=2|risk_min=10|risk_max=22|min_wick=0.50|rr=2|max_bars=288|one_trade=1",
+  "source": "ny_sweep_playbook_v4_stump",
+  "oneTradePerDay": true,
+  "costUnits": 0.0
+}

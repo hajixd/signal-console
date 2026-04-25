@@ -1,0 +1,16 @@
+{
+  "strategyId": "nasdaq_100_futures_momentum",
+  "label": "NQ ML-Selected Momentum",
+  "folder": "nasdaq_100_futures_momentum",
+  "assetKey": "nasdaq_100_futures",
+  "phase": "momentum",
+  "variantId": "precision_sprint",
+  "source": "precision_sprint",
+  "signalAtrMult": 3.0,
+  "recentSignalLookback": 24,
+  "absCloseEma200AtrMax": 0.75,
+  "tpUnits": 150.0,
+  "slUnits": 500.0,
+  "oneTradePerDay": false,
+  "costUnits": 0.0
+}

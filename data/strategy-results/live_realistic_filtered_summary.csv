@@ -1,4 +1,0 @@
-variant,trades_path,trades,wins,losses,win_rate_pct,profit_factor_r,total_r,avg_r,max_drawdown_r,trades_per_day,trades_per_week,max_concurrent_positions
-rolling,C:\Users\elhad\Desktop\projects\trading\artifacts\machine_learning\live_realistic_filtered_rolling_trades.csv,1889,1384,505,73.26627845420857,1.2059996054947288,58.346798498225425,0.030887664636434848,17.335453108624634,2.6168342977532144,18.3178400842725,12
-posthoc,C:\Users\elhad\Desktop\projects\trading\artifacts\machine_learning\live_realistic_filtered_posthoc_trades.csv,566,462,104,81.62544169611307,2.071219897151021,40.8867247536368,0.07223802960006502,2.5133799913970893,0.777116704805492,5.439816933638444,5
-holdout,C:\Users\elhad\Desktop\projects\trading\artifacts\machine_learning\live_realistic_filtered_holdout_trades.csv,112,91,21,81.25,1.6315455238718435,6.844728750604893,0.061113649558972256,3.113198386120171,0.6128241664291821,4.289769165004275,3

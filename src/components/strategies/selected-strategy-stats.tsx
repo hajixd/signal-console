@@ -6,6 +6,7 @@ type BasketTrade = {
   key: string;
   entryTime: string;
   basePnlDollars: number;
+  rMultiple: number;
 };
 
 type DollarAggregate = {
@@ -73,13 +74,14 @@ function aggregateDollars(trades: BasketTrade[], pnlForTrade: (trade: BasketTrad
 
   for (const trade of trades) {
     const pnl = pnlForTrade(trade);
+    const result = trade.rMultiple;
     totalDollars += pnl;
-    if (pnl > 0) {
+    if (result > 0) {
       wins += 1;
-      grossWins += pnl;
-    } else if (pnl < 0) {
+      grossWins += result;
+    } else if (result < 0) {
       losses += 1;
-      grossLosses += Math.abs(pnl);
+      grossLosses += Math.abs(result);
     }
   }
 
@@ -132,7 +134,7 @@ export default function SelectedStrategyStats({ strategies, trades }: SelectedSt
   return (
     <div className="backtest-stats-grid">
       <div className={`backtest-stat-card ${selectedDollarAggregate.profitFactor >= 1 ? "tone-up" : "tone-down"}`}>
-        <span>Dollar PF</span>
+        <span>PF</span>
         <strong>{selectedDollarAggregate.trades ? fmtNumber(selectedDollarAggregate.profitFactor) : "--"}</strong>
       </div>
       <div className={`backtest-stat-card ${selectedDollarAggregate.winRatePct >= 50 ? "tone-up" : "tone-neutral"}`}>

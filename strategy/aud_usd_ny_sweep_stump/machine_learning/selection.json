@@ -1,0 +1,11 @@
+{
+  "strategyId": "aud_usd_ny_sweep_stump",
+  "label": "AUD/USD NY Sweep V4 Stump",
+  "folder": "aud_usd_ny_sweep_stump",
+  "assetKey": "aud_usd",
+  "phase": "ny_sweep_playbook",
+  "variantId": "ny_sweep_v4|model=stump|min=0.48|start=420|end=510|max_tests=1|risk_min=10|risk_max=20|min_wick=0.35|rr=2|max_bars=144|one_trade=1",
+  "source": "metadata_tuner_holdout_2026",
+  "oneTradePerDay": false,
+  "costUnits": 0.0
+}

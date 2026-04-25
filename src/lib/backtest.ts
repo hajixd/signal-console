@@ -1,20 +1,13 @@
-import { readFile } from "node:fs/promises";
 import path from "node:path";
-import { strategyPhaseIsLive } from "@/core/strategies/registry";
-import { recommendedSizeMultiplier } from "./instruments";
-import { benchmarkMlModelName, strategyDisplayLabel } from "./strategy-names";
-import {
-  defaultTickSize,
-  rowIdentity,
-  STRATEGY_DATASETS,
-  strategyKey,
-  strategyLogicalKey,
-  type CsvRow,
-  type StrategyDataset,
-  type StrategyKey
-} from "./strategy-sources";
+import { assetForKey, assetForSymbol, isMarket, type Market } from "@/lib/assets";
+import { recommendedSizeMultiplier } from "@/lib/instruments";
+import { readProjectText, readProjectTextIfExists } from "@/lib/project-assets";
+import type { StrategyDefinition } from "@/lib/strategy-definition";
+import { STRATEGY_DEFINITIONS } from "@/lib/strategy-loader";
 
-export type { StrategyKey } from "./strategy-sources";
+export type StrategyKey = string;
+export type BacktestPriceMode = "fixed" | "custom";
+export type BacktestSizeMode = "auto" | "custom";
 
 export type BacktestStat = {
   key: StrategyKey;
@@ -42,6 +35,9 @@ export type BacktestStat = {
   pipOrTickSize?: number;
   tpUnits?: number;
   slUnits?: number;
+  tpMode?: BacktestPriceMode;
+  slMode?: BacktestPriceMode;
+  sizeMode?: BacktestSizeMode;
   costUnits?: number;
   signalAtrMult?: number;
   recentSignalLookback?: number;
@@ -75,9 +71,15 @@ export type BacktestTrade = {
   rMultiple: number;
   tpUnits: number;
   slUnits: number;
+  tpMode?: BacktestPriceMode;
+  slMode?: BacktestPriceMode;
+  sizeMode?: BacktestSizeMode;
   costUnits: number;
   exitReason: string;
   barsHeld: number;
+  assetKey: string;
+  strategyId: string;
+  sizeMultiplierHint?: number;
 };
 
 export type BacktestAggregate = {
@@ -90,30 +92,68 @@ export type BacktestAggregate = {
   avgR: number;
 };
 
+export type StrategyCatalogEntry = {
+  key: string;
+  label: string;
+  folder: string;
+  fileCode?: string;
+  liveSupported: boolean;
+  assetKey: string;
+  symbol: string;
+  market: Market;
+  timeframes: string[];
+};
+
 type StrategyCatalog = {
+  entries: StrategyCatalogEntry[];
   stats: BacktestStat[];
   trades: BacktestTrade[];
 };
 
-type TradeSummary = BacktestAggregate & {
-  tradesPerDay: number;
-  tradesPerWeek: number;
-  tpUnits?: number;
-  slUnits?: number;
-  costUnits?: number;
-};
+type CsvRow = Record<string, string>;
 
-let catalogPromise: Promise<StrategyCatalog> | null = null;
+const BACKTEST_MANIFEST_PATH = "cache/backtest-manifest.json";
+const STRATEGY_ROOT = "strategy";
+const TIMEFRAME_ORDER = ["15m", "30m", "45m", "1h", "4h", "1d", "1w"] as const;
+const CATALOG_CACHE_TTL_MS = 60_000;
 
-const OPPOSITE_LABEL_SUFFIX = " [Opposite]";
-const OPPOSITE_VARIANT_TOKEN = "inverse=1";
-const MAX_OPPOSITE_STRATEGIES = 12;
-const MIN_OPPOSITE_TRADES = 20;
-const MIN_OPPOSITE_PROFIT_FACTOR = 1.4;
-const MAX_OPPOSITE_AVG_R = 5;
+let catalogCache: { promise: Promise<StrategyCatalog>; loadedAt: number } | null = null;
+
+function timeframeOrder(value: string): number {
+  const index = TIMEFRAME_ORDER.indexOf(value as (typeof TIMEFRAME_ORDER)[number]);
+  return index >= 0 ? index : TIMEFRAME_ORDER.length;
+}
+
+function strategyUsesPriorDayStructure(strategy: StrategyDefinition): boolean {
+  const defaults = strategy.defaults ?? {};
+  return (
+    strategy.phase === "ict_sweep_fvg" ||
+    strategy.phase === "ict_turtle_soup" ||
+    defaults.stopLossPolicy?.mode === "prior_day_extreme" ||
+    defaults.takeProfitPolicy?.mode === "prior_day_extreme"
+  );
+}
+
+function strategyTimeframes(strategy: StrategyDefinition): string[] {
+  const timeframes = new Set<string>(["15m"]);
+  if (strategyUsesPriorDayStructure(strategy)) {
+    timeframes.add("1d");
+  }
+  return [...timeframes].sort((left, right) => timeframeOrder(left) - timeframeOrder(right));
+}
+
+function strategyLogicalKey(symbol: string, phase: string, variantId?: string): string {
+  return `${symbol}\t${phase}\t${variantId ?? ""}`;
+}
+
+function strategyKey(strategyId: string, symbol: string, phase: string, variantId?: string): StrategyKey {
+  return `${strategyId}\t${strategyLogicalKey(symbol, phase, variantId)}`;
+}
 
 function parseCsv(text: string): CsvRow[] {
-  const [headerLine, ...lines] = text.trim().split(/\r?\n/);
+  const trimmed = text.trim();
+  if (!trimmed) return [];
+  const [headerLine, ...lines] = trimmed.split(/\r?\n/);
   if (!headerLine) return [];
   const headers = headerLine.split(",");
   return lines
@@ -137,340 +177,280 @@ function optionalNumeric(value: string | undefined): number | undefined {
   return Number.isFinite(parsed) ? parsed : undefined;
 }
 
+function priceMode(value: string | undefined): BacktestPriceMode | undefined {
+  return value === "custom" ? "custom" : value === "fixed" ? "fixed" : undefined;
+}
+
+function sizeMode(value: string | undefined): BacktestSizeMode | undefined {
+  return value === "custom" ? "custom" : value === "auto" ? "auto" : undefined;
+}
+
 function average(values: number[]): number | undefined {
   if (!values.length) return undefined;
   return values.reduce((sum, value) => sum + value, 0) / values.length;
 }
 
-function strategyModelName(symbol: string, phase: string, source?: string, variantId?: string): string | undefined {
-  const combined = `${source ?? ""}|${variantId ?? ""}`.toLowerCase();
-  if (!combined.includes("precision_sprint")) return undefined;
-  return benchmarkMlModelName(symbol, phase);
+function hasMeaningfulVariation(values: number[], precision = 4): boolean {
+  const distinct = new Set(
+    values
+      .filter((value) => Number.isFinite(value))
+      .map((value) => value.toFixed(precision))
+  );
+  return distinct.size > 1;
 }
 
-function strategyLabel(symbol: string, phase: string, source?: string, variantId?: string, mlModelName?: string): string {
-  return strategyDisplayLabel({ symbol, phase, source, variantId, mlModelName });
+function variantNumber(variantId: string | undefined, ...keys: string[]): number | undefined {
+  if (!variantId) return undefined;
+  for (const token of variantId.split("|")) {
+    const [key, rawValue] = token.split("=", 2);
+    if (!keys.includes(key) || rawValue === undefined || rawValue === "" || rawValue === "none") continue;
+    const parsed = Number(rawValue);
+    if (Number.isFinite(parsed)) return parsed;
+  }
+  return undefined;
 }
 
-async function readCsvRows(relativePath: string): Promise<CsvRow[]> {
-  const text = await readFile(path.join(/* turbopackIgnore: true */ process.cwd(), relativePath), "utf8");
-  return parseCsv(text);
+async function readCsvRows(filePath: string, mode: "auto" | "local" | "remote" = "auto"): Promise<CsvRow[]> {
+  try {
+    return parseCsv(await readProjectText(filePath, mode));
+  } catch {
+    return [];
+  }
 }
 
-function tradeSummary(trades: BacktestTrade[]): TradeSummary {
-  const aggregate = aggregateBacktest(trades);
-  const times = trades.map((trade) => Date.parse(trade.entryTime)).filter((time) => Number.isFinite(time));
-  const start = times.length ? Math.min(...times) : Number.NaN;
-  const end = times.length ? Math.max(...times) : Number.NaN;
-  const days = Number.isFinite(start) && Number.isFinite(end) && end > start ? Math.max((end - start) / 86_400_000, 1) : 730;
-
+function aggregateBacktest(trades: BacktestTrade[]): BacktestAggregate {
+  const wins = trades.filter((trade) => trade.rMultiple > 0);
+  const losses = trades.filter((trade) => trade.rMultiple < 0);
+  const grossWins = wins.reduce((sum, trade) => sum + trade.rMultiple, 0);
+  const grossLosses = Math.abs(losses.reduce((sum, trade) => sum + trade.rMultiple, 0));
+  const totalR = trades.reduce((sum, trade) => sum + trade.rMultiple, 0);
   return {
-    ...aggregate,
-    tradesPerDay: aggregate.trades ? aggregate.trades / days : 0,
-    tradesPerWeek: aggregate.trades ? aggregate.trades / (days / 7) : 0,
-    tpUnits: average(trades.map((trade) => trade.tpUnits)),
-    slUnits: average(trades.map((trade) => trade.slUnits)),
-    costUnits: average(trades.map((trade) => trade.costUnits))
+    trades: trades.length,
+    wins: wins.length,
+    losses: losses.length,
+    winRatePct: trades.length ? (wins.length / trades.length) * 100 : 0,
+    profitFactor: grossLosses ? grossWins / grossLosses : grossWins ? Infinity : 0,
+    totalR,
+    avgR: trades.length ? totalR / trades.length : 0
   };
 }
 
-function tradeTickSize(trades: BacktestTrade[], symbol: string, market?: string): number | undefined {
-  const normalizedMarket = market === "futures" || market === "forex" || market === "gold_spot" ? market : undefined;
-  return defaultTickSize(symbol, normalizedMarket);
+function maxDrawdownR(trades: BacktestTrade[]): number {
+  let equityR = 0;
+  let peakR = 0;
+  let maxDrawdown = 0;
+  const ordered = [...trades].sort((left, right) => Date.parse(left.exitTime) - Date.parse(right.exitTime));
+  for (const trade of ordered) {
+    equityR += trade.rMultiple;
+    peakR = Math.max(peakR, equityR);
+    maxDrawdown = Math.max(maxDrawdown, peakR - equityR);
+  }
+  return maxDrawdown;
 }
 
-function oppositeVariantId(variantId?: string): string {
-  if (variantId?.includes(OPPOSITE_VARIANT_TOKEN)) return variantId;
-  return variantId ? `${variantId}|${OPPOSITE_VARIANT_TOKEN}` : OPPOSITE_VARIANT_TOKEN;
-}
-
-function oppositeLabel(label: string): string {
-  return label.endsWith(OPPOSITE_LABEL_SUFFIX) ? label : `${label}${OPPOSITE_LABEL_SUFFIX}`;
-}
-
-function oppositeExitReason(reason: string): string {
-  const normalized = reason.toLowerCase();
-  if (normalized === "tp") return "sl";
-  if (normalized === "sl") return "tp";
-  return reason;
-}
-
-function oppositeTrade(trade: BacktestTrade): BacktestTrade {
-  const variantId = oppositeVariantId(trade.variantId);
+function tradeCadence(trades: BacktestTrade[]): { tradesPerDay: number; tradesPerWeek: number } {
+  const times = trades.map((trade) => Date.parse(trade.entryTime)).filter((value) => Number.isFinite(value));
+  if (!times.length) {
+    return { tradesPerDay: 0, tradesPerWeek: 0 };
+  }
+  const start = Math.min(...times);
+  const end = Math.max(...times);
+  const days = Math.max((end - start) / 86_400_000, 1);
   return {
-    ...trade,
-    key: strategyKey(trade.datasetId, trade.symbol, trade.phase, variantId),
-    logicalKey: strategyLogicalKey(trade.symbol, trade.phase, variantId),
-    label: oppositeLabel(trade.label),
+    tradesPerDay: trades.length / days,
+    tradesPerWeek: trades.length / (days / 7)
+  };
+}
+
+function backtestTradeFromRow(row: CsvRow, strategy: StrategyDefinition): BacktestTrade | null {
+  const assetKey = (row.asset_key ?? strategy.assetKey ?? "").trim();
+  if (!assetKey) return null;
+  const asset = assetForKey(assetKey);
+  const symbol = (row.symbol ?? asset.symbol).trim().toUpperCase();
+  const phase = (row.phase || "").trim();
+  if (!symbol || !phase) return null;
+
+  const variantId = (row.variant_id ?? "").trim() || strategy.defaults?.variantId || undefined;
+  const logicalKey = strategyLogicalKey(symbol, phase, variantId);
+
+  return {
+    key: strategyKey(strategy.id, symbol, phase, variantId),
+    logicalKey,
+    datasetId: strategy.id,
+    datasetLabel: strategy.label,
+    market: isMarket(row.market) ? row.market : asset.market,
+    symbol,
+    phase,
+    label: strategy.label,
+    source: row.source || strategy.defaults?.source || "python_backtest",
     variantId,
-    side: trade.side === "long" ? "short" : "long",
-    netUnits: -trade.netUnits,
-    rMultiple: -trade.rMultiple,
-    exitReason: oppositeExitReason(trade.exitReason)
-  };
-}
-
-function shouldAddOppositeStrategy(originalStat: BacktestStat, originalTrades: BacktestTrade[], oppositeSummary: TradeSummary): boolean {
-  if (originalStat.invertSignal || !strategyPhaseIsLive(originalStat.phase)) return false;
-
-  const originalAggregate = aggregateBacktest(originalTrades);
-  if (originalAggregate.trades < MIN_OPPOSITE_TRADES) return false;
-  if (!Number.isFinite(originalAggregate.avgR) || Math.abs(originalAggregate.avgR) > MAX_OPPOSITE_AVG_R) return false;
-  if (originalAggregate.profitFactor >= 1) return false;
-  if (!(oppositeSummary.profitFactor >= MIN_OPPOSITE_PROFIT_FACTOR)) return false;
-  if (!(oppositeSummary.totalR > 0)) return false;
-  return true;
-}
-
-function backtestTradeFromRow(row: CsvRow, dataset: StrategyDataset): BacktestTrade {
-  const identity = rowIdentity(row, dataset);
-  const modelName = strategyModelName(identity.symbol, identity.phase, identity.source, identity.variantId);
-  const side: BacktestTrade["side"] = row.side === "short" ? "short" : "long";
-  const explicitBarsHeld = numeric(row.bars_held);
-  const entryIndex = numeric(row.entry_index);
-  const exitIndex = numeric(row.exit_index);
-
-  return {
-    key: identity.key,
-    logicalKey: identity.logicalKey,
-    datasetId: identity.datasetId,
-    datasetLabel: identity.datasetLabel,
-    market: identity.market,
-    symbol: identity.symbol,
-    phase: identity.phase,
-    label: strategyLabel(identity.symbol, identity.phase, identity.source, identity.variantId, modelName),
-    source: identity.source,
-    variantId: identity.variantId,
-    modelName,
-    side,
-    entryIndex,
-    exitIndex,
-    signalTime: row.signal_time,
-    entryTime: row.entry_time,
-    exitTime: row.exit_time,
+    modelName: strategy.label,
+    side: row.side === "short" ? "short" : "long",
+    entryIndex: numeric(row.entry_index),
+    exitIndex: numeric(row.exit_index),
+    signalTime: row.signal_time || row.entry_time || "",
+    entryTime: row.entry_time || row.signal_time || "",
+    exitTime: row.exit_time || row.entry_time || "",
     entryPrice: numeric(row.entry_price),
     exitPrice: numeric(row.exit_price),
     netUnits: numeric(row.net_units),
     rMultiple: numeric(row.r_multiple),
     tpUnits: numeric(row.tp_units),
     slUnits: numeric(row.sl_units),
+    tpMode: priceMode(row.tp_mode),
+    slMode: priceMode(row.sl_mode),
+    sizeMode: sizeMode(row.size_mode),
     costUnits: numeric(row.cost_units),
-    exitReason: row.exit_reason,
-    barsHeld: Math.max(1, explicitBarsHeld || exitIndex - entryIndex + 1)
+    exitReason: row.exit_reason || "end",
+    barsHeld: Math.max(1, numeric(row.bars_held) || numeric(row.exit_index) - numeric(row.entry_index) + 1),
+    assetKey,
+    strategyId: row.strategy_id || strategy.id,
+    sizeMultiplierHint: optionalNumeric(row.size_multiplier) ?? strategy.defaults?.sizeMultiplier
   };
 }
 
-function numericFromCandidates(...values: Array<string | undefined>): number {
-  for (const value of values) {
-    if (value === undefined || value === "") continue;
-    return numeric(value);
-  }
-  return 0;
-}
-
-function optionalNumericFromCandidates(...values: Array<string | undefined>): number | undefined {
-  for (const value of values) {
-    const parsed = optionalNumeric(value);
-    if (parsed !== undefined) return parsed;
-  }
-  return undefined;
-}
-
-function backtestStatFromRow(row: CsvRow, dataset: StrategyDataset, trades: BacktestTrade[]): BacktestStat {
-  const identity = rowIdentity(row, dataset);
-  const modelName = strategyModelName(identity.symbol, identity.phase, identity.source, identity.variantId);
-  const derived = tradeSummary(trades);
-  const tpUnits = optionalNumericFromCandidates(row.tp_units, row.test_tp_units) ?? derived.tpUnits;
-  const slUnits = optionalNumericFromCandidates(row.sl_units, row.test_sl_units) ?? derived.slUnits;
-  const costUnits = optionalNumeric(row.cost_units) ?? derived.costUnits;
-  const sizeMultiplier = optionalNumeric(row.size_multiplier) ?? recommendedSizeMultiplier({
-    symbol: identity.symbol,
-    tpUnits,
-    slUnits,
-    costUnits
-  });
-  const pipOrTickSize = optionalNumeric(row.pip_or_tick_size) ?? tradeTickSize(trades, identity.symbol, identity.market);
+function backtestStatFromTrades(strategy: StrategyDefinition, trades: BacktestTrade[]): BacktestStat {
+  const first = trades[0]!;
+  const aggregate = aggregateBacktest(trades);
+  const cadence = tradeCadence(trades);
+  const asset = first.assetKey ? assetForKey(first.assetKey) : assetForSymbol(first.symbol);
+  const sizeMultiplierHint = average(trades.map((trade) => trade.sizeMultiplierHint).filter((value): value is number => value !== undefined));
+  const signalAtrMult = variantNumber(first.variantId, "sig", "signal_atr_mult") ?? strategy.defaults?.signalAtrMult;
+  const recentSignalLookback = variantNumber(first.variantId, "lookback") ?? strategy.defaults?.recentSignalLookback;
+  const absCloseEma200AtrMax =
+    variantNumber(first.variantId, "abs", "abs_close_ema200_atr_max") ?? strategy.defaults?.absCloseEma200AtrMax;
+  const tradeRsiMin = variantNumber(first.variantId, "rsi_min", "trade_rsi_min") ?? strategy.defaults?.tradeRsiMin;
+  const tradeRsiMax =
+    variantNumber(first.variantId, "rsi_max", "rsi2", "rsi2_max", "trade_rsi_max") ?? strategy.defaults?.tradeRsiMax;
+  const tpMode: BacktestPriceMode =
+    trades.some((trade) => trade.tpMode === "custom") || hasMeaningfulVariation(trades.map((trade) => trade.tpUnits)) ? "custom" : "fixed";
+  const slMode: BacktestPriceMode =
+    trades.some((trade) => trade.slMode === "custom") || hasMeaningfulVariation(trades.map((trade) => trade.slUnits)) ? "custom" : "fixed";
+  const sizeModeValue: BacktestSizeMode = trades.some((trade) => trade.sizeMode === "custom") ? "custom" : "auto";
 
   return {
-    key: identity.key,
-    logicalKey: identity.logicalKey,
-    datasetId: identity.datasetId,
-    datasetLabel: identity.datasetLabel,
-    market: identity.market,
-    symbol: identity.symbol,
-    phase: identity.phase,
-    label: strategyLabel(identity.symbol, identity.phase, identity.source, identity.variantId, modelName),
-    source: identity.source,
-    variantId: identity.variantId,
-    modelName,
-    sizeMultiplier,
-    trades: numericFromCandidates(row.test_r_trades, row.test_trades, row.trades) || derived.trades,
-    wins: numericFromCandidates(row.test_r_wins, row.test_wins, row.wins) || derived.wins,
-    losses: numericFromCandidates(row.test_r_losses, row.test_losses, row.losses) || derived.losses,
-    winRatePct: numericFromCandidates(row.test_r_win_rate_pct, row.test_win_rate_pct, row.win_rate_pct) || derived.winRatePct,
-    profitFactor:
-      numericFromCandidates(row.test_r_profit_factor, row.profit_factor_r, row.test_profit_factor, row.profit_factor_dollars) ||
-      derived.profitFactor,
-    totalR: numericFromCandidates(row.test_r_total, row.total_r, row.test_total, row.total_pnl) || derived.totalR,
-    avgR: numericFromCandidates(row.test_r_avg, row.avg_r, row.test_avg, row.avg_pnl) || derived.avgR,
-    maxDrawdownR: numeric(row.max_drawdown_r),
-    tradesPerDay: numericFromCandidates(row.test_trades_per_day, row.trades_per_day) || derived.tradesPerDay,
-    tradesPerWeek: numericFromCandidates(row.test_trades_per_week, row.trades_per_week) || derived.tradesPerWeek,
-    pipOrTickSize,
-    tpUnits,
-    slUnits,
-    costUnits,
-    signalAtrMult: optionalNumeric(row.signal_atr_mult),
-    recentSignalLookback: optionalNumeric(row.recent_signal_lookback),
-    absCloseEma200AtrMax: optionalNumeric(row.abs_close_ema200_atr_max),
-    tradeRsiMin: optionalNumeric(row.trade_rsi_min),
-    tradeRsiMax: optionalNumeric(row.trade_rsi_max)
+    key: first.key,
+    logicalKey: first.logicalKey,
+    datasetId: strategy.id,
+    datasetLabel: strategy.label,
+    market: first.market,
+    symbol: first.symbol,
+    phase: first.phase,
+    label: strategy.label,
+    source: first.source || strategy.defaults?.source,
+    variantId: first.variantId,
+    modelName: strategy.label,
+    sizeMultiplier:
+      sizeMultiplierHint ??
+      strategy.defaults?.sizeMultiplier ??
+      recommendedSizeMultiplier({
+        symbol: first.symbol,
+        tpUnits: average(trades.map((trade) => trade.tpUnits)),
+        slUnits: average(trades.map((trade) => trade.slUnits))
+      }),
+    trades: aggregate.trades,
+    wins: aggregate.wins,
+    losses: aggregate.losses,
+    winRatePct: aggregate.winRatePct,
+    profitFactor: aggregate.profitFactor,
+    totalR: aggregate.totalR,
+    avgR: aggregate.avgR,
+    maxDrawdownR: maxDrawdownR(trades),
+    tradesPerDay: cadence.tradesPerDay,
+    tradesPerWeek: cadence.tradesPerWeek,
+    pipOrTickSize: asset?.tickSize,
+    tpUnits: average(trades.map((trade) => trade.tpUnits)),
+    slUnits: average(trades.map((trade) => trade.slUnits)),
+    tpMode,
+    slMode,
+    sizeMode: sizeModeValue,
+    costUnits: average(trades.map((trade) => trade.costUnits)),
+    signalAtrMult,
+    recentSignalLookback,
+    absCloseEma200AtrMax,
+    tradeRsiMin,
+    tradeRsiMax,
+    invertSignal: first.variantId?.includes("inverse=1") || strategy.defaults?.invertSignal || false
+  };
+}
+
+async function readManifestCatalog(): Promise<StrategyCatalog | null> {
+  const raw = await readProjectTextIfExists(BACKTEST_MANIFEST_PATH);
+  if (!raw) return null;
+
+  try {
+    const parsed = JSON.parse(raw) as StrategyCatalog;
+    if (Array.isArray(parsed.entries) && Array.isArray(parsed.stats) && Array.isArray(parsed.trades)) {
+      return parsed;
+    }
+  } catch {
+    return null;
+  }
+
+  return null;
+}
+
+export async function buildLocalStrategyCatalog(): Promise<StrategyCatalog> {
+  const trades: BacktestTrade[] = [];
+
+  for (const strategy of STRATEGY_DEFINITIONS) {
+    const csvPath = path.posix.join(STRATEGY_ROOT, strategy.folder, strategy.backtestFileName);
+    const rows = await readCsvRows(csvPath, "local");
+    trades.push(
+      ...rows
+        .map((row) => backtestTradeFromRow(row, strategy))
+        .filter((trade): trade is BacktestTrade => Boolean(trade))
+    );
+  }
+
+  trades.sort((left, right) => Date.parse(right.entryTime) - Date.parse(left.entryTime));
+
+  const stats = STRATEGY_DEFINITIONS.flatMap((strategy) => {
+    const strategyTrades = trades.filter((trade) => trade.datasetId === strategy.id);
+    return strategyTrades.length ? [backtestStatFromTrades(strategy, strategyTrades)] : [];
+  });
+
+  return {
+    entries: STRATEGY_DEFINITIONS.map((strategy) => {
+      const asset = assetForKey(strategy.assetKey);
+      return {
+      key: strategy.id,
+      label: strategy.label,
+      folder: strategy.folder,
+      fileCode: strategy.fileName,
+      liveSupported: strategy.liveEnabled,
+      assetKey: asset.key,
+      symbol: asset.symbol,
+      market: asset.market,
+      timeframes: strategyTimeframes(strategy)
+      };
+    }),
+    stats,
+    trades
   };
 }
 
 async function buildStrategyCatalog(): Promise<StrategyCatalog> {
-  const tradesByKey = new Map<string, BacktestTrade[]>();
-  const baseTrades = (
-    await Promise.all(
-      STRATEGY_DATASETS.map(async (dataset) => {
-        const rows = await readCsvRows(dataset.tradesPath);
-        return rows.map((row) => backtestTradeFromRow(row, dataset));
-      })
-    )
-  )
-    .flat()
-    .sort((left, right) => Date.parse(right.entryTime) - Date.parse(left.entryTime));
-
-  for (const trade of baseTrades) {
-    const trades = tradesByKey.get(trade.key) ?? [];
-    trades.push(trade);
-    tradesByKey.set(trade.key, trades);
-  }
-
-  const stats = (
-    await Promise.all(
-      STRATEGY_DATASETS.map(async (dataset) => {
-        const rows = await readCsvRows(dataset.statsPath);
-        return rows.map((row) => {
-          const key = rowIdentity(row, dataset).key;
-          return backtestStatFromRow(row, dataset, tradesByKey.get(key) ?? []);
-        });
-      })
-    )
-  ).flat();
-
-  const statByKey = new Map(stats.map((stat) => [stat.key, stat]));
-  for (const [key, trades] of tradesByKey.entries()) {
-    if (statByKey.has(key) || !trades.length) continue;
-    const first = trades[0]!;
-    const derived = tradeSummary(trades);
-    statByKey.set(key, {
-      key: first.key,
-      logicalKey: first.logicalKey,
-      datasetId: first.datasetId,
-      datasetLabel: first.datasetLabel,
-      market: first.market,
-      symbol: first.symbol,
-      phase: first.phase,
-      label: first.label,
-      source: first.source,
-      variantId: first.variantId,
-      modelName: first.modelName,
-      sizeMultiplier: recommendedSizeMultiplier({
-        symbol: first.symbol,
-        tpUnits: derived.tpUnits,
-        slUnits: derived.slUnits,
-        costUnits: derived.costUnits
-      }),
-      trades: derived.trades,
-      wins: derived.wins,
-      losses: derived.losses,
-      winRatePct: derived.winRatePct,
-      profitFactor: derived.profitFactor,
-      totalR: derived.totalR,
-      avgR: derived.avgR,
-      maxDrawdownR: 0,
-      tradesPerDay: derived.tradesPerDay,
-      tradesPerWeek: derived.tradesPerWeek,
-      pipOrTickSize: tradeTickSize(trades, first.symbol, first.market),
-      tpUnits: derived.tpUnits,
-      slUnits: derived.slUnits,
-      costUnits: derived.costUnits,
-      signalAtrMult: undefined,
-      recentSignalLookback: undefined,
-      absCloseEma200AtrMax: undefined,
-      tradeRsiMin: undefined,
-      tradeRsiMax: undefined
-    });
-  }
-
-  const baseStats = [...statByKey.values()];
-  const oppositeCandidates = baseStats
-    .map((stat) => {
-      const originalTrades = tradesByKey.get(stat.key) ?? [];
-      if (!originalTrades.length) return null;
-
-      const mirroredTrades = originalTrades.map(oppositeTrade);
-      const mirroredSummary = tradeSummary(mirroredTrades);
-      if (!shouldAddOppositeStrategy(stat, originalTrades, mirroredSummary)) return null;
-
-      const variantId = oppositeVariantId(stat.variantId);
-      const mirroredStat: BacktestStat = {
-        ...stat,
-        key: strategyKey(stat.datasetId, stat.symbol, stat.phase, variantId),
-        logicalKey: strategyLogicalKey(stat.symbol, stat.phase, variantId),
-        label: oppositeLabel(stat.label),
-        variantId,
-        trades: mirroredSummary.trades,
-        wins: mirroredSummary.wins,
-        losses: mirroredSummary.losses,
-        winRatePct: mirroredSummary.winRatePct,
-        profitFactor: mirroredSummary.profitFactor,
-        totalR: mirroredSummary.totalR,
-        avgR: mirroredSummary.avgR,
-        tradesPerDay: mirroredSummary.tradesPerDay,
-        tradesPerWeek: mirroredSummary.tradesPerWeek,
-        tpUnits: mirroredSummary.tpUnits ?? stat.tpUnits,
-        slUnits: mirroredSummary.slUnits ?? stat.slUnits,
-        costUnits: mirroredSummary.costUnits ?? stat.costUnits,
-        invertSignal: true
-      };
-
-      return {
-        originalProfitFactor: aggregateBacktest(originalTrades).profitFactor,
-        originalTrades: originalTrades.length,
-        oppositeProfitFactor: mirroredSummary.profitFactor,
-        stat: mirroredStat,
-        trades: mirroredTrades
-      };
-    })
-    .filter((candidate): candidate is NonNullable<typeof candidate> => Boolean(candidate))
-    .sort((left, right) => {
-      if (left.originalProfitFactor !== right.originalProfitFactor) {
-        return left.originalProfitFactor - right.originalProfitFactor;
-      }
-      if (left.oppositeProfitFactor !== right.oppositeProfitFactor) {
-        return right.oppositeProfitFactor - left.oppositeProfitFactor;
-      }
-      return right.originalTrades - left.originalTrades;
-    })
-    .slice(0, MAX_OPPOSITE_STRATEGIES);
-
-  const allTrades = [...baseTrades, ...oppositeCandidates.flatMap((candidate) => candidate.trades)].sort(
-    (left, right) => Date.parse(right.entryTime) - Date.parse(left.entryTime)
-  );
-
-  return {
-    stats: [...baseStats, ...oppositeCandidates.map((candidate) => candidate.stat)],
-    trades: allTrades
-  };
+  return (await readManifestCatalog()) ?? buildLocalStrategyCatalog();
 }
 
 async function loadStrategyCatalog(): Promise<StrategyCatalog> {
-  if (!catalogPromise) {
-    catalogPromise = buildStrategyCatalog();
+  const now = Date.now();
+  if (!catalogCache || now - catalogCache.loadedAt > CATALOG_CACHE_TTL_MS) {
+    catalogCache = {
+      promise: buildStrategyCatalog(),
+      loadedAt: now
+    };
   }
-  return catalogPromise;
+  return catalogCache.promise;
+}
+
+export async function getStrategyCatalog(): Promise<StrategyCatalogEntry[]> {
+  try {
+    return (await loadStrategyCatalog()).entries;
+  } catch {
+    return [];
+  }
 }
 
 export async function getBacktestStats(): Promise<BacktestStat[]> {
@@ -489,19 +469,4 @@ export async function getBacktestTrades(): Promise<BacktestTrade[]> {
   }
 }
 
-export function aggregateBacktest(trades: BacktestTrade[]): BacktestAggregate {
-  const wins = trades.filter((trade) => trade.rMultiple > 0);
-  const losses = trades.filter((trade) => trade.rMultiple < 0);
-  const winR = wins.reduce((sum, trade) => sum + trade.rMultiple, 0);
-  const lossR = Math.abs(losses.reduce((sum, trade) => sum + trade.rMultiple, 0));
-  const totalR = trades.reduce((sum, trade) => sum + trade.rMultiple, 0);
-  return {
-    trades: trades.length,
-    wins: wins.length,
-    losses: losses.length,
-    winRatePct: trades.length ? (wins.length / trades.length) * 100 : 0,
-    profitFactor: lossR ? winR / lossR : winR ? Infinity : 0,
-    totalR,
-    avgR: trades.length ? totalR / trades.length : 0
-  };
-}
+export { aggregateBacktest };

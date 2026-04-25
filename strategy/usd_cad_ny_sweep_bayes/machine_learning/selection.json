@@ -1,0 +1,11 @@
+{
+  "strategyId": "usd_cad_ny_sweep_bayes",
+  "label": "USD/CAD NY Sweep V4 Naive Bayes",
+  "folder": "usd_cad_ny_sweep_bayes",
+  "assetKey": "usd_cad",
+  "phase": "ny_sweep_playbook",
+  "variantId": "ny_sweep_v4|model=bayes|min=0.64|start=420|end=510|max_tests=1|risk_min=0|risk_max=12|min_wick=0|rr=2|max_bars=288|one_trade=1",
+  "source": "ny_sweep_playbook_v4_bayes",
+  "oneTradePerDay": true,
+  "costUnits": 0.0
+}

@@ -1,0 +1,27 @@
+{
+  "strategyId": "usd_jpy_ny_sweep_stump_prior_day_target_on_natural_gas_futures_opposite",
+  "label": "USD/JPY NY Sweep Stump Prior-Day Target on Natural Gas Futures Opposite",
+  "folder": "usd_jpy_ny_sweep_stump_prior_day_target_on_natural_gas_futures_opposite",
+  "assetKey": "natural_gas_futures",
+  "phase": "ny_sweep_playbook",
+  "variantId": "ny_sweep_v4|model=stump|min=0.60|start=420|end=540|max_tests=1|risk_min=10|risk_max=22|min_wick=0.50|rr=2|max_bars=288|one_trade=1",
+  "source": "ny_sweep_playbook_v4_stump_prior_day_target",
+  "oneTradePerDay": true,
+  "stopLossPolicy": {
+    "mode": "signal_extreme",
+    "bufferUnits": 5.0
+  },
+  "takeProfitPolicy": {
+    "mode": "prior_day_extreme",
+    "bufferUnits": 0.0
+  },
+  "sizePolicy": {
+    "mode": "confidence",
+    "minMultiplier": 0.75,
+    "maxMultiplier": 1.25,
+    "minConfidence": 0.6,
+    "maxConfidence": 0.8
+  },
+  "costUnits": 0.0,
+  "invertSignal": true
+}

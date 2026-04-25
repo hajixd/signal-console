@@ -1,0 +1,16 @@
+{
+  "strategyId": "crude_oil_futures_momentum",
+  "label": "CL ML-Selected Momentum",
+  "folder": "crude_oil_futures_momentum",
+  "assetKey": "crude_oil_futures",
+  "phase": "momentum",
+  "variantId": "precision_sprint",
+  "source": "precision_sprint",
+  "signalAtrMult": 3.0,
+  "recentSignalLookback": 16,
+  "absCloseEma200AtrMax": 1.0,
+  "tpUnits": 500.0,
+  "slUnits": 500.0,
+  "oneTradePerDay": false,
+  "costUnits": 0.0
+}

@@ -1,0 +1,231 @@
+import { mkdir, readFile, writeFile } from "node:fs/promises";
+import path from "node:path";
+import { FieldValue } from "firebase-admin/firestore";
+import { firebaseDb, hasFirebaseAdmin, storageObjectPath } from "@/lib/firebase-admin";
+import type { CronResult } from "@/lib/types";
+
+const LIVE_CONFIG_CACHE_TTL_MS = 30_000;
+const DATASET_STATUS_CACHE_TTL_MS = 30_000;
+const LIVE_CONFIG_LOCAL_PATH = path.join(process.cwd(), ".local", "signal-console-live-config.json");
+const DATASET_STATUS_LOCAL_PATH = path.join(process.cwd(), ".local", "signal-console-dataset-status.json");
+const LIVE_CONFIG_COLLECTION = "signalConsoleConfig";
+const DATASET_STATUS_COLLECTION = "signalConsoleDatasets";
+const CRON_RUN_COLLECTION = "signalConsoleCronRuns";
+
+type LiveConfigCache = { loadedAt: number; value: Promise<LiveConfig> } | null;
+type DatasetStatusCache = { loadedAt: number; value: Promise<DatasetStatus | null> } | null;
+
+let liveConfigCache: LiveConfigCache = null;
+let datasetStatusCache: DatasetStatusCache = null;
+
+export type SavedStrategyEdit = {
+  contracts?: number;
+  riskDollars?: number;
+  slUnits?: number;
+  targetDollars?: number;
+  tpUnits?: number;
+};
+
+export type LiveConfig = {
+  dashboardSelectedDatasetIds: string[];
+  enabledDatasetIds: string[];
+  strategyEdits: Record<string, SavedStrategyEdit>;
+  updatedAt?: string;
+};
+
+export type DatasetStatus = {
+  backtestManifestPath: string;
+  dataPrefix: string;
+  lastSyncAt: string;
+  strategyPrefix: string;
+  uploadedFilesCount: number;
+  updatedAt?: string;
+};
+
+function normalizedStringArray(value: unknown): string[] {
+  return Array.isArray(value) ? value.filter((item): item is string => typeof item === "string" && item.trim().length > 0) : [];
+}
+
+function normalizedStrategyEdits(value: unknown): Record<string, SavedStrategyEdit> {
+  if (!value || typeof value !== "object") return {};
+  const entries = Object.entries(value as Record<string, SavedStrategyEdit>).filter(([key]) => key.trim().length > 0);
+  return Object.fromEntries(entries);
+}
+
+function normalizeLiveConfig(value: Partial<LiveConfig> | null | undefined): LiveConfig {
+  return {
+    dashboardSelectedDatasetIds: normalizedStringArray(value?.dashboardSelectedDatasetIds),
+    enabledDatasetIds: normalizedStringArray(value?.enabledDatasetIds),
+    strategyEdits: normalizedStrategyEdits(value?.strategyEdits),
+    updatedAt: typeof value?.updatedAt === "string" ? value.updatedAt : undefined
+  };
+}
+
+function normalizeDatasetStatus(value: Partial<DatasetStatus> | null | undefined): DatasetStatus | null {
+  if (!value) return null;
+  if (
+    typeof value.backtestManifestPath !== "string" ||
+    typeof value.dataPrefix !== "string" ||
+    typeof value.lastSyncAt !== "string" ||
+    typeof value.strategyPrefix !== "string" ||
+    typeof value.uploadedFilesCount !== "number"
+  ) {
+    return null;
+  }
+  return {
+    backtestManifestPath: value.backtestManifestPath,
+    dataPrefix: value.dataPrefix,
+    lastSyncAt: value.lastSyncAt,
+    strategyPrefix: value.strategyPrefix,
+    uploadedFilesCount: value.uploadedFilesCount,
+    updatedAt: typeof value.updatedAt === "string" ? value.updatedAt : undefined
+  };
+}
+
+async function readJsonFile<T>(filePath: string): Promise<T | null> {
+  try {
+    return JSON.parse(await readFile(filePath, "utf8")) as T;
+  } catch {
+    return null;
+  }
+}
+
+async function writeJsonFile(filePath: string, value: unknown): Promise<void> {
+  await mkdir(path.dirname(filePath), { recursive: true });
+  await writeFile(filePath, JSON.stringify(value, null, 2));
+}
+
+async function readLiveConfigFromLocal(): Promise<LiveConfig> {
+  return normalizeLiveConfig(await readJsonFile<LiveConfig>(LIVE_CONFIG_LOCAL_PATH));
+}
+
+async function readLiveConfigFromFirestore(): Promise<LiveConfig> {
+  const snapshot = await firebaseDb().collection(LIVE_CONFIG_COLLECTION).doc("default").get();
+  return normalizeLiveConfig(snapshot.data() as Partial<LiveConfig> | undefined);
+}
+
+async function readDatasetStatusFromLocal(): Promise<DatasetStatus | null> {
+  return normalizeDatasetStatus(await readJsonFile<DatasetStatus>(DATASET_STATUS_LOCAL_PATH));
+}
+
+async function readDatasetStatusFromFirestore(): Promise<DatasetStatus | null> {
+  const snapshot = await firebaseDb().collection(DATASET_STATUS_COLLECTION).doc("runtime").get();
+  return normalizeDatasetStatus(snapshot.data() as Partial<DatasetStatus> | undefined);
+}
+
+export async function getLiveConfig(): Promise<LiveConfig> {
+  const now = Date.now();
+  if (!liveConfigCache || now - liveConfigCache.loadedAt > LIVE_CONFIG_CACHE_TTL_MS) {
+    liveConfigCache = {
+      loadedAt: now,
+      value: hasFirebaseAdmin() ? readLiveConfigFromFirestore() : readLiveConfigFromLocal()
+    };
+  }
+  return liveConfigCache.value;
+}
+
+export async function saveLiveConfig(config: LiveConfig): Promise<LiveConfig> {
+  const normalized = normalizeLiveConfig({
+    ...config,
+    updatedAt: new Date().toISOString()
+  });
+
+  if (hasFirebaseAdmin()) {
+    await firebaseDb()
+      .collection(LIVE_CONFIG_COLLECTION)
+      .doc("default")
+      .set(
+        {
+          ...normalized,
+          updatedAt: normalized.updatedAt,
+          updatedAtServer: FieldValue.serverTimestamp()
+        },
+        { merge: true }
+      );
+  } else {
+    await writeJsonFile(LIVE_CONFIG_LOCAL_PATH, normalized);
+  }
+
+  liveConfigCache = {
+    loadedAt: Date.now(),
+    value: Promise.resolve(normalized)
+  };
+
+  return normalized;
+}
+
+export async function getDatasetStatus(): Promise<DatasetStatus | null> {
+  const now = Date.now();
+  if (!datasetStatusCache || now - datasetStatusCache.loadedAt > DATASET_STATUS_CACHE_TTL_MS) {
+    datasetStatusCache = {
+      loadedAt: now,
+      value: hasFirebaseAdmin() ? readDatasetStatusFromFirestore() : readDatasetStatusFromLocal()
+    };
+  }
+  return datasetStatusCache.value;
+}
+
+export async function saveDatasetStatus(status: DatasetStatus): Promise<DatasetStatus> {
+  const normalized: DatasetStatus = {
+    ...status,
+    updatedAt: new Date().toISOString()
+  };
+
+  if (hasFirebaseAdmin()) {
+    await firebaseDb()
+      .collection(DATASET_STATUS_COLLECTION)
+      .doc("runtime")
+      .set(
+        {
+          ...normalized,
+          updatedAtServer: FieldValue.serverTimestamp()
+        },
+        { merge: true }
+      );
+  } else {
+    await writeJsonFile(DATASET_STATUS_LOCAL_PATH, normalized);
+  }
+
+  datasetStatusCache = {
+    loadedAt: Date.now(),
+    value: Promise.resolve(normalized)
+  };
+
+  return normalized;
+}
+
+export async function saveCronRun(result: CronResult): Promise<void> {
+  const payload = {
+    ...result,
+    generatedCount: result.generated.length,
+    skippedDuplicateCount: result.skippedDuplicates.length,
+    skippedRiskCount: result.skippedRisk.length,
+    errorCount: result.errors.length,
+    createdAt: new Date().toISOString()
+  };
+
+  if (hasFirebaseAdmin()) {
+    await firebaseDb()
+      .collection(CRON_RUN_COLLECTION)
+      .doc(result.checkedAt.replace(/[^0-9A-Za-z_-]/g, "_"))
+      .set({
+        ...payload,
+        createdAtServer: FieldValue.serverTimestamp()
+      });
+    return;
+  }
+
+  const localPath = path.join(process.cwd(), ".local", "signal-console-cron-runs.json");
+  const existing = (await readJsonFile<typeof payload[]>(localPath)) ?? [];
+  await writeJsonFile(localPath, [payload, ...existing].slice(0, 100));
+}
+
+export function defaultDatasetStatus(): DatasetStatus {
+  return {
+    backtestManifestPath: storageObjectPath("cache/backtest-manifest.json"),
+    dataPrefix: storageObjectPath("data"),
+    lastSyncAt: new Date(0).toISOString(),
+    strategyPrefix: storageObjectPath("strategy"),
+    uploadedFilesCount: 0
+  };
+}

@@ -1,4 +1,0 @@
-variant,trades_path,trades,wins,losses,win_rate_pct,profit_factor_r,total_r,avg_r,max_drawdown_r,trades_per_day,trades_per_week,max_concurrent_positions
-rolling,artifacts\machine_learning\live_realistic_filtered_highpf_rolling_trades.csv,329,208,121,63.22188449848024,1.278447939922678,28.998885991575,0.08814251061268998,10.973906025658279,0.5518301738446755,3.8628112169127284,4
-posthoc,artifacts\machine_learning\live_realistic_filtered_highpf_posthoc_trades.csv,566,462,104,81.62544169611307,2.071219897151021,40.8867247536368,0.07223802960006502,2.5133799913970893,0.777116704805492,5.439816933638444,5
-holdout,artifacts\machine_learning\live_realistic_filtered_highpf_holdout_trades.csv,112,91,21,81.25,1.6315455238718435,6.844728750604893,0.061113649558972256,3.113198386120171,0.6128241664291821,4.289769165004275,3

@@ -1,0 +1,20 @@
+{
+  "strategyId": "nasdaq_100_futures_reddit_orb_retest",
+  "label": "NQ Reddit ORB Retest Breakout",
+  "folder": "nasdaq_100_futures_reddit_orb_retest",
+  "assetKey": "nasdaq_100_futures",
+  "phase": "reddit_orb_retest",
+  "variantId": "reddit_orb_retest|ny|range=15|entry=90|rr=1.5|max_bars=16|trend=all|one_trade=1",
+  "source": "research_summary_recovered_2026",
+  "selectionMethod": "recovered_from_research_summary_csv",
+  "recoveredFrom": "strategy/research_summary.csv",
+  "recoveredTrader": "Mike Bellafiore",
+  "recoveredPlaybook": "ORB Retest",
+  "recoveredSummaryPhase": "reddit_orb_retest",
+  "recoveredForwardProfitFactor": 1.288313,
+  "recoveredForwardTrades": 452,
+  "recoveredForwardTotalR": 48.531146,
+  "recoveredForwardMaxDrawdownR": 12.469754,
+  "oneTradePerDay": true,
+  "costUnits": 0.0
+}

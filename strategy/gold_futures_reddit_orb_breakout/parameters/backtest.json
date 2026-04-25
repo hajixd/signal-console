@@ -1,0 +1,11 @@
+{
+  "strategyId": "gold_futures_reddit_orb_breakout",
+  "label": "GC Reddit ORB Breakout",
+  "folder": "gold_futures_reddit_orb_breakout",
+  "assetKey": "gold_futures",
+  "phase": "reddit_orb_breakout",
+  "variantId": "reddit_orb_breakout|ny|range=15|entry=150|rr=1.5|sl_atr=1|tp_atr=1.5|threshold=2|adx_max=none|adx_min=none|rsi2=none|trend=all|max_bars=24",
+  "source": "reddit_research",
+  "oneTradePerDay": false,
+  "costUnits": 0.0
+}

@@ -59,8 +59,14 @@ const CHICAGO_FORMATTER = new Intl.DateTimeFormat("en-US", {
 
 const MINUTES_TO_FLATTEN_BY_PHASE: Record<StrategyPhase, number> = {
   ict_sweep_fvg: 35,
+  ict_turtle_soup: 120,
   mean_reversion: 220,
   momentum: 260,
+  reddit_capitulation_reversion: 180,
+  reddit_ema_pullback: 180,
+  reddit_orb_breakout: 120,
+  reddit_orb_retest: 120,
+  trendline_break: 240,
   squeeze_breakout: 180
 };
 

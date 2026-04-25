@@ -1,0 +1,20 @@
+{
+  "strategyId": "dow_jones_futures_reddit_orb_retest",
+  "label": "YM Reddit ORB Retest Breakout",
+  "folder": "dow_jones_futures_reddit_orb_retest",
+  "assetKey": "dow_jones_futures",
+  "phase": "reddit_orb_retest",
+  "variantId": "reddit_orb_retest|london|range=45|entry=150|rr=2.5|max_bars=32|trend=all|one_trade=1",
+  "source": "research_summary_recovered_2026",
+  "selectionMethod": "recovered_from_research_summary_csv",
+  "recoveredFrom": "strategy/research_summary.csv",
+  "recoveredTrader": "Mike Bellafiore",
+  "recoveredPlaybook": "ORB Retest",
+  "recoveredSummaryPhase": "reddit_orb_retest",
+  "recoveredForwardProfitFactor": 1.056439,
+  "recoveredForwardTrades": 488,
+  "recoveredForwardTotalR": 18.344848,
+  "recoveredForwardMaxDrawdownR": 38.363142,
+  "oneTradePerDay": true,
+  "costUnits": 0.0
+}

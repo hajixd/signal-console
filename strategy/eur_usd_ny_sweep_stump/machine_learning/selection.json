@@ -1,0 +1,11 @@
+{
+  "strategyId": "eur_usd_ny_sweep_stump",
+  "label": "EUR/USD NY Sweep V4 Stump",
+  "folder": "eur_usd_ny_sweep_stump",
+  "assetKey": "eur_usd",
+  "phase": "ny_sweep_playbook",
+  "variantId": "ny_sweep_v4|model=stump|min=0.64|start=480|end=540|max_tests=2|risk_min=8|risk_max=15|min_wick=0.25|rr=2|max_bars=288|one_trade=1",
+  "source": "ny_sweep_playbook_v4_stump",
+  "oneTradePerDay": true,
+  "costUnits": 0.0
+}

@@ -27,8 +27,8 @@ export type StrategyEdit = {
 
 export type StrategyEditMap = Record<string, StrategyEdit>;
 
-export const STRATEGY_EDITS_STORAGE_KEY = "signal-console:strategy-edits:v1";
-export const STRATEGY_EDITS_CHANGE_EVENT = "signal-console:strategy-edits-changed";
+export const STRATEGY_EDITS_STORAGE_KEY = "trading-bot:strategy-edits:v1";
+export const STRATEGY_EDITS_CHANGE_EVENT = "trading-bot:strategy-edits-changed";
 
 function formatNumber(value: number): string {
   if (!Number.isFinite(value)) return "inf";
@@ -68,16 +68,46 @@ export function defaultStrategyEdit(strategy: StrategyEditOption): StrategyEdit 
   };
 }
 
+function strategyScaleForContracts(strategy: StrategyEditOption, contracts: number): number {
+  const baseContracts = defaultStrategyEdit(strategy).contracts || 1;
+  return contracts / baseContracts;
+}
+
+function dollarsFromUnits(strategy: StrategyEditOption, units: number, contracts: number): number {
+  return roundControlValue(Math.abs(units * strategy.dollarPerUnit * strategyScaleForContracts(strategy, contracts)));
+}
+
+function unitsFromDollars(strategy: StrategyEditOption, dollars: number, contracts: number): number {
+  const dollarValue = Math.abs(strategy.dollarPerUnit * strategyScaleForContracts(strategy, contracts));
+  return dollarValue ? roundControlValue(Math.abs(dollars) / dollarValue) : 0;
+}
+
 export function normalizeStrategyEdit(strategy: StrategyEditOption, edit: StrategyEdit): StrategyEdit {
   const fallback = defaultStrategyEdit(strategy);
+  const contracts = Number.isFinite(edit.contracts) && edit.contracts > 0 ? roundControlValue(edit.contracts) : fallback.contracts;
+  let tpUnits = Number.isFinite(edit.tpUnits) && edit.tpUnits > 0 ? roundControlValue(edit.tpUnits) : 0;
+  let slUnits = Number.isFinite(edit.slUnits) && edit.slUnits > 0 ? roundControlValue(edit.slUnits) : 0;
+  let targetDollars = Number.isFinite(edit.targetDollars) && edit.targetDollars > 0 ? roundControlValue(edit.targetDollars) : 0;
+  let riskDollars = Number.isFinite(edit.riskDollars) && edit.riskDollars > 0 ? roundControlValue(edit.riskDollars) : 0;
+
+  if (tpUnits <= 0 && targetDollars > 0) tpUnits = unitsFromDollars(strategy, targetDollars, contracts);
+  if (slUnits <= 0 && riskDollars > 0) slUnits = unitsFromDollars(strategy, riskDollars, contracts);
+  if (targetDollars <= 0 && tpUnits > 0) targetDollars = dollarsFromUnits(strategy, tpUnits, contracts);
+  if (riskDollars <= 0 && slUnits > 0) riskDollars = dollarsFromUnits(strategy, slUnits, contracts);
+
+  if (tpUnits <= 0) tpUnits = fallback.tpUnits;
+  if (slUnits <= 0) slUnits = fallback.slUnits;
+  if (targetDollars <= 0) targetDollars = dollarsFromUnits(strategy, tpUnits, contracts) || fallback.targetDollars;
+  if (riskDollars <= 0) riskDollars = dollarsFromUnits(strategy, slUnits, contracts) || fallback.riskDollars;
+
   return {
     modelName: fallback.modelName,
-    contracts: Number.isFinite(edit.contracts) && edit.contracts > 0 ? roundControlValue(edit.contracts) : fallback.contracts,
+    contracts,
     sizeName: fallback.sizeName,
-    tpUnits: Number.isFinite(edit.tpUnits) && edit.tpUnits >= 0 ? roundControlValue(edit.tpUnits) : fallback.tpUnits,
-    slUnits: Number.isFinite(edit.slUnits) && edit.slUnits >= 0 ? roundControlValue(edit.slUnits) : fallback.slUnits,
-    targetDollars: Number.isFinite(edit.targetDollars) && edit.targetDollars >= 0 ? roundControlValue(edit.targetDollars) : fallback.targetDollars,
-    riskDollars: Number.isFinite(edit.riskDollars) && edit.riskDollars >= 0 ? roundControlValue(edit.riskDollars) : fallback.riskDollars
+    tpUnits,
+    slUnits,
+    targetDollars,
+    riskDollars
   };
 }
 

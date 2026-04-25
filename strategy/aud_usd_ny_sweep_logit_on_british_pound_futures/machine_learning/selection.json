@@ -1,0 +1,11 @@
+{
+  "strategyId": "aud_usd_ny_sweep_logit_on_british_pound_futures",
+  "label": "AUD/USD NY Sweep V4 Logit on British Pound Futures",
+  "folder": "aud_usd_ny_sweep_logit_on_british_pound_futures",
+  "assetKey": "british_pound_futures",
+  "phase": "ny_sweep_playbook",
+  "variantId": "ny_sweep_v4|model=logit|min=0.48|start=450|end=570|max_tests=2|risk_min=8|risk_max=27|min_wick=0|rr=2|max_bars=288|one_trade=1",
+  "source": "metadata_tuner_holdout_2026",
+  "oneTradePerDay": false,
+  "costUnits": 0.0
+}

@@ -1,0 +1,20 @@
+{
+  "strategyId": "crude_oil_futures_reddit_orb_breakout",
+  "label": "CL Reddit ORB Breakout",
+  "folder": "crude_oil_futures_reddit_orb_breakout",
+  "assetKey": "crude_oil_futures",
+  "phase": "reddit_orb_breakout",
+  "variantId": "reddit_orb_breakout|ny|range=15|entry=150|rr=2.5|max_bars=32|trend=all|one_trade=1",
+  "source": "research_summary_recovered_2026",
+  "selectionMethod": "recovered_from_research_summary_csv",
+  "recoveredFrom": "strategy/research_summary.csv",
+  "recoveredTrader": "Mike Bellafiore",
+  "recoveredPlaybook": "Opening Drive",
+  "recoveredSummaryPhase": "reddit_orb_breakout",
+  "recoveredForwardProfitFactor": 1.058161,
+  "recoveredForwardTrades": 1089,
+  "recoveredForwardTotalR": 34.143723,
+  "recoveredForwardMaxDrawdownR": 23.219595,
+  "oneTradePerDay": true,
+  "costUnits": 0.0
+}

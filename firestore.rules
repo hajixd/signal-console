@@ -1,0 +1,24 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /signalConsoleAlerts/{alertId} {
+      allow read, write: if false;
+    }
+
+    match /signalConsoleConfig/{docId} {
+      allow read, write: if false;
+    }
+
+    match /signalConsoleCronRuns/{runId} {
+      allow read, write: if false;
+    }
+
+    match /signalConsoleDatasets/{docId} {
+      allow read, write: if false;
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

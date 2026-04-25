@@ -1,0 +1,11 @@
+{
+  "strategyId": "dow_jones_futures_reddit_ema_pullback",
+  "label": "YM Reddit EMA Pullback Trend",
+  "folder": "dow_jones_futures_reddit_ema_pullback",
+  "assetKey": "dow_jones_futures",
+  "phase": "reddit_ema_pullback",
+  "variantId": "reddit_ema_pullback|ny|range=15|entry=150|rr=1.5|sl_atr=1|tp_atr=1.5|threshold=2|adx_max=none|adx_min=none|rsi2=none|trend=both|max_bars=24",
+  "source": "reddit_research",
+  "oneTradePerDay": false,
+  "costUnits": 0.0
+}

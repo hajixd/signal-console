@@ -1,0 +1,11 @@
+{
+  "strategyId": "usd_jpy_ny_sweep_bayes_on_dow_jones_futures",
+  "label": "USD/JPY NY Sweep V4 Naive Bayes on Dow Jones Futures",
+  "folder": "usd_jpy_ny_sweep_bayes_on_dow_jones_futures",
+  "assetKey": "dow_jones_futures",
+  "phase": "ny_sweep_playbook",
+  "variantId": "ny_sweep_v4|model=bayes|min=0.52|start=450|end=540|max_tests=1|risk_min=10|risk_max=22|min_wick=0.50|rr=2|max_bars=288|one_trade=1",
+  "source": "ny_sweep_playbook_v4_bayes",
+  "oneTradePerDay": true,
+  "costUnits": 0.0
+}

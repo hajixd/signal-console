@@ -1,4 +1,5 @@
-import type { Bar, StrategyRule } from "./types";
+import { assetForKey } from "@/lib/assets";
+import type { Bar, StrategyRule } from "@/lib/types";
 
 type DatabentoRecord = {
   ts_event?: string;
@@ -47,7 +48,7 @@ function floorTo15Minutes(date: Date): string {
 
 function aggregateTo15m(records: Array<{ time: string; open: number; high: number; low: number; close: number; volume: number }>): Bar[] {
   const buckets = new Map<string, Bar>();
-  for (const record of records.sort((a, b) => Date.parse(a.time) - Date.parse(b.time))) {
+  for (const record of records.sort((left, right) => Date.parse(left.time) - Date.parse(right.time))) {
     const bucketKey = floorTo15Minutes(new Date(record.time));
     const current = buckets.get(bucketKey);
     if (!current) {
@@ -80,12 +81,14 @@ function parseDatabentoJson(text: string): Bar[] {
       const item = JSON.parse(trimmed) as DatabentoRecord;
       const time = item.ts_event ?? item.time;
       if (!time) continue;
+
       const open = normalizePrice(item.open);
       const high = normalizePrice(item.high);
       const low = normalizePrice(item.low);
       const close = normalizePrice(item.close);
       const volume = normalizeVolume(item.volume);
       if ([open, high, low, close].some((value) => !Number.isFinite(value))) continue;
+
       records.push({ time, open, high, low, close, volume });
     } catch {
       continue;
@@ -94,28 +97,17 @@ function parseDatabentoJson(text: string): Bar[] {
   return aggregateTo15m(records);
 }
 
-function twelveDataSymbol(symbol: string): string {
-  if (symbol === "XAUUSD") return "XAU/USD";
-  if (/^[A-Z]{6}$/.test(symbol)) return `${symbol.slice(0, 3)}/${symbol.slice(3)}`;
-  return symbol;
-}
-
-function oandaInstrument(symbol: string): string {
-  if (symbol === "XAUUSD") return "XAU_USD";
-  if (/^[A-Z]{6}$/.test(symbol)) return `${symbol.slice(0, 3)}_${symbol.slice(3)}`;
-  return symbol;
-}
-
 export async function fetchMarketBars(rule: StrategyRule): Promise<Bar[]> {
-  if (rule.market === "futures") return fetchDatabentoBars(rule);
-  if (process.env.OANDA_API_TOKEN) return fetchOandaBars(oandaInstrument(rule.symbol));
-  return fetchTwelveDataBars(twelveDataSymbol(rule.symbol));
+  const asset = assetForKey(rule.assetKey);
+  if (asset.market === "futures") return fetchDatabentoBars(asset.databentoSymbol, asset.symbol);
+  if (process.env.OANDA_API_TOKEN) return fetchOandaBars(asset.oandaSymbol ?? asset.symbol);
+  return fetchTwelveDataBars(asset.twelveDataSymbol ?? asset.symbol);
 }
 
-export async function fetchDatabentoBars(rule: StrategyRule): Promise<Bar[]> {
+async function fetchDatabentoBars(databentoSymbol: string | undefined, symbol: string): Promise<Bar[]> {
   const apiKey = process.env.DATABENTO_API_KEY;
   if (!apiKey) throw new Error("Missing DATABENTO_API_KEY");
-  if (!rule.databentoSymbol) throw new Error(`Missing Databento continuous symbol for ${rule.symbol}`);
+  if (!databentoSymbol) throw new Error(`Missing Databento symbol for ${symbol}`);
 
   const end = new Date();
   const start = new Date(end.getTime() - 12 * 24 * 60 * 60 * 1000);
@@ -123,7 +115,7 @@ export async function fetchDatabentoBars(rule: StrategyRule): Promise<Bar[]> {
     dataset: "GLBX.MDP3",
     schema: "ohlcv-1m",
     stype_in: "continuous",
-    symbols: rule.databentoSymbol,
+    symbols: databentoSymbol,
     start: start.toISOString(),
     end: end.toISOString(),
     encoding: "json"
@@ -144,7 +136,7 @@ export async function fetchDatabentoBars(rule: StrategyRule): Promise<Bar[]> {
   return parseDatabentoJson(await response.text());
 }
 
-export async function fetchTwelveDataBars(symbol: string): Promise<Bar[]> {
+async function fetchTwelveDataBars(symbol: string): Promise<Bar[]> {
   const keys = (process.env.TWELVEDATA_API_KEYS ?? "").split(",").map((item) => item.trim()).filter(Boolean);
   if (!keys.length) throw new Error("Missing TWELVEDATA_API_KEYS");
   const apiKey = keys[Math.floor(Date.now() / 60_000) % keys.length];
@@ -167,7 +159,7 @@ export async function fetchTwelveDataBars(symbol: string): Promise<Bar[]> {
   }));
 }
 
-export async function fetchOandaBars(instrument: string): Promise<Bar[]> {
+async function fetchOandaBars(instrument: string): Promise<Bar[]> {
   const token = process.env.OANDA_API_TOKEN;
   if (!token) throw new Error("Missing OANDA_API_TOKEN");
   const baseUrl = process.env.OANDA_API_BASE_URL ?? "https://api-fxpractice.oanda.com";

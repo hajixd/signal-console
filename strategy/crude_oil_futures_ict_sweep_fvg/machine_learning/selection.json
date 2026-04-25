@@ -1,0 +1,12 @@
+{
+  "strategyId": "crude_oil_futures_ict_sweep_fvg",
+  "label": "CL ML-Selected ICT Sweep FVG Reversal",
+  "folder": "crude_oil_futures_ict_sweep_fvg",
+  "assetKey": "crude_oil_futures",
+  "phase": "ict_sweep_fvg",
+  "variantId": "ict_sweep_fvg|ny|rr=2|max_bars=32|one_trade=1",
+  "source": "metadata_tuner_holdout_2026",
+  "ictRiskReward": 1.0,
+  "oneTradePerDay": false,
+  "costUnits": 0.0
+}

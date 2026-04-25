@@ -1,0 +1,11 @@
+{
+  "strategyId": "nzd_usd_ny_sweep_logit",
+  "label": "NZD/USD NY Sweep V4 Logit",
+  "folder": "nzd_usd_ny_sweep_logit",
+  "assetKey": "nzd_usd",
+  "phase": "ny_sweep_playbook",
+  "variantId": "ny_sweep_v4|model=logit|min=0.54|start=450|end=570|max_tests=3|risk_min=10|risk_max=22|min_wick=0|rr=2|max_bars=288|one_trade=1",
+  "source": "ny_sweep_playbook_v4_logit",
+  "oneTradePerDay": true,
+  "costUnits": 0.0
+}

@@ -4,8 +4,8 @@ import { useEffect, useState } from "react";
 
 type Theme = "dark" | "light";
 
-const STORAGE_KEY = "signal-console-theme";
-const LEGACY_STORAGE_KEY = "trade-dashboard-theme";
+const STORAGE_KEY = "trading-bot-theme";
+const LEGACY_STORAGE_KEY = "signal-console-theme";
 
 function applyTheme(theme: Theme) {
   document.documentElement.dataset.theme = theme;

@@ -1,0 +1,11 @@
+{
+  "strategyId": "nzd_usd_ny_sweep_stump",
+  "label": "NZD/USD NY Sweep V4 Stump",
+  "folder": "nzd_usd_ny_sweep_stump",
+  "assetKey": "nzd_usd",
+  "phase": "ny_sweep_playbook",
+  "variantId": "ny_sweep_v4|model=stump|min=0.64|start=450|end=540|max_tests=2|risk_min=0|risk_max=15|min_wick=0.25|rr=1.75|max_bars=96|one_trade=0",
+  "source": "metadata_tuner_holdout_2026",
+  "oneTradePerDay": false,
+  "costUnits": 0.0
+}

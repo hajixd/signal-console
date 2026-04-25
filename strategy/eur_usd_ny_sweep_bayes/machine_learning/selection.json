@@ -1,0 +1,11 @@
+{
+  "strategyId": "eur_usd_ny_sweep_bayes",
+  "label": "EUR/USD NY Sweep V4 Naive Bayes",
+  "folder": "eur_usd_ny_sweep_bayes",
+  "assetKey": "eur_usd",
+  "phase": "ny_sweep_playbook",
+  "variantId": "ny_sweep_v4|model=bayes|min=0.62|start=480|end=540|max_tests=2|risk_min=10|risk_max=15|min_wick=0.25|rr=2|max_bars=288|one_trade=1",
+  "source": "ny_sweep_playbook_v4_bayes",
+  "oneTradePerDay": true,
+  "costUnits": 0.0
+}

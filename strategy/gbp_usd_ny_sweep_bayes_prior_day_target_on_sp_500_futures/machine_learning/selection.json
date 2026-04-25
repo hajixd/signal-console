@@ -1,0 +1,26 @@
+{
+  "strategyId": "gbp_usd_ny_sweep_bayes_prior_day_target_on_sp_500_futures",
+  "label": "GBP/USD NY Sweep Bayes Prior-Day Target on S&P 500 Futures",
+  "folder": "gbp_usd_ny_sweep_bayes_prior_day_target_on_sp_500_futures",
+  "assetKey": "sp_500_futures",
+  "phase": "ny_sweep_playbook",
+  "variantId": "ny_sweep_v4|model=bayes|min=0.62|start=420|end=540|max_tests=2|risk_min=10|risk_max=22|min_wick=0.5|rr=1.75|max_bars=96|one_trade=1",
+  "source": "metadata_tuner_holdout_2026",
+  "oneTradePerDay": false,
+  "stopLossPolicy": {
+    "mode": "signal_extreme",
+    "bufferUnits": 5.0
+  },
+  "takeProfitPolicy": {
+    "mode": "prior_day_extreme",
+    "bufferUnits": 0.0
+  },
+  "sizePolicy": {
+    "mode": "confidence",
+    "minMultiplier": 0.75,
+    "maxMultiplier": 1.25,
+    "minConfidence": 0.6,
+    "maxConfidence": 0.8
+  },
+  "costUnits": 0.0
+}

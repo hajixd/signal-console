@@ -1,0 +1,11 @@
+{
+  "strategyId": "eur_usd_ny_sweep_logit_on_euro_futures",
+  "label": "EUR/USD NY Sweep V4 Logit on Euro Futures",
+  "folder": "eur_usd_ny_sweep_logit_on_euro_futures",
+  "assetKey": "euro_futures",
+  "phase": "ny_sweep_playbook",
+  "variantId": "ny_sweep_v4|model=logit|min=0.48|start=420|end=600|max_tests=1|risk_min=0|risk_max=30|min_wick=0.25|rr=2|max_bars=144|one_trade=0",
+  "source": "metadata_tuner_holdout_2026",
+  "oneTradePerDay": false,
+  "costUnits": 0.0
+}

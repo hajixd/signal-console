@@ -64,6 +64,12 @@ type PreparedTrade = {
   pnlDollars: number;
 };
 
+type SessionTemplate = {
+  startTimeMs: number;
+  tradeOffsetsMs: number[];
+  spanMs: number;
+};
+
 type ReplayOutcome = {
   status: "pass" | "fail" | "incomplete";
   trades: number;
@@ -167,12 +173,37 @@ function sessionStarts(trades: PreparedTrade[]): number[] {
   return [...starts.values()].sort((left, right) => left - right);
 }
 
-function sessionTradeCounts(trades: PreparedTrade[]): number[] {
-  const counts = new Map<string, number>();
+function sessionTemplates(trades: PreparedTrade[]): SessionTemplate[] {
+  const grouped = new Map<string, number[]>();
   for (const trade of trades) {
-    counts.set(trade.sessionKey, (counts.get(trade.sessionKey) ?? 0) + 1);
+    const bucket = grouped.get(trade.sessionKey) ?? [];
+    bucket.push(trade.entryTimeMs);
+    grouped.set(trade.sessionKey, bucket);
   }
-  return [...counts.values()].filter((count) => count > 0);
+
+  return [...grouped.values()]
+    .map((times) => times.sort((left, right) => left - right))
+    .filter((times) => times.length > 0)
+    .map((times) => {
+      const startTimeMs = times[0]!;
+      const tradeOffsetsMs = times.map((time) => Math.max(0, time - startTimeMs));
+      return {
+        startTimeMs,
+        tradeOffsetsMs,
+        spanMs: tradeOffsetsMs[tradeOffsetsMs.length - 1] ?? 0
+      };
+    })
+    .sort((left, right) => left.startTimeMs - right.startTimeMs);
+}
+
+function sessionStartGapsMs(templates: SessionTemplate[]): number[] {
+  if (templates.length < 2) return [86_400_000];
+  const gaps: number[] = [];
+  for (let index = 1; index < templates.length; index += 1) {
+    const gap = templates[index]!.startTimeMs - templates[index - 1]!.startTimeMs;
+    if (gap > 0) gaps.push(gap);
+  }
+  return gaps.length ? gaps : [86_400_000];
 }
 
 function replayTrades(trades: PreparedTrade[], startMs: number, rules: ChallengeRules, horizonMinutes?: number): ReplayOutcome {
@@ -300,21 +331,27 @@ function passRateFromOutcomes(
 
 function buildMonteCarloTrades(sourceTrades: PreparedTrade[], rng: () => number): PreparedTrade[] {
   const pnls = sourceTrades.map((trade) => trade.pnlDollars);
-  const counts = sessionTradeCounts(sourceTrades);
-  const firstMs = sourceTrades[0]?.entryTimeMs ?? Date.now();
-  const intraSessionGapMinutes = Math.max(5, Math.min(90, median(sourceTrades.map((trade, index) => {
-    if (index === 0 || trade.sessionKey !== sourceTrades[index - 1].sessionKey) return 0;
-    return (trade.entryTimeMs - sourceTrades[index - 1].entryTimeMs) / 60_000;
-  }))));
-  const maxSessions = Math.max(30, counts.length || 30);
+  const templates = sessionTemplates(sourceTrades);
+  const startGapsMs = sessionStartGapsMs(templates);
+  const firstMs = templates[0]?.startTimeMs ?? sourceTrades[0]?.entryTimeMs ?? Date.now();
   const generated: PreparedTrade[] = [];
+  let sessionStartMs = firstMs;
+  let previousSessionSpanMs = 0;
 
-  for (let sessionIndex = 0; sessionIndex < maxSessions && generated.length < sourceTrades.length; sessionIndex += 1) {
-    const sessionCount = counts[Math.floor(rng() * counts.length)] ?? 1;
-    const sessionStartMs = firstMs + sessionIndex * 86_400_000;
-    for (let tradeIndex = 0; tradeIndex < sessionCount && generated.length < sourceTrades.length; tradeIndex += 1) {
+  for (let sessionIndex = 0; generated.length < sourceTrades.length; sessionIndex += 1) {
+    // Keep Monte Carlo timing grounded in real behavior by resampling historical
+    // session shapes and start-to-start gaps instead of inventing a flat daily cadence.
+    const template = templates[Math.floor(rng() * templates.length)] ?? templates[0];
+    if (!template) break;
+    if (sessionIndex > 0) {
+      const sampledGapMs = startGapsMs[Math.floor(rng() * startGapsMs.length)] ?? 86_400_000;
+      sessionStartMs += Math.max(sampledGapMs, previousSessionSpanMs + 60_000);
+    }
+    previousSessionSpanMs = template.spanMs;
+    for (const offsetMs of template.tradeOffsetsMs) {
+      if (generated.length >= sourceTrades.length) break;
       generated.push({
-        entryTimeMs: sessionStartMs + tradeIndex * intraSessionGapMinutes * 60_000,
+        entryTimeMs: sessionStartMs + offsetMs,
         sessionKey: `mc-${sessionIndex}`,
         pnlDollars: pnls[Math.floor(rng() * pnls.length)] ?? 0
       });

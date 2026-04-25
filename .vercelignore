@@ -1,0 +1,11 @@
+.git
+.next
+.local
+node_modules
+backtest-engine/__pycache__
+backtest-engine/research
+data
+strategy/**/backtest_trades.csv
+strategy/research_summary.csv
+strategy/tuning_summary.csv
+.codex-next-dev.log

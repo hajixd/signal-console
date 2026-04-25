@@ -1,65 +1,23 @@
-type FixedDollarSpec = {
-  dollarPerUnit: number;
-  sizeLabel: string;
-  unitLabel: string;
-};
+import { assetForSymbol } from "./assets";
 
 type RecommendedSizeArgs = {
   symbol: string;
   currentMultiplier?: number;
   tpUnits?: number;
   slUnits?: number;
-  costUnits?: number;
   minTargetDollars?: number;
   minRiskDollars?: number;
   maxRiskDollars?: number;
 };
 
-const FIXED_SPECS: Record<string, FixedDollarSpec> = {
-  "6A": { dollarPerUnit: 0.5, sizeLabel: "1 micro FX future", unitLabel: "ticks" },
-  "6B": { dollarPerUnit: 0.625, sizeLabel: "1 micro FX future", unitLabel: "ticks" },
-  "6C": { dollarPerUnit: 0.5, sizeLabel: "1 micro FX future", unitLabel: "ticks" },
-  "6E": { dollarPerUnit: 0.625, sizeLabel: "1 micro FX future", unitLabel: "ticks" },
-  "6J": { dollarPerUnit: 0.625, sizeLabel: "1 micro FX future", unitLabel: "ticks" },
-  CL: { dollarPerUnit: 1, sizeLabel: "1 MCL micro", unitLabel: "ticks" },
-  ES: { dollarPerUnit: 1.25, sizeLabel: "1 MES micro", unitLabel: "ticks" },
-  GC: { dollarPerUnit: 1, sizeLabel: "1 MGC micro", unitLabel: "ticks" },
-  HG: { dollarPerUnit: 1.25, sizeLabel: "1 MHG micro", unitLabel: "ticks" },
-  NG: { dollarPerUnit: 2.5, sizeLabel: "1 QG mini", unitLabel: "ticks" },
-  NQ: { dollarPerUnit: 0.5, sizeLabel: "1 MNQ micro", unitLabel: "ticks" },
-  RTY: { dollarPerUnit: 0.5, sizeLabel: "1 M2K micro", unitLabel: "ticks" },
-  SI: { dollarPerUnit: 5, sizeLabel: "1 SIL micro", unitLabel: "ticks" },
-  YM: { dollarPerUnit: 0.5, sizeLabel: "1 MYM micro", unitLabel: "ticks" },
-  ZB: { dollarPerUnit: 31.25, sizeLabel: "1 futures contract", unitLabel: "ticks" },
-  ZN: { dollarPerUnit: 15.625, sizeLabel: "1 futures contract", unitLabel: "ticks" },
-  XAUUSD: { dollarPerUnit: 0.1, sizeLabel: "10 oz spot", unitLabel: "pips" }
-};
-
-const USD_QUOTE_FOREX = new Set(["AUDUSD", "EURUSD", "GBPUSD", "NZDUSD"]);
-const USD_BASE_FOREX = new Set(["USDCAD", "USDCHF", "USDJPY"]);
 const DEFAULT_MIN_TARGET_DOLLARS = 300;
 const DEFAULT_MIN_RISK_DOLLARS = 300;
 const DEFAULT_MAX_RISK_DOLLARS = 1250;
 const WHOLE_SIZE_STEP = 0.25;
 const FRACTIONAL_SIZE_STEP = 0.01;
 
-function fallbackForexPrice(symbol: string): number {
-  if (symbol === "USDJPY") return 150;
-  if (symbol === "USDCHF") return 0.9;
-  if (symbol === "USDCAD") return 1.36;
-  return 1;
-}
-
-export function dollarPerUnit(symbol: string, price?: number): number {
-  const fixed = FIXED_SPECS[symbol];
-  if (fixed) return fixed.dollarPerUnit;
-  if (USD_QUOTE_FOREX.has(symbol)) return 1;
-  if (USD_BASE_FOREX.has(symbol)) {
-    const referencePrice = price && price > 0 ? price : fallbackForexPrice(symbol);
-    const quotePipValue = symbol === "USDJPY" ? 1000 : 10;
-    return (quotePipValue / referencePrice) * 0.1;
-  }
-  return 1;
+export function dollarPerUnit(symbol: string, _entryPrice?: number): number {
+  return assetForSymbol(symbol)?.dollarPerUnit ?? 1;
 }
 
 function scaleSizeLabel(label: string, multiplier = 1): string {
@@ -79,17 +37,11 @@ function roundDownToStep(value: number, step: number): number {
 }
 
 export function instrumentSizeLabel(symbol: string, multiplier = 1): string {
-  const fixed = FIXED_SPECS[symbol];
-  if (fixed) return scaleSizeLabel(fixed.sizeLabel, multiplier);
-  if (USD_QUOTE_FOREX.has(symbol) || USD_BASE_FOREX.has(symbol)) return scaleSizeLabel("0.1 FX lot", multiplier);
-  return scaleSizeLabel("1 unit", multiplier);
+  return scaleSizeLabel(assetForSymbol(symbol)?.sizeLabel ?? "1 unit", multiplier);
 }
 
 export function instrumentUnitLabel(symbol: string): string {
-  const fixed = FIXED_SPECS[symbol];
-  if (fixed) return fixed.unitLabel;
-  if (USD_QUOTE_FOREX.has(symbol) || USD_BASE_FOREX.has(symbol)) return "pips";
-  return "units";
+  return assetForSymbol(symbol)?.unitLabel ?? "units";
 }
 
 export function recommendedSizeMultiplier({

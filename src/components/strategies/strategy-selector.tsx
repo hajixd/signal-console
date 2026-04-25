@@ -8,7 +8,8 @@ import { emitStrategyEditsChanged, STRATEGY_EDITS_STORAGE_KEY } from "@/componen
 type StrategyOption = {
   key: string;
   label: string;
-  datasetLabel: string;
+  aliases?: string[];
+  timeframeLabel: string;
   symbol: string;
   phase: string;
   market?: string;
@@ -22,7 +23,12 @@ type StrategyOption = {
   dollarPerUnit: number;
   targetDollars: number;
   riskDollars: number;
+  riskRewardRatio?: number;
   sizeLabel: string;
+  tpMode?: "fixed" | "custom";
+  slMode?: "fixed" | "custom";
+  sizeMode?: "auto" | "custom";
+  rrrMode?: "fixed" | "custom";
   liveSupported: boolean;
 };
 
@@ -32,7 +38,7 @@ type StrategySelectorProps = {
   defaultKeys: string[];
 };
 
-type SortColumn = "ticker" | "model" | "profitFactor" | "winRate" | "trades" | "targetRisk" | "size" | "enabled";
+type SortColumn = "ticker" | "model" | "profitFactor" | "winRate" | "trades" | "target" | "risk" | "rrr" | "size" | "scale" | "enabled";
 type SortDirection = "asc" | "desc";
 
 type StrategyEdit = {
@@ -67,6 +73,15 @@ function formatNumber(value: number): string {
   }).format(value);
 }
 
+function formatScaleRatio(value: number): string {
+  if (!Number.isFinite(value)) return "--";
+  const formatted = new Intl.NumberFormat("en-US", {
+    minimumFractionDigits: Math.abs(value - 1) < 0.005 ? 0 : 2,
+    maximumFractionDigits: 2
+  }).format(value);
+  return `${formatted}x`;
+}
+
 function formatPct(value: number): string {
   return `${new Intl.NumberFormat("en-US", {
     minimumFractionDigits: 1,
@@ -76,6 +91,7 @@ function formatPct(value: number): string {
 
 function formatMarket(value: string | undefined): string {
   if (!value) return "Market";
+  if (value === "multi") return "Multi-market";
   return value.charAt(0).toUpperCase() + value.slice(1);
 }
 
@@ -90,6 +106,28 @@ function splitSizeLabel(value: string): { contracts: number; sizeName: string } 
 
 function formatSizeLabel(contracts: number, sizeName: string): string {
   return `${formatNumber(contracts)} ${sizeName.trim() || "contract"}`;
+}
+
+function displayTargetLabel(strategy: StrategyOption, value: number): string {
+  return strategy.tpMode === "custom" ? "Custom" : formatMoney(value);
+}
+
+function displayRiskLabel(strategy: StrategyOption, value: number): string {
+  return strategy.slMode === "custom" ? "Custom" : formatMoney(value);
+}
+
+function displaySizeLabel(strategy: StrategyOption, contracts: number, sizeName: string): string {
+  return strategy.sizeMode === "custom" ? "Custom" : formatSizeLabel(contracts, sizeName);
+}
+
+function riskRewardRatio(targetDollars: number, riskDollars: number): number | undefined {
+  return riskDollars > 0 ? targetDollars / riskDollars : undefined;
+}
+
+function displayRiskRewardLabel(strategy: StrategyOption, value: number | undefined, hasBacktestTrades: boolean): string {
+  if (!hasBacktestTrades) return "--";
+  if (strategy.rrrMode === "custom") return "Custom";
+  return Number.isFinite(value) ? formatNumber(value ?? 0) : "--";
 }
 
 function roundControlValue(value: number): number {
@@ -114,6 +152,11 @@ function scaleForContracts(strategy: StrategyOption, contracts: number): number 
   return contracts / baseContracts;
 }
 
+function contractsForScale(strategy: StrategyOption, scale: number): number {
+  const baseContracts = defaultEdit(strategy).contracts || 1;
+  return roundControlValue(Math.max(0.01, baseContracts * Math.max(0.01, scale)));
+}
+
 function dollarsFromUnits(strategy: StrategyOption, units: number, contracts: number): number {
   return roundControlValue(Math.abs(units * strategy.dollarPerUnit * scaleForContracts(strategy, contracts)));
 }
@@ -125,14 +168,30 @@ function unitsFromDollars(strategy: StrategyOption, dollars: number, contracts: 
 
 function normalizeEdit(strategy: StrategyOption, edit: StrategyEdit): StrategyEdit {
   const fallback = defaultEdit(strategy);
+  const contracts = Number.isFinite(edit.contracts) && edit.contracts > 0 ? roundControlValue(edit.contracts) : fallback.contracts;
+  let tpUnits = Number.isFinite(edit.tpUnits) && edit.tpUnits > 0 ? roundControlValue(edit.tpUnits) : 0;
+  let slUnits = Number.isFinite(edit.slUnits) && edit.slUnits > 0 ? roundControlValue(edit.slUnits) : 0;
+  let targetDollars = Number.isFinite(edit.targetDollars) && edit.targetDollars > 0 ? roundControlValue(edit.targetDollars) : 0;
+  let riskDollars = Number.isFinite(edit.riskDollars) && edit.riskDollars > 0 ? roundControlValue(edit.riskDollars) : 0;
+
+  if (tpUnits <= 0 && targetDollars > 0) tpUnits = unitsFromDollars(strategy, targetDollars, contracts);
+  if (slUnits <= 0 && riskDollars > 0) slUnits = unitsFromDollars(strategy, riskDollars, contracts);
+  if (targetDollars <= 0 && tpUnits > 0) targetDollars = dollarsFromUnits(strategy, tpUnits, contracts);
+  if (riskDollars <= 0 && slUnits > 0) riskDollars = dollarsFromUnits(strategy, slUnits, contracts);
+
+  if (tpUnits <= 0) tpUnits = fallback.tpUnits;
+  if (slUnits <= 0) slUnits = fallback.slUnits;
+  if (targetDollars <= 0) targetDollars = dollarsFromUnits(strategy, tpUnits, contracts) || fallback.targetDollars;
+  if (riskDollars <= 0) riskDollars = dollarsFromUnits(strategy, slUnits, contracts) || fallback.riskDollars;
+
   return {
     modelName: fallback.modelName,
-    contracts: Number.isFinite(edit.contracts) && edit.contracts > 0 ? roundControlValue(edit.contracts) : fallback.contracts,
+    contracts,
     sizeName: fallback.sizeName,
-    tpUnits: Number.isFinite(edit.tpUnits) && edit.tpUnits >= 0 ? roundControlValue(edit.tpUnits) : fallback.tpUnits,
-    slUnits: Number.isFinite(edit.slUnits) && edit.slUnits >= 0 ? roundControlValue(edit.slUnits) : fallback.slUnits,
-    targetDollars: Number.isFinite(edit.targetDollars) && edit.targetDollars >= 0 ? roundControlValue(edit.targetDollars) : fallback.targetDollars,
-    riskDollars: Number.isFinite(edit.riskDollars) && edit.riskDollars >= 0 ? roundControlValue(edit.riskDollars) : fallback.riskDollars
+    tpUnits,
+    slUnits,
+    targetDollars,
+    riskDollars
   };
 }
 
@@ -223,10 +282,11 @@ function strategyMatchesSearch(strategy: StrategyOption, edit: StrategyEdit, que
   return [
     strategy.symbol,
     strategy.key,
-    strategy.datasetLabel,
+    strategy.timeframeLabel,
     edit.modelName,
     formatMarket(strategy.market),
-    edit.sizeName
+    edit.sizeName,
+    ...(strategy.aliases ?? [])
   ].some((value) => value.toLowerCase().includes(query));
 }
 
@@ -334,11 +394,11 @@ export default function StrategySelector({ strategies, selectedKeys, defaultKeys
     if (sortColumn === "profitFactor") comparison = left.profitFactor - right.profitFactor;
     if (sortColumn === "winRate") comparison = left.winRatePct - right.winRatePct;
     if (sortColumn === "trades") comparison = left.trades - right.trades;
-    if (sortColumn === "targetRisk") {
-      comparison = leftEdit.targetDollars - rightEdit.targetDollars;
-      if (comparison === 0) comparison = leftEdit.riskDollars - rightEdit.riskDollars;
-    }
+    if (sortColumn === "target") comparison = leftEdit.targetDollars - rightEdit.targetDollars;
+    if (sortColumn === "risk") comparison = leftEdit.riskDollars - rightEdit.riskDollars;
+    if (sortColumn === "rrr") comparison = (riskRewardRatio(leftEdit.targetDollars, leftEdit.riskDollars) ?? 0) - (riskRewardRatio(rightEdit.targetDollars, rightEdit.riskDollars) ?? 0);
     if (sortColumn === "size") comparison = leftEdit.contracts - rightEdit.contracts;
+    if (sortColumn === "scale") comparison = scaleForContracts(left, leftEdit.contracts) - scaleForContracts(right, rightEdit.contracts);
     if (sortColumn === "enabled") comparison = Number(selected.has(left.key)) - Number(selected.has(right.key));
 
     if (comparison === 0) {
@@ -437,6 +497,11 @@ export default function StrategySelector({ strategies, selectedKeys, defaultKeys
     });
   }
 
+  function updateScale(value: number) {
+    if (!activeStrategy || !Number.isFinite(value) || value <= 0) return;
+    updateContracts(contractsForScale(activeStrategy, value));
+  }
+
   function scaleContracts(multiplier: number) {
     if (!activeStrategy) return;
     setDraft((current) => (current ? scaledEdit(activeStrategy, current, multiplier) : current));
@@ -485,14 +550,14 @@ export default function StrategySelector({ strategies, selectedKeys, defaultKeys
           <span>Search</span>
           <input
             type="search"
-            placeholder="Ticker, model, or dataset"
+            placeholder="Strategy, asset, or phase"
             value={searchQuery}
             onChange={(event) => setSearchQuery(event.target.value)}
           />
         </label>
         <div className="bulkScale">
-          <span>All contracts</span>
-          <div className="scaleButtons" aria-label="Scale all strategy contracts">
+          <span>All scale</span>
+          <div className="scaleButtons" aria-label="Scale all strategy rows">
             <button type="button" onClick={() => scaleAllContracts(0.5)}>
               0.5x
             </button>
@@ -512,11 +577,11 @@ export default function StrategySelector({ strategies, selectedKeys, defaultKeys
       <div className="basketList" role="list" aria-label="Strategy enable list">
         <div className="basketListHeader">
           <button className={sortButtonClass("ticker")} type="button" onClick={() => toggleSort("ticker")}>
-            <span>Ticker</span>
+            <span>Assets</span>
             <strong>{sortIndicator("ticker")}</strong>
           </button>
           <button className={sortButtonClass("model")} type="button" onClick={() => toggleSort("model")}>
-            <span>Model</span>
+            <span>Strategy</span>
             <strong>{sortIndicator("model")}</strong>
           </button>
           <button className={sortButtonClass("profitFactor")} type="button" onClick={() => toggleSort("profitFactor")}>
@@ -531,13 +596,25 @@ export default function StrategySelector({ strategies, selectedKeys, defaultKeys
             <span>Trades</span>
             <strong>{sortIndicator("trades")}</strong>
           </button>
-          <button className={sortButtonClass("targetRisk")} type="button" onClick={() => toggleSort("targetRisk")}>
-            <span>Take Profit / Stop Loss</span>
-            <strong>{sortIndicator("targetRisk")}</strong>
+          <button className={sortButtonClass("target")} type="button" onClick={() => toggleSort("target")}>
+            <span>Take Profit</span>
+            <strong>{sortIndicator("target")}</strong>
+          </button>
+          <button className={sortButtonClass("risk")} type="button" onClick={() => toggleSort("risk")}>
+            <span>Stop Loss</span>
+            <strong>{sortIndicator("risk")}</strong>
+          </button>
+          <button className={sortButtonClass("rrr")} type="button" onClick={() => toggleSort("rrr")}>
+            <span>RRR</span>
+            <strong>{sortIndicator("rrr")}</strong>
           </button>
           <button className={sortButtonClass("size")} type="button" onClick={() => toggleSort("size")}>
-            <span>Size</span>
+            <span>Unit/contract size</span>
             <strong>{sortIndicator("size")}</strong>
+          </button>
+          <button className={sortButtonClass("scale")} type="button" onClick={() => toggleSort("scale")}>
+            <span>Scale</span>
+            <strong>{sortIndicator("scale")}</strong>
           </button>
           <button className={sortButtonClass("enabled")} type="button" onClick={() => toggleSort("enabled")}>
             <span>Enabled</span>
@@ -549,6 +626,7 @@ export default function StrategySelector({ strategies, selectedKeys, defaultKeys
           const checked = selected.has(strategy.key);
           const custom = Boolean(edits[strategy.key]);
           const effective = currentEdit(strategy);
+          const effectiveRiskRewardRatio = riskRewardRatio(effective.targetDollars, effective.riskDollars);
           const hasBacktestTrades = strategy.trades > 0;
           return (
             <div
@@ -564,13 +642,13 @@ export default function StrategySelector({ strategies, selectedKeys, defaultKeys
                 }
               }}
             >
-              <span className="basketTicker" data-label="Ticker">
+              <span className="basketTicker" data-label="Assets">
                 {strategy.symbol}
               </span>
               <div className="basketModel">
                 <strong>{effective.modelName}</strong>
                 <span>
-                  {strategy.datasetLabel} / {formatMarket(strategy.market)} / {strategy.liveSupported ? "live" : "backtest only"}
+                  {formatMarket(strategy.market)} / {strategy.timeframeLabel} / {strategy.liveSupported ? "live-ready" : "backtest only"}
                   {custom ? " / custom" : ""}
                 </span>
               </div>
@@ -579,10 +657,11 @@ export default function StrategySelector({ strategies, selectedKeys, defaultKeys
               </span>
               <span data-label="Win">{hasBacktestTrades ? formatPct(strategy.winRatePct) : "--"}</span>
               <span data-label="Trades">{formatNumber(strategy.trades)}</span>
-              <span data-label="Take Profit / Stop Loss">
-                {formatMoney(effective.targetDollars)} / {formatMoney(effective.riskDollars)}
-              </span>
-              <span data-label="Size">{formatSizeLabel(effective.contracts, effective.sizeName)}</span>
+              <span data-label="Take Profit">{displayTargetLabel(strategy, effective.targetDollars)}</span>
+              <span data-label="Stop Loss">{displayRiskLabel(strategy, effective.riskDollars)}</span>
+              <span data-label="RRR">{displayRiskRewardLabel(strategy, effectiveRiskRewardRatio, hasBacktestTrades)}</span>
+              <span data-label="Unit/contract size">{displaySizeLabel(strategy, effective.contracts, effective.sizeName)}</span>
+              <span data-label="Scale">{formatScaleRatio(scaleForContracts(strategy, effective.contracts))}</span>
               <label className="strategyToggle" data-label="Enabled" onClick={(event) => event.stopPropagation()}>
                 <input type="checkbox" checked={checked} disabled={isPending} onChange={() => toggleStrategy(strategy.key)} />
                 <span>{checked ? "On" : "Off"}</span>
@@ -622,16 +701,22 @@ export default function StrategySelector({ strategies, selectedKeys, defaultKeys
                 <strong className="lockedField">{draft.modelName}</strong>
               </div>
               <label className="fieldControl">
-                <span>Contracts</span>
-                <input type="number" min="0.01" step="0.01" value={draft.contracts} onChange={(event) => updateContracts(Number(event.target.value))} />
+                <span>Scale</span>
+                <input
+                  type="number"
+                  min="0.01"
+                  step="0.01"
+                  value={roundControlValue(scaleForContracts(activeStrategy, draft.contracts))}
+                  onChange={(event) => updateScale(Number(event.target.value))}
+                />
               </label>
               <div className="fieldControl">
-                <span>Size label</span>
+                <span>Unit name</span>
                 <strong className="lockedField">{draft.sizeName}</strong>
               </div>
               <div className="fieldControl wide">
-                <span>Quick size</span>
-                <div className="scaleButtons" aria-label="Quick contract size multipliers">
+                <span>Quick scale</span>
+                <div className="scaleButtons" aria-label="Quick strategy scale multipliers">
                   <button type="button" onClick={() => scaleContracts(0.5)}>
                     0.5x
                   </button>
@@ -662,7 +747,7 @@ export default function StrategySelector({ strategies, selectedKeys, defaultKeys
             </div>
 
             <div className="strategyModalSummary">
-              <span>Size: {formatSizeLabel(draft.contracts, draft.sizeName)}</span>
+              <span>Scale: {formatScaleRatio(scaleForContracts(activeStrategy, draft.contracts))} ({formatSizeLabel(draft.contracts, draft.sizeName)})</span>
               <span>
                 Take Profit / Stop Loss: {formatMoney(draft.targetDollars)} / {formatMoney(draft.riskDollars)}
               </span>

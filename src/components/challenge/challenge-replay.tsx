@@ -28,7 +28,7 @@ type ChallengeReplayProps = {
   trades: ChallengeReplayInputTrade[];
 };
 
-const STORAGE_KEY = "signal-console:challenge-rules:v1";
+const STORAGE_KEY = "trading-bot:challenge-rules:v1";
 
 function fmtNumber(value: number): string {
   if (!Number.isFinite(value)) return "inf";

@@ -1,6 +1,7 @@
-import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { NextResponse } from "next/server";
+import { assetForSymbol, isMarket } from "@/lib/assets";
+import { readProjectText } from "@/lib/project-assets";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -18,18 +19,18 @@ type MarketBar = {
 const lineCache = new Map<string, string[]>();
 
 function marketDataPath(symbolValue: string, marketValue: string): string | null {
-  const symbol = symbolValue.trim().toLowerCase();
+  const asset = assetForSymbol(symbolValue);
   const market = marketValue.trim().toLowerCase();
-  if (!symbol) return null;
-  if (symbol === "xauusd" || market === "gold_spot") return path.join(process.cwd(), "data/market/reference/xauusd_oanda_15m.csv");
-  if (market === "forex") return path.join(process.cwd(), `data/market/forex/${symbol}_twelvedata_15m.csv`);
-  return path.join(process.cwd(), `data/market/futures/${symbol}_databento_volume_front_15m.csv`);
+  if (!asset) return null;
+  if (market && isMarket(market) && market !== asset.market) return null;
+  return path.join(process.cwd(), "data", "15m", asset.dataFile);
 }
 
 async function marketLines(filePath: string): Promise<string[]> {
   const cached = lineCache.get(filePath);
   if (cached) return cached;
-  const text = await readFile(filePath, "utf8");
+  const relativePath = path.relative(process.cwd(), filePath).replace(/\\/g, "/");
+  const text = await readProjectText(relativePath);
   const lines = text.trim().split(/\r?\n/);
   lineCache.set(filePath, lines);
   return lines;
@@ -77,9 +78,7 @@ function indexAtOrBefore(lines: string[], targetSeconds: number): number | null 
   while (left <= right) {
     const middle = Math.floor((left + right) / 2);
     const timestamp = timestampForLine(lines[middle + 1]);
-    if (timestamp == null) {
-      break;
-    }
+    if (timestamp == null) break;
 
     if (timestamp <= targetSeconds) {
       best = middle;

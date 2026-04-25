@@ -1,29 +1,14 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
+import { firebaseDb, hasFirebaseAdmin } from "@/lib/firebase-admin";
 import type { TradeAlert } from "./types";
 
-const TRADES_KEY = "signal-console:alerts";
-const LEGACY_TRADES_KEY = "trade-dashboard:alerts";
-const localPath = path.join(process.cwd(), ".local", "signal-console-alerts.json");
-const legacyLocalPath = path.join(process.cwd(), ".local", "trade-alerts.json");
+const TRADE_COLLECTION = "signalConsoleAlerts";
+const localPath = path.join(process.cwd(), ".local", "trading-bot-alerts.json");
+const legacyLocalPath = path.join(process.cwd(), ".local", "signal-console-alerts.json");
 
-function hasRedis(): boolean {
-  return Boolean(process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN);
-}
-
-async function redisCommand<T>(command: Array<string | number>): Promise<T> {
-  const response = await fetch(process.env.UPSTASH_REDIS_REST_URL!, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${process.env.UPSTASH_REDIS_REST_TOKEN}`,
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify(command),
-    cache: "no-store"
-  });
-  if (!response.ok) throw new Error(`Upstash ${response.status}: ${await response.text()}`);
-  const payload = (await response.json()) as { result: T };
-  return payload.result;
+function sortTrades(trades: TradeAlert[]): TradeAlert[] {
+  return [...trades].sort((left, right) => Date.parse(right.signalTime) - Date.parse(left.signalTime));
 }
 
 async function readLocal(): Promise<TradeAlert[]> {
@@ -45,32 +30,51 @@ async function writeLocal(trades: TradeAlert[]): Promise<void> {
   await writeFile(localPath, JSON.stringify(trades, null, 2));
 }
 
+function normalizeTrade(value: unknown): TradeAlert | null {
+  if (!value || typeof value !== "object") return null;
+  return value as TradeAlert;
+}
+
 export async function getTrades(): Promise<TradeAlert[]> {
-  if (hasRedis()) {
-    let raw = await redisCommand<string[]>(["LRANGE", TRADES_KEY, 0, 499]);
-    if (!raw.length) {
-      raw = await redisCommand<string[]>(["LRANGE", LEGACY_TRADES_KEY, 0, 499]);
-    }
-    return raw.map((item) => JSON.parse(item) as TradeAlert);
+  if (hasFirebaseAdmin()) {
+    const snapshot = await firebaseDb()
+      .collection(TRADE_COLLECTION)
+      .orderBy("signalTimeMillis", "desc")
+      .limit(500)
+      .get();
+
+    return snapshot.docs
+      .map((doc) => normalizeTrade(doc.data()))
+      .filter((trade): trade is TradeAlert => Boolean(trade));
   }
-  return readLocal();
+  return sortTrades(await readLocal());
 }
 
 export async function hasTrade(id: string): Promise<boolean> {
+  if (hasFirebaseAdmin()) {
+    return (await firebaseDb().collection(TRADE_COLLECTION).doc(id).get()).exists;
+  }
   const trades = await getTrades();
   return trades.some((trade) => trade.id === id);
 }
 
 export async function saveTrade(trade: TradeAlert): Promise<void> {
-  if (hasRedis()) {
-    await redisCommand<number>(["LPUSH", TRADES_KEY, JSON.stringify(trade)]);
-    await redisCommand<number>(["LTRIM", TRADES_KEY, 0, 499]);
+  if (hasFirebaseAdmin()) {
+    await firebaseDb()
+      .collection(TRADE_COLLECTION)
+      .doc(trade.id)
+      .set({
+        ...trade,
+        createdAtMillis: Date.parse(trade.createdAt) || Date.now(),
+        signalTimeMillis: Date.parse(trade.signalTime) || Date.now(),
+        updatedAt: new Date().toISOString()
+      });
     return;
   }
   const trades = await readLocal();
   await writeLocal([trade, ...trades.filter((item) => item.id !== trade.id)].slice(0, 500));
 }
 
-export function storageMode(): "upstash" | "local" {
-  return hasRedis() ? "upstash" : "local";
+export function storageMode(): "firebase" | "local" {
+  return hasFirebaseAdmin() ? "firebase" : "local";
 }

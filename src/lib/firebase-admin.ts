@@ -1,0 +1,122 @@
+import { applicationDefault, cert, getApps, initializeApp } from "firebase-admin/app";
+import { getFirestore } from "firebase-admin/firestore";
+import { getStorage } from "firebase-admin/storage";
+
+type FirebaseServiceAccount = {
+  clientEmail?: string;
+  privateKey?: string;
+  privateKeyId?: string;
+  projectId?: string;
+};
+
+let cachedUnavailable = false;
+
+function trim(value: string | undefined): string | undefined {
+  const normalized = value?.trim();
+  return normalized ? normalized : undefined;
+}
+
+function normalizePrivateKey(value: string | undefined): string | undefined {
+  const normalized = trim(value);
+  return normalized ? normalized.replace(/\\n/g, "\n") : undefined;
+}
+
+function readServiceAccountFromJson(): FirebaseServiceAccount | null {
+  const raw = trim(process.env.FIREBASE_SERVICE_ACCOUNT_JSON);
+  if (!raw) return null;
+
+  try {
+    const parsed = JSON.parse(raw) as FirebaseServiceAccount;
+    return {
+      clientEmail: trim(parsed.clientEmail),
+      privateKey: normalizePrivateKey(parsed.privateKey),
+      privateKeyId: trim(parsed.privateKeyId),
+      projectId: trim(parsed.projectId)
+    };
+  } catch (error) {
+    throw new Error(`Invalid FIREBASE_SERVICE_ACCOUNT_JSON: ${error instanceof Error ? error.message : "Unknown error"}`);
+  }
+}
+
+function readServiceAccount(): FirebaseServiceAccount | null {
+  const fromJson = readServiceAccountFromJson();
+  if (fromJson) return fromJson;
+
+  const projectId = trim(process.env.FIREBASE_PROJECT_ID);
+  const clientEmail = trim(process.env.FIREBASE_CLIENT_EMAIL);
+  const privateKey = normalizePrivateKey(process.env.FIREBASE_PRIVATE_KEY);
+  const privateKeyId = trim(process.env.FIREBASE_PRIVATE_KEY_ID);
+
+  if (!projectId || !clientEmail || !privateKey) return null;
+
+  return {
+    clientEmail,
+    privateKey,
+    privateKeyId,
+    projectId
+  };
+}
+
+export function firebaseProjectId(): string | undefined {
+  return readServiceAccount()?.projectId ?? trim(process.env.FIREBASE_PROJECT_ID);
+}
+
+export function firebaseStorageBucketName(): string {
+  return trim(process.env.FIREBASE_STORAGE_BUCKET) ?? "codenames-tournament.firebasestorage.app";
+}
+
+export function firebaseStoragePrefix(): string {
+  return (trim(process.env.SIGNAL_CONSOLE_STORAGE_PREFIX) ?? "signal-console").replace(/^\/+|\/+$/g, "");
+}
+
+export function storageObjectPath(relativePath: string): string {
+  const normalized = relativePath.replace(/\\/g, "/").replace(/^\/+/, "");
+  const prefix = firebaseStoragePrefix();
+  return prefix ? `${prefix}/${normalized}` : normalized;
+}
+
+export function hasFirebaseAdmin(): boolean {
+  if (cachedUnavailable) return false;
+  return Boolean(readServiceAccount() || trim(process.env.GOOGLE_APPLICATION_CREDENTIALS));
+}
+
+export function firebaseAdminApp() {
+  if (getApps().length) return getApps()[0]!;
+  if (cachedUnavailable) return null;
+
+  const serviceAccount = readServiceAccount();
+  const projectId = firebaseProjectId();
+
+  try {
+    return initializeApp({
+      credential: serviceAccount
+        ? cert({
+            clientEmail: serviceAccount.clientEmail,
+            privateKey: serviceAccount.privateKey,
+            projectId: serviceAccount.projectId
+          })
+        : applicationDefault(),
+      projectId,
+      storageBucket: firebaseStorageBucketName()
+    });
+  } catch {
+    cachedUnavailable = true;
+    return null;
+  }
+}
+
+export function firebaseDb() {
+  const app = firebaseAdminApp();
+  if (!app) {
+    throw new Error("Firebase Admin is not configured");
+  }
+  return getFirestore(app);
+}
+
+export function firebaseBucket() {
+  const app = firebaseAdminApp();
+  if (!app) {
+    throw new Error("Firebase Admin is not configured");
+  }
+  return getStorage(app).bucket(firebaseStorageBucketName());
+}

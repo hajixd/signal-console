@@ -1,0 +1,16 @@
+import { createStrategyDefinition, runtimeDefaultsFromMetadata } from "@/lib/strategy-definition";
+import { evaluateNySweepPlaybook } from "@/lib/strategy-runtime/ny-sweep-playbook";
+import selection from "./machine_learning/selection.json";
+
+export default createStrategyDefinition({
+  id: "aud_usd_ny_sweep_stump",
+  label: "AUD/USD NY Sweep V4 Stump",
+  folder: "aud_usd_ny_sweep_stump",
+  fileName: "strategy.ts",
+  backtestFileName: "backtest_trades.csv",
+  assetKey: "aud_usd",
+  phase: "ny_sweep_playbook",
+  liveEnabled: true,
+  evaluator: evaluateNySweepPlaybook,
+  defaults: runtimeDefaultsFromMetadata(selection)
+});

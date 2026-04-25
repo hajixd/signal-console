@@ -47,6 +47,7 @@ export type TradeHistoryRow = {
   rMultipleLabel: string;
   netUnitsLabel: string;
   sizeLabel: string;
+  sizeMultiplier: number;
   targetRiskLabel: string;
   targetLabel: string;
   riskLabel: string;
@@ -178,8 +179,8 @@ function tradePathStats(trade: TradeHistoryRow, bars: ChartBar[]): { mfe: number
   }
 
   return {
-    mfe: Number.isFinite(maxFavorable) ? maxFavorable : null,
-    mae: Number.isFinite(maxAdverse) ? maxAdverse : null
+    mfe: Number.isFinite(maxFavorable) ? Math.min(maxFavorable, Math.max(0, trade.targetDollars)) : null,
+    mae: Number.isFinite(maxAdverse) ? Math.min(maxAdverse, Math.max(0, trade.riskDollars)) : null
   };
 }
 
@@ -767,8 +768,10 @@ export default function TradeHistory({ rows }: TradeHistoryProps) {
             <col className="history-col-duration" />
             <col className="history-col-exit" />
             <col className="history-col-pnl" />
+            <col className="history-col-rmultiple" />
             <col className="history-col-size" />
-            <col className="history-col-risk" />
+            <col className="history-col-target" />
+            <col className="history-col-stop" />
           </colgroup>
           <thead>
             <tr>
@@ -781,8 +784,10 @@ export default function TradeHistory({ rows }: TradeHistoryProps) {
               <th>Duration</th>
               <th>Exit by</th>
               <th>P&L $</th>
+              <th>R</th>
               <th>Size</th>
-              <th>Take Profit / Stop Loss $</th>
+              <th>Take Profit $</th>
+              <th>Stop Loss $</th>
             </tr>
           </thead>
           <tbody>
@@ -817,8 +822,10 @@ export default function TradeHistory({ rows }: TradeHistoryProps) {
                 </td>
                 <td>{trade.exitReasonLabel}</td>
                 <td className={trade.pnlClassName}>{trade.pnlLabel}</td>
+                <td className={trade.pnlClassName}>{trade.rMultipleLabel}</td>
                 <td>{trade.sizeLabel}</td>
-                <td>{trade.targetRiskLabel}</td>
+                <td>{trade.targetLabel}</td>
+                <td>{trade.riskLabel}</td>
               </tr>
             ))}
           </tbody>
