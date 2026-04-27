@@ -21,6 +21,7 @@ class CandidateRow:
     base_strategy_id: str
     base_label: str
     target_asset_key: str
+    variant_id: str
     best_inverted: bool
     best_pf: float
     best_trades: int
@@ -34,6 +35,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--min-total-r", type=float, default=8.0, help="Minimum best total R to materialize")
     parser.add_argument("--limit", type=int, help="Optional max number of candidates to materialize after filtering")
     parser.add_argument("--backtest-only", action="store_true", help="Mark generated strategies as backtest-only in the app")
+    parser.add_argument("--overwrite", action="store_true", help="Regenerate candidate folders even if they already exist")
     return parser.parse_args()
 
 
@@ -79,6 +81,7 @@ def load_candidates(args: argparse.Namespace) -> list[CandidateRow]:
             base_strategy_id=row["base_strategy_id"],
             base_label=row["base_label"],
             target_asset_key=row["target_asset_key"],
+            variant_id=row["variant_id"],
             best_inverted=str(row["best_inverted"]).lower() == "true",
             best_pf=float(row["best_pf"]),
             best_trades=int(row["best_trades"]),
@@ -156,7 +159,15 @@ def rewrite_strategy_ts(
     strategy_path.write_text(text, encoding="utf-8")
 
 
-def rewrite_metadata(metadata_path: Path, strategy_id: str, label: str, folder: str, asset_key: str, inverted: bool) -> None:
+def rewrite_metadata(
+    metadata_path: Path,
+    strategy_id: str,
+    label: str,
+    folder: str,
+    asset_key: str,
+    variant_id: str,
+    inverted: bool,
+) -> None:
     payload = json.loads(metadata_path.read_text(encoding="utf-8"))
     stop_loss_policy = payload.get("stopLossPolicy")
     if isinstance(stop_loss_policy, dict):
@@ -197,7 +208,7 @@ def rewrite_metadata(metadata_path: Path, strategy_id: str, label: str, folder: 
     payload["label"] = label
     payload["folder"] = folder
     payload["assetKey"] = asset_key
-    payload["variantId"] = clean_variant_id(str(payload["variantId"]))
+    payload["variantId"] = clean_variant_id(variant_id)
     if inverted:
         payload["invertSignal"] = True
     else:
@@ -233,6 +244,8 @@ def main() -> None:
         raise ValueError("No cross-market candidates matched the requested thresholds")
 
     created_folders: list[str] = []
+    skipped_existing_folders: list[str] = []
+    skipped_missing_sources: list[str] = []
     for candidate in candidates:
         target_asset = assets.get(candidate.target_asset_key)
         if target_asset is None:
@@ -240,14 +253,26 @@ def main() -> None:
 
         source_dir = STRATEGY_ROOT / candidate.base_strategy_id
         if not source_dir.exists():
-            raise FileNotFoundError(f"Missing source strategy folder for {candidate.base_strategy_id}: {source_dir}")
+            skipped_missing_sources.append(candidate.base_strategy_id)
+            continue
 
         folder = strategy_folder_name(candidate.base_strategy_id, target_asset.key, candidate.best_inverted)
         label = strategy_label(candidate.base_label, target_asset.name, candidate.best_inverted)
         target_dir = STRATEGY_ROOT / folder
+        if target_dir.exists() and not args.overwrite:
+            skipped_existing_folders.append(folder)
+            continue
 
         copy_strategy_scaffold(source_dir, target_dir)
-        rewrite_metadata(find_metadata_path(target_dir), folder, label, folder, target_asset.key, candidate.best_inverted)
+        rewrite_metadata(
+            find_metadata_path(target_dir),
+            folder,
+            label,
+            folder,
+            target_asset.key,
+            candidate.variant_id,
+            candidate.best_inverted,
+        )
         rewrite_strategy_ts(target_dir / "strategy.ts", folder, label, folder, target_asset.key, live_enabled, candidate.best_inverted)
         created_folders.append(folder)
 
@@ -259,6 +284,10 @@ def main() -> None:
     )
     for folder in created_folders:
         print(folder)
+    if skipped_existing_folders:
+        print(f"Skipped {len(skipped_existing_folders)} existing strategy folders (use --overwrite to regenerate)")
+    if skipped_missing_sources:
+        print(f"Skipped {len(set(skipped_missing_sources))} missing source strategy folders")
 
 
 if __name__ == "__main__":

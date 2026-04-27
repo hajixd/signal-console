@@ -1,0 +1,21 @@
+{
+  "strategyId": "copper_futures_tori_trades_trendline_break_retest",
+  "label": "HG Tori Trades Trendline Break Retest",
+  "folder": "copper_futures_tori_trades_trendline_break_retest",
+  "assetKey": "copper_futures",
+  "phase": "tori_trendline_mtf",
+  "variantId": "tori_trendline_mtf|all|lookback=24|swing=2|touch=2|gap=1|lead=4|break=0.02|tol=0.3|stop_buf=0.1|risk=3|rr=2.4|target_lookback=48|max_bars=80|one_trade=0",
+  "source": "online_research_2026",
+  "selectionMethod": "manual_online_research_plus_local_backtest",
+  "sourceUrls": [
+    "https://www.fxreplay.com/strategies/tori-trades-trendlines-strategy",
+    "https://www.tradezella.com/strategies/trendline-strategy"
+  ],
+  "researchSummary": "Mechanical trendline-break proxy inspired by Tori's action-line and safety-line framework, selected for stronger copper futures profit factor than the nearby Tori parameter variants tested locally.",
+  "selectedForwardProfitFactor": 1.9003886463568738,
+  "selectedForwardTrades": 53,
+  "forwardTotalR": 22.636829850171996,
+  "verificationSummary": "Full-history CSV generated in fast mode on 2026-04-26 after local variant search; anti-cheat audit passed on a 1500-bar sample for this strategy.",
+  "oneTradePerDay": false,
+  "costUnits": 0.0
+}

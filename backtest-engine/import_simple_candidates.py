@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 import argparse
+import concurrent.futures
 import hashlib
 import json
 import math
+import os
 import re
 import shutil
 from dataclasses import asdict, dataclass, field
@@ -507,22 +509,20 @@ def build_runtime_strategy(candidate: Candidate, strategy_id: str) -> runner.Bac
     )
 
 
-def evaluate_candidates(
+def evaluate_asset_candidates(
+    asset_key: str,
     candidates: list[Candidate],
-    assets: dict[str, runner.AssetConfig],
     min_profit_factor: float,
     min_trades: int,
-) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+) -> tuple[str, list[dict[str, Any]], list[dict[str, Any]], int]:
+    assets = runner.load_asset_by_key()
+    asset = assets[asset_key]
+    data = load_data_for_asset(asset, {})
     winners: list[dict[str, Any]] = []
     rejected: list[dict[str, Any]] = []
-    data_cache: dict[str, runner.EnrichedData] = {}
 
-    for index, candidate in enumerate(candidates, start=1):
-        if index == 1 or index % 25 == 0:
-            print(f"Evaluating candidate {index}/{len(candidates)}: {candidate.symbol} {candidate.phase} {candidate.parameter_set_name}")
+    for candidate in candidates:
         strategy_id = strategy_id_for(candidate)
-        asset = assets[candidate.asset_key]
-        data = load_data_for_asset(asset, data_cache)
         strategy = build_runtime_strategy(candidate, strategy_id)
         strict_trades = runner.run_single_strategy(strategy, asset, data, strict_anti_cheat=True)
         strict_metrics = metrics_from_trades(strict_trades)
@@ -562,12 +562,53 @@ def evaluate_candidates(
                 "strategyId": strategy_id,
                 "candidate": candidate,
                 "metrics": strict_metrics,
-                "strictTrades": strict_trades,
-                "fastTrades": fast_trades,
                 "antiCheatPassed": True,
-                "ordinal": index,
             }
         )
+
+    return asset_key, winners, rejected, len(candidates)
+
+
+def evaluate_candidates(
+    candidates: list[Candidate],
+    assets: dict[str, runner.AssetConfig],
+    min_profit_factor: float,
+    min_trades: int,
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    winners: list[dict[str, Any]] = []
+    rejected: list[dict[str, Any]] = []
+    candidates_by_asset: dict[str, list[Candidate]] = {}
+    for candidate in candidates:
+        if candidate.asset_key not in assets:
+            rejected.append(
+                {
+                    "strategyId": strategy_id_for(candidate),
+                    "folder": candidate.source_folders[0],
+                    "phase": candidate.phase,
+                    "symbol": candidate.symbol,
+                    "reason": f"Missing asset config for {candidate.asset_key}",
+                }
+            )
+            continue
+        candidates_by_asset.setdefault(candidate.asset_key, []).append(candidate)
+
+    max_workers = max(1, min(len(candidates_by_asset), os.cpu_count() or 4, 6))
+    print(f"Evaluating {len(candidates)} candidates across {len(candidates_by_asset)} assets with {max_workers} workers")
+
+    with concurrent.futures.ProcessPoolExecutor(max_workers=max_workers) as executor:
+        futures = {
+            executor.submit(evaluate_asset_candidates, asset_key, grouped_candidates, min_profit_factor, min_trades): asset_key
+            for asset_key, grouped_candidates in candidates_by_asset.items()
+        }
+        for future in concurrent.futures.as_completed(futures):
+            asset_key = futures[future]
+            completed_asset_key, asset_winners, asset_rejected, asset_candidate_count = future.result()
+            winners.extend(asset_winners)
+            rejected.extend(asset_rejected)
+            print(
+                f"Completed {completed_asset_key}: candidates={asset_candidate_count}, "
+                f"winners={len(asset_winners)}, rejected={len(asset_rejected)}"
+            )
 
     winners.sort(
         key=lambda item: (

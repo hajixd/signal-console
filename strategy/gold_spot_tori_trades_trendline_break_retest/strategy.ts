@@ -10,7 +10,7 @@ export default createStrategyDefinition({
   backtestFileName: "backtest_trades.csv",
   assetKey: "gold_spot",
   phase: "tori_trendline_mtf",
-  liveEnabled: false,
+  liveEnabled: true,
   evaluator: evaluateToriTrendlineMtf,
   defaults: runtimeDefaultsFromMetadata(parameters)
 });

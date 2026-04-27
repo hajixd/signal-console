@@ -1,4 +1,6 @@
-import { readdir } from "node:fs/promises";
+import { createHash } from "node:crypto";
+import { createReadStream } from "node:fs";
+import { readdir, stat } from "node:fs/promises";
 import path from "node:path";
 import { buildLocalStrategyCatalog } from "../src/lib/backtest";
 import { firebaseBucket, hasFirebaseAdmin, storageObjectPath } from "../src/lib/firebase-admin";
@@ -7,6 +9,11 @@ import { defaultDatasetStatus, getLiveConfig, saveDatasetStatus, saveLiveConfig 
 type UploadRoot = {
   include: (filePath: string) => boolean;
   root: string;
+};
+
+type RemoteFileInfo = {
+  md5Hash?: string;
+  size?: number;
 };
 
 const UPLOAD_ROOTS: UploadRoot[] = [
@@ -49,6 +56,22 @@ function selectedUploadRoots(): UploadRoot[] {
   return unique(roots);
 }
 
+function changedOnlyRequested(): boolean {
+  return process.argv.includes("--changed-only");
+}
+
+function selectedPathPrefixes(): string[] {
+  const raw = process.argv.find((value) => value.startsWith("--path-prefixes="));
+  if (!raw) return [];
+  return unique(
+    raw
+      .slice("--path-prefixes=".length)
+      .split(",")
+      .map((value) => value.trim().replace(/\\/g, "/").replace(/^\/+/, "").replace(/\/+$/, ""))
+      .filter(Boolean)
+  );
+}
+
 function contentType(filePath: string): string {
   const ext = path.extname(filePath).toLowerCase();
   if (ext === ".json") return "application/json";
@@ -84,6 +107,73 @@ function unique<T>(values: T[]): T[] {
   return [...new Set(values)];
 }
 
+async function md5Base64(relativePath: string): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const digest = createHash("md5");
+    const stream = createReadStream(path.join(process.cwd(), relativePath));
+
+    stream.on("data", (chunk) => digest.update(chunk));
+    stream.on("end", () => resolve(digest.digest("base64")));
+    stream.on("error", reject);
+  });
+}
+
+async function remoteFilesForRoots(roots: UploadRoot[]): Promise<Map<string, RemoteFileInfo>> {
+  const bucket = firebaseBucket();
+  const remoteFiles = new Map<string, RemoteFileInfo>();
+
+  for (const root of roots) {
+    const [files] = await bucket.getFiles({ prefix: storageObjectPath(root.root) });
+    for (const file of files) {
+      const metadata = file.metadata.md5Hash || file.metadata.size ? file.metadata : (await file.getMetadata())[0];
+      remoteFiles.set(file.name, {
+        md5Hash: metadata.md5Hash,
+        size: metadata.size ? Number(metadata.size) : undefined
+      });
+    }
+  }
+
+  return remoteFiles;
+}
+
+async function filterChangedFiles(relativePaths: string[], roots: UploadRoot[]): Promise<string[]> {
+  if (!changedOnlyRequested()) {
+    return relativePaths;
+  }
+
+  const remoteFiles = await remoteFilesForRoots(roots);
+  const changedPaths: string[] = [];
+  let skippedCount = 0;
+
+  for (const relativePath of relativePaths) {
+    const destination = storageObjectPath(relativePath);
+    const remoteFile = remoteFiles.get(destination);
+    if (!remoteFile) {
+      changedPaths.push(relativePath);
+      continue;
+    }
+
+    const localSize = (await stat(path.join(process.cwd(), relativePath))).size;
+    if (remoteFile.size !== localSize) {
+      changedPaths.push(relativePath);
+      continue;
+    }
+
+    const localMd5Hash = await md5Base64(relativePath);
+    if (remoteFile.md5Hash !== localMd5Hash) {
+      changedPaths.push(relativePath);
+      continue;
+    }
+
+    skippedCount += 1;
+    console.log(`skipped unchanged ${destination}`);
+  }
+
+  console.log(`changed-only mode selected ${changedPaths.length} of ${relativePaths.length} files for upload`);
+  console.log(`skipped unchanged files ${skippedCount}`);
+  return changedPaths;
+}
+
 async function uploadFiles(relativePaths: string[]): Promise<number> {
   const bucket = firebaseBucket();
   let uploadedCount = 0;
@@ -110,15 +200,22 @@ async function main(): Promise<void> {
     throw new Error("Firebase Admin credentials are missing. Set FIREBASE_SERVICE_ACCOUNT_JSON or the split FIREBASE_* variables first.");
   }
 
+  const roots = selectedUploadRoots();
+  const pathPrefixes = selectedPathPrefixes();
   const files = unique(
     (
       await Promise.all(
-        selectedUploadRoots().map((entry) => walk(entry.root, entry.include))
+        roots.map((entry) => walk(entry.root, entry.include))
       )
     ).flat()
   );
+  const matchingFiles =
+    pathPrefixes.length > 0
+      ? files.filter((relativePath) => pathPrefixes.some((prefix) => relativePath.startsWith(prefix)))
+      : files;
+  const filesToUpload = await filterChangedFiles(matchingFiles, roots);
 
-  const uploadedFilesCount = await uploadFiles(files);
+  const uploadedFilesCount = await uploadFiles(filesToUpload);
   const catalog = await buildLocalStrategyCatalog();
   const generatedAt = new Date().toISOString();
   const manifestRelativePath = "cache/backtest-manifest.json";

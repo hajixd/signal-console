@@ -155,13 +155,44 @@ function parseCsv(text: string): CsvRow[] {
   if (!trimmed) return [];
   const [headerLine, ...lines] = trimmed.split(/\r?\n/);
   if (!headerLine) return [];
-  const headers = headerLine.split(",");
+  const headers = parseCsvLine(headerLine);
   return lines
     .filter(Boolean)
     .map((line) => {
-      const cells = line.split(",");
+      const cells = parseCsvLine(line);
       return Object.fromEntries(headers.map((header, index) => [header, cells[index] ?? ""]));
     });
+}
+
+function parseCsvLine(line: string): string[] {
+  const cells: string[] = [];
+  let current = "";
+  let inQuotes = false;
+
+  for (let index = 0; index < line.length; index += 1) {
+    const character = line[index];
+
+    if (character === '"') {
+      if (inQuotes && line[index + 1] === '"') {
+        current += '"';
+        index += 1;
+        continue;
+      }
+      inQuotes = !inQuotes;
+      continue;
+    }
+
+    if (character === "," && !inQuotes) {
+      cells.push(current);
+      current = "";
+      continue;
+    }
+
+    current += character;
+  }
+
+  cells.push(current);
+  return cells;
 }
 
 function numeric(value: string | undefined): number {

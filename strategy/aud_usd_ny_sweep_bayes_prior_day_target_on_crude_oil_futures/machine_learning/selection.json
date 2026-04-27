@@ -1,0 +1,26 @@
+{
+  "strategyId": "aud_usd_ny_sweep_bayes_prior_day_target_on_crude_oil_futures",
+  "label": "AUD/USD NY Sweep Bayes Prior-Day Target on Crude Oil Futures",
+  "folder": "aud_usd_ny_sweep_bayes_prior_day_target_on_crude_oil_futures",
+  "assetKey": "crude_oil_futures",
+  "phase": "ny_sweep_playbook",
+  "variantId": "ny_sweep_v4|model=bayes|min=0.52|start=420|end=510|max_tests=3|risk_min=10|risk_max=15|min_wick=0.35|rr=2|max_bars=288|one_trade=1",
+  "source": "metadata_tuner_holdout_2026",
+  "oneTradePerDay": false,
+  "stopLossPolicy": {
+    "mode": "signal_extreme",
+    "bufferUnits": 5.0
+  },
+  "takeProfitPolicy": {
+    "mode": "prior_day_extreme",
+    "bufferUnits": 0.0
+  },
+  "sizePolicy": {
+    "mode": "confidence",
+    "minMultiplier": 0.75,
+    "maxMultiplier": 1.25,
+    "minConfidence": 0.6,
+    "maxConfidence": 0.8
+  },
+  "costUnits": 0.0
+}

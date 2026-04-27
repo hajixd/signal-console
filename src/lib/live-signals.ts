@@ -4,6 +4,7 @@ import { getBacktestStats, type BacktestStat } from "@/lib/backtest";
 import { recommendedSizeMultiplier } from "@/lib/instruments";
 import { getLiveConfig, type SavedStrategyEdit } from "@/lib/live-config";
 import { STRATEGY_DEFINITIONS } from "@/lib/strategy-loader";
+import type { StrategySignal } from "@/lib/strategy-definition";
 import { planTradeAlert } from "@/lib/trade-planner";
 import type { Bar, StrategyRule, TradeAlert } from "@/lib/types";
 
@@ -47,6 +48,33 @@ function applyStrategyEdit(rule: StrategyRule, edit: SavedStrategyEdit | undefin
     tpUnits: tpUnits ?? rule.tpUnits,
     slUnits: slUnits ?? rule.slUnits,
     sizeMultiplier: sizeMultiplier ?? rule.sizeMultiplier
+  };
+}
+
+function finiteNumber(value: number | null | undefined): value is number {
+  return typeof value === "number" && Number.isFinite(value);
+}
+
+function invertStrategySignal(rule: StrategyRule, signal: StrategySignal): StrategySignal {
+  if (!rule.invertSignal) return signal;
+
+  const priorDirection = signal.side === "long" ? 1 : -1;
+  const priorStopLossPrice = signal.stopLossPrice;
+  const impliedTakeProfitPrice =
+    finiteNumber(signal.takeProfitPrice)
+      ? signal.takeProfitPrice
+      : finiteNumber(signal.riskReward) && signal.riskReward > 0
+        ? signal.entryPrice + priorDirection * Math.abs(signal.entryPrice - priorStopLossPrice) * signal.riskReward
+        : signal.entryPrice + priorDirection * signal.tpUnits * rule.tickSize;
+
+  return {
+    ...signal,
+    side: signal.side === "long" ? "short" : "long",
+    takeProfitPrice: priorStopLossPrice,
+    stopLossPrice: impliedTakeProfitPrice,
+    tpUnits: signal.slUnits,
+    slUnits: signal.tpUnits,
+    notes: signal.notes ? `${signal.notes} Live inverse applied.` : "Live inverse applied."
   };
 }
 
@@ -128,7 +156,8 @@ export function evaluateLatestSignal(rule: StrategyRule, rawBars: Bar[]): TradeA
   if (!strategy) return null;
   const bars = enrichBars(rawBars);
   const signalIndex = bars.length - 1;
-  const signal = strategy.evaluator(rule, bars, signalIndex);
-  if (!signal) return null;
+  const rawSignal = strategy.evaluator(rule, bars, signalIndex);
+  if (!rawSignal) return null;
+  const signal = invertStrategySignal(rule, rawSignal);
   return planTradeAlert(rule, signal, bars, signalIndex, NEXT_BAR_ENTRY_MODE);
 }

@@ -1,0 +1,27 @@
+{
+  "strategyId": "eur_usd_ny_sweep_stump_prior_day_target_on_silver_futures_opposite",
+  "label": "EUR/USD NY Sweep Stump Prior-Day Target on Silver Futures Opposite",
+  "folder": "eur_usd_ny_sweep_stump_prior_day_target_on_silver_futures_opposite",
+  "assetKey": "silver_futures",
+  "phase": "ny_sweep_playbook",
+  "variantId": "ny_sweep_v4|model=stump|min=0.64|start=480|end=540|max_tests=2|risk_min=8|risk_max=15|min_wick=0.25|rr=2|max_bars=288|one_trade=1",
+  "source": "metadata_tuner_holdout_2026",
+  "oneTradePerDay": false,
+  "stopLossPolicy": {
+    "mode": "signal_extreme",
+    "bufferUnits": 5.0
+  },
+  "takeProfitPolicy": {
+    "mode": "prior_day_extreme",
+    "bufferUnits": 0.0
+  },
+  "sizePolicy": {
+    "mode": "confidence",
+    "minMultiplier": 0.75,
+    "maxMultiplier": 1.25,
+    "minConfidence": 0.6,
+    "maxConfidence": 0.8
+  },
+  "costUnits": 0.0,
+  "invertSignal": true
+}

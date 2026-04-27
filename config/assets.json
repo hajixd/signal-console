@@ -175,6 +175,83 @@
     "unitLabel": "ticks",
     "databentoSymbol": "ZN.v.0"
   },
+  "corn_futures": {
+    "symbol": "ZC",
+    "name": "Corn Futures",
+    "market": "futures",
+    "dataFile": "corn_futures.csv",
+    "tickSize": 0.25,
+    "dollarPerUnit": 12.5,
+    "sizeLabel": "1 futures contract",
+    "unitLabel": "ticks",
+    "databentoSymbol": "ZC.v.0"
+  },
+  "micro_bitcoin_futures": {
+    "symbol": "MBT",
+    "name": "Micro Bitcoin Futures",
+    "market": "futures",
+    "dataFile": "micro_bitcoin_futures.csv",
+    "tickSize": 5,
+    "dollarPerUnit": 0.5,
+    "sizeLabel": "1 MBT micro",
+    "unitLabel": "ticks",
+    "databentoSymbol": "MBT.v.0"
+  },
+  "micro_ether_futures": {
+    "symbol": "MET",
+    "name": "Micro Ether Futures",
+    "market": "futures",
+    "dataFile": "micro_ether_futures.csv",
+    "tickSize": 0.25,
+    "dollarPerUnit": 0.025,
+    "sizeLabel": "1 MET micro",
+    "unitLabel": "ticks",
+    "databentoSymbol": "MET.v.0"
+  },
+  "new_zealand_dollar_futures": {
+    "symbol": "6N",
+    "name": "New Zealand Dollar Futures",
+    "market": "futures",
+    "dataFile": "new_zealand_dollar_futures.csv",
+    "tickSize": 0.00005,
+    "dollarPerUnit": 5,
+    "sizeLabel": "1 FX future",
+    "unitLabel": "ticks",
+    "databentoSymbol": "6N.v.0"
+  },
+  "swiss_franc_futures": {
+    "symbol": "6S",
+    "name": "Swiss Franc Futures",
+    "market": "futures",
+    "dataFile": "swiss_franc_futures.csv",
+    "tickSize": 0.0001,
+    "dollarPerUnit": 12.5,
+    "sizeLabel": "1 FX future",
+    "unitLabel": "ticks",
+    "databentoSymbol": "6S.v.0"
+  },
+  "us_treasury_2y_note_futures": {
+    "symbol": "ZT",
+    "name": "US Treasury 2Y Note Futures",
+    "market": "futures",
+    "dataFile": "us_treasury_2y_note_futures.csv",
+    "tickSize": 0.00390625,
+    "dollarPerUnit": 7.8125,
+    "sizeLabel": "1 futures contract",
+    "unitLabel": "ticks",
+    "databentoSymbol": "ZT.v.0"
+  },
+  "us_treasury_5y_note_futures": {
+    "symbol": "ZF",
+    "name": "US Treasury 5Y Note Futures",
+    "market": "futures",
+    "dataFile": "us_treasury_5y_note_futures.csv",
+    "tickSize": 0.0078125,
+    "dollarPerUnit": 7.8125,
+    "sizeLabel": "1 futures contract",
+    "unitLabel": "ticks",
+    "databentoSymbol": "ZF.v.0"
+  },
   "aud_usd": {
     "symbol": "AUDUSD",
     "name": "AUD/USD",
@@ -186,6 +263,83 @@
     "unitLabel": "pips",
     "twelveDataSymbol": "AUD/USD",
     "oandaSymbol": "AUD_USD"
+  },
+  "aud_nzd": {
+    "symbol": "AUDNZD",
+    "name": "AUD/NZD",
+    "market": "forex",
+    "dataFile": "aud_nzd.csv",
+    "tickSize": 0.0001,
+    "dollarPerUnit": 0.59044,
+    "sizeLabel": "0.1 FX lot",
+    "unitLabel": "pips",
+    "twelveDataSymbol": "AUD/NZD"
+  },
+  "btc_usd": {
+    "symbol": "BTCUSD",
+    "name": "BTC/USD",
+    "market": "crypto",
+    "dataFile": "btc_usd.csv",
+    "tickSize": 0.01,
+    "dollarPerUnit": 0.01,
+    "sizeLabel": "1 BTC spot unit",
+    "unitLabel": "ticks",
+    "twelveDataSymbol": "BTC/USD"
+  },
+  "eth_usd": {
+    "symbol": "ETHUSD",
+    "name": "ETH/USD",
+    "market": "crypto",
+    "dataFile": "eth_usd.csv",
+    "tickSize": 0.01,
+    "dollarPerUnit": 0.01,
+    "sizeLabel": "1 ETH spot unit",
+    "unitLabel": "ticks",
+    "twelveDataSymbol": "ETH/USD"
+  },
+  "eur_cad": {
+    "symbol": "EURCAD",
+    "name": "EUR/CAD",
+    "market": "forex",
+    "dataFile": "eur_cad.csv",
+    "tickSize": 0.0001,
+    "dollarPerUnit": 0.7320804996,
+    "sizeLabel": "0.1 FX lot",
+    "unitLabel": "pips",
+    "twelveDataSymbol": "EUR/CAD"
+  },
+  "eur_chf": {
+    "symbol": "EURCHF",
+    "name": "EUR/CHF",
+    "market": "forex",
+    "dataFile": "eur_chf.csv",
+    "tickSize": 0.0001,
+    "dollarPerUnit": 1.2807213022,
+    "sizeLabel": "0.1 FX lot",
+    "unitLabel": "pips",
+    "twelveDataSymbol": "EUR/CHF"
+  },
+  "eur_gbp": {
+    "symbol": "EURGBP",
+    "name": "EUR/GBP",
+    "market": "forex",
+    "dataFile": "eur_gbp.csv",
+    "tickSize": 0.0001,
+    "dollarPerUnit": 1.35063,
+    "sizeLabel": "0.1 FX lot",
+    "unitLabel": "pips",
+    "twelveDataSymbol": "EUR/GBP"
+  },
+  "eur_jpy": {
+    "symbol": "EURJPY",
+    "name": "EUR/JPY",
+    "market": "forex",
+    "dataFile": "eur_jpy.csv",
+    "tickSize": 0.01,
+    "dollarPerUnit": 0.6275068506,
+    "sizeLabel": "0.1 FX lot",
+    "unitLabel": "pips",
+    "twelveDataSymbol": "EUR/JPY"
   },
   "eur_usd": {
     "symbol": "EURUSD",
@@ -210,6 +364,17 @@
     "unitLabel": "pips",
     "twelveDataSymbol": "GBP/USD",
     "oandaSymbol": "GBP_USD"
+  },
+  "gbp_jpy": {
+    "symbol": "GBPJPY",
+    "name": "GBP/JPY",
+    "market": "forex",
+    "dataFile": "gbp_jpy.csv",
+    "tickSize": 0.01,
+    "dollarPerUnit": 0.6275068506,
+    "sizeLabel": "0.1 FX lot",
+    "unitLabel": "pips",
+    "twelveDataSymbol": "GBP/JPY"
   },
   "nzd_usd": {
     "symbol": "NZDUSD",

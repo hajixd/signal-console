@@ -137,7 +137,7 @@ function parseDatabentoJson(text: string): Bar[] {
 export async function fetchMarketBars(rule: StrategyRule): Promise<Bar[]> {
   const asset = assetForKey(rule.assetKey);
   if (asset.market === "futures") return fetchDatabentoBars(asset.databentoSymbol, asset.symbol);
-  if (process.env.OANDA_API_TOKEN) return fetchOandaBars(asset.oandaSymbol ?? asset.symbol);
+  if (asset.market !== "crypto" && process.env.OANDA_API_TOKEN) return fetchOandaBars(asset.oandaSymbol ?? asset.symbol);
   return fetchTwelveDataBars(asset.twelveDataSymbol ?? asset.symbol);
 }
 

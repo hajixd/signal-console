@@ -1,0 +1,26 @@
+{
+  "strategyId": "russell_2000_futures_claytrader_support_resistance_retest",
+  "label": "RTY ClayTrader Support Resistance Retest",
+  "folder": "russell_2000_futures_claytrader_support_resistance_retest",
+  "assetKey": "russell_2000_futures",
+  "phase": "support_resistance_retest",
+  "variantId": "support_resistance_retest|london|range=48|entry=90|threshold=0.08|rr=2|sl_atr=1|max_bars=32|trend=all|one_trade=1",
+  "source": "public_research_forward_selection_2026",
+  "selectionMethod": "manual_materialization_from_strategy_research_summary",
+  "sourceUrls": [
+    "https://www.oanda.com/us-en/trade-tap-blog/trading-knowledge/how-to-get-started-in-the-world-of-trading-part-2/",
+    "https://claytrader.com/stock_chart/trading-breakout-strategy/"
+  ],
+  "researchSummary": "Forward-positive support/resistance retest candidate recovered from strategy/research_summary.csv.",
+  "recoveredFrom": "strategy/research_summary.csv",
+  "recoveredTrader": "ClayTrader",
+  "recoveredPlaybook": "Support Resistance Retest",
+  "recoveredSummaryPhase": "support_resistance_retest",
+  "selectedTrainingProfitFactor": 1.3076923,
+  "selectedTrainingTrades": 215,
+  "selectedForwardProfitFactor": 1.1475104,
+  "selectedForwardTrades": 255,
+  "forwardTotalR": 23.909962,
+  "oneTradePerDay": true,
+  "costUnits": 0.0
+}

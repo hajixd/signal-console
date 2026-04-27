@@ -1,0 +1,26 @@
+{
+  "strategyId": "eur_usd_humbled_trader_vwap_pullback",
+  "label": "EUR/USD Humbled Trader VWAP Pullback",
+  "folder": "eur_usd_humbled_trader_vwap_pullback",
+  "assetKey": "eur_usd",
+  "phase": "vwap_pullback",
+  "variantId": "vwap_pullback|all|threshold=0.1|rr=2|sl_atr=1|max_bars=24|trend=all|one_trade=1",
+  "source": "public_research_forward_selection_2026",
+  "selectionMethod": "manual_materialization_from_strategy_research_summary",
+  "sourceUrls": [
+    "https://ftmo.oanda.com/blog/vwap-pullback-strategy-trade-with-volume-not-emotion/",
+    "https://www.humbledtrader.com/blog/vwap-strategy-secrets-boosting-your-trading-skills-to-the-next-level/"
+  ],
+  "researchSummary": "Forward-positive VWAP pullback candidate recovered from strategy/research_summary.csv.",
+  "recoveredFrom": "strategy/research_summary.csv",
+  "recoveredTrader": "Humbled Trader",
+  "recoveredPlaybook": "VWAP Pullback",
+  "recoveredSummaryPhase": "vwap_pullback",
+  "selectedTrainingProfitFactor": 1.0295369,
+  "selectedTrainingTrades": 232,
+  "selectedForwardProfitFactor": 1.0542995,
+  "selectedForwardTrades": 529,
+  "forwardTotalR": 18.045583,
+  "oneTradePerDay": true,
+  "costUnits": 0.0
+}

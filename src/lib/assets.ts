@@ -1,6 +1,6 @@
 import assetsJson from "@config/assets.json";
 
-export type Market = "futures" | "forex" | "gold_spot";
+export type Market = "futures" | "forex" | "gold_spot" | "crypto";
 
 export type AssetDefinition = {
   key: string;
@@ -45,9 +45,9 @@ export function assetForSymbol(symbol: string): AssetDefinition | undefined {
 export function defaultTickSize(symbol: string, market?: Market): number {
   const asset = assetForSymbol(symbol);
   if (asset) return asset.tickSize;
-  return market === "gold_spot" ? 0.01 : 0.0001;
+  return market === "gold_spot" || market === "crypto" ? 0.01 : 0.0001;
 }
 
 export function isMarket(value: string | undefined): value is Market {
-  return value === "futures" || value === "forex" || value === "gold_spot";
+  return value === "futures" || value === "forex" || value === "gold_spot" || value === "crypto";
 }

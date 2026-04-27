@@ -12,7 +12,7 @@ For deploys, the app is now designed to keep heavy runtime CSV assets out of Ver
 
 ## Repo Snapshot
 
-- Current asset catalog: 24 assets
+- Current asset catalog: 39 assets
 - Stored candle timeframes: 15m, 30m, 45m, 1h, 4h, 1d, 1w
 - Current strategy folders: 65
 - Current live/runtime strategy families in `src/lib/strategy-runtime/`: 8
@@ -212,6 +212,8 @@ tradingBot/
 - `reddit_capitulation_reversion`
 - `reddit_orb_breakout`
 - `reddit_orb_retest`
+- `support_resistance_retest`
+- `vwap_pullback`
 
 The Python engine also contains extra research/backtest-only phase implementations such as `parabolic_fade`, `vwap_pullback`, `support_resistance_retest`, `trendline_break`, and some aliases like `ma_pullback` and `ema_rider`.
 

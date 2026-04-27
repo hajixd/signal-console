@@ -1,11 +1,15 @@
 import audUsdNySweepBayesStrategy from "@strategy/aud_usd_ny_sweep_bayes/strategy";
 import audUsdNySweepBayesPriorDayTargetStrategy from "@strategy/aud_usd_ny_sweep_bayes_prior_day_target/strategy";
+import audUsdNySweepBayesPriorDayTargetOnCrudeOilFuturesStrategy from "@strategy/aud_usd_ny_sweep_bayes_prior_day_target_on_crude_oil_futures/strategy";
+import audUsdNySweepBayesPriorDayTargetOnRussell2000FuturesStrategy from "@strategy/aud_usd_ny_sweep_bayes_prior_day_target_on_russell_2000_futures/strategy";
+import audUsdIctTurtleSoupStrategy from "@strategy/aud_usd_ict_turtle_soup/strategy";
 import audUsdNySweepLogitStrategy from "@strategy/aud_usd_ny_sweep_logit/strategy";
 import audUsdNySweepLogitOnBritishPoundFuturesStrategy from "@strategy/aud_usd_ny_sweep_logit_on_british_pound_futures/strategy";
 import audUsdNySweepLogitOnEuroFuturesStrategy from "@strategy/aud_usd_ny_sweep_logit_on_euro_futures/strategy";
 import audUsdNySweepStumpStrategy from "@strategy/aud_usd_ny_sweep_stump/strategy";
 import copperFuturesRedditCapitulationReversionStrategy from "@strategy/copper_futures_reddit_capitulation_reversion/strategy";
 import copperFuturesRedditOrbBreakoutOppositeStrategy from "@strategy/copper_futures_reddit_orb_breakout_opposite/strategy";
+import copperFuturesToriTradesTrendlineBreakRetestStrategy from "@strategy/copper_futures_tori_trades_trendline_break_retest/strategy";
 import crudeOilFuturesIctSweepFvgStrategy from "@strategy/crude_oil_futures_ict_sweep_fvg/strategy";
 import crudeOilFuturesMomentumStrategy from "@strategy/crude_oil_futures_momentum/strategy";
 import crudeOilFuturesRedditOrbBreakoutStrategy from "@strategy/crude_oil_futures_reddit_orb_breakout/strategy";
@@ -15,24 +19,30 @@ import dowJonesFuturesRedditCapitulationReversionOnUsdChfStrategy from "@strateg
 import dowJonesFuturesRedditEmaPullbackStrategy from "@strategy/dow_jones_futures_reddit_ema_pullback/strategy";
 import dowJonesFuturesRedditOrbBreakoutOppositeStrategy from "@strategy/dow_jones_futures_reddit_orb_breakout_opposite/strategy";
 import dowJonesFuturesRedditOrbRetestStrategy from "@strategy/dow_jones_futures_reddit_orb_retest/strategy";
+import eurUsdHumbledTraderVwapPullbackStrategy from "@strategy/eur_usd_humbled_trader_vwap_pullback/strategy";
 import eurUsdNySweepBayesStrategy from "@strategy/eur_usd_ny_sweep_bayes/strategy";
 import eurUsdNySweepLogitStrategy from "@strategy/eur_usd_ny_sweep_logit/strategy";
 import eurUsdNySweepLogitOnBritishPoundFuturesStrategy from "@strategy/eur_usd_ny_sweep_logit_on_british_pound_futures/strategy";
 import eurUsdNySweepLogitOnEuroFuturesStrategy from "@strategy/eur_usd_ny_sweep_logit_on_euro_futures/strategy";
 import eurUsdNySweepStumpStrategy from "@strategy/eur_usd_ny_sweep_stump/strategy";
 import eurUsdNySweepStumpPriorDayTargetStrategy from "@strategy/eur_usd_ny_sweep_stump_prior_day_target/strategy";
+import eurUsdNySweepStumpPriorDayTargetOnSilverFuturesOppositeStrategy from "@strategy/eur_usd_ny_sweep_stump_prior_day_target_on_silver_futures_opposite/strategy";
+import gbpUsdHumbledTraderVwapPullbackStrategy from "@strategy/gbp_usd_humbled_trader_vwap_pullback/strategy";
 import gbpUsdIctTurtleSoupStrategy from "@strategy/gbp_usd_ict_turtle_soup/strategy";
 import gbpUsdMeanReversionStrategy from "@strategy/gbp_usd_mean_reversion/strategy";
 import gbpUsdNySweepBayesStrategy from "@strategy/gbp_usd_ny_sweep_bayes/strategy";
 import gbpUsdNySweepBayesPriorDayTargetOnSp500FuturesStrategy from "@strategy/gbp_usd_ny_sweep_bayes_prior_day_target_on_sp_500_futures/strategy";
 import gbpUsdNySweepLogitStrategy from "@strategy/gbp_usd_ny_sweep_logit/strategy";
+import gbpUsdNySweepStumpStrategy from "@strategy/gbp_usd_ny_sweep_stump/strategy";
 import gbpUsdNySweepStumpOnBritishPoundFuturesStrategy from "@strategy/gbp_usd_ny_sweep_stump_on_british_pound_futures/strategy";
 import gbpUsdNySweepStumpOnEuroFuturesStrategy from "@strategy/gbp_usd_ny_sweep_stump_on_euro_futures/strategy";
+import goldFuturesHumbledTraderVwapPullbackOppositeStrategy from "@strategy/gold_futures_humbled_trader_vwap_pullback_opposite/strategy";
 import goldFuturesIctSweepFvgStrategy from "@strategy/gold_futures_ict_sweep_fvg/strategy";
 import goldFuturesRedditEmaPullbackStrategy from "@strategy/gold_futures_reddit_ema_pullback/strategy";
 import goldFuturesRedditOrbBreakoutStrategy from "@strategy/gold_futures_reddit_orb_breakout/strategy";
 import goldFuturesToriTradesTrendlineBreakRetestStrategy from "@strategy/gold_futures_tori_trades_trendline_break_retest/strategy";
 import goldSpotToriTradesTrendlineBreakRetestStrategy from "@strategy/gold_spot_tori_trades_trendline_break_retest/strategy";
+import nasdaq100FuturesClaytraderSupportResistanceRetestStrategy from "@strategy/nasdaq_100_futures_claytrader_support_resistance_retest/strategy";
 import nasdaq100FuturesMomentumStrategy from "@strategy/nasdaq_100_futures_momentum/strategy";
 import nasdaq100FuturesRedditEmaPullbackStrategy from "@strategy/nasdaq_100_futures_reddit_ema_pullback/strategy";
 import nasdaq100FuturesRedditOrbBreakoutStrategy from "@strategy/nasdaq_100_futures_reddit_orb_breakout/strategy";
@@ -42,6 +52,7 @@ import nzdUsdNySweepBayesStrategy from "@strategy/nzd_usd_ny_sweep_bayes/strateg
 import nzdUsdNySweepLogitStrategy from "@strategy/nzd_usd_ny_sweep_logit/strategy";
 import nzdUsdNySweepStumpStrategy from "@strategy/nzd_usd_ny_sweep_stump/strategy";
 import russell2000FuturesIctSweepFvgStrategy from "@strategy/russell_2000_futures_ict_sweep_fvg/strategy";
+import russell2000FuturesClaytraderSupportResistanceRetestStrategy from "@strategy/russell_2000_futures_claytrader_support_resistance_retest/strategy";
 import russell2000FuturesRedditOrbRetestStrategy from "@strategy/russell_2000_futures_reddit_orb_retest/strategy";
 import silverFuturesRedditCapitulationReversionStrategy from "@strategy/silver_futures_reddit_capitulation_reversion/strategy";
 import sp500FuturesRedditOrbBreakoutStrategy from "@strategy/sp_500_futures_reddit_orb_breakout/strategy";
@@ -54,10 +65,13 @@ import usdCadNySweepLogitPriorDayTargetOnCanadianDollarFuturesOppositeStrategy f
 import usdCadNySweepStumpStrategy from "@strategy/usd_cad_ny_sweep_stump/strategy";
 import usdChfNySweepStumpStrategy from "@strategy/usd_chf_ny_sweep_stump/strategy";
 import usdJpyNySweepBayesStrategy from "@strategy/usd_jpy_ny_sweep_bayes/strategy";
+import usdJpyNySweepBayesOnCopperFuturesStrategy from "@strategy/usd_jpy_ny_sweep_bayes_on_copper_futures/strategy";
 import usdJpyNySweepBayesOnDowJonesFuturesStrategy from "@strategy/usd_jpy_ny_sweep_bayes_on_dow_jones_futures/strategy";
 import usdJpyNySweepLogitStrategy from "@strategy/usd_jpy_ny_sweep_logit/strategy";
 import usdJpyNySweepLogitOnSp500FuturesStrategy from "@strategy/usd_jpy_ny_sweep_logit_on_sp_500_futures/strategy";
+import usdJpyNySweepStumpStrategy from "@strategy/usd_jpy_ny_sweep_stump/strategy";
 import usdJpyNySweepStumpOnCopperFuturesStrategy from "@strategy/usd_jpy_ny_sweep_stump_on_copper_futures/strategy";
+import usdJpyNySweepStumpPriorDayTargetStrategy from "@strategy/usd_jpy_ny_sweep_stump_prior_day_target/strategy";
 import usdJpyNySweepStumpPriorDayTargetOnNaturalGasFuturesOppositeStrategy from "@strategy/usd_jpy_ny_sweep_stump_prior_day_target_on_natural_gas_futures_opposite/strategy";
 
 import type { StrategyDefinition } from "@/lib/strategy-definition";
@@ -67,12 +81,16 @@ export type { StrategyDefinition, StrategySignal } from "@/lib/strategy-definiti
 export const STRATEGY_DEFINITIONS: StrategyDefinition[] = [
   audUsdNySweepBayesStrategy,
   audUsdNySweepBayesPriorDayTargetStrategy,
+  audUsdNySweepBayesPriorDayTargetOnCrudeOilFuturesStrategy,
+  audUsdNySweepBayesPriorDayTargetOnRussell2000FuturesStrategy,
+  audUsdIctTurtleSoupStrategy,
   audUsdNySweepLogitStrategy,
   audUsdNySweepLogitOnBritishPoundFuturesStrategy,
   audUsdNySweepLogitOnEuroFuturesStrategy,
   audUsdNySweepStumpStrategy,
   copperFuturesRedditCapitulationReversionStrategy,
   copperFuturesRedditOrbBreakoutOppositeStrategy,
+  copperFuturesToriTradesTrendlineBreakRetestStrategy,
   crudeOilFuturesIctSweepFvgStrategy,
   crudeOilFuturesMomentumStrategy,
   crudeOilFuturesRedditOrbBreakoutStrategy,
@@ -82,24 +100,30 @@ export const STRATEGY_DEFINITIONS: StrategyDefinition[] = [
   dowJonesFuturesRedditEmaPullbackStrategy,
   dowJonesFuturesRedditOrbBreakoutOppositeStrategy,
   dowJonesFuturesRedditOrbRetestStrategy,
+  eurUsdHumbledTraderVwapPullbackStrategy,
   eurUsdNySweepBayesStrategy,
   eurUsdNySweepLogitStrategy,
   eurUsdNySweepLogitOnBritishPoundFuturesStrategy,
   eurUsdNySweepLogitOnEuroFuturesStrategy,
   eurUsdNySweepStumpStrategy,
   eurUsdNySweepStumpPriorDayTargetStrategy,
+  eurUsdNySweepStumpPriorDayTargetOnSilverFuturesOppositeStrategy,
+  gbpUsdHumbledTraderVwapPullbackStrategy,
   gbpUsdIctTurtleSoupStrategy,
   gbpUsdMeanReversionStrategy,
   gbpUsdNySweepBayesStrategy,
   gbpUsdNySweepBayesPriorDayTargetOnSp500FuturesStrategy,
   gbpUsdNySweepLogitStrategy,
+  gbpUsdNySweepStumpStrategy,
   gbpUsdNySweepStumpOnBritishPoundFuturesStrategy,
   gbpUsdNySweepStumpOnEuroFuturesStrategy,
+  goldFuturesHumbledTraderVwapPullbackOppositeStrategy,
   goldFuturesIctSweepFvgStrategy,
   goldFuturesRedditEmaPullbackStrategy,
   goldFuturesRedditOrbBreakoutStrategy,
   goldFuturesToriTradesTrendlineBreakRetestStrategy,
   goldSpotToriTradesTrendlineBreakRetestStrategy,
+  nasdaq100FuturesClaytraderSupportResistanceRetestStrategy,
   nasdaq100FuturesMomentumStrategy,
   nasdaq100FuturesRedditEmaPullbackStrategy,
   nasdaq100FuturesRedditOrbBreakoutStrategy,
@@ -108,6 +132,7 @@ export const STRATEGY_DEFINITIONS: StrategyDefinition[] = [
   nzdUsdNySweepBayesStrategy,
   nzdUsdNySweepLogitStrategy,
   nzdUsdNySweepStumpStrategy,
+  russell2000FuturesClaytraderSupportResistanceRetestStrategy,
   russell2000FuturesIctSweepFvgStrategy,
   russell2000FuturesRedditOrbRetestStrategy,
   silverFuturesRedditCapitulationReversionStrategy,
@@ -121,10 +146,13 @@ export const STRATEGY_DEFINITIONS: StrategyDefinition[] = [
   usdCadNySweepStumpStrategy,
   usdChfNySweepStumpStrategy,
   usdJpyNySweepBayesStrategy,
+  usdJpyNySweepBayesOnCopperFuturesStrategy,
   usdJpyNySweepBayesOnDowJonesFuturesStrategy,
   usdJpyNySweepLogitStrategy,
   usdJpyNySweepLogitOnSp500FuturesStrategy,
+  usdJpyNySweepStumpStrategy,
   usdJpyNySweepStumpOnCopperFuturesStrategy,
+  usdJpyNySweepStumpPriorDayTargetStrategy,
   usdJpyNySweepStumpPriorDayTargetOnNaturalGasFuturesOppositeStrategy,
 ];
 

@@ -83,11 +83,24 @@ These are the source of truth for the Next.js UI and live signal evaluation.
 - `dow_jones_futures` (`YM`)
 - `us_treasury_30y_bond_futures` (`ZB`)
 - `us_treasury_10y_note_futures` (`ZN`)
+- `corn_futures` (`ZC`)
+- `micro_bitcoin_futures` (`MBT`)
+- `micro_ether_futures` (`MET`)
+- `new_zealand_dollar_futures` (`6N`)
+- `swiss_franc_futures` (`6S`)
+- `us_treasury_2y_note_futures` (`ZT`)
+- `us_treasury_5y_note_futures` (`ZF`)
 
 ### Forex
 
+- `aud_nzd` (`AUDNZD`)
 - `aud_usd` (`AUDUSD`)
+- `eur_cad` (`EURCAD`)
+- `eur_chf` (`EURCHF`)
+- `eur_gbp` (`EURGBP`)
+- `eur_jpy` (`EURJPY`)
 - `eur_usd` (`EURUSD`)
+- `gbp_jpy` (`GBPJPY`)
 - `gbp_usd` (`GBPUSD`)
 - `nzd_usd` (`NZDUSD`)
 - `usd_cad` (`USDCAD`)
@@ -97,6 +110,11 @@ These are the source of truth for the Next.js UI and live signal evaluation.
 ### Spot
 
 - `gold_spot` (`XAUUSD`)
+
+### Crypto
+
+- `btc_usd` (`BTCUSD`)
+- `eth_usd` (`ETHUSD`)
 
 ## Timeframes Available For Strategy Building
 
@@ -129,6 +147,8 @@ Important nuance:
 - `reddit_capitulation_reversion`
 - `reddit_orb_breakout`
 - `reddit_orb_retest`
+- `support_resistance_retest`
+- `vwap_pullback`
 
 ### Python backtest engine also supports extra research phases
 

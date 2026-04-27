@@ -49,6 +49,7 @@ def main() -> None:
             label,
             folder,
             strategy.asset_key,
+            strategy.variant_id,
             True,
         )
         helpers.rewrite_strategy_ts(
