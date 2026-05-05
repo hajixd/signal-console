@@ -3152,6 +3152,78 @@ def write_strategy_backtest_csv(csv_path: Path, trades: list[BacktestTradeRow]) 
     temp_path.replace(csv_path)
 
 
+def parse_iso_timestamp(value: str) -> int:
+    parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=timezone.utc)
+    return int(parsed.timestamp())
+
+
+def parse_side(value: str) -> int:
+    return 1 if value.strip().lower() == "long" else -1
+
+
+def read_strategy_backtest_csv(csv_path: Path) -> list[BacktestTradeRow]:
+    if not csv_path.exists():
+        return []
+
+    trades: list[BacktestTradeRow] = []
+    with csv_path.open("r", newline="", encoding="utf-8") as handle:
+        reader = csv.DictReader(handle)
+        for row in reader:
+            try:
+                trades.append(
+                    BacktestTradeRow(
+                        strategy_id=str(row["strategy_id"]),
+                        asset_key=str(row["asset_key"]),
+                        asset_name=str(row["asset_name"]),
+                        market=str(row["market"]),
+                        symbol=str(row["symbol"]),
+                        phase=str(row["phase"]),
+                        variant_id=str(row.get("variant_id", "")),
+                        side=parse_side(str(row["side"])),
+                        signal_time=parse_iso_timestamp(str(row["signal_time"])),
+                        entry_index=int(row["entry_index"]),
+                        exit_index=int(row["exit_index"]),
+                        entry_time=parse_iso_timestamp(str(row["entry_time"])),
+                        exit_time=parse_iso_timestamp(str(row["exit_time"])),
+                        entry_price=float(row["entry_price"]),
+                        exit_price=float(row["exit_price"]),
+                        net_units=float(row["net_units"]),
+                        r_multiple=float(row["r_multiple"]),
+                        tp_units=float(row["tp_units"]),
+                        sl_units=float(row["sl_units"]),
+                        cost_units=float(row.get("cost_units", 0) or 0),
+                        exit_reason=str(row["exit_reason"]),
+                        bars_held=int(row["bars_held"]),
+                        source=str(row.get("source", "")),
+                        tp_mode=str(row.get("tp_mode", "fixed") or "fixed"),
+                        sl_mode=str(row.get("sl_mode", "fixed") or "fixed"),
+                        size_mode=str(row.get("size_mode", "auto") or "auto"),
+                        size_multiplier=float(row.get("size_multiplier", 1) or 1),
+                    )
+                )
+            except (KeyError, TypeError, ValueError):
+                continue
+    return sorted(trades, key=lambda trade: (trade.signal_time, trade.entry_time, trade.exit_time))
+
+
+def incremental_backtest_start(existing_trades: list[BacktestTradeRow], overlap_days: int) -> int | None:
+    if not existing_trades:
+        return None
+    latest_signal = max(trade.signal_time for trade in existing_trades)
+    return max(BACKTEST_START_TS, latest_signal - max(0, overlap_days) * 24 * 60 * 60)
+
+
+def merge_incremental_backtest_trades(
+    existing_trades: list[BacktestTradeRow],
+    replacement_trades: list[BacktestTradeRow],
+    replacement_start_ts: int,
+) -> list[BacktestTradeRow]:
+    kept = [trade for trade in existing_trades if trade.signal_time < replacement_start_ts]
+    return sorted([*kept, *replacement_trades], key=lambda trade: (trade.signal_time, trade.entry_time, trade.exit_time))
+
+
 def trade_signature(trade: BacktestTradeRow) -> tuple[Any, ...]:
     return (
         trade.side,
@@ -3235,6 +3307,38 @@ def parse_date_argument(value: str | None) -> int | None:
     return int(parsed.timestamp())
 
 
+def load_incremental_start_state(state_path: str | None) -> dict[str, int]:
+    if not state_path:
+        return {}
+
+    path = Path(state_path)
+    if not path.exists():
+        raise FileNotFoundError(f"Missing incremental start state: {path}")
+
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    tails = payload.get("tails", {}) if isinstance(payload, dict) else {}
+    state: dict[str, int] = {}
+
+    if not isinstance(tails, dict):
+        return state
+
+    for asset_key, by_timeframe in tails.items():
+        if not isinstance(asset_key, str) or not isinstance(by_timeframe, dict):
+            continue
+        tail = by_timeframe.get("15m")
+        if not isinstance(tail, dict):
+            continue
+        raw_time = tail.get("lastBarTime")
+        if isinstance(raw_time, (int, float)) and math.isfinite(raw_time):
+            state[asset_key] = int(raw_time)
+            continue
+        raw_iso = tail.get("lastBarAt")
+        if isinstance(raw_iso, str) and raw_iso:
+            state[asset_key] = parse_iso_timestamp(raw_iso)
+
+    return state
+
+
 def run_backtests(
     strategy_filters: list[str] | None = None,
     timings: bool = False,
@@ -3243,10 +3347,14 @@ def run_backtests(
     tail_bars: int | None = None,
     strict_anti_cheat: bool = True,
     write_output: bool = True,
+    incremental: bool = False,
+    incremental_overlap_days: int = 7,
+    incremental_start_state_path: str | None = None,
 ) -> None:
     assets = load_asset_by_key()
     enriched_cache: dict[str, EnrichedData] = {}
     strategies = selected_backtest_strategies(strategy_filters)
+    incremental_start_state = load_incremental_start_state(incremental_start_state_path)
     overall_start = perf_counter()
 
     if timings:
@@ -3261,8 +3369,20 @@ def run_backtests(
         strategy_start = perf_counter()
         try:
             asset = assets[strategy.asset_key]
+            existing_trades = read_strategy_backtest_csv(output_path) if incremental and output_path.exists() else []
+            effective_start_ts = start_ts if start_ts is not None else BACKTEST_START_TS
+            state_start_ts = incremental_start_state.get(asset.key)
+            incremental_start_ts = (
+                max(BACKTEST_START_TS, state_start_ts - max(0, incremental_overlap_days) * 24 * 60 * 60)
+                if state_start_ts is not None
+                else incremental_backtest_start(existing_trades, incremental_overlap_days)
+            )
+            if start_ts is None and existing_trades and incremental_start_ts is not None:
+                effective_start_ts = incremental_start_ts
             if timings:
                 print(f"Starting {strategy.id}")
+                if incremental:
+                    print(f"  incremental start {iso_time(effective_start_ts)} from {len(existing_trades)} existing trade(s)")
             if asset.key not in enriched_cache:
                 candle_path = DATA_ROOT / "15m" / asset.data_file
                 if not candle_path.exists():
@@ -3284,19 +3404,33 @@ def run_backtests(
                 strategy,
                 asset,
                 enriched_cache[asset.key],
-                start_ts=start_ts if start_ts is not None else BACKTEST_START_TS,
+                start_ts=effective_start_ts,
                 end_ts=end_ts,
                 strict_anti_cheat=strict_anti_cheat,
             )
             if write_output:
-                write_strategy_backtest_csv(output_path, trades)
+                output_trades = (
+                    merge_incremental_backtest_trades(existing_trades, trades, effective_start_ts)
+                    if incremental and existing_trades
+                    else trades
+                )
+                write_strategy_backtest_csv(output_path, output_trades)
             elapsed = perf_counter() - strategy_start
             if timings:
                 destination = output_path if write_output else "(no write)"
-                print(f"{strategy.id}: {len(trades)} trades in {elapsed:.2f}s -> {destination}")
+                if write_output and incremental and existing_trades:
+                    print(
+                        f"{strategy.id}: {len(trades)} replacement trade(s), {len(output_trades)} total "
+                        f"in {elapsed:.2f}s -> {destination}"
+                    )
+                else:
+                    print(f"{strategy.id}: {len(trades)} trades in {elapsed:.2f}s -> {destination}")
             else:
                 if write_output:
-                    print(f"Wrote {len(trades)} backtest trades to {output_path}")
+                    if incremental and existing_trades:
+                        print(f"Wrote {len(output_trades)} incremental backtest trades to {output_path}")
+                    else:
+                        print(f"Wrote {len(trades)} backtest trades to {output_path}")
                 else:
                     print(f"Computed {len(trades)} backtest trades for {strategy.id}")
         except Exception as exc:
@@ -3387,6 +3521,9 @@ def parse_args() -> argparse.Namespace:
     run.add_argument("--strict-anti-cheat", action="store_true", help="Deprecated alias. Strict anti-cheat mode is now the default.")
     run.add_argument("--fast-unsafe", action="store_true", help="Disable anti-cheat window slicing for faster exploratory runs.")
     run.add_argument("--no-write", action="store_true", help="Compute results without overwriting backtest CSV files.")
+    run.add_argument("--incremental", action="store_true", help="Preserve old trade rows and replace only a recent overlap window.")
+    run.add_argument("--incremental-overlap-days", type=int, default=7, help="Recent trade window to recompute when --incremental is used.")
+    run.add_argument("--incremental-start-state", help="JSON file created before candle refresh; uses prior data tails as incremental cutoffs.")
 
     listing = subparsers.add_parser("list-backtests", help="List available backtest strategies")
     listing.add_argument("--strategy", action="append", help="Optional strategy id/folder/asset filter. Repeat to include multiple.")
@@ -3414,6 +3551,9 @@ def main() -> None:
             tail_bars=args.tail_bars,
             strict_anti_cheat=not bool(args.fast_unsafe),
             write_output=not bool(args.no_write),
+            incremental=bool(args.incremental),
+            incremental_overlap_days=int(args.incremental_overlap_days),
+            incremental_start_state_path=args.incremental_start_state,
         )
         return
     if args.command == "list-backtests":
