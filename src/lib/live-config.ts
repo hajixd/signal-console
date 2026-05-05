@@ -34,12 +34,23 @@ export type LiveConfig = {
 };
 
 export type DatasetStatus = {
+  assetCoverage?: Record<string, DatasetAssetCoverage>;
   backtestManifestPath: string;
   dataPrefix: string;
   lastSyncAt: string;
   strategyPrefix: string;
   uploadedFilesCount: number;
   updatedAt?: string;
+};
+
+export type DatasetAssetCoverage = {
+  dataFile: string;
+  firstBarAt?: string;
+  lastBarAt?: string;
+  rows: number;
+  symbol: string;
+  timeframes: string[];
+  updatedAt: string;
 };
 
 function normalizedStringArray(value: unknown): string[] {
@@ -73,6 +84,7 @@ function normalizeDatasetStatus(value: Partial<DatasetStatus> | null | undefined
     return null;
   }
   return {
+    assetCoverage: normalizeAssetCoverage(value.assetCoverage),
     backtestManifestPath: value.backtestManifestPath,
     dataPrefix: value.dataPrefix,
     lastSyncAt: value.lastSyncAt,
@@ -80,6 +92,26 @@ function normalizeDatasetStatus(value: Partial<DatasetStatus> | null | undefined
     uploadedFilesCount: value.uploadedFilesCount,
     updatedAt: typeof value.updatedAt === "string" ? value.updatedAt : undefined
   };
+}
+
+function normalizeAssetCoverage(value: unknown): Record<string, DatasetAssetCoverage> {
+  if (!value || typeof value !== "object") return {};
+  return Object.fromEntries(
+    Object.entries(value as Record<string, Partial<DatasetAssetCoverage>>)
+      .filter(([, coverage]) => coverage && typeof coverage === "object")
+      .map(([key, coverage]) => [
+        key,
+        {
+          dataFile: typeof coverage.dataFile === "string" ? coverage.dataFile : "",
+          firstBarAt: typeof coverage.firstBarAt === "string" ? coverage.firstBarAt : undefined,
+          lastBarAt: typeof coverage.lastBarAt === "string" ? coverage.lastBarAt : undefined,
+          rows: typeof coverage.rows === "number" ? coverage.rows : 0,
+          symbol: typeof coverage.symbol === "string" ? coverage.symbol : key,
+          timeframes: normalizedStringArray(coverage.timeframes),
+          updatedAt: typeof coverage.updatedAt === "string" ? coverage.updatedAt : new Date(0).toISOString()
+        }
+      ])
+  );
 }
 
 async function readJsonFile<T>(filePath: string): Promise<T | null> {
@@ -222,6 +254,7 @@ export async function saveCronRun(result: CronResult): Promise<void> {
 
 export function defaultDatasetStatus(): DatasetStatus {
   return {
+    assetCoverage: {},
     backtestManifestPath: storageObjectPath("cache/backtest-manifest.json"),
     dataPrefix: storageObjectPath("data"),
     lastSyncAt: new Date(0).toISOString(),

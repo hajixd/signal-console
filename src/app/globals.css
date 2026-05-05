@@ -1160,6 +1160,186 @@ html[data-theme="light"] .themeDarkLabel {
   white-space: nowrap;
 }
 
+.topstepConnection {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.topstepConnectionSummary,
+.topstepConnectForm,
+.topstepConnectionFoot {
+  min-width: 0;
+  display: grid;
+  gap: 0.55rem;
+}
+
+.topstepConnectionSummary {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+}
+
+.topstepConnectionState {
+  min-width: 0;
+  display: grid;
+  gap: 0.22rem;
+}
+
+.topstepConnectionState .status,
+.topstepAccountRow .status {
+  justify-self: start;
+}
+
+.topstepConnectionState strong {
+  color: rgba(255, 255, 255, 0.92);
+  font-size: 0.92rem;
+  font-weight: 950;
+}
+
+.topstepConnectionState small {
+  color: var(--text-dim);
+  font-size: 0.72rem;
+  line-height: 1.42;
+}
+
+.topstepConnectionActions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.45rem;
+}
+
+.topstepConnectionActions button,
+.topstepConnectForm button {
+  min-height: 34px;
+  border: 1px solid rgba(96, 165, 250, 0.28);
+  background: rgba(96, 165, 250, 0.09);
+  color: #c8ddff;
+  padding: 0 0.72rem;
+  font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+  font-size: 0.62rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.topstepConnectionActions button:hover:not(:disabled),
+.topstepConnectForm button:hover:not(:disabled) {
+  border-color: rgba(96, 165, 250, 0.52);
+  background: rgba(96, 165, 250, 0.15);
+  color: #ffffff;
+}
+
+.topstepConnectionActions button:disabled,
+.topstepConnectForm button:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+
+.topstepConnectForm {
+  grid-template-columns: minmax(190px, 0.8fr) minmax(220px, 1fr) auto;
+  align-items: end;
+}
+
+.topstepConnectForm label {
+  min-width: 0;
+  display: grid;
+  gap: 0.2rem;
+}
+
+.topstepConnectForm label span,
+.topstepAccountRow span,
+.topstepConnectionFoot span {
+  color: var(--text-faint);
+  font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+  font-size: 0.58rem;
+  font-weight: 900;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.topstepConnectForm input {
+  min-width: 0;
+  min-height: 36px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.035);
+  color: rgba(255, 255, 255, 0.9);
+  padding: 0 0.62rem;
+  outline: none;
+}
+
+.topstepConnectForm input:focus {
+  border-color: rgba(96, 165, 250, 0.5);
+  box-shadow: inset 0 0 0 1px rgba(96, 165, 250, 0.28);
+}
+
+.topstepConnectForm input::placeholder {
+  color: rgba(255, 255, 255, 0.34);
+}
+
+.topstepAccountList {
+  min-width: 0;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.topstepAccountRow {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) minmax(92px, 0.35fr) minmax(120px, 0.45fr) auto;
+  gap: 0.55rem;
+  align-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.025);
+  padding: 0.62rem;
+}
+
+.topstepAccountRow div {
+  min-width: 0;
+  display: grid;
+  gap: 0.16rem;
+}
+
+.topstepAccountRow strong {
+  min-width: 0;
+  overflow: hidden;
+  color: rgba(255, 255, 255, 0.9);
+  font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+  font-size: 0.72rem;
+  font-weight: 950;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.topstepAccountEmpty {
+  min-height: 86px;
+  display: grid;
+  align-content: center;
+  gap: 0.22rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.02);
+  padding: 0.75rem;
+}
+
+.topstepAccountEmpty strong,
+.topstepConnectionFoot strong {
+  color: rgba(255, 255, 255, 0.88);
+  font-size: 0.76rem;
+  font-weight: 900;
+}
+
+.topstepAccountEmpty span {
+  color: var(--text-dim);
+  font-size: 0.72rem;
+  line-height: 1.42;
+}
+
+.topstepConnectionFoot {
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding-top: 0.65rem;
+}
+
 .backtest-stats-grid {
   display: grid;
   grid-template-columns: repeat(6, minmax(0, 1fr));
@@ -1833,6 +2013,47 @@ html[data-theme="light"] .telegram-grid strong {
   color: #0f172a;
 }
 
+html[data-theme="light"] .topstepConnectionState strong,
+html[data-theme="light"] .topstepAccountRow strong,
+html[data-theme="light"] .topstepAccountEmpty strong,
+html[data-theme="light"] .topstepConnectionFoot strong {
+  color: rgba(15, 23, 42, 0.9);
+}
+
+html[data-theme="light"] .topstepConnectForm input {
+  border-color: rgba(15, 23, 42, 0.14);
+  background: #ffffff;
+  color: rgba(15, 23, 42, 0.88);
+}
+
+html[data-theme="light"] .topstepConnectForm input::placeholder {
+  color: rgba(15, 23, 42, 0.38);
+}
+
+html[data-theme="light"] .topstepAccountRow,
+html[data-theme="light"] .topstepAccountEmpty {
+  border-color: var(--line);
+  background: #ffffff;
+}
+
+html[data-theme="light"] .topstepConnectionFoot {
+  border-top-color: var(--line-soft);
+}
+
+html[data-theme="light"] .topstepConnectionActions button,
+html[data-theme="light"] .topstepConnectForm button {
+  border-color: rgba(37, 99, 235, 0.2);
+  background: rgba(37, 99, 235, 0.06);
+  color: #1d4ed8;
+}
+
+html[data-theme="light"] .topstepConnectionActions button:hover:not(:disabled),
+html[data-theme="light"] .topstepConnectForm button:hover:not(:disabled) {
+  border-color: rgba(37, 99, 235, 0.34);
+  background: rgba(37, 99, 235, 0.1);
+  color: #1e40af;
+}
+
 html[data-theme="light"] .backtest-stat-card.tone-up {
   border-color: rgba(4, 120, 87, 0.24);
   background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(16, 185, 129, 0.035));
@@ -2192,6 +2413,10 @@ html[data-theme="light"] .strategyToggle input {
   .telegram-grid {
     grid-template-columns: 1fr;
   }
+
+  .topstepAccountRow {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 760px) {
@@ -2226,6 +2451,19 @@ html[data-theme="light"] .strategyToggle input {
   .terminal-actions,
   .terminal-action,
   .count-pill {
+    width: 100%;
+  }
+
+  .topstepConnectionSummary,
+  .topstepConnectForm,
+  .topstepAccountRow,
+  .topstepConnectionFoot {
+    grid-template-columns: 1fr;
+  }
+
+  .topstepConnectionActions,
+  .topstepConnectionActions button,
+  .topstepConnectForm button {
     width: 100%;
   }
 

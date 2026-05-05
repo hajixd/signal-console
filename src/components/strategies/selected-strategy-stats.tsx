@@ -25,6 +25,7 @@ type DollarAggregate = {
 };
 
 type SelectedStrategyStatsProps = {
+  dataEndAt?: string;
   strategies: StrategyEditOption[];
   trades: BasketTrade[];
   persistedStrategyEdits?: StrategyEditSeedMap;
@@ -128,7 +129,7 @@ function tradeCadence(trades: BasketTrade[]) {
   };
 }
 
-export default function SelectedStrategyStats({ strategies, trades, persistedStrategyEdits }: SelectedStrategyStatsProps) {
+export default function SelectedStrategyStats({ dataEndAt, strategies, trades, persistedStrategyEdits }: SelectedStrategyStatsProps) {
   const edits = useStrategyEdits(strategies, persistedStrategyEdits);
   const strategyByKey = new Map(strategies.map((strategy) => [strategy.key, strategy]));
   const selectedDollarAggregate = aggregateDollars(trades, (trade) => {
@@ -185,7 +186,7 @@ export default function SelectedStrategyStats({ strategies, trades, persistedStr
       </div>
       <div className="backtest-stat-card tone-neutral">
         <span>End date</span>
-        <strong>{fmtDate(selectedCadence.end)}</strong>
+        <strong>{dataEndAt ? fmtDate(Date.parse(dataEndAt)) : fmtDate(selectedCadence.end)}</strong>
       </div>
     </div>
   );

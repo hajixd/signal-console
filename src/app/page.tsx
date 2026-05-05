@@ -1,6 +1,7 @@
 import ChallengeReplay from "@/components/challenge/challenge-replay";
 import SelectedStrategyStats from "@/components/strategies/selected-strategy-stats";
 import StrategySelector from "@/components/strategies/strategy-selector";
+import TopstepConnectionPanel from "@/components/topstep/topstep-connection-panel";
 import EditableTradeHistory from "@/components/trades/editable-trade-history";
 import { type TradeHistoryRow } from "@/components/trades/trade-history";
 import TestAlertButton from "@/components/ui/test-alert-button";
@@ -42,6 +43,7 @@ type HomeProps = {
 };
 
 type StrategyOption = {
+  assetKey: string;
   key: string;
   label: string;
   aliases: string[];
@@ -434,6 +436,7 @@ export default async function Home({ searchParams }: HomeProps) {
 
       return {
         key: entry.key,
+        assetKey: entry.assetKey,
         label: entry.label,
         aliases: uniqueValues([
           entry.label,
@@ -500,6 +503,12 @@ export default async function Home({ searchParams }: HomeProps) {
       selectedStrategyNames.has(trade.strategy)
   );
   const selectedBacktestTrades = backtestTrades.filter((trade) => selectedKeySet.has(trade.datasetId));
+  const selectedDataEndAt =
+    strategyOptions
+      .filter((option) => selectedKeySet.has(option.key))
+      .map((option) => datasetStatus?.assetCoverage?.[option.assetKey]?.lastBarAt)
+      .filter((value): value is string => Boolean(value))
+      .sort((left, right) => Date.parse(right) - Date.parse(left))[0];
   const selectedBasketTrades = selectedBacktestTrades.map((trade) => ({
     key: trade.datasetId,
     entryTime: trade.entryTime,
@@ -596,6 +605,17 @@ export default async function Home({ searchParams }: HomeProps) {
           </div>
         </header>
 
+        <section className="backtest-card topstep-card" id="topstep">
+          <div className="backtest-card-head">
+            <div>
+              <h2>TopstepX Connection</h2>
+              <p>Connect an individual ProjectX API session for account lookup and future execution flows.</p>
+            </div>
+            <span className="count-pill">ProjectX gateway</span>
+          </div>
+          <TopstepConnectionPanel />
+        </section>
+
         <section className="backtest-card">
           <div className="backtest-card-head">
             <div>
@@ -605,6 +625,7 @@ export default async function Home({ searchParams }: HomeProps) {
           </div>
 
           <SelectedStrategyStats
+            dataEndAt={selectedDataEndAt}
             strategies={strategyOptions}
             trades={selectedBasketTrades}
             persistedStrategyEdits={liveConfig.strategyEdits}

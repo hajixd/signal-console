@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { fetchMarketBars } from "@/lib/market-data";
+import { refreshMarketDataForRules } from "@/lib/market-data-refresh";
 import { saveCronRun } from "@/lib/live-config";
 import { activeRules, evaluateLatestSignal } from "@/lib/live-signals";
 import { hasTrade, saveTrade } from "@/lib/storage";
@@ -9,7 +10,7 @@ import type { CronResult } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
-export const maxDuration = 60;
+export const maxDuration = 300;
 
 function isAuthorized(request: NextRequest): "ok" | "missing-secret" | "bad-secret" {
   const secret = process.env.CRON_SECRET;
@@ -27,10 +28,15 @@ async function runSignalCheck(): Promise<CronResult> {
   };
   const candidates: Array<{ signal: ReturnType<typeof withTopstepGuardNote>; score: number; riskDollars: number }> = [];
   const rules = await activeRules();
+  const dataRefreshEnabled = process.env.CRON_REFRESH_MARKET_DATA !== "false";
+  const refreshedBars = dataRefreshEnabled ? await refreshMarketDataForRules(rules) : null;
+  if (refreshedBars) {
+    result.dataRefresh = refreshedBars.summary;
+  }
 
   for (const rule of rules) {
     try {
-      const bars = await fetchMarketBars(rule);
+      const bars = refreshedBars?.barsByAssetKey.get(rule.assetKey) ?? (await fetchMarketBars(rule));
       const signal = evaluateLatestSignal(rule, bars);
       if (!signal) continue;
 
