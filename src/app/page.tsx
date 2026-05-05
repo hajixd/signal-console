@@ -1,7 +1,7 @@
 import ChallengeReplay from "@/components/challenge/challenge-replay";
 import SelectedStrategyStats from "@/components/strategies/selected-strategy-stats";
 import StrategySelector from "@/components/strategies/strategy-selector";
-import TopstepConnectionPanel from "@/components/topstep/topstep-connection-panel";
+import TopstepConnectionDrawer from "@/components/topstep/topstep-connection-drawer";
 import EditableTradeHistory from "@/components/trades/editable-trade-history";
 import { type TradeHistoryRow } from "@/components/trades/trade-history";
 import TestAlertButton from "@/components/ui/test-alert-button";
@@ -602,19 +602,9 @@ export default async function Home({ searchParams }: HomeProps) {
               {telegramBotUsername ? "Open Telegram bot" : "Open BotFather"}
             </a>
             <TestAlertButton disabled={!telegramConfigured} sendTestAlert={sendTestTelegramAlert} />
+            <TopstepConnectionDrawer />
           </div>
         </header>
-
-        <section className="backtest-card topstep-card" id="topstep">
-          <div className="backtest-card-head">
-            <div>
-              <h2>TopstepX Connection</h2>
-              <p>Connect an individual ProjectX API session for account lookup and future execution flows.</p>
-            </div>
-            <span className="count-pill">ProjectX gateway</span>
-          </div>
-          <TopstepConnectionPanel />
-        </section>
 
         <section className="backtest-card">
           <div className="backtest-card-head">
