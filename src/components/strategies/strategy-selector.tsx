@@ -336,7 +336,6 @@ export default function StrategySelector({
   const pathname = usePathname();
   const [, startSavingSelection] = useTransition();
   const [isSavingEdits, startSavingEdits] = useTransition();
-  const [isRenderingSelection, setIsRenderingSelection] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
   const [edits, setEdits] = useState<StrategyEditMap>({});
   const [activeKey, setActiveKey] = useState<string | null>(null);
@@ -368,7 +367,6 @@ export default function StrategySelector({
 
   useEffect(() => {
     setOptimisticSelectedKeys(selectedKeys);
-    setIsRenderingSelection(false);
   }, [selectionSignature, selectedKeys]);
 
   useEffect(() => {
@@ -424,7 +422,6 @@ export default function StrategySelector({
       startSavingSelection(async () => {
         try {
           await persistLiveSelection(selectedKeysToSync, strategyScopeKeys);
-          setIsRenderingSelection(true);
           router.refresh();
         } catch (error) {
           console.error("Failed to sync live strategy selection", error);
@@ -651,14 +648,6 @@ export default function StrategySelector({
 
   return (
     <div className="strategyPicker">
-      {isRenderingSelection || isSavingEdits ? (
-        <div className="korraLoadingOverlay" role="status" aria-live="polite">
-          <div className="korraLoadingCore">
-            <div className="korraLoadingSpinner" aria-hidden="true" />
-            <span className="korraLoadingText">{isSavingEdits ? "Rendering settings" : "Rendering selection"}</span>
-          </div>
-        </div>
-      ) : null}
       <div className="pickerHeader">
         <span>Strategies</span>
         <div className="pickerActions">
