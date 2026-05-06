@@ -552,6 +552,7 @@ export default async function Home({ searchParams }: HomeProps) {
   const defaultSelectedKeys = persistedSelectedKeys.length ? persistedSelectedKeys : recentDefaultKeys;
   const selectedKeys = parseSelection(params?.strategies, allKeys, defaultSelectedKeys);
   const selectedKeySet = new Set(selectedKeys);
+  const activeMarketKeySet = new Set(allKeys);
   const selectedLiveKeys = new Set(
     strategyOptions.filter((option) => selectedKeySet.has(option.key) && option.liveSupported).flatMap((option) => option.logicalKeys)
   );
@@ -567,6 +568,7 @@ export default async function Home({ searchParams }: HomeProps) {
       selectedStrategyNames.has(trade.strategy)
   );
   const selectedBacktestTrades = backtestTrades.filter((trade) => selectedKeySet.has(trade.datasetId));
+  const activeMarketBacktestTrades = backtestTrades.filter((trade) => activeMarketKeySet.has(trade.datasetId));
   const selectedDataEndAt =
     strategyOptions
       .filter((option) => selectedKeySet.has(option.key))
@@ -579,7 +581,7 @@ export default async function Home({ searchParams }: HomeProps) {
     basePnlDollars: tradeDollarPnl(trade, optionByKey.get(trade.datasetId)?.sizeMultiplier ?? 1),
     rMultiple: trade.rMultiple
   }));
-  const tradeHistoryRows: TradeHistoryRow[] = selectedBacktestTrades.map((trade, index) => {
+  const tradeHistoryRows: TradeHistoryRow[] = activeMarketBacktestTrades.map((trade, index) => {
     const sizeMultiplier = optionByKey.get(trade.datasetId)?.sizeMultiplier ?? 1;
     const tradeMultiplier = tradeSizeMultiplier(trade, sizeMultiplier);
     const dollarPnl = tradeDollarPnl(trade, sizeMultiplier);
@@ -863,15 +865,15 @@ export default async function Home({ searchParams }: HomeProps) {
           <div className="backtest-card-head">
             <div>
               <h2>Backtest History</h2>
-              <p>Trade-by-trade dollar history for the selected strategies, including every stored backtest trade.</p>
+              <p>Trade-by-trade dollar history for every stored backtest trade in the active market.</p>
             </div>
             <span className="count-pill">Showing {fmtNumber(visibleTradeHistoryRows.length)} trades</span>
           </div>
 
-          {selectedBacktestTrades.length === 0 ? (
+          {activeMarketBacktestTrades.length === 0 ? (
             <div className="empty-state">
               <strong>No backtest trades match</strong>
-              <span>Select at least one strategy to see historical trades.</span>
+              <span>No stored backtest trades are available for this market.</span>
             </div>
           ) : (
             <EditableTradeHistory
