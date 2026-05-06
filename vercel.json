@@ -2,11 +2,11 @@
   "crons": [
     {
       "path": "/api/cron/check-signals",
-      "schedule": "*/15 * * * *"
+      "schedule": "0 14 * * *"
     },
     {
       "path": "/api/cron/refresh-backtests",
-      "schedule": "22 */4 * * *"
+      "schedule": "22 10 * * *"
     }
   ]
 }

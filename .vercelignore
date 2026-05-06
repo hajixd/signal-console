@@ -1,6 +1,8 @@
 .git
 .next
 .local
+.env
+.env.*
 node_modules
 backtest-engine/__pycache__
 backtest-engine/research

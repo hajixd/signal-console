@@ -105,7 +105,9 @@ export type StrategyCatalogEntry = {
 };
 
 type StrategyCatalog = {
+  catalogVersion?: number;
   entries: StrategyCatalogEntry[];
+  generatedAt?: string;
   stats: BacktestStat[];
   trades: BacktestTrade[];
 };
@@ -428,6 +430,10 @@ function latestTradeTime(catalog: StrategyCatalog | null): number {
   return Math.max(...catalog.trades.map((trade) => Date.parse(trade.entryTime)).filter(Number.isFinite));
 }
 
+function isoFromMillis(value: number): string | undefined {
+  return value > 0 && Number.isFinite(value) ? new Date(value).toISOString() : undefined;
+}
+
 export async function buildLocalStrategyCatalog(): Promise<StrategyCatalog> {
   const trades: BacktestTrade[] = [];
 
@@ -515,6 +521,25 @@ export async function getBacktestTrades(): Promise<BacktestTrade[]> {
     return (await loadStrategyCatalog()).trades;
   } catch {
     return [];
+  }
+}
+
+export async function getBacktestCatalogFreshness(): Promise<{
+  generatedAt?: string;
+  latestTradeAt?: string;
+  trades: number;
+}> {
+  try {
+    const catalog = await loadStrategyCatalog();
+    return {
+      generatedAt: catalog.generatedAt,
+      latestTradeAt: isoFromMillis(latestTradeTime(catalog)),
+      trades: catalog.trades.length
+    };
+  } catch {
+    return {
+      trades: 0
+    };
   }
 }
 

@@ -9,6 +9,7 @@ import TestAlertButton from "@/components/ui/test-alert-button";
 import ThemeToggle from "@/components/ui/theme-toggle";
 import { syncLiveSelection, syncStrategyEdits } from "@/app/live-selection-actions";
 import { sendTestTelegramAlert } from "@/app/telegram-actions";
+import { ensureBacktestHistoryFresh } from "@/lib/backtest-refresh";
 import {
   aggregateBacktest,
   getBacktestStats,
@@ -21,7 +22,7 @@ import {
 } from "@/lib/backtest";
 import { DEFAULT_CHALLENGE_RULES, type ChallengeRules } from "@/lib/challenge";
 import { dollarPerUnit, instrumentSizeLabel, instrumentUnitLabel, recommendedSizeMultiplier } from "@/lib/instruments";
-import { getDatasetStatus, getLiveConfig } from "@/lib/live-config";
+import { defaultDatasetStatus, getDatasetStatus, getLiveConfig, type LiveConfig } from "@/lib/live-config";
 import { allRules } from "@/lib/live-signals";
 import { projectAssetMode } from "@/lib/project-assets";
 import { getTrades, storageMode } from "@/lib/storage";
@@ -30,6 +31,11 @@ import type { TradeAlert } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 const DEFAULT_SELECTED_STRATEGY_COUNT = 1;
+const EMPTY_LIVE_CONFIG: LiveConfig = {
+  dashboardSelectedDatasetIds: [],
+  enabledDatasetIds: [],
+  strategyEdits: {}
+};
 
 type HomeProps = {
   searchParams?: Promise<{
@@ -320,6 +326,19 @@ function sameRecentDisplay(values: string[]): boolean {
   return values.length < 2 || values[0] === values[1];
 }
 
+function latestStrategyTradeTime(trades: BacktestTrade[]): number {
+  return Math.max(0, ...trades.map((trade) => Date.parse(trade.entryTime)).filter(Number.isFinite));
+}
+
+async function safeRuntimeValue<T>(loader: () => Promise<T>, fallback: T): Promise<T> {
+  try {
+    return await loader();
+  } catch (error) {
+    console.error(error);
+    return fallback;
+  }
+}
+
 function safeRiskRewardRatio(targetDollars: number, riskDollars: number): number | undefined {
   return riskDollars > 0 ? targetDollars / riskDollars : undefined;
 }
@@ -422,14 +441,15 @@ export default async function Home({ searchParams }: HomeProps) {
   const challengeRules = challengeRulesFromParams(params);
   const accountMultiplier = accountSizeMultiplier(challengeRules);
   const [liveTrades, strategyCatalog, backtestStats, backtestTrades, liveRules, liveConfig, datasetStatus] = await Promise.all([
-    getTrades(),
+    safeRuntimeValue(getTrades, []),
     getStrategyCatalog(),
     getBacktestStats(),
     getBacktestTrades(),
     allRules(),
-    getLiveConfig(),
-    getDatasetStatus()
+    safeRuntimeValue(getLiveConfig, EMPTY_LIVE_CONFIG),
+    safeRuntimeValue(async () => (await getDatasetStatus()) ?? defaultDatasetStatus(), defaultDatasetStatus())
   ]);
+  await ensureBacktestHistoryFresh().catch((error) => console.error(error));
   const liveRuleByKey = new Map(liveRules.map((rule) => [rule.key, rule]));
   const statByKey = new Map(backtestStats.map((stat) => [stat.key, stat]));
 
@@ -525,7 +545,11 @@ export default async function Home({ searchParams }: HomeProps) {
   const allKeys = strategyOptions.map((option) => option.key);
   const persistedLiveEnabledKeys = liveConfig.enabledDatasetIds.filter((key) => allKeys.includes(key));
   const persistedSelectedKeys = liveConfig.dashboardSelectedDatasetIds.filter((key) => allKeys.includes(key));
-  const defaultSelectedKeys = persistedSelectedKeys.length ? persistedSelectedKeys : allKeys.slice(0, DEFAULT_SELECTED_STRATEGY_COUNT);
+  const recentDefaultKeys = [...strategyOptions]
+    .sort((left, right) => latestStrategyTradeTime(tradesByStrategy.get(right.key) ?? []) - latestStrategyTradeTime(tradesByStrategy.get(left.key) ?? []))
+    .slice(0, DEFAULT_SELECTED_STRATEGY_COUNT)
+    .map((option) => option.key);
+  const defaultSelectedKeys = persistedSelectedKeys.length ? persistedSelectedKeys : recentDefaultKeys;
   const selectedKeys = parseSelection(params?.strategies, allKeys, defaultSelectedKeys);
   const selectedKeySet = new Set(selectedKeys);
   const selectedLiveKeys = new Set(
