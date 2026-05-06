@@ -10,13 +10,51 @@ export type ProjectXAccount = {
 
 export type ProjectXConnectionStatus = {
   accounts: ProjectXAccount[];
+  autoTradePaused?: boolean;
   checkedAt?: string;
   connected: boolean;
   error?: string;
   persisted?: boolean;
   refreshed?: boolean;
+  pausedAccountIds?: number[];
   storageMode?: "firebase" | "local";
   userName?: string;
+};
+
+export type ProjectXContract = {
+  activeContract?: boolean;
+  description?: string;
+  id: string;
+  name: string;
+  symbolId?: string;
+  tickSize?: number;
+  tickValue?: number;
+};
+
+export type ProjectXOrderType = 1 | 2 | 4 | 5 | 6 | 7;
+export type ProjectXOrderSide = 0 | 1;
+
+export type ProjectXBracket = {
+  ticks: number;
+  type: ProjectXOrderType;
+};
+
+export type ProjectXPlaceOrderRequest = {
+  accountId: number;
+  contractId: string;
+  customTag?: string | null;
+  limitPrice?: number | null;
+  side: ProjectXOrderSide;
+  size: number;
+  stopLossBracket?: ProjectXBracket | null;
+  stopPrice?: number | null;
+  takeProfitBracket?: ProjectXBracket | null;
+  trailPrice?: number | null;
+  type: ProjectXOrderType;
+};
+
+export type ProjectXPlaceOrderResult = {
+  orderId: number;
 };
 
 type ProjectXBaseResponse = {
@@ -36,6 +74,14 @@ type ProjectXValidateResponse = ProjectXBaseResponse & {
 
 type ProjectXAccountSearchResponse = ProjectXBaseResponse & {
   accounts?: ProjectXAccount[];
+};
+
+type ProjectXContractSearchResponse = ProjectXBaseResponse & {
+  contracts?: ProjectXContract[];
+};
+
+type ProjectXPlaceOrderResponse = ProjectXBaseResponse & {
+  orderId?: number;
 };
 
 export class ProjectXApiError extends Error {
@@ -125,6 +171,27 @@ export async function searchProjectXAccounts(token: string, onlyActiveAccounts =
   );
 
   return response.accounts ?? [];
+}
+
+export async function searchProjectXContracts(token: string, searchText: string, live = false): Promise<ProjectXContract[]> {
+  const response = await projectXPost<ProjectXContractSearchResponse>(
+    "/api/Contract/search",
+    {
+      live,
+      searchText
+    },
+    token
+  );
+
+  return response.contracts ?? [];
+}
+
+export async function placeProjectXOrder(token: string, request: ProjectXPlaceOrderRequest): Promise<ProjectXPlaceOrderResult> {
+  const response = await projectXPost<ProjectXPlaceOrderResponse>("/api/Order/place", request, token);
+  if (typeof response.orderId !== "number" || !Number.isFinite(response.orderId)) {
+    throw new ProjectXApiError("ProjectX accepted the request but did not return an order id.");
+  }
+  return { orderId: response.orderId };
 }
 
 export function readableProjectXError(error: unknown): string {

@@ -15,10 +15,12 @@ export type ProjectXConnectionStoreMode = "firebase" | "local";
 type StoredProjectXConnectionPayload = {
   accounts: ProjectXAccount[];
   accountCount: number;
+  autoTradePaused?: boolean;
   connectedAt: string;
   encryptedToken: string;
   id: string;
   lastCheckedAt?: string;
+  pausedAccountIds?: number[];
   status: "connected" | "expired";
   tradeableAccountCount: number;
   updatedAt: string;
@@ -62,24 +64,43 @@ function decryptToken(value: string): string {
 }
 
 function normalizeAccounts(accounts: ProjectXAccount[]): ProjectXAccount[] {
-  return accounts.map((account) => ({
-    id: Number(account.id),
-    name: String(account.name),
-    balance: typeof account.balance === "number" && Number.isFinite(account.balance) ? account.balance : undefined,
-    canTrade: Boolean(account.canTrade),
-    isVisible: Boolean(account.isVisible)
-  }));
+  return accounts.map((account) => {
+    const normalized: ProjectXAccount = {
+      id: Number(account.id),
+      name: String(account.name),
+      canTrade: Boolean(account.canTrade),
+      isVisible: Boolean(account.isVisible)
+    };
+
+    if (typeof account.balance === "number" && Number.isFinite(account.balance)) {
+      normalized.balance = account.balance;
+    }
+
+    return normalized;
+  });
+}
+
+function normalizePausedAccountIds(value: unknown, accounts: ProjectXAccount[], defaultPaused: boolean): number[] {
+  if (!Array.isArray(value)) return defaultPaused ? accounts.map((account) => account.id) : [];
+  const accountIds = new Set(accounts.map((account) => account.id));
+  return value
+    .map((item) => Number(item))
+    .filter((item) => Number.isInteger(item) && accountIds.has(item));
 }
 
 function toStoredConnection(value: StoredProjectXConnectionPayload | null | undefined): StoredProjectXConnection | null {
   if (!value?.id || !value.encryptedToken) return null;
   const accounts = normalizeAccounts(value.accounts ?? []);
+  const autoTradePaused = value.autoTradePaused !== false;
+  const pausedAccountIds = normalizePausedAccountIds(value.pausedAccountIds, accounts, autoTradePaused);
   return {
     accounts,
     accountCount: typeof value.accountCount === "number" ? value.accountCount : accounts.length,
+    autoTradePaused: accounts.length > 0 && pausedAccountIds.length === accounts.length,
     connectedAt: typeof value.connectedAt === "string" ? value.connectedAt : new Date(0).toISOString(),
     id: value.id,
     lastCheckedAt: typeof value.lastCheckedAt === "string" ? value.lastCheckedAt : undefined,
+    pausedAccountIds,
     status: value.status === "expired" ? "expired" : "connected",
     token: decryptToken(value.encryptedToken),
     tradeableAccountCount:
@@ -87,6 +108,18 @@ function toStoredConnection(value: StoredProjectXConnectionPayload | null | unde
     updatedAt: typeof value.updatedAt === "string" ? value.updatedAt : new Date(0).toISOString(),
     userName: typeof value.userName === "string" ? value.userName : undefined
   };
+}
+
+function safeToStoredConnection(value: StoredProjectXConnectionPayload | null | undefined): StoredProjectXConnection | null {
+  try {
+    return toStoredConnection(value);
+  } catch {
+    return null;
+  }
+}
+
+function newestConnectionFirst(left: StoredProjectXConnection, right: StoredProjectXConnection): number {
+  return Date.parse(right.updatedAt) - Date.parse(left.updatedAt);
 }
 
 async function readLocalConnections(): Promise<Record<string, StoredProjectXConnectionPayload>> {
@@ -116,27 +149,55 @@ export async function getStoredProjectXConnection(id: string): Promise<StoredPro
   return toStoredConnection(connections[id]);
 }
 
+export async function getStoredProjectXConnections(): Promise<StoredProjectXConnection[]> {
+  if (hasFirebaseAdmin()) {
+    const snapshot = await firebaseDb().collection(PROJECTX_CONNECTION_COLLECTION).get();
+    return snapshot.docs
+      .map((doc) => safeToStoredConnection(doc.data() as StoredProjectXConnectionPayload | undefined))
+      .filter((connection): connection is StoredProjectXConnection => connection !== null && connection.status === "connected")
+      .sort(newestConnectionFirst);
+  }
+
+  const connections = await readLocalConnections();
+  return Object.values(connections)
+    .map((connection) => safeToStoredConnection(connection))
+    .filter((connection): connection is StoredProjectXConnection => connection !== null && connection.status === "connected")
+    .sort(newestConnectionFirst);
+}
+
+export async function getLatestStoredProjectXConnection(preferredId?: string): Promise<StoredProjectXConnection | null> {
+  const preferredConnection = preferredId ? await getStoredProjectXConnection(preferredId) : null;
+  if (preferredConnection?.status === "connected") return preferredConnection;
+  return (await getStoredProjectXConnections())[0] ?? null;
+}
+
 export async function saveStoredProjectXConnection(input: {
   accounts: ProjectXAccount[];
+  autoTradePaused?: boolean;
   connectedAt?: string;
   id: string;
+  pausedAccountIds?: number[];
   token: string;
   userName?: string;
 }): Promise<StoredProjectXConnection> {
   const now = new Date().toISOString();
   const accounts = normalizeAccounts(input.accounts);
+  const pausedAccountIds = normalizePausedAccountIds(input.pausedAccountIds, accounts, input.autoTradePaused !== false);
   const payload: StoredProjectXConnectionPayload = {
     accounts,
     accountCount: accounts.length,
+    autoTradePaused: accounts.length > 0 && pausedAccountIds.length === accounts.length,
     connectedAt: input.connectedAt ?? now,
     encryptedToken: encryptToken(input.token),
     id: input.id,
     lastCheckedAt: now,
+    pausedAccountIds,
     status: "connected",
     tradeableAccountCount: accounts.filter((account) => account.canTrade).length,
-    updatedAt: now,
-    userName: input.userName
+    updatedAt: now
   };
+
+  if (input.userName) payload.userName = input.userName;
 
   if (hasFirebaseAdmin()) {
     await firebaseDb()
@@ -158,6 +219,35 @@ export async function saveStoredProjectXConnection(input: {
   return toStoredConnection(payload)!;
 }
 
+export async function setStoredProjectXConnectionPaused(id: string, autoTradePaused: boolean, accountId?: number): Promise<StoredProjectXConnection | null> {
+  const connection = await getStoredProjectXConnection(id);
+  if (!connection) return null;
+  const accountIds = connection.accounts.map((account) => account.id);
+  const pausedAccountIds = new Set(connection.pausedAccountIds);
+
+  if (typeof accountId === "number" && accountIds.includes(accountId)) {
+    if (autoTradePaused) {
+      pausedAccountIds.add(accountId);
+    } else {
+      pausedAccountIds.delete(accountId);
+    }
+  } else {
+    pausedAccountIds.clear();
+    if (autoTradePaused) {
+      for (const id of accountIds) pausedAccountIds.add(id);
+    }
+  }
+
+  return saveStoredProjectXConnection({
+    accounts: connection.accounts,
+    connectedAt: connection.connectedAt,
+    id,
+    pausedAccountIds: [...pausedAccountIds],
+    token: connection.token,
+    userName: connection.userName
+  });
+}
+
 export async function deleteStoredProjectXConnection(id: string): Promise<void> {
   if (hasFirebaseAdmin()) {
     await firebaseDb().collection(PROJECTX_CONNECTION_COLLECTION).doc(id).delete();
@@ -168,4 +258,3 @@ export async function deleteStoredProjectXConnection(id: string): Promise<void> 
   delete connections[id];
   await writeLocalConnections(connections);
 }
-

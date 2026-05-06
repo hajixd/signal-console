@@ -152,7 +152,7 @@ button {
 
 .terminal-head {
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   justify-content: space-between;
   gap: 1rem;
   min-height: 78px;
@@ -182,6 +182,51 @@ button {
   font-size: 1.42rem;
   line-height: 1.03;
   font-weight: 900;
+}
+
+.market-tabs {
+  width: 100%;
+  min-height: 46px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: #0b0b0b;
+  box-shadow: 0 18px 45px rgba(0, 0, 0, 0.48);
+}
+
+.market-tab {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-right: 1px solid var(--line);
+  color: rgba(232, 236, 243, 0.76);
+  font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+  font-size: 0.68rem;
+  font-weight: 900;
+  letter-spacing: 0;
+  text-decoration: none;
+  text-transform: uppercase;
+  transition:
+    background 160ms ease,
+    color 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.market-tab:last-child {
+  border-right: 0;
+}
+
+.market-tab:hover {
+  background: rgba(255, 255, 255, 0.04);
+  color: #eaf2ff;
+}
+
+.market-tab.active {
+  background: rgba(96, 165, 250, 0.2);
+  color: #f3f6fb;
+  box-shadow: inset 0 -2px 0 var(--accent);
 }
 
 .asset-meta span {
@@ -364,6 +409,9 @@ html[data-theme="light"] .themeDarkLabel {
 
 .topstepDrawerHead button {
   min-height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   border: 1px solid rgba(255, 255, 255, 0.13);
   background: rgba(255, 255, 255, 0.035);
   color: rgba(255, 255, 255, 0.78);
@@ -469,8 +517,63 @@ html[data-theme="light"] .themeDarkLabel {
 }
 
 .strategyPicker {
+  position: relative;
   display: grid;
   gap: 0.62rem;
+}
+
+.korraLoadingOverlay {
+  position: absolute;
+  inset: -0.5rem;
+  z-index: 20;
+  display: grid;
+  place-items: center;
+  background: rgba(4, 8, 12, 0.34);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+}
+
+.korraLoadingCore {
+  display: grid;
+  justify-items: center;
+  gap: 0.62rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 14px;
+  background: rgba(9, 15, 21, 0.84);
+  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.58);
+  padding: 0.72rem 0.95rem;
+}
+
+.korraLoadingSpinner {
+  width: 38px;
+  height: 38px;
+  border: 3px solid rgba(255, 255, 255, 0.16);
+  border-top-color: #00ff9d;
+  border-right-color: #55d9ff;
+  border-radius: 50%;
+  animation: korraLoadingSpin 0.88s linear infinite;
+}
+
+.korraLoadingText {
+  color: rgba(226, 255, 240, 0.85);
+  font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+  font-size: 0.64rem;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.routeLoadingShell {
+  min-height: 100svh;
+  display: grid;
+  place-items: center;
+  background: rgba(4, 8, 12, 0.34);
+}
+
+@keyframes korraLoadingSpin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .pickerHeader {
@@ -1329,11 +1432,16 @@ html[data-theme="light"] .themeDarkLabel {
 }
 
 .topstepConnectionSummary,
+.topstepConnectionHero,
 .topstepConnectForm,
 .topstepConnectionFoot {
   min-width: 0;
   display: grid;
   gap: 0.55rem;
+}
+
+.topstepConnectionHero {
+  padding: 0.12rem 0 0.25rem;
 }
 
 .topstepConnectionSummary {
@@ -1364,6 +1472,37 @@ html[data-theme="light"] .themeDarkLabel {
   line-height: 1.42;
 }
 
+.topstepConnectionMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.topstepConnectionMeta div {
+  min-width: 0;
+  display: grid;
+  gap: 0.16rem;
+}
+
+.topstepConnectionMeta span {
+  color: var(--text-faint);
+  font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+  font-size: 0.56rem;
+  font-weight: 900;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.topstepConnectionMeta strong {
+  min-width: 0;
+  overflow: hidden;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 0.72rem;
+  font-weight: 900;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .topstepConnectionActions {
   display: flex;
   flex-wrap: wrap;
@@ -1371,8 +1510,18 @@ html[data-theme="light"] .themeDarkLabel {
   gap: 0.45rem;
 }
 
+.topstepPrimaryActions {
+  flex-direction: column;
+  justify-content: stretch;
+}
+
+.topstepPrimaryActions button {
+  width: 100%;
+}
+
 .topstepConnectionActions button,
-.topstepConnectForm button {
+.topstepConnectForm button,
+.topstepAccountControls button {
   min-height: 34px;
   border: 1px solid rgba(96, 165, 250, 0.28);
   background: rgba(96, 165, 250, 0.09);
@@ -1386,16 +1535,64 @@ html[data-theme="light"] .themeDarkLabel {
 }
 
 .topstepConnectionActions button:hover:not(:disabled),
-.topstepConnectForm button:hover:not(:disabled) {
+.topstepConnectForm button:hover:not(:disabled),
+.topstepAccountControls button:hover:not(:disabled) {
   border-color: rgba(96, 165, 250, 0.52);
   background: rgba(96, 165, 250, 0.15);
   color: #ffffff;
 }
 
 .topstepConnectionActions button:disabled,
-.topstepConnectForm button:disabled {
+.topstepConnectForm button:disabled,
+.topstepAccountControls button:disabled {
   cursor: default;
   opacity: 0.5;
+}
+
+.topstepConnectionActions .dangerButton,
+.topstepAccountControls .dangerButton {
+  border-color: rgba(248, 113, 113, 0.26);
+  background: rgba(248, 113, 113, 0.08);
+  color: #fecaca;
+}
+
+.topstepConnectionActions .dangerButton:hover:not(:disabled),
+.topstepAccountControls .dangerButton:hover:not(:disabled) {
+  border-color: rgba(248, 113, 113, 0.42);
+  background: rgba(248, 113, 113, 0.13);
+  color: #ffffff;
+}
+
+.topstepAccountControls {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.topstepAccountControls .playButton {
+  border-color: rgba(52, 211, 153, 0.3);
+  background: rgba(52, 211, 153, 0.09);
+  color: #bbf7d0;
+}
+
+.topstepAccountControls .playButton:hover:not(:disabled) {
+  border-color: rgba(52, 211, 153, 0.5);
+  background: rgba(52, 211, 153, 0.14);
+  color: #ffffff;
+}
+
+.topstepAccountControls .pauseButton {
+  border-color: rgba(251, 191, 36, 0.3);
+  background: rgba(251, 191, 36, 0.09);
+  color: #fde68a;
+}
+
+.topstepAccountControls .pauseButton:hover:not(:disabled) {
+  border-color: rgba(251, 191, 36, 0.5);
+  background: rgba(251, 191, 36, 0.14);
+  color: #ffffff;
 }
 
 .topstepConnectForm {
@@ -1448,18 +1645,51 @@ html[data-theme="light"] .themeDarkLabel {
 .topstepAccountRow {
   min-width: 0;
   display: grid;
-  grid-template-columns: minmax(180px, 1fr) minmax(92px, 0.35fr) minmax(120px, 0.45fr) auto;
-  gap: 0.55rem;
   align-items: center;
+  gap: 0.62rem;
   border: 1px solid rgba(255, 255, 255, 0.08);
   background: rgba(255, 255, 255, 0.025);
-  padding: 0.62rem;
+  padding: 0.68rem;
 }
 
-.topstepAccountRow div {
+.topstepAccountFields {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: center;
+  gap: 0.72rem;
+}
+
+.topstepAccountFields > div {
+  min-width: 0;
+  min-height: 38px;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 0.18rem;
+  text-align: center;
+}
+
+.topstepAccountTitle {
+  min-width: 0;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.7rem;
+}
+
+.topstepAccountTitle div,
+.topstepAccountDetails div {
   min-width: 0;
   display: grid;
   gap: 0.16rem;
+}
+
+.topstepAccountDetails {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem;
 }
 
 .topstepAccountRow strong {
@@ -1471,6 +1701,40 @@ html[data-theme="light"] .themeDarkLabel {
   font-weight: 950;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.topstepStatusValue {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  justify-self: center;
+  gap: 0.32rem;
+  min-height: 22px;
+  padding: 0 0.42rem;
+}
+
+.topstepAccountRow .topstepStatusValue {
+  justify-self: center;
+}
+
+.statusDot {
+  width: 0.5rem;
+  height: 0.5rem;
+  flex: 0 0 auto;
+  border-radius: 999px;
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.04);
+}
+
+.statusDot.green {
+  background: #34d399;
+}
+
+.statusDot.orange {
+  background: #f59e0b;
+}
+
+.statusDot.red {
+  background: #fb7185;
 }
 
 .topstepAccountEmpty {
@@ -1504,6 +1768,7 @@ html[data-theme="light"] .themeDarkLabel {
 }
 
 .topstepDrawerPanel .topstepConnectionSummary,
+.topstepDrawerPanel .topstepConnectionHero,
 .topstepDrawerPanel .topstepConnectForm,
 .topstepDrawerPanel .topstepAccountRow,
 .topstepDrawerPanel .topstepConnectionFoot {
@@ -1830,7 +2095,7 @@ html[data-theme="light"] .themeDarkLabel {
 }
 
 .live-alert-table {
-  min-width: 1200px;
+  min-width: 1290px;
 }
 
 .history-table {
@@ -2117,10 +2382,26 @@ html[data-theme="light"] .terminal {
 }
 
 html[data-theme="light"] .terminal-head,
+html[data-theme="light"] .market-tabs,
 html[data-theme="light"] .backtest-card {
   border-color: var(--line);
   background: #ffffff;
   box-shadow: none;
+}
+
+html[data-theme="light"] .market-tab {
+  border-right-color: var(--line);
+  color: rgba(15, 23, 42, 0.68);
+}
+
+html[data-theme="light"] .market-tab:hover {
+  background: rgba(37, 99, 235, 0.06);
+  color: #1d4ed8;
+}
+
+html[data-theme="light"] .market-tab.active {
+  background: rgba(37, 99, 235, 0.1);
+  color: #1d4ed8;
 }
 
 html[data-theme="light"] .terminal-kicker {
@@ -2243,10 +2524,15 @@ html[data-theme="light"] .telegram-grid strong {
 }
 
 html[data-theme="light"] .topstepConnectionState strong,
+html[data-theme="light"] .topstepConnectionMeta strong,
 html[data-theme="light"] .topstepAccountRow strong,
 html[data-theme="light"] .topstepAccountEmpty strong,
 html[data-theme="light"] .topstepConnectionFoot strong {
   color: rgba(15, 23, 42, 0.9);
+}
+
+html[data-theme="light"] .topstepConnectionMeta div {
+  background: transparent;
 }
 
 html[data-theme="light"] .topstepConnectForm input {
@@ -2270,17 +2556,57 @@ html[data-theme="light"] .topstepConnectionFoot {
 }
 
 html[data-theme="light"] .topstepConnectionActions button,
-html[data-theme="light"] .topstepConnectForm button {
+html[data-theme="light"] .topstepConnectForm button,
+html[data-theme="light"] .topstepAccountControls button {
   border-color: rgba(37, 99, 235, 0.2);
   background: rgba(37, 99, 235, 0.06);
   color: #1d4ed8;
 }
 
 html[data-theme="light"] .topstepConnectionActions button:hover:not(:disabled),
-html[data-theme="light"] .topstepConnectForm button:hover:not(:disabled) {
+html[data-theme="light"] .topstepConnectForm button:hover:not(:disabled),
+html[data-theme="light"] .topstepAccountControls button:hover:not(:disabled) {
   border-color: rgba(37, 99, 235, 0.34);
   background: rgba(37, 99, 235, 0.1);
   color: #1e40af;
+}
+
+html[data-theme="light"] .topstepConnectionActions .dangerButton,
+html[data-theme="light"] .topstepAccountControls .dangerButton {
+  border-color: rgba(220, 38, 38, 0.2);
+  background: rgba(220, 38, 38, 0.06);
+  color: #b91c1c;
+}
+
+html[data-theme="light"] .topstepConnectionActions .dangerButton:hover:not(:disabled),
+html[data-theme="light"] .topstepAccountControls .dangerButton:hover:not(:disabled) {
+  border-color: rgba(220, 38, 38, 0.34);
+  background: rgba(220, 38, 38, 0.1);
+  color: #991b1b;
+}
+
+html[data-theme="light"] .topstepAccountControls .playButton {
+  border-color: rgba(5, 150, 105, 0.22);
+  background: rgba(5, 150, 105, 0.06);
+  color: #047857;
+}
+
+html[data-theme="light"] .topstepAccountControls .playButton:hover:not(:disabled) {
+  border-color: rgba(5, 150, 105, 0.36);
+  background: rgba(5, 150, 105, 0.1);
+  color: #065f46;
+}
+
+html[data-theme="light"] .topstepAccountControls .pauseButton {
+  border-color: rgba(180, 83, 9, 0.22);
+  background: rgba(180, 83, 9, 0.06);
+  color: #92400e;
+}
+
+html[data-theme="light"] .topstepAccountControls .pauseButton:hover:not(:disabled) {
+  border-color: rgba(180, 83, 9, 0.36);
+  background: rgba(180, 83, 9, 0.1);
+  color: #78350f;
 }
 
 html[data-theme="light"] .backtest-stat-card.tone-up {
@@ -2643,9 +2969,11 @@ html[data-theme="light"] .strategyToggle input {
     grid-template-columns: 1fr;
   }
 
-  .topstepAccountRow {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+  .topstepAccountDetails,
+  .topstepAccountFields {
+    grid-template-columns: 1fr;
   }
+
 }
 
 @media (max-width: 760px) {
@@ -2677,6 +3005,10 @@ html[data-theme="light"] .strategyToggle input {
     align-items: stretch;
   }
 
+  .market-tabs {
+    width: 100%;
+  }
+
   .terminal-actions,
   .topstepDrawerButton,
   .terminal-action,
@@ -2700,8 +3032,8 @@ html[data-theme="light"] .strategyToggle input {
   }
 
   .topstepConnectionSummary,
+  .topstepConnectionHero,
   .topstepConnectForm,
-  .topstepAccountRow,
   .topstepConnectionFoot {
     grid-template-columns: 1fr;
   }

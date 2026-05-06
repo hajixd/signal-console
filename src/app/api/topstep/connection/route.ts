@@ -4,7 +4,8 @@ import {
   deleteStoredProjectXConnection,
   getStoredProjectXConnection,
   projectXConnectionStoreMode,
-  saveStoredProjectXConnection
+  saveStoredProjectXConnection,
+  setStoredProjectXConnectionPaused
 } from "@/lib/projectx-connections";
 import {
   loginProjectXApiKey,
@@ -23,6 +24,11 @@ const CONNECTION_MAX_AGE_SECONDS = 180 * 24 * 60 * 60;
 type ConnectPayload = {
   apiKey?: unknown;
   userName?: unknown;
+};
+
+type UpdatePayload = {
+  accountId?: unknown;
+  autoTradePaused?: unknown;
 };
 
 function normalizeText(value: unknown): string {
@@ -74,6 +80,7 @@ async function connectedStatus(connectionId: string): Promise<{ status: ProjectX
     return {
       status: {
         accounts: [],
+        autoTradePaused: true,
         connected: false,
         persisted: false
       }
@@ -85,8 +92,10 @@ async function connectedStatus(connectionId: string): Promise<{ status: ProjectX
   const accounts = await searchProjectXAccounts(activeToken, true);
   await saveStoredProjectXConnection({
     accounts,
+    autoTradePaused: connection.autoTradePaused,
     connectedAt: connection.connectedAt,
     id: connectionId,
+    pausedAccountIds: connection.pausedAccountIds,
     token: activeToken,
     userName: connection.userName
   });
@@ -94,8 +103,10 @@ async function connectedStatus(connectionId: string): Promise<{ status: ProjectX
   return {
     status: {
       accounts,
+      autoTradePaused: connection.autoTradePaused,
       checkedAt: new Date().toISOString(),
       connected: true,
+      pausedAccountIds: connection.pausedAccountIds,
       persisted: true,
       refreshed: Boolean(refreshedToken),
       userName: connection.userName
@@ -107,11 +118,7 @@ async function connectedStatus(connectionId: string): Promise<{ status: ProjectX
 export async function GET(request: NextRequest) {
   const connectionId = connectionIdFromRequest(request);
   if (!connectionId) {
-    return jsonStatus({
-      accounts: [],
-      connected: false,
-      persisted: false
-    });
+    return jsonStatus({ accounts: [], autoTradePaused: true, connected: false, persisted: false });
   }
 
   try {
@@ -120,9 +127,9 @@ export async function GET(request: NextRequest) {
     setConnectionCookie(response, connectionId);
     return response;
   } catch (error) {
-    await deleteStoredProjectXConnection(connectionId).catch(() => undefined);
     const response = jsonStatus({
       accounts: [],
+      autoTradePaused: true,
       connected: false,
       error: readableProjectXError(error),
       persisted: false
@@ -141,6 +148,7 @@ export async function POST(request: NextRequest) {
     return jsonStatus(
       {
         accounts: [],
+        autoTradePaused: true,
         connected: false,
         error: "Enter both the TopstepX username and API key.",
         persisted: false
@@ -155,14 +163,18 @@ export async function POST(request: NextRequest) {
     const accounts = await searchProjectXAccounts(token, true);
     await saveStoredProjectXConnection({
       accounts,
+      autoTradePaused: true,
       id: connectionId,
+      pausedAccountIds: accounts.map((account) => account.id),
       token,
       userName
     });
     const response = jsonStatus({
       accounts,
+      autoTradePaused: true,
       checkedAt: new Date().toISOString(),
       connected: true,
+      pausedAccountIds: accounts.map((account) => account.id),
       persisted: true,
       userName
     });
@@ -172,6 +184,7 @@ export async function POST(request: NextRequest) {
     return jsonStatus(
       {
         accounts: [],
+        autoTradePaused: true,
         connected: false,
         error: readableProjectXError(error),
         persisted: false
@@ -179,6 +192,54 @@ export async function POST(request: NextRequest) {
       { status: 400 }
     );
   }
+}
+
+export async function PATCH(request: NextRequest) {
+  const connectionId = connectionIdFromRequest(request);
+  if (!connectionId) {
+    return jsonStatus(
+      {
+        accounts: [],
+        autoTradePaused: true,
+        connected: false,
+        error: "Add a ProjectX account before changing auto-trade status.",
+        persisted: false
+      },
+      { status: 400 }
+    );
+  }
+
+  const payload = ((await request.json().catch(() => ({}))) ?? {}) as UpdatePayload;
+  const autoTradePaused = payload.autoTradePaused === false ? false : true;
+  const accountId = typeof payload.accountId === "number" && Number.isInteger(payload.accountId) ? payload.accountId : undefined;
+
+  const connection = await setStoredProjectXConnectionPaused(connectionId, autoTradePaused, accountId);
+  if (!connection) {
+    const response = jsonStatus(
+      {
+        accounts: [],
+        autoTradePaused: true,
+        connected: false,
+        error: "ProjectX account is no longer connected.",
+        persisted: false
+      },
+      { status: 404 }
+    );
+    clearConnectionCookie(response);
+    return response;
+  }
+
+  const response = jsonStatus({
+    accounts: connection.accounts,
+    autoTradePaused: connection.autoTradePaused,
+    checkedAt: connection.lastCheckedAt,
+    connected: true,
+    pausedAccountIds: connection.pausedAccountIds,
+    persisted: true,
+    userName: connection.userName
+  });
+  setConnectionCookie(response, connectionId);
+  return response;
 }
 
 export async function DELETE(request: NextRequest) {
@@ -189,6 +250,7 @@ export async function DELETE(request: NextRequest) {
 
   const response = jsonStatus({
     accounts: [],
+    autoTradePaused: true,
     connected: false,
     persisted: false
   });

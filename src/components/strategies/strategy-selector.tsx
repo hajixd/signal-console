@@ -1,8 +1,7 @@
 "use client";
 
-import type { Route } from "next";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useRef, useState, useTransition } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import {
   emitStrategyEditsChanged,
   loadClientStrategyEdits,
@@ -45,7 +44,7 @@ type StrategySelectorProps = {
   defaultKeys: string[];
   persistedLiveKeys: string[];
   persistedStrategyEdits: StrategyEditSeedMap;
-  persistLiveSelection: (selectedKeys: string[]) => Promise<void>;
+  persistLiveSelection: (selectedKeys: string[], scopeKeys?: string[]) => Promise<void>;
   persistStrategyEdits: (edits: StrategyEditSeedMap) => Promise<void>;
 };
 
@@ -54,6 +53,8 @@ type SortDirection = "asc" | "desc";
 
 const STORAGE_KEY = STRATEGY_EDITS_STORAGE_KEY;
 const STRATEGY_SIZES_PARAM = "strategySizes";
+const EDIT_RENDER_DELAY_MS = 2500;
+const SELECTION_SYNC_DELAY_MS = 650;
 
 function formatMoney(value: number): string {
   return new Intl.NumberFormat("en-US", {
@@ -333,9 +334,9 @@ export default function StrategySelector({
 }: StrategySelectorProps) {
   const router = useRouter();
   const pathname = usePathname();
-  const [isPending, startTransition] = useTransition();
-  const [isSavingSelection, startSavingSelection] = useTransition();
+  const [, startSavingSelection] = useTransition();
   const [isSavingEdits, startSavingEdits] = useTransition();
+  const [isRenderingSelection, setIsRenderingSelection] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
   const [edits, setEdits] = useState<StrategyEditMap>({});
   const [activeKey, setActiveKey] = useState<string | null>(null);
@@ -343,19 +344,38 @@ export default function StrategySelector({
   const [searchQuery, setSearchQuery] = useState("");
   const [sortColumn, setSortColumn] = useState<SortColumn | null>(null);
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
-  const selected = new Set(selectedKeys);
+  const [optimisticSelectedKeys, setOptimisticSelectedKeys] = useState(selectedKeys);
+  const selected = new Set(optimisticSelectedKeys);
   const activeStrategy = strategies.find((strategy) => strategy.key === activeKey);
   const hasEdits = Object.keys(edits).length > 0;
   const normalizedSearchQuery = searchQuery.trim().toLowerCase();
   const orderByKey = new Map(strategies.map((strategy, index) => [strategy.key, index]));
+  const strategyScopeKeys = useMemo(() => strategies.map((strategy) => strategy.key), [strategies]);
+  const strategyScopeSignature = strategyScopeKeys.join("|");
   const selectionSignature = selectedKeys.join("|");
+  const optimisticSelectionSignature = optimisticSelectedKeys.join("|");
   const persistedLiveSelectionSignature = persistedLiveKeys.join("|");
   const normalizedPersistedEdits = normalizeEditMap(strategies, persistedStrategyEdits);
   const persistedEditsSignature = serializeEdits(normalizedPersistedEdits);
   const currentEditSignature = serializeEdits(edits);
   const lastSyncedSelectionRef = useRef<string>("");
   const lastSyncedEditsRef = useRef<string>("");
-  const controlsDisabled = isPending || isSavingSelection || isSavingEdits;
+  const selectionSyncTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const latestEditSignatureRef = useRef<string>(currentEditSignature);
+  const editSyncTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const editSyncRunRef = useRef(0);
+  const editControlsDisabled = isSavingEdits;
+
+  useEffect(() => {
+    setOptimisticSelectedKeys(selectedKeys);
+    setIsRenderingSelection(false);
+  }, [selectionSignature, selectedKeys]);
+
+  useEffect(() => {
+    return () => {
+      if (selectionSyncTimerRef.current) clearTimeout(selectionSyncTimerRef.current);
+    };
+  }, []);
 
   useEffect(() => {
     if (isLoaded) return;
@@ -384,63 +404,92 @@ export default function StrategySelector({
   }, [edits, isLoaded]);
 
   useEffect(() => {
-    if (selectionSignature === persistedLiveSelectionSignature) {
-      lastSyncedSelectionRef.current = selectionSignature;
+    if (optimisticSelectionSignature === persistedLiveSelectionSignature) {
+      lastSyncedSelectionRef.current = optimisticSelectionSignature;
+      if (selectionSyncTimerRef.current) {
+        clearTimeout(selectionSyncTimerRef.current);
+        selectionSyncTimerRef.current = null;
+      }
       return;
     }
-    if (lastSyncedSelectionRef.current === selectionSignature) return;
+    if (lastSyncedSelectionRef.current === optimisticSelectionSignature) return;
 
-    lastSyncedSelectionRef.current = selectionSignature;
-    startSavingSelection(async () => {
-      try {
-        await persistLiveSelection(selectedKeys);
-        router.refresh();
-      } catch (error) {
-        console.error("Failed to sync live strategy selection", error);
-        lastSyncedSelectionRef.current = "";
+    if (selectionSyncTimerRef.current) clearTimeout(selectionSyncTimerRef.current);
+    selectionSyncTimerRef.current = setTimeout(() => {
+      const selectedKeysToSync = optimisticSelectedKeys;
+      const signatureToSync = optimisticSelectionSignature;
+      lastSyncedSelectionRef.current = signatureToSync;
+      selectionSyncTimerRef.current = null;
+
+      startSavingSelection(async () => {
+        try {
+          await persistLiveSelection(selectedKeysToSync, strategyScopeKeys);
+          setIsRenderingSelection(true);
+          router.refresh();
+        } catch (error) {
+          console.error("Failed to sync live strategy selection", error);
+          lastSyncedSelectionRef.current = "";
+        }
+      });
+    }, SELECTION_SYNC_DELAY_MS);
+
+    return () => {
+      if (selectionSyncTimerRef.current) {
+        clearTimeout(selectionSyncTimerRef.current);
+        selectionSyncTimerRef.current = null;
       }
-    });
-  }, [persistLiveSelection, persistedLiveSelectionSignature, router, selectedKeys, selectionSignature]);
+    };
+  }, [optimisticSelectedKeys, optimisticSelectionSignature, persistLiveSelection, persistedLiveSelectionSignature, router, strategyScopeKeys, strategyScopeSignature]);
 
   useEffect(() => {
     if (!isLoaded) return;
     if (currentEditSignature === persistedEditsSignature) {
       lastSyncedEditsRef.current = currentEditSignature;
+      latestEditSignatureRef.current = currentEditSignature;
+      if (editSyncTimerRef.current) {
+        clearTimeout(editSyncTimerRef.current);
+        editSyncTimerRef.current = null;
+      }
       return;
     }
-    if (lastSyncedEditsRef.current === currentEditSignature) return;
+    latestEditSignatureRef.current = currentEditSignature;
+    if (editSyncTimerRef.current) clearTimeout(editSyncTimerRef.current);
 
-    lastSyncedEditsRef.current = currentEditSignature;
-    startSavingEdits(async () => {
-      try {
-        await persistStrategyEdits(edits);
-        router.refresh();
-      } catch (error) {
-        console.error("Failed to sync strategy edits", error);
-        lastSyncedEditsRef.current = "";
+    const syncRun = editSyncRunRef.current + 1;
+    editSyncRunRef.current = syncRun;
+    editSyncTimerRef.current = setTimeout(() => {
+      const editsToSync = edits;
+      const signatureToSync = currentEditSignature;
+      lastSyncedEditsRef.current = signatureToSync;
+      editSyncTimerRef.current = null;
+
+      startSavingEdits(async () => {
+        try {
+          await persistStrategyEdits(editsToSync);
+          if (editSyncRunRef.current === syncRun && latestEditSignatureRef.current === signatureToSync) {
+            router.refresh();
+          }
+        } catch (error) {
+          console.error("Failed to sync strategy edits", error);
+          if (editSyncRunRef.current === syncRun) lastSyncedEditsRef.current = "";
+        }
+      });
+    }, EDIT_RENDER_DELAY_MS);
+
+    return () => {
+      if (editSyncTimerRef.current) {
+        clearTimeout(editSyncTimerRef.current);
+        editSyncTimerRef.current = null;
       }
-    });
+    };
   }, [currentEditSignature, edits, isLoaded, persistStrategyEdits, persistedEditsSignature, router]);
 
   function navigate(nextKeys: string[], nextDefaultKeys = defaultKeys) {
-    startTransition(() => {
-      const params = new URLSearchParams(typeof window !== "undefined" ? window.location.search : "");
-      params.delete(STRATEGY_SIZES_PARAM);
-      if (nextKeys.length === 0) {
-        params.set("strategies", "none");
-      } else if (!sameSelection(nextKeys, nextDefaultKeys)) {
-        params.delete("strategies");
-        params.set("strategies", nextKeys.join(","));
-      } else {
-        params.delete("strategies");
-      }
-      const query = params.toString();
-      router.push((query ? `${pathname}?${query}` : pathname) as Route, { scroll: false });
-    });
+    setOptimisticSelectedKeys(nextKeys);
   }
 
   function toggleStrategy(key: string) {
-    const nextKeys = selected.has(key) ? selectedKeys.filter((item) => item !== key) : [...selectedKeys, key];
+    const nextKeys = selected.has(key) ? optimisticSelectedKeys.filter((item) => item !== key) : [...optimisticSelectedKeys, key];
     navigate(nextKeys);
   }
 
@@ -602,13 +651,21 @@ export default function StrategySelector({
 
   return (
     <div className="strategyPicker">
+      {isRenderingSelection || isSavingEdits ? (
+        <div className="korraLoadingOverlay" role="status" aria-live="polite">
+          <div className="korraLoadingCore">
+            <div className="korraLoadingSpinner" aria-hidden="true" />
+            <span className="korraLoadingText">{isSavingEdits ? "Rendering settings" : "Rendering selection"}</span>
+          </div>
+        </div>
+      ) : null}
       <div className="pickerHeader">
         <span>Strategies</span>
         <div className="pickerActions">
-          <button type="button" onClick={() => navigate([])} disabled={controlsDisabled || selectedKeys.length === 0}>
+          <button type="button" onClick={() => navigate([])} disabled={optimisticSelectedKeys.length === 0}>
             Clear
           </button>
-          <button type="button" onClick={resetAllEdits} disabled={controlsDisabled || !hasEdits}>
+          <button type="button" onClick={resetAllEdits} disabled={editControlsDisabled || !hasEdits}>
             Reset edits
           </button>
         </div>
@@ -735,7 +792,6 @@ export default function StrategySelector({
                 <input
                   type="checkbox"
                   checked={checked}
-                  disabled={controlsDisabled}
                   onChange={() => toggleStrategy(strategy.key)}
                 />
                 <span>{checked ? "On" : "Off"}</span>

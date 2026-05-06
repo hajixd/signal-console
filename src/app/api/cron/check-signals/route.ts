@@ -3,6 +3,7 @@ import { fetchMarketBars } from "@/lib/market-data";
 import { refreshMarketDataForRules } from "@/lib/market-data-refresh";
 import { saveCronRun } from "@/lib/live-config";
 import { activeRules, evaluateLatestSignal } from "@/lib/live-signals";
+import { executeProjectXAutoTrade } from "@/lib/projectx-auto-trader";
 import { hasTrade, saveTrade } from "@/lib/storage";
 import { sendTelegram } from "@/lib/telegram";
 import { TOPSTEP_100K_ACCOUNT, reviewTopstepSignal, withTopstepGuardNote } from "@/lib/topstep";
@@ -100,9 +101,29 @@ async function runSignalCheck(): Promise<CronResult> {
     });
 
   for (const candidate of selected) {
-    const notification = await sendTelegram(candidate.signal);
-    const trade = {
+    await saveTrade({
       ...candidate.signal,
+      autoTradeCheckedAt: new Date().toISOString(),
+      autoTradeError: "ProjectX execution reserved; awaiting cron execution.",
+      autoTradeStatus: "skipped"
+    });
+    const autoTrade = await executeProjectXAutoTrade(candidate.signal);
+    const executableSignal = {
+      ...candidate.signal,
+      autoTradeAccountId: autoTrade.accountId,
+      autoTradeAccountName: autoTrade.accountName,
+      autoTradeCheckedAt: autoTrade.checkedAt,
+      autoTradeContractId: autoTrade.contractId,
+      autoTradeContractName: autoTrade.contractName,
+      autoTradeCustomTag: autoTrade.customTag,
+      autoTradeError: autoTrade.error,
+      autoTradeOrderId: autoTrade.orderId,
+      autoTradeStatus: autoTrade.status
+    };
+    await saveTrade(executableSignal);
+    const notification = await sendTelegram(executableSignal);
+    const trade = {
+      ...executableSignal,
       telegramStatus: notification.status,
       telegramError: notification.error
     };

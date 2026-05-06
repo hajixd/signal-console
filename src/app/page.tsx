@@ -1,4 +1,5 @@
 import ChallengeReplay from "@/components/challenge/challenge-replay";
+import Link from "next/link";
 import SelectedStrategyStats from "@/components/strategies/selected-strategy-stats";
 import StrategySelector from "@/components/strategies/strategy-selector";
 import TopstepConnectionDrawer from "@/components/topstep/topstep-connection-drawer";
@@ -32,6 +33,7 @@ const DEFAULT_SELECTED_STRATEGY_COUNT = 1;
 
 type HomeProps = {
   searchParams?: Promise<{
+    market?: string;
     strategies?: string;
     accountSize?: string;
     profitTarget?: string;
@@ -41,6 +43,13 @@ type HomeProps = {
     dailyStop?: string;
   }>;
 };
+
+type MarketTabKey = "forex" | "futures";
+
+const MARKET_TABS: Array<{ key: MarketTabKey; label: string }> = [
+  { key: "forex", label: "Forex" },
+  { key: "futures", label: "Futures" }
+];
 
 type StrategyOption = {
   assetKey: string;
@@ -176,6 +185,22 @@ function parseSelection(value: string | undefined, allKeys: string[], defaultKey
   return value.split(",").filter((key) => allowed.has(key));
 }
 
+function parseMarketTab(value: string | undefined): MarketTabKey {
+  return value === "forex" ? "forex" : "futures";
+}
+
+function marketTabHref(tab: MarketTabKey, params: Awaited<HomeProps["searchParams"]> | undefined): string {
+  const nextParams = new URLSearchParams();
+  nextParams.set("market", tab);
+
+  for (const key of ["strategies", "accountSize", "profitTarget", "maxLoss", "dailyLoss", "dailyLock", "dailyStop"] as const) {
+    const value = params?.[key];
+    if (value) nextParams.set(key, value);
+  }
+
+  return `/?${nextParams.toString()}`;
+}
+
 function averageNumbers(values: number[]): number {
   return values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : 0;
 }
@@ -253,6 +278,19 @@ function tradeSizeMultiplier(trade: BacktestTrade, fallback = 1): number {
 
 function liveRowClass(trade: TradeAlert): string {
   return trade.side === "long" ? "up-row" : "down-row";
+}
+
+function autoTradeStatusClass(trade: TradeAlert): string {
+  if (trade.autoTradeStatus === "placed") return "sent";
+  if (trade.autoTradeStatus === "failed") return "failed";
+  return "skipped";
+}
+
+function autoTradeStatusLabel(trade: TradeAlert): string {
+  if (!trade.autoTradeStatus) return "off";
+  if (trade.autoTradeStatus === "placed") return "placed";
+  if (trade.autoTradeStatus === "dry_run") return "dry run";
+  return trade.autoTradeStatus;
 }
 
 function tradeDollarPnl(trade: BacktestTrade, sizeMultiplier = 1): number {
@@ -380,6 +418,7 @@ function challengeSessionCount(trades: { entryTime: string; pnlDollars: number }
 
 export default async function Home({ searchParams }: HomeProps) {
   const params = await searchParams;
+  const activeMarket = parseMarketTab(params?.market);
   const challengeRules = challengeRulesFromParams(params);
   const accountMultiplier = accountSizeMultiplier(challengeRules);
   const [liveTrades, strategyCatalog, backtestStats, backtestTrades, liveRules, liveConfig, datasetStatus] = await Promise.all([
@@ -408,7 +447,7 @@ export default async function Home({ searchParams }: HomeProps) {
     tradesByStrategy.set(trade.datasetId, bucket);
   }
 
-  const strategyOptions = strategyCatalog
+  const allStrategyOptions = strategyCatalog
     .map((entry) => {
       const stats = statsByStrategy.get(entry.key) ?? [];
       const trades = tradesByStrategy.get(entry.key) ?? [];
@@ -481,6 +520,7 @@ export default async function Home({ searchParams }: HomeProps) {
       if (left.trades === 0 || right.trades === 0) return left.trades === right.trades ? 0 : left.trades ? -1 : 1;
       return right.profitFactor - left.profitFactor;
     });
+  const strategyOptions = allStrategyOptions.filter((option) => option.market === activeMarket);
   const optionByKey = new Map(strategyOptions.map((option) => [option.key, option]));
   const allKeys = strategyOptions.map((option) => option.key);
   const persistedLiveEnabledKeys = liveConfig.enabledDatasetIds.filter((key) => allKeys.includes(key));
@@ -583,7 +623,7 @@ export default async function Home({ searchParams }: HomeProps) {
   const challengeReplaySeed = `trading-bot:${selectedKeys.join("|")}`;
   const challengeHistoricalSessions = challengeSessionCount(challengeReplayTrades);
   const telegramBotUsername = process.env.TELEGRAM_BOT_USERNAME?.replace(/^@/, "");
-  const telegramConfigured = Boolean(process.env.TELEGRAM_BOT_TOKEN && process.env.TELEGRAM_CHAT_ID);
+  const telegramConfigured = Boolean(process.env.TELEGRAM_BOT_TOKEN && (process.env.TELEGRAM_GROUP_CHAT_ID || process.env.TELEGRAM_CHAT_ID));
   const telegramLink = telegramBotUsername ? `https://t.me/${telegramBotUsername}` : "https://t.me/BotFather";
   const alertStore = storageMode();
   const assetStore = projectAssetMode();
@@ -592,6 +632,19 @@ export default async function Home({ searchParams }: HomeProps) {
   return (
     <main className="terminal">
       <section className="terminal-workspace" id="signals">
+        <nav className="market-tabs" aria-label="Market view">
+          {MARKET_TABS.map((tab) => (
+            <Link
+              aria-current={activeMarket === tab.key ? "page" : undefined}
+              className={`market-tab${activeMarket === tab.key ? " active" : ""}`}
+              href={marketTabHref(tab.key, params)}
+              key={tab.key}
+              prefetch
+            >
+              {tab.label}
+            </Link>
+          ))}
+        </nav>
         <header className="terminal-head">
           <div className="asset-meta">
             <h1>Trading Bot</h1>
@@ -663,8 +716,8 @@ export default async function Home({ searchParams }: HomeProps) {
               <strong>{process.env.TELEGRAM_BOT_TOKEN ? "Set" : "Missing"}</strong>
             </div>
             <div>
-              <span>Chat ID</span>
-              <strong>{process.env.TELEGRAM_CHAT_ID ? "Set" : "Missing"}</strong>
+              <span>Group chat ID</span>
+              <strong>{process.env.TELEGRAM_GROUP_CHAT_ID || process.env.TELEGRAM_CHAT_ID ? "Set" : "Missing"}</strong>
             </div>
             <div>
               <span>Route</span>
@@ -729,6 +782,7 @@ export default async function Home({ searchParams }: HomeProps) {
                   <col className="live-col-money" />
                   <col className="live-col-odds" />
                   <col className="live-col-status" />
+                  <col className="live-col-status" />
                   <col className="live-col-time" />
                 </colgroup>
                 <thead>
@@ -743,6 +797,7 @@ export default async function Home({ searchParams }: HomeProps) {
                     <th>Target $</th>
                     <th>Risk $</th>
                     <th>Odds</th>
+                    <th>ProjectX</th>
                     <th>Telegram</th>
                     <th>Signal time</th>
                   </tr>
@@ -765,6 +820,9 @@ export default async function Home({ searchParams }: HomeProps) {
                       <td>{fmtMoney(alertTargetDollars(trade))}</td>
                       <td>{fmtMoney(alertRiskDollars(trade))}</td>
                       <td>{fmtPct(trade.estimatedWinRatePct)}</td>
+                      <td title={trade.autoTradeError ?? trade.autoTradeContractName ?? trade.autoTradeContractId ?? undefined}>
+                        <span className={`status ${autoTradeStatusClass(trade)}`}>{autoTradeStatusLabel(trade)}</span>
+                      </td>
                       <td>
                         <span className={`status ${trade.telegramStatus}`}>{trade.telegramStatus}</span>
                       </td>

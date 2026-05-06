@@ -92,6 +92,15 @@ export type StrategyRule = {
 };
 
 export type TradeAlert = {
+  autoTradeAccountId?: number;
+  autoTradeAccountName?: string;
+  autoTradeCheckedAt?: string;
+  autoTradeContractId?: string;
+  autoTradeContractName?: string;
+  autoTradeCustomTag?: string;
+  autoTradeError?: string;
+  autoTradeOrderId?: number;
+  autoTradeStatus?: "disabled" | "dry_run" | "failed" | "placed" | "skipped";
   id: string;
   createdAt: string;
   signalTime: string;
