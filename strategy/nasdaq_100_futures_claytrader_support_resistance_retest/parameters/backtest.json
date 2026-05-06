@@ -1,0 +1,26 @@
+{
+  "strategyId": "nasdaq_100_futures_claytrader_support_resistance_retest",
+  "label": "NQ ClayTrader Support Resistance Retest",
+  "folder": "nasdaq_100_futures_claytrader_support_resistance_retest",
+  "assetKey": "nasdaq_100_futures",
+  "phase": "support_resistance_retest",
+  "variantId": "support_resistance_retest|ny|range=48|entry=90|threshold=0.08|rr=2|sl_atr=1|max_bars=32|trend=ema|one_trade=1",
+  "source": "public_research_forward_selection_2026",
+  "selectionMethod": "manual_materialization_from_strategy_research_summary",
+  "sourceUrls": [
+    "https://www.oanda.com/us-en/trade-tap-blog/trading-knowledge/how-to-get-started-in-the-world-of-trading-part-2/",
+    "https://claytrader.com/stock_chart/trading-breakout-strategy/"
+  ],
+  "researchSummary": "Forward-positive support/resistance retest candidate recovered from strategy/research_summary.csv.",
+  "recoveredFrom": "strategy/research_summary.csv",
+  "recoveredTrader": "ClayTrader",
+  "recoveredPlaybook": "Support Resistance Retest",
+  "recoveredSummaryPhase": "support_resistance_retest",
+  "selectedTrainingProfitFactor": 1.1429893,
+  "selectedTrainingTrades": 914,
+  "selectedForwardProfitFactor": 1.1716347,
+  "selectedForwardTrades": 346,
+  "forwardTotalR": 35.943068,
+  "oneTradePerDay": true,
+  "costUnits": 0.0
+}

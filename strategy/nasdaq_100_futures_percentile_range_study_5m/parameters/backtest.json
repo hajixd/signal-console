@@ -1,0 +1,13 @@
+{
+  "strategyId": "nasdaq_100_futures_percentile_range_study_5m",
+  "label": "NQ Percentile Range Study 5m",
+  "folder": "nasdaq_100_futures_percentile_range_study_5m",
+  "assetKey": "nasdaq_100_futures",
+  "phase": "percentile_range_study",
+  "variantId": "percentile_range_study|tf=5m|range=96|study=576|horizon=6|buckets=20|min_samples=16|edge_ticks=12|trend=ema|max_bars=18|one_trade=1",
+  "source": "rolling_min_max_percentile_study",
+  "tpUnits": 140,
+  "slUnits": 90,
+  "oneTradePerDay": true,
+  "costUnits": 0
+}

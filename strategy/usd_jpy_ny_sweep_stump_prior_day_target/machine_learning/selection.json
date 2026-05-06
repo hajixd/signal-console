@@ -1,0 +1,30 @@
+{
+  "strategyId": "usd_jpy_ny_sweep_stump_prior_day_target",
+  "label": "USD/JPY NY Sweep Stump Prior-Day Target",
+  "folder": "usd_jpy_ny_sweep_stump_prior_day_target",
+  "assetKey": "usd_jpy",
+  "phase": "ny_sweep_playbook",
+  "variantId": "ny_sweep_v4|model=stump|min=0.60|start=420|end=540|max_tests=1|risk_min=10|risk_max=22|min_wick=0.50|rr=2|max_bars=288|one_trade=1",
+  "source": "tuning_summary_recovered_2026",
+  "selectionMethod": "materialized_from_tuning_summary",
+  "recoveredForwardProfitFactor": 2.11382,
+  "recoveredForwardTrades": 27,
+  "recoveredForwardTotalR": 20.048767,
+  "oneTradePerDay": true,
+  "stopLossPolicy": {
+    "mode": "signal_extreme",
+    "bufferUnits": 5.0
+  },
+  "takeProfitPolicy": {
+    "mode": "prior_day_extreme",
+    "bufferUnits": 0.0
+  },
+  "sizePolicy": {
+    "mode": "confidence",
+    "minMultiplier": 0.75,
+    "maxMultiplier": 1.25,
+    "minConfidence": 0.6,
+    "maxConfidence": 0.8
+  },
+  "costUnits": 0.0
+}

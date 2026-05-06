@@ -1,0 +1,26 @@
+{
+  "strategyId": "gbp_usd_humbled_trader_vwap_pullback",
+  "label": "GBP/USD Humbled Trader VWAP Pullback",
+  "folder": "gbp_usd_humbled_trader_vwap_pullback",
+  "assetKey": "gbp_usd",
+  "phase": "vwap_pullback",
+  "variantId": "vwap_pullback|ny|threshold=0.1|rr=2|sl_atr=1|max_bars=24|trend=ema|one_trade=1",
+  "source": "public_research_forward_selection_2026",
+  "selectionMethod": "manual_materialization_from_strategy_research_summary",
+  "sourceUrls": [
+    "https://ftmo.oanda.com/blog/vwap-pullback-strategy-trade-with-volume-not-emotion/",
+    "https://www.humbledtrader.com/blog/vwap-strategy-secrets-boosting-your-trading-skills-to-the-next-level/"
+  ],
+  "researchSummary": "Forward-positive VWAP pullback candidate recovered from strategy/research_summary.csv.",
+  "recoveredFrom": "strategy/research_summary.csv",
+  "recoveredTrader": "Humbled Trader",
+  "recoveredPlaybook": "VWAP Pullback",
+  "recoveredSummaryPhase": "vwap_pullback",
+  "selectedTrainingProfitFactor": 1.1583213,
+  "selectedTrainingTrades": 73,
+  "selectedForwardProfitFactor": 1.0621731,
+  "selectedForwardTrades": 201,
+  "forwardTotalR": 7.7365282,
+  "oneTradePerDay": true,
+  "costUnits": 0.0
+}

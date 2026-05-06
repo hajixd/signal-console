@@ -1,0 +1,15 @@
+{
+  "strategyId": "gbp_usd_ny_sweep_stump",
+  "label": "GBP/USD NY Sweep V4 Stump",
+  "folder": "gbp_usd_ny_sweep_stump",
+  "assetKey": "gbp_usd",
+  "phase": "ny_sweep_playbook",
+  "variantId": "ny_sweep_v4|model=stump|min=0.60|start=420|end=510|max_tests=2|risk_min=10|risk_max=22|min_wick=0.50|rr=2|max_bars=288|one_trade=1",
+  "source": "tuning_summary_recovered_2026",
+  "selectionMethod": "materialized_from_tuning_summary",
+  "recoveredForwardProfitFactor": 2.833333,
+  "recoveredForwardTrades": 29,
+  "recoveredForwardTotalR": 22.0,
+  "oneTradePerDay": true,
+  "costUnits": 0.0
+}
