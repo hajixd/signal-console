@@ -114,8 +114,9 @@ type CsvRow = Record<string, string>;
 
 const BACKTEST_MANIFEST_PATH = "cache/backtest-manifest.json";
 const STRATEGY_ROOT = "strategy";
-const TIMEFRAME_ORDER = ["15m", "30m", "45m", "1h", "4h", "1d", "1w"] as const;
+const TIMEFRAME_ORDER = ["1m", "5m", "15m", "30m", "45m", "1h", "4h", "1d", "1w"] as const;
 const CATALOG_CACHE_TTL_MS = 60_000;
+const MANIFEST_STALE_AFTER_MS = 7 * 24 * 60 * 60 * 1000;
 
 let catalogCache: { promise: Promise<StrategyCatalog>; loadedAt: number } | null = null;
 
@@ -135,7 +136,8 @@ function strategyUsesPriorDayStructure(strategy: StrategyDefinition): boolean {
 }
 
 function strategyTimeframes(strategy: StrategyDefinition): string[] {
-  const timeframes = new Set<string>(["15m"]);
+  const timeframe = strategy.defaults?.variantId?.split("|").find((part) => part.startsWith("tf="))?.slice(3);
+  const timeframes = new Set<string>([timeframe || "15m"]);
   if (strategyUsesPriorDayStructure(strategy)) {
     timeframes.add("1d");
   }
@@ -421,6 +423,11 @@ async function readManifestCatalog(): Promise<StrategyCatalog | null> {
   return null;
 }
 
+function latestTradeTime(catalog: StrategyCatalog | null): number {
+  if (!catalog?.trades.length) return 0;
+  return Math.max(...catalog.trades.map((trade) => Date.parse(trade.entryTime)).filter(Number.isFinite));
+}
+
 export async function buildLocalStrategyCatalog(): Promise<StrategyCatalog> {
   const trades: BacktestTrade[] = [];
 
@@ -462,7 +469,18 @@ export async function buildLocalStrategyCatalog(): Promise<StrategyCatalog> {
 }
 
 async function buildStrategyCatalog(): Promise<StrategyCatalog> {
-  return (await readManifestCatalog()) ?? buildLocalStrategyCatalog();
+  const manifest = await readManifestCatalog();
+  if (!manifest) return buildLocalStrategyCatalog();
+
+  if (process.env.BACKTEST_FORCE_LOCAL === "1") return buildLocalStrategyCatalog();
+
+  const manifestLatestTradeTime = latestTradeTime(manifest);
+  if (manifestLatestTradeTime && Date.now() - manifestLatestTradeTime <= MANIFEST_STALE_AFTER_MS) {
+    return manifest;
+  }
+
+  const local = await buildLocalStrategyCatalog();
+  return latestTradeTime(local) > manifestLatestTradeTime ? local : manifest;
 }
 
 async function loadStrategyCatalog(): Promise<StrategyCatalog> {

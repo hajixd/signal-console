@@ -3,6 +3,10 @@
     {
       "path": "/api/cron/check-signals",
       "schedule": "*/15 * * * *"
+    },
+    {
+      "path": "/api/cron/refresh-backtests",
+      "schedule": "22 */4 * * *"
     }
   ]
 }

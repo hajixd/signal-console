@@ -62,20 +62,27 @@ function strategyEditSignature(edits: Record<string, PersistedStrategyEdit>): st
   );
 }
 
-export async function syncLiveSelection(selectedKeys: string[]): Promise<void> {
+export async function syncLiveSelection(selectedKeys: string[], scopeKeys?: string[]): Promise<void> {
   const normalized = normalizeSelectedKeys(selectedKeys);
+  const normalizedScope = scopeKeys ? new Set(normalizeSelectedKeys(scopeKeys)) : null;
   const existing = await getLiveConfig();
+  const nextEnabledDatasetIds = normalizedScope
+    ? [...existing.enabledDatasetIds.filter((key) => !normalizedScope.has(key)), ...normalized]
+    : normalized;
+  const nextDashboardSelectedDatasetIds = normalizedScope
+    ? [...existing.dashboardSelectedDatasetIds.filter((key) => !normalizedScope.has(key)), ...normalized]
+    : normalized;
 
   if (
-    sameSelection(existing.enabledDatasetIds, normalized) &&
-    sameSelection(existing.dashboardSelectedDatasetIds, normalized)
+    sameSelection(existing.enabledDatasetIds, nextEnabledDatasetIds) &&
+    sameSelection(existing.dashboardSelectedDatasetIds, nextDashboardSelectedDatasetIds)
   ) {
     return;
   }
 
   await saveLiveConfig({
-    enabledDatasetIds: normalized,
-    dashboardSelectedDatasetIds: normalized,
+    enabledDatasetIds: nextEnabledDatasetIds,
+    dashboardSelectedDatasetIds: nextDashboardSelectedDatasetIds,
     strategyEdits: existing.strategyEdits
   });
 }

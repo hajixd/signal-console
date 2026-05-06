@@ -184,6 +184,58 @@ function tradePathStats(trade: TradeHistoryRow, bars: ChartBar[]): { mfe: number
   };
 }
 
+function priceTouched(bar: ChartBar, price: number): boolean {
+  return Number.isFinite(price) && bar.low <= price && bar.high >= price;
+}
+
+function exitTargetPrice(trade: TradeHistoryRow): number {
+  const targetDistance = Math.abs(trade.exitPrice - trade.targetPrice);
+  const stopDistance = Math.abs(trade.exitPrice - trade.stopPrice);
+  const tolerance = Math.max(Math.abs(trade.exitPrice) * 0.00001, 0.00001);
+  if (targetDistance <= tolerance) return trade.targetPrice;
+  if (stopDistance <= tolerance) return trade.stopPrice;
+  return trade.exitPrice;
+}
+
+function resolvedExitPositionForTrade(trade: TradeHistoryRow, bars: ChartBar[]): number | null {
+  const entryPosition = nearestPositionForAnchor(bars, trade.entryIndex, trade.entryTime);
+  const fallbackExitPosition = nearestPositionForAnchor(bars, trade.exitIndex, trade.exitTime);
+  if (entryPosition == null) return fallbackExitPosition;
+
+  const targetPrice = exitTargetPrice(trade);
+  for (let position = entryPosition; position < bars.length; position += 1) {
+    const bar = bars[position];
+    if (bar && priceTouched(bar, targetPrice)) return position;
+  }
+
+  return fallbackExitPosition;
+}
+
+function correctedDurationLabel(trade: TradeHistoryRow, bars: ChartBar[]): string {
+  const entryPosition = nearestPositionForAnchor(bars, trade.entryIndex, trade.entryTime);
+  const exitPosition = resolvedExitPositionForTrade(trade, bars);
+  if (entryPosition == null || exitPosition == null) return `${trade.durationLabel} / ${trade.durationDetailLabel}`;
+
+  const barsHeld = Math.max(1, Math.abs(exitPosition - entryPosition) + 1);
+  const entryTime = Date.parse(bars[entryPosition]?.time ?? trade.entryTime);
+  const exitTime = Date.parse(bars[exitPosition]?.time ?? trade.exitTime);
+  const detail = Number.isFinite(entryTime) && Number.isFinite(exitTime) ? durationFromMs(Math.abs(exitTime - entryTime)) : trade.durationDetailLabel;
+  return `${barsHeld.toLocaleString()} ${barsHeld === 1 ? "bar" : "bars"} / ${detail}`;
+}
+
+function durationFromMs(value: number): string {
+  let remainingMinutes = Math.round(value / 60_000);
+  const days = Math.floor(remainingMinutes / 1440);
+  remainingMinutes -= days * 1440;
+  const hours = Math.floor(remainingMinutes / 60);
+  const minutes = remainingMinutes - hours * 60;
+  const parts: string[] = [];
+  if (days) parts.push(`${days}d`);
+  if (hours || days) parts.push(`${hours}h`);
+  parts.push(`${minutes}m`);
+  return parts.join(" ");
+}
+
 function InfoBox({
   label,
   value,
@@ -592,7 +644,7 @@ function TradeCandlestickChart({
         {entryInView && entryPosition != null
           ? markerAt(
               entryPosition,
-              `Entry ${entrySide}`,
+              "Entry",
               direction === 1 ? "below" : "above",
               direction === 1 ? "up" : "down",
               direction === 1 ? "#34d399" : "#fb7185"
@@ -601,7 +653,7 @@ function TradeCandlestickChart({
         {exitInView && exitPosition != null
           ? markerAt(
               exitPosition,
-              `Exit ${exitSide}`,
+              "Exit",
               direction === 1 ? "above" : "below",
               direction === 1 ? "down" : "up",
               direction === 1 ? "#fb7185" : "#34d399"
@@ -704,6 +756,7 @@ export default function TradeHistory({ rows }: TradeHistoryProps) {
   const [activeTrade, setActiveTrade] = useState<TradeHistoryRow | null>(null);
   const [chartState, setChartState] = useState<ChartState>({ status: "idle", bars: [] });
   const activeStats = activeTrade ? tradePathStats(activeTrade, chartState.bars) : { mfe: null, mae: null };
+  const activeDurationLabel = activeTrade ? correctedDurationLabel(activeTrade, chartState.bars) : "";
 
   useEffect(() => {
     if (!activeTrade) return;
@@ -872,7 +925,7 @@ export default function TradeHistory({ rows }: TradeHistoryProps) {
 
               <div className="tradeModalMetrics two">
                 <InfoBox label="PnL" value={activeTrade.pnlLabel} valueClassName={activeTrade.pnlClassName} tone={activeTrade.pnlClassName === "up" ? "green" : activeTrade.pnlClassName === "down" ? "red" : "neutral"} />
-                <InfoBox label="Duration" value={`${activeTrade.durationLabel} / ${activeTrade.durationDetailLabel}`} />
+                <InfoBox label="Duration" value={activeDurationLabel} />
               </div>
 
               <div className="tradeModalMetrics four">

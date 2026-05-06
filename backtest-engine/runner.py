@@ -744,6 +744,7 @@ ALLOWED_METADATA_KEYS = {
     "recoveredForwardTrades",
     "recoveredForwardTotalR",
     "recoveredForwardMaxDrawdownR",
+    "verificationSummary",
 }
 
 STOP_LOSS_POLICY_MODES = {"signal_extreme", "prior_day_extreme"}
@@ -1025,6 +1026,28 @@ def variant_float(variant_id: str, key: str, fallback: float) -> float:
     raw_value = variant_value(variant_id, key)
     parsed = optional_float(raw_value)
     return parsed if parsed is not None else fallback
+
+
+def variant_deciles(variant_id: str, key: str, fallback: set[int]) -> set[int]:
+    raw_value = variant_value(variant_id, key)
+    if not raw_value:
+        return set(fallback)
+    deciles: set[int] = set()
+    for token in raw_value.split(","):
+        try:
+            decile = int(token.strip())
+        except ValueError:
+            continue
+        if 1 <= decile <= 10:
+            deciles.add(decile)
+    return deciles or set(fallback)
+
+
+def strategy_timeframe(strategy: BacktestStrategy) -> str:
+    timeframe = variant_value(strategy.variant_id, "tf") or "15m"
+    if timeframe not in {"1m", "5m", "15m", "30m", "45m", "1h", "4h", "1d", "1w"}:
+        raise ValueError(f"Unsupported timeframe '{timeframe}' for {strategy.id}")
+    return timeframe
 
 
 def rolling_mean(values: np.ndarray, length: int) -> np.ndarray:
@@ -1881,6 +1904,238 @@ def evaluate_mean_reversion(
     return echo_style_signal(strategy, side)
 
 
+def range_position(data: EnrichedData, index: int, range_bars: int) -> float | None:
+    start = index - range_bars + 1
+    if start < 0:
+        return None
+    range_high = float(np.max(data.high[start : index + 1]))
+    range_low = float(np.min(data.low[start : index + 1]))
+    range_size = range_high - range_low
+    if not maybe_number(range_size) or range_size <= 0:
+        return None
+    return min(1.0, max(0.0, (float(data.close[index]) - range_low) / range_size))
+
+
+def percentile_bucket(position: float, buckets: int) -> int:
+    return min(buckets - 1, max(0, int(math.floor(position * buckets))))
+
+
+def decile_for_position(position: float, buckets: int) -> int:
+    return min(buckets, max(1, int(math.floor(position * buckets)) + 1))
+
+
+def evaluate_percentile_range_study(
+    strategy: BacktestStrategy, data: EnrichedData, index: int, asset: AssetConfig, config: RuntimeConfig
+) -> dict[str, Any] | None:
+    range_bars = max(5, variant_int(strategy.variant_id, "range", 96))
+    study_bars = max(50, variant_int(strategy.variant_id, "study", 480))
+    horizon_bars = max(1, variant_int(strategy.variant_id, "horizon", 6))
+    buckets = max(5, variant_int(strategy.variant_id, "buckets", 20))
+    min_samples = max(3, variant_int(strategy.variant_id, "min_samples", 12))
+    edge_ticks = max(0.0, variant_float(strategy.variant_id, "edge_ticks", 8.0))
+
+    if asset.tick_size <= 0 or index < range_bars + horizon_bars + min_samples:
+        return None
+
+    current_position = range_position(data, index, range_bars)
+    if current_position is None:
+        return None
+    target_bucket = percentile_bucket(current_position, buckets)
+
+    first_sample = max(range_bars - 1, index - horizon_bars - study_bars + 1)
+    last_sample = index - horizon_bars
+    samples = 0
+    total_ticks = 0.0
+    for sample_index in range(first_sample, last_sample + 1):
+        sample_position = range_position(data, sample_index, range_bars)
+        if sample_position is None or percentile_bucket(sample_position, buckets) != target_bucket:
+            continue
+        total_ticks += (float(data.close[sample_index + horizon_bars]) - float(data.close[sample_index])) / asset.tick_size
+        samples += 1
+
+    if samples < min_samples:
+        return None
+
+    average_ticks = total_ticks / samples
+    if abs(average_ticks) < edge_ticks:
+        return None
+
+    side = 1 if average_ticks > 0 else -1
+    if not allowed_by_trend(data, index, side, config.trend):
+        return None
+
+    return {
+        "entry_mode": "market",
+        "side": side,
+        "tp_units": float(strategy.tp_units or 0.0),
+        "sl_units": float(strategy.sl_units or 0.0),
+        "score": abs(average_ticks),
+        "confidence": min(0.99, abs(average_ticks) / max(edge_ticks, 1.0)),
+    }
+
+
+def evaluate_decile_forward_edge(
+    strategy: BacktestStrategy, data: EnrichedData, index: int, asset: AssetConfig, config: RuntimeConfig
+) -> dict[str, Any] | None:
+    range_bars = max(5, variant_int(strategy.variant_id, "range", 96))
+    buckets = max(5, variant_int(strategy.variant_id, "buckets", 10))
+    long_deciles = variant_deciles(strategy.variant_id, "long", {10})
+    short_deciles = variant_deciles(strategy.variant_id, "short", {1})
+
+    current_position = range_position(data, index, range_bars)
+    prior_position = range_position(data, index - 1, range_bars) if index > 0 else None
+    if current_position is None:
+        return None
+    current_decile = decile_for_position(current_position, buckets)
+    prior_decile = decile_for_position(prior_position, buckets) if prior_position is not None else 0
+    if current_decile == prior_decile:
+        return None
+
+    side = 0
+    if current_decile in long_deciles:
+        side = 1
+    elif current_decile in short_deciles:
+        side = -1
+    if side == 0 or not allowed_by_trend(data, index, side, config.trend):
+        return None
+
+    return {
+        "entry_mode": "market",
+        "side": side,
+        "tp_units": float(strategy.tp_units or 0.0),
+        "sl_units": float(strategy.sl_units or 0.0),
+        "score": float(current_decile),
+    }
+
+
+def moving_average_parts(strategy: BacktestStrategy) -> tuple[str, int]:
+    raw = (variant_value(strategy.variant_id, "ma") or "SMA20").upper()
+    kind = raw[:3] if raw.startswith(("EMA", "SMA")) else "SMA"
+    try:
+        length = int(raw[3:])
+    except ValueError:
+        length = 20
+    return kind, max(2, length)
+
+
+def moving_average_value(data: EnrichedData, index: int, kind: str, length: int) -> float:
+    if index < 0:
+        return math.nan
+    if kind == "SMA":
+        if index + 1 < length:
+            return math.nan
+        return float(np.mean(data.close[index - length + 1 : index + 1]))
+    if length == 9:
+        return float(data.ema9[index])
+    if length == 21:
+        return float(data.ema21[index])
+    if length == 30:
+        return float(data.ema30[index])
+    if length == 34:
+        return float(data.ema34[index])
+    if length == 50:
+        return float(data.ema50[index])
+    if length == 200:
+        return float(data.ema200[index])
+
+    values = data.close[: index + 1]
+    if values.shape[0] == 0:
+        return math.nan
+    alpha = 2.0 / (length + 1.0)
+    current = float(values[0])
+    for value in values[1:]:
+        current = alpha * float(value) + (1.0 - alpha) * current
+    return current
+
+
+def moving_average_touched(data: EnrichedData, index: int, average: float, setup_side: str) -> bool:
+    if not maybe_number(average):
+        return False
+    if setup_side == "resistance_short":
+        return bool(data.high[index] >= average and data.close[index] <= average)
+    return bool(data.low[index] <= average and data.close[index] >= average)
+
+
+def evaluate_moving_average_touch(
+    strategy: BacktestStrategy, data: EnrichedData, index: int, asset: AssetConfig, config: RuntimeConfig
+) -> dict[str, Any] | None:
+    if index <= 0:
+        return None
+    kind, length = moving_average_parts(strategy)
+    setup_side = variant_value(strategy.variant_id, "side") or "support_long"
+    if setup_side not in {"support_long", "resistance_short"}:
+        setup_side = "support_long"
+
+    average = moving_average_value(data, index, kind, length)
+    prior_average = moving_average_value(data, index - 1, kind, length)
+    if not maybe_number(average) or not maybe_number(prior_average):
+        return None
+
+    if setup_side == "support_long":
+        if data.close[index - 1] <= prior_average or not moving_average_touched(data, index, average, setup_side):
+            return None
+        side = 1
+    else:
+        if data.close[index - 1] >= prior_average or not moving_average_touched(data, index, average, setup_side):
+            return None
+        side = -1
+
+    if variant_value(strategy.variant_id, "fresh") != "0" and moving_average_touched(data, index - 1, prior_average, setup_side):
+        return None
+    if not allowed_by_trend(data, index, side, config.trend):
+        return None
+
+    return {
+        "entry_mode": "market",
+        "side": side,
+        "tp_units": float(strategy.tp_units or 0.0),
+        "sl_units": float(strategy.sl_units or 0.0),
+    }
+
+
+def average_parts_from_token(raw: str, fallback: str) -> tuple[str, int]:
+    token = (raw or fallback).upper()
+    kind = token[:3] if token.startswith(("EMA", "SMA")) else fallback[:3]
+    try:
+        length = int(token[3:])
+    except ValueError:
+        length = int(fallback[3:])
+    return kind, max(2, length)
+
+
+def evaluate_moving_average_crossover(
+    strategy: BacktestStrategy, data: EnrichedData, index: int, asset: AssetConfig, config: RuntimeConfig
+) -> dict[str, Any] | None:
+    if index <= 0:
+        return None
+
+    fast_kind, fast_length = average_parts_from_token(variant_value(strategy.variant_id, "fast") or "", "SMA50")
+    slow_kind, slow_length = average_parts_from_token(variant_value(strategy.variant_id, "slow") or "", "SMA200")
+    direction = variant_value(strategy.variant_id, "direction") or "long"
+
+    fast_now = moving_average_value(data, index, fast_kind, fast_length)
+    slow_now = moving_average_value(data, index, slow_kind, slow_length)
+    fast_prior = moving_average_value(data, index - 1, fast_kind, fast_length)
+    slow_prior = moving_average_value(data, index - 1, slow_kind, slow_length)
+    if not all(maybe_number(value) for value in (fast_now, slow_now, fast_prior, slow_prior)):
+        return None
+
+    side = 0
+    if direction in {"long", "both"} and fast_prior <= slow_prior and fast_now > slow_now:
+        side = 1
+    elif direction in {"short", "both"} and fast_prior >= slow_prior and fast_now < slow_now:
+        side = -1
+    if side == 0:
+        return None
+
+    return {
+        "entry_mode": "market",
+        "side": side,
+        "tp_units": float(strategy.tp_units or 0.0),
+        "sl_units": float(strategy.sl_units or 0.0),
+    }
+
+
 def evaluate_reddit_capitulation_reversion(
     strategy: BacktestStrategy, data: EnrichedData, index: int, asset: AssetConfig, config: RuntimeConfig
 ) -> dict[str, Any] | None:
@@ -2417,6 +2672,14 @@ def evaluate_strategy_signal(
         signal = evaluate_momentum(strategy, data, index, asset)
     elif strategy.phase == "mean_reversion":
         signal = evaluate_mean_reversion(strategy, data, index, asset)
+    elif strategy.phase == "percentile_range_study":
+        signal = evaluate_percentile_range_study(strategy, data, index, asset, config)
+    elif strategy.phase == "decile_forward_edge":
+        signal = evaluate_decile_forward_edge(strategy, data, index, asset, config)
+    elif strategy.phase == "moving_average_touch":
+        signal = evaluate_moving_average_touch(strategy, data, index, asset, config)
+    elif strategy.phase == "moving_average_crossover":
+        signal = evaluate_moving_average_crossover(strategy, data, index, asset, config)
     elif strategy.phase == "parabolic_fade":
         signal = evaluate_parabolic_fade(strategy, data, index, asset, config)
     elif strategy.phase == "vwap_pullback":
@@ -2444,6 +2707,10 @@ def evaluate_strategy_signal(
     elif signal is None and strategy.phase not in {
         "momentum",
         "mean_reversion",
+        "percentile_range_study",
+        "decile_forward_edge",
+        "moving_average_touch",
+        "moving_average_crossover",
         "parabolic_fade",
         "vwap_pullback",
         "support_resistance_retest",
@@ -3152,6 +3419,79 @@ def write_strategy_backtest_csv(csv_path: Path, trades: list[BacktestTradeRow]) 
     temp_path.replace(csv_path)
 
 
+def parse_iso_timestamp(value: str) -> int:
+    parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=timezone.utc)
+    return int(parsed.timestamp())
+
+
+def parse_side(value: str) -> int:
+    return 1 if value.strip().lower() == "long" else -1
+
+
+def read_strategy_backtest_csv(csv_path: Path) -> list[BacktestTradeRow]:
+    if not csv_path.exists():
+        return []
+
+    trades: list[BacktestTradeRow] = []
+    with csv_path.open("r", newline="", encoding="utf-8") as handle:
+        reader = csv.DictReader(handle)
+        for row in reader:
+            try:
+                trades.append(
+                    BacktestTradeRow(
+                        strategy_id=str(row["strategy_id"]),
+                        asset_key=str(row["asset_key"]),
+                        asset_name=str(row["asset_name"]),
+                        market=str(row["market"]),
+                        symbol=str(row["symbol"]),
+                        phase=str(row["phase"]),
+                        variant_id=str(row.get("variant_id", "")),
+                        side=parse_side(str(row["side"])),
+                        signal_time=parse_iso_timestamp(str(row["signal_time"])),
+                        entry_index=int(row["entry_index"]),
+                        exit_index=int(row["exit_index"]),
+                        entry_time=parse_iso_timestamp(str(row["entry_time"])),
+                        exit_time=parse_iso_timestamp(str(row["exit_time"])),
+                        entry_price=float(row["entry_price"]),
+                        exit_price=float(row["exit_price"]),
+                        net_units=float(row["net_units"]),
+                        r_multiple=float(row["r_multiple"]),
+                        tp_units=float(row["tp_units"]),
+                        sl_units=float(row["sl_units"]),
+                        cost_units=float(row.get("cost_units", 0) or 0),
+                        exit_reason=str(row["exit_reason"]),
+                        bars_held=int(row["bars_held"]),
+                        source=str(row.get("source", "")),
+                        tp_mode=str(row.get("tp_mode", "fixed") or "fixed"),
+                        sl_mode=str(row.get("sl_mode", "fixed") or "fixed"),
+                        size_mode=str(row.get("size_mode", "auto") or "auto"),
+                        size_multiplier=float(row.get("size_multiplier", 1) or 1),
+                    )
+                )
+            except (KeyError, TypeError, ValueError):
+                continue
+    return sorted(trades, key=lambda trade: (trade.signal_time, trade.entry_time, trade.exit_time))
+
+
+def incremental_backtest_start(existing_trades: list[BacktestTradeRow], overlap_days: int) -> int | None:
+    if not existing_trades:
+        return None
+    latest_signal = max(trade.signal_time for trade in existing_trades)
+    return max(BACKTEST_START_TS, latest_signal - max(0, overlap_days) * 24 * 60 * 60)
+
+
+def merge_incremental_backtest_trades(
+    existing_trades: list[BacktestTradeRow],
+    replacement_trades: list[BacktestTradeRow],
+    replacement_start_ts: int,
+) -> list[BacktestTradeRow]:
+    kept = [trade for trade in existing_trades if trade.signal_time < replacement_start_ts]
+    merged = [*kept, *replacement_trades]
+    return sorted(merged, key=lambda trade: (trade.signal_time, trade.entry_time, trade.exit_time))
+
+
 def trade_signature(trade: BacktestTradeRow) -> tuple[Any, ...]:
     return (
         trade.side,
@@ -3235,6 +3575,38 @@ def parse_date_argument(value: str | None) -> int | None:
     return int(parsed.timestamp())
 
 
+def load_incremental_start_state(state_path: str | None) -> dict[tuple[str, str], int]:
+    if not state_path:
+        return {}
+
+    path = Path(state_path)
+    if not path.exists():
+        raise FileNotFoundError(f"Missing incremental start state: {path}")
+
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    tails = payload.get("tails", {}) if isinstance(payload, dict) else {}
+    state: dict[tuple[str, str], int] = {}
+
+    if not isinstance(tails, dict):
+        return state
+
+    for asset_key, by_timeframe in tails.items():
+        if not isinstance(asset_key, str) or not isinstance(by_timeframe, dict):
+            continue
+        for timeframe, tail in by_timeframe.items():
+            if not isinstance(timeframe, str) or not isinstance(tail, dict):
+                continue
+            raw_time = tail.get("lastBarTime")
+            if isinstance(raw_time, (int, float)) and math.isfinite(raw_time):
+                state[(asset_key, timeframe)] = int(raw_time)
+                continue
+            raw_iso = tail.get("lastBarAt")
+            if isinstance(raw_iso, str) and raw_iso:
+                state[(asset_key, timeframe)] = parse_iso_timestamp(raw_iso)
+
+    return state
+
+
 def run_backtests(
     strategy_filters: list[str] | None = None,
     timings: bool = False,
@@ -3243,10 +3615,14 @@ def run_backtests(
     tail_bars: int | None = None,
     strict_anti_cheat: bool = True,
     write_output: bool = True,
+    incremental: bool = False,
+    incremental_overlap_days: int = 7,
+    incremental_start_state_path: str | None = None,
 ) -> None:
     assets = load_asset_by_key()
-    enriched_cache: dict[str, EnrichedData] = {}
+    enriched_cache: dict[tuple[str, str], EnrichedData] = {}
     strategies = selected_backtest_strategies(strategy_filters)
+    incremental_start_state = load_incremental_start_state(incremental_start_state_path)
     overall_start = perf_counter()
 
     if timings:
@@ -3261,12 +3637,26 @@ def run_backtests(
         strategy_start = perf_counter()
         try:
             asset = assets[strategy.asset_key]
+            timeframe = strategy_timeframe(strategy)
+            cache_key = (asset.key, timeframe)
+            existing_trades = read_strategy_backtest_csv(output_path) if incremental and output_path.exists() else []
+            effective_start_ts = start_ts if start_ts is not None else BACKTEST_START_TS
+            state_start_ts = incremental_start_state.get((asset.key, timeframe))
+            incremental_start_ts = (
+                max(BACKTEST_START_TS, state_start_ts - max(0, incremental_overlap_days) * 24 * 60 * 60)
+                if state_start_ts is not None
+                else incremental_backtest_start(existing_trades, incremental_overlap_days)
+            )
+            if start_ts is None and existing_trades and incremental_start_ts is not None:
+                effective_start_ts = incremental_start_ts
             if timings:
                 print(f"Starting {strategy.id}")
-            if asset.key not in enriched_cache:
-                candle_path = DATA_ROOT / "15m" / asset.data_file
+                if incremental:
+                    print(f"  incremental start {iso_time(effective_start_ts)} from {len(existing_trades)} existing trade(s)")
+            if cache_key not in enriched_cache:
+                candle_path = DATA_ROOT / timeframe / asset.data_file
                 if not candle_path.exists():
-                    raise FileNotFoundError(f"Missing 15m candle file: {candle_path}. Run prepare-data first.")
+                    raise FileNotFoundError(f"Missing {timeframe} candle file: {candle_path}. Run/import that timeframe first.")
                 if timings:
                     print(f"  loading {candle_path}")
                 frame = load_candle_csv(candle_path)
@@ -3274,29 +3664,43 @@ def run_backtests(
                     frame = frame.tail(tail_bars)
                     if timings:
                         print(f"  tail-bars {tail_bars}")
-                enriched_cache[asset.key] = build_enriched_data(frame, asset)
+                enriched_cache[cache_key] = build_enriched_data(frame, asset)
                 if timings:
-                    print(f"  enriched {asset.key}")
+                    print(f"  enriched {asset.key} {timeframe}")
 
             if timings:
                 print(f"  running {strategy.id}")
             trades = run_single_strategy(
                 strategy,
                 asset,
-                enriched_cache[asset.key],
-                start_ts=start_ts if start_ts is not None else BACKTEST_START_TS,
+                enriched_cache[cache_key],
+                start_ts=effective_start_ts,
                 end_ts=end_ts,
                 strict_anti_cheat=strict_anti_cheat,
             )
             if write_output:
-                write_strategy_backtest_csv(output_path, trades)
+                output_trades = (
+                    merge_incremental_backtest_trades(existing_trades, trades, effective_start_ts)
+                    if incremental and existing_trades
+                    else trades
+                )
+                write_strategy_backtest_csv(output_path, output_trades)
             elapsed = perf_counter() - strategy_start
             if timings:
                 destination = output_path if write_output else "(no write)"
-                print(f"{strategy.id}: {len(trades)} trades in {elapsed:.2f}s -> {destination}")
+                if write_output and incremental and existing_trades:
+                    print(
+                        f"{strategy.id}: {len(trades)} replacement trade(s), {len(output_trades)} total "
+                        f"in {elapsed:.2f}s -> {destination}"
+                    )
+                else:
+                    print(f"{strategy.id}: {len(trades)} trades in {elapsed:.2f}s -> {destination}")
             else:
                 if write_output:
-                    print(f"Wrote {len(trades)} backtest trades to {output_path}")
+                    if incremental and existing_trades:
+                        print(f"Wrote {len(output_trades)} incremental backtest trades to {output_path}")
+                    else:
+                        print(f"Wrote {len(trades)} backtest trades to {output_path}")
                 else:
                     print(f"Computed {len(trades)} backtest trades for {strategy.id}")
         except Exception as exc:
@@ -3318,23 +3722,25 @@ def audit_anti_cheat(
     fail_fast: bool = False,
 ) -> None:
     assets = load_asset_by_key()
-    enriched_cache: dict[str, EnrichedData] = {}
+    enriched_cache: dict[tuple[str, str], EnrichedData] = {}
     strategies = selected_backtest_strategies(strategy_filters)
     mismatches: list[tuple[str, str]] = []
 
     print(f"Auditing anti-cheat on {len(strategies)} strategy(s)")
     for strategy in strategies:
         asset = assets[strategy.asset_key]
-        if asset.key not in enriched_cache:
-            candle_path = DATA_ROOT / "15m" / asset.data_file
+        timeframe = strategy_timeframe(strategy)
+        cache_key = (asset.key, timeframe)
+        if cache_key not in enriched_cache:
+            candle_path = DATA_ROOT / timeframe / asset.data_file
             if not candle_path.exists():
-                raise FileNotFoundError(f"Missing 15m candle file: {candle_path}. Run prepare-data first.")
+                raise FileNotFoundError(f"Missing {timeframe} candle file: {candle_path}. Run/import that timeframe first.")
             frame = load_candle_csv(candle_path)
             if tail_bars is not None and tail_bars > 0:
                 frame = frame.tail(tail_bars)
-            enriched_cache[asset.key] = build_enriched_data(frame, asset)
+            enriched_cache[cache_key] = build_enriched_data(frame, asset)
 
-        data = enriched_cache[asset.key]
+        data = enriched_cache[cache_key]
         fast_trades = run_single_strategy(
             strategy,
             asset,
@@ -3387,6 +3793,9 @@ def parse_args() -> argparse.Namespace:
     run.add_argument("--strict-anti-cheat", action="store_true", help="Deprecated alias. Strict anti-cheat mode is now the default.")
     run.add_argument("--fast-unsafe", action="store_true", help="Disable anti-cheat window slicing for faster exploratory runs.")
     run.add_argument("--no-write", action="store_true", help="Compute results without overwriting backtest CSV files.")
+    run.add_argument("--incremental", action="store_true", help="Preserve old trade rows and replace only a recent overlap window.")
+    run.add_argument("--incremental-overlap-days", type=int, default=7, help="Recent trade window to recompute when --incremental is used.")
+    run.add_argument("--incremental-start-state", help="JSON file created before candle refresh; uses prior data tails as incremental cutoffs.")
 
     listing = subparsers.add_parser("list-backtests", help="List available backtest strategies")
     listing.add_argument("--strategy", action="append", help="Optional strategy id/folder/asset filter. Repeat to include multiple.")
@@ -3414,6 +3823,9 @@ def main() -> None:
             tail_bars=args.tail_bars,
             strict_anti_cheat=not bool(args.fast_unsafe),
             write_output=not bool(args.no_write),
+            incremental=bool(args.incremental),
+            incremental_overlap_days=int(args.incremental_overlap_days),
+            incremental_start_state_path=args.incremental_start_state,
         )
         return
     if args.command == "list-backtests":

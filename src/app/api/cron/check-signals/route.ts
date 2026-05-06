@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { fetchMarketBars } from "@/lib/market-data";
+import { refreshMarketDataForRules } from "@/lib/market-data-refresh";
 import { saveCronRun } from "@/lib/live-config";
 import { activeRules, evaluateLatestSignal } from "@/lib/live-signals";
+import { executeProjectXAutoTrade } from "@/lib/projectx-auto-trader";
 import { hasTrade, saveTrade } from "@/lib/storage";
 import { sendTelegram } from "@/lib/telegram";
 import { TOPSTEP_100K_ACCOUNT, reviewTopstepSignal, withTopstepGuardNote } from "@/lib/topstep";
@@ -9,7 +11,7 @@ import type { CronResult } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
-export const maxDuration = 60;
+export const maxDuration = 300;
 
 function isAuthorized(request: NextRequest): "ok" | "missing-secret" | "bad-secret" {
   const secret = process.env.CRON_SECRET;
@@ -27,10 +29,15 @@ async function runSignalCheck(): Promise<CronResult> {
   };
   const candidates: Array<{ signal: ReturnType<typeof withTopstepGuardNote>; score: number; riskDollars: number }> = [];
   const rules = await activeRules();
+  const dataRefreshEnabled = process.env.CRON_REFRESH_MARKET_DATA !== "false";
+  const refreshedBars = dataRefreshEnabled ? await refreshMarketDataForRules(rules) : null;
+  if (refreshedBars) {
+    result.dataRefresh = refreshedBars.summary;
+  }
 
   for (const rule of rules) {
     try {
-      const bars = await fetchMarketBars(rule);
+      const bars = refreshedBars?.barsByAssetKey.get(rule.assetKey) ?? (await fetchMarketBars(rule));
       const signal = evaluateLatestSignal(rule, bars);
       if (!signal) continue;
 
@@ -94,9 +101,29 @@ async function runSignalCheck(): Promise<CronResult> {
     });
 
   for (const candidate of selected) {
-    const notification = await sendTelegram(candidate.signal);
-    const trade = {
+    await saveTrade({
       ...candidate.signal,
+      autoTradeCheckedAt: new Date().toISOString(),
+      autoTradeError: "ProjectX execution reserved; awaiting cron execution.",
+      autoTradeStatus: "skipped"
+    });
+    const autoTrade = await executeProjectXAutoTrade(candidate.signal);
+    const executableSignal = {
+      ...candidate.signal,
+      autoTradeAccountId: autoTrade.accountId,
+      autoTradeAccountName: autoTrade.accountName,
+      autoTradeCheckedAt: autoTrade.checkedAt,
+      autoTradeContractId: autoTrade.contractId,
+      autoTradeContractName: autoTrade.contractName,
+      autoTradeCustomTag: autoTrade.customTag,
+      autoTradeError: autoTrade.error,
+      autoTradeOrderId: autoTrade.orderId,
+      autoTradeStatus: autoTrade.status
+    };
+    await saveTrade(executableSignal);
+    const notification = await sendTelegram(executableSignal);
+    const trade = {
+      ...executableSignal,
       telegramStatus: notification.status,
       telegramError: notification.error
     };

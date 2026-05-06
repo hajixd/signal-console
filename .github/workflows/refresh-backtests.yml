@@ -1,0 +1,88 @@
+name: Refresh Backtests
+
+on:
+  schedule:
+    - cron: "17 */4 * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: refresh-backtests
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  refresh:
+    name: Refresh market data and backtests
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    env:
+      DATABENTO_API_KEY: ${{ secrets.DATABENTO_API_KEY }}
+      TWELVEDATA_API_KEYS: ${{ secrets.TWELVEDATA_API_KEYS }}
+      OANDA_API_TOKEN: ${{ secrets.OANDA_API_TOKEN }}
+      OANDA_API_BASE_URL: ${{ vars.OANDA_API_BASE_URL || 'https://api-fxpractice.oanda.com' }}
+      FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
+      FIREBASE_STORAGE_BUCKET: ${{ secrets.FIREBASE_STORAGE_BUCKET }}
+      FIREBASE_CLIENT_EMAIL: ${{ secrets.FIREBASE_CLIENT_EMAIL }}
+      FIREBASE_PRIVATE_KEY: ${{ secrets.FIREBASE_PRIVATE_KEY }}
+      FIREBASE_PRIVATE_KEY_ID: ${{ secrets.FIREBASE_PRIVATE_KEY_ID }}
+      FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
+      SIGNAL_CONSOLE_STORAGE_PREFIX: ${{ vars.SIGNAL_CONSOLE_STORAGE_PREFIX || 'signal-console' }}
+      CRON_REFRESH_MARKET_DATA: "true"
+
+    steps:
+      - name: Check out main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          npm ci
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
+
+      - name: Pull current runtime assets from Firebase
+        run: node --import tsx scripts/firebase-pull.ts --roots=data,strategy
+
+      - name: Capture current data tails
+        run: node --import tsx scripts/capture-data-tails.ts --out=.local/data-tail-state.json
+
+      - name: Refresh live market CSVs
+        run: node --import tsx scripts/refresh-live-market-data.ts
+
+      - name: Refresh 15m source data and derived folders
+        env:
+          AUTO_REFRESH_LOOKBACK_DAYS: ${{ vars.AUTO_REFRESH_LOOKBACK_DAYS || '7' }}
+        run: |
+          python backtest-engine/import_provider_data.py \
+            --all-assets \
+            --incremental \
+            --continue-on-error \
+            --lookback-days "$AUTO_REFRESH_LOOKBACK_DAYS" \
+            --prepare-data
+
+      - name: Run backtests
+        env:
+          AUTO_BACKTEST_OVERLAP_DAYS: ${{ vars.AUTO_BACKTEST_OVERLAP_DAYS || '7' }}
+        run: |
+          python backtest-engine/runner.py run-backtests \
+            --incremental \
+            --incremental-overlap-days "$AUTO_BACKTEST_OVERLAP_DAYS" \
+            --incremental-start-state .local/data-tail-state.json
+
+      - name: Upload changed runtime assets to Firebase
+        run: node --import tsx scripts/firebase-sync.ts --roots=config,data,strategy --changed-only

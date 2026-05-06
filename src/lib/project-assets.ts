@@ -12,13 +12,13 @@ function localPath(relativePath: string): string {
 
   switch (root) {
     case "cache":
-      return path.join(/* turbopackIgnore: true */ process.cwd(), "cache", ...rest);
+      return path.join(/*turbopackIgnore: true*/ process.cwd(), "cache", ...rest);
     case "config":
-      return path.join(/* turbopackIgnore: true */ process.cwd(), "config", ...rest);
+      return path.join(/*turbopackIgnore: true*/ process.cwd(), "config", ...rest);
     case "data":
-      return path.join(/* turbopackIgnore: true */ process.cwd(), "data", ...rest);
+      return path.join(/*turbopackIgnore: true*/ process.cwd(), "data", ...rest);
     case "strategy":
-      return path.join(/* turbopackIgnore: true */ process.cwd(), "strategy", ...rest);
+      return path.join(/*turbopackIgnore: true*/ process.cwd(), "strategy", ...rest);
     default:
       throw new Error(`Unsupported project asset root: ${root ?? "(empty)"}`);
   }

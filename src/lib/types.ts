@@ -92,6 +92,15 @@ export type StrategyRule = {
 };
 
 export type TradeAlert = {
+  autoTradeAccountId?: number;
+  autoTradeAccountName?: string;
+  autoTradeCheckedAt?: string;
+  autoTradeContractId?: string;
+  autoTradeContractName?: string;
+  autoTradeCustomTag?: string;
+  autoTradeError?: string;
+  autoTradeOrderId?: number;
+  autoTradeStatus?: "disabled" | "dry_run" | "failed" | "placed" | "skipped";
   id: string;
   createdAt: string;
   signalTime: string;
@@ -126,6 +135,22 @@ export type TradeAlert = {
 
 export type CronResult = {
   checkedAt: string;
+  dataRefresh?: {
+    assets: Array<{
+      assetKey: string;
+      dataFile: string;
+      firstBarAt?: string;
+      lastBarAt?: string;
+      rows: number;
+      symbol: string;
+      timeframes: string[];
+      updatedAt: string;
+      uploadedFiles: number;
+    }>;
+    errors: Array<{ assetKey: string; message: string; symbol: string }>;
+    refreshedAt: string;
+    uploadedFiles: number;
+  };
   generated: TradeAlert[];
   skippedDuplicates: string[];
   skippedRisk: Array<{ id: string; symbol: string; reason: string }>;

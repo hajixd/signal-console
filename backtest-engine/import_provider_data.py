@@ -159,6 +159,46 @@ def closed_15m_cutoff() -> int:
     return int(time.time()) - 75
 
 
+def read_existing_candles(asset: AssetConfig) -> list[CandleBar]:
+    input_path = DATA_15M_ROOT / asset.data_file
+    if not input_path.exists():
+        return []
+
+    bars: list[CandleBar] = []
+    with input_path.open("r", newline="", encoding="utf-8") as handle:
+        reader = csv.DictReader(handle)
+        for row in reader:
+            try:
+                bars.append(
+                    CandleBar(
+                        time=int(float(row["time"])),
+                        open=float(row["open"]),
+                        high=float(row["high"]),
+                        low=float(row["low"]),
+                        close=float(row["close"]),
+                        volume=float(row.get("volume", 0) or 0),
+                    )
+                )
+            except (KeyError, TypeError, ValueError):
+                continue
+    return sorted(bars, key=lambda item: item.time)
+
+
+def merge_candles(existing: list[CandleBar], incoming: list[CandleBar]) -> list[CandleBar]:
+    bars_by_time = {bar.time: bar for bar in existing}
+    for bar in incoming:
+        bars_by_time[bar.time] = bar
+    return [bars_by_time[timestamp] for timestamp in sorted(bars_by_time)]
+
+
+def incremental_start(asset: AssetConfig, lookback_days: int) -> datetime | None:
+    existing = read_existing_candles(asset)
+    if not existing:
+        return None
+    last_timestamp = existing[-1].time
+    return datetime.fromtimestamp(last_timestamp, tz=UTC) - timedelta(days=max(0, lookback_days))
+
+
 def write_candles(asset: AssetConfig, bars: list[CandleBar]) -> None:
     output_path = DATA_15M_ROOT / asset.data_file
     output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -217,6 +257,7 @@ def fetch_databento_15m(asset: AssetConfig, start: datetime, end: datetime) -> l
 
     for window_start, window_end in windows:
         effective_end = window_end
+        server_error_attempts = 0
         while True:
             params = {
                 "dataset": "GLBX.MDP3",
@@ -268,6 +309,16 @@ def fetch_databento_15m(asset: AssetConfig, start: datetime, end: datetime) -> l
                 available_end = parse_databento_available_end(body)
                 if exc.code == 422 and available_end and available_end > window_start and available_end < effective_end:
                     effective_end = available_end
+                    continue
+                if exc.code in {500, 502, 503, 504} and server_error_attempts < 3:
+                    server_error_attempts += 1
+                    wait_seconds = 5 * server_error_attempts
+                    print(
+                        f"[databento] {asset.key}: HTTP {exc.code}; retrying in {wait_seconds}s "
+                        f"({server_error_attempts}/3)",
+                        flush=True,
+                    )
+                    time.sleep(wait_seconds)
                     continue
                 raise RuntimeError(f"Databento {exc.code} for {asset.key}: {body[:240]}") from exc
             except URLError as exc:
@@ -387,6 +438,10 @@ def selected_assets(all_assets: dict[str, AssetConfig], requested: list[str] | N
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Download 15m candles from Databento and Twelve Data")
     parser.add_argument("--asset", action="append", help="Asset key to import. Repeat to import multiple assets.")
+    parser.add_argument("--all-assets", action="store_true", help="Import every asset in config/assets.json.")
+    parser.add_argument("--incremental", action="store_true", help="Start from the existing local CSV tail and merge new bars into it.")
+    parser.add_argument("--continue-on-error", action="store_true", help="Log per-asset provider failures and continue importing the rest.")
+    parser.add_argument("--lookback-days", type=int, default=7, help="When --incremental is used, refetch this many days before the local tail.")
     parser.add_argument("--start-date", help="Inclusive UTC start date in YYYY-MM-DD or ISO format. Defaults to 2020-01-01.")
     parser.add_argument("--end-date", help="Exclusive UTC end date in YYYY-MM-DD or ISO format. Defaults to now.")
     parser.add_argument("--prepare-data", action="store_true", help="Rebuild 30m/45m/1h/4h/1d/1w folders after import.")
@@ -405,25 +460,50 @@ def parse_end_date(value: str | None) -> datetime:
 def main() -> None:
     args = parse_args()
     assets = load_assets()
-    import_start = parse_start_date(args.start_date)
     import_end = parse_end_date(args.end_date)
-    if import_end <= import_start:
-        raise ValueError("end-date must be greater than start-date")
 
-    targets = selected_assets(assets, args.asset)
-    print(f"Importing {len(targets)} asset(s) from {import_start.date().isoformat()} to {import_end.date().isoformat()}", flush=True)
+    if args.all_assets and args.asset:
+        raise ValueError("Use either --all-assets or repeated --asset, not both.")
+
+    targets = list(assets.values()) if args.all_assets else selected_assets(assets, args.asset)
+    print(f"Importing {len(targets)} asset(s) through {import_end.isoformat()}", flush=True)
+    failures: list[tuple[str, str]] = []
 
     for asset in targets:
-        print(f"Starting {asset.key} ({asset.name})", flush=True)
-        bars = fetch_asset(asset, import_start, import_end)
-        if not bars:
-            raise RuntimeError(f"No 15m candles were returned for {asset.key}")
-        write_candles(asset, bars)
-        print(f"Wrote {len(bars)} 15m candles to data/15m/{asset.data_file}", flush=True)
+        try:
+            import_start = parse_start_date(args.start_date)
+            if args.incremental and not args.start_date:
+                import_start = incremental_start(asset, args.lookback_days) or import_start
+            if import_end <= import_start:
+                print(f"Skipping {asset.key}; existing data is already newer than the requested end.", flush=True)
+                continue
+
+            print(f"Starting {asset.key} ({asset.name})", flush=True)
+            print(f"Window {import_start.isoformat()} -> {import_end.isoformat()}", flush=True)
+            incoming_bars = fetch_asset(asset, import_start, import_end)
+            bars = merge_candles(read_existing_candles(asset), incoming_bars) if args.incremental else incoming_bars
+            if not bars:
+                raise RuntimeError(f"No 15m candles were returned for {asset.key}")
+            write_candles(asset, bars)
+            print(
+                f"Wrote {len(bars)} 15m candles to data/15m/{asset.data_file} ({len(incoming_bars)} fetched)",
+                flush=True,
+            )
+        except Exception as exc:
+            if not args.continue_on_error:
+                raise
+            message = str(exc)
+            failures.append((asset.key, message))
+            print(f"Failed {asset.key}: {message}", flush=True)
 
     if args.prepare_data:
         print("Rebuilding derived timeframes from data/15m", flush=True)
         prepare_data()
+
+    if failures:
+        print("Completed with provider failures:", flush=True)
+        for key, message in failures:
+            print(f"- {key}: {message}", flush=True)
 
 
 if __name__ == "__main__":

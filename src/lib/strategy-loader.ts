@@ -43,10 +43,18 @@ import goldFuturesRedditOrbBreakoutStrategy from "@strategy/gold_futures_reddit_
 import goldFuturesToriTradesTrendlineBreakRetestStrategy from "@strategy/gold_futures_tori_trades_trendline_break_retest/strategy";
 import goldSpotToriTradesTrendlineBreakRetestStrategy from "@strategy/gold_spot_tori_trades_trendline_break_retest/strategy";
 import nasdaq100FuturesClaytraderSupportResistanceRetestStrategy from "@strategy/nasdaq_100_futures_claytrader_support_resistance_retest/strategy";
+import nasdaq100FuturesDecileForwardEdge5mStrategy from "@strategy/nasdaq_100_futures_decile_forward_edge_5m/strategy";
 import nasdaq100FuturesMomentumStrategy from "@strategy/nasdaq_100_futures_momentum/strategy";
+import nasdaq100FuturesPercentileRangeStudy1hStrategy from "@strategy/nasdaq_100_futures_percentile_range_study_1h/strategy";
+import nasdaq100FuturesPercentileRangeStudy1mStrategy from "@strategy/nasdaq_100_futures_percentile_range_study_1m/strategy";
+import nasdaq100FuturesPercentileRangeStudy5mStrategy from "@strategy/nasdaq_100_futures_percentile_range_study_5m/strategy";
+import nasdaq100FuturesPercentileRangeStudy15mStrategy from "@strategy/nasdaq_100_futures_percentile_range_study_15m/strategy";
+import nasdaq100FuturesPercentileRangeStudy30mStrategy from "@strategy/nasdaq_100_futures_percentile_range_study_30m/strategy";
 import nasdaq100FuturesRedditEmaPullbackStrategy from "@strategy/nasdaq_100_futures_reddit_ema_pullback/strategy";
 import nasdaq100FuturesRedditOrbBreakoutStrategy from "@strategy/nasdaq_100_futures_reddit_orb_breakout/strategy";
 import nasdaq100FuturesRedditOrbRetestStrategy from "@strategy/nasdaq_100_futures_reddit_orb_retest/strategy";
+import nasdaq100FuturesSma20SupportBounce1hStrategy from "@strategy/nasdaq_100_futures_sma20_support_bounce_1h/strategy";
+import nasdaq100FuturesSma50Sma200Cross15mStrategy from "@strategy/nasdaq_100_futures_sma50_sma200_cross_15m/strategy";
 import nasdaq100FuturesToriTradesTrendlineBreakRetestStrategy from "@strategy/nasdaq_100_futures_tori_trades_trendline_break_retest/strategy";
 import nzdUsdNySweepBayesStrategy from "@strategy/nzd_usd_ny_sweep_bayes/strategy";
 import nzdUsdNySweepLogitStrategy from "@strategy/nzd_usd_ny_sweep_logit/strategy";
@@ -124,10 +132,18 @@ export const STRATEGY_DEFINITIONS: StrategyDefinition[] = [
   goldFuturesToriTradesTrendlineBreakRetestStrategy,
   goldSpotToriTradesTrendlineBreakRetestStrategy,
   nasdaq100FuturesClaytraderSupportResistanceRetestStrategy,
+  nasdaq100FuturesDecileForwardEdge5mStrategy,
   nasdaq100FuturesMomentumStrategy,
+  nasdaq100FuturesPercentileRangeStudy1mStrategy,
+  nasdaq100FuturesPercentileRangeStudy5mStrategy,
+  nasdaq100FuturesPercentileRangeStudy15mStrategy,
+  nasdaq100FuturesPercentileRangeStudy30mStrategy,
+  nasdaq100FuturesPercentileRangeStudy1hStrategy,
   nasdaq100FuturesRedditEmaPullbackStrategy,
   nasdaq100FuturesRedditOrbBreakoutStrategy,
   nasdaq100FuturesRedditOrbRetestStrategy,
+  nasdaq100FuturesSma20SupportBounce1hStrategy,
+  nasdaq100FuturesSma50Sma200Cross15mStrategy,
   nasdaq100FuturesToriTradesTrendlineBreakRetestStrategy,
   nzdUsdNySweepBayesStrategy,
   nzdUsdNySweepLogitStrategy,

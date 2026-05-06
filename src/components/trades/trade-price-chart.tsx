@@ -116,6 +116,34 @@ function nearestMappedCandle(candles: MappedCandle[], indexValue: number, timeVa
   return bestCandle;
 }
 
+function priceTouched(candle: MappedCandle, price: number): boolean {
+  return Number.isFinite(price) && candle.low <= price && candle.high >= price;
+}
+
+function resolvedExitCandle(candles: MappedCandle[], trade: TradeChartTrade, entryCandle: MappedCandle | null): MappedCandle | null {
+  if (!candles.length) return null;
+  const fallback = nearestMappedCandle(candles, trade.exitIndex, trade.exitTime);
+  const exitReasonPrice =
+    Math.abs(trade.exitPrice - trade.targetPrice) <= Math.max(Math.abs(trade.targetPrice) * 0.00001, 0.00001)
+      ? trade.targetPrice
+      : Math.abs(trade.exitPrice - trade.stopPrice) <= Math.max(Math.abs(trade.stopPrice) * 0.00001, 0.00001)
+        ? trade.stopPrice
+        : trade.exitPrice;
+
+  const entryPosition = candleIndex(candles, entryCandle);
+  const fallbackPosition = candleIndex(candles, fallback);
+  const searchStart = Math.max(entryPosition, 0);
+  const searchEnd = Math.max(fallbackPosition, Math.min(candles.length - 1, searchStart + 1));
+
+  for (let position = searchStart; position <= candles.length - 1; position += 1) {
+    const candle = candles[position]!;
+    if (priceTouched(candle, exitReasonPrice)) return candle;
+    if (position >= searchEnd && fallbackPosition > entryPosition) break;
+  }
+
+  return fallback;
+}
+
 function candleIndex(candles: MappedCandle[], candle: MappedCandle | null): number {
   if (!candle) return 0;
   const found = candles.findIndex((candidate) => candidate.time === candle.time);
@@ -178,8 +206,8 @@ export default function TradePriceChart({
     [mappedCandles, trade.entryIndex, trade.entryTime]
   );
   const exitCandle = useMemo(
-    () => nearestMappedCandle(mappedCandles, trade.exitIndex, trade.exitTime),
-    [mappedCandles, trade.exitIndex, trade.exitTime]
+    () => resolvedExitCandle(mappedCandles, trade, entryCandle),
+    [entryCandle, mappedCandles, trade]
   );
   const visibleAnchor = entryCandle ?? mappedCandles[0] ?? null;
   const displayBar = activeBar ?? visibleAnchor?.source ?? bars[0] ?? null;
@@ -306,7 +334,7 @@ export default function TradePriceChart({
         position: isLong ? "belowBar" : "aboveBar",
         shape: isLong ? "arrowUp" : "arrowDown",
         color: isLong ? "#34d399" : "#fb7185",
-        text: isLong ? "Entry Buy" : "Entry Sell",
+        text: "Entry",
         size: 1.25
       });
     }
@@ -316,7 +344,7 @@ export default function TradePriceChart({
         position: isLong ? "aboveBar" : "belowBar",
         shape: isLong ? "arrowDown" : "arrowUp",
         color: isLong ? "#fb7185" : "#34d399",
-        text: isLong ? "Exit Sell" : "Exit Buy",
+        text: "Exit",
         size: 1.25
       });
     }

@@ -1,0 +1,13 @@
+{
+  "strategyId": "nasdaq_100_futures_decile_forward_edge_5m",
+  "label": "NQ 5m Decile Forward Edge",
+  "folder": "nasdaq_100_futures_decile_forward_edge_5m",
+  "assetKey": "nasdaq_100_futures",
+  "phase": "decile_forward_edge",
+  "variantId": "decile_forward_edge|tf=5m|range=96|buckets=10|long=10|short=1|trend=ema|max_bars=10|one_trade=1",
+  "source": "nq_decile_forward_response_2026",
+  "tpUnits": 80,
+  "slUnits": 60,
+  "oneTradePerDay": true,
+  "costUnits": 0
+}
