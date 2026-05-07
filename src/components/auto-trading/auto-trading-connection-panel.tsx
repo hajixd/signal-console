@@ -46,13 +46,27 @@ type PropFirmOption = {
 
 const PROP_FIRM_OPTIONS: PropFirmOption[] = [
   { id: "topstep", label: "Topstep", markets: ["futures"], platformIds: ["projectx"] },
-  { id: "tradovate-futures", label: "Tradovate/CQG firm", markets: ["futures"], platformIds: ["tradovate"] },
-  { id: "rithmic-futures", label: "Rithmic firm", markets: ["futures"], platformIds: ["rithmic"] },
-  { id: "other-futures", label: "Other futures prop firm", markets: ["futures"], platformIds: ["projectx", "tradovate", "rithmic"] },
-  { id: "e8", label: "E8 Markets", markets: ["forex"], platformIds: ["tradelocker", "matchtrader", "mt5_bridge"] },
+  { id: "apex", label: "Apex Trader Funding", markets: ["futures"], platformIds: ["tradovate", "rithmic"] },
+  { id: "my-funded-futures", label: "MyFundedFutures", markets: ["futures"], platformIds: ["tradovate"] },
+  { id: "take-profit-trader", label: "Take Profit Trader", markets: ["futures"], platformIds: ["tradovate", "rithmic"] },
+  { id: "tradeify", label: "Tradeify", markets: ["futures"], platformIds: ["tradovate"] },
+  { id: "elite-trader-funding", label: "Elite Trader Funding", markets: ["futures"], platformIds: ["tradovate"] },
+  { id: "earn2trade", label: "Earn2Trade", markets: ["futures"], platformIds: ["tradovate", "rithmic"] },
+  { id: "leeloo", label: "Leeloo Trading", markets: ["futures"], platformIds: ["rithmic"] },
+  { id: "bulenox", label: "Bulenox", markets: ["futures"], platformIds: ["rithmic"] },
+  { id: "oneup", label: "OneUp Trader", markets: ["futures"], platformIds: ["rithmic"] },
+  { id: "e8", label: "E8 Markets", markets: ["forex"], platformIds: ["tradelocker", "matchtrader", "ctrader", "mt5_bridge"] },
   { id: "ftmo", label: "FTMO", markets: ["forex"], platformIds: ["mt5_bridge", "ctrader"] },
-  { id: "the5ers", label: "The5ers", markets: ["forex"], platformIds: ["mt5_bridge"] },
-  { id: "other-forex", label: "Other forex prop firm", markets: ["forex"], platformIds: ["tradelocker", "mt5_bridge", "ctrader", "matchtrader"] }
+  { id: "the5ers", label: "The5ers", markets: ["forex"], platformIds: ["mt5_bridge", "ctrader"] },
+  { id: "fundednext", label: "FundedNext", markets: ["forex"], platformIds: ["mt5_bridge", "ctrader", "matchtrader"] },
+  { id: "fundingpips", label: "FundingPips", markets: ["forex"], platformIds: ["mt5_bridge", "ctrader", "matchtrader", "tradelocker"] },
+  { id: "funded-trading-plus", label: "Funded Trading Plus", markets: ["forex"], platformIds: ["mt5_bridge", "ctrader", "matchtrader"] },
+  { id: "alpha-capital", label: "Alpha Capital Group", markets: ["forex"], platformIds: ["mt5_bridge", "ctrader", "tradelocker"] },
+  { id: "blue-guardian", label: "Blue Guardian", markets: ["forex"], platformIds: ["matchtrader", "tradelocker", "mt5_bridge"] },
+  { id: "goat-funded-trader", label: "GOAT Funded Trader", markets: ["forex"], platformIds: ["ctrader", "tradelocker", "matchtrader", "mt5_bridge"] },
+  { id: "brightfunded", label: "BrightFunded", markets: ["forex"], platformIds: ["mt5_bridge", "ctrader"] },
+  { id: "fxify", label: "FXIFY", markets: ["forex"], platformIds: ["mt5_bridge"] },
+  { id: "funderpro", label: "FunderPro", markets: ["forex"], platformIds: ["mt5_bridge", "ctrader", "tradelocker"] }
 ];
 
 const CONNECTION_FIELDS: Record<AutoTradeProviderId, ConnectionField[]> = {
@@ -209,7 +223,9 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
 
   const marketLabel = autoTradeMarketLabel(market);
   const selectedFirm = propFirms.find((firm) => firm.id === selectedFirmId) ?? propFirms[0]!;
-  const platformOptions = providers.filter((provider) => selectedFirm.platformIds.includes(provider.id));
+  const platformOptions = selectedFirm.platformIds
+    .map((providerId) => providers.find((provider) => provider.id === providerId))
+    .filter((provider): provider is AutoTradeProvider => Boolean(provider));
   const selectedProvider = platformOptions.find((provider) => provider.id === selectedProviderId) ?? platformOptions[0] ?? providers[0]!;
   const canConnectSelectedProvider = selectedProvider.id === "projectx" && selectedProvider.status === "live" && market === "futures";
   const storageLabel = status.storageMode === "firebase" ? "Firebase" : "local dev storage";
@@ -229,7 +245,9 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
 
   useEffect(() => {
     const nextFirm = propFirms.find((firm) => firm.id === selectedFirmId) ?? propFirms[0];
-    const nextProviders = providers.filter((provider) => nextFirm?.platformIds.includes(provider.id));
+    const nextProviders = (nextFirm?.platformIds ?? [])
+      .map((providerId) => providers.find((provider) => provider.id === providerId))
+      .filter((provider): provider is AutoTradeProvider => Boolean(provider));
     if (!nextProviders.some((provider) => provider.id === selectedProviderId)) {
       setSelectedProviderId(firstProviderId(nextProviders.length ? nextProviders : providers));
     }
@@ -479,12 +497,6 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
                 ))}
               </select>
             </label>
-          </div>
-
-          <div className="autoTradeProviderSummary">
-            <span>{selectedFirm.label} / {selectedProvider.label}</span>
-            <strong>{selectedProvider.coverage}</strong>
-            <p>{selectedProvider.description}</p>
           </div>
 
           {canConnectSelectedProvider ? (

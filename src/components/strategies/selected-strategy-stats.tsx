@@ -6,7 +6,7 @@ import {
   type StrategyEditSeedMap,
   useStrategyEdits
 } from "@/components/strategies/strategy-edits-store";
-import LocalDateTime from "@/components/ui/local-date-time";
+import { LocalDateTimeStack } from "@/components/ui/local-date-time";
 
 type BasketTrade = {
   key: string;
@@ -178,13 +178,13 @@ export default function SelectedStrategyStats({ dataEndAt, strategies, trades, p
         <span>Trades / year</span>
         <strong>{selectedDollarAggregate.trades ? fmtNumber(selectedCadence.perYear) : "--"}</strong>
       </div>
-      <div className="backtest-stat-card tone-neutral">
+      <div className="backtest-stat-card tone-neutral date-stat-card">
         <span>Start date</span>
-        <strong><LocalDateTime value={selectedCadence.start} /></strong>
+        <strong><LocalDateTimeStack value={selectedCadence.start} /></strong>
       </div>
-      <div className="backtest-stat-card tone-neutral">
+      <div className="backtest-stat-card tone-neutral date-stat-card">
         <span>End date</span>
-        <strong><LocalDateTime value={latestEndDate(dataEndAt, selectedCadence.end)} /></strong>
+        <strong><LocalDateTimeStack value={latestEndDate(dataEndAt, selectedCadence.end)} /></strong>
       </div>
     </div>
   );

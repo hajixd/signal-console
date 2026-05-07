@@ -1508,8 +1508,8 @@ html[data-theme="light"] .themeDarkLabel {
 .autoTradeSelectGrid {
   min-width: 0;
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.5rem;
+  grid-template-columns: 1fr;
+  gap: 0.42rem;
 }
 
 .autoTradeSelectControl {
@@ -1521,20 +1521,31 @@ html[data-theme="light"] .themeDarkLabel {
 .autoTradeSelectControl span {
   color: var(--text-faint);
   font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
-  font-size: 0.58rem;
+  font-size: 0.52rem;
   font-weight: 900;
   letter-spacing: 0;
   text-transform: uppercase;
 }
 
 .autoTradeSelectControl select {
+  appearance: none;
   min-width: 0;
-  min-height: 40px;
-  border: 1px solid rgba(96, 165, 250, 0.28);
-  background: #111827;
+  min-height: 36px;
+  border: 1px solid rgba(96, 165, 250, 0.24);
+  border-radius: 8px;
+  background:
+    linear-gradient(45deg, transparent 50%, rgba(166, 190, 229, 0.85) 50%) calc(100% - 16px) 50% / 6px 6px no-repeat,
+    linear-gradient(135deg, rgba(166, 190, 229, 0.85) 50%, transparent 50%) calc(100% - 12px) 50% / 6px 6px no-repeat,
+    #0f1625;
   color: rgba(255, 255, 255, 0.92);
-  padding: 0 0.62rem;
+  padding: 0 2rem 0 0.62rem;
+  font-size: 0.72rem;
+  font-weight: 800;
   outline: none;
+  transition:
+    border-color 160ms ease,
+    background-color 160ms ease,
+    box-shadow 160ms ease;
 }
 
 .autoTradeSelectControl select:focus {
@@ -1563,8 +1574,7 @@ html[data-theme="light"] .themeDarkLabel {
   color: #ffffff;
 }
 
-.autoTradeProviderOption span,
-.autoTradeProviderSummary span {
+.autoTradeProviderOption span {
   color: var(--text-faint);
   font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
   font-size: 0.56rem;
@@ -1591,28 +1601,6 @@ html[data-theme="light"] .themeDarkLabel {
   min-width: 0;
   display: grid;
   gap: 0.58rem;
-}
-
-.autoTradeProviderSummary {
-  min-width: 0;
-  display: grid;
-  gap: 0.22rem;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(255, 255, 255, 0.025);
-  padding: 0.7rem;
-}
-
-.autoTradeProviderSummary strong {
-  color: rgba(255, 255, 255, 0.92);
-  font-size: 0.82rem;
-  font-weight: 950;
-}
-
-.autoTradeProviderSummary p {
-  margin: 0;
-  color: var(--text-dim);
-  font-size: 0.72rem;
-  line-height: 1.42;
 }
 
 .topstepConnectionSummary,
@@ -1991,6 +1979,33 @@ html[data-theme="light"] .themeDarkLabel {
   font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
   font-size: 1.08rem;
   font-weight: 950;
+  letter-spacing: 0;
+}
+
+.backtest-stat-card.date-stat-card strong {
+  align-self: end;
+  font-size: 0.94rem;
+  line-height: 1.08;
+}
+
+.localDateTimeStack {
+  display: grid;
+  gap: 0.1rem;
+}
+
+.localDateTimeStack span,
+.localDateTimeStack small {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.localDateTimeStack small {
+  color: rgba(147, 187, 252, 0.82);
+  font-family: inherit;
+  font-size: 0.74rem;
+  font-weight: 900;
   letter-spacing: 0;
 }
 
@@ -2712,7 +2727,6 @@ html[data-theme="light"] .telegram-grid strong {
 html[data-theme="light"] .topstepConnectionState strong,
 html[data-theme="light"] .topstepConnectionMeta strong,
 html[data-theme="light"] .autoTradeProviderOption strong,
-html[data-theme="light"] .autoTradeProviderSummary strong,
 html[data-theme="light"] .topstepAccountRow strong,
 html[data-theme="light"] .topstepAccountEmpty strong,
 html[data-theme="light"] .topstepConnectionFoot strong {
@@ -2727,7 +2741,10 @@ html[data-theme="light"] .autoTradeSelectControl select,
 html[data-theme="light"] .topstepConnectForm input,
 html[data-theme="light"] .topstepConnectForm select {
   border-color: rgba(15, 23, 42, 0.14);
-  background: #ffffff;
+  background:
+    linear-gradient(45deg, transparent 50%, rgba(71, 85, 105, 0.82) 50%) calc(100% - 16px) 50% / 6px 6px no-repeat,
+    linear-gradient(135deg, rgba(71, 85, 105, 0.82) 50%, transparent 50%) calc(100% - 12px) 50% / 6px 6px no-repeat,
+    #ffffff;
   color: rgba(15, 23, 42, 0.88);
 }
 
@@ -2737,7 +2754,6 @@ html[data-theme="light"] .topstepConnectForm input::placeholder {
 
 html[data-theme="light"] .topstepAccountRow,
 html[data-theme="light"] .autoTradeProviderOption,
-html[data-theme="light"] .autoTradeProviderSummary,
 html[data-theme="light"] .topstepAccountEmpty {
   border-color: var(--line);
   background: #ffffff;
@@ -2752,10 +2768,6 @@ html[data-theme="light"] .autoTradeProviderOption.active {
   border-color: rgba(37, 99, 235, 0.32);
   background: rgba(37, 99, 235, 0.08);
   color: #1e40af;
-}
-
-html[data-theme="light"] .autoTradeProviderSummary p {
-  color: var(--text-dim);
 }
 
 html[data-theme="light"] .topstepConnectionFoot {
@@ -2834,6 +2846,10 @@ html[data-theme="light"] .backtest-stat-card.tone-neutral {
 html[data-theme="light"] .backtest-stat-card.tone-neutral strong,
 html[data-theme="light"] .neutral {
   color: #2563eb !important;
+}
+
+html[data-theme="light"] .localDateTimeStack small {
+  color: rgba(37, 99, 235, 0.7);
 }
 
 html[data-theme="light"] .challenge-method {
