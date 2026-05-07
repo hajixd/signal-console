@@ -40,6 +40,7 @@ type StrategyOption = {
 };
 
 type StrategySelectorProps = {
+  market: "forex" | "futures";
   strategies: StrategyOption[];
   selectedKeys: string[];
   defaultKeys: string[];
@@ -76,7 +77,7 @@ type CustomScaleResult = {
 };
 
 const STORAGE_KEY = STRATEGY_EDITS_STORAGE_KEY;
-const CUSTOM_SCALE_RANGE_STORAGE_KEY = "trading-bot-custom-scale-range";
+const CUSTOM_SCALE_RANGE_STORAGE_KEY_PREFIX = "trading-bot-custom-scale-range";
 const STRATEGY_SIZES_PARAM = "strategySizes";
 const EDIT_RENDER_DELAY_MS = 2500;
 const SELECTION_SYNC_DELAY_MS = 650;
@@ -91,11 +92,15 @@ function isCustomScaleRangeInput(value: unknown): value is Partial<CustomScaleRa
   return Boolean(value && typeof value === "object");
 }
 
-function loadClientCustomScaleRange(): CustomScaleRangeInput {
+function customScaleRangeStorageKey(market: StrategySelectorProps["market"]): string {
+  return `${CUSTOM_SCALE_RANGE_STORAGE_KEY_PREFIX}:${market}`;
+}
+
+function loadClientCustomScaleRange(storageKey: string): CustomScaleRangeInput {
   if (typeof window === "undefined") return EMPTY_CUSTOM_SCALE_RANGE;
 
   try {
-    const raw = window.localStorage.getItem(CUSTOM_SCALE_RANGE_STORAGE_KEY);
+    const raw = window.localStorage.getItem(storageKey);
     if (!raw) return EMPTY_CUSTOM_SCALE_RANGE;
     const parsed: unknown = JSON.parse(raw);
     if (!isCustomScaleRangeInput(parsed)) return EMPTY_CUSTOM_SCALE_RANGE;
@@ -456,6 +461,7 @@ function defaultSortDirection(column: SortColumn): SortDirection {
 }
 
 export default function StrategySelector({
+  market,
   strategies,
   selectedKeys,
   defaultKeys,
@@ -477,7 +483,8 @@ export default function StrategySelector({
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
   const [optimisticSelectedKeys, setOptimisticSelectedKeys] = useState(selectedKeys);
   const [isCustomScaleOpen, setIsCustomScaleOpen] = useState(false);
-  const [customScaleRange, setCustomScaleRange] = useState<CustomScaleRangeInput>(() => loadClientCustomScaleRange());
+  const customScaleRangeKey = customScaleRangeStorageKey(market);
+  const [customScaleRange, setCustomScaleRange] = useState<CustomScaleRangeInput>(() => loadClientCustomScaleRange(customScaleRangeKey));
   const [customScaleError, setCustomScaleError] = useState("");
   const [customScaleResult, setCustomScaleResult] = useState<CustomScaleResult | null>(null);
   const selected = new Set(optimisticSelectedKeys);
@@ -538,13 +545,19 @@ export default function StrategySelector({
   }, [edits, isLoaded]);
 
   useEffect(() => {
+    setCustomScaleRange(loadClientCustomScaleRange(customScaleRangeKey));
+    setCustomScaleError("");
+    setCustomScaleResult(null);
+  }, [customScaleRangeKey]);
+
+  useEffect(() => {
     if (typeof window === "undefined") return;
     if (hasCustomScaleRangeValue(customScaleRange)) {
-      window.localStorage.setItem(CUSTOM_SCALE_RANGE_STORAGE_KEY, JSON.stringify(customScaleRange));
+      window.localStorage.setItem(customScaleRangeKey, JSON.stringify(customScaleRange));
     } else {
-      window.localStorage.removeItem(CUSTOM_SCALE_RANGE_STORAGE_KEY);
+      window.localStorage.removeItem(customScaleRangeKey);
     }
-  }, [customScaleRange]);
+  }, [customScaleRange, customScaleRangeKey]);
 
   useEffect(() => {
     if (optimisticSelectionSignature === persistedLiveSelectionSignature) {

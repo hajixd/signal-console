@@ -683,6 +683,7 @@ export default async function Home({ searchParams }: HomeProps) {
           />
 
           <StrategySelector
+            market={activeMarket}
             strategies={strategyOptions}
             selectedKeys={selectedKeys}
             defaultKeys={defaultSelectedKeys}
