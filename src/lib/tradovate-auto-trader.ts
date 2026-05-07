@@ -3,12 +3,14 @@ import {
   dryRunOrder,
   envFlag,
   envText,
+  fieldText,
   failedOrder,
   readJsonResponse,
   readableError,
   requiredEnv,
   result
 } from "@/lib/auto-trade-utils";
+import { getAutoTradeConnection } from "@/lib/auto-trade-connections";
 import type { ProjectXAutoTradeResult } from "@/lib/projectx-auto-trader";
 import type { TradeAlert } from "@/lib/types";
 
@@ -25,8 +27,8 @@ type TradovatePlaceOrderResponse = {
 
 const PROVIDER_NAME = "Tradovate / CQG";
 
-function baseUrl(): string {
-  return (envText("TRADOVATE_API_BASE_URL") ?? "https://demo.tradovateapi.com/v1").replace(/\/+$/g, "");
+function baseUrl(fields?: Record<string, string>): string {
+  return (fieldText(fields, "apiBaseUrl", "TRADOVATE_API_BASE_URL") ?? "https://demo.tradovateapi.com/v1").replace(/\/+$/g, "");
 }
 
 function dryRunEnabled(): boolean {
@@ -37,15 +39,15 @@ export function tradovateConfigured(): boolean {
   return requiredEnv(["TRADOVATE_USERNAME", "TRADOVATE_PASSWORD", "TRADOVATE_ACCOUNT_ID"]).length === 0;
 }
 
-async function tradovateToken(): Promise<string> {
-  const response = await fetch(`${baseUrl()}/auth/accesstokenrequest`, {
+async function tradovateToken(fields?: Record<string, string>): Promise<string> {
+  const response = await fetch(`${baseUrl(fields)}/auth/accesstokenrequest`, {
     body: JSON.stringify({
-      appId: envText("TRADOVATE_APP_ID") ?? "TradingBot",
-      appVersion: envText("TRADOVATE_APP_VERSION") ?? "1.0",
-      cid: envText("TRADOVATE_CID"),
-      name: envText("TRADOVATE_USERNAME"),
-      password: envText("TRADOVATE_PASSWORD"),
-      sec: envText("TRADOVATE_SECRET")
+      appId: fieldText(fields, "appId", "TRADOVATE_APP_ID") ?? "TradingBot",
+      appVersion: fieldText(fields, "appVersion", "TRADOVATE_APP_VERSION") ?? "1.0",
+      cid: fieldText(fields, "cid", "TRADOVATE_CID"),
+      name: fieldText(fields, "username", "TRADOVATE_USERNAME"),
+      password: fieldText(fields, "password", "TRADOVATE_PASSWORD"),
+      sec: fieldText(fields, "secret", "TRADOVATE_SECRET")
     }),
     cache: "no-store",
     headers: { "content-type": "application/json" },
@@ -62,10 +64,17 @@ export async function executeTradovateAutoTrade(trade: TradeAlert): Promise<Proj
     return result("disabled", { error: "TRADOVATE_AUTO_TRADE_ENABLED is disabled." });
   }
 
-  const missing = requiredEnv(["TRADOVATE_USERNAME", "TRADOVATE_PASSWORD", "TRADOVATE_ACCOUNT_ID"]);
-  const accountId = Number(envText("TRADOVATE_ACCOUNT_ID"));
-  const request = autoTradeRequest("TRADOVATE", trade, Number.isFinite(accountId) ? accountId : envText("TRADOVATE_ACCOUNT_ID"));
-  if (missing.length) return result("skipped", { error: `Missing Tradovate env: ${missing.join(", ")}.` });
+  const connection = await getAutoTradeConnection("tradovate");
+  if (connection?.paused) return result("skipped", { error: "Tradovate connection is paused." });
+  const fields = connection?.fields;
+  const envMissing = requiredEnv(["TRADOVATE_USERNAME", "TRADOVATE_PASSWORD", "TRADOVATE_ACCOUNT_ID"]);
+  const requiredMissing = ["username", "password", "accountId"].filter((key) => !fields?.[key]);
+  if (!fields && envMissing.length) return result("skipped", { error: `Missing Tradovate env: ${envMissing.join(", ")}.` });
+  if (fields && requiredMissing.length) return result("skipped", { error: `Missing Tradovate connection fields: ${requiredMissing.join(", ")}.` });
+
+  const accountIdValue = fieldText(fields, "accountId", "TRADOVATE_ACCOUNT_ID");
+  const accountId = Number(accountIdValue);
+  const request = autoTradeRequest("TRADOVATE", trade, Number.isFinite(accountId) ? accountId : accountIdValue, fields);
 
   if (dryRunEnabled()) {
     const order = dryRunOrder(request, PROVIDER_NAME);
@@ -73,11 +82,11 @@ export async function executeTradovateAutoTrade(trade: TradeAlert): Promise<Proj
   }
 
   try {
-    const token = await tradovateToken();
-    const response = await fetch(`${baseUrl()}/order/placeorder`, {
+    const token = await tradovateToken(fields);
+    const response = await fetch(`${baseUrl(fields)}/order/placeorder`, {
       body: JSON.stringify({
         accountId,
-        accountSpec: envText("TRADOVATE_ACCOUNT_SPEC") ?? envText("TRADOVATE_USERNAME"),
+        accountSpec: fieldText(fields, "accountSpec", "TRADOVATE_ACCOUNT_SPEC") ?? fieldText(fields, "username", "TRADOVATE_USERNAME"),
         action: request.action === "buy" ? "Buy" : "Sell",
         clOrdId: request.customTag,
         isAutomated: true,

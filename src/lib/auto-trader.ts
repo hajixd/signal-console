@@ -96,7 +96,16 @@ export async function executeAutoTrade(trade: TradeAlert): Promise<AutoTradeExec
   )?.trim() as AutoTradeProviderId | undefined;
   const marketConnectors = AUTO_TRADE_CONNECTORS.filter((connector) => autoTradeProviderById(connector.providerId)?.markets.includes(market));
   const preferredConnector = preferredProviderId ? marketConnectors.find((connector) => connector.providerId === preferredProviderId) : undefined;
-  const connector = preferredConnector ?? marketConnectors.find((candidate) => candidate.isConfigured()) ?? marketConnectors[0];
+  let connector = preferredConnector ?? marketConnectors.find((candidate) => candidate.isConfigured());
+  if (!connector) {
+    for (const candidate of marketConnectors) {
+      if (await getAutoTradeConnection(candidate.providerId)) {
+        connector = candidate;
+        break;
+      }
+    }
+  }
+  connector ??= marketConnectors[0];
 
   if (connector) {
     const provider = autoTradeProviderById(connector.providerId);
@@ -115,3 +124,4 @@ export async function executeAutoTrade(trade: TradeAlert): Promise<AutoTradeExec
     providerName: `${market === "futures" ? "Futures" : "Forex"} execution router`
   });
 }
+import { getAutoTradeConnection } from "@/lib/auto-trade-connections";

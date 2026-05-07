@@ -3,12 +3,14 @@ import {
   dryRunOrder,
   envFlag,
   envText,
+  fieldText,
   failedOrder,
   readJsonResponse,
   readableError,
   requiredEnv,
   result
 } from "@/lib/auto-trade-utils";
+import { getAutoTradeConnection } from "@/lib/auto-trade-connections";
 import type { ProjectXAutoTradeResult } from "@/lib/projectx-auto-trader";
 import type { TradeAlert } from "@/lib/types";
 
@@ -22,12 +24,12 @@ type MatchTraderOrderResponse = {
 
 const PROVIDER_NAME = "Match-Trader";
 
-function platformUrl(): string {
-  return envText("MATCHTRADER_PLATFORM_URL")!.replace(/\/+$/g, "");
+function platformUrl(fields?: Record<string, string>): string {
+  return fieldText(fields, "platformUrl", "MATCHTRADER_PLATFORM_URL")!.replace(/\/+$/g, "");
 }
 
-function endpoint(path: string): string {
-  return `${platformUrl()}/mtr-api/${envText("MATCHTRADER_SYSTEM_UUID")}/${path.replace(/^\/+/g, "")}`;
+function endpoint(path: string, fields?: Record<string, string>): string {
+  return `${platformUrl(fields)}/mtr-api/${fieldText(fields, "systemUuid", "MATCHTRADER_SYSTEM_UUID")}/${path.replace(/^\/+/g, "")}`;
 }
 
 function dryRunEnabled(): boolean {
@@ -43,9 +45,15 @@ export async function executeMatchTraderAutoTrade(trade: TradeAlert): Promise<Pr
     return result("disabled", { error: "MATCHTRADER_AUTO_TRADE_ENABLED is disabled." });
   }
 
-  const missing = requiredEnv(["MATCHTRADER_PLATFORM_URL", "MATCHTRADER_SYSTEM_UUID", "MATCHTRADER_TRADING_API_TOKEN"]);
-  const request = autoTradeRequest("MATCHTRADER", trade, envText("MATCHTRADER_ACCOUNT_ID"));
-  if (missing.length) return result("skipped", { error: `Missing Match-Trader env: ${missing.join(", ")}.` });
+  const connection = await getAutoTradeConnection("matchtrader");
+  if (connection?.paused) return result("skipped", { error: "Match-Trader connection is paused." });
+  const fields = connection?.fields;
+  const envMissing = requiredEnv(["MATCHTRADER_PLATFORM_URL", "MATCHTRADER_SYSTEM_UUID", "MATCHTRADER_TRADING_API_TOKEN"]);
+  const requiredMissing = ["platformUrl", "systemUuid", "tradingApiToken"].filter((key) => !fields?.[key]);
+  if (!fields && envMissing.length) return result("skipped", { error: `Missing Match-Trader env: ${envMissing.join(", ")}.` });
+  if (fields && requiredMissing.length) return result("skipped", { error: `Missing Match-Trader connection fields: ${requiredMissing.join(", ")}.` });
+
+  const request = autoTradeRequest("MATCHTRADER", trade, fieldText(fields, "accountId", "MATCHTRADER_ACCOUNT_ID"), fields);
 
   if (dryRunEnabled()) {
     const order = dryRunOrder(request, PROVIDER_NAME);
@@ -53,7 +61,7 @@ export async function executeMatchTraderAutoTrade(trade: TradeAlert): Promise<Pr
   }
 
   try {
-    const response = await fetch(endpoint(request.entryType === "limit" ? "/pending-order/create" : "/position/open"), {
+    const response = await fetch(endpoint(request.entryType === "limit" ? "/pending-order/create" : "/position/open", fields), {
       body: JSON.stringify(
         request.entryType === "limit"
           ? {
@@ -78,9 +86,9 @@ export async function executeMatchTraderAutoTrade(trade: TradeAlert): Promise<Pr
       cache: "no-store",
       headers: {
         accept: "application/json",
-        "auth-trading-api": envText("MATCHTRADER_TRADING_API_TOKEN")!,
+        "auth-trading-api": fieldText(fields, "tradingApiToken", "MATCHTRADER_TRADING_API_TOKEN")!,
         "content-type": "application/json",
-        ...(envText("MATCHTRADER_CO_AUTH_COOKIE") ? { cookie: `co-auth=${envText("MATCHTRADER_CO_AUTH_COOKIE")}` } : {})
+        ...(fieldText(fields, "coAuthCookie", "MATCHTRADER_CO_AUTH_COOKIE") ? { cookie: `co-auth=${fieldText(fields, "coAuthCookie", "MATCHTRADER_CO_AUTH_COOKIE")}` } : {})
       },
       method: "POST"
     });

@@ -3,6 +3,7 @@ import {
   dryRunOrder,
   envFlag,
   envText,
+  fieldText,
   failedOrder,
   readJsonResponse,
   readableError,
@@ -10,6 +11,8 @@ import {
   result,
   type ProviderPrefix
 } from "@/lib/auto-trade-utils";
+import { getAutoTradeConnection } from "@/lib/auto-trade-connections";
+import type { AutoTradeProviderId } from "@/lib/auto-trade-platforms";
 import type { ProjectXAutoTradeResult } from "@/lib/projectx-auto-trader";
 import type { TradeAlert } from "@/lib/types";
 
@@ -19,6 +22,7 @@ type BridgeProvider = {
   enabledEnv: string;
   name: string;
   prefix: ProviderPrefix;
+  providerId: AutoTradeProviderId;
   secretEnv: string;
   urlEnv: string;
 };
@@ -38,8 +42,11 @@ async function executeBridgeAutoTrade(provider: BridgeProvider, trade: TradeAler
     return result("disabled", { error: `${provider.enabledEnv} is disabled.` });
   }
 
-  const missing = requiredEnv([provider.urlEnv, provider.secretEnv]);
-  const request = autoTradeRequest(provider.prefix, trade, envText(provider.accountEnv));
+  const connection = await getAutoTradeConnection(provider.providerId);
+  if (connection?.paused) return result("skipped", { error: `${provider.name} connection is paused.` });
+  const fields = connection?.fields;
+  const missing = fields ? ["bridgeUrl", "bridgeSecret"].filter((key) => !fields[key]) : requiredEnv([provider.urlEnv, provider.secretEnv]);
+  const request = autoTradeRequest(provider.prefix, trade, fieldText(fields, "accountId", provider.accountEnv), fields);
   if (missing.length) return result("skipped", { error: `Missing ${provider.name} bridge env: ${missing.join(", ")}.` });
 
   if (envFlag(provider.dryRunEnv, false)) {
@@ -48,14 +55,17 @@ async function executeBridgeAutoTrade(provider: BridgeProvider, trade: TradeAler
   }
 
   try {
-    const response = await fetch(envText(provider.urlEnv)!, {
+    const response = await fetch(fieldText(fields, "bridgeUrl", provider.urlEnv)!, {
       body: JSON.stringify({
         accountId: request.accountId,
         action: request.action,
         customTag: request.customTag,
         entryPrice: request.entryPrice,
         entryType: request.entryType,
-        secret: envText(provider.secretEnv),
+        login: fields?.login,
+        password: fields?.password,
+        secret: fieldText(fields, "bridgeSecret", provider.secretEnv),
+        server: fields?.server,
         size: request.size,
         stopLossPrice: request.stopLossPrice,
         symbol: request.symbol,
@@ -115,6 +125,7 @@ export function executeMt5BridgeAutoTrade(trade: TradeAlert): Promise<ProjectXAu
       enabledEnv: "MT5_AUTO_TRADE_ENABLED",
       name: "MetaTrader 5 Bridge",
       prefix: "MT5",
+      providerId: "mt5_bridge",
       secretEnv: "MT5_BRIDGE_SECRET",
       urlEnv: "MT5_BRIDGE_URL"
     },
@@ -130,6 +141,7 @@ export function executeRithmicBridgeAutoTrade(trade: TradeAlert): Promise<Projec
       enabledEnv: "RITHMIC_AUTO_TRADE_ENABLED",
       name: "Rithmic Bridge",
       prefix: "RITHMIC",
+      providerId: "rithmic",
       secretEnv: "RITHMIC_BRIDGE_SECRET",
       urlEnv: "RITHMIC_BRIDGE_URL"
     },
@@ -145,6 +157,7 @@ export function executeCTraderBridgeAutoTrade(trade: TradeAlert): Promise<Projec
       enabledEnv: "CTRADER_AUTO_TRADE_ENABLED",
       name: "cTrader Bridge",
       prefix: "CTRADER",
+      providerId: "ctrader",
       secretEnv: "CTRADER_BRIDGE_SECRET",
       urlEnv: "CTRADER_BRIDGE_URL"
     },

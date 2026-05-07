@@ -22,6 +22,10 @@ export function envText(name: string): string | undefined {
   return value ? value : undefined;
 }
 
+export function fieldText(fields: Record<string, string> | undefined, key: string, envName: string): string | undefined {
+  return fields?.[key]?.trim() || envText(envName);
+}
+
 export function envFlag(name: string, fallback: boolean): boolean {
   const value = envText(name)?.toLowerCase();
   if (!value) return fallback;
@@ -62,14 +66,42 @@ export function parseEnvMap(name: string): Record<string, string> {
   }
 }
 
+export function parseMap(raw: string | undefined): Record<string, string> {
+  if (!raw?.trim()) return {};
+  try {
+    const parsed = JSON.parse(raw) as unknown;
+    if (!parsed || typeof parsed !== "object") return {};
+    return Object.fromEntries(
+      Object.entries(parsed as Record<string, unknown>)
+        .map(([key, value]) => [key.trim().toUpperCase(), typeof value === "string" ? value.trim() : String(value)])
+        .filter(([key, value]) => Boolean(key && value))
+    );
+  } catch {
+    return Object.fromEntries(
+      raw
+        .split(",")
+        .map((entry) => entry.split(":"))
+        .map(([key, value]) => [key?.trim().toUpperCase() ?? "", value?.trim() ?? ""])
+        .filter(([key, value]) => Boolean(key && value))
+    );
+  }
+}
+
 export function mappedSymbol(prefix: ProviderPrefix, trade: TradeAlert): string {
   const symbol = trade.symbol.trim().toUpperCase();
   return parseEnvMap(`${prefix}_SYMBOL_MAP`)[symbol] ?? symbol;
 }
 
-export function mappedSize(prefix: ProviderPrefix, trade: TradeAlert, fallback = trade.sizeMultiplier ?? 1): number {
+export function mappedSymbolWithFields(prefix: ProviderPrefix, trade: TradeAlert, fields?: Record<string, string>): string {
   const symbol = trade.symbol.trim().toUpperCase();
-  const mapped = Number(parseEnvMap(`${prefix}_SIZE_MAP`)[symbol] ?? parseEnvMap(`${prefix}_LOT_MAP`)[symbol]);
+  return parseMap(fields?.symbolMap)[symbol] ?? parseEnvMap(`${prefix}_SYMBOL_MAP`)[symbol] ?? symbol;
+}
+
+export function mappedSize(prefix: ProviderPrefix, trade: TradeAlert, fallback = trade.sizeMultiplier ?? 1, fields?: Record<string, string>): number {
+  const symbol = trade.symbol.trim().toUpperCase();
+  const mapped = Number(
+    parseMap(fields?.sizeMap)[symbol] ?? parseMap(fields?.lotMap)[symbol] ?? parseEnvMap(`${prefix}_SIZE_MAP`)[symbol] ?? parseEnvMap(`${prefix}_LOT_MAP`)[symbol]
+  );
   const size = Number.isFinite(mapped) && mapped > 0 ? mapped : fallback;
   return Number.isFinite(size) && size > 0 ? Number(size.toFixed(4)) : 1;
 }
@@ -86,7 +118,7 @@ export function tradeLevels(trade: TradeAlert): Pick<AutoTradeRequest, "stopLoss
   return { stopLossPrice, takeProfitPrice };
 }
 
-export function autoTradeRequest(prefix: ProviderPrefix, trade: TradeAlert, accountId?: number | string): AutoTradeRequest {
+export function autoTradeRequest(prefix: ProviderPrefix, trade: TradeAlert, accountId?: number | string, fields?: Record<string, string>): AutoTradeRequest {
   return {
     ...tradeLevels(trade),
     accountId,
@@ -95,8 +127,8 @@ export function autoTradeRequest(prefix: ProviderPrefix, trade: TradeAlert, acco
     entryPrice: trade.entryPrice,
     entryType: trade.entryType === "limit" ? "limit" : "market",
     rawTrade: trade,
-    size: mappedSize(prefix, trade),
-    symbol: mappedSymbol(prefix, trade)
+    size: mappedSize(prefix, trade, trade.sizeMultiplier ?? 1, fields),
+    symbol: mappedSymbolWithFields(prefix, trade, fields)
   };
 }
 
