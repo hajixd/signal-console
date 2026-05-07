@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect, useState } from "react";
+
 type LocalDateTimeProps = {
   fallback?: string;
   value?: number | string;
@@ -21,5 +23,11 @@ export function formatLocalDateTime(value: number | string | undefined, fallback
 }
 
 export default function LocalDateTime({ fallback = "--", value }: LocalDateTimeProps) {
-  return <span suppressHydrationWarning>{formatLocalDateTime(value, fallback)}</span>;
+  const [clientLabel, setClientLabel] = useState<string | null>(null);
+
+  useEffect(() => {
+    setClientLabel(formatLocalDateTime(value, fallback));
+  }, [fallback, value]);
+
+  return <span suppressHydrationWarning>{clientLabel ?? formatLocalDateTime(value, fallback)}</span>;
 }
