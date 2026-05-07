@@ -78,6 +78,8 @@ type CandleMenuState = {
   candle: ChartBar;
 };
 
+const TRADE_CHART_CONTEXT_CANDLES = 80;
+
 function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
 }
@@ -810,7 +812,7 @@ export default function TradeHistory({ rows }: TradeHistoryProps) {
       entryTime: activeTrade.entryTime,
       exitTime: activeTrade.exitTime,
       timeframe: chartTimeframe,
-      context: "80"
+      context: String(TRADE_CHART_CONTEXT_CANDLES)
     });
 
     setChartState({ status: "loading", bars: [] });
@@ -884,17 +886,6 @@ export default function TradeHistory({ rows }: TradeHistoryProps) {
             timeframes={TRADE_CHART_TIMEFRAMES}
             trade={activeTrade}
           />
-
-          <div className="tradeModalDetailsStrip">
-            <InfoBox label="Signal Time" value={<LocalDateTime value={activeTrade.signalTime} />} />
-            <InfoBox label="Entry Time" value={<LocalDateTime value={activeTrade.entryTime} />} />
-            <InfoBox label="Exit Time" value={<LocalDateTime value={activeTrade.exitTime} />} />
-            <InfoBox label="Direction" value={activeTrade.sideLabel} valueClassName={activeTrade.sideClassName} />
-            <InfoBox label="Move" value={activeTrade.netUnitsLabel} />
-            <InfoBox label="R Multiple" value={activeTrade.rMultipleLabel} valueClassName={activeTrade.pnlClassName} />
-            <InfoBox label="Size" value={activeTrade.sizeLabel} />
-            <InfoBox label="Take Profit / Stop Loss" value={`${activeTrade.tpUnitsLabel} / ${activeTrade.slUnitsLabel}`} />
-          </div>
         </div>
       </section>
     </div>

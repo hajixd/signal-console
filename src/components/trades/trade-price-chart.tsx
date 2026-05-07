@@ -52,9 +52,21 @@ type TradeChartTrade = {
 
 type ChartStatus = "idle" | "loading" | "ready" | "error";
 type ChartTheme = "dark" | "light";
+type ReplaySpeed = 1 | 2 | 4 | 8;
 type MappedCandle = CandlestickData<UTCTimestamp> & {
   source: TradeChartBar;
 };
+const REPLAY_SPEEDS: ReplaySpeed[] = [1, 2, 4, 8];
+const REPLAY_INTERVAL_MS: Record<ReplaySpeed, number> = {
+  1: 700,
+  2: 360,
+  4: 180,
+  8: 90
+};
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.min(max, Math.max(min, value));
+}
 
 function timestampFromTime(value: string | undefined): UTCTimestamp | null {
   if (!value) return null;
@@ -165,6 +177,10 @@ function candleIndex(candles: MappedCandle[], candle: MappedCandle | null): numb
   return found >= 0 ? found : 0;
 }
 
+function candleIsRevealed(candle: MappedCandle | null, current: MappedCandle | null): candle is MappedCandle {
+  return Boolean(candle && current && Number(candle.time) <= Number(current.time));
+}
+
 function chartMessage(status: ChartStatus): string {
   if (status === "loading") return "Loading candles...";
   if (status === "error") return "Chart unavailable.";
@@ -194,6 +210,9 @@ export default function TradePriceChart({
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [activeBar, setActiveBar] = useState<TradeChartBar | null>(null);
   const [chartTheme, setChartTheme] = useState<ChartTheme>("dark");
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [replayPosition, setReplayPosition] = useState(0);
+  const [replaySpeed, setReplaySpeed] = useState<ReplaySpeed>(2);
   const mappedCandles = useMemo(
     () =>
       bars
@@ -213,20 +232,27 @@ export default function TradePriceChart({
         .sort((left, right) => Number(left.time) - Number(right.time)),
     [bars]
   );
+  const maxReplayPosition = Math.max(0, mappedCandles.length - 1);
+  const clampedReplayPosition = clamp(replayPosition, 0, maxReplayPosition);
+  const visibleMappedCandles = useMemo(
+    () => mappedCandles.slice(0, clampedReplayPosition + 1),
+    [clampedReplayPosition, mappedCandles]
+  );
+  const currentReplayCandle = visibleMappedCandles[visibleMappedCandles.length - 1] ?? null;
   const candleData = useMemo(
     () =>
-      mappedCandles.map((candle) => ({
+      visibleMappedCandles.map((candle) => ({
         time: candle.time,
         open: candle.open,
         high: candle.high,
         low: candle.low,
         close: candle.close
       })),
-    [mappedCandles]
+    [visibleMappedCandles]
   );
   const sourceByTime = useMemo(
-    () => new Map(mappedCandles.map((candle) => [Number(candle.time), candle.source])),
-    [mappedCandles]
+    () => new Map(visibleMappedCandles.map((candle) => [Number(candle.time), candle.source])),
+    [visibleMappedCandles]
   );
   const entryCandle = useMemo(
     () => nearestMappedCandle(mappedCandles, trade.entryIndex, trade.entryTime),
@@ -237,7 +263,7 @@ export default function TradePriceChart({
     [entryCandle, mappedCandles, trade]
   );
   const visibleAnchor = entryCandle ?? mappedCandles[0] ?? null;
-  const displayBar = activeBar ?? visibleAnchor?.source ?? bars[0] ?? null;
+  const displayBar = activeBar ?? currentReplayCandle?.source ?? visibleAnchor?.source ?? bars[0] ?? null;
   const change = displayBar ? displayBar.close - displayBar.open : 0;
   const changePct = displayBar && displayBar.open !== 0 ? (change / displayBar.open) * 100 : 0;
   const up = change >= 0;
@@ -265,8 +291,27 @@ export default function TradePriceChart({
   }, []);
 
   useEffect(() => {
-    setActiveBar(visibleAnchor?.source ?? bars[0] ?? null);
-  }, [bars, trade.id, visibleAnchor]);
+    setIsPlaying(false);
+    setReplayPosition(Math.max(0, mappedCandles.length - 1));
+  }, [mappedCandles.length, timeframe, trade.id]);
+
+  useEffect(() => {
+    setActiveBar(currentReplayCandle?.source ?? visibleAnchor?.source ?? bars[0] ?? null);
+  }, [bars, currentReplayCandle, trade.id, visibleAnchor]);
+
+  useEffect(() => {
+    if (!isPlaying) return undefined;
+    if (clampedReplayPosition >= maxReplayPosition) {
+      setIsPlaying(false);
+      return undefined;
+    }
+
+    const timer = window.setTimeout(() => {
+      setReplayPosition((current) => Math.min(maxReplayPosition, current + 1));
+    }, REPLAY_INTERVAL_MS[replaySpeed]);
+
+    return () => window.clearTimeout(timer);
+  }, [clampedReplayPosition, isPlaying, maxReplayPosition, replaySpeed]);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -390,7 +435,7 @@ export default function TradePriceChart({
 
     const isLong = trade.side === "long";
     const markers: SeriesMarker<UTCTimestamp>[] = [];
-    if (entryCandle) {
+    if (candleIsRevealed(entryCandle, currentReplayCandle)) {
       markers.push({
         time: entryCandle.time,
         position: isLong ? "belowBar" : "aboveBar",
@@ -400,7 +445,7 @@ export default function TradePriceChart({
         size: 1.25
       });
     }
-    if (exitCandle) {
+    if (candleIsRevealed(exitCandle, currentReplayCandle)) {
       markers.push({
         time: exitCandle.time,
         position: isLong ? "aboveBar" : "belowBar",
@@ -415,10 +460,11 @@ export default function TradePriceChart({
     const entryPosition = candleIndex(mappedCandles, entryCandle);
     const exitPosition = candleIndex(mappedCandles, exitCandle);
     const tradeWindow = Math.max(10, Math.abs(exitPosition - entryPosition) + 1);
-    const windowSize = Math.min(mappedCandles.length, Math.max(45, Math.ceil(tradeWindow * 3)));
+    const visibleCandleCount = Math.max(1, candleData.length);
+    const windowSize = Math.min(visibleCandleCount, Math.max(45, Math.ceil(tradeWindow * 3)));
     const anchor = Math.max(0, entryPosition);
     let from = Math.max(0, anchor - Math.floor(windowSize * 0.35));
-    let to = Math.min(mappedCandles.length - 1, from + windowSize - 1);
+    let to = Math.min(visibleCandleCount - 1, from + windowSize - 1);
     if (to - from + 1 < windowSize) from = Math.max(0, to - windowSize + 1);
 
     chart.timeScale().fitContent();
@@ -440,6 +486,7 @@ export default function TradePriceChart({
   }, [
     candleData,
     chartTheme,
+    currentReplayCandle,
     entryCandle,
     exitCandle,
     mappedCandles,
@@ -451,6 +498,69 @@ export default function TradePriceChart({
     trade.stopPrice,
     trade.targetPrice
   ]);
+
+  function togglePlayback() {
+    if (isPlaying) {
+      setIsPlaying(false);
+      return;
+    }
+
+    if (clampedReplayPosition >= maxReplayPosition) {
+      setReplayPosition(0);
+    }
+    setIsPlaying(true);
+  }
+
+  function stepReplay(delta: number) {
+    setIsPlaying(false);
+    setReplayPosition((current) => clamp(current + delta, 0, maxReplayPosition));
+  }
+
+  function resetReplay() {
+    setIsPlaying(false);
+    setReplayPosition(0);
+  }
+
+  const replayControls = mappedCandles.length ? (
+    <div className="tradeReplayPanel">
+      <div className="tradeReplayButtons" aria-label="Replay controls">
+        <button type="button" onClick={resetReplay}>Reset</button>
+        <button type="button" onClick={() => stepReplay(-1)}>Back</button>
+        <button type="button" className={isPlaying ? "active" : ""} onClick={togglePlayback}>
+          {isPlaying ? "Pause" : "Play"}
+        </button>
+        <button type="button" onClick={() => stepReplay(1)}>Forward</button>
+      </div>
+      <label className="tradeReplaySlider">
+        <span>{formatChartTime(currentReplayCandle?.source.time)}</span>
+        <input
+          type="range"
+          min={0}
+          max={maxReplayPosition}
+          step={1}
+          value={clampedReplayPosition}
+          onChange={(event) => {
+            setIsPlaying(false);
+            setReplayPosition(Number(event.target.value));
+          }}
+        />
+        <strong>{clampedReplayPosition + 1} / {mappedCandles.length}</strong>
+      </label>
+      <div className="tradeReplaySpeeds" aria-label="Replay speed">
+        {REPLAY_SPEEDS.map((speed) => (
+          <button
+            aria-pressed={replaySpeed === speed}
+            className={replaySpeed === speed ? "active" : ""}
+            key={speed}
+            onClick={() => setReplaySpeed(speed)}
+            type="button"
+          >
+            {speed}x
+          </button>
+        ))}
+      </div>
+    </div>
+  ) : null;
 
   if (status === "loading" || status === "error" || !bars.length || !mappedCandles.length) {
     return (
@@ -469,7 +579,7 @@ export default function TradePriceChart({
       <div className="tradeCandlestickHead">
         <strong>Trade Candlesticks</strong>
         <div className="tradeCandlestickHeadMeta">
-          <span><strong>{mappedCandles.length}</strong> candles</span>
+          <span><strong>{visibleMappedCandles.length}</strong> / {mappedCandles.length} candles</span>
           {timeframeControls}
         </div>
       </div>
@@ -511,6 +621,7 @@ export default function TradePriceChart({
         </div>
         <div ref={containerRef} className="tradePriceChart" aria-label={`${trade.symbol} TradingView Lightweight candlestick chart`} />
       </div>
+      {replayControls}
     </section>
   );
 }

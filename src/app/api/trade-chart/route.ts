@@ -18,9 +18,14 @@ type MarketBar = {
 const lineCache = new Map<string, string[]>();
 const SUPPORTED_TIMEFRAMES = new Set(["1m", "5m", "15m", "30m", "45m", "1h", "4h", "1d", "1w"]);
 const DEFAULT_TIMEFRAME = "15m";
+const DEFAULT_CONTEXT_CANDLES = 80;
 
 function chartTimeframe(value: string | null): string {
   return value && SUPPORTED_TIMEFRAMES.has(value) ? value : DEFAULT_TIMEFRAME;
+}
+
+function contextCandles(value: string | null): number {
+  return Math.max(8, Math.min(DEFAULT_CONTEXT_CANDLES, Math.round(numericParam(value, DEFAULT_CONTEXT_CANDLES))));
 }
 
 function marketDataPath(symbolValue: string, marketValue: string, timeframe: string): string | null {
@@ -127,7 +132,7 @@ export async function GET(request: Request) {
   const market = searchParams.get("market") ?? "";
   const entryIndex = Math.max(0, Math.round(numericParam(searchParams.get("entryIndex"), 0)));
   const exitIndex = Math.max(0, Math.round(numericParam(searchParams.get("exitIndex"), entryIndex)));
-  const context = Math.max(8, Math.min(80, Math.round(numericParam(searchParams.get("context"), 28))));
+  const context = contextCandles(searchParams.get("context"));
   const timeframe = chartTimeframe(searchParams.get("timeframe"));
   const filePath = marketDataPath(symbol, market, timeframe);
 
