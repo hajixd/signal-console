@@ -173,8 +173,24 @@ export async function GET(request: NextRequest) {
   if (auth === "bad-secret") {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+  if (request.nextUrl.searchParams.get("health") === "1") {
+    return NextResponse.json({
+      checkedAt: new Date().toISOString(),
+      dataRefreshEnabled: process.env.CRON_REFRESH_MARKET_DATA !== "false",
+      ok: true,
+      route: "/api/cron/check-signals"
+    });
+  }
+  const startedAt = Date.now();
   const result = await runSignalCheck();
   await saveCronRun(result);
+  console.info("check-signals cron completed", {
+    durationMs: Date.now() - startedAt,
+    errors: result.errors.length,
+    generated: result.generated.length,
+    skippedDuplicates: result.skippedDuplicates.length,
+    skippedRisk: result.skippedRisk.length
+  });
   return NextResponse.json(result);
 }
 

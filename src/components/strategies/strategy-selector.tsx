@@ -587,6 +587,31 @@ export default function StrategySelector({
     };
   }, [currentEditSignature, edits, isLoaded, persistStrategyEdits, persistedEditsSignature, router]);
 
+  useEffect(() => {
+    if (!activeKey && !isCustomScaleOpen) return undefined;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    function closeOnEscape(event: KeyboardEvent) {
+      if (event.key !== "Escape") return;
+      if (isCustomScaleOpen) {
+        setIsCustomScaleOpen(false);
+        setCustomScaleError("");
+        setCustomScaleResult(null);
+        return;
+      }
+      setActiveKey(null);
+      setDraft(null);
+    }
+
+    document.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [activeKey, isCustomScaleOpen]);
+
   function navigate(nextKeys: string[], nextDefaultKeys = defaultKeys) {
     setOptimisticSelectedKeys(nextKeys);
   }
@@ -932,7 +957,7 @@ export default function StrategySelector({
               <span className="basketTicker" data-label="Assets">
                 {strategy.symbol}
               </span>
-              <div className="basketModel">
+              <div className="basketModel" data-label="Strategy">
                 <strong>{effective.modelName}</strong>
                 <span>
                   {formatMarket(strategy.market)} / {strategy.timeframeLabel} / {strategy.liveSupported ? "live-ready" : "backtest only"}
@@ -970,6 +995,8 @@ export default function StrategySelector({
           <form
             className="strategyModal"
             aria-label={`${activeStrategy.symbol} strategy settings`}
+            aria-modal="true"
+            role="dialog"
             onSubmit={(event) => {
               event.preventDefault();
               saveEditor();

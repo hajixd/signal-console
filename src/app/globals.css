@@ -154,6 +154,12 @@ button {
   animation: marketViewEnter 240ms ease-out both;
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .marketView {
+    animation: none;
+  }
+}
+
 @keyframes marketViewEnter {
   from {
     opacity: 0;
@@ -3190,10 +3196,22 @@ html[data-theme="light"] .strategyToggle input {
   }
 
   .terminal-actions,
-  .topstepDrawerButton,
   .terminal-action,
+  .themeToggle,
+  .topstepDrawerButton,
   .count-pill {
     width: 100%;
+  }
+
+  .terminal-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .terminal-action,
+  .themeToggle,
+  .topstepDrawerButton {
+    min-width: 0;
   }
 
   .topstepDrawerButton {
@@ -3272,6 +3290,12 @@ html[data-theme="light"] .strategyToggle input {
     display: none;
   }
 
+  .basketListRow,
+  .basketListEmpty {
+    min-width: 0;
+    width: 100%;
+  }
+
   .basketListRow {
     grid-template-columns: 1fr;
     gap: 0.36rem;
@@ -3279,6 +3303,7 @@ html[data-theme="light"] .strategyToggle input {
   }
 
   .basketListRow > span,
+  .basketListRow > .basketModel,
   .basketListRow > .strategyToggle {
     display: flex;
     justify-content: space-between;
@@ -3286,6 +3311,7 @@ html[data-theme="light"] .strategyToggle input {
   }
 
   .basketListRow > span::before,
+  .basketListRow > .basketModel::before,
   .basketListRow > .strategyToggle::before {
     content: attr(data-label);
     color: rgba(255, 255, 255, 0.45);
@@ -3293,6 +3319,18 @@ html[data-theme="light"] .strategyToggle input {
     font-size: 0.58rem;
     font-weight: 900;
     text-transform: uppercase;
+  }
+
+  .basketListRow > .basketModel {
+    display: grid;
+    grid-template-columns: minmax(5.5rem, 0.45fr) minmax(0, 1fr);
+    min-width: 0;
+  }
+
+  .basketListRow > .basketModel strong,
+  .basketListRow > .basketModel span {
+    max-width: none;
+    text-align: left;
   }
 
   .strategyModal {

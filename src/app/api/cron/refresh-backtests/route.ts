@@ -19,8 +19,21 @@ export async function GET(request: NextRequest) {
   if (auth === "bad-secret") {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+  if (request.nextUrl.searchParams.get("health") === "1") {
+    return NextResponse.json({
+      checkedAt: new Date().toISOString(),
+      ok: true,
+      route: "/api/cron/refresh-backtests"
+    });
+  }
 
+  const startedAt = Date.now();
   const result = await dispatchBacktestRefresh("cron-route");
+  console.info("refresh-backtests cron completed", {
+    durationMs: Date.now() - startedAt,
+    ok: result.ok,
+    status: result.status
+  });
   return NextResponse.json(result.body, { status: result.status });
 }
 
