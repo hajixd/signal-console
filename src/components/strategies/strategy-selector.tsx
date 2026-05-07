@@ -76,6 +76,7 @@ type CustomScaleResult = {
 };
 
 const STORAGE_KEY = STRATEGY_EDITS_STORAGE_KEY;
+const CUSTOM_SCALE_RANGE_STORAGE_KEY = "trading-bot-custom-scale-range";
 const STRATEGY_SIZES_PARAM = "strategySizes";
 const EDIT_RENDER_DELAY_MS = 2500;
 const SELECTION_SYNC_DELAY_MS = 650;
@@ -85,6 +86,34 @@ const EMPTY_CUSTOM_SCALE_RANGE: CustomScaleRangeInput = {
   targetCeiling: "",
   targetFloor: ""
 };
+
+function isCustomScaleRangeInput(value: unknown): value is Partial<CustomScaleRangeInput> {
+  return Boolean(value && typeof value === "object");
+}
+
+function loadClientCustomScaleRange(): CustomScaleRangeInput {
+  if (typeof window === "undefined") return EMPTY_CUSTOM_SCALE_RANGE;
+
+  try {
+    const raw = window.localStorage.getItem(CUSTOM_SCALE_RANGE_STORAGE_KEY);
+    if (!raw) return EMPTY_CUSTOM_SCALE_RANGE;
+    const parsed: unknown = JSON.parse(raw);
+    if (!isCustomScaleRangeInput(parsed)) return EMPTY_CUSTOM_SCALE_RANGE;
+
+    return {
+      riskCeiling: typeof parsed.riskCeiling === "string" ? parsed.riskCeiling : "",
+      riskFloor: typeof parsed.riskFloor === "string" ? parsed.riskFloor : "",
+      targetCeiling: typeof parsed.targetCeiling === "string" ? parsed.targetCeiling : "",
+      targetFloor: typeof parsed.targetFloor === "string" ? parsed.targetFloor : ""
+    };
+  } catch {
+    return EMPTY_CUSTOM_SCALE_RANGE;
+  }
+}
+
+function hasCustomScaleRangeValue(value: CustomScaleRangeInput): boolean {
+  return Object.values(value).some((entry) => entry.trim().length > 0);
+}
 
 function formatMoney(value: number): string {
   return new Intl.NumberFormat("en-US", {
@@ -448,7 +477,7 @@ export default function StrategySelector({
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
   const [optimisticSelectedKeys, setOptimisticSelectedKeys] = useState(selectedKeys);
   const [isCustomScaleOpen, setIsCustomScaleOpen] = useState(false);
-  const [customScaleRange, setCustomScaleRange] = useState<CustomScaleRangeInput>(EMPTY_CUSTOM_SCALE_RANGE);
+  const [customScaleRange, setCustomScaleRange] = useState<CustomScaleRangeInput>(() => loadClientCustomScaleRange());
   const [customScaleError, setCustomScaleError] = useState("");
   const [customScaleResult, setCustomScaleResult] = useState<CustomScaleResult | null>(null);
   const selected = new Set(optimisticSelectedKeys);
@@ -507,6 +536,15 @@ export default function StrategySelector({
     }
     emitStrategyEditsChanged(edits);
   }, [edits, isLoaded]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (hasCustomScaleRangeValue(customScaleRange)) {
+      window.localStorage.setItem(CUSTOM_SCALE_RANGE_STORAGE_KEY, JSON.stringify(customScaleRange));
+    } else {
+      window.localStorage.removeItem(CUSTOM_SCALE_RANGE_STORAGE_KEY);
+    }
+  }, [customScaleRange]);
 
   useEffect(() => {
     if (optimisticSelectionSignature === persistedLiveSelectionSignature) {

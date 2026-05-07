@@ -37,6 +37,15 @@ type BridgeOrderResponse = {
   status?: "dry_run" | "failed" | "placed";
 };
 
+function missingBridgeSettings(fields: Record<string, string> | undefined, provider: BridgeProvider): string[] {
+  return [
+    ["bridgeUrl", provider.urlEnv],
+    ["bridgeSecret", provider.secretEnv]
+  ]
+    .filter(([fieldKey, envName]) => !fieldText(fields, fieldKey, envName))
+    .map(([fieldKey]) => fieldKey);
+}
+
 async function executeBridgeAutoTrade(provider: BridgeProvider, trade: TradeAlert): Promise<ProjectXAutoTradeResult> {
   if (!envFlag(provider.enabledEnv, true)) {
     return result("disabled", { error: `${provider.enabledEnv} is disabled.` });
@@ -45,9 +54,9 @@ async function executeBridgeAutoTrade(provider: BridgeProvider, trade: TradeAler
   const connection = await getAutoTradeConnection(provider.providerId);
   if (connection?.paused) return result("skipped", { error: `${provider.name} connection is paused.` });
   const fields = connection?.fields;
-  const missing = fields ? ["bridgeUrl", "bridgeSecret"].filter((key) => !fields[key]) : requiredEnv([provider.urlEnv, provider.secretEnv]);
+  const missing = missingBridgeSettings(fields, provider);
   const request = autoTradeRequest(provider.prefix, trade, fieldText(fields, "accountId", provider.accountEnv), fields);
-  if (missing.length) return result("skipped", { error: `Missing ${provider.name} bridge env: ${missing.join(", ")}.` });
+  if (missing.length) return result("skipped", { error: `Missing ${provider.name} bridge settings: ${missing.join(", ")}.` });
 
   if (envFlag(provider.dryRunEnv, false)) {
     const order = dryRunOrder(request, provider.name);
@@ -57,13 +66,16 @@ async function executeBridgeAutoTrade(provider: BridgeProvider, trade: TradeAler
   try {
     const response = await fetch(fieldText(fields, "bridgeUrl", provider.urlEnv)!, {
       body: JSON.stringify({
+        accessToken: fields?.accessToken,
         accountId: request.accountId,
         action: request.action,
         customTag: request.customTag,
         entryPrice: request.entryPrice,
         entryType: request.entryType,
+        gateway: fields?.gateway,
         login: fields?.login,
         password: fields?.password,
+        refreshToken: fields?.refreshToken,
         secret: fieldText(fields, "bridgeSecret", provider.secretEnv),
         server: fields?.server,
         size: request.size,

@@ -48,10 +48,14 @@ export async function executeMatchTraderAutoTrade(trade: TradeAlert): Promise<Pr
   const connection = await getAutoTradeConnection("matchtrader");
   if (connection?.paused) return result("skipped", { error: "Match-Trader connection is paused." });
   const fields = connection?.fields;
-  const envMissing = requiredEnv(["MATCHTRADER_PLATFORM_URL", "MATCHTRADER_SYSTEM_UUID", "MATCHTRADER_TRADING_API_TOKEN"]);
-  const requiredMissing = ["platformUrl", "systemUuid", "tradingApiToken"].filter((key) => !fields?.[key]);
-  if (!fields && envMissing.length) return result("skipped", { error: `Missing Match-Trader env: ${envMissing.join(", ")}.` });
-  if (fields && requiredMissing.length) return result("skipped", { error: `Missing Match-Trader connection fields: ${requiredMissing.join(", ")}.` });
+  const requiredMissing = [
+    ["platformUrl", "MATCHTRADER_PLATFORM_URL"],
+    ["systemUuid", "MATCHTRADER_SYSTEM_UUID"],
+    ["tradingApiToken", "MATCHTRADER_TRADING_API_TOKEN"]
+  ]
+    .filter(([key, envName]) => !fieldText(fields, key, envName))
+    .map(([key]) => key);
+  if (requiredMissing.length) return result("skipped", { error: `Missing Match-Trader credentials: ${requiredMissing.join(", ")}.` });
 
   const request = autoTradeRequest("MATCHTRADER", trade, fieldText(fields, "accountId", "MATCHTRADER_ACCOUNT_ID"), fields);
 

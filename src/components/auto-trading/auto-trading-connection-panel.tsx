@@ -21,6 +21,8 @@ type SavedAutoTradeConnection = {
   checkedAt?: string;
   connected: boolean;
   connectedAt: string;
+  firmId?: string;
+  firmLabel?: string;
   id: AutoTradeProviderId;
   paused: boolean;
   providerLabel: string;
@@ -59,7 +61,7 @@ const PROP_FIRM_OPTIONS: PropFirmOption[] = [
   { id: "ftmo", label: "FTMO", markets: ["forex"], platformIds: ["mt5_bridge", "ctrader"] },
   { id: "the5ers", label: "The5ers", markets: ["forex"], platformIds: ["mt5_bridge", "ctrader"] },
   { id: "fundednext", label: "FundedNext", markets: ["forex"], platformIds: ["mt5_bridge", "ctrader", "matchtrader"] },
-  { id: "fundingpips", label: "FundingPips", markets: ["forex"], platformIds: ["mt5_bridge", "ctrader", "matchtrader", "tradelocker"] },
+  { id: "fundingpips", label: "FundingPips", markets: ["forex"], platformIds: ["mt5_bridge", "ctrader", "matchtrader"] },
   { id: "funded-trading-plus", label: "Funded Trading Plus", markets: ["forex"], platformIds: ["mt5_bridge", "ctrader", "matchtrader"] },
   { id: "alpha-capital", label: "Alpha Capital Group", markets: ["forex"], platformIds: ["mt5_bridge", "ctrader", "tradelocker"] },
   { id: "blue-guardian", label: "Blue Guardian", markets: ["forex"], platformIds: ["matchtrader", "tradelocker", "mt5_bridge"] },
@@ -72,62 +74,66 @@ const PROP_FIRM_OPTIONS: PropFirmOption[] = [
 const CONNECTION_FIELDS: Record<AutoTradeProviderId, ConnectionField[]> = {
   projectx: [],
   tradelocker: [
-    { key: "email", label: "Email", placeholder: "trader@example.com", required: true },
-    { key: "password", label: "Password", required: true, secret: true },
-    { key: "server", label: "Server", defaultValue: "demo", placeholder: "demo", required: true },
+    { key: "email", label: "TradeLocker email", placeholder: "trader@example.com", required: true },
+    { key: "password", label: "TradeLocker password", required: true, secret: true },
+    { key: "server", label: "TradeLocker server", defaultValue: "demo", placeholder: "demo / E8 / FPR", required: true },
     { advanced: true, key: "accountId", label: "Account ID" },
     { advanced: true, key: "accNum", label: "Account number" },
     { advanced: true, key: "tradableInstrumentId", label: "Instrument ID", placeholder: "auto-discovered when possible" },
     { advanced: true, defaultValue: "TRADE", key: "routeId", label: "Route ID", placeholder: "TRADE" },
+    { advanced: true, key: "apiBaseUrl", label: "API base URL", placeholder: "https://demo.tradelocker.com/backend-api" },
     { advanced: true, key: "symbolMap", label: "Symbol map", placeholder: "EURUSD:EURUSD,XAUUSD:XAUUSD" },
     { advanced: true, key: "sizeMap", label: "Size map", placeholder: "EURUSD:0.1,XAUUSD:0.05" }
   ],
   mt5_bridge: [
-    { key: "bridgeUrl", label: "Bridge URL", placeholder: "https://your-vps/place-order", required: true },
-    { key: "bridgeSecret", label: "Bridge secret", required: true, secret: true },
-    { advanced: true, key: "login", label: "MT5 login" },
-    { advanced: true, key: "password", label: "MT5 password", secret: true },
-    { advanced: true, key: "server", label: "MT5 server" },
+    { key: "login", label: "MT5 username / login", placeholder: "318747699", required: true },
+    { key: "password", label: "MT5 password", required: true, secret: true },
+    { key: "server", label: "MT5 server", placeholder: "FTMO-Server", required: true },
+    { advanced: true, key: "bridgeUrl", label: "Bridge URL", placeholder: "https://your-vps/place-order" },
+    { advanced: true, key: "bridgeSecret", label: "Bridge secret", secret: true },
     { advanced: true, key: "accountId", label: "Account ID" },
     { advanced: true, key: "symbolMap", label: "Symbol map", placeholder: "EURUSD:EURUSD.,XAUUSD:XAUUSDm" },
     { advanced: true, key: "lotMap", label: "Lot map", placeholder: "EURUSD:0.1,XAUUSD:0.05" }
   ],
   ctrader: [
-    { key: "bridgeUrl", label: "Bridge URL", placeholder: "https://your-ctrader-bridge/place-order", required: true },
-    { key: "bridgeSecret", label: "Bridge secret", required: true, secret: true },
-    { advanced: true, key: "accountId", label: "Account ID" },
-    { advanced: true, key: "accessToken", label: "Access token", secret: true },
+    { key: "accountId", label: "cTrader account ID", required: true },
+    { key: "accessToken", label: "Access token", required: true, secret: true },
+    { advanced: true, key: "refreshToken", label: "Refresh token", secret: true },
+    { advanced: true, key: "bridgeUrl", label: "Bridge URL", placeholder: "https://your-ctrader-bridge/place-order" },
+    { advanced: true, key: "bridgeSecret", label: "Bridge secret", secret: true },
     { advanced: true, key: "symbolMap", label: "Symbol map", placeholder: "EURUSD:1,XAUUSD:2" },
     { advanced: true, key: "sizeMap", label: "Size map", placeholder: "EURUSD:10000,XAUUSD:1" }
   ],
   matchtrader: [
-    { key: "platformUrl", label: "Platform URL", required: true },
-    { key: "systemUuid", label: "System UUID", required: true },
     { key: "tradingApiToken", label: "Trading API token", required: true, secret: true },
+    { advanced: true, key: "platformUrl", label: "Platform URL", placeholder: "https://platform.example.com" },
+    { advanced: true, key: "systemUuid", label: "System UUID" },
     { advanced: true, key: "coAuthCookie", label: "co-auth cookie", secret: true },
     { advanced: true, key: "accountId", label: "Account ID" },
     { advanced: true, key: "symbolMap", label: "Symbol map", placeholder: "EURUSD:EURUSD,XAUUSD:GOLD" },
     { advanced: true, key: "sizeMap", label: "Size map", placeholder: "EURUSD:0.1,XAUUSD:0.05" }
   ],
   tradovate: [
-    { key: "username", label: "Username", required: true },
-    { key: "password", label: "Password", required: true, secret: true },
+    { key: "username", label: "Tradovate username", required: true },
+    { key: "password", label: "Tradovate password", required: true, secret: true },
     { advanced: true, key: "accountId", label: "Account ID" },
     { advanced: true, key: "accountSpec", label: "Account spec" },
     { advanced: true, defaultValue: "TradingBot", key: "appId", label: "App ID", placeholder: "TradingBot" },
     { advanced: true, defaultValue: "1.0", key: "appVersion", label: "App version", placeholder: "1.0" },
     { advanced: true, key: "cid", label: "CID" },
     { advanced: true, key: "secret", label: "Secret", secret: true },
+    { advanced: true, key: "apiBaseUrl", label: "API base URL", placeholder: "https://demo.tradovateapi.com/v1" },
     { advanced: true, key: "symbolMap", label: "Symbol map", placeholder: "ES:MESM6,NQ:MNQM6" },
     { advanced: true, key: "sizeMap", label: "Size map", placeholder: "ES:1,NQ:1" }
   ],
   rithmic: [
-    { key: "bridgeUrl", label: "Bridge URL", placeholder: "https://your-rithmic-bridge/place-order", required: true },
-    { key: "bridgeSecret", label: "Bridge secret", required: true, secret: true },
-    { advanced: true, key: "login", label: "Rithmic login" },
-    { advanced: true, key: "password", label: "Rithmic password", secret: true },
-    { advanced: true, key: "server", label: "System", placeholder: "Rithmic Paper Trading" },
-    { advanced: true, key: "accountId", label: "Account ID" },
+    { key: "login", label: "Rithmic user ID", placeholder: "LL000907", required: true },
+    { key: "password", label: "Rithmic password", required: true, secret: true },
+    { key: "accountId", label: "Rithmic account number", placeholder: "LL000907-003", required: true },
+    { defaultValue: "Rithmic Paper Trading", key: "server", label: "System", placeholder: "Rithmic Paper Trading", required: true },
+    { defaultValue: "Chicago", key: "gateway", label: "Gateway", placeholder: "Chicago", required: true },
+    { advanced: true, key: "bridgeUrl", label: "Bridge URL", placeholder: "https://your-rithmic-bridge/place-order" },
+    { advanced: true, key: "bridgeSecret", label: "Bridge secret", secret: true },
     { advanced: true, key: "symbolMap", label: "Symbol map", placeholder: "ES:MESM6,NQ:MNQM6" },
     { advanced: true, key: "sizeMap", label: "Size map", placeholder: "ES:1,NQ:1" }
   ]
@@ -139,6 +145,11 @@ function defaultConnectionFields(providerId: AutoTradeProviderId): Record<string
       .filter((field) => field.defaultValue)
       .map((field) => [field.key, field.defaultValue!])
   );
+}
+
+function genericAccountName(fields: Record<string, string>, firm: PropFirmOption, provider: AutoTradeProvider): string {
+  const account = fields.accountName || fields.accountId || fields.login || fields.username || fields.email || fields.accNum;
+  return account ? `${firm.label} / ${account}` : `${firm.label} / ${provider.shortLabel}`;
 }
 
 function fmtMoney(value: number | undefined): string {
@@ -354,7 +365,9 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
           accountId: genericFields.accountId,
-          accountName: genericFields.accountName || genericFields.login || genericFields.username || genericFields.email,
+          accountName: genericAccountName(genericFields, selectedFirm, selectedProvider),
+          firmId: selectedFirm.id,
+          firmLabel: selectedFirm.label,
           fields: genericFields,
           providerId: selectedProvider.id
         })
@@ -630,6 +643,10 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
                 return (
                   <div className="topstepAccountRow" key={connection.id}>
                     <div className="topstepAccountFields">
+                      <div>
+                        <span>Firm</span>
+                        <strong>{connection.firmLabel ?? "--"}</strong>
+                      </div>
                       <div>
                         <span>Provider</span>
                         <strong>{connection.providerLabel}</strong>

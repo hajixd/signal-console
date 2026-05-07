@@ -23,6 +23,19 @@ export type TradeChartBar = {
   volume?: number;
 };
 
+export const TRADE_CHART_TIMEFRAMES = [
+  { label: "1m", value: "1m" },
+  { label: "5m", value: "5m" },
+  { label: "15m", value: "15m" },
+  { label: "30m", value: "30m" },
+  { label: "45m", value: "45m" },
+  { label: "1h", value: "1h" },
+  { label: "4h", value: "4h" },
+  { label: "1d", value: "1d" }
+] as const;
+
+export type TradeChartTimeframe = (typeof TRADE_CHART_TIMEFRAMES)[number]["value"];
+
 type TradeChartTrade = {
   id: string;
   symbol: string;
@@ -38,6 +51,7 @@ type TradeChartTrade = {
 };
 
 type ChartStatus = "idle" | "loading" | "ready" | "error";
+type ChartTheme = "dark" | "light";
 type MappedCandle = CandlestickData<UTCTimestamp> & {
   source: TradeChartBar;
 };
@@ -157,17 +171,29 @@ function chartMessage(status: ChartStatus): string {
   return "No candles available for this trade.";
 }
 
+function currentChartTheme(): ChartTheme {
+  if (typeof document === "undefined") return "dark";
+  return document.documentElement.dataset.theme === "light" ? "light" : "dark";
+}
+
 export default function TradePriceChart({
   trade,
   bars,
-  status
+  status,
+  timeframe,
+  timeframes,
+  onTimeframeChange
 }: {
   trade: TradeChartTrade;
   bars: TradeChartBar[];
   status: ChartStatus;
+  timeframe: TradeChartTimeframe;
+  timeframes: readonly { label: string; value: TradeChartTimeframe }[];
+  onTimeframeChange: (value: TradeChartTimeframe) => void;
 }) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [activeBar, setActiveBar] = useState<TradeChartBar | null>(null);
+  const [chartTheme, setChartTheme] = useState<ChartTheme>("dark");
   const mappedCandles = useMemo(
     () =>
       bars
@@ -215,6 +241,28 @@ export default function TradePriceChart({
   const change = displayBar ? displayBar.close - displayBar.open : 0;
   const changePct = displayBar && displayBar.open !== 0 ? (change / displayBar.open) * 100 : 0;
   const up = change >= 0;
+  const timeframeControls = (
+    <div className="tradeTimeframeButtons" aria-label="Chart timeframe">
+      {timeframes.map((option) => (
+        <button
+          aria-pressed={timeframe === option.value}
+          className={timeframe === option.value ? "active" : ""}
+          key={option.value}
+          onClick={() => onTimeframeChange(option.value)}
+          type="button"
+        >
+          {option.label}
+        </button>
+      ))}
+    </div>
+  );
+
+  useEffect(() => {
+    setChartTheme(currentChartTheme());
+    const observer = new MutationObserver(() => setChartTheme(currentChartTheme()));
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+    return () => observer.disconnect();
+  }, []);
 
   useEffect(() => {
     setActiveBar(visibleAnchor?.source ?? bars[0] ?? null);
@@ -224,41 +272,54 @@ export default function TradePriceChart({
     const container = containerRef.current;
     if (!container || status !== "ready" || !candleData.length) return undefined;
 
+    const isLight = chartTheme === "light";
+    const backgroundColor = isLight ? "#f8fafc" : "#030303";
+    const textColor = isLight ? "rgba(15, 23, 42, 0.68)" : "rgba(255, 255, 255, 0.68)";
+    const gridColor = isLight ? "rgba(15, 23, 42, 0.08)" : "rgba(255, 255, 255, 0.08)";
+    const axisColor = isLight ? "rgba(15, 23, 42, 0.14)" : "rgba(255, 255, 255, 0.14)";
+    const crosshairColor = isLight ? "rgba(15, 23, 42, 0.34)" : "rgba(255, 255, 255, 0.35)";
+    const labelBackground = isLight ? "rgba(248, 250, 252, 0.96)" : "rgba(20, 20, 20, 0.94)";
+    const entryLineColor = isLight ? "rgba(15, 23, 42, 0.88)" : "rgba(255, 255, 255, 0.88)";
+    const upColor = isLight ? "#059669" : "#22c55e";
+    const upSoftColor = isLight ? "#10b981" : "#34d399";
+    const downColor = isLight ? "#dc2626" : "#ef4444";
+    const downSoftColor = isLight ? "#f43f5e" : "#f87171";
+
     const chart = createChart(container, {
       autoSize: true,
       width: container.clientWidth,
-      height: Math.max(340, container.clientHeight || 380),
+      height: Math.max(300, container.clientHeight || 318),
       layout: {
-        background: { type: ColorType.Solid, color: "#030303" },
-        textColor: "rgba(255, 255, 255, 0.68)",
+        background: { type: ColorType.Solid, color: backgroundColor },
+        textColor,
         fontFamily: "'IBM Plex Mono', 'SFMono-Regular', Menlo, Monaco, Consolas, monospace",
         fontSize: 11
       },
       grid: {
-        vertLines: { color: "rgba(255, 255, 255, 0.08)", style: LineStyle.Dashed, visible: true },
-        horzLines: { color: "rgba(255, 255, 255, 0.08)", style: LineStyle.Dashed, visible: true }
+        vertLines: { color: gridColor, style: LineStyle.Dashed, visible: true },
+        horzLines: { color: gridColor, style: LineStyle.Dashed, visible: true }
       },
       crosshair: {
         mode: CrosshairMode.Normal,
         vertLine: {
-          color: "rgba(255, 255, 255, 0.35)",
-          labelBackgroundColor: "rgba(20, 20, 20, 0.94)",
+          color: crosshairColor,
+          labelBackgroundColor: labelBackground,
           style: LineStyle.Dashed,
           width: 1
         },
         horzLine: {
-          color: "rgba(255, 255, 255, 0.35)",
-          labelBackgroundColor: "rgba(20, 20, 20, 0.94)",
+          color: crosshairColor,
+          labelBackgroundColor: labelBackground,
           style: LineStyle.Dashed,
           width: 1
         }
       },
       rightPriceScale: {
-        borderColor: "rgba(255, 255, 255, 0.14)",
+        borderColor: axisColor,
         scaleMargins: { top: 0.12, bottom: 0.16 }
       },
       timeScale: {
-        borderColor: "rgba(255, 255, 255, 0.14)",
+        borderColor: axisColor,
         barSpacing: 6,
         minBarSpacing: 1,
         rightOffset: 8,
@@ -283,12 +344,12 @@ export default function TradePriceChart({
     });
 
     const series = chart.addSeries(CandlestickSeries, {
-      upColor: "#22c55e",
-      downColor: "#ef4444",
-      borderUpColor: "#34d399",
-      borderDownColor: "#f87171",
-      wickUpColor: "#34d399",
-      wickDownColor: "#f87171",
+      upColor,
+      downColor,
+      borderUpColor: upSoftColor,
+      borderDownColor: downSoftColor,
+      wickUpColor: upSoftColor,
+      wickDownColor: downSoftColor,
       priceLineVisible: false,
       lastValueVisible: true
     });
@@ -296,7 +357,7 @@ export default function TradePriceChart({
     series.setData(candleData);
     series.createPriceLine({
       price: trade.entryPrice,
-      color: "rgba(255, 255, 255, 0.88)",
+      color: entryLineColor,
       lineWidth: 2,
       lineStyle: LineStyle.Solid,
       axisLabelVisible: true,
@@ -304,7 +365,7 @@ export default function TradePriceChart({
     });
     series.createPriceLine({
       price: trade.exitPrice,
-      color: trade.side === "long" ? "rgba(248, 113, 113, 0.9)" : "rgba(52, 211, 153, 0.9)",
+      color: trade.side === "long" ? downSoftColor : upSoftColor,
       lineWidth: 1,
       lineStyle: LineStyle.Dashed,
       axisLabelVisible: true,
@@ -312,7 +373,7 @@ export default function TradePriceChart({
     });
     series.createPriceLine({
       price: trade.targetPrice,
-      color: "rgba(52, 211, 153, 0.92)",
+      color: upSoftColor,
       lineWidth: 1,
       lineStyle: LineStyle.Dashed,
       axisLabelVisible: true,
@@ -320,7 +381,7 @@ export default function TradePriceChart({
     });
     series.createPriceLine({
       price: trade.stopPrice,
-      color: "rgba(251, 113, 133, 0.92)",
+      color: downSoftColor,
       lineWidth: 1,
       lineStyle: LineStyle.Dashed,
       axisLabelVisible: true,
@@ -334,7 +395,7 @@ export default function TradePriceChart({
         time: entryCandle.time,
         position: isLong ? "belowBar" : "aboveBar",
         shape: isLong ? "arrowUp" : "arrowDown",
-        color: isLong ? "#34d399" : "#fb7185",
+        color: isLong ? upSoftColor : downSoftColor,
         text: "Entry",
         size: 1.25
       });
@@ -344,7 +405,7 @@ export default function TradePriceChart({
         time: exitCandle.time,
         position: isLong ? "aboveBar" : "belowBar",
         shape: isLong ? "arrowDown" : "arrowUp",
-        color: isLong ? "#fb7185" : "#34d399",
+        color: isLong ? downSoftColor : upSoftColor,
         text: "Exit",
         size: 1.25
       });
@@ -378,6 +439,7 @@ export default function TradePriceChart({
     };
   }, [
     candleData,
+    chartTheme,
     entryCandle,
     exitCandle,
     mappedCandles,
@@ -395,7 +457,7 @@ export default function TradePriceChart({
       <section className="tradeCandlestickPanel isEmpty">
         <div className="tradeCandlestickHead">
           <strong>Trade Candlesticks</strong>
-          <span>TradingView Lightweight Charts</span>
+          {timeframeControls}
         </div>
         <span>{chartMessage(status)}</span>
       </section>
@@ -406,9 +468,10 @@ export default function TradePriceChart({
     <section className="tradeCandlestickPanel">
       <div className="tradeCandlestickHead">
         <strong>Trade Candlesticks</strong>
-        <span>
-          TradingView Lightweight Charts / <strong>{mappedCandles.length}</strong> candles
-        </span>
+        <div className="tradeCandlestickHeadMeta">
+          <span><strong>{mappedCandles.length}</strong> candles</span>
+          {timeframeControls}
+        </div>
       </div>
       <div className="tradePriceChartWrap">
         <div className="tradeChartLegend">

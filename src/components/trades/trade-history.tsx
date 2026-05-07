@@ -10,7 +10,7 @@ import {
   type WheelEvent as ReactWheelEvent
 } from "react";
 import { createPortal } from "react-dom";
-import TradePriceChart, { type TradeChartBar } from "@/components/trades/trade-price-chart";
+import TradePriceChart, { TRADE_CHART_TIMEFRAMES, type TradeChartBar, type TradeChartTimeframe } from "@/components/trades/trade-price-chart";
 import LocalDateTime from "@/components/ui/local-date-time";
 
 export type TradeHistoryRow = {
@@ -256,6 +256,16 @@ function InfoBox({
       <strong className={valueClassName}>{value || "N/A"}</strong>
     </div>
   );
+}
+
+function exitReasonClassName(label: string): string {
+  const normalized = label.toLowerCase();
+  if (normalized.includes("take profit")) return "exitReasonBadge exitTakeProfit";
+  if (normalized.includes("stop loss")) return "exitReasonBadge exitStopLoss";
+  if (normalized.includes("max")) return "exitReasonBadge exitMaxBars";
+  if (normalized.includes("signal")) return "exitReasonBadge exitSignal";
+  if (normalized.includes("time")) return "exitReasonBadge exitTime";
+  return "exitReasonBadge exitOther";
 }
 
 function TradeCandlestickChart({
@@ -758,6 +768,7 @@ function CandleContextMenu({ state }: { state: CandleMenuState }) {
 export default function TradeHistory({ rows }: TradeHistoryProps) {
   const [activeTrade, setActiveTrade] = useState<TradeHistoryRow | null>(null);
   const [chartState, setChartState] = useState<ChartState>({ status: "idle", bars: [] });
+  const [chartTimeframe, setChartTimeframe] = useState<TradeChartTimeframe>("15m");
   const activeStats = activeTrade ? tradePathStats(activeTrade, chartState.bars) : { mfe: null, mae: null };
   const activeDurationLabel = activeTrade ? correctedDurationLabel(activeTrade, chartState.bars) : "";
 
@@ -765,6 +776,10 @@ export default function TradeHistory({ rows }: TradeHistoryProps) {
     if (!activeTrade) return;
     setActiveTrade(rows.find((row) => row.id === activeTrade.id) ?? null);
   }, [activeTrade, rows]);
+
+  useEffect(() => {
+    if (activeTrade) setChartTimeframe("15m");
+  }, [activeTrade?.id]);
 
   useEffect(() => {
     if (!activeTrade) return undefined;
@@ -794,6 +809,7 @@ export default function TradeHistory({ rows }: TradeHistoryProps) {
       exitIndex: String(activeTrade.exitIndex),
       entryTime: activeTrade.entryTime,
       exitTime: activeTrade.exitTime,
+      timeframe: chartTimeframe,
       context: "80"
     });
 
@@ -808,7 +824,7 @@ export default function TradeHistory({ rows }: TradeHistoryProps) {
       });
 
     return () => controller.abort();
-  }, [activeTrade]);
+  }, [activeTrade, chartTimeframe]);
 
   const activeTradeModal = activeTrade ? (
     <div
@@ -844,7 +860,7 @@ export default function TradeHistory({ rows }: TradeHistoryProps) {
           <div className="tradeModalMetrics four">
             <InfoBox label="Entry Reason" value={`Model: ${activeTrade.modelName}`} tone="blue" />
             <InfoBox label="Entry Price" value={activeTrade.entryPriceLabel} />
-            <InfoBox label="Exit Reason" value={activeTrade.exitReasonLabel} tone="blue" />
+            <InfoBox label="Exit Reason" value={activeTrade.exitReasonLabel} tone="blue" valueClassName={exitReasonClassName(activeTrade.exitReasonLabel)} />
             <InfoBox label="Exit Price" value={activeTrade.exitPriceLabel} />
           </div>
 
@@ -860,7 +876,14 @@ export default function TradeHistory({ rows }: TradeHistoryProps) {
             <InfoBox label="DD (MAE)" value={activeStats.mae == null ? "--" : formatLossMoney(activeStats.mae)} tone="red" />
           </div>
 
-          <TradePriceChart trade={activeTrade} bars={chartState.bars} status={chartState.status} />
+          <TradePriceChart
+            bars={chartState.bars}
+            onTimeframeChange={setChartTimeframe}
+            status={chartState.status}
+            timeframe={chartTimeframe}
+            timeframes={TRADE_CHART_TIMEFRAMES}
+            trade={activeTrade}
+          />
 
           <div className="tradeModalDetailsStrip">
             <InfoBox label="Signal Time" value={<LocalDateTime value={activeTrade.signalTime} />} />
@@ -943,12 +966,14 @@ export default function TradeHistory({ rows }: TradeHistoryProps) {
                 <td>
                   {trade.durationLabel} <span className="durationDetail">/ {trade.durationDetailLabel}</span>
                 </td>
-                <td>{trade.exitReasonLabel}</td>
+                <td>
+                  <span className={exitReasonClassName(trade.exitReasonLabel)}>{trade.exitReasonLabel}</span>
+                </td>
                 <td className={trade.pnlClassName}>{trade.pnlLabel}</td>
                 <td className={trade.pnlClassName}>{trade.rMultipleLabel}</td>
                 <td>{trade.sizeLabel}</td>
-                <td>{trade.targetLabel}</td>
-                <td>{trade.riskLabel}</td>
+                <td className="take-profit-cell">{trade.targetLabel}</td>
+                <td className="stop-loss-cell">{trade.riskLabel}</td>
               </tr>
             ))}
           </tbody>

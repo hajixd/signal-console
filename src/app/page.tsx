@@ -711,56 +711,27 @@ export default async function Home({ searchParams }: HomeProps) {
           />
         </section>
 
-        <section className="backtest-card telegram-card">
+        <section className="backtest-card history-card" id="backtest" aria-label="Backtest trade history">
           <div className="backtest-card-head">
             <div>
-              <h2>Telegram Alerts</h2>
+              <h2>Backtest History</h2>
+              <p>Trade-by-trade dollar history for every stored backtest trade in the active market.</p>
             </div>
-            <span className={`status ${telegramConfigured ? "sent" : "skipped"}`}>{telegramConfigured ? "configured" : "needs env"}</span>
+            <span className="count-pill">{historyCountLabel}</span>
           </div>
-          <div className="telegram-grid" aria-label="Telegram environment status">
-            <div>
-              <span>Bot token</span>
-              <strong>{process.env.TELEGRAM_BOT_TOKEN ? "Set" : "Missing"}</strong>
-            </div>
-            <div>
-              <span>Group chat ID</span>
-              <strong>{process.env.TELEGRAM_GROUP_CHAT_ID || process.env.TELEGRAM_CHAT_ID ? "Set" : "Missing"}</strong>
-            </div>
-            <div>
-              <span>Route</span>
-              <strong>/api/cron/check-signals</strong>
-            </div>
-          </div>
-        </section>
 
-        <section className="backtest-card telegram-card">
-          <div className="backtest-card-head">
-            <div>
-              <h2>Runtime Storage</h2>
+          {activeMarketBacktestTrades.length === 0 ? (
+            <div className="empty-state">
+              <strong>No backtest trades match</strong>
+              <span>No stored backtest trades are available for this market.</span>
             </div>
-            <span className={`status ${assetStore === "firebase" ? "sent" : "skipped"}`}>{assetStore}</span>
-          </div>
-          <div className="telegram-grid" aria-label="Runtime storage status">
-            <div>
-              <span>Alert store</span>
-              <strong>{alertStore}</strong>
-            </div>
-            <div>
-              <span>Backtest/data source</span>
-              <strong>{assetStore}</strong>
-            </div>
-            <div>
-              <span>Live-enabled sets</span>
-              <strong>{fmtNumber(liveSelectionCount)}</strong>
-            </div>
-            <div>
-              <span>Dataset sync</span>
-              <strong>
-                <LocalDateTime value={datasetStatus?.lastSyncAt} fallback="Not synced yet" />
-              </strong>
-            </div>
-          </div>
+          ) : (
+            <EditableTradeHistory
+              rows={visibleTradeHistoryRows}
+              strategies={strategyOptions}
+              persistedStrategyEdits={liveConfig.strategyEdits}
+            />
+          )}
         </section>
 
         <section className="backtest-card history-card" id="cron" aria-label="Cron execution history">
@@ -845,27 +816,56 @@ export default async function Home({ searchParams }: HomeProps) {
           )}
         </section>
 
-        <section className="backtest-card history-card" id="backtest" aria-label="Backtest trade history">
+        <section className="backtest-card telegram-card">
           <div className="backtest-card-head">
             <div>
-              <h2>Backtest History</h2>
-              <p>Trade-by-trade dollar history for every stored backtest trade in the active market.</p>
+              <h2>Telegram Alerts</h2>
             </div>
-            <span className="count-pill">{historyCountLabel}</span>
+            <span className={`status ${telegramConfigured ? "sent" : "skipped"}`}>{telegramConfigured ? "configured" : "needs env"}</span>
           </div>
-
-          {activeMarketBacktestTrades.length === 0 ? (
-            <div className="empty-state">
-              <strong>No backtest trades match</strong>
-              <span>No stored backtest trades are available for this market.</span>
+          <div className="telegram-grid" aria-label="Telegram environment status">
+            <div>
+              <span>Bot token</span>
+              <strong>{process.env.TELEGRAM_BOT_TOKEN ? "Set" : "Missing"}</strong>
             </div>
-          ) : (
-            <EditableTradeHistory
-              rows={visibleTradeHistoryRows}
-              strategies={strategyOptions}
-              persistedStrategyEdits={liveConfig.strategyEdits}
-            />
-          )}
+            <div>
+              <span>Group chat ID</span>
+              <strong>{process.env.TELEGRAM_GROUP_CHAT_ID || process.env.TELEGRAM_CHAT_ID ? "Set" : "Missing"}</strong>
+            </div>
+            <div>
+              <span>Route</span>
+              <strong>/api/cron/check-signals</strong>
+            </div>
+          </div>
+        </section>
+
+        <section className="backtest-card telegram-card">
+          <div className="backtest-card-head">
+            <div>
+              <h2>Runtime Storage</h2>
+            </div>
+            <span className={`status ${assetStore === "firebase" ? "sent" : "skipped"}`}>{assetStore}</span>
+          </div>
+          <div className="telegram-grid" aria-label="Runtime storage status">
+            <div>
+              <span>Alert store</span>
+              <strong>{alertStore}</strong>
+            </div>
+            <div>
+              <span>Backtest/data source</span>
+              <strong>{assetStore}</strong>
+            </div>
+            <div>
+              <span>Live-enabled sets</span>
+              <strong>{fmtNumber(liveSelectionCount)}</strong>
+            </div>
+            <div className="dataset-sync-tile">
+              <span>Dataset sync</span>
+              <strong>
+                <LocalDateTime value={datasetStatus?.lastSyncAt} fallback="Not synced yet" />
+              </strong>
+            </div>
+          </div>
         </section>
       </section>
     </main>

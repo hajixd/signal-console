@@ -169,14 +169,14 @@ export async function executeTradeLockerAutoTrade(trade: TradeAlert): Promise<Pr
   const connection = await getAutoTradeConnection("tradelocker");
   if (connection?.paused) return result("skipped", { error: "TradeLocker connection is paused." });
   const fields = connection?.fields;
-  const requiredMissing = ["email", "password", "server"].filter((key) => !fields?.[key]);
-  const envMissing = requiredEnv(["TRADELOCKER_EMAIL", "TRADELOCKER_PASSWORD", "TRADELOCKER_SERVER"]);
-  if (!fields && envMissing.length) {
-    return result("skipped", { error: `Missing TradeLocker env: ${envMissing.join(", ")}.` });
-  }
-  if (fields && requiredMissing.length) {
-    return result("skipped", { error: `Missing TradeLocker connection fields: ${requiredMissing.join(", ")}.` });
-  }
+  const requiredMissing = [
+    ["email", "TRADELOCKER_EMAIL"],
+    ["password", "TRADELOCKER_PASSWORD"],
+    ["server", "TRADELOCKER_SERVER"]
+  ]
+    .filter(([key, envName]) => !fieldText(fields, key, envName))
+    .map(([key]) => key);
+  if (requiredMissing.length) return result("skipped", { error: `Missing TradeLocker credentials: ${requiredMissing.join(", ")}.` });
 
   try {
     const token = await tradeLockerToken(fields);

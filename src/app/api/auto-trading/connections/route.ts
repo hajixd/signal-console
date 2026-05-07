@@ -16,6 +16,8 @@ type SavePayload = {
   accountId?: unknown;
   accountName?: unknown;
   fields?: unknown;
+  firmId?: unknown;
+  firmLabel?: unknown;
   providerId?: unknown;
 };
 
@@ -45,6 +47,8 @@ function publicConnection(connection: Awaited<ReturnType<typeof listAutoTradeCon
     checkedAt: connection.lastCheckedAt,
     connected: true,
     connectedAt: connection.connectedAt,
+    firmId: connection.firmId,
+    firmLabel: connection.firmLabel,
     id: connection.id,
     marketLabels: provider?.markets ?? [],
     paused: connection.paused,
@@ -78,6 +82,8 @@ export async function POST(request: NextRequest) {
       accountId: text(payload.accountId),
       accountName: text(payload.accountName),
       fields,
+      firmId: text(payload.firmId),
+      firmLabel: text(payload.firmLabel),
       providerId
     });
     return NextResponse.json({

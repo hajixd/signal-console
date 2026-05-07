@@ -16,13 +16,19 @@ type MarketBar = {
 };
 
 const lineCache = new Map<string, string[]>();
+const SUPPORTED_TIMEFRAMES = new Set(["1m", "5m", "15m", "30m", "45m", "1h", "4h", "1d", "1w"]);
+const DEFAULT_TIMEFRAME = "15m";
 
-function marketDataPath(symbolValue: string, marketValue: string): string | null {
+function chartTimeframe(value: string | null): string {
+  return value && SUPPORTED_TIMEFRAMES.has(value) ? value : DEFAULT_TIMEFRAME;
+}
+
+function marketDataPath(symbolValue: string, marketValue: string, timeframe: string): string | null {
   const asset = assetForSymbol(symbolValue);
   const market = marketValue.trim().toLowerCase();
   if (!asset) return null;
   if (market && isMarket(market) && market !== asset.market) return null;
-  return `15m/${asset.dataFile}`;
+  return `${timeframe}/${asset.dataFile}`;
 }
 
 async function marketLines(relativePath: string): Promise<string[]> {
@@ -122,7 +128,8 @@ export async function GET(request: Request) {
   const entryIndex = Math.max(0, Math.round(numericParam(searchParams.get("entryIndex"), 0)));
   const exitIndex = Math.max(0, Math.round(numericParam(searchParams.get("exitIndex"), entryIndex)));
   const context = Math.max(8, Math.min(80, Math.round(numericParam(searchParams.get("context"), 28))));
-  const filePath = marketDataPath(symbol, market);
+  const timeframe = chartTimeframe(searchParams.get("timeframe"));
+  const filePath = marketDataPath(symbol, market, timeframe);
 
   if (!filePath) {
     return NextResponse.json({ bars: [], error: "Missing symbol" }, { status: 400 });

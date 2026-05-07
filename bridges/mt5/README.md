@@ -41,11 +41,11 @@ For Vercel to reach it, put it behind HTTPS with a tunnel or reverse proxy, then
 
 In the app's Add Account form for MT5:
 
-- `Bridge URL`: your public `/place-order` URL
-- `Bridge secret`: same as `MT5_BRIDGE_SECRET`
-- `MT5 login`: your account login
-- `MT5 password`: your account password
-- `MT5 server`: your broker server name
+- `MT5 username / login`: the account login from the prop firm or broker
+- `MT5 password`: the account password from the prop firm or broker
+- `MT5 server`: the server name from the prop firm or broker
+- `Bridge URL`: advanced setting; your public `/place-order` URL if it is not already set in `MT5_BRIDGE_URL`
+- `Bridge secret`: advanced setting; same as `MT5_BRIDGE_SECRET` if it is not already set in the app environment
 - `Symbol map`: broker symbol names, for example `EURUSD:EURUSD.,XAUUSD:XAUUSDm`
 - `Lot map`: trade sizes, for example `EURUSD:0.1,XAUUSD:0.05`
 

@@ -111,10 +111,13 @@ export async function executeTradovateAutoTrade(trade: TradeAlert): Promise<Proj
   const connection = await getAutoTradeConnection("tradovate");
   if (connection?.paused) return result("skipped", { error: "Tradovate connection is paused." });
   const fields = connection?.fields;
-  const envMissing = requiredEnv(["TRADOVATE_USERNAME", "TRADOVATE_PASSWORD"]);
-  const requiredMissing = ["username", "password"].filter((key) => !fields?.[key]);
-  if (!fields && envMissing.length) return result("skipped", { error: `Missing Tradovate env: ${envMissing.join(", ")}.` });
-  if (fields && requiredMissing.length) return result("skipped", { error: `Missing Tradovate connection fields: ${requiredMissing.join(", ")}.` });
+  const requiredMissing = [
+    ["username", "TRADOVATE_USERNAME"],
+    ["password", "TRADOVATE_PASSWORD"]
+  ]
+    .filter(([key, envName]) => !fieldText(fields, key, envName))
+    .map(([key]) => key);
+  if (requiredMissing.length) return result("skipped", { error: `Missing Tradovate credentials: ${requiredMissing.join(", ")}.` });
 
   try {
     const token = await tradovateToken(fields);

@@ -15,6 +15,8 @@ export type AutoTradeConnection = {
   accountName?: string;
   connectedAt: string;
   fields: Record<string, string>;
+  firmId?: string;
+  firmLabel?: string;
   id: AutoTradeProviderId;
   lastCheckedAt?: string;
   paused: boolean;
@@ -78,6 +80,8 @@ function toConnection(value: StoredAutoTradeConnection | null | undefined): Auto
     accountName: value.accountName,
     connectedAt: typeof value.connectedAt === "string" ? value.connectedAt : new Date(0).toISOString(),
     fields: decryptFields(value.encryptedFields),
+    firmId: typeof value.firmId === "string" ? value.firmId : undefined,
+    firmLabel: typeof value.firmLabel === "string" ? value.firmLabel : undefined,
     id: value.id,
     lastCheckedAt: value.lastCheckedAt,
     paused: value.paused === true,
@@ -136,6 +140,8 @@ export async function saveAutoTradeConnection(input: {
   accountId?: string;
   accountName?: string;
   fields: Record<string, string>;
+  firmId?: string;
+  firmLabel?: string;
   providerId: AutoTradeProviderId;
 }): Promise<AutoTradeConnection> {
   const provider = autoTradeProviderById(input.providerId);
@@ -148,6 +154,8 @@ export async function saveAutoTradeConnection(input: {
     accountName: input.accountName,
     connectedAt: existing?.connectedAt ?? now,
     encryptedFields: encryptFields(cleanFields),
+    firmId: input.firmId,
+    firmLabel: input.firmLabel,
     id: input.providerId,
     lastCheckedAt: now,
     paused: existing?.paused ?? true,
@@ -177,6 +185,8 @@ export async function setAutoTradeConnectionPaused(providerId: AutoTradeProvider
     accountId: connection.accountId,
     accountName: connection.accountName,
     fields: connection.fields,
+    firmId: connection.firmId,
+    firmLabel: connection.firmLabel,
     providerId
   }).then((saved) => {
     saved.paused = paused;
@@ -190,6 +200,8 @@ async function persistPaused(connection: AutoTradeConnection): Promise<AutoTrade
     accountName: connection.accountName,
     connectedAt: connection.connectedAt,
     encryptedFields: encryptFields(connection.fields),
+    firmId: connection.firmId,
+    firmLabel: connection.firmLabel,
     id: connection.id,
     lastCheckedAt: new Date().toISOString(),
     paused: connection.paused,

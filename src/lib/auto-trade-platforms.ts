@@ -64,9 +64,9 @@ export const AUTO_TRADE_PROVIDERS: AutoTradeProvider[] = [
     markets: ["forex"],
     status: "live",
     statusLabel: "Live",
-    coverage: "E8 US Forex/CFD and other TradeLocker prop accounts.",
+    coverage: "E8 US, Blue Guardian, FunderPro, and other TradeLocker prop accounts.",
     connectionMode: "REST API",
-    description: "Primary direct API route for Forex/CFD prop firms that expose TradeLocker credentials."
+    description: "Direct API route using the email, password, and server issued with a TradeLocker account."
   },
   {
     id: "mt5_bridge",
@@ -75,9 +75,9 @@ export const AUTO_TRADE_PROVIDERS: AutoTradeProvider[] = [
     markets: ["forex"],
     status: "live",
     statusLabel: "Live",
-    coverage: "FTMO MT5 and MT5-based prop accounts through a VPS Expert Advisor.",
-    connectionMode: "Windows VPS EA",
-    description: "MT5 Expert Advisor bridge pattern for accounts that require terminal-based execution."
+    coverage: "FTMO, FundedNext, The5ers, FXIFY, and MT5-based prop accounts through a Windows bridge.",
+    connectionMode: "Windows VPS bridge",
+    description: "MT5 execution using the account login, password, and server while bridge infrastructure stays advanced."
   },
   {
     id: "ctrader",
@@ -86,9 +86,9 @@ export const AUTO_TRADE_PROVIDERS: AutoTradeProvider[] = [
     markets: ["forex"],
     status: "live",
     statusLabel: "Live",
-    coverage: "FTMO and other cTrader prop accounts where Open API access is available.",
-    connectionMode: "Open API",
-    description: "Direct cTrader Open API connector for C# or token-based automation setups."
+    coverage: "FTMO, The5ers, E8, FundedNext, BrightFunded, and other cTrader prop accounts where Open API access is available.",
+    connectionMode: "Open API token",
+    description: "cTrader account routing with account ID and OAuth token while bridge/client credentials stay advanced."
   },
   {
     id: "matchtrader",
@@ -97,9 +97,9 @@ export const AUTO_TRADE_PROVIDERS: AutoTradeProvider[] = [
     markets: ["forex"],
     status: "live",
     statusLabel: "Live",
-    coverage: "E8 US accounts that choose MatchTrader when broker API access is enabled.",
-    connectionMode: "Broker API",
-    description: "Connector slot for firms that enable Match-Trader platform API access."
+    coverage: "E8 US, FundedNext US, Blue Guardian, FundingPips, and other Match-Trader prop accounts with API access enabled.",
+    connectionMode: "Trading API token",
+    description: "Match-Trader API route for accounts where the firm exposes a trading API token."
   }
 ];
 
