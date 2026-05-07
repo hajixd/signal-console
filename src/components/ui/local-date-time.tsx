@@ -29,5 +29,5 @@ export default function LocalDateTime({ fallback = "--", value }: LocalDateTimeP
     setClientLabel(formatLocalDateTime(value, fallback));
   }, [fallback, value]);
 
-  return <span suppressHydrationWarning>{clientLabel ?? formatLocalDateTime(value, fallback)}</span>;
+  return <span suppressHydrationWarning>{clientLabel ?? fallback}</span>;
 }
