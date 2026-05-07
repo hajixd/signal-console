@@ -2900,6 +2900,11 @@ html[data-theme="light"] .localDateTimeStack small {
   color: rgba(37, 99, 235, 0.7);
 }
 
+html[data-theme="light"] .date-stat-card .localDateTimeStack span,
+html[data-theme="light"] .date-stat-card .localDateTimeStack small {
+  color: #2563eb;
+}
+
 html[data-theme="light"] .challenge-method {
   border-color: var(--line);
   background: #ffffff;
@@ -3975,11 +3980,13 @@ html[data-theme="light"] .tradeCandlestickPanel {
 }
 
 .date-stat-card .localDateTimeStack span {
+  color: #93bbfc;
   font-size: 1.05rem;
   font-weight: 950;
 }
 
 .date-stat-card .localDateTimeStack small {
+  color: #93bbfc;
   font-size: 0.82rem;
   font-weight: 950;
 }
