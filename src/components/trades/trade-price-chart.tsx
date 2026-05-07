@@ -325,8 +325,8 @@ export default function TradePriceChart({
     const crosshairColor = isLight ? "rgba(15, 23, 42, 0.34)" : "rgba(255, 255, 255, 0.35)";
     const labelBackground = isLight ? "rgba(248, 250, 252, 0.96)" : "rgba(20, 20, 20, 0.94)";
     const entryLineColor = isLight ? "rgba(15, 23, 42, 0.88)" : "rgba(255, 255, 255, 0.88)";
-    const upColor = isLight ? "#059669" : "#22c55e";
-    const upSoftColor = isLight ? "#10b981" : "#34d399";
+    const upColor = isLight ? "#16a34a" : "#22c55e";
+    const upSoftColor = isLight ? "#22c55e" : "#34d399";
     const downColor = isLight ? "#dc2626" : "#ef4444";
     const downSoftColor = isLight ? "#f43f5e" : "#f87171";
 

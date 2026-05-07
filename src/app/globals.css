@@ -2614,7 +2614,7 @@ html[data-theme="light"] {
   --text: #111827;
   --text-dim: rgba(17, 24, 39, 0.68);
   --text-faint: rgba(17, 24, 39, 0.44);
-  --up: #047857;
+  --up: #16a34a;
   --down: #be123c;
   --neutral: #2563eb;
   --accent: #2563eb;
@@ -2855,7 +2855,7 @@ html[data-theme="light"] .topstepAccountControls .dangerButton:hover:not(:disabl
 html[data-theme="light"] .topstepAccountControls .playButton {
   border-color: rgba(5, 150, 105, 0.22);
   background: rgba(5, 150, 105, 0.06);
-  color: #047857;
+  color: #16a34a;
 }
 
 html[data-theme="light"] .topstepAccountControls .playButton:hover:not(:disabled) {
@@ -3171,7 +3171,7 @@ html[data-theme="light"] .scaleButtons button:hover {
 html[data-theme="light"] .customScaleNotice {
   border-color: rgba(5, 150, 105, 0.22);
   background: rgba(5, 150, 105, 0.08);
-  color: #047857;
+  color: #16a34a;
 }
 
 html[data-theme="light"] .customScaleNotice span {
@@ -3238,7 +3238,7 @@ html[data-theme="light"] .sideLong,
 html[data-theme="light"] .sent {
   border-color: rgba(4, 120, 87, 0.25);
   background: rgba(16, 185, 129, 0.1);
-  color: #047857;
+  color: #16a34a;
 }
 
 html[data-theme="light"] .sideShort,
@@ -3249,7 +3249,7 @@ html[data-theme="light"] .failed {
 }
 
 html[data-theme="light"] .strategyToggle input {
-  accent-color: #047857;
+  accent-color: #16a34a;
 }
 
 @media (max-width: 1080px) {
@@ -4202,7 +4202,7 @@ html[data-theme="light"] .tradeInfoBox strong {
 }
 
 html[data-theme="light"] {
-  --up: #059669;
+  --up: #16a34a;
   --down: #dc2626;
   --neutral: #2563eb;
   --accent: #2563eb;
@@ -4210,7 +4210,7 @@ html[data-theme="light"] {
 
 html[data-theme="light"] .up,
 html[data-theme="light"] .take-profit-cell {
-  color: #047857 !important;
+  color: #16a34a !important;
 }
 
 html[data-theme="light"] .down,
@@ -4250,12 +4250,12 @@ html[data-theme="light"] .dataset-sync-tile {
 }
 
 html[data-theme="light"] .dataset-sync-tile span {
-  color: #047857;
+  color: #16a34a;
 }
 
 html[data-theme="light"] .dataset-sync-tile strong,
 html[data-theme="light"] .dataset-sync-tile strong span {
-  color: #064e3b;
+  color: #15803d;
 }
 
 html[data-theme="light"] .history-table .ticker-cell {
@@ -4271,7 +4271,7 @@ html[data-theme="light"] .exitReasonBadge {
 html[data-theme="light"] .exitTakeProfit {
   border-color: rgba(5, 150, 105, 0.26);
   background: #dcfce7;
-  color: #047857;
+  color: #16a34a;
 }
 
 html[data-theme="light"] .exitStopLoss {
@@ -4357,7 +4357,7 @@ html[data-theme="light"] .tradeInfoBox.tone-blue {
 }
 
 html[data-theme="light"] .tradeInfoBox.tone-green strong {
-  color: #047857;
+  color: #16a34a;
 }
 
 html[data-theme="light"] .tradeInfoBox.tone-red strong {
@@ -4407,7 +4407,7 @@ html[data-theme="light"] .tradeTimeframeButtons button.active {
 
 html[data-theme="light"] .tradeOutcomeBadge.up {
   border-color: rgba(5, 150, 105, 0.28);
-  color: #047857;
+  color: #16a34a;
 }
 
 html[data-theme="light"] .tradeOutcomeBadge.down {
@@ -4529,7 +4529,7 @@ html[data-theme="light"] .tradeReplaySpeeds button:hover,
 html[data-theme="light"] .tradeReplaySpeeds button.active {
   border-color: rgba(5, 150, 105, 0.28);
   background: #dcfce7;
-  color: #047857;
+  color: #16a34a;
 }
 
 html[data-theme="light"] .tradeReplaySlider {
@@ -4541,7 +4541,7 @@ html[data-theme="light"] .tradeReplaySlider strong {
 }
 
 html[data-theme="light"] .tradeReplaySlider input {
-  accent-color: #059669;
+  accent-color: #16a34a;
 }
 
 @media (max-width: 920px) {
