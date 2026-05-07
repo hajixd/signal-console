@@ -14,6 +14,8 @@ export type AutoTradeOrderSummary = {
   customTag?: string;
   error?: string;
   orderId?: number;
+  providerId?: string;
+  providerName?: string;
   size?: number;
   status: "dry_run" | "failed" | "placed";
 };
@@ -113,6 +115,8 @@ export type TradeAlert = {
   autoTradeError?: string;
   autoTradeOrderId?: number;
   autoTradeOrders?: AutoTradeOrderSummary[];
+  autoTradeProviderId?: string;
+  autoTradeProviderName?: string;
   autoTradeStatus?: "disabled" | "dry_run" | "failed" | "placed" | "skipped";
   id: string;
   createdAt: string;

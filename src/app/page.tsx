@@ -1,8 +1,8 @@
 import ChallengeReplay from "@/components/challenge/challenge-replay";
 import Link from "next/link";
+import AutoTradingConnectionDrawer from "@/components/auto-trading/auto-trading-connection-drawer";
 import SelectedStrategyStats from "@/components/strategies/selected-strategy-stats";
 import StrategySelector from "@/components/strategies/strategy-selector";
-import TopstepConnectionDrawer from "@/components/topstep/topstep-connection-drawer";
 import EditableTradeHistory from "@/components/trades/editable-trade-history";
 import { type TradeHistoryRow } from "@/components/trades/trade-history";
 import TestAlertButton from "@/components/ui/test-alert-button";
@@ -688,7 +688,7 @@ export default async function Home({ searchParams }: HomeProps) {
               {telegramBotUsername ? "Open Telegram bot" : "Open BotFather"}
             </a>
             <TestAlertButton disabled={!telegramConfigured} sendTestAlert={sendTestTelegramAlert} />
-            <TopstepConnectionDrawer />
+            <AutoTradingConnectionDrawer market={activeMarket} />
           </div>
         </header>
 
@@ -830,7 +830,7 @@ export default async function Home({ searchParams }: HomeProps) {
                     <th>Target $</th>
                     <th>Risk $</th>
                     <th>Odds</th>
-                    <th>ProjectX</th>
+                    <th>Auto Trade</th>
                     <th>Telegram</th>
                     <th>Signal time</th>
                   </tr>
@@ -853,7 +853,7 @@ export default async function Home({ searchParams }: HomeProps) {
                       <td>{fmtMoney(alertTargetDollars(trade))}</td>
                       <td>{fmtMoney(alertRiskDollars(trade))}</td>
                       <td>{fmtPct(trade.estimatedWinRatePct)}</td>
-                      <td title={trade.autoTradeError ?? trade.autoTradeContractName ?? trade.autoTradeContractId ?? undefined}>
+                      <td title={trade.autoTradeError ?? trade.autoTradeProviderName ?? trade.autoTradeContractName ?? trade.autoTradeContractId ?? undefined}>
                         <span className={`status ${autoTradeStatusClass(trade)}`}>{autoTradeStatusLabel(trade)}</span>
                       </td>
                       <td>

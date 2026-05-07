@@ -1,13 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
+import { executeAutoTrade } from "@/lib/auto-trader";
+import { autoTradeMarketForSignal } from "@/lib/auto-trade-platforms";
+import { dollarPerUnit } from "@/lib/instruments";
 import { fetchMarketBars } from "@/lib/market-data";
 import { refreshMarketDataForRules } from "@/lib/market-data-refresh";
 import { saveCronRun } from "@/lib/live-config";
 import { activeRules, evaluateLatestSignal } from "@/lib/live-signals";
-import { executeProjectXAutoTrade } from "@/lib/projectx-auto-trader";
 import { hasTrade, saveTrade } from "@/lib/storage";
 import { sendTelegram } from "@/lib/telegram";
 import { TOPSTEP_100K_ACCOUNT, reviewTopstepSignal, withTopstepGuardNote } from "@/lib/topstep";
-import type { CronResult } from "@/lib/types";
+import type { CronResult, TradeAlert } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -17,6 +19,21 @@ function isAuthorized(request: NextRequest): "ok" | "missing-secret" | "bad-secr
   const secret = process.env.CRON_SECRET;
   if (!secret) return process.env.NODE_ENV === "production" ? "missing-secret" : "ok";
   return request.headers.get("authorization") === `Bearer ${secret}` ? "ok" : "bad-secret";
+}
+
+function signalDollars(trade: TradeAlert): { targetDollars: number; riskDollars: number } {
+  const unitValue = dollarPerUnit(trade.symbol, trade.entryPrice);
+  const sizeMultiplier = trade.sizeMultiplier ?? 1;
+  return {
+    riskDollars: Math.abs(trade.slUnits * unitValue * sizeMultiplier),
+    targetDollars: Math.abs(trade.tpUnits * unitValue * sizeMultiplier)
+  };
+}
+
+function genericSignalScore(trade: TradeAlert, riskDollars: number, targetDollars: number): number {
+  const boundedProfitFactor = Number.isFinite(trade.liveProfitFactor) ? Math.min(Math.max(trade.liveProfitFactor, 0), 6) : 1;
+  const rewardRisk = riskDollars > 0 ? targetDollars / riskDollars : 0;
+  return trade.estimatedWinRatePct / 50 + Math.log1p(boundedProfitFactor) + Math.min(rewardRisk, 4) * 0.18;
 }
 
 async function runSignalCheck(): Promise<CronResult> {
@@ -46,20 +63,31 @@ async function runSignalCheck(): Promise<CronResult> {
         continue;
       }
 
-      const topstepReview = reviewTopstepSignal(rule, signal);
-      if (!topstepReview.allowed) {
+      const signalMarket = autoTradeMarketForSignal(signal.market);
+      if (!signalMarket) {
         result.skippedRisk.push({
           id: signal.id,
           symbol: signal.symbol,
-          reason: topstepReview.reason ?? "Topstep risk guard rejected the signal"
+          reason: `no auto-trade market route for ${signal.market}`
         });
         continue;
       }
 
+      const topstepReview = signalMarket === "futures" ? reviewTopstepSignal(rule, signal) : null;
+      if (topstepReview && !topstepReview.allowed) {
+        result.skippedRisk.push({
+          id: signal.id,
+          symbol: signal.symbol,
+          reason: topstepReview.reason ?? "Futures risk guard rejected the signal"
+        });
+        continue;
+      }
+
+      const dollars = topstepReview ?? signalDollars(signal);
       candidates.push({
-        signal: withTopstepGuardNote(signal, topstepReview),
-        score: topstepReview.score,
-        riskDollars: topstepReview.riskDollars
+        signal: topstepReview ? withTopstepGuardNote(signal, topstepReview) : signal,
+        score: topstepReview?.score ?? genericSignalScore(signal, dollars.riskDollars, dollars.targetDollars),
+        riskDollars: dollars.riskDollars
       });
     } catch (error) {
       result.errors.push({
@@ -69,8 +97,8 @@ async function runSignalCheck(): Promise<CronResult> {
     }
   }
 
-  const configuredMaxAlerts = Number(process.env.TOPSTEP_MAX_ALERTS_PER_CHECK ?? TOPSTEP_100K_ACCOUNT.maxAlertsPerCheck);
-  const configuredMaxRisk = Number(process.env.TOPSTEP_MAX_RISK_PER_CHECK ?? TOPSTEP_100K_ACCOUNT.maxRiskPerCheck);
+  const configuredMaxAlerts = Number(process.env.AUTO_TRADE_MAX_ALERTS_PER_CHECK ?? process.env.TOPSTEP_MAX_ALERTS_PER_CHECK ?? TOPSTEP_100K_ACCOUNT.maxAlertsPerCheck);
+  const configuredMaxRisk = Number(process.env.AUTO_TRADE_MAX_RISK_PER_CHECK ?? process.env.TOPSTEP_MAX_RISK_PER_CHECK ?? TOPSTEP_100K_ACCOUNT.maxRiskPerCheck);
   const maxAlerts = Number.isFinite(configuredMaxAlerts) && configuredMaxAlerts > 0 ? configuredMaxAlerts : TOPSTEP_100K_ACCOUNT.maxAlertsPerCheck;
   const maxRisk = Number.isFinite(configuredMaxRisk) && configuredMaxRisk > 0 ? configuredMaxRisk : TOPSTEP_100K_ACCOUNT.maxRiskPerCheck;
   let acceptedRisk = 0;
@@ -104,10 +132,10 @@ async function runSignalCheck(): Promise<CronResult> {
     await saveTrade({
       ...candidate.signal,
       autoTradeCheckedAt: new Date().toISOString(),
-      autoTradeError: "ProjectX execution reserved; awaiting cron execution.",
+      autoTradeError: "Auto-trade execution queued; awaiting connector dispatch.",
       autoTradeStatus: "skipped"
     });
-    const autoTrade = await executeProjectXAutoTrade(candidate.signal);
+    const autoTrade = await executeAutoTrade(candidate.signal);
     const executableSignal = {
       ...candidate.signal,
       autoTradeAccountId: autoTrade.accountId,
@@ -119,6 +147,8 @@ async function runSignalCheck(): Promise<CronResult> {
       autoTradeError: autoTrade.error,
       autoTradeOrderId: autoTrade.orderId,
       autoTradeOrders: autoTrade.orders,
+      autoTradeProviderId: autoTrade.providerId,
+      autoTradeProviderName: autoTrade.providerName,
       autoTradeStatus: autoTrade.status
     };
     await saveTrade(executableSignal);

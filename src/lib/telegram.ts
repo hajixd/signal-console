@@ -53,6 +53,7 @@ function formatSignalTime(value: string): string {
 
 function autoTradeLine(trade: TradeAlert): string {
   if (!trade.autoTradeStatus) return "";
+  const provider = trade.autoTradeProviderName ?? trade.autoTradeOrders?.find((order) => order.providerName)?.providerName ?? "Auto trade";
   if (trade.autoTradeOrders?.length) {
     const placed = trade.autoTradeOrders.filter((order) => order.status === "placed").length;
     const dryRuns = trade.autoTradeOrders.filter((order) => order.status === "dry_run").length;
@@ -63,15 +64,15 @@ function autoTradeLine(trade: TradeAlert): string {
       .join(", ");
     const suffix = trade.autoTradeOrders.length > 3 ? ` +${trade.autoTradeOrders.length - 3}` : "";
     const status = dryRuns ? `${dryRuns} dry run` : placed ? `${placed} placed${failed ? ` / ${failed} failed` : ""}` : `${failed} failed`;
-    return `ProjectX: ${status} on ${accountLabel}${suffix} (${trade.autoTradeContractName ?? trade.autoTradeContractId ?? trade.symbol})`;
+    return `${provider}: ${status} on ${accountLabel}${suffix} (${trade.autoTradeContractName ?? trade.autoTradeContractId ?? trade.symbol})`;
   }
   if (trade.autoTradeStatus === "placed") {
-    return `ProjectX: order ${trade.autoTradeOrderId ?? "placed"} on ${trade.autoTradeAccountName ?? trade.autoTradeAccountId ?? "account"} (${trade.autoTradeContractName ?? trade.autoTradeContractId ?? trade.symbol})`;
+    return `${provider}: order ${trade.autoTradeOrderId ?? "placed"} on ${trade.autoTradeAccountName ?? trade.autoTradeAccountId ?? "account"} (${trade.autoTradeContractName ?? trade.autoTradeContractId ?? trade.symbol})`;
   }
   if (trade.autoTradeStatus === "dry_run") {
-    return `ProjectX: dry run for ${trade.autoTradeAccountName ?? trade.autoTradeAccountId ?? "account"} (${trade.autoTradeContractName ?? trade.autoTradeContractId ?? trade.symbol})`;
+    return `${provider}: dry run for ${trade.autoTradeAccountName ?? trade.autoTradeAccountId ?? "account"} (${trade.autoTradeContractName ?? trade.autoTradeContractId ?? trade.symbol})`;
   }
-  return `ProjectX: ${trade.autoTradeStatus}${trade.autoTradeError ? ` - ${trade.autoTradeError}` : ""}`;
+  return `${provider}: ${trade.autoTradeStatus}${trade.autoTradeError ? ` - ${trade.autoTradeError}` : ""}`;
 }
 
 function fitTelegramMessage(text: string): string {
@@ -105,8 +106,8 @@ export function formatTelegramMessage(trade: TradeAlert): string {
     executionModes ? `Modes: ${escapeHtml(executionModes)}` : "",
     "",
     `<b>Execution</b>`,
-    autoTrade ? escapeHtml(autoTrade) : "ProjectX: not attempted",
-    trade.autoTradeError ? `ProjectX note: ${escapeHtml(truncate(trade.autoTradeError, 180))}` : "",
+    autoTrade ? escapeHtml(autoTrade) : "Auto trade: not attempted",
+    trade.autoTradeError ? `Auto trade note: ${escapeHtml(truncate(trade.autoTradeError, 180))}` : "",
     trade.notes ? `Risk note: ${escapeHtml(truncate(trade.notes, 300))}` : "",
     "",
     `<b>Meta</b>`,

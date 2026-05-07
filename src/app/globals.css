@@ -1472,6 +1472,86 @@ html[data-theme="light"] .themeDarkLabel {
   gap: 0.65rem;
 }
 
+.autoTradeModeStrip {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.45rem;
+}
+
+.autoTradeProviderOption {
+  min-width: 0;
+  min-height: 82px;
+  display: grid;
+  align-content: center;
+  gap: 0.28rem;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  background: rgba(255, 255, 255, 0.025);
+  color: rgba(255, 255, 255, 0.82);
+  padding: 0.62rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.autoTradeProviderOption:hover,
+.autoTradeProviderOption.active {
+  border-color: rgba(96, 165, 250, 0.42);
+  background: rgba(96, 165, 250, 0.1);
+  color: #ffffff;
+}
+
+.autoTradeProviderOption span,
+.autoTradeProviderSummary span {
+  color: var(--text-faint);
+  font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+  font-size: 0.56rem;
+  font-weight: 900;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.autoTradeProviderOption strong {
+  min-width: 0;
+  overflow: hidden;
+  color: inherit;
+  font-size: 0.82rem;
+  font-weight: 950;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.autoTradeProviderOption .status {
+  justify-self: start;
+}
+
+.autoTradeAddAccount {
+  min-width: 0;
+  display: grid;
+  gap: 0.58rem;
+}
+
+.autoTradeProviderSummary {
+  min-width: 0;
+  display: grid;
+  gap: 0.22rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.025);
+  padding: 0.7rem;
+}
+
+.autoTradeProviderSummary strong {
+  color: rgba(255, 255, 255, 0.92);
+  font-size: 0.82rem;
+  font-weight: 950;
+}
+
+.autoTradeProviderSummary p {
+  margin: 0;
+  color: var(--text-dim);
+  font-size: 0.72rem;
+  line-height: 1.42;
+}
+
 .topstepConnectionSummary,
 .topstepConnectionHero,
 .topstepConnectForm,
@@ -2566,6 +2646,8 @@ html[data-theme="light"] .telegram-grid strong {
 
 html[data-theme="light"] .topstepConnectionState strong,
 html[data-theme="light"] .topstepConnectionMeta strong,
+html[data-theme="light"] .autoTradeProviderOption strong,
+html[data-theme="light"] .autoTradeProviderSummary strong,
 html[data-theme="light"] .topstepAccountRow strong,
 html[data-theme="light"] .topstepAccountEmpty strong,
 html[data-theme="light"] .topstepConnectionFoot strong {
@@ -2587,9 +2669,26 @@ html[data-theme="light"] .topstepConnectForm input::placeholder {
 }
 
 html[data-theme="light"] .topstepAccountRow,
+html[data-theme="light"] .autoTradeProviderOption,
+html[data-theme="light"] .autoTradeProviderSummary,
 html[data-theme="light"] .topstepAccountEmpty {
   border-color: var(--line);
   background: #ffffff;
+}
+
+html[data-theme="light"] .autoTradeProviderOption {
+  color: rgba(15, 23, 42, 0.78);
+}
+
+html[data-theme="light"] .autoTradeProviderOption:hover,
+html[data-theme="light"] .autoTradeProviderOption.active {
+  border-color: rgba(37, 99, 235, 0.32);
+  background: rgba(37, 99, 235, 0.08);
+  color: #1e40af;
+}
+
+html[data-theme="light"] .autoTradeProviderSummary p {
+  color: var(--text-dim);
 }
 
 html[data-theme="light"] .topstepConnectionFoot {
@@ -3034,6 +3133,7 @@ html[data-theme="light"] .strategyToggle input {
   }
 
   .topstepAccountDetails,
+  .autoTradeModeStrip,
   .topstepAccountFields {
     grid-template-columns: 1fr;
   }
@@ -3103,6 +3203,7 @@ html[data-theme="light"] .strategyToggle input {
   }
 
   .topstepConnectionActions,
+  .autoTradeModeStrip,
   .topstepConnectionActions button,
   .topstepConnectForm button {
     width: 100%;
