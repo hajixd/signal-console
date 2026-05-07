@@ -8,6 +8,8 @@ import {
   LineStyle,
   createChart,
   type CandlestickData,
+  type IChartApi,
+  type ISeriesApi,
   type Logical,
   type UTCTimestamp,
   type WhitespaceData
@@ -71,11 +73,38 @@ type TradeChartOverlay = {
   entry: ChartOverlayPoint;
   pathEnd: ChartOverlayPoint | null;
   exit: ChartOverlayPoint | null;
+  visual: ChartPositionVisual | null;
+};
+type ChartPositionVisual = {
+  x: number;
+  width: number;
+  y1: number;
+  y2: number;
+  entryY: number;
+  targetY: number;
+  stopY: number;
+  profitY: number;
+  profitHeight: number;
+  riskY: number;
+  riskHeight: number;
 };
 type MappedCandle = CandlestickData<UTCTimestamp> & {
   source: TradeChartBar;
 };
 type ReplayChartData = CandlestickData<UTCTimestamp> | WhitespaceData<UTCTimestamp>;
+type CandleSeriesApi = ISeriesApi<"Candlestick">;
+type NumberRange = {
+  from: number;
+  to: number;
+};
+type OverlayInputs = {
+  chartLevelTags: ChartLevelTag[];
+  currentReplayCandle: MappedCandle | null;
+  entryCandle: MappedCandle | null;
+  exitCandle: MappedCandle | null;
+  mappedCandles: MappedCandle[];
+  trade: TradeChartTrade;
+};
 const REPLAY_SPEEDS: ReplaySpeed[] = [1, 2, 4, 8];
 const REPLAY_INTERVAL_MS: Record<ReplaySpeed, number> = {
   1: 700,
@@ -197,6 +226,53 @@ function candleIndex(candles: MappedCandle[], candle: MappedCandle | null): numb
   return found >= 0 ? found : 0;
 }
 
+function tradeLogicalRange(candles: MappedCandle[], entryCandle: MappedCandle | null, exitCandle: MappedCandle | null): NumberRange {
+  const entryPosition = candleIndex(candles, entryCandle);
+  const exitPosition = candleIndex(candles, exitCandle);
+  const start = Math.min(entryPosition, exitPosition);
+  const end = Math.max(entryPosition, exitPosition);
+  const tradeWindow = Math.max(10, end - start + 1);
+  const fullCandleCount = Math.max(1, candles.length);
+  const windowSize = Math.max(45, Math.ceil(tradeWindow * 3));
+  const leftPadding = Math.max(8, Math.ceil(tradeWindow * 0.65));
+  const rightPadding = Math.max(12, Math.ceil(tradeWindow * 1.2));
+  const rightWhitespace = Math.max(8, Math.ceil(windowSize * 0.18));
+  let from = Math.max(0, start - leftPadding);
+  let to = Math.min(fullCandleCount - 1 + rightWhitespace, end + rightPadding);
+
+  if (to - from + 1 < windowSize) to = Math.min(fullCandleCount - 1 + rightWhitespace, from + windowSize - 1);
+  if (to - from + 1 < windowSize) from = Math.max(0, to - windowSize + 1);
+
+  return { from, to };
+}
+
+function tradePriceRange(candles: MappedCandle[], levels: number[], logicalRange: NumberRange): NumberRange | null {
+  const prices: number[] = [];
+  const from = clamp(Math.floor(logicalRange.from), 0, Math.max(0, candles.length - 1));
+  const to = clamp(Math.ceil(logicalRange.to), from, Math.max(0, candles.length - 1));
+
+  for (let index = from; index <= to; index += 1) {
+    const candle = candles[index];
+    if (!candle) continue;
+    prices.push(candle.high, candle.low);
+  }
+
+  for (const level of levels) {
+    if (Number.isFinite(level)) prices.push(level);
+  }
+
+  if (!prices.length) return null;
+  const min = Math.min(...prices);
+  const max = Math.max(...prices);
+  if (!Number.isFinite(min) || !Number.isFinite(max)) return null;
+  const span = Math.max(max - min, Math.abs(max) * 0.0001, 0.01);
+  const padding = span * 0.16;
+  return {
+    from: min - padding,
+    to: max + padding
+  };
+}
+
 function candleIsRevealed(candle: MappedCandle | null, current: MappedCandle | null): candle is MappedCandle {
   return Boolean(candle && current && Number(candle.time) <= Number(current.time));
 }
@@ -228,6 +304,13 @@ export default function TradePriceChart({
   onTimeframeChange: (value: TradeChartTimeframe) => void;
 }) {
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const chartRef = useRef<IChartApi | null>(null);
+  const seriesRef = useRef<CandleSeriesApi | null>(null);
+  const overlayInputsRef = useRef<OverlayInputs | null>(null);
+  const scheduleOverlayUpdateRef = useRef<(() => void) | null>(null);
+  const lockedLogicalRangeRef = useRef<NumberRange | null>(null);
+  const lockedPriceRangeRef = useRef<NumberRange | null>(null);
+  const rangeReadyRef = useRef(false);
   const [activeBar, setActiveBar] = useState<TradeChartBar | null>(null);
   const [chartTheme, setChartTheme] = useState<ChartTheme>("dark");
   const [isPlaying, setIsPlaying] = useState(false);
@@ -279,8 +362,8 @@ export default function TradePriceChart({
     [clampedReplayPosition, mappedCandles]
   );
   const sourceByTime = useMemo(
-    () => new Map(visibleMappedCandles.map((candle) => [Number(candle.time), candle.source])),
-    [visibleMappedCandles]
+    () => new Map(mappedCandles.map((candle) => [Number(candle.time), candle.source])),
+    [mappedCandles]
   );
   const entryCandle = useMemo(
     () => nearestMappedCandle(mappedCandles, trade.entryIndex, trade.entryTime),
@@ -373,6 +456,30 @@ export default function TradePriceChart({
   }, [clampedReplayPosition, isPlaying, maxReplayPosition, replaySpeed]);
 
   useEffect(() => {
+    overlayInputsRef.current = {
+      chartLevelTags,
+      currentReplayCandle,
+      entryCandle,
+      exitCandle,
+      mappedCandles,
+      trade
+    };
+    scheduleOverlayUpdateRef.current?.();
+  }, [
+    chartLevelTags,
+    currentReplayCandle,
+    entryCandle,
+    exitCandle,
+    mappedCandles,
+    trade,
+    trade.entryPrice,
+    trade.exitPrice,
+    trade.side,
+    trade.stopPrice,
+    trade.targetPrice
+  ]);
+
+  useEffect(() => {
     const container = containerRef.current;
     if (!container || status !== "ready" || !candleData.length) return undefined;
 
@@ -424,14 +531,18 @@ export default function TradePriceChart({
         }
       },
       rightPriceScale: {
+        autoScale: false,
         borderColor: axisColor,
         scaleMargins: { top: 0.12, bottom: 0.16 }
       },
       timeScale: {
         borderColor: axisColor,
         barSpacing: 6,
+        lockVisibleTimeRangeOnResize: true,
         minBarSpacing: 1,
         rightOffset: 8,
+        shiftVisibleRangeOnNewBar: false,
+        allowShiftVisibleRangeOnWhitespaceReplacement: false,
         timeVisible: true,
         secondsVisible: false
       },
@@ -463,13 +574,15 @@ export default function TradePriceChart({
       lastValueVisible: true
     });
 
+    chartRef.current = chart;
+    seriesRef.current = series;
     series.setData(candleData);
     series.createPriceLine({
       price: trade.entryPrice,
       color: entryLineColor,
       lineWidth: 2,
       lineStyle: LineStyle.Solid,
-      axisLabelVisible: true,
+      axisLabelVisible: false,
       axisLabelColor: entryTagColor,
       axisLabelTextColor: entryTagTextColor,
       title: `Entry ${formatChartPrice(trade.entryPrice)}`
@@ -479,7 +592,7 @@ export default function TradePriceChart({
       color: trade.side === "long" ? downSoftColor : upSoftColor,
       lineWidth: 1,
       lineStyle: LineStyle.Dashed,
-      axisLabelVisible: true,
+      axisLabelVisible: false,
       axisLabelColor: trade.side === "long" ? redTagColor : greenTagColor,
       axisLabelTextColor: lightTagTextColor,
       title: `Exit ${formatChartPrice(trade.exitPrice)}`
@@ -489,7 +602,7 @@ export default function TradePriceChart({
       color: upSoftColor,
       lineWidth: 1,
       lineStyle: LineStyle.Dashed,
-      axisLabelVisible: true,
+      axisLabelVisible: false,
       axisLabelColor: greenTagColor,
       axisLabelTextColor: lightTagTextColor,
       title: `TP ${formatChartPrice(trade.targetPrice)}`
@@ -499,37 +612,48 @@ export default function TradePriceChart({
       color: downSoftColor,
       lineWidth: 1,
       lineStyle: LineStyle.Dashed,
-      axisLabelVisible: true,
+      axisLabelVisible: false,
       axisLabelColor: redTagColor,
       axisLabelTextColor: lightTagTextColor,
       title: `SL ${formatChartPrice(trade.stopPrice)}`
     });
 
-    const entryPosition = candleIndex(mappedCandles, entryCandle);
-    const exitPosition = candleIndex(mappedCandles, exitCandle);
-    const tradeWindow = Math.max(10, Math.abs(exitPosition - entryPosition) + 1);
-    const fullCandleCount = Math.max(1, mappedCandles.length);
-    const windowSize = Math.min(fullCandleCount, Math.max(45, Math.ceil(tradeWindow * 3)));
-    const anchor = Math.max(0, entryPosition);
-    let from = Math.max(0, anchor - Math.floor(windowSize * 0.35));
-    let to = Math.min(fullCandleCount - 1, from + windowSize - 1);
-    if (to - from + 1 < windowSize) from = Math.max(0, to - windowSize + 1);
+    const logicalRange = tradeLogicalRange(mappedCandles, entryCandle, exitCandle);
+    const priceRange = tradePriceRange(
+      mappedCandles,
+      [trade.entryPrice, trade.exitPrice, trade.targetPrice, trade.stopPrice],
+      logicalRange
+    );
+    lockedLogicalRangeRef.current = logicalRange;
+    lockedPriceRangeRef.current = priceRange;
+    rangeReadyRef.current = false;
 
-    chart.timeScale().fitContent();
-    chart.timeScale().setVisibleLogicalRange({ from, to });
+    chart.timeScale().setVisibleLogicalRange(logicalRange);
+    series.priceScale().applyOptions({ autoScale: false, scaleMargins: { top: 0.12, bottom: 0.16 } });
+    if (priceRange) series.priceScale().setVisibleRange(priceRange);
+    const rangeAnimationFrame = window.requestAnimationFrame(() => {
+      chart.timeScale().setVisibleLogicalRange(logicalRange);
+      if (priceRange) series.priceScale().setVisibleRange(priceRange);
+      rangeReadyRef.current = true;
+      scheduleOverlayUpdateRef.current?.();
+    });
 
-    const pointFor = (candle: MappedCandle | null, price: number): ChartOverlayPoint | null => {
+    const pointFor = (candles: MappedCandle[], candle: MappedCandle | null, price: number): ChartOverlayPoint | null => {
       if (!candle || !Number.isFinite(price)) return null;
-      const x = chart.timeScale().logicalToCoordinate(candleIndex(mappedCandles, candle) as Logical);
+      const x = chart.timeScale().logicalToCoordinate(candleIndex(candles, candle) as Logical);
       const y = series.priceToCoordinate(price);
       if (x == null || y == null) return null;
       return { x: Number(x), y: Number(y) };
     };
 
     const updateTradeOverlay = () => {
+      const inputs = overlayInputsRef.current;
+      if (!inputs) return;
+
       const chartHeight = Math.max(1, container.clientHeight || 318);
+      const chartWidth = Math.max(1, container.clientWidth || 1);
       const minLevelTagGap = 20;
-      const nextLevelTags = chartLevelTags
+      const nextLevelTags = inputs.chartLevelTags
         .map((tag) => {
           const y = series.priceToCoordinate(tag.price);
           if (y == null) return null;
@@ -561,22 +685,46 @@ export default function TradePriceChart({
 
       setPositionedLevelTags(nextLevelTags);
 
-      if (!candleIsRevealed(entryCandle, currentReplayCandle)) {
+      if (!candleIsRevealed(inputs.entryCandle, inputs.currentReplayCandle)) {
         setTradeOverlay(null);
         return;
       }
 
-      const entry = pointFor(entryCandle, trade.entryPrice);
+      const entry = pointFor(inputs.mappedCandles, inputs.entryCandle, inputs.trade.entryPrice);
       if (!entry) {
         setTradeOverlay(null);
         return;
       }
 
-      const exitRevealed = candleIsRevealed(exitCandle, currentReplayCandle);
-      const pathEndCandle = exitRevealed ? exitCandle : currentReplayCandle;
-      const pathEndPrice = exitRevealed ? trade.exitPrice : currentReplayCandle?.close;
-      const pathEnd = pathEndPrice == null ? null : pointFor(pathEndCandle, pathEndPrice);
-      const exit = exitRevealed ? pointFor(exitCandle, trade.exitPrice) : null;
+      const exitRevealed = candleIsRevealed(inputs.exitCandle, inputs.currentReplayCandle);
+      const pathEndCandle = exitRevealed ? inputs.exitCandle : inputs.currentReplayCandle;
+      const pathEndPrice = exitRevealed ? inputs.trade.exitPrice : inputs.currentReplayCandle?.close;
+      const pathEnd = pathEndPrice == null ? null : pointFor(inputs.mappedCandles, pathEndCandle, pathEndPrice);
+      const exit = exitRevealed ? pointFor(inputs.mappedCandles, inputs.exitCandle, inputs.trade.exitPrice) : null;
+
+      const targetY = series.priceToCoordinate(inputs.trade.targetPrice);
+      const stopY = series.priceToCoordinate(inputs.trade.stopPrice);
+      const entryY = series.priceToCoordinate(inputs.trade.entryPrice);
+      const visualEndX = exit?.x ?? pathEnd?.x ?? entry.x;
+      const minimumVisualWidth = Math.min(180, Math.max(72, chartWidth * 0.16));
+      const visualWidth = Math.max(minimumVisualWidth, visualEndX - entry.x);
+      const visualX = clamp(entry.x, 0, Math.max(0, chartWidth - visualWidth));
+      const visual =
+        targetY == null || stopY == null || entryY == null
+          ? null
+          : {
+              x: visualX,
+              width: clamp(visualWidth, 6, Math.max(6, chartWidth - visualX)),
+              y1: Math.min(Number(targetY), Number(stopY), Number(entryY)),
+              y2: Math.max(Number(targetY), Number(stopY), Number(entryY)),
+              entryY: Number(entryY),
+              targetY: Number(targetY),
+              stopY: Number(stopY),
+              profitY: Math.min(Number(entryY), Number(targetY)),
+              profitHeight: Math.abs(Number(entryY) - Number(targetY)),
+              riskY: Math.min(Number(entryY), Number(stopY)),
+              riskHeight: Math.abs(Number(entryY) - Number(stopY))
+            };
 
       setTradeOverlay({
         entry,
@@ -584,7 +732,8 @@ export default function TradePriceChart({
           pathEnd && (Math.abs(pathEnd.x - entry.x) > 2 || Math.abs(pathEnd.y - entry.y) > 2)
             ? pathEnd
             : null,
-        exit
+        exit,
+        visual
       });
     };
 
@@ -593,6 +742,7 @@ export default function TradePriceChart({
       window.cancelAnimationFrame(overlayAnimationFrame);
       overlayAnimationFrame = window.requestAnimationFrame(updateTradeOverlay);
     };
+    scheduleOverlayUpdateRef.current = scheduleTradeOverlayUpdate;
     const resizeObserver = new ResizeObserver(scheduleTradeOverlayUpdate);
     resizeObserver.observe(container);
     chart.timeScale().subscribeVisibleLogicalRangeChange(scheduleTradeOverlayUpdate);
@@ -609,14 +759,18 @@ export default function TradePriceChart({
       chart.unsubscribeCrosshairMove(handleCrosshairMove);
       chart.timeScale().unsubscribeVisibleLogicalRangeChange(scheduleTradeOverlayUpdate);
       resizeObserver.disconnect();
+      window.cancelAnimationFrame(rangeAnimationFrame);
       window.cancelAnimationFrame(overlayAnimationFrame);
       chart.remove();
+      chartRef.current = null;
+      seriesRef.current = null;
+      scheduleOverlayUpdateRef.current = null;
+      lockedLogicalRangeRef.current = null;
+      lockedPriceRangeRef.current = null;
+      rangeReadyRef.current = false;
     };
   }, [
-    candleData,
-    chartLevelTags,
     chartTheme,
-    currentReplayCandle,
     entryCandle,
     exitCandle,
     mappedCandles,
@@ -628,6 +782,25 @@ export default function TradePriceChart({
     trade.stopPrice,
     trade.targetPrice
   ]);
+
+  useEffect(() => {
+    const chart = chartRef.current;
+    const series = seriesRef.current;
+    if (!chart || !series) return;
+
+    const rangeReady = rangeReadyRef.current;
+    const currentLogicalRange = rangeReady ? chart.timeScale().getVisibleLogicalRange() : null;
+    const currentPriceRange = rangeReady ? series.priceScale().getVisibleRange() : null;
+    series.setData(candleData);
+
+    const lockedLogicalRange = currentLogicalRange ?? lockedLogicalRangeRef.current;
+    const lockedPriceRange = currentPriceRange ?? lockedPriceRangeRef.current;
+    series.priceScale().applyOptions({ autoScale: false });
+    if (lockedPriceRange) series.priceScale().setVisibleRange(lockedPriceRange);
+    if (lockedLogicalRange) chart.timeScale().setVisibleLogicalRange(lockedLogicalRange);
+
+    scheduleOverlayUpdateRef.current?.();
+  }, [candleData]);
 
   function togglePlayback() {
     if (isPlaying) {
@@ -751,6 +924,52 @@ export default function TradePriceChart({
         ) : null}
         {tradeOverlay ? (
           <svg className="tradeChartTradeOverlay" aria-hidden="true">
+            {tradeOverlay.visual ? (
+              <g className="tradeChartPositionVisual">
+                <rect
+                  className="tradeChartProfitZone"
+                  x={tradeOverlay.visual.x}
+                  y={tradeOverlay.visual.profitY}
+                  width={tradeOverlay.visual.width}
+                  height={tradeOverlay.visual.profitHeight}
+                />
+                <rect
+                  className="tradeChartRiskZone"
+                  x={tradeOverlay.visual.x}
+                  y={tradeOverlay.visual.riskY}
+                  width={tradeOverlay.visual.width}
+                  height={tradeOverlay.visual.riskHeight}
+                />
+                <line
+                  className="tradeChartTargetLine"
+                  x1={tradeOverlay.visual.x}
+                  y1={tradeOverlay.visual.targetY}
+                  x2={tradeOverlay.visual.x + tradeOverlay.visual.width}
+                  y2={tradeOverlay.visual.targetY}
+                />
+                <line
+                  className="tradeChartEntryLine"
+                  x1={tradeOverlay.visual.x}
+                  y1={tradeOverlay.visual.entryY}
+                  x2={tradeOverlay.visual.x + tradeOverlay.visual.width}
+                  y2={tradeOverlay.visual.entryY}
+                />
+                <line
+                  className="tradeChartStopLine"
+                  x1={tradeOverlay.visual.x}
+                  y1={tradeOverlay.visual.stopY}
+                  x2={tradeOverlay.visual.x + tradeOverlay.visual.width}
+                  y2={tradeOverlay.visual.stopY}
+                />
+                <line
+                  className="tradeChartPositionEdge"
+                  x1={tradeOverlay.visual.x + tradeOverlay.visual.width}
+                  y1={tradeOverlay.visual.y1}
+                  x2={tradeOverlay.visual.x + tradeOverlay.visual.width}
+                  y2={tradeOverlay.visual.y2}
+                />
+              </g>
+            ) : null}
             {tradeOverlay.pathEnd ? (
               <line
                 className={`tradeChartTradePath ${exitLevelTone}`}

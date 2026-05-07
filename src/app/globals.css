@@ -4278,6 +4278,48 @@ html[data-theme="light"] .tradeInfoBox strong {
   stroke-width: 2;
 }
 
+.tradeChartPositionVisual {
+  shape-rendering: crispEdges;
+}
+
+.tradeChartProfitZone {
+  fill: rgba(16, 185, 129, 0.16);
+  stroke: rgba(16, 185, 129, 0.38);
+  stroke-width: 1;
+}
+
+.tradeChartRiskZone {
+  fill: rgba(244, 63, 94, 0.18);
+  stroke: rgba(244, 63, 94, 0.42);
+  stroke-width: 1;
+}
+
+.tradeChartTargetLine,
+.tradeChartEntryLine,
+.tradeChartStopLine,
+.tradeChartPositionEdge {
+  fill: none;
+  stroke-linecap: square;
+  stroke-width: 1.5;
+}
+
+.tradeChartTargetLine {
+  stroke: rgba(16, 185, 129, 0.92);
+}
+
+.tradeChartEntryLine {
+  stroke: rgba(255, 255, 255, 0.78);
+}
+
+.tradeChartStopLine {
+  stroke: rgba(244, 63, 94, 0.95);
+}
+
+.tradeChartPositionEdge {
+  stroke: rgba(255, 255, 255, 0.46);
+  stroke-dasharray: 4 4;
+}
+
 .tradeChartEntryMarker {
   fill: #10b981;
   stroke: rgba(255, 255, 255, 0.72);
@@ -4513,6 +4555,21 @@ html[data-theme="light"] .tradePriceChart {
 
 html[data-theme="light"] .tradeChartTradePath {
   stroke: rgba(15, 23, 42, 0.44);
+}
+
+html[data-theme="light"] .tradeChartProfitZone {
+  fill: rgba(22, 163, 74, 0.13);
+  stroke: rgba(22, 163, 74, 0.32);
+}
+
+html[data-theme="light"] .tradeChartRiskZone {
+  fill: rgba(220, 38, 38, 0.13);
+  stroke: rgba(220, 38, 38, 0.32);
+}
+
+html[data-theme="light"] .tradeChartEntryLine,
+html[data-theme="light"] .tradeChartPositionEdge {
+  stroke: rgba(15, 23, 42, 0.42);
 }
 
 html[data-theme="light"] .tradeChartMarkerText {
