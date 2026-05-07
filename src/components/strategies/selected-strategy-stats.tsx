@@ -66,6 +66,12 @@ function fmtDate(value: number | undefined): string {
   }).format(new Date(value));
 }
 
+function latestEndDate(dataEndAt: string | undefined, selectedEnd: number | undefined): number | undefined {
+  const dataEnd = dataEndAt ? Date.parse(dataEndAt) : Number.NaN;
+  const candidates = [dataEnd, selectedEnd ?? Number.NaN].filter((value) => Number.isFinite(value) && value > 0);
+  return candidates.length ? Math.max(...candidates) : undefined;
+}
+
 function statTone(value: number, higherIsGood = true): string {
   if (value === 0) return "tone-neutral";
   const good = higherIsGood ? value > 0 : value < 0;
@@ -186,7 +192,7 @@ export default function SelectedStrategyStats({ dataEndAt, strategies, trades, p
       </div>
       <div className="backtest-stat-card tone-neutral">
         <span>End date</span>
-        <strong>{dataEndAt ? fmtDate(Date.parse(dataEndAt)) : fmtDate(selectedCadence.end)}</strong>
+        <strong>{fmtDate(latestEndDate(dataEndAt, selectedCadence.end))}</strong>
       </div>
     </div>
   );

@@ -359,6 +359,15 @@ function dollarsInRange(value: number, floor: number, ceiling: number): boolean 
   return value + 0.01 >= floor && value - 0.01 <= ceiling;
 }
 
+function roundDownControlValue(value: number): number {
+  return Math.floor(value * 100) / 100;
+}
+
+function highestContractsForScale(strategy: StrategyOption, scale: number): number {
+  const baseContracts = defaultEdit(strategy).contracts || 1;
+  return Math.max(0.01, roundDownControlValue(baseContracts * Math.max(0.01, scale)));
+}
+
 function customScaledEdit(strategy: StrategyOption, edit: StrategyEdit, range: CustomScaleDollarRange): CustomScaleOutcome {
   const normalized = normalizeEdit(strategy, edit);
   const fallback = defaultEdit(strategy);
@@ -371,12 +380,15 @@ function customScaledEdit(strategy: StrategyOption, edit: StrategyEdit, range: C
 
   const lowerScale = Math.max(0.01, range.targetFloor / targetAtBaseScale, range.riskFloor / riskAtBaseScale);
   const upperScale = Math.min(range.targetCeiling / targetAtBaseScale, range.riskCeiling / riskAtBaseScale);
-  const currentScale = scaleForContracts(strategy, normalized.contracts);
   const nextScale =
     lowerScale <= upperScale
-      ? Math.min(Math.max(currentScale, lowerScale), upperScale)
+      ? upperScale
       : Math.sqrt(Math.max(0.01, lowerScale) * Math.max(0.01, upperScale));
-  const adjusted = editWithContracts(strategy, normalized, contractsForScale(strategy, nextScale));
+  const adjusted = editWithContracts(
+    strategy,
+    normalized,
+    lowerScale <= upperScale ? highestContractsForScale(strategy, nextScale) : contractsForScale(strategy, nextScale)
+  );
   const fit =
     dollarsInRange(adjusted.targetDollars, range.targetFloor, range.targetCeiling) &&
     dollarsInRange(adjusted.riskDollars, range.riskFloor, range.riskCeiling);

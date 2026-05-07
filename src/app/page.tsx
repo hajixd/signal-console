@@ -5,6 +5,7 @@ import SelectedStrategyStats from "@/components/strategies/selected-strategy-sta
 import StrategySelector from "@/components/strategies/strategy-selector";
 import EditableTradeHistory from "@/components/trades/editable-trade-history";
 import { type TradeHistoryRow } from "@/components/trades/trade-history";
+import AutoRefresh from "@/components/ui/auto-refresh";
 import TestAlertButton from "@/components/ui/test-alert-button";
 import ThemeToggle from "@/components/ui/theme-toggle";
 import { syncLiveSelection, syncStrategyEdits } from "@/app/live-selection-actions";
@@ -664,7 +665,8 @@ export default async function Home({ searchParams }: HomeProps) {
 
   return (
     <main className="terminal">
-      <section className="terminal-workspace" id="signals">
+      <AutoRefresh />
+      <section className="terminal-workspace marketView" id="signals" key={activeMarket}>
         <nav className="market-tabs" aria-label="Market view">
           {MARKET_TABS.map((tab) => (
             <Link

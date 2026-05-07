@@ -28,6 +28,8 @@ type SavedAutoTradeConnection = {
 };
 
 type ConnectionField = {
+  advanced?: boolean;
+  defaultValue?: string;
   key: string;
   label: string;
   placeholder?: string;
@@ -40,64 +42,72 @@ const CONNECTION_FIELDS: Record<AutoTradeProviderId, ConnectionField[]> = {
   tradelocker: [
     { key: "email", label: "Email", placeholder: "trader@example.com", required: true },
     { key: "password", label: "Password", required: true, secret: true },
-    { key: "server", label: "Server", placeholder: "demo", required: true },
-    { key: "accountId", label: "Account ID", required: true },
-    { key: "accNum", label: "Account number", required: true },
-    { key: "tradableInstrumentId", label: "Instrument ID", placeholder: "per-symbol id", required: true },
-    { key: "routeId", label: "Route ID", placeholder: "TRADE" },
-    { key: "symbolMap", label: "Symbol map", placeholder: "EURUSD:EURUSD,XAUUSD:XAUUSD" },
-    { key: "sizeMap", label: "Size map", placeholder: "EURUSD:0.1,XAUUSD:0.05" }
+    { key: "server", label: "Server", defaultValue: "demo", placeholder: "demo", required: true },
+    { advanced: true, key: "accountId", label: "Account ID" },
+    { advanced: true, key: "accNum", label: "Account number" },
+    { advanced: true, key: "tradableInstrumentId", label: "Instrument ID", placeholder: "auto-discovered when possible" },
+    { advanced: true, defaultValue: "TRADE", key: "routeId", label: "Route ID", placeholder: "TRADE" },
+    { advanced: true, key: "symbolMap", label: "Symbol map", placeholder: "EURUSD:EURUSD,XAUUSD:XAUUSD" },
+    { advanced: true, key: "sizeMap", label: "Size map", placeholder: "EURUSD:0.1,XAUUSD:0.05" }
   ],
   mt5_bridge: [
     { key: "bridgeUrl", label: "Bridge URL", placeholder: "https://your-vps/place-order", required: true },
     { key: "bridgeSecret", label: "Bridge secret", required: true, secret: true },
-    { key: "login", label: "MT5 login", required: true },
-    { key: "password", label: "MT5 password", required: true, secret: true },
-    { key: "server", label: "MT5 server", required: true },
-    { key: "accountId", label: "Account ID" },
-    { key: "symbolMap", label: "Symbol map", placeholder: "EURUSD:EURUSD.,XAUUSD:XAUUSDm" },
-    { key: "lotMap", label: "Lot map", placeholder: "EURUSD:0.1,XAUUSD:0.05" }
+    { advanced: true, key: "login", label: "MT5 login" },
+    { advanced: true, key: "password", label: "MT5 password", secret: true },
+    { advanced: true, key: "server", label: "MT5 server" },
+    { advanced: true, key: "accountId", label: "Account ID" },
+    { advanced: true, key: "symbolMap", label: "Symbol map", placeholder: "EURUSD:EURUSD.,XAUUSD:XAUUSDm" },
+    { advanced: true, key: "lotMap", label: "Lot map", placeholder: "EURUSD:0.1,XAUUSD:0.05" }
   ],
   ctrader: [
     { key: "bridgeUrl", label: "Bridge URL", placeholder: "https://your-ctrader-bridge/place-order", required: true },
     { key: "bridgeSecret", label: "Bridge secret", required: true, secret: true },
-    { key: "accountId", label: "Account ID", required: true },
-    { key: "accessToken", label: "Access token", secret: true },
-    { key: "symbolMap", label: "Symbol map", placeholder: "EURUSD:1,XAUUSD:2" },
-    { key: "sizeMap", label: "Size map", placeholder: "EURUSD:10000,XAUUSD:1" }
+    { advanced: true, key: "accountId", label: "Account ID" },
+    { advanced: true, key: "accessToken", label: "Access token", secret: true },
+    { advanced: true, key: "symbolMap", label: "Symbol map", placeholder: "EURUSD:1,XAUUSD:2" },
+    { advanced: true, key: "sizeMap", label: "Size map", placeholder: "EURUSD:10000,XAUUSD:1" }
   ],
   matchtrader: [
     { key: "platformUrl", label: "Platform URL", required: true },
     { key: "systemUuid", label: "System UUID", required: true },
     { key: "tradingApiToken", label: "Trading API token", required: true, secret: true },
-    { key: "coAuthCookie", label: "co-auth cookie", secret: true },
-    { key: "accountId", label: "Account ID" },
-    { key: "symbolMap", label: "Symbol map", placeholder: "EURUSD:EURUSD,XAUUSD:GOLD" },
-    { key: "sizeMap", label: "Size map", placeholder: "EURUSD:0.1,XAUUSD:0.05" }
+    { advanced: true, key: "coAuthCookie", label: "co-auth cookie", secret: true },
+    { advanced: true, key: "accountId", label: "Account ID" },
+    { advanced: true, key: "symbolMap", label: "Symbol map", placeholder: "EURUSD:EURUSD,XAUUSD:GOLD" },
+    { advanced: true, key: "sizeMap", label: "Size map", placeholder: "EURUSD:0.1,XAUUSD:0.05" }
   ],
   tradovate: [
     { key: "username", label: "Username", required: true },
     { key: "password", label: "Password", required: true, secret: true },
-    { key: "accountId", label: "Account ID", required: true },
-    { key: "accountSpec", label: "Account spec" },
-    { key: "appId", label: "App ID", placeholder: "TradingBot" },
-    { key: "appVersion", label: "App version", placeholder: "1.0" },
-    { key: "cid", label: "CID" },
-    { key: "secret", label: "Secret", secret: true },
-    { key: "symbolMap", label: "Symbol map", placeholder: "ES:MESM6,NQ:MNQM6" },
-    { key: "sizeMap", label: "Size map", placeholder: "ES:1,NQ:1" }
+    { advanced: true, key: "accountId", label: "Account ID" },
+    { advanced: true, key: "accountSpec", label: "Account spec" },
+    { advanced: true, defaultValue: "TradingBot", key: "appId", label: "App ID", placeholder: "TradingBot" },
+    { advanced: true, defaultValue: "1.0", key: "appVersion", label: "App version", placeholder: "1.0" },
+    { advanced: true, key: "cid", label: "CID" },
+    { advanced: true, key: "secret", label: "Secret", secret: true },
+    { advanced: true, key: "symbolMap", label: "Symbol map", placeholder: "ES:MESM6,NQ:MNQM6" },
+    { advanced: true, key: "sizeMap", label: "Size map", placeholder: "ES:1,NQ:1" }
   ],
   rithmic: [
     { key: "bridgeUrl", label: "Bridge URL", placeholder: "https://your-rithmic-bridge/place-order", required: true },
     { key: "bridgeSecret", label: "Bridge secret", required: true, secret: true },
-    { key: "login", label: "Rithmic login", required: true },
-    { key: "password", label: "Rithmic password", required: true, secret: true },
-    { key: "server", label: "System", placeholder: "Rithmic Paper Trading", required: true },
-    { key: "accountId", label: "Account ID", required: true },
-    { key: "symbolMap", label: "Symbol map", placeholder: "ES:MESM6,NQ:MNQM6" },
-    { key: "sizeMap", label: "Size map", placeholder: "ES:1,NQ:1" }
+    { advanced: true, key: "login", label: "Rithmic login" },
+    { advanced: true, key: "password", label: "Rithmic password", secret: true },
+    { advanced: true, key: "server", label: "System", placeholder: "Rithmic Paper Trading" },
+    { advanced: true, key: "accountId", label: "Account ID" },
+    { advanced: true, key: "symbolMap", label: "Symbol map", placeholder: "ES:MESM6,NQ:MNQM6" },
+    { advanced: true, key: "sizeMap", label: "Size map", placeholder: "ES:1,NQ:1" }
   ]
 };
+
+function defaultConnectionFields(providerId: AutoTradeProviderId): Record<string, string> {
+  return Object.fromEntries(
+    (CONNECTION_FIELDS[providerId] ?? [])
+      .filter((field) => field.defaultValue)
+      .map((field) => [field.key, field.defaultValue!])
+  );
+}
 
 function fmtMoney(value: number | undefined): string {
   if (typeof value !== "number" || !Number.isFinite(value)) return "--";
@@ -171,7 +181,8 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
   const [isDisconnecting, setIsDisconnecting] = useState(false);
   const [isUpdatingPaused, setIsUpdatingPaused] = useState(false);
   const [savedConnections, setSavedConnections] = useState<SavedAutoTradeConnection[]>([]);
-  const [genericFields, setGenericFields] = useState<Record<string, string>>({});
+  const [genericFields, setGenericFields] = useState<Record<string, string>>(() => defaultConnectionFields(selectedProviderId));
+  const [showAdvancedFields, setShowAdvancedFields] = useState(false);
 
   const marketLabel = autoTradeMarketLabel(market);
   const selectedProvider = providers.find((provider) => provider.id === selectedProviderId) ?? providers[0]!;
@@ -182,6 +193,8 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
   const visibleAccounts = market === "futures" ? status.accounts : [];
   const visibleSavedConnections = savedConnections.filter((connection) => providers.some((provider) => provider.id === connection.id));
   const selectedProviderFields = CONNECTION_FIELDS[selectedProvider.id] ?? [];
+  const primaryProviderFields = selectedProviderFields.filter((field) => !field.advanced);
+  const advancedProviderFields = selectedProviderFields.filter((field) => field.advanced);
 
   useEffect(() => {
     if (!providers.some((provider) => provider.id === selectedProviderId)) {
@@ -191,8 +204,14 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
 
   useEffect(() => {
     setIsAddingAccount(false);
-    setGenericFields({});
+    setGenericFields(defaultConnectionFields(firstProviderId(providers)));
+    setShowAdvancedFields(false);
   }, [market]);
+
+  useEffect(() => {
+    setGenericFields(defaultConnectionFields(selectedProviderId));
+    setShowAdvancedFields(false);
+  }, [selectedProviderId]);
 
   async function refreshSavedConnections() {
     try {
@@ -459,25 +478,30 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
             </form>
           ) : selectedProviderFields.length ? (
             <form className="topstepConnectForm" onSubmit={handleGenericConnect}>
-              {selectedProviderFields.map((field) => (
-                <label key={field.key}>
-                  <span>{field.label}</span>
-                  <input
-                    autoComplete={field.secret ? "off" : undefined}
-                    name={`${selectedProvider.id}-${field.key}`}
-                    onChange={(event) =>
-                      setGenericFields((current) => ({
-                        ...current,
-                        [field.key]: event.target.value
-                      }))
-                    }
-                    placeholder={field.placeholder}
-                    required={field.required}
-                    type={field.secret ? "password" : "text"}
-                    value={genericFields[field.key] ?? ""}
-                  />
-                </label>
-              ))}
+              {[...primaryProviderFields, ...(showAdvancedFields ? advancedProviderFields : [])].map((field) => (
+                  <label key={field.key}>
+                    <span>{field.label}</span>
+                    <input
+                      autoComplete={field.secret ? "off" : undefined}
+                      name={`${selectedProvider.id}-${field.key}`}
+                      onChange={(event) =>
+                        setGenericFields((current) => ({
+                          ...current,
+                          [field.key]: event.target.value
+                        }))
+                      }
+                      placeholder={field.placeholder}
+                      required={field.required}
+                      type={field.secret ? "password" : "text"}
+                      value={genericFields[field.key] ?? ""}
+                    />
+                  </label>
+                ))}
+              {advancedProviderFields.length ? (
+                <button type="button" onClick={() => setShowAdvancedFields((current) => !current)}>
+                  {showAdvancedFields ? "Hide Advanced" : "Advanced Settings"}
+                </button>
+              ) : null}
               <button type="submit" disabled={isConnecting}>
                 {isConnecting ? "Connecting..." : "Connect Account"}
               </button>

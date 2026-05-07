@@ -25,6 +25,11 @@ type TradovatePlaceOrderResponse = {
   orderId?: number | null;
 };
 
+type TradovateAccountRoute = {
+  accountId: number;
+  accountSpec: string;
+};
+
 const PROVIDER_NAME = "Tradovate / CQG";
 
 function baseUrl(fields?: Record<string, string>): string {
@@ -36,7 +41,7 @@ function dryRunEnabled(): boolean {
 }
 
 export function tradovateConfigured(): boolean {
-  return requiredEnv(["TRADOVATE_USERNAME", "TRADOVATE_PASSWORD", "TRADOVATE_ACCOUNT_ID"]).length === 0;
+  return requiredEnv(["TRADOVATE_USERNAME", "TRADOVATE_PASSWORD"]).length === 0;
 }
 
 async function tradovateToken(fields?: Record<string, string>): Promise<string> {
@@ -59,6 +64,45 @@ async function tradovateToken(fields?: Record<string, string>): Promise<string> 
   return parsed.accessToken;
 }
 
+function asRecord(value: unknown): Record<string, unknown> | null {
+  return value && typeof value === "object" ? (value as Record<string, unknown>) : null;
+}
+
+function stringValue(value: unknown): string | undefined {
+  if (typeof value === "string" && value.trim()) return value.trim();
+  if (typeof value === "number" && Number.isFinite(value)) return String(value);
+  return undefined;
+}
+
+function accountArray(value: unknown): Record<string, unknown>[] {
+  const direct = Array.isArray(value) ? value : asRecord(value)?.accounts ?? asRecord(value)?.data ?? asRecord(value)?.result ?? [];
+  return Array.isArray(direct) ? direct.filter((item): item is Record<string, unknown> => Boolean(asRecord(item))) : [];
+}
+
+async function discoverTradovateAccount(token: string, fields?: Record<string, string>): Promise<TradovateAccountRoute | null> {
+  const configuredId = Number(fieldText(fields, "accountId", "TRADOVATE_ACCOUNT_ID"));
+  const configuredSpec = fieldText(fields, "accountSpec", "TRADOVATE_ACCOUNT_SPEC") ?? fieldText(fields, "username", "TRADOVATE_USERNAME");
+  if (Number.isFinite(configuredId) && configuredSpec) return { accountId: configuredId, accountSpec: configuredSpec };
+
+  const response = await fetch(`${baseUrl(fields)}/account/list`, {
+    cache: "no-store",
+    headers: { authorization: `Bearer ${token}` },
+    method: "GET"
+  });
+  const parsed = await readJsonResponse<unknown>(response, "Tradovate account discovery failed.");
+  const accounts = accountArray(parsed);
+  const selected =
+    accounts.find((account) => Number(stringValue(account.id)) === configuredId) ??
+    accounts.find((account) => stringValue(account.name) === configuredSpec || stringValue(account.accountSpec) === configuredSpec) ??
+    accounts[0];
+  const accountId = Number(stringValue(selected?.id));
+  if (!Number.isFinite(accountId)) return null;
+  return {
+    accountId,
+    accountSpec: stringValue(selected?.name) ?? stringValue(selected?.accountSpec) ?? configuredSpec ?? fieldText(fields, "username", "TRADOVATE_USERNAME") ?? ""
+  };
+}
+
 export async function executeTradovateAutoTrade(trade: TradeAlert): Promise<ProjectXAutoTradeResult> {
   if (!envFlag("TRADOVATE_AUTO_TRADE_ENABLED", true)) {
     return result("disabled", { error: "TRADOVATE_AUTO_TRADE_ENABLED is disabled." });
@@ -67,26 +111,26 @@ export async function executeTradovateAutoTrade(trade: TradeAlert): Promise<Proj
   const connection = await getAutoTradeConnection("tradovate");
   if (connection?.paused) return result("skipped", { error: "Tradovate connection is paused." });
   const fields = connection?.fields;
-  const envMissing = requiredEnv(["TRADOVATE_USERNAME", "TRADOVATE_PASSWORD", "TRADOVATE_ACCOUNT_ID"]);
-  const requiredMissing = ["username", "password", "accountId"].filter((key) => !fields?.[key]);
+  const envMissing = requiredEnv(["TRADOVATE_USERNAME", "TRADOVATE_PASSWORD"]);
+  const requiredMissing = ["username", "password"].filter((key) => !fields?.[key]);
   if (!fields && envMissing.length) return result("skipped", { error: `Missing Tradovate env: ${envMissing.join(", ")}.` });
   if (fields && requiredMissing.length) return result("skipped", { error: `Missing Tradovate connection fields: ${requiredMissing.join(", ")}.` });
 
-  const accountIdValue = fieldText(fields, "accountId", "TRADOVATE_ACCOUNT_ID");
-  const accountId = Number(accountIdValue);
-  const request = autoTradeRequest("TRADOVATE", trade, Number.isFinite(accountId) ? accountId : accountIdValue, fields);
-
-  if (dryRunEnabled()) {
-    const order = dryRunOrder(request, PROVIDER_NAME);
-    return result("dry_run", { accountId: order.accountId, contractId: request.symbol, contractName: request.symbol, orders: [order] });
-  }
-
   try {
     const token = await tradovateToken(fields);
+    const account = await discoverTradovateAccount(token, fields);
+    if (!account) return result("skipped", { error: "Tradovate could not discover an account. Add Account ID in Advanced Settings." });
+    const request = autoTradeRequest("TRADOVATE", trade, account.accountId, fields);
+
+    if (dryRunEnabled()) {
+      const order = dryRunOrder(request, PROVIDER_NAME);
+      return result("dry_run", { accountId: order.accountId, contractId: request.symbol, contractName: request.symbol, orders: [order] });
+    }
+
     const response = await fetch(`${baseUrl(fields)}/order/placeorder`, {
       body: JSON.stringify({
-        accountId,
-        accountSpec: fieldText(fields, "accountSpec", "TRADOVATE_ACCOUNT_SPEC") ?? fieldText(fields, "username", "TRADOVATE_USERNAME"),
+        accountId: account.accountId,
+        accountSpec: account.accountSpec,
         action: request.action === "buy" ? "Buy" : "Sell",
         clOrdId: request.customTag,
         isAutomated: true,
@@ -110,7 +154,7 @@ export async function executeTradovateAutoTrade(trade: TradeAlert): Promise<Proj
     }
     const orderId = parsed.orderId ?? undefined;
     return result("placed", {
-      accountId,
+      accountId: account.accountId,
       contractId: request.symbol,
       contractName: request.symbol,
       orderId,
@@ -124,6 +168,6 @@ export async function executeTradovateAutoTrade(trade: TradeAlert): Promise<Proj
     });
   } catch (error) {
     const message = readableError(error, "Tradovate order placement failed.");
-    return result("failed", { error: message, orders: [failedOrder(request, message)] });
+    return result("failed", { error: message });
   }
 }
