@@ -1,5 +1,4 @@
 import ChallengeReplay from "@/components/challenge/challenge-replay";
-import Link from "next/link";
 import AutoTradingConnectionDrawer from "@/components/auto-trading/auto-trading-connection-drawer";
 import SelectedStrategyStats from "@/components/strategies/selected-strategy-stats";
 import StrategySelector from "@/components/strategies/strategy-selector";
@@ -7,6 +6,7 @@ import EditableTradeHistory from "@/components/trades/editable-trade-history";
 import { type TradeHistoryRow } from "@/components/trades/trade-history";
 import AutoRefresh from "@/components/ui/auto-refresh";
 import LocalDateTime from "@/components/ui/local-date-time";
+import MarketSwitchTabs from "@/components/ui/market-switch-tabs";
 import TestAlertButton from "@/components/ui/test-alert-button";
 import ThemeToggle from "@/components/ui/theme-toggle";
 import { syncLiveSelection, syncStrategyEdits } from "@/app/live-selection-actions";
@@ -192,18 +192,6 @@ function parseSelection(value: string | undefined, allKeys: string[], defaultKey
 
 function parseMarketTab(value: string | undefined): MarketTabKey {
   return value === "forex" ? "forex" : "futures";
-}
-
-function marketTabHref(tab: MarketTabKey, params: Awaited<HomeProps["searchParams"]> | undefined): string {
-  const nextParams = new URLSearchParams();
-  nextParams.set("market", tab);
-
-  for (const key of ["accountSize", "profitTarget", "maxLoss", "dailyLoss", "dailyLock", "dailyStop"] as const) {
-    const value = params?.[key];
-    if (value) nextParams.set(key, value);
-  }
-
-  return `/?${nextParams.toString()}`;
 }
 
 function averageNumbers(values: number[]): number {
@@ -664,19 +652,7 @@ export default async function Home({ searchParams }: HomeProps) {
     <main className="terminal">
       <AutoRefresh />
       <section className="terminal-workspace marketView" id="signals" key={activeMarket}>
-        <nav className="market-tabs" aria-label="Market view">
-          {MARKET_TABS.map((tab) => (
-            <Link
-              aria-current={activeMarket === tab.key ? "page" : undefined}
-              className={`market-tab${activeMarket === tab.key ? " active" : ""}`}
-              href={marketTabHref(tab.key, params)}
-              key={tab.key}
-              prefetch={false}
-            >
-              {tab.label}
-            </Link>
-          ))}
-        </nav>
+        <MarketSwitchTabs activeMarket={activeMarket} tabs={MARKET_TABS} />
         <header className="terminal-head">
           <div className="asset-meta">
             <h1>Trading Bot</h1>

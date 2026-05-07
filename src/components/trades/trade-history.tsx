@@ -9,6 +9,7 @@ import {
   type MouseEvent as ReactMouseEvent,
   type WheelEvent as ReactWheelEvent
 } from "react";
+import { createPortal } from "react-dom";
 import TradePriceChart, { type TradeChartBar } from "@/components/trades/trade-price-chart";
 import LocalDateTime from "@/components/ui/local-date-time";
 
@@ -809,6 +810,73 @@ export default function TradeHistory({ rows }: TradeHistoryProps) {
     return () => controller.abort();
   }, [activeTrade]);
 
+  const activeTradeModal = activeTrade ? (
+    <div
+      className="tradeModalBackdrop"
+      role="presentation"
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget) setActiveTrade(null);
+      }}
+    >
+      <section
+        className={`tradeModal ${activeTrade.rowClassName}`}
+        role="dialog"
+        aria-modal="true"
+        aria-label={`${activeTrade.symbol} trade details`}
+        onMouseDown={(event) => event.stopPropagation()}
+      >
+        <div className="tradeModalHead">
+          <div className="tradeModalTitle">
+            <strong>{activeTrade.modelName}</strong>
+            <span>{activeTrade.symbol} / {activeTrade.marketLabel}</span>
+          </div>
+          <div className="tradeModalHeadActions">
+            <span className={`tradeOutcomeBadge ${activeTrade.pnlClassName}`}>
+              {activeTrade.pnlClassName === "up" ? "WIN" : activeTrade.pnlClassName === "down" ? "LOSS" : "FLAT"}
+            </span>
+            <button type="button" onClick={() => setActiveTrade(null)}>
+              Close
+            </button>
+          </div>
+        </div>
+
+        <div className="tradeModalBody">
+          <div className="tradeModalMetrics four">
+            <InfoBox label="Entry Reason" value={`Model: ${activeTrade.modelName}`} tone="blue" />
+            <InfoBox label="Entry Price" value={activeTrade.entryPriceLabel} />
+            <InfoBox label="Exit Reason" value={activeTrade.exitReasonLabel} tone="blue" />
+            <InfoBox label="Exit Price" value={activeTrade.exitPriceLabel} />
+          </div>
+
+          <div className="tradeModalMetrics two">
+            <InfoBox label="PnL" value={activeTrade.pnlLabel} valueClassName={activeTrade.pnlClassName} tone={activeTrade.pnlClassName === "up" ? "green" : activeTrade.pnlClassName === "down" ? "red" : "neutral"} />
+            <InfoBox label="Duration" value={activeDurationLabel} />
+          </div>
+
+          <div className="tradeModalMetrics four">
+            <InfoBox label="Take Profit" value={`${activeTrade.targetPriceLabel} / ${activeTrade.targetLabel}`} tone="green" />
+            <InfoBox label="Stop Loss" value={`${activeTrade.stopPriceLabel} / ${activeTrade.riskLabel}`} tone="red" />
+            <InfoBox label="Peak (MFE)" value={activeStats.mfe == null ? "--" : formatSignedMoney(activeStats.mfe)} tone="green" />
+            <InfoBox label="DD (MAE)" value={activeStats.mae == null ? "--" : formatLossMoney(activeStats.mae)} tone="red" />
+          </div>
+
+          <TradePriceChart trade={activeTrade} bars={chartState.bars} status={chartState.status} />
+
+          <div className="tradeModalDetailsStrip">
+            <InfoBox label="Signal Time" value={<LocalDateTime value={activeTrade.signalTime} />} />
+            <InfoBox label="Entry Time" value={<LocalDateTime value={activeTrade.entryTime} />} />
+            <InfoBox label="Exit Time" value={<LocalDateTime value={activeTrade.exitTime} />} />
+            <InfoBox label="Direction" value={activeTrade.sideLabel} valueClassName={activeTrade.sideClassName} />
+            <InfoBox label="Move" value={activeTrade.netUnitsLabel} />
+            <InfoBox label="R Multiple" value={activeTrade.rMultipleLabel} valueClassName={activeTrade.pnlClassName} />
+            <InfoBox label="Size" value={activeTrade.sizeLabel} />
+            <InfoBox label="Take Profit / Stop Loss" value={`${activeTrade.tpUnitsLabel} / ${activeTrade.slUnitsLabel}`} />
+          </div>
+        </div>
+      </section>
+    </div>
+  ) : null;
+
   return (
     <>
       <div className="terminal-table-wrap tall">
@@ -887,72 +955,7 @@ export default function TradeHistory({ rows }: TradeHistoryProps) {
         </table>
       </div>
 
-      {activeTrade ? (
-        <div
-          className="tradeModalBackdrop"
-          role="presentation"
-          onMouseDown={(event) => {
-            if (event.target === event.currentTarget) setActiveTrade(null);
-          }}
-        >
-          <section
-            className={`tradeModal ${activeTrade.rowClassName}`}
-            role="dialog"
-            aria-modal="true"
-            aria-label={`${activeTrade.symbol} trade details`}
-            onMouseDown={(event) => event.stopPropagation()}
-          >
-            <div className="tradeModalHead">
-              <div className="tradeModalTitle">
-                <strong>{activeTrade.modelName}</strong>
-                <span>{activeTrade.symbol} / {activeTrade.marketLabel}</span>
-              </div>
-              <div className="tradeModalHeadActions">
-                <span className={`tradeOutcomeBadge ${activeTrade.pnlClassName}`}>
-                  {activeTrade.pnlClassName === "up" ? "WIN" : activeTrade.pnlClassName === "down" ? "LOSS" : "FLAT"}
-                </span>
-                <button type="button" onClick={() => setActiveTrade(null)}>
-                  Close
-                </button>
-              </div>
-            </div>
-
-            <div className="tradeModalBody">
-              <div className="tradeModalMetrics four">
-                <InfoBox label="Entry Reason" value={`Model: ${activeTrade.modelName}`} tone="blue" />
-                <InfoBox label="Entry Price" value={activeTrade.entryPriceLabel} />
-                <InfoBox label="Exit Reason" value={activeTrade.exitReasonLabel} tone="blue" />
-                <InfoBox label="Exit Price" value={activeTrade.exitPriceLabel} />
-              </div>
-
-              <div className="tradeModalMetrics two">
-                <InfoBox label="PnL" value={activeTrade.pnlLabel} valueClassName={activeTrade.pnlClassName} tone={activeTrade.pnlClassName === "up" ? "green" : activeTrade.pnlClassName === "down" ? "red" : "neutral"} />
-                <InfoBox label="Duration" value={activeDurationLabel} />
-              </div>
-
-              <div className="tradeModalMetrics four">
-                <InfoBox label="Take Profit" value={`${activeTrade.targetPriceLabel} / ${activeTrade.targetLabel}`} tone="green" />
-                <InfoBox label="Stop Loss" value={`${activeTrade.stopPriceLabel} / ${activeTrade.riskLabel}`} tone="red" />
-                <InfoBox label="Peak (MFE)" value={activeStats.mfe == null ? "--" : formatSignedMoney(activeStats.mfe)} tone="green" />
-                <InfoBox label="DD (MAE)" value={activeStats.mae == null ? "--" : formatLossMoney(activeStats.mae)} tone="red" />
-              </div>
-
-              <TradePriceChart trade={activeTrade} bars={chartState.bars} status={chartState.status} />
-
-              <div className="tradeModalDetailsStrip">
-                <InfoBox label="Signal Time" value={<LocalDateTime value={activeTrade.signalTime} />} />
-                <InfoBox label="Entry Time" value={<LocalDateTime value={activeTrade.entryTime} />} />
-                <InfoBox label="Exit Time" value={<LocalDateTime value={activeTrade.exitTime} />} />
-                <InfoBox label="Direction" value={activeTrade.sideLabel} valueClassName={activeTrade.sideClassName} />
-                <InfoBox label="Move" value={activeTrade.netUnitsLabel} />
-                <InfoBox label="R Multiple" value={activeTrade.rMultipleLabel} valueClassName={activeTrade.pnlClassName} />
-                <InfoBox label="Size" value={activeTrade.sizeLabel} />
-                <InfoBox label="Take Profit / Stop Loss" value={`${activeTrade.tpUnitsLabel} / ${activeTrade.slUnitsLabel}`} />
-              </div>
-            </div>
-          </section>
-        </div>
-      ) : null}
+      {activeTradeModal ? createPortal(activeTradeModal, document.body) : null}
     </>
   );
 }

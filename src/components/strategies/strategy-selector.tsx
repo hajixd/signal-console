@@ -2,6 +2,7 @@
 
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { createPortal } from "react-dom";
 import {
   emitStrategyEditsChanged,
   loadClientStrategyEdits,
@@ -990,7 +991,7 @@ export default function StrategySelector({
         ) : null}
       </div>
 
-      {activeStrategy && draft ? (
+      {activeStrategy && draft ? createPortal((
         <div className="strategyModalBackdrop" role="presentation" onMouseDown={closeEditor}>
           <form
             className="strategyModal"
@@ -1079,9 +1080,9 @@ export default function StrategySelector({
             </div>
           </form>
         </div>
-      ) : null}
+      ), document.body) : null}
 
-      {isCustomScaleOpen ? (
+      {isCustomScaleOpen ? createPortal((
         <div className="strategyModalBackdrop" role="presentation" onMouseDown={closeCustomScale}>
           <form
             className="strategyModal customScaleModal"
@@ -1173,7 +1174,7 @@ export default function StrategySelector({
             </div>
           </form>
         </div>
-      ) : null}
+      ), document.body) : null}
     </div>
   );
 }

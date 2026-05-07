@@ -155,7 +155,7 @@ button {
 }
 
 .marketView {
-  animation: marketViewEnter 240ms ease-out both;
+  animation: marketViewEnter 120ms ease-out both;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -167,12 +167,10 @@ button {
 @keyframes marketViewEnter {
   from {
     opacity: 0;
-    transform: translateY(8px);
   }
 
   to {
     opacity: 1;
-    transform: translateY(0);
   }
 }
 
@@ -211,6 +209,7 @@ button {
 }
 
 .market-tabs {
+  position: relative;
   width: 100%;
   min-height: 46px;
   display: grid;
@@ -253,6 +252,45 @@ button {
   background: rgba(96, 165, 250, 0.2);
   color: #f3f6fb;
   box-shadow: inset 0 -2px 0 var(--accent);
+}
+
+.market-tab.isPending {
+  color: #ffffff;
+  background: rgba(96, 165, 250, 0.14);
+}
+
+.market-tabs.isSwitching::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  animation: marketSwitchBar 820ms ease-in-out infinite;
+}
+
+.marketSwitchStatus {
+  position: absolute;
+  right: 0.62rem;
+  bottom: 0.52rem;
+  color: rgba(191, 219, 254, 0.92);
+  font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+  font-size: 0.56rem;
+  font-weight: 950;
+  letter-spacing: 0;
+  text-transform: uppercase;
+  pointer-events: none;
+}
+
+@keyframes marketSwitchBar {
+  from {
+    transform: translateX(-100%);
+  }
+
+  to {
+    transform: translateX(100%);
+  }
 }
 
 .asset-meta span {
@@ -967,7 +1005,7 @@ html[data-theme="light"] .themeDarkLabel {
 .strategyModalBackdrop {
   position: fixed;
   inset: 0;
-  z-index: 80;
+  z-index: 9999;
   display: grid;
   place-items: center;
   padding: 1rem;
@@ -977,6 +1015,8 @@ html[data-theme="light"] .themeDarkLabel {
 
 .strategyModal {
   width: min(680px, 100%);
+  max-height: calc(100svh - 2rem);
+  overflow-y: auto;
   display: grid;
   gap: 0.85rem;
   border: 1px solid rgba(255, 255, 255, 0.14);
@@ -1984,7 +2024,9 @@ html[data-theme="light"] .themeDarkLabel {
 
 .backtest-stat-card.date-stat-card strong {
   align-self: end;
-  font-size: 0.94rem;
+  color: #a9c8ff;
+  font-size: 0.98rem;
+  font-weight: 950;
   line-height: 1.08;
 }
 
@@ -1997,6 +2039,7 @@ html[data-theme="light"] .themeDarkLabel {
 .localDateTimeStack small {
   min-width: 0;
   overflow: hidden;
+  font-weight: 950;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -2004,8 +2047,7 @@ html[data-theme="light"] .themeDarkLabel {
 .localDateTimeStack small {
   color: rgba(147, 187, 252, 0.82);
   font-family: inherit;
-  font-size: 0.74rem;
-  font-weight: 900;
+  font-size: 0.78rem;
   letter-spacing: 0;
 }
 
@@ -2385,10 +2427,16 @@ html[data-theme="light"] .themeDarkLabel {
   padding: 0.58rem 0.5rem;
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
   color: rgba(255, 255, 255, 0.84);
+  font-weight: 900;
   vertical-align: middle;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.terminal-table td *,
+.terminal-table .durationDetail {
+  font-weight: 900;
 }
 
 .history-table th,
