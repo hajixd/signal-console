@@ -1,5 +1,16 @@
 import { autoTradeMarketForSignal, autoTradeProviderById, type AutoTradeProviderId } from "@/lib/auto-trade-platforms";
+import {
+  cTraderBridgeConfigured,
+  executeCTraderBridgeAutoTrade,
+  executeMt5BridgeAutoTrade,
+  executeRithmicBridgeAutoTrade,
+  mt5BridgeConfigured,
+  rithmicBridgeConfigured
+} from "@/lib/bridge-auto-trader";
+import { executeMatchTraderAutoTrade, matchTraderConfigured } from "@/lib/matchtrader-auto-trader";
 import { executeProjectXAutoTrade, type ProjectXAutoTradeResult } from "@/lib/projectx-auto-trader";
+import { executeTradeLockerAutoTrade, tradeLockerConfigured } from "@/lib/tradelocker-auto-trader";
+import { executeTradovateAutoTrade, tradovateConfigured } from "@/lib/tradovate-auto-trader";
 import type { AutoTradeOrderSummary, TradeAlert } from "@/lib/types";
 
 export type AutoTradeExecutionResult = ProjectXAutoTradeResult & {
@@ -9,13 +20,45 @@ export type AutoTradeExecutionResult = ProjectXAutoTradeResult & {
 
 type AutoTradeConnector = {
   execute: (trade: TradeAlert) => Promise<ProjectXAutoTradeResult>;
+  isConfigured: () => boolean;
   providerId: AutoTradeProviderId;
 };
 
 const AUTO_TRADE_CONNECTORS: AutoTradeConnector[] = [
   {
     execute: executeProjectXAutoTrade,
+    isConfigured: () => true,
     providerId: "projectx"
+  },
+  {
+    execute: executeTradovateAutoTrade,
+    isConfigured: tradovateConfigured,
+    providerId: "tradovate"
+  },
+  {
+    execute: executeRithmicBridgeAutoTrade,
+    isConfigured: rithmicBridgeConfigured,
+    providerId: "rithmic"
+  },
+  {
+    execute: executeTradeLockerAutoTrade,
+    isConfigured: tradeLockerConfigured,
+    providerId: "tradelocker"
+  },
+  {
+    execute: executeMt5BridgeAutoTrade,
+    isConfigured: mt5BridgeConfigured,
+    providerId: "mt5_bridge"
+  },
+  {
+    execute: executeCTraderBridgeAutoTrade,
+    isConfigured: cTraderBridgeConfigured,
+    providerId: "ctrader"
+  },
+  {
+    execute: executeMatchTraderAutoTrade,
+    isConfigured: matchTraderConfigured,
+    providerId: "matchtrader"
   }
 ];
 
@@ -48,11 +91,16 @@ export async function executeAutoTrade(trade: TradeAlert): Promise<AutoTradeExec
     return result("skipped", { error: `No auto-trade market route exists for ${trade.market}.` });
   }
 
-  for (const connector of AUTO_TRADE_CONNECTORS) {
-    const provider = autoTradeProviderById(connector.providerId);
-    if (!provider?.markets.includes(market)) continue;
+  const preferredProviderId = (
+    market === "futures" ? process.env.AUTO_TRADE_FUTURES_PROVIDER : process.env.AUTO_TRADE_FOREX_PROVIDER
+  )?.trim() as AutoTradeProviderId | undefined;
+  const marketConnectors = AUTO_TRADE_CONNECTORS.filter((connector) => autoTradeProviderById(connector.providerId)?.markets.includes(market));
+  const preferredConnector = preferredProviderId ? marketConnectors.find((connector) => connector.providerId === preferredProviderId) : undefined;
+  const connector = preferredConnector ?? marketConnectors.find((candidate) => candidate.isConfigured()) ?? marketConnectors[0];
 
-    const providerName = provider.label;
+  if (connector) {
+    const provider = autoTradeProviderById(connector.providerId);
+    const providerName = provider?.label ?? connector.providerId;
     const execution = await connector.execute(trade);
     return {
       ...execution,
