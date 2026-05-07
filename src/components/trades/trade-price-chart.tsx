@@ -7,10 +7,10 @@ import {
   CrosshairMode,
   LineStyle,
   createChart,
-  createSeriesMarkers,
   type CandlestickData,
-  type SeriesMarker,
-  type UTCTimestamp
+  type Logical,
+  type UTCTimestamp,
+  type WhitespaceData
 } from "lightweight-charts";
 
 export type TradeChartBar = {
@@ -53,9 +53,29 @@ type TradeChartTrade = {
 type ChartStatus = "idle" | "loading" | "ready" | "error";
 type ChartTheme = "dark" | "light";
 type ReplaySpeed = 1 | 2 | 4 | 8;
+type ChartLevelTone = "entry" | "green" | "red";
+type ChartLevelTag = {
+  key: "entry" | "exit" | "target" | "stop";
+  label: string;
+  price: number;
+  tone: ChartLevelTone;
+};
+type PositionedChartLevelTag = ChartLevelTag & {
+  y: number;
+};
+type ChartOverlayPoint = {
+  x: number;
+  y: number;
+};
+type TradeChartOverlay = {
+  entry: ChartOverlayPoint;
+  pathEnd: ChartOverlayPoint | null;
+  exit: ChartOverlayPoint | null;
+};
 type MappedCandle = CandlestickData<UTCTimestamp> & {
   source: TradeChartBar;
 };
+type ReplayChartData = CandlestickData<UTCTimestamp> | WhitespaceData<UTCTimestamp>;
 const REPLAY_SPEEDS: ReplaySpeed[] = [1, 2, 4, 8];
 const REPLAY_INTERVAL_MS: Record<ReplaySpeed, number> = {
   1: 700,
@@ -213,6 +233,8 @@ export default function TradePriceChart({
   const [isPlaying, setIsPlaying] = useState(false);
   const [replayPosition, setReplayPosition] = useState(0);
   const [replaySpeed, setReplaySpeed] = useState<ReplaySpeed>(2);
+  const [tradeOverlay, setTradeOverlay] = useState<TradeChartOverlay | null>(null);
+  const [positionedLevelTags, setPositionedLevelTags] = useState<PositionedChartLevelTag[]>([]);
   const mappedCandles = useMemo(
     () =>
       bars
@@ -239,16 +261,22 @@ export default function TradePriceChart({
     [clampedReplayPosition, mappedCandles]
   );
   const currentReplayCandle = visibleMappedCandles[visibleMappedCandles.length - 1] ?? null;
-  const candleData = useMemo(
+  const candleData = useMemo<ReplayChartData[]>(
     () =>
-      visibleMappedCandles.map((candle) => ({
-        time: candle.time,
-        open: candle.open,
-        high: candle.high,
-        low: candle.low,
-        close: candle.close
-      })),
-    [visibleMappedCandles]
+      mappedCandles.map((candle, index) =>
+        index <= clampedReplayPosition
+          ? {
+              time: candle.time,
+              open: candle.open,
+              high: candle.high,
+              low: candle.low,
+              close: candle.close
+            }
+          : {
+              time: candle.time
+            }
+      ),
+    [clampedReplayPosition, mappedCandles]
   );
   const sourceByTime = useMemo(
     () => new Map(visibleMappedCandles.map((candle) => [Number(candle.time), candle.source])),
@@ -267,6 +295,37 @@ export default function TradePriceChart({
   const change = displayBar ? displayBar.close - displayBar.open : 0;
   const changePct = displayBar && displayBar.open !== 0 ? (change / displayBar.open) * 100 : 0;
   const up = change >= 0;
+  const isLong = trade.side === "long";
+  const exitLevelTone: ChartLevelTone = isLong ? "red" : "green";
+  const chartLevelTags = useMemo<ChartLevelTag[]>(
+    () => [
+      {
+        key: "target",
+        label: "TP",
+        price: trade.targetPrice,
+        tone: "green"
+      },
+      {
+        key: "exit",
+        label: "Exit",
+        price: trade.exitPrice,
+        tone: exitLevelTone
+      },
+      {
+        key: "entry",
+        label: "Entry",
+        price: trade.entryPrice,
+        tone: "entry"
+      },
+      {
+        key: "stop",
+        label: "SL",
+        price: trade.stopPrice,
+        tone: "red"
+      }
+    ],
+    [exitLevelTone, trade.entryPrice, trade.exitPrice, trade.stopPrice, trade.targetPrice]
+  );
   const timeframeControls = (
     <div className="tradeTimeframeButtons" aria-label="Chart timeframe">
       {timeframes.map((option) => (
@@ -329,6 +388,11 @@ export default function TradePriceChart({
     const upSoftColor = isLight ? "#22c55e" : "#34d399";
     const downColor = isLight ? "#dc2626" : "#ef4444";
     const downSoftColor = isLight ? "#f43f5e" : "#f87171";
+    const entryTagColor = "#111827";
+    const entryTagTextColor = "#ffffff";
+    const greenTagColor = isLight ? "#16a34a" : "#10b981";
+    const redTagColor = isLight ? "#ef4444" : "#fb7185";
+    const lightTagTextColor = "#ffffff";
 
     const chart = createChart(container, {
       autoSize: true,
@@ -406,6 +470,8 @@ export default function TradePriceChart({
       lineWidth: 2,
       lineStyle: LineStyle.Solid,
       axisLabelVisible: true,
+      axisLabelColor: entryTagColor,
+      axisLabelTextColor: entryTagTextColor,
       title: `Entry ${formatChartPrice(trade.entryPrice)}`
     });
     series.createPriceLine({
@@ -414,6 +480,8 @@ export default function TradePriceChart({
       lineWidth: 1,
       lineStyle: LineStyle.Dashed,
       axisLabelVisible: true,
+      axisLabelColor: trade.side === "long" ? redTagColor : greenTagColor,
+      axisLabelTextColor: lightTagTextColor,
       title: `Exit ${formatChartPrice(trade.exitPrice)}`
     });
     series.createPriceLine({
@@ -422,6 +490,8 @@ export default function TradePriceChart({
       lineWidth: 1,
       lineStyle: LineStyle.Dashed,
       axisLabelVisible: true,
+      axisLabelColor: greenTagColor,
+      axisLabelTextColor: lightTagTextColor,
       title: `TP ${formatChartPrice(trade.targetPrice)}`
     });
     series.createPriceLine({
@@ -430,45 +500,102 @@ export default function TradePriceChart({
       lineWidth: 1,
       lineStyle: LineStyle.Dashed,
       axisLabelVisible: true,
+      axisLabelColor: redTagColor,
+      axisLabelTextColor: lightTagTextColor,
       title: `SL ${formatChartPrice(trade.stopPrice)}`
     });
-
-    const isLong = trade.side === "long";
-    const markers: SeriesMarker<UTCTimestamp>[] = [];
-    if (candleIsRevealed(entryCandle, currentReplayCandle)) {
-      markers.push({
-        time: entryCandle.time,
-        position: isLong ? "belowBar" : "aboveBar",
-        shape: isLong ? "arrowUp" : "arrowDown",
-        color: isLong ? upSoftColor : downSoftColor,
-        text: "Entry",
-        size: 1.25
-      });
-    }
-    if (candleIsRevealed(exitCandle, currentReplayCandle)) {
-      markers.push({
-        time: exitCandle.time,
-        position: isLong ? "aboveBar" : "belowBar",
-        shape: isLong ? "arrowDown" : "arrowUp",
-        color: isLong ? downSoftColor : upSoftColor,
-        text: "Exit",
-        size: 1.25
-      });
-    }
-    const markerLayer = createSeriesMarkers(series, markers, { zOrder: "top" });
 
     const entryPosition = candleIndex(mappedCandles, entryCandle);
     const exitPosition = candleIndex(mappedCandles, exitCandle);
     const tradeWindow = Math.max(10, Math.abs(exitPosition - entryPosition) + 1);
-    const visibleCandleCount = Math.max(1, candleData.length);
-    const windowSize = Math.min(visibleCandleCount, Math.max(45, Math.ceil(tradeWindow * 3)));
+    const fullCandleCount = Math.max(1, mappedCandles.length);
+    const windowSize = Math.min(fullCandleCount, Math.max(45, Math.ceil(tradeWindow * 3)));
     const anchor = Math.max(0, entryPosition);
     let from = Math.max(0, anchor - Math.floor(windowSize * 0.35));
-    let to = Math.min(visibleCandleCount - 1, from + windowSize - 1);
+    let to = Math.min(fullCandleCount - 1, from + windowSize - 1);
     if (to - from + 1 < windowSize) from = Math.max(0, to - windowSize + 1);
 
     chart.timeScale().fitContent();
     chart.timeScale().setVisibleLogicalRange({ from, to });
+
+    const pointFor = (candle: MappedCandle | null, price: number): ChartOverlayPoint | null => {
+      if (!candle || !Number.isFinite(price)) return null;
+      const x = chart.timeScale().logicalToCoordinate(candleIndex(mappedCandles, candle) as Logical);
+      const y = series.priceToCoordinate(price);
+      if (x == null || y == null) return null;
+      return { x: Number(x), y: Number(y) };
+    };
+
+    const updateTradeOverlay = () => {
+      const chartHeight = Math.max(1, container.clientHeight || 318);
+      const minLevelTagGap = 20;
+      const nextLevelTags = chartLevelTags
+        .map((tag) => {
+          const y = series.priceToCoordinate(tag.price);
+          if (y == null) return null;
+          return {
+            ...tag,
+            y: clamp(Number(y), 12, chartHeight - 12)
+          };
+        })
+        .filter((tag): tag is PositionedChartLevelTag => Boolean(tag))
+        .sort((left, right) => left.y - right.y);
+
+      for (let index = 1; index < nextLevelTags.length; index += 1) {
+        const previous = nextLevelTags[index - 1]!;
+        const current = nextLevelTags[index]!;
+        if (current.y - previous.y < minLevelTagGap) current.y = previous.y + minLevelTagGap;
+      }
+
+      const levelTagOverflow = (nextLevelTags.at(-1)?.y ?? 0) - (chartHeight - 12);
+      if (levelTagOverflow > 0) {
+        for (const tag of nextLevelTags) tag.y -= levelTagOverflow;
+      }
+
+      for (let index = nextLevelTags.length - 2; index >= 0; index -= 1) {
+        const next = nextLevelTags[index + 1]!;
+        const current = nextLevelTags[index]!;
+        if (next.y - current.y < minLevelTagGap) current.y = next.y - minLevelTagGap;
+        current.y = clamp(current.y, 12, chartHeight - 12);
+      }
+
+      setPositionedLevelTags(nextLevelTags);
+
+      if (!candleIsRevealed(entryCandle, currentReplayCandle)) {
+        setTradeOverlay(null);
+        return;
+      }
+
+      const entry = pointFor(entryCandle, trade.entryPrice);
+      if (!entry) {
+        setTradeOverlay(null);
+        return;
+      }
+
+      const exitRevealed = candleIsRevealed(exitCandle, currentReplayCandle);
+      const pathEndCandle = exitRevealed ? exitCandle : currentReplayCandle;
+      const pathEndPrice = exitRevealed ? trade.exitPrice : currentReplayCandle?.close;
+      const pathEnd = pathEndPrice == null ? null : pointFor(pathEndCandle, pathEndPrice);
+      const exit = exitRevealed ? pointFor(exitCandle, trade.exitPrice) : null;
+
+      setTradeOverlay({
+        entry,
+        pathEnd:
+          pathEnd && (Math.abs(pathEnd.x - entry.x) > 2 || Math.abs(pathEnd.y - entry.y) > 2)
+            ? pathEnd
+            : null,
+        exit
+      });
+    };
+
+    let overlayAnimationFrame = window.requestAnimationFrame(updateTradeOverlay);
+    const scheduleTradeOverlayUpdate = () => {
+      window.cancelAnimationFrame(overlayAnimationFrame);
+      overlayAnimationFrame = window.requestAnimationFrame(updateTradeOverlay);
+    };
+    const resizeObserver = new ResizeObserver(scheduleTradeOverlayUpdate);
+    resizeObserver.observe(container);
+    chart.timeScale().subscribeVisibleLogicalRangeChange(scheduleTradeOverlayUpdate);
 
     const handleCrosshairMove = (param: { time?: unknown }) => {
       if (typeof param.time !== "number") return;
@@ -480,11 +607,14 @@ export default function TradePriceChart({
 
     return () => {
       chart.unsubscribeCrosshairMove(handleCrosshairMove);
-      markerLayer.detach();
+      chart.timeScale().unsubscribeVisibleLogicalRangeChange(scheduleTradeOverlayUpdate);
+      resizeObserver.disconnect();
+      window.cancelAnimationFrame(overlayAnimationFrame);
       chart.remove();
     };
   }, [
     candleData,
+    chartLevelTags,
     chartTheme,
     currentReplayCandle,
     entryCandle,
@@ -605,20 +735,75 @@ export default function TradePriceChart({
             Change <strong>{formatChartPrice(change)} / {formatPct(changePct)}</strong>
           </span>
         </div>
-        <div className="tradeChartLevels">
-          <span>
-            Entry <strong>{formatChartPrice(trade.entryPrice)}</strong>
-          </span>
-          <span>
-            Exit <strong>{formatChartPrice(trade.exitPrice)}</strong>
-          </span>
-          <span>
-            TP <strong>{formatChartPrice(trade.targetPrice)}</strong>
-          </span>
-          <span>
-            SL <strong>{formatChartPrice(trade.stopPrice)}</strong>
-          </span>
-        </div>
+        {positionedLevelTags.length ? (
+          <div className="tradeChartPriceTags" aria-label="Trade price levels">
+            {positionedLevelTags.map((tag) => (
+              <span
+                className={`tradeChartPriceTag ${tag.tone}`}
+                key={tag.key}
+                style={{ top: tag.y }}
+              >
+                <span>{tag.label}</span>
+                <strong>{formatChartPrice(tag.price)}</strong>
+              </span>
+            ))}
+          </div>
+        ) : null}
+        {tradeOverlay ? (
+          <svg className="tradeChartTradeOverlay" aria-hidden="true">
+            {tradeOverlay.pathEnd ? (
+              <line
+                className={`tradeChartTradePath ${exitLevelTone}`}
+                x1={tradeOverlay.entry.x}
+                y1={tradeOverlay.entry.y}
+                x2={tradeOverlay.pathEnd.x}
+                y2={tradeOverlay.pathEnd.y}
+              />
+            ) : null}
+            <polygon
+              className={`tradeChartEntryMarker ${isLong ? "long" : "short"}`}
+              points={
+                isLong
+                  ? `${tradeOverlay.entry.x},${tradeOverlay.entry.y - 8} ${tradeOverlay.entry.x - 6},${tradeOverlay.entry.y + 5} ${tradeOverlay.entry.x + 6},${tradeOverlay.entry.y + 5}`
+                  : `${tradeOverlay.entry.x},${tradeOverlay.entry.y + 8} ${tradeOverlay.entry.x - 6},${tradeOverlay.entry.y - 5} ${tradeOverlay.entry.x + 6},${tradeOverlay.entry.y - 5}`
+              }
+            />
+            <text
+              className="tradeChartMarkerText entry"
+              x={tradeOverlay.entry.x}
+              y={tradeOverlay.entry.y + (isLong ? 22 : -14)}
+              textAnchor="middle"
+            >
+              Entry
+            </text>
+            {tradeOverlay.exit ? (
+              <>
+                <line
+                  className={`tradeChartExitMarker ${exitLevelTone}`}
+                  x1={tradeOverlay.exit.x - 5}
+                  y1={tradeOverlay.exit.y - 5}
+                  x2={tradeOverlay.exit.x + 5}
+                  y2={tradeOverlay.exit.y + 5}
+                />
+                <line
+                  className={`tradeChartExitMarker ${exitLevelTone}`}
+                  x1={tradeOverlay.exit.x + 5}
+                  y1={tradeOverlay.exit.y - 5}
+                  x2={tradeOverlay.exit.x - 5}
+                  y2={tradeOverlay.exit.y + 5}
+                />
+                <text
+                  className={`tradeChartMarkerText exit ${exitLevelTone}`}
+                  x={tradeOverlay.exit.x}
+                  y={tradeOverlay.exit.y + (isLong ? -12 : 22)}
+                  textAnchor="middle"
+                >
+                  Exit
+                </text>
+              </>
+            ) : null}
+          </svg>
+        ) : null}
         <div ref={containerRef} className="tradePriceChart" aria-label={`${trade.symbol} TradingView Lightweight candlestick chart`} />
       </div>
       {replayControls}

@@ -4081,7 +4081,7 @@ html[data-theme="light"] .tradeModal.up-row,
 html[data-theme="light"] .tradeModal.down-row,
 html[data-theme="light"] .tradeModal.neutral-row {
   width: min(1180px, 97vw);
-  height: min(880px, 92vh);
+  height: auto;
   max-height: min(880px, 92vh);
 }
 
@@ -4103,6 +4103,8 @@ html[data-theme="light"] .tradeModalHead button {
 }
 
 .tradeModalBody {
+  flex: 0 1 auto;
+  overflow-y: auto;
   padding: 9px 12px;
 }
 
@@ -4191,6 +4193,132 @@ html[data-theme="light"] .tradeInfoBox strong {
 
 .tradePriceChart {
   height: 318px;
+}
+
+.tradeChartLegend {
+  z-index: 6;
+}
+
+.tradeChartPriceTags {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 5;
+  pointer-events: none;
+}
+
+.tradeChartPriceTag {
+  position: absolute;
+  right: 0;
+  display: inline-flex;
+  align-items: stretch;
+  min-height: 20px;
+  overflow: hidden;
+  border: 1px solid currentColor;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.32);
+  color: #ffffff;
+  font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+  font-size: 10px;
+  font-weight: 950;
+  line-height: 1;
+  text-transform: none;
+  transform: translateY(-50%);
+  white-space: nowrap;
+}
+
+.tradeChartPriceTag > span,
+.tradeChartPriceTag > strong {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 6px;
+  font-weight: 950;
+}
+
+.tradeChartPriceTag > span {
+  background: rgba(0, 0, 0, 0.16);
+}
+
+.tradeChartPriceTag > strong {
+  min-width: 62px;
+  justify-content: flex-end;
+}
+
+.tradeChartPriceTag.entry {
+  border-color: #111827;
+  background: #111827;
+  color: #ffffff;
+}
+
+.tradeChartPriceTag.green {
+  border-color: #16a34a;
+  background: #16a34a;
+}
+
+.tradeChartPriceTag.red {
+  border-color: #ef4444;
+  background: #ef4444;
+}
+
+.tradeChartTradeOverlay {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.tradeChartTradePath {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.78);
+  stroke-dasharray: 2 6;
+  stroke-linecap: round;
+  stroke-width: 2;
+}
+
+.tradeChartEntryMarker {
+  fill: #10b981;
+  stroke: rgba(255, 255, 255, 0.72);
+  stroke-width: 1;
+}
+
+.tradeChartEntryMarker.short {
+  fill: #ef4444;
+}
+
+.tradeChartExitMarker {
+  fill: none;
+  stroke-linecap: round;
+  stroke-width: 2.5;
+}
+
+.tradeChartExitMarker.red {
+  stroke: #ef4444;
+}
+
+.tradeChartExitMarker.green {
+  stroke: #10b981;
+}
+
+.tradeChartMarkerText {
+  fill: #10b981;
+  font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+  font-size: 10px;
+  font-weight: 950;
+  paint-order: stroke;
+  stroke: #030303;
+  stroke-linejoin: round;
+  stroke-width: 3px;
+}
+
+.tradeChartMarkerText.exit.red {
+  fill: #ef4444;
+}
+
+.tradeChartMarkerText.exit.green {
+  fill: #10b981;
 }
 
 .tradeCandlestickPanel.isEmpty {
@@ -4383,6 +4511,14 @@ html[data-theme="light"] .tradePriceChart {
   background: #f8fafc;
 }
 
+html[data-theme="light"] .tradeChartTradePath {
+  stroke: rgba(15, 23, 42, 0.44);
+}
+
+html[data-theme="light"] .tradeChartMarkerText {
+  stroke: #f8fafc;
+}
+
 html[data-theme="light"] .tradeChartLegend > strong,
 html[data-theme="light"] .tradeChartLegend span,
 html[data-theme="light"] .tradeChartLevels span {
@@ -4436,6 +4572,10 @@ html[data-theme="light"] .tradeCandleContextRow span {
 .tradeChartLegend *,
 .tradeChartLevels,
 .tradeChartLevels *,
+.tradeChartPriceTags,
+.tradeChartPriceTags *,
+.tradeChartTradeOverlay,
+.tradeChartTradeOverlay *,
 .tradeReplayPanel,
 .tradeReplayPanel * {
   font-weight: 950 !important;
@@ -4553,7 +4693,7 @@ html[data-theme="light"] .tradeReplaySlider input {
   html[data-theme="light"] .tradeModal.up-row,
   html[data-theme="light"] .tradeModal.down-row,
   html[data-theme="light"] .tradeModal.neutral-row {
-    height: min(760px, 88vh);
+    height: auto;
     max-height: min(760px, 88vh);
   }
 
