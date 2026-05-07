@@ -20,10 +20,14 @@
 }
 
 html {
+  max-width: 100%;
+  overflow-x: clip;
   scroll-behavior: smooth;
 }
 
 body {
+  max-width: 100%;
+  overflow-x: clip;
   margin: 0;
   background: var(--bg);
   color: var(--text);
@@ -1501,6 +1505,43 @@ html[data-theme="light"] .themeDarkLabel {
   gap: 0.45rem;
 }
 
+.autoTradeSelectGrid {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+
+.autoTradeSelectControl {
+  min-width: 0;
+  display: grid;
+  gap: 0.24rem;
+}
+
+.autoTradeSelectControl span {
+  color: var(--text-faint);
+  font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+  font-size: 0.58rem;
+  font-weight: 900;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.autoTradeSelectControl select {
+  min-width: 0;
+  min-height: 40px;
+  border: 1px solid rgba(96, 165, 250, 0.28);
+  background: #111827;
+  color: rgba(255, 255, 255, 0.92);
+  padding: 0 0.62rem;
+  outline: none;
+}
+
+.autoTradeSelectControl select:focus {
+  border-color: rgba(96, 165, 250, 0.56);
+  box-shadow: inset 0 0 0 1px rgba(96, 165, 250, 0.26);
+}
+
 .autoTradeProviderOption {
   min-width: 0;
   min-height: 82px;
@@ -1760,7 +1801,8 @@ html[data-theme="light"] .themeDarkLabel {
   text-transform: uppercase;
 }
 
-.topstepConnectForm input {
+.topstepConnectForm input,
+.topstepConnectForm select {
   min-width: 0;
   min-height: 36px;
   border: 1px solid rgba(255, 255, 255, 0.12);
@@ -1770,7 +1812,8 @@ html[data-theme="light"] .themeDarkLabel {
   outline: none;
 }
 
-.topstepConnectForm input:focus {
+.topstepConnectForm input:focus,
+.topstepConnectForm select:focus {
   border-color: rgba(96, 165, 250, 0.5);
   box-shadow: inset 0 0 0 1px rgba(96, 165, 250, 0.28);
 }
@@ -2680,7 +2723,9 @@ html[data-theme="light"] .topstepConnectionMeta div {
   background: transparent;
 }
 
-html[data-theme="light"] .topstepConnectForm input {
+html[data-theme="light"] .autoTradeSelectControl select,
+html[data-theme="light"] .topstepConnectForm input,
+html[data-theme="light"] .topstepConnectForm select {
   border-color: rgba(15, 23, 42, 0.14);
   background: #ffffff;
   color: rgba(15, 23, 42, 0.88);
@@ -3238,9 +3283,14 @@ html[data-theme="light"] .strategyToggle input {
 
   .topstepConnectionActions,
   .autoTradeModeStrip,
+  .autoTradeSelectGrid,
   .topstepConnectionActions button,
   .topstepConnectForm button {
     width: 100%;
+  }
+
+  .autoTradeSelectGrid {
+    grid-template-columns: 1fr;
   }
 
   .backtest-grid.two-up,

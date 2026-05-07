@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useId, useState } from "react";
+import { createPortal } from "react-dom";
 import AutoTradingConnectionPanel from "@/components/auto-trading/auto-trading-connection-panel";
 import { autoTradeMarketLabel, type AutoTradeMarket } from "@/lib/auto-trade-platforms";
 
@@ -36,6 +37,29 @@ export default function AutoTradingConnectionDrawer({ market }: AutoTradingConne
     setIsOpen(false);
   }, [market]);
 
+  const drawer = isOpen ? (
+    <div className="topstepDrawerLayer">
+      <button
+        aria-label="Close auto-trading drawer"
+        className="topstepDrawerBackdrop"
+        onClick={() => setIsOpen(false)}
+        type="button"
+      />
+      <aside aria-modal="true" className="topstepDrawerPanel" id={drawerId} role="dialog">
+        <div className="topstepDrawerHead">
+          <div>
+            <span>{marketLabel} execution</span>
+            <strong>Auto-Trading Accounts</strong>
+          </div>
+          <button aria-label="Close auto-trading drawer" onClick={() => setIsOpen(false)} type="button">
+            <span aria-hidden="true">Close</span>
+          </button>
+        </div>
+        <AutoTradingConnectionPanel market={market} />
+      </aside>
+    </div>
+  ) : null;
+
   return (
     <>
       <button
@@ -54,28 +78,7 @@ export default function AutoTradingConnectionDrawer({ market }: AutoTradingConne
         </span>
       </button>
 
-      {isOpen ? (
-        <div className="topstepDrawerLayer">
-          <button
-            aria-label="Close auto-trading drawer"
-            className="topstepDrawerBackdrop"
-            onClick={() => setIsOpen(false)}
-            type="button"
-          />
-          <aside aria-modal="true" className="topstepDrawerPanel" id={drawerId} role="dialog">
-            <div className="topstepDrawerHead">
-              <div>
-                <span>{marketLabel} execution</span>
-                <strong>Auto-Trading Accounts</strong>
-              </div>
-              <button aria-label="Close auto-trading drawer" onClick={() => setIsOpen(false)} type="button">
-                <span aria-hidden="true">Close</span>
-              </button>
-            </div>
-            <AutoTradingConnectionPanel market={market} />
-          </aside>
-        </div>
-      ) : null}
+      {drawer ? createPortal(drawer, document.body) : null}
     </>
   );
 }

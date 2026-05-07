@@ -5,10 +5,12 @@ import {
   useMemo,
   useRef,
   useState,
+  type ReactNode,
   type MouseEvent as ReactMouseEvent,
   type WheelEvent as ReactWheelEvent
 } from "react";
 import TradePriceChart, { type TradeChartBar } from "@/components/trades/trade-price-chart";
+import LocalDateTime from "@/components/ui/local-date-time";
 
 export type TradeHistoryRow = {
   id: string;
@@ -243,7 +245,7 @@ function InfoBox({
   valueClassName
 }: {
   label: string;
-  value: string;
+  value: ReactNode;
   tone?: "neutral" | "green" | "red" | "blue" | "amber";
   valueClassName?: string;
 }) {
@@ -863,7 +865,7 @@ export default function TradeHistory({ rows }: TradeHistoryProps) {
                 <td className="ticker-cell">{trade.symbol}</td>
                 <td className="main-cell">
                   <span>{trade.modelName}</span>
-                  <small>{trade.entryTimeLabel}</small>
+                  <small><LocalDateTime value={trade.entryTime} /></small>
                 </td>
                 <td>
                   <span className={trade.sideClassName}>{trade.sideLabel}</span>
@@ -938,9 +940,9 @@ export default function TradeHistory({ rows }: TradeHistoryProps) {
               <TradePriceChart trade={activeTrade} bars={chartState.bars} status={chartState.status} />
 
               <div className="tradeModalDetailsStrip">
-                <InfoBox label="Signal Time" value={activeTrade.signalTimeLabel} />
-                <InfoBox label="Entry Time" value={activeTrade.entryTimeLabel} />
-                <InfoBox label="Exit Time" value={activeTrade.exitTimeLabel} />
+                <InfoBox label="Signal Time" value={<LocalDateTime value={activeTrade.signalTime} />} />
+                <InfoBox label="Entry Time" value={<LocalDateTime value={activeTrade.entryTime} />} />
+                <InfoBox label="Exit Time" value={<LocalDateTime value={activeTrade.exitTime} />} />
                 <InfoBox label="Direction" value={activeTrade.sideLabel} valueClassName={activeTrade.sideClassName} />
                 <InfoBox label="Move" value={activeTrade.netUnitsLabel} />
                 <InfoBox label="R Multiple" value={activeTrade.rMultipleLabel} valueClassName={activeTrade.pnlClassName} />

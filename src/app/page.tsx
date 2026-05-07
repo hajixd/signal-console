@@ -6,6 +6,7 @@ import StrategySelector from "@/components/strategies/strategy-selector";
 import EditableTradeHistory from "@/components/trades/editable-trade-history";
 import { type TradeHistoryRow } from "@/components/trades/trade-history";
 import AutoRefresh from "@/components/ui/auto-refresh";
+import LocalDateTime from "@/components/ui/local-date-time";
 import TestAlertButton from "@/components/ui/test-alert-button";
 import ThemeToggle from "@/components/ui/theme-toggle";
 import { syncLiveSelection, syncStrategyEdits } from "@/app/live-selection-actions";
@@ -131,18 +132,14 @@ function fmtMoney(value: number, signed = false): string {
 }
 
 function fmtTime(value: string): string {
-  return new Intl.DateTimeFormat("en-US", {
+  return new Intl.DateTimeFormat(undefined, {
     month: "short",
     day: "numeric",
+    year: "numeric",
     hour: "numeric",
     minute: "2-digit",
     timeZoneName: "short"
   }).format(new Date(value));
-}
-
-function syncStatusLabel(value: string | undefined): string {
-  if (!value || value.startsWith("1970-01-01")) return "Not synced yet";
-  return fmtTime(value);
 }
 
 function fmtDuration(startValue: string, endValue: string): string {
@@ -783,7 +780,9 @@ export default async function Home({ searchParams }: HomeProps) {
             </div>
             <div>
               <span>Dataset sync</span>
-              <strong>{syncStatusLabel(datasetStatus?.lastSyncAt)}</strong>
+              <strong>
+                <LocalDateTime value={datasetStatus?.lastSyncAt} fallback="Not synced yet" />
+              </strong>
             </div>
           </div>
         </section>
@@ -861,7 +860,7 @@ export default async function Home({ searchParams }: HomeProps) {
                       <td>
                         <span className={`status ${trade.telegramStatus}`}>{trade.telegramStatus}</span>
                       </td>
-                      <td>{fmtTime(trade.signalTime)}</td>
+                      <td><LocalDateTime value={trade.signalTime} /></td>
                     </tr>
                   ))}
                 </tbody>

@@ -6,6 +6,7 @@ import {
   type StrategyEditSeedMap,
   useStrategyEdits
 } from "@/components/strategies/strategy-edits-store";
+import LocalDateTime from "@/components/ui/local-date-time";
 
 type BasketTrade = {
   key: string;
@@ -55,15 +56,6 @@ function fmtMoney(value: number, signed = false): string {
   });
   const formatted = formatter.format(value);
   return signed && value > 0 ? `+${formatted}` : formatted;
-}
-
-function fmtDate(value: number | undefined): string {
-  if (!value) return "--";
-  return new Intl.DateTimeFormat("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric"
-  }).format(new Date(value));
 }
 
 function latestEndDate(dataEndAt: string | undefined, selectedEnd: number | undefined): number | undefined {
@@ -188,11 +180,11 @@ export default function SelectedStrategyStats({ dataEndAt, strategies, trades, p
       </div>
       <div className="backtest-stat-card tone-neutral">
         <span>Start date</span>
-        <strong>{fmtDate(selectedCadence.start)}</strong>
+        <strong><LocalDateTime value={selectedCadence.start} /></strong>
       </div>
       <div className="backtest-stat-card tone-neutral">
         <span>End date</span>
-        <strong>{fmtDate(latestEndDate(dataEndAt, selectedCadence.end))}</strong>
+        <strong><LocalDateTime value={latestEndDate(dataEndAt, selectedCadence.end)} /></strong>
       </div>
     </div>
   );

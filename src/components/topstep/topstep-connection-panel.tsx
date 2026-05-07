@@ -36,11 +36,12 @@ function fmtMoney(value: number | undefined): string {
 
 function fmtTime(value: string | undefined): string {
   if (!value) return "Not checked yet";
-  return new Intl.DateTimeFormat("en-US", {
+  return new Intl.DateTimeFormat(undefined, {
     hour: "numeric",
     minute: "2-digit",
     month: "short",
     day: "numeric",
+    year: "numeric",
     timeZoneName: "short"
   }).format(new Date(value));
 }

@@ -37,6 +37,24 @@ type ConnectionField = {
   secret?: boolean;
 };
 
+type PropFirmOption = {
+  id: string;
+  label: string;
+  markets: AutoTradeMarket[];
+  platformIds: AutoTradeProviderId[];
+};
+
+const PROP_FIRM_OPTIONS: PropFirmOption[] = [
+  { id: "topstep", label: "Topstep", markets: ["futures"], platformIds: ["projectx"] },
+  { id: "tradovate-futures", label: "Tradovate/CQG firm", markets: ["futures"], platformIds: ["tradovate"] },
+  { id: "rithmic-futures", label: "Rithmic firm", markets: ["futures"], platformIds: ["rithmic"] },
+  { id: "other-futures", label: "Other futures prop firm", markets: ["futures"], platformIds: ["projectx", "tradovate", "rithmic"] },
+  { id: "e8", label: "E8 Markets", markets: ["forex"], platformIds: ["tradelocker", "matchtrader", "mt5_bridge"] },
+  { id: "ftmo", label: "FTMO", markets: ["forex"], platformIds: ["mt5_bridge", "ctrader"] },
+  { id: "the5ers", label: "The5ers", markets: ["forex"], platformIds: ["mt5_bridge"] },
+  { id: "other-forex", label: "Other forex prop firm", markets: ["forex"], platformIds: ["tradelocker", "mt5_bridge", "ctrader", "matchtrader"] }
+];
+
 const CONNECTION_FIELDS: Record<AutoTradeProviderId, ConnectionField[]> = {
   projectx: [],
   tradelocker: [
@@ -120,23 +138,26 @@ function fmtMoney(value: number | undefined): string {
 
 function fmtTime(value: string | undefined): string {
   if (!value) return "Not checked yet";
-  return new Intl.DateTimeFormat("en-US", {
+  return new Intl.DateTimeFormat(undefined, {
     hour: "numeric",
     minute: "2-digit",
     month: "short",
     day: "numeric",
+    year: "numeric",
     timeZoneName: "short"
   }).format(new Date(value));
 }
 
-function providerStatusClass(provider: AutoTradeProvider): string {
-  if (provider.status === "live") return "sent";
-  if (provider.status === "adapter_ready") return "skipped";
-  return "neutral";
-}
-
 function firstProviderId(providers: AutoTradeProvider[]): AutoTradeProviderId {
   return providers.find((provider) => provider.status === "live")?.id ?? providers[0]!.id;
+}
+
+function propFirmsForMarket(market: AutoTradeMarket): PropFirmOption[] {
+  return PROP_FIRM_OPTIONS.filter((firm) => firm.markets.includes(market));
+}
+
+function firstPropFirmId(market: AutoTradeMarket): string {
+  return propFirmsForMarket(market)[0]?.id ?? PROP_FIRM_OPTIONS[0]!.id;
 }
 
 function accountStatusClass(account: ProjectXAccount): string {
@@ -171,6 +192,8 @@ type AutoTradingConnectionPanelProps = {
 
 export default function AutoTradingConnectionPanel({ market }: AutoTradingConnectionPanelProps) {
   const providers = useMemo(() => autoTradeProvidersForMarket(market), [market]);
+  const propFirms = useMemo(() => propFirmsForMarket(market), [market]);
+  const [selectedFirmId, setSelectedFirmId] = useState(() => firstPropFirmId(market));
   const [selectedProviderId, setSelectedProviderId] = useState<AutoTradeProviderId>(() => firstProviderId(providers));
   const [userName, setUserName] = useState("");
   const [apiKey, setApiKey] = useState("");
@@ -185,7 +208,9 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
   const [showAdvancedFields, setShowAdvancedFields] = useState(false);
 
   const marketLabel = autoTradeMarketLabel(market);
-  const selectedProvider = providers.find((provider) => provider.id === selectedProviderId) ?? providers[0]!;
+  const selectedFirm = propFirms.find((firm) => firm.id === selectedFirmId) ?? propFirms[0]!;
+  const platformOptions = providers.filter((provider) => selectedFirm.platformIds.includes(provider.id));
+  const selectedProvider = platformOptions.find((provider) => provider.id === selectedProviderId) ?? platformOptions[0] ?? providers[0]!;
   const canConnectSelectedProvider = selectedProvider.id === "projectx" && selectedProvider.status === "live" && market === "futures";
   const storageLabel = status.storageMode === "firebase" ? "Firebase" : "local dev storage";
   const displayUserName = status.userName || userName || "--";
@@ -197,13 +222,22 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
   const advancedProviderFields = selectedProviderFields.filter((field) => field.advanced);
 
   useEffect(() => {
-    if (!providers.some((provider) => provider.id === selectedProviderId)) {
-      setSelectedProviderId(firstProviderId(providers));
+    if (!propFirms.some((firm) => firm.id === selectedFirmId)) {
+      setSelectedFirmId(firstPropFirmId(market));
     }
-  }, [providers, selectedProviderId]);
+  }, [market, propFirms, selectedFirmId]);
+
+  useEffect(() => {
+    const nextFirm = propFirms.find((firm) => firm.id === selectedFirmId) ?? propFirms[0];
+    const nextProviders = providers.filter((provider) => nextFirm?.platformIds.includes(provider.id));
+    if (!nextProviders.some((provider) => provider.id === selectedProviderId)) {
+      setSelectedProviderId(firstProviderId(nextProviders.length ? nextProviders : providers));
+    }
+  }, [providers, propFirms, selectedFirmId, selectedProviderId]);
 
   useEffect(() => {
     setIsAddingAccount(false);
+    setSelectedFirmId(firstPropFirmId(market));
     setGenericFields(defaultConnectionFields(firstProviderId(providers)));
     setShowAdvancedFields(false);
   }, [market]);
@@ -309,7 +343,7 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
       });
       const payload = await parseSavedConnections(response);
       setSavedConnections(payload.connections);
-      setGenericFields({});
+      setGenericFields(defaultConnectionFields(selectedProvider.id));
       setIsAddingAccount(false);
     } catch (error) {
       setStatus((current) => ({
@@ -424,24 +458,31 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
 
       {isAddingAccount ? (
         <div className="autoTradeAddAccount">
-          <div className="autoTradeModeStrip" aria-label={`${marketLabel} auto-trade providers`}>
-            {providers.map((provider) => (
-              <button
-                aria-pressed={selectedProvider.id === provider.id}
-                className={`autoTradeProviderOption${selectedProvider.id === provider.id ? " active" : ""}`}
-                key={provider.id}
-                onClick={() => setSelectedProviderId(provider.id)}
-                type="button"
-              >
-                <span>{provider.connectionMode}</span>
-                <strong>{provider.shortLabel}</strong>
-                <em className={`status ${providerStatusClass(provider)}`}>{provider.statusLabel}</em>
-              </button>
-            ))}
+          <div className="autoTradeSelectGrid">
+            <label className="autoTradeSelectControl">
+              <span>Prop firm</span>
+              <select value={selectedFirm.id} onChange={(event) => setSelectedFirmId(event.target.value)}>
+                {propFirms.map((firm) => (
+                  <option key={firm.id} value={firm.id}>
+                    {firm.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="autoTradeSelectControl">
+              <span>Platform</span>
+              <select value={selectedProvider.id} onChange={(event) => setSelectedProviderId(event.target.value as AutoTradeProviderId)}>
+                {platformOptions.map((provider) => (
+                  <option key={provider.id} value={provider.id}>
+                    {provider.shortLabel}
+                  </option>
+                ))}
+              </select>
+            </label>
           </div>
 
           <div className="autoTradeProviderSummary">
-            <span>{selectedProvider.label}</span>
+            <span>{selectedFirm.label} / {selectedProvider.label}</span>
             <strong>{selectedProvider.coverage}</strong>
             <p>{selectedProvider.description}</p>
           </div>
