@@ -50,11 +50,40 @@ type StrategySelectorProps = {
 
 type SortColumn = "ticker" | "model" | "profitFactor" | "winRate" | "trades" | "target" | "risk" | "rrr" | "size" | "scale" | "enabled";
 type SortDirection = "asc" | "desc";
+type CustomScaleRangeInput = {
+  riskCeiling: string;
+  riskFloor: string;
+  targetCeiling: string;
+  targetFloor: string;
+};
+type CustomScaleDollarRange = {
+  riskCeiling: number;
+  riskFloor: number;
+  targetCeiling: number;
+  targetFloor: number;
+};
+type CustomScaleOutcome = {
+  edit: StrategyEdit;
+  fit: boolean;
+  changed: boolean;
+};
+type CustomScaleResult = {
+  applied: number;
+  closest: number;
+  total: number;
+  unchanged: number;
+};
 
 const STORAGE_KEY = STRATEGY_EDITS_STORAGE_KEY;
 const STRATEGY_SIZES_PARAM = "strategySizes";
 const EDIT_RENDER_DELAY_MS = 2500;
 const SELECTION_SYNC_DELAY_MS = 650;
+const EMPTY_CUSTOM_SCALE_RANGE: CustomScaleRangeInput = {
+  riskCeiling: "",
+  riskFloor: "",
+  targetCeiling: "",
+  targetFloor: ""
+};
 
 function formatMoney(value: number): string {
   return new Intl.NumberFormat("en-US", {
@@ -131,6 +160,10 @@ function displayRiskRewardLabel(strategy: StrategyOption, value: number | undefi
 }
 
 function roundControlValue(value: number): number {
+  return Math.round(value * 100) / 100;
+}
+
+function roundDollars(value: number): number {
   return Math.round(value * 100) / 100;
 }
 
@@ -298,6 +331,63 @@ function scaledEdit(strategy: StrategyOption, edit: StrategyEdit, multiplier: nu
   };
 }
 
+function parseCustomScaleRange(input: CustomScaleRangeInput): { error?: string; range?: CustomScaleDollarRange } {
+  const targetFloor = Number(input.targetFloor);
+  const targetCeiling = Number(input.targetCeiling);
+  const riskFloor = Number(input.riskFloor);
+  const riskCeiling = Number(input.riskCeiling);
+
+  if (![targetFloor, targetCeiling, riskFloor, riskCeiling].every((value) => Number.isFinite(value) && value > 0)) {
+    return { error: "Enter positive dollar values for every range." };
+  }
+
+  if (targetFloor > targetCeiling || riskFloor > riskCeiling) {
+    return { error: "Floors must be less than or equal to ceilings." };
+  }
+
+  return {
+    range: {
+      riskCeiling: roundDollars(riskCeiling),
+      riskFloor: roundDollars(riskFloor),
+      targetCeiling: roundDollars(targetCeiling),
+      targetFloor: roundDollars(targetFloor)
+    }
+  };
+}
+
+function dollarsInRange(value: number, floor: number, ceiling: number): boolean {
+  return value + 0.01 >= floor && value - 0.01 <= ceiling;
+}
+
+function customScaledEdit(strategy: StrategyOption, edit: StrategyEdit, range: CustomScaleDollarRange): CustomScaleOutcome {
+  const normalized = normalizeEdit(strategy, edit);
+  const fallback = defaultEdit(strategy);
+  const targetAtBaseScale = dollarsFromUnits(strategy, normalized.tpUnits, fallback.contracts);
+  const riskAtBaseScale = dollarsFromUnits(strategy, normalized.slUnits, fallback.contracts);
+
+  if (targetAtBaseScale <= 0 || riskAtBaseScale <= 0) {
+    return { edit: normalized, fit: false, changed: false };
+  }
+
+  const lowerScale = Math.max(0.01, range.targetFloor / targetAtBaseScale, range.riskFloor / riskAtBaseScale);
+  const upperScale = Math.min(range.targetCeiling / targetAtBaseScale, range.riskCeiling / riskAtBaseScale);
+  const currentScale = scaleForContracts(strategy, normalized.contracts);
+  const nextScale =
+    lowerScale <= upperScale
+      ? Math.min(Math.max(currentScale, lowerScale), upperScale)
+      : Math.sqrt(Math.max(0.01, lowerScale) * Math.max(0.01, upperScale));
+  const adjusted = editWithContracts(strategy, normalized, contractsForScale(strategy, nextScale));
+  const fit =
+    dollarsInRange(adjusted.targetDollars, range.targetFloor, range.targetCeiling) &&
+    dollarsInRange(adjusted.riskDollars, range.riskFloor, range.riskCeiling);
+
+  return {
+    edit: adjusted,
+    fit,
+    changed: !nearlyEqual(adjusted.contracts, normalized.contracts)
+  };
+}
+
 function strategyMatchesSearch(strategy: StrategyOption, edit: StrategyEdit, query: string): boolean {
   if (!query) return true;
   return [
@@ -344,6 +434,10 @@ export default function StrategySelector({
   const [sortColumn, setSortColumn] = useState<SortColumn | null>(null);
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
   const [optimisticSelectedKeys, setOptimisticSelectedKeys] = useState(selectedKeys);
+  const [isCustomScaleOpen, setIsCustomScaleOpen] = useState(false);
+  const [customScaleRange, setCustomScaleRange] = useState<CustomScaleRangeInput>(EMPTY_CUSTOM_SCALE_RANGE);
+  const [customScaleError, setCustomScaleError] = useState("");
+  const [customScaleResult, setCustomScaleResult] = useState<CustomScaleResult | null>(null);
   const selected = new Set(optimisticSelectedKeys);
   const activeStrategy = strategies.find((strategy) => strategy.key === activeKey);
   const hasEdits = Object.keys(edits).length > 0;
@@ -598,6 +692,69 @@ export default function StrategySelector({
     if (activeStrategy) setDraft((current) => (current ? scaledEdit(activeStrategy, current, multiplier) : current));
   }
 
+  function openCustomScale() {
+    setCustomScaleError("");
+    setCustomScaleResult(null);
+    setIsCustomScaleOpen(true);
+  }
+
+  function closeCustomScale() {
+    setIsCustomScaleOpen(false);
+    setCustomScaleError("");
+    setCustomScaleResult(null);
+  }
+
+  function updateCustomScaleRange(field: keyof CustomScaleRangeInput, value: string) {
+    setCustomScaleRange((current) => ({ ...current, [field]: value }));
+    setCustomScaleError("");
+    setCustomScaleResult(null);
+  }
+
+  function applyCustomScaleRange(range: CustomScaleDollarRange) {
+    const next: StrategyEditMap = { ...edits };
+    const outcomes = new Map<string, CustomScaleOutcome>();
+    let applied = 0;
+    let closest = 0;
+    let unchanged = 0;
+
+    for (const strategy of strategies) {
+      const currentStrategyEdit = edits[strategy.key] ? normalizeEdit(strategy, edits[strategy.key]) : defaultEdit(strategy);
+      const outcome = customScaledEdit(strategy, currentStrategyEdit, range);
+      outcomes.set(strategy.key, outcome);
+
+      if (!outcome.fit) {
+        closest += 1;
+      } else if (outcome.changed) {
+        applied += 1;
+      } else {
+        unchanged += 1;
+      }
+
+      if (isDefaultEdit(strategy, outcome.edit)) {
+        delete next[strategy.key];
+      } else {
+        next[strategy.key] = outcome.edit;
+      }
+    }
+
+    setEdits(next);
+    if (activeStrategy) {
+      const outcome = outcomes.get(activeStrategy.key);
+      if (outcome) setDraft(outcome.edit);
+    }
+    setCustomScaleResult({ applied, closest, total: strategies.length, unchanged });
+  }
+
+  function submitCustomScaleRange() {
+    const parsed = parseCustomScaleRange(customScaleRange);
+    if (!parsed.range) {
+      setCustomScaleError(parsed.error ?? "Custom range could not be applied.");
+      setCustomScaleResult(null);
+      return;
+    }
+    applyCustomScaleRange(parsed.range);
+  }
+
   function updateContracts(value: number) {
     if (!activeStrategy) return;
     setDraft((current) => {
@@ -681,6 +838,9 @@ export default function StrategySelector({
             </button>
             <button type="button" onClick={() => scaleAllContracts(4)}>
               4x
+            </button>
+            <button type="button" onClick={openCustomScale} disabled={editControlsDisabled || strategies.length === 0}>
+              Custom
             </button>
           </div>
         </div>
@@ -877,6 +1037,100 @@ export default function StrategySelector({
                 Reset
               </button>
               <button type="submit">Save</button>
+            </div>
+          </form>
+        </div>
+      ) : null}
+
+      {isCustomScaleOpen ? (
+        <div className="strategyModalBackdrop" role="presentation" onMouseDown={closeCustomScale}>
+          <form
+            className="strategyModal customScaleModal"
+            aria-label="Custom range scale"
+            aria-modal="true"
+            role="dialog"
+            onSubmit={(event) => {
+              event.preventDefault();
+              submitCustomScaleRange();
+            }}
+            onMouseDown={(event) => event.stopPropagation()}
+          >
+            <div className="strategyModalHead">
+              <div>
+                <span>All scale</span>
+                <strong>Custom range</strong>
+              </div>
+              <button type="button" onClick={closeCustomScale}>
+                Close
+              </button>
+            </div>
+
+            <div className="strategyModalGrid">
+              <label className="fieldControl">
+                <span>Take Profit floor $</span>
+                <input
+                  type="number"
+                  min="0.01"
+                  step="0.01"
+                  value={customScaleRange.targetFloor}
+                  onChange={(event) => updateCustomScaleRange("targetFloor", event.target.value)}
+                  autoFocus
+                />
+              </label>
+              <label className="fieldControl">
+                <span>Take Profit ceiling $</span>
+                <input
+                  type="number"
+                  min="0.01"
+                  step="0.01"
+                  value={customScaleRange.targetCeiling}
+                  onChange={(event) => updateCustomScaleRange("targetCeiling", event.target.value)}
+                />
+              </label>
+              <label className="fieldControl">
+                <span>Stop Loss floor $</span>
+                <input
+                  type="number"
+                  min="0.01"
+                  step="0.01"
+                  value={customScaleRange.riskFloor}
+                  onChange={(event) => updateCustomScaleRange("riskFloor", event.target.value)}
+                />
+              </label>
+              <label className="fieldControl">
+                <span>Stop Loss ceiling $</span>
+                <input
+                  type="number"
+                  min="0.01"
+                  step="0.01"
+                  value={customScaleRange.riskCeiling}
+                  onChange={(event) => updateCustomScaleRange("riskCeiling", event.target.value)}
+                />
+              </label>
+            </div>
+
+            {customScaleError ? <div className="customScaleNotice isError">{customScaleError}</div> : null}
+            {customScaleResult ? (
+              <div className={`customScaleNotice${customScaleResult.closest ? " isWarning" : ""}`}>
+                <span>{formatNumber(customScaleResult.applied)} adjusted</span>
+                <span>{formatNumber(customScaleResult.unchanged)} already inside</span>
+                <span>{formatNumber(customScaleResult.closest)} closest fit</span>
+                <span>{formatNumber(customScaleResult.total)} total</span>
+              </div>
+            ) : null}
+
+            <div className="strategyModalActions">
+              <button
+                type="button"
+                onClick={() => {
+                  setCustomScaleRange(EMPTY_CUSTOM_SCALE_RANGE);
+                  setCustomScaleError("");
+                  setCustomScaleResult(null);
+                }}
+              >
+                Clear
+              </button>
+              <button type="submit">Apply</button>
             </div>
           </form>
         </div>
