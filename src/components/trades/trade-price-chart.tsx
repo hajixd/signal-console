@@ -7,13 +7,21 @@ import {
   CrosshairMode,
   LineStyle,
   createChart,
+  createSeriesMarkers,
   type CandlestickData,
   type IChartApi,
+  type IPrimitivePaneRenderer,
+  type IPrimitivePaneView,
+  type ISeriesMarkersPluginApi,
+  type ISeriesPrimitive,
   type ISeriesApi,
-  type Logical,
+  type SeriesAttachedParameter,
+  type SeriesMarker,
+  type Time,
   type UTCTimestamp,
   type WhitespaceData
 } from "lightweight-charts";
+import type { CanvasRenderingTarget2D } from "fancy-canvas";
 
 export type TradeChartBar = {
   index: number;
@@ -55,54 +63,37 @@ type TradeChartTrade = {
 type ChartStatus = "idle" | "loading" | "ready" | "error";
 type ChartTheme = "dark" | "light";
 type ReplaySpeed = 1 | 2 | 4 | 8;
-type ChartLevelTone = "entry" | "green" | "red";
-type ChartLevelTag = {
-  key: "entry" | "exit" | "target" | "stop";
-  label: string;
-  price: number;
-  tone: ChartLevelTone;
-};
-type PositionedChartLevelTag = ChartLevelTag & {
-  y: number;
-};
 type ChartOverlayPoint = {
   x: number;
   y: number;
-};
-type TradeChartOverlay = {
-  entry: ChartOverlayPoint;
-  pathEnd: ChartOverlayPoint | null;
-  exit: ChartOverlayPoint | null;
-  visual: ChartPositionVisual | null;
-};
-type ChartPositionVisual = {
-  x: number;
-  width: number;
-  y1: number;
-  y2: number;
-  entryY: number;
-  targetY: number;
-  stopY: number;
-  profitY: number;
-  profitHeight: number;
-  riskY: number;
-  riskHeight: number;
 };
 type MappedCandle = CandlestickData<UTCTimestamp> & {
   source: TradeChartBar;
 };
 type ReplayChartData = CandlestickData<UTCTimestamp> | WhitespaceData<UTCTimestamp>;
 type CandleSeriesApi = ISeriesApi<"Candlestick">;
+type TradeSeriesMarkersApi = ISeriesMarkersPluginApi<Time>;
 type NumberRange = {
   from: number;
   to: number;
 };
-type OverlayInputs = {
-  chartLevelTags: ChartLevelTag[];
+type TradeVisualTheme = {
+  entryLine: string;
+  targetLine: string;
+  stopLine: string;
+  edgeLine: string;
+  pathLine: string;
+  profitFill: string;
+  profitStroke: string;
+  riskFill: string;
+  riskStroke: string;
+};
+type TradeVisualSnapshot = {
   currentReplayCandle: MappedCandle | null;
   entryCandle: MappedCandle | null;
   exitCandle: MappedCandle | null;
   mappedCandles: MappedCandle[];
+  theme: TradeVisualTheme;
   trade: TradeChartTrade;
 };
 const REPLAY_SPEEDS: ReplaySpeed[] = [1, 2, 4, 8];
@@ -288,6 +279,215 @@ function currentChartTheme(): ChartTheme {
   return document.documentElement.dataset.theme === "light" ? "light" : "dark";
 }
 
+function tradeVisualTheme(isLight: boolean): TradeVisualTheme {
+  return {
+    entryLine: isLight ? "rgba(15, 23, 42, 0.62)" : "rgba(255, 255, 255, 0.78)",
+    targetLine: isLight ? "rgba(22, 163, 74, 0.88)" : "rgba(16, 185, 129, 0.92)",
+    stopLine: isLight ? "rgba(220, 38, 38, 0.86)" : "rgba(244, 63, 94, 0.95)",
+    edgeLine: isLight ? "rgba(15, 23, 42, 0.36)" : "rgba(255, 255, 255, 0.46)",
+    pathLine: isLight ? "rgba(15, 23, 42, 0.72)" : "rgba(255, 255, 255, 0.9)",
+    profitFill: isLight ? "rgba(22, 163, 74, 0.22)" : "rgba(16, 185, 129, 0.26)",
+    profitStroke: isLight ? "rgba(22, 163, 74, 0.4)" : "rgba(16, 185, 129, 0.48)",
+    riskFill: isLight ? "rgba(220, 38, 38, 0.2)" : "rgba(244, 63, 94, 0.28)",
+    riskStroke: isLight ? "rgba(220, 38, 38, 0.38)" : "rgba(244, 63, 94, 0.5)"
+  };
+}
+
+function tradeMarkerList(snapshot: TradeVisualSnapshot | null): SeriesMarker<Time>[] {
+  if (!snapshot || !candleIsRevealed(snapshot.entryCandle, snapshot.currentReplayCandle)) return [];
+
+  const direction = snapshot.trade.side === "long" ? 1 : -1;
+  const exitIsFavorable = (snapshot.trade.exitPrice - snapshot.trade.entryPrice) * direction >= 0;
+  const markers: SeriesMarker<Time>[] = [
+    {
+      color: snapshot.trade.side === "long" ? "#10b981" : "#ef4444",
+      position: "atPriceMiddle",
+      price: snapshot.trade.entryPrice,
+      shape: snapshot.trade.side === "long" ? "arrowUp" : "arrowDown",
+      text: "Entry",
+      time: snapshot.entryCandle.time,
+      size: 1.1
+    }
+  ];
+
+  if (candleIsRevealed(snapshot.exitCandle, snapshot.currentReplayCandle)) {
+    markers.push({
+      color: exitIsFavorable ? "#10b981" : "#ef4444",
+      position: "atPriceMiddle",
+      price: snapshot.trade.exitPrice,
+      shape: snapshot.trade.side === "long" ? "arrowDown" : "arrowUp",
+      text: "Exit",
+      time: snapshot.exitCandle.time,
+      size: 1.1
+    });
+  }
+
+  return markers;
+}
+
+class TradePositionPrimitive implements ISeriesPrimitive<Time> {
+  private readonly zoneView = new TradePositionPaneView(this, "bottom");
+  private readonly pathView = new TradePositionPaneView(this, "top");
+  private chart: IChartApi | null = null;
+  private requestUpdate: (() => void) | null = null;
+  private series: CandleSeriesApi | null = null;
+  private snapshot: TradeVisualSnapshot | null = null;
+
+  attached(param: SeriesAttachedParameter<Time>): void {
+    this.chart = param.chart as IChartApi;
+    this.series = param.series as CandleSeriesApi;
+    this.requestUpdate = param.requestUpdate;
+  }
+
+  detached(): void {
+    this.chart = null;
+    this.requestUpdate = null;
+    this.series = null;
+    this.snapshot = null;
+  }
+
+  paneViews(): readonly IPrimitivePaneView[] {
+    return [this.zoneView, this.pathView];
+  }
+
+  setSnapshot(snapshot: TradeVisualSnapshot | null): void {
+    this.snapshot = snapshot;
+    this.requestUpdate?.();
+  }
+
+  drawZones(target: CanvasRenderingTarget2D): void {
+    const snapshot = this.snapshot;
+    if (!snapshot || !candleIsRevealed(snapshot.entryCandle, snapshot.currentReplayCandle)) return;
+
+    target.useMediaCoordinateSpace(({ context, mediaSize }) => {
+      const coordinates = this.coordinates(mediaSize.width);
+      if (!coordinates) return;
+
+      context.save();
+      context.beginPath();
+      context.rect(0, 0, mediaSize.width, mediaSize.height);
+      context.clip();
+      context.fillStyle = snapshot.theme.profitFill;
+      context.strokeStyle = snapshot.theme.profitStroke;
+      context.lineWidth = 1;
+      context.fillRect(coordinates.visualX, coordinates.profitY, coordinates.visualWidth, coordinates.profitHeight);
+      context.strokeRect(coordinates.visualX, coordinates.profitY, coordinates.visualWidth, coordinates.profitHeight);
+      context.fillStyle = snapshot.theme.riskFill;
+      context.strokeStyle = snapshot.theme.riskStroke;
+      context.fillRect(coordinates.visualX, coordinates.riskY, coordinates.visualWidth, coordinates.riskHeight);
+      context.strokeRect(coordinates.visualX, coordinates.riskY, coordinates.visualWidth, coordinates.riskHeight);
+
+      this.line(context, snapshot.theme.targetLine, coordinates.visualX, coordinates.targetY, coordinates.visualX + coordinates.visualWidth, coordinates.targetY);
+      this.line(context, snapshot.theme.entryLine, coordinates.visualX, coordinates.entryY, coordinates.visualX + coordinates.visualWidth, coordinates.entryY);
+      this.line(context, snapshot.theme.stopLine, coordinates.visualX, coordinates.stopY, coordinates.visualX + coordinates.visualWidth, coordinates.stopY);
+
+      context.setLineDash([4, 4]);
+      this.line(context, snapshot.theme.edgeLine, coordinates.visualX + coordinates.visualWidth, coordinates.y1, coordinates.visualX + coordinates.visualWidth, coordinates.y2);
+      context.restore();
+    });
+  }
+
+  drawPath(target: CanvasRenderingTarget2D): void {
+    const snapshot = this.snapshot;
+    if (!snapshot || !candleIsRevealed(snapshot.entryCandle, snapshot.currentReplayCandle)) return;
+
+    target.useMediaCoordinateSpace(({ context, mediaSize }) => {
+      const coordinates = this.coordinates(mediaSize.width);
+      if (!coordinates || !coordinates.pathEnd) return;
+
+      context.save();
+      context.beginPath();
+      context.rect(0, 0, mediaSize.width, mediaSize.height);
+      context.clip();
+      context.strokeStyle = snapshot.theme.pathLine;
+      context.lineWidth = 2.25;
+      context.lineCap = "round";
+      context.setLineDash([2, 6]);
+      context.beginPath();
+      context.moveTo(coordinates.entry.x, coordinates.entry.y);
+      context.lineTo(coordinates.pathEnd.x, coordinates.pathEnd.y);
+      context.stroke();
+      context.restore();
+    });
+  }
+
+  private coordinates(chartWidth: number) {
+    const snapshot = this.snapshot;
+    const chart = this.chart;
+    const series = this.series;
+    if (!snapshot || !chart || !series) return null;
+
+    const pointFor = (candle: MappedCandle | null, price: number): ChartOverlayPoint | null => {
+      if (!candle || !Number.isFinite(price)) return null;
+      const x = chart.timeScale().timeToCoordinate(candle.time as Time);
+      const y = series.priceToCoordinate(price);
+      if (x == null || y == null) return null;
+      return { x: Number(x), y: Number(y) };
+    };
+
+    const entry = pointFor(snapshot.entryCandle, snapshot.trade.entryPrice);
+    const targetY = series.priceToCoordinate(snapshot.trade.targetPrice);
+    const stopY = series.priceToCoordinate(snapshot.trade.stopPrice);
+    const entryY = series.priceToCoordinate(snapshot.trade.entryPrice);
+    if (!entry || targetY == null || stopY == null || entryY == null) return null;
+
+    const exitRevealed = candleIsRevealed(snapshot.exitCandle, snapshot.currentReplayCandle);
+    const pathEndCandle = exitRevealed ? snapshot.exitCandle : snapshot.currentReplayCandle;
+    const pathEndPrice = exitRevealed ? snapshot.trade.exitPrice : snapshot.currentReplayCandle?.close;
+    const pathEnd = pathEndPrice == null ? null : pointFor(pathEndCandle, pathEndPrice);
+    const visualEndX = pathEnd?.x ?? entry.x;
+    const minimumVisualWidth = Math.min(180, Math.max(72, chartWidth * 0.16));
+    const visualWidth = Math.max(minimumVisualWidth, visualEndX - entry.x);
+    const visualX = clamp(entry.x, 0, Math.max(0, chartWidth - visualWidth));
+
+    return {
+      entry,
+      pathEnd:
+        pathEnd && (Math.abs(pathEnd.x - entry.x) > 2 || Math.abs(pathEnd.y - entry.y) > 2)
+          ? pathEnd
+          : null,
+      visualX,
+      visualWidth: clamp(visualWidth, 6, Math.max(6, chartWidth - visualX)),
+      y1: Math.min(Number(targetY), Number(stopY), Number(entryY)),
+      y2: Math.max(Number(targetY), Number(stopY), Number(entryY)),
+      entryY: Number(entryY),
+      targetY: Number(targetY),
+      stopY: Number(stopY),
+      profitY: Math.min(Number(entryY), Number(targetY)),
+      profitHeight: Math.abs(Number(entryY) - Number(targetY)),
+      riskY: Math.min(Number(entryY), Number(stopY)),
+      riskHeight: Math.abs(Number(entryY) - Number(stopY))
+    };
+  }
+
+  private line(context: CanvasRenderingContext2D, color: string, x1: number, y1: number, x2: number, y2: number): void {
+    context.strokeStyle = color;
+    context.lineWidth = 1.5;
+    context.lineCap = "square";
+    context.beginPath();
+    context.moveTo(x1, y1);
+    context.lineTo(x2, y2);
+    context.stroke();
+  }
+}
+
+class TradePositionPaneView implements IPrimitivePaneView {
+  constructor(
+    private readonly primitive: TradePositionPrimitive,
+    private readonly layer: "bottom" | "top"
+  ) {}
+
+  zOrder(): "bottom" | "top" {
+    return this.layer;
+  }
+
+  renderer(): IPrimitivePaneRenderer {
+    return this.layer === "bottom"
+      ? { draw: (target) => this.primitive.drawZones(target) }
+      : { draw: (target) => this.primitive.drawPath(target) };
+  }
+}
+
 export default function TradePriceChart({
   trade,
   bars,
@@ -305,9 +505,9 @@ export default function TradePriceChart({
 }) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const chartRef = useRef<IChartApi | null>(null);
+  const markersRef = useRef<TradeSeriesMarkersApi | null>(null);
   const seriesRef = useRef<CandleSeriesApi | null>(null);
-  const overlayInputsRef = useRef<OverlayInputs | null>(null);
-  const scheduleOverlayUpdateRef = useRef<(() => void) | null>(null);
+  const visualPrimitiveRef = useRef<TradePositionPrimitive | null>(null);
   const lockedLogicalRangeRef = useRef<NumberRange | null>(null);
   const lockedPriceRangeRef = useRef<NumberRange | null>(null);
   const rangeReadyRef = useRef(false);
@@ -316,8 +516,6 @@ export default function TradePriceChart({
   const [isPlaying, setIsPlaying] = useState(false);
   const [replayPosition, setReplayPosition] = useState(0);
   const [replaySpeed, setReplaySpeed] = useState<ReplaySpeed>(2);
-  const [tradeOverlay, setTradeOverlay] = useState<TradeChartOverlay | null>(null);
-  const [positionedLevelTags, setPositionedLevelTags] = useState<PositionedChartLevelTag[]>([]);
   const mappedCandles = useMemo(
     () =>
       bars
@@ -378,37 +576,6 @@ export default function TradePriceChart({
   const change = displayBar ? displayBar.close - displayBar.open : 0;
   const changePct = displayBar && displayBar.open !== 0 ? (change / displayBar.open) * 100 : 0;
   const up = change >= 0;
-  const isLong = trade.side === "long";
-  const exitLevelTone: ChartLevelTone = isLong ? "red" : "green";
-  const chartLevelTags = useMemo<ChartLevelTag[]>(
-    () => [
-      {
-        key: "target",
-        label: "TP",
-        price: trade.targetPrice,
-        tone: "green"
-      },
-      {
-        key: "exit",
-        label: "Exit",
-        price: trade.exitPrice,
-        tone: exitLevelTone
-      },
-      {
-        key: "entry",
-        label: "Entry",
-        price: trade.entryPrice,
-        tone: "entry"
-      },
-      {
-        key: "stop",
-        label: "SL",
-        price: trade.stopPrice,
-        tone: "red"
-      }
-    ],
-    [exitLevelTone, trade.entryPrice, trade.exitPrice, trade.stopPrice, trade.targetPrice]
-  );
   const timeframeControls = (
     <div className="tradeTimeframeButtons" aria-label="Chart timeframe">
       {timeframes.map((option) => (
@@ -454,30 +621,6 @@ export default function TradePriceChart({
 
     return () => window.clearTimeout(timer);
   }, [clampedReplayPosition, isPlaying, maxReplayPosition, replaySpeed]);
-
-  useEffect(() => {
-    overlayInputsRef.current = {
-      chartLevelTags,
-      currentReplayCandle,
-      entryCandle,
-      exitCandle,
-      mappedCandles,
-      trade
-    };
-    scheduleOverlayUpdateRef.current?.();
-  }, [
-    chartLevelTags,
-    currentReplayCandle,
-    entryCandle,
-    exitCandle,
-    mappedCandles,
-    trade,
-    trade.entryPrice,
-    trade.exitPrice,
-    trade.side,
-    trade.stopPrice,
-    trade.targetPrice
-  ]);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -577,12 +720,21 @@ export default function TradePriceChart({
     chartRef.current = chart;
     seriesRef.current = series;
     series.setData(candleData);
+    const visualPrimitive = new TradePositionPrimitive();
+    series.attachPrimitive(visualPrimitive);
+    visualPrimitiveRef.current = visualPrimitive;
+    const markers = createSeriesMarkers(series, [], {
+      autoScale: false,
+      zOrder: "aboveSeries"
+    });
+    markersRef.current = markers;
+
     series.createPriceLine({
       price: trade.entryPrice,
       color: entryLineColor,
       lineWidth: 2,
       lineStyle: LineStyle.Solid,
-      axisLabelVisible: false,
+      axisLabelVisible: true,
       axisLabelColor: entryTagColor,
       axisLabelTextColor: entryTagTextColor,
       title: `Entry ${formatChartPrice(trade.entryPrice)}`
@@ -592,7 +744,7 @@ export default function TradePriceChart({
       color: trade.side === "long" ? downSoftColor : upSoftColor,
       lineWidth: 1,
       lineStyle: LineStyle.Dashed,
-      axisLabelVisible: false,
+      axisLabelVisible: true,
       axisLabelColor: trade.side === "long" ? redTagColor : greenTagColor,
       axisLabelTextColor: lightTagTextColor,
       title: `Exit ${formatChartPrice(trade.exitPrice)}`
@@ -602,7 +754,7 @@ export default function TradePriceChart({
       color: upSoftColor,
       lineWidth: 1,
       lineStyle: LineStyle.Dashed,
-      axisLabelVisible: false,
+      axisLabelVisible: true,
       axisLabelColor: greenTagColor,
       axisLabelTextColor: lightTagTextColor,
       title: `TP ${formatChartPrice(trade.targetPrice)}`
@@ -612,7 +764,7 @@ export default function TradePriceChart({
       color: downSoftColor,
       lineWidth: 1,
       lineStyle: LineStyle.Dashed,
-      axisLabelVisible: false,
+      axisLabelVisible: true,
       axisLabelColor: redTagColor,
       axisLabelTextColor: lightTagTextColor,
       title: `SL ${formatChartPrice(trade.stopPrice)}`
@@ -635,117 +787,7 @@ export default function TradePriceChart({
       chart.timeScale().setVisibleLogicalRange(logicalRange);
       if (priceRange) series.priceScale().setVisibleRange(priceRange);
       rangeReadyRef.current = true;
-      scheduleOverlayUpdateRef.current?.();
     });
-
-    const pointFor = (candles: MappedCandle[], candle: MappedCandle | null, price: number): ChartOverlayPoint | null => {
-      if (!candle || !Number.isFinite(price)) return null;
-      const x = chart.timeScale().logicalToCoordinate(candleIndex(candles, candle) as Logical);
-      const y = series.priceToCoordinate(price);
-      if (x == null || y == null) return null;
-      return { x: Number(x), y: Number(y) };
-    };
-
-    const updateTradeOverlay = () => {
-      const inputs = overlayInputsRef.current;
-      if (!inputs) return;
-
-      const chartHeight = Math.max(1, container.clientHeight || 318);
-      const chartWidth = Math.max(1, container.clientWidth || 1);
-      const minLevelTagGap = 20;
-      const nextLevelTags = inputs.chartLevelTags
-        .map((tag) => {
-          const y = series.priceToCoordinate(tag.price);
-          if (y == null) return null;
-          return {
-            ...tag,
-            y: clamp(Number(y), 12, chartHeight - 12)
-          };
-        })
-        .filter((tag): tag is PositionedChartLevelTag => Boolean(tag))
-        .sort((left, right) => left.y - right.y);
-
-      for (let index = 1; index < nextLevelTags.length; index += 1) {
-        const previous = nextLevelTags[index - 1]!;
-        const current = nextLevelTags[index]!;
-        if (current.y - previous.y < minLevelTagGap) current.y = previous.y + minLevelTagGap;
-      }
-
-      const levelTagOverflow = (nextLevelTags.at(-1)?.y ?? 0) - (chartHeight - 12);
-      if (levelTagOverflow > 0) {
-        for (const tag of nextLevelTags) tag.y -= levelTagOverflow;
-      }
-
-      for (let index = nextLevelTags.length - 2; index >= 0; index -= 1) {
-        const next = nextLevelTags[index + 1]!;
-        const current = nextLevelTags[index]!;
-        if (next.y - current.y < minLevelTagGap) current.y = next.y - minLevelTagGap;
-        current.y = clamp(current.y, 12, chartHeight - 12);
-      }
-
-      setPositionedLevelTags(nextLevelTags);
-
-      if (!candleIsRevealed(inputs.entryCandle, inputs.currentReplayCandle)) {
-        setTradeOverlay(null);
-        return;
-      }
-
-      const entry = pointFor(inputs.mappedCandles, inputs.entryCandle, inputs.trade.entryPrice);
-      if (!entry) {
-        setTradeOverlay(null);
-        return;
-      }
-
-      const exitRevealed = candleIsRevealed(inputs.exitCandle, inputs.currentReplayCandle);
-      const pathEndCandle = exitRevealed ? inputs.exitCandle : inputs.currentReplayCandle;
-      const pathEndPrice = exitRevealed ? inputs.trade.exitPrice : inputs.currentReplayCandle?.close;
-      const pathEnd = pathEndPrice == null ? null : pointFor(inputs.mappedCandles, pathEndCandle, pathEndPrice);
-      const exit = exitRevealed ? pointFor(inputs.mappedCandles, inputs.exitCandle, inputs.trade.exitPrice) : null;
-
-      const targetY = series.priceToCoordinate(inputs.trade.targetPrice);
-      const stopY = series.priceToCoordinate(inputs.trade.stopPrice);
-      const entryY = series.priceToCoordinate(inputs.trade.entryPrice);
-      const visualEndX = exit?.x ?? pathEnd?.x ?? entry.x;
-      const minimumVisualWidth = Math.min(180, Math.max(72, chartWidth * 0.16));
-      const visualWidth = Math.max(minimumVisualWidth, visualEndX - entry.x);
-      const visualX = clamp(entry.x, 0, Math.max(0, chartWidth - visualWidth));
-      const visual =
-        targetY == null || stopY == null || entryY == null
-          ? null
-          : {
-              x: visualX,
-              width: clamp(visualWidth, 6, Math.max(6, chartWidth - visualX)),
-              y1: Math.min(Number(targetY), Number(stopY), Number(entryY)),
-              y2: Math.max(Number(targetY), Number(stopY), Number(entryY)),
-              entryY: Number(entryY),
-              targetY: Number(targetY),
-              stopY: Number(stopY),
-              profitY: Math.min(Number(entryY), Number(targetY)),
-              profitHeight: Math.abs(Number(entryY) - Number(targetY)),
-              riskY: Math.min(Number(entryY), Number(stopY)),
-              riskHeight: Math.abs(Number(entryY) - Number(stopY))
-            };
-
-      setTradeOverlay({
-        entry,
-        pathEnd:
-          pathEnd && (Math.abs(pathEnd.x - entry.x) > 2 || Math.abs(pathEnd.y - entry.y) > 2)
-            ? pathEnd
-            : null,
-        exit,
-        visual
-      });
-    };
-
-    let overlayAnimationFrame = window.requestAnimationFrame(updateTradeOverlay);
-    const scheduleTradeOverlayUpdate = () => {
-      window.cancelAnimationFrame(overlayAnimationFrame);
-      overlayAnimationFrame = window.requestAnimationFrame(updateTradeOverlay);
-    };
-    scheduleOverlayUpdateRef.current = scheduleTradeOverlayUpdate;
-    const resizeObserver = new ResizeObserver(scheduleTradeOverlayUpdate);
-    resizeObserver.observe(container);
-    chart.timeScale().subscribeVisibleLogicalRangeChange(scheduleTradeOverlayUpdate);
 
     const handleCrosshairMove = (param: { time?: unknown }) => {
       if (typeof param.time !== "number") return;
@@ -757,14 +799,14 @@ export default function TradePriceChart({
 
     return () => {
       chart.unsubscribeCrosshairMove(handleCrosshairMove);
-      chart.timeScale().unsubscribeVisibleLogicalRangeChange(scheduleTradeOverlayUpdate);
-      resizeObserver.disconnect();
       window.cancelAnimationFrame(rangeAnimationFrame);
-      window.cancelAnimationFrame(overlayAnimationFrame);
+      markers.detach();
+      series.detachPrimitive(visualPrimitive);
       chart.remove();
       chartRef.current = null;
+      markersRef.current = null;
       seriesRef.current = null;
-      scheduleOverlayUpdateRef.current = null;
+      visualPrimitiveRef.current = null;
       lockedLogicalRangeRef.current = null;
       lockedPriceRangeRef.current = null;
       rangeReadyRef.current = false;
@@ -785,8 +827,10 @@ export default function TradePriceChart({
 
   useEffect(() => {
     const chart = chartRef.current;
+    const markers = markersRef.current;
     const series = seriesRef.current;
-    if (!chart || !series) return;
+    const visualPrimitive = visualPrimitiveRef.current;
+    if (!chart || !markers || !series || !visualPrimitive) return;
 
     const rangeReady = rangeReadyRef.current;
     const currentLogicalRange = rangeReady ? chart.timeScale().getVisibleLogicalRange() : null;
@@ -799,8 +843,17 @@ export default function TradePriceChart({
     if (lockedPriceRange) series.priceScale().setVisibleRange(lockedPriceRange);
     if (lockedLogicalRange) chart.timeScale().setVisibleLogicalRange(lockedLogicalRange);
 
-    scheduleOverlayUpdateRef.current?.();
-  }, [candleData]);
+    const snapshot: TradeVisualSnapshot = {
+      currentReplayCandle,
+      entryCandle,
+      exitCandle,
+      mappedCandles,
+      theme: tradeVisualTheme(chartTheme === "light"),
+      trade
+    };
+    visualPrimitive.setSnapshot(snapshot);
+    markers.setMarkers(tradeMarkerList(snapshot));
+  }, [candleData, chartTheme, currentReplayCandle, entryCandle, exitCandle, mappedCandles, trade]);
 
   function togglePlayback() {
     if (isPlaying) {
@@ -908,121 +961,6 @@ export default function TradePriceChart({
             Change <strong>{formatChartPrice(change)} / {formatPct(changePct)}</strong>
           </span>
         </div>
-        {positionedLevelTags.length ? (
-          <div className="tradeChartPriceTags" aria-label="Trade price levels">
-            {positionedLevelTags.map((tag) => (
-              <span
-                className={`tradeChartPriceTag ${tag.tone}`}
-                key={tag.key}
-                style={{ top: tag.y }}
-              >
-                <span>{tag.label}</span>
-                <strong>{formatChartPrice(tag.price)}</strong>
-              </span>
-            ))}
-          </div>
-        ) : null}
-        {tradeOverlay ? (
-          <svg className="tradeChartTradeOverlay" aria-hidden="true">
-            {tradeOverlay.visual ? (
-              <g className="tradeChartPositionVisual">
-                <rect
-                  className="tradeChartProfitZone"
-                  x={tradeOverlay.visual.x}
-                  y={tradeOverlay.visual.profitY}
-                  width={tradeOverlay.visual.width}
-                  height={tradeOverlay.visual.profitHeight}
-                />
-                <rect
-                  className="tradeChartRiskZone"
-                  x={tradeOverlay.visual.x}
-                  y={tradeOverlay.visual.riskY}
-                  width={tradeOverlay.visual.width}
-                  height={tradeOverlay.visual.riskHeight}
-                />
-                <line
-                  className="tradeChartTargetLine"
-                  x1={tradeOverlay.visual.x}
-                  y1={tradeOverlay.visual.targetY}
-                  x2={tradeOverlay.visual.x + tradeOverlay.visual.width}
-                  y2={tradeOverlay.visual.targetY}
-                />
-                <line
-                  className="tradeChartEntryLine"
-                  x1={tradeOverlay.visual.x}
-                  y1={tradeOverlay.visual.entryY}
-                  x2={tradeOverlay.visual.x + tradeOverlay.visual.width}
-                  y2={tradeOverlay.visual.entryY}
-                />
-                <line
-                  className="tradeChartStopLine"
-                  x1={tradeOverlay.visual.x}
-                  y1={tradeOverlay.visual.stopY}
-                  x2={tradeOverlay.visual.x + tradeOverlay.visual.width}
-                  y2={tradeOverlay.visual.stopY}
-                />
-                <line
-                  className="tradeChartPositionEdge"
-                  x1={tradeOverlay.visual.x + tradeOverlay.visual.width}
-                  y1={tradeOverlay.visual.y1}
-                  x2={tradeOverlay.visual.x + tradeOverlay.visual.width}
-                  y2={tradeOverlay.visual.y2}
-                />
-              </g>
-            ) : null}
-            {tradeOverlay.pathEnd ? (
-              <line
-                className={`tradeChartTradePath ${exitLevelTone}`}
-                x1={tradeOverlay.entry.x}
-                y1={tradeOverlay.entry.y}
-                x2={tradeOverlay.pathEnd.x}
-                y2={tradeOverlay.pathEnd.y}
-              />
-            ) : null}
-            <polygon
-              className={`tradeChartEntryMarker ${isLong ? "long" : "short"}`}
-              points={
-                isLong
-                  ? `${tradeOverlay.entry.x},${tradeOverlay.entry.y - 8} ${tradeOverlay.entry.x - 6},${tradeOverlay.entry.y + 5} ${tradeOverlay.entry.x + 6},${tradeOverlay.entry.y + 5}`
-                  : `${tradeOverlay.entry.x},${tradeOverlay.entry.y + 8} ${tradeOverlay.entry.x - 6},${tradeOverlay.entry.y - 5} ${tradeOverlay.entry.x + 6},${tradeOverlay.entry.y - 5}`
-              }
-            />
-            <text
-              className="tradeChartMarkerText entry"
-              x={tradeOverlay.entry.x}
-              y={tradeOverlay.entry.y + (isLong ? 22 : -14)}
-              textAnchor="middle"
-            >
-              Entry
-            </text>
-            {tradeOverlay.exit ? (
-              <>
-                <line
-                  className={`tradeChartExitMarker ${exitLevelTone}`}
-                  x1={tradeOverlay.exit.x - 5}
-                  y1={tradeOverlay.exit.y - 5}
-                  x2={tradeOverlay.exit.x + 5}
-                  y2={tradeOverlay.exit.y + 5}
-                />
-                <line
-                  className={`tradeChartExitMarker ${exitLevelTone}`}
-                  x1={tradeOverlay.exit.x + 5}
-                  y1={tradeOverlay.exit.y - 5}
-                  x2={tradeOverlay.exit.x - 5}
-                  y2={tradeOverlay.exit.y + 5}
-                />
-                <text
-                  className={`tradeChartMarkerText exit ${exitLevelTone}`}
-                  x={tradeOverlay.exit.x}
-                  y={tradeOverlay.exit.y + (isLong ? -12 : 22)}
-                  textAnchor="middle"
-                >
-                  Exit
-                </text>
-              </>
-            ) : null}
-          </svg>
-        ) : null}
         <div ref={containerRef} className="tradePriceChart" aria-label={`${trade.symbol} TradingView Lightweight candlestick chart`} />
       </div>
       {replayControls}
