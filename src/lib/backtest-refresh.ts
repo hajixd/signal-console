@@ -2,6 +2,9 @@ import { getBacktestCatalogFreshness } from "@/lib/backtest";
 
 const WORKFLOW_FILE = "refresh-backtests.yml";
 const DEFAULT_MAX_AGE_HOURS = 12;
+const DISPATCH_THROTTLE_MS = 60 * 60 * 1000;
+
+let lastStaleDispatchAt = 0;
 
 type RefreshDispatchResult = {
   body: Record<string, unknown>;
@@ -97,5 +100,17 @@ export async function ensureBacktestHistoryFresh(): Promise<RefreshDispatchResul
   const stale = !generatedAt || Date.now() - generatedAt > maxRefreshAgeMs();
 
   if (!stale) return null;
+  if (Date.now() - lastStaleDispatchAt < DISPATCH_THROTTLE_MS) {
+    return {
+      ok: true,
+      status: 202,
+      body: {
+        dispatched: false,
+        reason: "stale-backtest-manifest",
+        skipped: "Recent refresh dispatch already requested"
+      }
+    };
+  }
+  lastStaleDispatchAt = Date.now();
   return dispatchBacktestRefresh("stale-backtest-manifest");
 }

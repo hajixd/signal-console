@@ -1,6 +1,9 @@
 import type { TradeAlert } from "./types";
 import { dollarPerUnit, instrumentSizeLabel } from "./instruments";
 
+const TELEGRAM_MAX_TEXT_LENGTH = 3900;
+const TELEGRAM_SEND_TIMEOUT_MS = 10_000;
+
 function formatPrice(value: number): string {
   return new Intl.NumberFormat("en-US", {
     maximumFractionDigits: 5
@@ -27,7 +30,13 @@ function escapeHtml(value: string): string {
   return value
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;");
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+function truncate(value: string, maxLength: number): string {
+  if (value.length <= maxLength) return value;
+  return `${value.slice(0, Math.max(0, maxLength - 3))}...`;
 }
 
 function formatSignalTime(value: string): string {
@@ -37,12 +46,25 @@ function formatSignalTime(value: string): string {
     year: "numeric",
     hour: "numeric",
     minute: "2-digit",
+    timeZone: "UTC",
     timeZoneName: "short"
   }).format(new Date(value));
 }
 
 function autoTradeLine(trade: TradeAlert): string {
   if (!trade.autoTradeStatus) return "";
+  if (trade.autoTradeOrders?.length) {
+    const placed = trade.autoTradeOrders.filter((order) => order.status === "placed").length;
+    const dryRuns = trade.autoTradeOrders.filter((order) => order.status === "dry_run").length;
+    const failed = trade.autoTradeOrders.filter((order) => order.status === "failed").length;
+    const accountLabel = trade.autoTradeOrders
+      .map((order) => order.accountName ?? String(order.accountId))
+      .slice(0, 3)
+      .join(", ");
+    const suffix = trade.autoTradeOrders.length > 3 ? ` +${trade.autoTradeOrders.length - 3}` : "";
+    const status = dryRuns ? `${dryRuns} dry run` : placed ? `${placed} placed${failed ? ` / ${failed} failed` : ""}` : `${failed} failed`;
+    return `ProjectX: ${status} on ${accountLabel}${suffix} (${trade.autoTradeContractName ?? trade.autoTradeContractId ?? trade.symbol})`;
+  }
   if (trade.autoTradeStatus === "placed") {
     return `ProjectX: order ${trade.autoTradeOrderId ?? "placed"} on ${trade.autoTradeAccountName ?? trade.autoTradeAccountId ?? "account"} (${trade.autoTradeContractName ?? trade.autoTradeContractId ?? trade.symbol})`;
   }
@@ -50,6 +72,11 @@ function autoTradeLine(trade: TradeAlert): string {
     return `ProjectX: dry run for ${trade.autoTradeAccountName ?? trade.autoTradeAccountId ?? "account"} (${trade.autoTradeContractName ?? trade.autoTradeContractId ?? trade.symbol})`;
   }
   return `ProjectX: ${trade.autoTradeStatus}${trade.autoTradeError ? ` - ${trade.autoTradeError}` : ""}`;
+}
+
+function fitTelegramMessage(text: string): string {
+  if (text.length <= TELEGRAM_MAX_TEXT_LENGTH) return text;
+  return `${text.slice(0, TELEGRAM_MAX_TEXT_LENGTH - 24)}\n\n[message truncated]`;
 }
 
 export function formatTelegramMessage(trade: TradeAlert): string {
@@ -60,22 +87,33 @@ export function formatTelegramMessage(trade: TradeAlert): string {
   const rewardRisk = riskDollars > 0 ? targetDollars / riskDollars : 0;
   const executionModes = [trade.entryType, trade.tpMode, trade.slMode, trade.sizeMode].filter(Boolean).join(" / ");
   const side = trade.side === "long" ? "BUY" : "SELL";
+  const autoTrade = autoTradeLine(trade);
   const lines = [
-    `<b>${escapeHtml(trade.symbol)} ${side} signal</b>`,
-    escapeHtml(trade.strategy),
+    `<b>Signal</b>`,
+    `${escapeHtml(trade.symbol)} ${side} | ${escapeHtml(truncate(trade.strategy, 120))}`,
     "",
-    `<b>Entry</b>: ${formatPrice(trade.entryPrice)} (${escapeHtml(trade.entryMode)})`,
-    `<b>Take Profit</b>: ${formatPrice(trade.takeProfitPrice)} / ${formatMoney(targetDollars)}`,
-    `<b>Stop Loss</b>: ${formatPrice(trade.stopLossPrice)} / ${formatMoney(riskDollars)}`,
-    `<b>Size</b>: ${escapeHtml(instrumentSizeLabel(trade.symbol, sizeMultiplier))}`,
-    `<b>Stats</b>: ${formatNumber(trade.estimatedWinRatePct, 1)}% win odds / PF ${formatNumber(trade.liveProfitFactor)} / R:R ${formatNumber(rewardRisk)}`,
-    executionModes ? `<b>Modes</b>: ${escapeHtml(executionModes)}` : "",
-    autoTradeLine(trade) ? `<b>${escapeHtml(autoTradeLine(trade))}</b>` : "",
-    trade.notes ? `<b>Risk note</b>: ${escapeHtml(trade.notes)}` : "",
-    `<b>Signal candle</b>: ${escapeHtml(formatSignalTime(trade.signalTime))}`,
+    `<b>Plan</b>`,
+    `Entry: ${formatPrice(trade.entryPrice)} (${escapeHtml(trade.entryMode)})`,
+    `Take profit: ${formatPrice(trade.takeProfitPrice)} / ${formatMoney(targetDollars)}`,
+    `Stop loss: ${formatPrice(trade.stopLossPrice)} / ${formatMoney(riskDollars)}`,
+    `Size: ${escapeHtml(instrumentSizeLabel(trade.symbol, sizeMultiplier))}`,
+    "",
+    `<b>Stats</b>`,
+    `Win odds: ${formatNumber(trade.estimatedWinRatePct, 1)}%`,
+    `Profit factor: ${formatNumber(trade.liveProfitFactor)}`,
+    `Reward/risk: ${formatNumber(rewardRisk)}R`,
+    executionModes ? `Modes: ${escapeHtml(executionModes)}` : "",
+    "",
+    `<b>Execution</b>`,
+    autoTrade ? escapeHtml(autoTrade) : "ProjectX: not attempted",
+    trade.autoTradeError ? `ProjectX note: ${escapeHtml(truncate(trade.autoTradeError, 180))}` : "",
+    trade.notes ? `Risk note: ${escapeHtml(truncate(trade.notes, 300))}` : "",
+    "",
+    `<b>Meta</b>`,
+    `Signal candle: ${escapeHtml(formatSignalTime(trade.signalTime))}`,
     `<code>${escapeHtml(trade.id)}</code>`
   ].filter(Boolean);
-  return lines.join("\n");
+  return fitTelegramMessage(lines.join("\n"));
 }
 
 export function telegramConfigured(): boolean {
@@ -91,21 +129,30 @@ export async function sendTelegramText(text: string): Promise<{ status: "sent" |
   const chatId = telegramChatId();
   if (!token || !chatId) return { status: "skipped" };
 
-  const response = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      chat_id: chatId,
-      text,
-      disable_web_page_preview: true,
-      parse_mode: "HTML"
-    })
-  });
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), TELEGRAM_SEND_TIMEOUT_MS);
+  try {
+    const response = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      signal: controller.signal,
+      body: JSON.stringify({
+        chat_id: chatId,
+        text: fitTelegramMessage(text),
+        disable_web_page_preview: true,
+        parse_mode: "HTML"
+      })
+    });
 
-  if (!response.ok) {
-    return { status: "failed", error: `${response.status}: ${(await response.text()).slice(0, 240)}` };
+    if (!response.ok) {
+      return { status: "failed", error: `${response.status}: ${(await response.text()).slice(0, 240)}` };
+    }
+    return { status: "sent" };
+  } catch (error) {
+    return { status: "failed", error: error instanceof Error ? error.message : "Telegram request failed" };
+  } finally {
+    clearTimeout(timeout);
   }
-  return { status: "sent" };
 }
 
 export async function sendTelegram(trade: TradeAlert): Promise<{ status: "sent" | "skipped" | "failed"; error?: string }> {

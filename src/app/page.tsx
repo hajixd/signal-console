@@ -31,6 +31,7 @@ import type { TradeAlert } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 const DEFAULT_SELECTED_STRATEGY_COUNT = 1;
+const HISTORY_VISIBLE_TRADE_LIMIT = 500;
 const EMPTY_LIVE_CONFIG: LiveConfig = {
   dashboardSelectedDatasetIds: [],
   enabledDatasetIds: [],
@@ -199,7 +200,7 @@ function marketTabHref(tab: MarketTabKey, params: Awaited<HomeProps["searchParam
   const nextParams = new URLSearchParams();
   nextParams.set("market", tab);
 
-  for (const key of ["strategies", "accountSize", "profitTarget", "maxLoss", "dailyLoss", "dailyLock", "dailyStop"] as const) {
+  for (const key of ["accountSize", "profitTarget", "maxLoss", "dailyLoss", "dailyLock", "dailyStop"] as const) {
     const value = params?.[key];
     if (value) nextParams.set(key, value);
   }
@@ -569,6 +570,7 @@ export default async function Home({ searchParams }: HomeProps) {
   );
   const selectedBacktestTrades = backtestTrades.filter((trade) => selectedKeySet.has(trade.datasetId));
   const activeMarketBacktestTrades = backtestTrades.filter((trade) => activeMarketKeySet.has(trade.datasetId));
+  const visibleBacktestHistoryTrades = activeMarketBacktestTrades.slice(0, HISTORY_VISIBLE_TRADE_LIMIT);
   const selectedDataEndAt =
     strategyOptions
       .filter((option) => selectedKeySet.has(option.key))
@@ -581,7 +583,7 @@ export default async function Home({ searchParams }: HomeProps) {
     basePnlDollars: tradeDollarPnl(trade, optionByKey.get(trade.datasetId)?.sizeMultiplier ?? 1),
     rMultiple: trade.rMultiple
   }));
-  const tradeHistoryRows: TradeHistoryRow[] = activeMarketBacktestTrades.map((trade, index) => {
+  const tradeHistoryRows: TradeHistoryRow[] = visibleBacktestHistoryTrades.map((trade, index) => {
     const sizeMultiplier = optionByKey.get(trade.datasetId)?.sizeMultiplier ?? 1;
     const tradeMultiplier = tradeSizeMultiplier(trade, sizeMultiplier);
     const dollarPnl = tradeDollarPnl(trade, sizeMultiplier);
@@ -641,6 +643,11 @@ export default async function Home({ searchParams }: HomeProps) {
     };
   });
   const visibleTradeHistoryRows = tradeHistoryRows;
+  const hiddenHistoryTradeCount = Math.max(0, activeMarketBacktestTrades.length - visibleTradeHistoryRows.length);
+  const historyCountLabel =
+    hiddenHistoryTradeCount > 0
+      ? `Showing latest ${fmtNumber(visibleTradeHistoryRows.length)} of ${fmtNumber(activeMarketBacktestTrades.length)} trades`
+      : `Showing ${fmtNumber(visibleTradeHistoryRows.length)} trades`;
   const challengeReplayTrades = selectedBacktestTrades.map((trade) => ({
       key: trade.datasetId,
       entryTime: trade.entryTime,
@@ -665,7 +672,7 @@ export default async function Home({ searchParams }: HomeProps) {
               className={`market-tab${activeMarket === tab.key ? " active" : ""}`}
               href={marketTabHref(tab.key, params)}
               key={tab.key}
-              prefetch
+              prefetch={false}
             >
               {tab.label}
             </Link>
@@ -867,7 +874,7 @@ export default async function Home({ searchParams }: HomeProps) {
               <h2>Backtest History</h2>
               <p>Trade-by-trade dollar history for every stored backtest trade in the active market.</p>
             </div>
-            <span className="count-pill">Showing {fmtNumber(visibleTradeHistoryRows.length)} trades</span>
+            <span className="count-pill">{historyCountLabel}</span>
           </div>
 
           {activeMarketBacktestTrades.length === 0 ? (

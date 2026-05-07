@@ -118,6 +118,7 @@ async function runSignalCheck(): Promise<CronResult> {
       autoTradeCustomTag: autoTrade.customTag,
       autoTradeError: autoTrade.error,
       autoTradeOrderId: autoTrade.orderId,
+      autoTradeOrders: autoTrade.orders,
       autoTradeStatus: autoTrade.status
     };
     await saveTrade(executableSignal);

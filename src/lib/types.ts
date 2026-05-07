@@ -6,6 +6,18 @@ export type EntryType = "market" | "limit";
 export type BacktestPriceMode = "fixed" | "custom";
 export type BacktestSizeMode = "auto" | "custom";
 
+export type AutoTradeOrderSummary = {
+  accountId: number;
+  accountName?: string;
+  contractId?: string;
+  contractName?: string;
+  customTag?: string;
+  error?: string;
+  orderId?: number;
+  size?: number;
+  status: "dry_run" | "failed" | "placed";
+};
+
 export type StopLossPolicy = {
   mode: "signal_extreme" | "prior_day_extreme";
   bufferUnits?: number;
@@ -100,6 +112,7 @@ export type TradeAlert = {
   autoTradeCustomTag?: string;
   autoTradeError?: string;
   autoTradeOrderId?: number;
+  autoTradeOrders?: AutoTradeOrderSummary[];
   autoTradeStatus?: "disabled" | "dry_run" | "failed" | "placed" | "skipped";
   id: string;
   createdAt: string;

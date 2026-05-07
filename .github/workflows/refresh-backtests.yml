@@ -61,9 +61,6 @@ jobs:
       - name: Capture current data tails
         run: node --import tsx scripts/capture-data-tails.ts --out=.local/data-tail-state.json
 
-      - name: Refresh live market CSVs
-        run: node --import tsx scripts/refresh-live-market-data.ts
-
       - name: Refresh 15m source data and derived folders
         env:
           AUTO_REFRESH_LOOKBACK_DAYS: ${{ vars.AUTO_REFRESH_LOOKBACK_DAYS || '7' }}

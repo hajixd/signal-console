@@ -17,7 +17,7 @@ import {
   type ProjectXOrderType,
   type ProjectXPlaceOrderRequest
 } from "@/lib/projectx";
-import type { TradeAlert } from "@/lib/types";
+import type { AutoTradeOrderSummary, TradeAlert } from "@/lib/types";
 
 export type ProjectXAutoTradeStatus = "disabled" | "dry_run" | "failed" | "placed" | "skipped";
 
@@ -30,6 +30,7 @@ export type ProjectXAutoTradeResult = {
   customTag?: string;
   error?: string;
   orderId?: number;
+  orders?: AutoTradeOrderSummary[];
   status: ProjectXAutoTradeStatus;
 };
 
@@ -117,8 +118,8 @@ function wholeNumber(value: number | undefined, label: string): number {
   return rounded;
 }
 
-function customTagForTrade(trade: TradeAlert): string {
-  const hash = createHash("sha256").update(trade.id).digest("hex").slice(0, 24);
+function customTagForTrade(trade: TradeAlert, accountId: number): string {
+  const hash = createHash("sha256").update(`${trade.id}:${accountId}`).digest("hex").slice(0, 24);
   return `tb_${hash}`;
 }
 
@@ -152,12 +153,15 @@ function bestContract(contracts: ProjectXContract[], searchText: string): Projec
   return [...contracts].sort((left, right) => contractScore(right, searchText) - contractScore(left, searchText))[0] ?? null;
 }
 
-function tradeableAccount(connection: StoredProjectXConnection): ProjectXAccount | null {
+function tradeableAccounts(connection: StoredProjectXConnection): ProjectXAccount[] {
   const configuredAccountId = positiveIntegerEnv("PROJECTX_AUTO_TRADE_ACCOUNT_ID");
   const pausedAccountIds = new Set(connection.pausedAccountIds);
   const accounts = connection.accounts.filter((account) => account.canTrade && account.isVisible && !pausedAccountIds.has(account.id));
-  if (configuredAccountId) return accounts.find((account) => account.id === configuredAccountId) ?? null;
-  return accounts[0] ?? null;
+  if (configuredAccountId) {
+    const configuredAccount = accounts.find((account) => account.id === configuredAccountId);
+    return configuredAccount ? [configuredAccount] : [];
+  }
+  return accounts;
 }
 
 function isFiftyKAccount(account: ProjectXAccount): boolean {
@@ -173,6 +177,24 @@ function isFiftyKAccount(account: ProjectXAccount): boolean {
 function projectXOrderSize(baseSize: number, account: ProjectXAccount): number {
   if (!isFiftyKAccount(account)) return baseSize;
   return Math.max(1, Math.floor(baseSize / 2));
+}
+
+function summarizeOrders(
+  orders: AutoTradeOrderSummary[],
+  fields: Pick<ProjectXAutoTradeResult, "contractId" | "contractName"> = {}
+): Omit<ProjectXAutoTradeResult, "checkedAt" | "status"> {
+  const first = orders[0];
+  const failed = orders.filter((order) => order.status === "failed");
+  return {
+    accountId: orders.length === 1 ? first?.accountId : undefined,
+    accountName: orders.length > 1 ? `${orders.length} accounts` : first?.accountName,
+    contractId: first?.contractId ?? fields.contractId,
+    contractName: first?.contractName ?? fields.contractName,
+    customTag: orders.length === 1 ? first?.customTag : undefined,
+    error: failed.length ? `${failed.length} account(s) failed: ${failed.map((order) => order.accountName ?? order.accountId).join(", ")}` : undefined,
+    orderId: orders.length === 1 ? first?.orderId : undefined,
+    orders
+  };
 }
 
 async function refreshedConnection(): Promise<StoredProjectXConnection | null> {
@@ -206,65 +228,93 @@ export async function executeProjectXAutoTrade(trade: TradeAlert): Promise<Proje
     const connection = await refreshedConnection();
     if (!connection) return result("skipped", { error: "No TopstepX ProjectX connection is available." });
 
-    const account = tradeableAccount(connection);
-    if (!account) {
+    const accounts = tradeableAccounts(connection);
+    if (!accounts.length) {
       return result("skipped", {
         error: positiveIntegerEnv("PROJECTX_AUTO_TRADE_ACCOUNT_ID")
           ? "Configured PROJECTX_AUTO_TRADE_ACCOUNT_ID was not found or is paused."
-          : "No connected unpaused ProjectX account is available."
+          : "No connected unpaused ProjectX accounts are available."
       });
     }
 
     const searchText = contractSearchTextForTrade(trade);
     const contract = bestContract(await searchProjectXContracts(connection.token, searchText, projectXContractLiveFlag()), searchText);
-    if (!contract) return result("failed", { accountId: account.id, accountName: account.name, error: `No ProjectX contract found for ${searchText}.` });
+    if (!contract) return result("failed", { error: `No ProjectX contract found for ${searchText}.` });
 
     const baseSize = wholeNumber(trade.sizeMultiplier ?? 1, "Order size");
-    const size = projectXOrderSize(baseSize, account);
-    const stopLossTicks = wholeNumber(trade.slUnits, "Stop-loss ticks");
-    const takeProfitTicks = wholeNumber(trade.tpUnits, "Take-profit ticks");
+    const stopLossTicks = wholeNumber(Math.abs(trade.slUnits), "Stop-loss ticks");
+    const takeProfitTicks = wholeNumber(Math.abs(trade.tpUnits), "Take-profit ticks");
     const entryType: ProjectXOrderType = trade.entryType === "limit" ? 1 : 2;
     const side: ProjectXOrderSide = trade.side === "long" ? 0 : 1;
-    const customTag = customTagForTrade(trade);
-    const request: ProjectXPlaceOrderRequest = {
-      accountId: account.id,
-      contractId: contract.id,
-      customTag,
-      limitPrice: entryType === 1 ? trade.entryPrice : null,
-      side,
-      size,
-      stopLossBracket: {
-        ticks: stopLossTicks,
-        type: 4 as ProjectXOrderType
-      },
-      stopPrice: null,
-      takeProfitBracket: {
-        ticks: takeProfitTicks,
-        type: 1 as ProjectXOrderType
-      },
-      trailPrice: null,
-      type: entryType
-    };
+    const orders: AutoTradeOrderSummary[] = [];
 
-    if (dryRunEnabled()) {
-      return result("dry_run", {
+    for (const account of accounts) {
+      const size = projectXOrderSize(baseSize, account);
+      const customTag = customTagForTrade(trade, account.id);
+      const request: ProjectXPlaceOrderRequest = {
         accountId: account.id,
-        accountName: account.name,
         contractId: contract.id,
-        contractName: contract.name,
-        customTag
-      });
+        customTag,
+        limitPrice: entryType === 1 ? trade.entryPrice : null,
+        side,
+        size,
+        stopLossBracket: {
+          ticks: stopLossTicks,
+          type: 4 as ProjectXOrderType
+        },
+        stopPrice: null,
+        takeProfitBracket: {
+          ticks: takeProfitTicks,
+          type: 1 as ProjectXOrderType
+        },
+        trailPrice: null,
+        type: entryType
+      };
+
+      if (dryRunEnabled()) {
+        orders.push({
+          accountId: account.id,
+          accountName: account.name,
+          contractId: contract.id,
+          contractName: contract.name,
+          customTag,
+          size,
+          status: "dry_run"
+        });
+        continue;
+      }
+
+      try {
+        const order = await placeProjectXOrder(connection.token, request);
+        orders.push({
+          accountId: account.id,
+          accountName: account.name,
+          contractId: contract.id,
+          contractName: contract.name,
+          customTag,
+          orderId: order.orderId,
+          size,
+          status: "placed"
+        });
+      } catch (error) {
+        orders.push({
+          accountId: account.id,
+          accountName: account.name,
+          contractId: contract.id,
+          contractName: contract.name,
+          customTag,
+          error: readableProjectXError(error),
+          size,
+          status: "failed"
+        });
+      }
     }
 
-    const order = await placeProjectXOrder(connection.token, request);
-    return result("placed", {
-      accountId: account.id,
-      accountName: account.name,
-      contractId: contract.id,
-      contractName: contract.name,
-      customTag,
-      orderId: order.orderId
-    });
+    const placedOrders = orders.filter((order) => order.status === "placed");
+    const contractFields = { contractId: contract.id, contractName: contract.name };
+    if (dryRunEnabled()) return result("dry_run", summarizeOrders(orders, contractFields));
+    if (placedOrders.length) return result("placed", summarizeOrders(orders, contractFields));
+    return result("failed", summarizeOrders(orders, contractFields));
   } catch (error) {
     return result("failed", { error: readableProjectXError(error) });
   }
