@@ -339,6 +339,19 @@ async function safeRuntimeValue<T>(loader: () => Promise<T>, fallback: T): Promi
   }
 }
 
+function nextCronRunIso(matches: (date: Date) => boolean, now = new Date()): string {
+  const candidate = new Date(now);
+  candidate.setUTCSeconds(0, 0);
+  if (candidate.getTime() <= now.getTime()) candidate.setUTCMinutes(candidate.getUTCMinutes() + 1);
+
+  for (let offset = 0; offset < 60 * 24 * 8; offset += 1) {
+    if (matches(candidate)) return candidate.toISOString();
+    candidate.setUTCMinutes(candidate.getUTCMinutes() + 1);
+  }
+
+  return candidate.toISOString();
+}
+
 function safeRiskRewardRatio(targetDollars: number, riskDollars: number): number | undefined {
   return riskDollars > 0 ? targetDollars / riskDollars : undefined;
 }
@@ -451,6 +464,10 @@ export default async function Home({ searchParams }: HomeProps) {
   ]);
   const syncStatus = datasetStatus?.sync ?? {};
   const legacyDatasetSyncAt = datasetStatus?.sync ? undefined : datasetStatus?.lastSyncAt;
+  const now = new Date();
+  const nextMarketDataSyncAt = nextCronRunIso((date) => date.getUTCMinutes() % 5 === 0, now);
+  const nextSignalTradeCheckAt = nextCronRunIso((date) => [2, 17, 32, 47].includes(date.getUTCMinutes()), now);
+  const nextDataValidityRefreshAt = nextCronRunIso((date) => date.getUTCMinutes() === 0 && date.getUTCHours() % 12 === 0, now);
   const liveRuleByKey = new Map(liveRules.map((rule) => [rule.key, rule]));
   const statByKey = new Map(backtestStats.map((stat) => [stat.key, stat]));
 
@@ -805,28 +822,28 @@ export default async function Home({ searchParams }: HomeProps) {
                 <tbody>
                   {selectedLiveTrades.map((trade, index) => (
                     <tr className={liveRowClass(trade)} key={trade.id}>
-                      <td>{fmtNumber(index + 1)}</td>
-                      <td className="ticker-cell">{trade.symbol}</td>
-                      <td className="main-cell">
+                      <td data-label="#">{fmtNumber(index + 1)}</td>
+                      <td className="ticker-cell" data-label="Ticker">{trade.symbol}</td>
+                      <td className="main-cell" data-label="Model">
                         <span>{trade.strategy}</span>
                         <small>{trade.entryMode}</small>
                       </td>
-                      <td>
+                      <td data-label="Direction">
                         <span className={sideClass(trade.side)}>{sideLabel(trade.side)}</span>
                       </td>
-                      <td>{fmtDollarPrice(trade.entryPrice)}</td>
-                      <td>{fmtPrice(trade.takeProfitPrice)}</td>
-                      <td>{fmtPrice(trade.stopLossPrice)}</td>
-                      <td>{fmtMoney(alertTargetDollars(trade))}</td>
-                      <td>{fmtMoney(alertRiskDollars(trade))}</td>
-                      <td>{fmtPct(trade.estimatedWinRatePct)}</td>
-                      <td title={trade.autoTradeError ?? trade.autoTradeProviderName ?? trade.autoTradeContractName ?? trade.autoTradeContractId ?? undefined}>
+                      <td data-label="Entry">{fmtDollarPrice(trade.entryPrice)}</td>
+                      <td data-label="Take Profit">{fmtPrice(trade.takeProfitPrice)}</td>
+                      <td data-label="Stop Loss">{fmtPrice(trade.stopLossPrice)}</td>
+                      <td data-label="Target $">{fmtMoney(alertTargetDollars(trade))}</td>
+                      <td data-label="Risk $">{fmtMoney(alertRiskDollars(trade))}</td>
+                      <td data-label="Odds">{fmtPct(trade.estimatedWinRatePct)}</td>
+                      <td data-label="Auto Trade" title={trade.autoTradeError ?? trade.autoTradeProviderName ?? trade.autoTradeContractName ?? trade.autoTradeContractId ?? undefined}>
                         <span className={`status ${autoTradeStatusClass(trade)}`}>{autoTradeStatusLabel(trade)}</span>
                       </td>
-                      <td>
+                      <td data-label="Telegram">
                         <span className={`status ${trade.telegramStatus}`}>{trade.telegramStatus}</span>
                       </td>
-                      <td><LocalDateTime value={trade.signalTime} /></td>
+                      <td data-label="Signal time"><LocalDateTime value={trade.signalTime} /></td>
                     </tr>
                   ))}
                 </tbody>
@@ -878,20 +895,53 @@ export default async function Home({ searchParams }: HomeProps) {
               <span>Live-enabled sets</span>
               <strong>{fmtNumber(liveSelectionCount)}</strong>
             </div>
-            <div className="dataset-sync-tile sync-tile">
-              <span className="sync-tile-title">Sync</span>
-              <dl className="sync-times">
-                <dt>Market data sync</dt>
+          </div>
+        </section>
+
+        <section className="backtest-card sync-card">
+          <div className="backtest-card-head">
+            <div>
+              <h2>Sync</h2>
+            </div>
+            <span className="status sent">active</span>
+          </div>
+          <div className="sync-grid" aria-label="Dataset sync status">
+            <div className="dataset-sync-tile">
+              <span className="sync-tile-name">Market data sync</span>
+              <dl className="sync-tile-times">
+                <dt>Last</dt>
                 <dd>
                   <LocalDateTime value={syncStatus.lastMarketDataSyncAt ?? legacyDatasetSyncAt} fallback="Not synced yet" />
                 </dd>
-                <dt>Signal trade check</dt>
+                <dt>Next scheduled</dt>
+                <dd>
+                  <LocalDateTime value={nextMarketDataSyncAt} />
+                </dd>
+              </dl>
+            </div>
+            <div className="dataset-sync-tile">
+              <span className="sync-tile-name">Signal trade check</span>
+              <dl className="sync-tile-times">
+                <dt>Last</dt>
                 <dd>
                   <LocalDateTime value={syncStatus.lastSignalTradeCheckAt} fallback="Not checked yet" />
                 </dd>
-                <dt>Data validity refresh</dt>
+                <dt>Next scheduled</dt>
+                <dd>
+                  <LocalDateTime value={nextSignalTradeCheckAt} />
+                </dd>
+              </dl>
+            </div>
+            <div className="dataset-sync-tile">
+              <span className="sync-tile-name">Data validity refresh</span>
+              <dl className="sync-tile-times">
+                <dt>Last</dt>
                 <dd>
                   <LocalDateTime value={syncStatus.lastDataValidityRefreshAt ?? legacyDatasetSyncAt} fallback="Not refreshed yet" />
+                </dd>
+                <dt>Next scheduled</dt>
+                <dd>
+                  <LocalDateTime value={nextDataValidityRefreshAt} />
                 </dd>
               </dl>
             </div>

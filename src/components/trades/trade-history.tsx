@@ -990,28 +990,28 @@ export default function TradeHistory({ rows }: TradeHistoryProps) {
                   }
                 }}
               >
-                <td>{trade.indexLabel}</td>
-                <td className="ticker-cell">{trade.symbol}</td>
-                <td className="main-cell">
+                <td data-label="#">{trade.indexLabel}</td>
+                <td className="ticker-cell" data-label="Ticker">{trade.symbol}</td>
+                <td className="main-cell" data-label="Entry model">
                   <span>{trade.modelName}</span>
                   <small><LocalDateTime value={trade.entryTime} /></small>
                 </td>
-                <td>
+                <td data-label="Direction">
                   <span className={trade.sideClassName}>{trade.sideLabel}</span>
                 </td>
-                <td>{trade.entryPriceLabel}</td>
-                <td>{trade.exitPriceLabel}</td>
-                <td>
+                <td data-label="Entry">{trade.entryPriceLabel}</td>
+                <td data-label="Exit">{trade.exitPriceLabel}</td>
+                <td data-label="Duration">
                   {trade.durationLabel} <span className="durationDetail">/ {trade.durationDetailLabel}</span>
                 </td>
-                <td>
+                <td data-label="Exit by">
                   <span className={exitReasonClassName(trade.exitReasonLabel)}>{trade.exitReasonLabel}</span>
                 </td>
-                <td className={trade.pnlClassName}>{trade.pnlLabel}</td>
-                <td className={trade.pnlClassName}>{trade.rMultipleLabel}</td>
-                <td>{trade.sizeLabel}</td>
-                <td className="take-profit-cell">{trade.targetLabel}</td>
-                <td className="stop-loss-cell">{trade.riskLabel}</td>
+                <td className={trade.pnlClassName} data-label="P&L $">{trade.pnlLabel}</td>
+                <td className={trade.pnlClassName} data-label="R">{trade.rMultipleLabel}</td>
+                <td data-label="Size">{trade.sizeLabel}</td>
+                <td className="take-profit-cell" data-label="Take Profit $">{trade.targetLabel}</td>
+                <td className="stop-loss-cell" data-label="Stop Loss $">{trade.riskLabel}</td>
               </tr>
             ))}
           </tbody>

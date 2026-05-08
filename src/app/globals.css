@@ -1593,6 +1593,19 @@ html[data-theme="light"] .themeDarkLabel {
   box-shadow: inset 0 0 0 1px rgba(96, 165, 250, 0.26);
 }
 
+.autoTradeSelectControl select.is-muted {
+  border-color: rgba(148, 163, 184, 0.16);
+  background:
+    linear-gradient(45deg, transparent 50%, rgba(148, 163, 184, 0.58) 50%) calc(100% - 16px) 50% / 6px 6px no-repeat,
+    linear-gradient(135deg, rgba(148, 163, 184, 0.58) 50%, transparent 50%) calc(100% - 12px) 50% / 6px 6px no-repeat,
+    rgba(15, 23, 42, 0.72);
+  color: rgba(226, 232, 240, 0.52);
+}
+
+.autoTradeSelectControl select option:disabled {
+  color: rgba(148, 163, 184, 0.58);
+}
+
 .autoTradeProviderOption {
   min-width: 0;
   min-height: 82px;
@@ -1951,6 +1964,10 @@ html[data-theme="light"] .themeDarkLabel {
   background: #fb7185;
 }
 
+.statusDot.gray {
+  background: #94a3b8;
+}
+
 .topstepAccountEmpty {
   min-height: 86px;
   display: grid;
@@ -1972,6 +1989,16 @@ html[data-theme="light"] .themeDarkLabel {
   color: var(--text-dim);
   font-size: 0.72rem;
   line-height: 1.42;
+}
+
+.autoTradeUnavailable,
+.autoTradeDisabledRow {
+  border-color: rgba(148, 163, 184, 0.14);
+  background: rgba(148, 163, 184, 0.035);
+}
+
+.autoTradeDisabledRow {
+  opacity: 0.58;
 }
 
 .topstepConnectionFoot {
@@ -2800,11 +2827,30 @@ html[data-theme="light"] .topstepConnectForm input::placeholder {
   color: rgba(15, 23, 42, 0.38);
 }
 
+html[data-theme="light"] .autoTradeSelectControl select.is-muted {
+  border-color: rgba(100, 116, 139, 0.18);
+  background:
+    linear-gradient(45deg, transparent 50%, rgba(100, 116, 139, 0.6) 50%) calc(100% - 16px) 50% / 6px 6px no-repeat,
+    linear-gradient(135deg, rgba(100, 116, 139, 0.6) 50%, transparent 50%) calc(100% - 12px) 50% / 6px 6px no-repeat,
+    #f1f5f9;
+  color: rgba(71, 85, 105, 0.68);
+}
+
+html[data-theme="light"] .autoTradeSelectControl select option:disabled {
+  color: rgba(100, 116, 139, 0.62);
+}
+
 html[data-theme="light"] .topstepAccountRow,
 html[data-theme="light"] .autoTradeProviderOption,
 html[data-theme="light"] .topstepAccountEmpty {
   border-color: var(--line);
   background: #ffffff;
+}
+
+html[data-theme="light"] .autoTradeUnavailable,
+html[data-theme="light"] .autoTradeDisabledRow {
+  border-color: rgba(100, 116, 139, 0.2);
+  background: #f8fafc;
 }
 
 html[data-theme="light"] .autoTradeProviderOption {
@@ -3268,7 +3314,7 @@ html[data-theme="light"] .strategyToggle input {
     grid-template-columns: 1fr;
   }
 
-  .sync-times {
+  .sync-grid {
     grid-template-columns: 1fr;
   }
 
@@ -3984,58 +4030,59 @@ html[data-theme="light"] .tradeCandlestickPanel {
   font-weight: 950;
 }
 
+.sync-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.6rem;
+}
+
 .dataset-sync-tile {
-  grid-column: 1 / -1;
+  min-width: 0;
+  display: grid;
+  gap: 0.38rem;
+  padding: 0.62rem 0.68rem;
+  border: 1px solid rgba(52, 211, 153, 0.24);
+  border-radius: 12px;
   border-color: rgba(52, 211, 153, 0.24) !important;
   background: linear-gradient(135deg, rgba(52, 211, 153, 0.1), rgba(96, 165, 250, 0.035)) !important;
 }
 
-.dataset-sync-tile span {
-  color: rgba(167, 243, 208, 0.84);
-  font-weight: 950;
-}
-
-.dataset-sync-tile strong,
-.dataset-sync-tile strong span {
-  color: #d1fae5;
-  font-size: 0.88rem;
-  font-weight: 950;
-}
-
-.sync-tile {
-  align-content: start;
-  gap: 0.62rem !important;
-}
-
-.sync-tile-title {
+.sync-tile-name {
   display: block;
-}
-
-.sync-times {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0.48rem 0.9rem;
-  margin: 0;
-}
-
-.sync-times dt,
-.sync-times dd {
-  min-width: 0;
-  margin: 0;
-}
-
-.sync-times dt {
-  color: rgba(167, 243, 208, 0.72);
-  font-size: 0.58rem;
+  color: rgba(167, 243, 208, 0.84);
+  font-size: 0.55rem;
   font-weight: 950;
   text-transform: uppercase;
 }
 
-.sync-times dd,
-.sync-times dd span {
-  color: #d1fae5;
-  font-size: 0.88rem;
+.sync-tile-times {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: 0.22rem 0.7rem;
+  align-items: baseline;
+  margin: 0;
+}
+
+.sync-tile-times dt,
+.sync-tile-times dd {
+  min-width: 0;
+  margin: 0;
+}
+
+.sync-tile-times dt {
+  color: rgba(167, 243, 208, 0.58);
+  font-size: 0.5rem;
   font-weight: 950;
+  text-transform: uppercase;
+}
+
+.sync-tile-times dd,
+.sync-tile-times dd span {
+  color: #d1fae5;
+  font-size: 0.7rem;
+  font-weight: 950;
+  overflow: hidden;
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
@@ -4376,21 +4423,16 @@ html[data-theme="light"] .dataset-sync-tile {
   background: linear-gradient(135deg, #ecfdf5, rgba(239, 246, 255, 0.74)) !important;
 }
 
-html[data-theme="light"] .dataset-sync-tile span {
+html[data-theme="light"] .sync-tile-name {
   color: #16a34a;
 }
 
-html[data-theme="light"] .dataset-sync-tile strong,
-html[data-theme="light"] .dataset-sync-tile strong span {
-  color: #15803d;
-}
-
-html[data-theme="light"] .sync-times dt {
+html[data-theme="light"] .sync-tile-times dt {
   color: #16a34a;
 }
 
-html[data-theme="light"] .sync-times dd,
-html[data-theme="light"] .sync-times dd span {
+html[data-theme="light"] .sync-tile-times dd,
+html[data-theme="light"] .sync-tile-times dd span {
   color: #15803d;
 }
 
@@ -4767,5 +4809,940 @@ html[data-theme="light"] .tradeReplaySlider input {
 
   .tradeReplaySlider strong {
     text-align: left;
+  }
+}
+
+@media (max-width: 680px) {
+  body {
+    background: #07090d;
+    font-size: 12px;
+    line-height: 1.18;
+  }
+
+  .terminal {
+    background: #07090d;
+  }
+
+  .terminal-workspace {
+    width: 100%;
+    gap: 6px;
+    padding: 5px 5px 24px;
+  }
+
+  .market-tabs {
+    position: sticky;
+    top: 0;
+    z-index: 45;
+    min-height: 32px;
+    border-right: 0;
+    border-left: 0;
+    background: rgba(8, 10, 14, 0.96);
+    box-shadow: none;
+    backdrop-filter: blur(14px);
+  }
+
+  .market-tab {
+    min-height: 32px;
+    padding: 0 6px;
+    font-size: 10px;
+    letter-spacing: 0;
+  }
+
+  .market-tab.active {
+    background: rgba(96, 165, 250, 0.14);
+    box-shadow: inset 0 -1px 0 var(--accent);
+  }
+
+  .marketSwitchStatus {
+    right: 6px;
+    bottom: 2px;
+    font-size: 8px;
+  }
+
+  .terminal-head {
+    min-height: 0;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 6px;
+    border-right: 0;
+    border-left: 0;
+    background: #090b0f;
+    box-shadow: none;
+    padding: 7px 8px;
+  }
+
+  .asset-meta h1 {
+    font-size: 16px;
+    line-height: 1;
+  }
+
+  .asset-meta span {
+    font-size: 10px;
+  }
+
+  .terminal-actions {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 42px minmax(0, 1fr) minmax(0, 1fr) 34px;
+    gap: 4px;
+  }
+
+  .terminal-action,
+  .themeToggle,
+  .topstepDrawerButton {
+    width: auto;
+    min-width: 0;
+    min-height: 28px;
+    height: 28px;
+    overflow: hidden;
+    padding: 0 6px;
+    font-size: 9.5px;
+    line-height: 1;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .themeToggle,
+  .topstepDrawerButton {
+    padding: 0;
+  }
+
+  .topstepDrawerIcon {
+    width: 14px;
+    gap: 2px;
+  }
+
+  .topstepDrawerIcon span {
+    height: 1px;
+  }
+
+  .backtest-card {
+    gap: 6px;
+    border-right: 0;
+    border-left: 0;
+    background: #090b0f;
+    box-shadow: none;
+    padding: 7px 6px;
+  }
+
+  .terminal-head,
+  .backtest-card {
+    border-color: rgba(255, 255, 255, 0.08);
+  }
+
+  .backtest-card-head {
+    min-width: 0;
+    flex-direction: row;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .backtest-card-head > div {
+    gap: 1px;
+  }
+
+  .backtest-card-head h2 {
+    font-size: 13px;
+    line-height: 1;
+  }
+
+  .backtest-card-head p {
+    display: none;
+  }
+
+  .count-pill {
+    width: auto;
+    min-width: 0;
+    min-height: 20px;
+    max-width: 54%;
+    justify-content: flex-end;
+    border-color: rgba(255, 255, 255, 0.09);
+    background: rgba(255, 255, 255, 0.025);
+    padding: 0 6px;
+    font-size: 8.5px;
+    line-height: 1.1;
+    text-align: right;
+    white-space: normal;
+  }
+
+  .backtest-stats-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 4px;
+  }
+
+  .backtest-stat-card {
+    min-height: 45px;
+    gap: 1px;
+    border-color: rgba(255, 255, 255, 0.075);
+    background: rgba(255, 255, 255, 0.022);
+    padding: 5px;
+  }
+
+  .backtest-stat-card span,
+  .telegram-grid span {
+    font-size: 8px;
+    line-height: 1.05;
+  }
+
+  .backtest-stat-card strong {
+    font-size: 12.5px;
+    line-height: 1.02;
+  }
+
+  .backtest-stat-card.date-stat-card strong,
+  .date-stat-card .localDateTimeStack span {
+    font-size: 11px;
+  }
+
+  .date-stat-card .localDateTimeStack small {
+    font-size: 9px;
+  }
+
+  .strategyPicker {
+    gap: 5px;
+  }
+
+  .pickerHeader {
+    flex-direction: row;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .pickerHeader > span,
+  .pickerActions button,
+  .strategySearch span,
+  .bulkScale > span,
+  .strategySearchCount,
+  .challenge-method-head span,
+  .challenge-method-grid span,
+  .challenge-footnote span,
+  .challenge-pass-card span,
+  .challenge-pass-card small,
+  .challenge-rule-form span {
+    font-size: 8px;
+    line-height: 1.05;
+  }
+
+  .pickerActions {
+    width: auto;
+    gap: 4px;
+  }
+
+  .pickerActions button,
+  .scaleButtons button,
+  .challenge-rule-form button,
+  .strategyModalHead button,
+  .strategyModalActions button {
+    min-height: 23px;
+    padding: 0 6px;
+    font-size: 8.5px;
+  }
+
+  .strategyToolbar {
+    width: 100%;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 5px;
+    align-items: end;
+  }
+
+  .strategySearch input,
+  .challenge-rule-form input,
+  .fieldControl input,
+  .lockedField {
+    min-height: 28px;
+    padding: 0 7px;
+    font-size: 11px;
+  }
+
+  .bulkScale {
+    grid-column: 1 / -1;
+  }
+
+  .bulkScale .scaleButtons {
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 4px;
+  }
+
+  .strategySearchCount {
+    min-height: 28px;
+    justify-content: flex-end;
+  }
+
+  .basketList {
+    max-height: 58svh;
+    border-color: rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.012);
+  }
+
+  .basketListHeader {
+    display: none;
+  }
+
+  .basketListRow,
+  .basketListEmpty {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .basketListRow {
+    min-height: 0;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 4px 6px;
+    align-items: start;
+    padding: 6px;
+    font-size: 10.5px;
+  }
+
+  .basketListRow > span,
+  .basketListRow > .basketModel,
+  .basketListRow > .strategyToggle {
+    justify-content: stretch;
+  }
+
+  .basketTicker {
+    justify-self: start;
+    font-size: 10.5px;
+  }
+
+  .basketListRow > .basketTicker {
+    display: inline-flex;
+    align-items: center;
+    min-height: 20px;
+    gap: 5px;
+  }
+
+  .basketListRow > .basketTicker::before,
+  .basketListRow > .strategyToggle::before {
+    content: none;
+  }
+
+  .basketListRow > .basketModel {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: 56px minmax(0, 1fr);
+    gap: 1px 7px;
+    min-width: 0;
+  }
+
+  .basketListRow > .basketModel::before {
+    grid-row: 1 / 3;
+    align-self: start;
+    content: attr(data-label);
+    color: rgba(255, 255, 255, 0.42);
+    font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+    font-size: 8px;
+    font-weight: 900;
+    text-transform: uppercase;
+  }
+
+  .basketModel strong {
+    font-size: 10.5px;
+    line-height: 1.1;
+  }
+
+  .basketModel span {
+    font-size: 9px;
+    line-height: 1.15;
+  }
+
+  .basketListRow > span:not(.basketTicker) {
+    min-width: 0;
+    min-height: 29px;
+    display: grid;
+    align-content: center;
+    gap: 1px;
+    border-top: 1px solid rgba(255, 255, 255, 0.055);
+    padding: 4px 0 0;
+    text-align: left;
+  }
+
+  .basketListRow > span:not(.basketTicker)::before {
+    content: attr(data-label);
+    color: rgba(255, 255, 255, 0.38);
+    font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+    font-size: 7.5px;
+    font-weight: 900;
+    text-transform: uppercase;
+  }
+
+  .strategyToggle {
+    grid-column: 2;
+    grid-row: 1;
+    justify-self: end;
+    min-height: 20px;
+    gap: 4px;
+    font-size: 9px;
+  }
+
+  .strategyToggle input {
+    width: 13px;
+    height: 13px;
+  }
+
+  .strategyToggle span {
+    font-size: 8px;
+  }
+
+  .challenge-rule-form {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 5px;
+  }
+
+  .challenge-rule-form button {
+    grid-column: 1 / -1;
+  }
+
+  .challenge-grid {
+    grid-template-columns: 1fr;
+    gap: 5px;
+  }
+
+  .challenge-pass-rates,
+  .challenge-method .challenge-pass-rates {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 4px;
+  }
+
+  .challenge-pass-card,
+  .challenge-method {
+    gap: 4px;
+    padding: 6px;
+  }
+
+  .challenge-pass-card strong {
+    font-size: 14px;
+  }
+
+  .challenge-method-head strong {
+    font-size: 15px;
+  }
+
+  .challenge-progress-track {
+    height: 3px;
+  }
+
+  .challenge-method-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 4px;
+  }
+
+  .challenge-method-grid div {
+    padding-top: 4px;
+  }
+
+  .challenge-method-grid strong {
+    font-size: 10.5px;
+  }
+
+  .challenge-footnote {
+    gap: 4px;
+  }
+
+  .challenge-footnote span {
+    padding: 4px 5px;
+  }
+
+  .telegram-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 4px;
+  }
+
+  .telegram-grid div {
+    gap: 1px;
+    padding: 6px;
+  }
+
+  .telegram-grid div:nth-child(3) {
+    grid-column: 1 / -1;
+  }
+
+  .telegram-grid strong {
+    font-size: 11px;
+  }
+
+  .sync-grid {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+
+  .dataset-sync-tile {
+    gap: 4px;
+    padding: 6px;
+  }
+
+  .sync-tile-name {
+    font-size: 8px;
+  }
+
+  .sync-tile-times {
+    gap: 2px 7px;
+  }
+
+  .sync-tile-times dt {
+    font-size: 7.5px;
+  }
+
+  .sync-tile-times dd,
+  .sync-tile-times dd span {
+    font-size: 10px;
+  }
+
+  .terminal-table-wrap,
+  .terminal-table-wrap.live,
+  .terminal-table-wrap.tall {
+    max-height: none;
+    overflow: visible;
+    border: 0;
+    background: transparent;
+  }
+
+  .terminal-table,
+  .live-alert-table,
+  .history-table {
+    min-width: 0;
+    width: 100%;
+    display: block;
+    font-size: 10.5px;
+  }
+
+  .terminal-table colgroup,
+  .terminal-table thead {
+    display: none;
+  }
+
+  .terminal-table tbody {
+    display: grid;
+    gap: 5px;
+  }
+
+  .terminal-table tbody tr {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1px 8px;
+    border: 1px solid rgba(255, 255, 255, 0.075);
+    background: rgba(255, 255, 255, 0.018);
+    padding: 6px;
+  }
+
+  .terminal-table td,
+  .history-table td,
+  .history-table th {
+    min-width: 0;
+    display: grid;
+    gap: 1px;
+    border-bottom: 0;
+    padding: 3px 0;
+    overflow: hidden;
+    text-align: left;
+    white-space: normal;
+  }
+
+  .terminal-table td::before {
+    content: attr(data-label);
+    color: rgba(255, 255, 255, 0.38);
+    font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+    font-size: 7.5px;
+    font-weight: 900;
+    line-height: 1;
+    text-transform: uppercase;
+  }
+
+  .terminal-table td:first-child {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .terminal-table td.main-cell {
+    grid-column: 1 / -1;
+  }
+
+  .main-cell,
+  .terminal-table .main-cell {
+    min-width: 0;
+  }
+
+  .main-cell span,
+  .main-cell small,
+  .history-table .main-cell span,
+  .history-table .main-cell small {
+    max-width: 100%;
+    margin-right: 0;
+    margin-left: 0;
+    font-size: 10px;
+    line-height: 1.12;
+  }
+
+  .main-cell small {
+    font-size: 8.5px;
+  }
+
+  .ticker-cell {
+    font-size: 10px;
+  }
+
+  .sidePill,
+  .status,
+  .exitReasonBadge {
+    min-width: 0;
+    min-height: 18px;
+    justify-self: start;
+    padding: 2px 5px;
+    font-size: 8px;
+    line-height: 1;
+  }
+
+  .empty-state {
+    min-height: 96px;
+    gap: 3px;
+    padding: 12px 8px;
+  }
+
+  .empty-state strong {
+    font-size: 12px;
+  }
+
+  .empty-state span {
+    font-size: 10.5px;
+  }
+
+  .topstepDrawerPanel {
+    width: 100vw;
+    gap: 6px;
+    padding: 8px;
+  }
+
+  .topstepDrawerHead {
+    top: -8px;
+    gap: 6px;
+    margin: -8px -8px 0;
+    padding: 8px;
+  }
+
+  .topstepDrawerHead strong {
+    font-size: 14px;
+  }
+
+  .topstepDrawerHead span,
+  .topstepDrawerHead button span,
+  .autoTradeSelectControl span,
+  .topstepConnectForm label span,
+  .topstepAccountRow span,
+  .topstepConnectionFoot span,
+  .topstepConnectionMeta span,
+  .autoTradeProviderOption span {
+    font-size: 8px;
+  }
+
+  .topstepDrawerHead button,
+  .topstepConnectionActions button,
+  .topstepConnectForm button,
+  .topstepAccountControls button {
+    min-height: 26px;
+    padding: 0 7px;
+    font-size: 8.5px;
+  }
+
+  .autoTradeModeStrip,
+  .autoTradeSelectGrid,
+  .topstepConnectForm,
+  .topstepAccountFields,
+  .topstepAccountDetails,
+  .topstepConnectionSummary,
+  .topstepConnectionHero,
+  .topstepConnectionFoot {
+    gap: 5px;
+  }
+
+  .autoTradeSelectControl select,
+  .topstepConnectForm input,
+  .topstepConnectForm select {
+    min-height: 29px;
+    padding-left: 7px;
+    font-size: 11px;
+  }
+
+  .topstepAccountRow,
+  .topstepAccountEmpty,
+  .autoTradeProviderOption {
+    min-height: 0;
+    gap: 5px;
+    padding: 6px;
+  }
+
+  .topstepAccountRow strong,
+  .topstepConnectionMeta strong,
+  .topstepConnectionState small,
+  .topstepAccountEmpty span {
+    font-size: 10px;
+  }
+
+  .topstepConnectionState strong,
+  .autoTradeProviderOption strong,
+  .topstepAccountEmpty strong {
+    font-size: 12px;
+  }
+
+  .strategyModalBackdrop {
+    padding: 6px;
+  }
+
+  .strategyModal {
+    width: calc(100vw - 12px);
+    max-height: calc(100svh - 12px);
+    gap: 7px;
+    padding: 8px;
+  }
+
+  .strategyModalHead {
+    flex-direction: row;
+    align-items: start;
+    gap: 8px;
+  }
+
+  .strategyModalHead span,
+  .fieldControl span,
+  .strategyModalSummary span {
+    font-size: 8px;
+  }
+
+  .strategyModalHead strong {
+    font-size: 13px;
+  }
+
+  .strategyModalGrid {
+    gap: 5px;
+  }
+
+  .strategyModalSummary {
+    gap: 4px;
+    padding-top: 6px;
+  }
+
+  .strategyModalSummary span {
+    padding: 4px 5px;
+  }
+
+  .tradeModalBackdrop {
+    padding: 4px;
+  }
+
+  .tradeModal,
+  html[data-theme="light"] .tradeModal,
+  .tradeModal.up-row,
+  .tradeModal.down-row,
+  .tradeModal.neutral-row,
+  html[data-theme="light"] .tradeModal.up-row,
+  html[data-theme="light"] .tradeModal.down-row,
+  html[data-theme="light"] .tradeModal.neutral-row {
+    width: calc(100vw - 8px);
+    height: calc(100svh - 8px);
+    max-height: calc(100svh - 8px);
+  }
+
+  .tradeModalHead {
+    flex-direction: row;
+    align-items: center;
+    gap: 6px;
+    padding: 7px;
+  }
+
+  .tradeModalTitle {
+    gap: 4px 7px;
+  }
+
+  .tradeModalTitle strong,
+  html[data-theme="light"] .tradeModalTitle strong,
+  .tradeCandlestickHead strong {
+    font-size: 12px;
+  }
+
+  .tradeModalTitle span,
+  .tradeOutcomeBadge,
+  .tradeModalHead button,
+  html[data-theme="light"] .tradeModalHead button,
+  .tradeCandlestickHead span,
+  .tradeChartLegend > strong,
+  .tradeChartLegend span,
+  .tradeTimeframeButtons button {
+    font-size: 8.5px;
+  }
+
+  .tradeOutcomeBadge {
+    padding: 2px 5px;
+  }
+
+  .tradeModalHead button,
+  html[data-theme="light"] .tradeModalHead button {
+    height: 24px;
+    padding: 0 7px;
+  }
+
+  .tradeModalBody {
+    padding: 6px;
+  }
+
+  .tradeModalMetrics,
+  .tradeModalDetailsStrip {
+    gap: 4px;
+    margin-bottom: 4px;
+  }
+
+  .tradeModalMetrics.four,
+  .tradeModalMetrics.two,
+  .tradeModalDetailsStrip {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .tradeInfoBox,
+  html[data-theme="light"] .tradeInfoBox {
+    min-height: 38px;
+    gap: 2px;
+    padding: 5px;
+  }
+
+  .tradeInfoBox span {
+    font-size: 7.5px;
+  }
+
+  .tradeInfoBox strong,
+  html[data-theme="light"] .tradeInfoBox strong {
+    font-size: 10px;
+  }
+
+  .tradeCandlestickHead {
+    gap: 6px;
+    padding: 6px;
+  }
+
+  .tradeCandlestickHeadMeta {
+    gap: 4px;
+  }
+
+  .tradeTimeframeButtons {
+    gap: 2px;
+  }
+
+  .tradeTimeframeButtons button {
+    min-width: 28px;
+    height: 20px;
+    padding: 0 4px;
+  }
+
+  .tradePriceChartWrap,
+  .tradePriceChart {
+    min-height: 250px;
+    height: 250px;
+  }
+
+  .tradeCandlestickPanel.isEmpty {
+    min-height: 250px;
+  }
+
+  .tradeCandlestickPanel.isEmpty > span {
+    min-height: 208px;
+  }
+
+  .tradeReplayPanel {
+    gap: 5px;
+    padding: 6px;
+  }
+
+  .tradeReplayControls,
+  .tradeReplayOptions,
+  .tradeReplayButtons,
+  .tradeReplaySpeeds,
+  .tradeReplayMode {
+    gap: 3px;
+  }
+
+  .tradeReplayButtons button,
+  .tradeReplaySpeeds button,
+  .tradeReplayMode button,
+  .tradeReplayToggle {
+    min-height: 22px;
+    padding: 0 5px;
+    font-size: 8px;
+  }
+
+  .tradeReplaySlider {
+    gap: 4px;
+    font-size: 8.5px;
+  }
+}
+
+@media (max-width: 680px) {
+  html[data-theme="light"] body,
+  html[data-theme="light"] .terminal {
+    background: #f5f7fb;
+  }
+
+  html[data-theme="light"] .market-tabs {
+    background: rgba(255, 255, 255, 0.96);
+  }
+
+  html[data-theme="light"] .terminal-head,
+  html[data-theme="light"] .backtest-card {
+    border-color: rgba(15, 23, 42, 0.1);
+    background: #ffffff;
+  }
+
+  html[data-theme="light"] .backtest-stat-card,
+  html[data-theme="light"] .telegram-grid div,
+  html[data-theme="light"] .basketList,
+  html[data-theme="light"] .terminal-table tbody tr,
+  html[data-theme="light"] .topstepAccountRow,
+  html[data-theme="light"] .topstepAccountEmpty,
+  html[data-theme="light"] .autoTradeProviderOption,
+  html[data-theme="light"] .challenge-pass-card,
+  html[data-theme="light"] .challenge-method {
+    border-color: rgba(15, 23, 42, 0.09);
+    background: rgba(15, 23, 42, 0.022);
+  }
+
+  html[data-theme="light"] .basketListRow > .basketModel::before,
+  html[data-theme="light"] .basketListRow > span:not(.basketTicker)::before,
+  html[data-theme="light"] .terminal-table td::before {
+    color: rgba(15, 23, 42, 0.42);
+  }
+
+  html[data-theme="light"] .basketListRow > span:not(.basketTicker) {
+    border-top-color: rgba(15, 23, 42, 0.075);
+  }
+}
+
+@media (max-width: 430px) {
+  .terminal-workspace {
+    padding-right: 4px;
+    padding-left: 4px;
+  }
+
+  .terminal-actions {
+    grid-template-columns: 38px minmax(0, 1fr) minmax(0, 1fr) 32px;
+  }
+
+  .backtest-stats-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .backtest-stat-card strong {
+    font-size: 11.5px;
+  }
+
+  .basketListRow {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .terminal-table tbody tr {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1px 6px;
+  }
+
+  .tradePriceChartWrap,
+  .tradePriceChart {
+    min-height: 224px;
+    height: 224px;
   }
 }

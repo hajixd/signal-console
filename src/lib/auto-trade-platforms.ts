@@ -40,8 +40,8 @@ export const AUTO_TRADE_PROVIDERS: AutoTradeProvider[] = [
     label: "Tradovate / CQG",
     shortLabel: "Tradovate",
     markets: ["futures"],
-    status: "live",
-    statusLabel: "Live",
+    status: "adapter_ready",
+    statusLabel: "Limited",
     coverage: "Lucid CQG, NinjaTrader, Tradovate, and TradingView futures routes.",
     connectionMode: "OAuth or bridge",
     description: "Best futures expansion path for CQG-based prop accounts once credentials are available."
@@ -51,8 +51,8 @@ export const AUTO_TRADE_PROVIDERS: AutoTradeProvider[] = [
     label: "Rithmic Bridge",
     shortLabel: "Rithmic",
     markets: ["futures"],
-    status: "live",
-    statusLabel: "Live",
+    status: "adapter_ready",
+    statusLabel: "Bridge required",
     coverage: "Lucid Rithmic, Quantower, MotiveWave, Sierra Chart, R|Trader Pro, and related futures platforms.",
     connectionMode: "Desktop or VPS bridge",
     description: "Bridge adapter for Rithmic accounts where direct broker API access is not exposed."
@@ -62,8 +62,8 @@ export const AUTO_TRADE_PROVIDERS: AutoTradeProvider[] = [
     label: "TradeLocker",
     shortLabel: "TradeLocker",
     markets: ["forex"],
-    status: "live",
-    statusLabel: "Live",
+    status: "adapter_ready",
+    statusLabel: "Limited",
     coverage: "E8 US, Blue Guardian, FunderPro, and other TradeLocker prop accounts.",
     connectionMode: "REST API",
     description: "Direct API route using the email, password, and server issued with a TradeLocker account."
@@ -73,8 +73,8 @@ export const AUTO_TRADE_PROVIDERS: AutoTradeProvider[] = [
     label: "MetaTrader 5 Bridge",
     shortLabel: "MT5",
     markets: ["forex"],
-    status: "live",
-    statusLabel: "Live",
+    status: "adapter_ready",
+    statusLabel: "Bridge required",
     coverage: "FTMO, FundedNext, The5ers, FXIFY, and MT5-based prop accounts through a Windows bridge.",
     connectionMode: "Windows VPS bridge",
     description: "MT5 execution using the account login, password, and server while bridge infrastructure stays advanced."
@@ -84,8 +84,8 @@ export const AUTO_TRADE_PROVIDERS: AutoTradeProvider[] = [
     label: "cTrader",
     shortLabel: "cTrader",
     markets: ["forex"],
-    status: "live",
-    statusLabel: "Live",
+    status: "adapter_ready",
+    statusLabel: "Bridge required",
     coverage: "FTMO, The5ers, E8, FundedNext, BrightFunded, and other cTrader prop accounts where Open API access is available.",
     connectionMode: "Open API token",
     description: "cTrader account routing with account ID and OAuth token while bridge/client credentials stay advanced."
@@ -95,13 +95,19 @@ export const AUTO_TRADE_PROVIDERS: AutoTradeProvider[] = [
     label: "Match-Trader",
     shortLabel: "MatchTrader",
     markets: ["forex"],
-    status: "live",
-    statusLabel: "Live",
+    status: "adapter_ready",
+    statusLabel: "Limited",
     coverage: "E8 US, FundedNext US, Blue Guardian, FundingPips, and other Match-Trader prop accounts with API access enabled.",
     connectionMode: "Trading API token",
     description: "Match-Trader API route for accounts where the firm exposes a trading API token."
   }
 ];
+
+export const FULLY_FUNCTIONING_AUTO_TRADE_PROVIDER_IDS: ReadonlySet<AutoTradeProviderId> = new Set<AutoTradeProviderId>(["projectx"]);
+
+export function autoTradeProviderFullyFunctioning(providerId: AutoTradeProviderId): boolean {
+  return FULLY_FUNCTIONING_AUTO_TRADE_PROVIDER_IDS.has(providerId);
+}
 
 export function autoTradeProvidersForMarket(market: AutoTradeMarket): AutoTradeProvider[] {
   return AUTO_TRADE_PROVIDERS.filter((provider) => provider.markets.includes(market));

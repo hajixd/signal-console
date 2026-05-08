@@ -3,6 +3,7 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import {
   autoTradeMarketLabel,
+  autoTradeProviderFullyFunctioning,
   autoTradeProvidersForMarket,
   type AutoTradeMarket,
   type AutoTradeProvider,
@@ -174,15 +175,21 @@ function fmtTime(value: string | undefined): string {
 }
 
 function firstProviderId(providers: AutoTradeProvider[]): AutoTradeProviderId {
-  return providers.find((provider) => provider.status === "live")?.id ?? providers[0]!.id;
+  return providers.find((provider) => autoTradeProviderFullyFunctioning(provider.id))?.id ?? providers[0]!.id;
 }
 
 function propFirmsForMarket(market: AutoTradeMarket): PropFirmOption[] {
   return PROP_FIRM_OPTIONS.filter((firm) => firm.markets.includes(market));
 }
 
+function firmHasFullyFunctioningPath(firm: PropFirmOption, providers: AutoTradeProvider[]): boolean {
+  const marketProviderIds = new Set(providers.map((provider) => provider.id));
+  return firm.platformIds.some((providerId) => marketProviderIds.has(providerId) && autoTradeProviderFullyFunctioning(providerId));
+}
+
 function firstPropFirmId(market: AutoTradeMarket): string {
-  return propFirmsForMarket(market)[0]?.id ?? PROP_FIRM_OPTIONS[0]!.id;
+  const firms = propFirmsForMarket(market);
+  return firms.find((firm) => firmHasFullyFunctioningPath(firm, autoTradeProvidersForMarket(market)))?.id ?? firms[0]?.id ?? PROP_FIRM_OPTIONS[0]!.id;
 }
 
 function accountStatusClass(account: ProjectXAccount): string {
@@ -238,7 +245,9 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
     .map((providerId) => providers.find((provider) => provider.id === providerId))
     .filter((provider): provider is AutoTradeProvider => Boolean(provider));
   const selectedProvider = platformOptions.find((provider) => provider.id === selectedProviderId) ?? platformOptions[0] ?? providers[0]!;
-  const canConnectSelectedProvider = selectedProvider.id === "projectx" && selectedProvider.status === "live" && market === "futures";
+  const selectedFirmReady = firmHasFullyFunctioningPath(selectedFirm, providers);
+  const selectedProviderReady = autoTradeProviderFullyFunctioning(selectedProvider.id);
+  const canConnectSelectedProvider = selectedProviderReady && selectedProvider.id === "projectx" && selectedProvider.status === "live" && market === "futures";
   const storageLabel = status.storageMode === "firebase" ? "Firebase" : "local dev storage";
   const displayUserName = status.userName || userName || "--";
   const pausedAccountIds = new Set(status.pausedAccountIds ?? status.accounts.map((account) => account.id));
@@ -358,6 +367,8 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
 
   async function handleGenericConnect(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (!selectedProviderReady) return;
+
     setIsConnecting(true);
     try {
       const response = await fetch("/api/auto-trading/connections", {
@@ -449,6 +460,8 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
   }
 
   async function handleGenericPaused(providerId: AutoTradeProviderId, nextPaused: boolean) {
+    if (!autoTradeProviderFullyFunctioning(providerId)) return;
+
     setIsUpdatingPaused(true);
     try {
       const response = await fetch("/api/auto-trading/connections", {
@@ -492,22 +505,28 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
           <div className="autoTradeSelectGrid">
             <label className="autoTradeSelectControl">
               <span>Prop firm</span>
-              <select value={selectedFirm.id} onChange={(event) => setSelectedFirmId(event.target.value)}>
-                {propFirms.map((firm) => (
-                  <option key={firm.id} value={firm.id}>
-                    {firm.label}
-                  </option>
-                ))}
+              <select className={selectedFirmReady ? undefined : "is-muted"} value={selectedFirm.id} onChange={(event) => setSelectedFirmId(event.target.value)}>
+                {propFirms.map((firm) => {
+                  const isReady = firmHasFullyFunctioningPath(firm, providers);
+                  return (
+                    <option disabled={!isReady} key={firm.id} value={firm.id}>
+                      {isReady ? firm.label : `${firm.label} - limited`}
+                    </option>
+                  );
+                })}
               </select>
             </label>
             <label className="autoTradeSelectControl">
               <span>Platform</span>
-              <select value={selectedProvider.id} onChange={(event) => setSelectedProviderId(event.target.value as AutoTradeProviderId)}>
-                {platformOptions.map((provider) => (
-                  <option key={provider.id} value={provider.id}>
-                    {provider.shortLabel}
-                  </option>
-                ))}
+              <select className={selectedProviderReady ? undefined : "is-muted"} value={selectedProvider.id} onChange={(event) => setSelectedProviderId(event.target.value as AutoTradeProviderId)}>
+                {platformOptions.map((provider) => {
+                  const isReady = autoTradeProviderFullyFunctioning(provider.id);
+                  return (
+                    <option disabled={!isReady} key={provider.id} value={provider.id}>
+                      {isReady ? provider.shortLabel : `${provider.shortLabel} - limited`}
+                    </option>
+                  );
+                })}
               </select>
             </label>
           </div>
@@ -542,7 +561,7 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
                 {isConnecting ? "Connecting..." : status.connected ? "Reconnect" : "Connect Account"}
               </button>
             </form>
-          ) : selectedProviderFields.length ? (
+          ) : selectedProviderReady && selectedProviderFields.length ? (
             <form className="topstepConnectForm" onSubmit={handleGenericConnect}>
               {[...primaryProviderFields, ...(showAdvancedFields ? advancedProviderFields : [])].map((field) => (
                   <label key={field.key}>
@@ -573,9 +592,9 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
               </button>
             </form>
           ) : (
-            <div className="topstepAccountEmpty">
-              <strong>{selectedProvider.label} is ready in the router</strong>
-              <span>Use the matching Vercel env vars or bridge URL for this provider; the in-app form only stores ProjectX credentials.</span>
+            <div className="topstepAccountEmpty autoTradeUnavailable">
+              <strong>{selectedProvider.label} is not fully functioning yet</strong>
+              <span>Only ProjectX / TopstepX is enabled for production auto-trading right now.</span>
             </div>
           )}
         </div>
@@ -640,8 +659,9 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
               })}
               {visibleSavedConnections.map((connection) => {
                 const provider = providers.find((item) => item.id === connection.id);
+                const connectionReady = autoTradeProviderFullyFunctioning(connection.id);
                 return (
-                  <div className="topstepAccountRow" key={connection.id}>
+                  <div className={`topstepAccountRow${connectionReady ? "" : " autoTradeDisabledRow"}`} key={connection.id}>
                     <div className="topstepAccountFields">
                       <div>
                         <span>Firm</span>
@@ -669,9 +689,9 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
                       </div>
                       <div>
                         <span>Status</span>
-                        <strong className={`topstepStatusValue status ${connection.paused ? "skipped" : "sent"}`}>
-                          <span aria-hidden="true" className={connection.paused ? "statusDot orange" : "statusDot green"} />
-                          {connection.paused ? "Paused" : "Connected"}
+                        <strong className={`topstepStatusValue status ${connectionReady ? (connection.paused ? "skipped" : "sent") : "skipped"}`}>
+                          <span aria-hidden="true" className={connectionReady ? (connection.paused ? "statusDot orange" : "statusDot green") : "statusDot gray"} />
+                          {connectionReady ? (connection.paused ? "Paused" : "Connected") : "Limited"}
                         </strong>
                       </div>
                     </div>
@@ -679,7 +699,7 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
                       <button
                         className={connection.paused ? "playButton" : "pauseButton"}
                         type="button"
-                        disabled={isUpdatingPaused || isDisconnecting}
+                        disabled={isUpdatingPaused || isDisconnecting || !connectionReady}
                         onClick={() => handleGenericPaused(connection.id, !connection.paused)}
                       >
                         {isUpdatingPaused ? "Updating..." : connection.paused ? "Play" : "Pause"}
