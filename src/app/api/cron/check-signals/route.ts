@@ -3,8 +3,7 @@ import { executeAutoTrade } from "@/lib/auto-trader";
 import { autoTradeMarketForSignal } from "@/lib/auto-trade-platforms";
 import { dollarPerUnit } from "@/lib/instruments";
 import { fetchMarketBars } from "@/lib/market-data";
-import { refreshMarketDataForRules } from "@/lib/market-data-refresh";
-import { saveCronRun } from "@/lib/live-config";
+import { saveCronRun, updateDatasetSyncStatus } from "@/lib/live-config";
 import { activeRules, evaluateLatestSignal } from "@/lib/live-signals";
 import { hasTrade, saveTrade } from "@/lib/storage";
 import { sendTelegram } from "@/lib/telegram";
@@ -46,15 +45,15 @@ async function runSignalCheck(): Promise<CronResult> {
   };
   const candidates: Array<{ signal: ReturnType<typeof withTopstepGuardNote>; score: number; riskDollars: number }> = [];
   const rules = await activeRules();
-  const dataRefreshEnabled = process.env.CRON_REFRESH_MARKET_DATA !== "false";
-  const refreshedBars = dataRefreshEnabled ? await refreshMarketDataForRules(rules) : null;
-  if (refreshedBars) {
-    result.dataRefresh = refreshedBars.summary;
-  }
+  const barsByAssetKey = new Map<string, Awaited<ReturnType<typeof fetchMarketBars>>>();
 
   for (const rule of rules) {
     try {
-      const bars = refreshedBars?.barsByAssetKey.get(rule.assetKey) ?? (await fetchMarketBars(rule));
+      let bars = barsByAssetKey.get(rule.assetKey);
+      if (!bars) {
+        bars = await fetchMarketBars(rule);
+        barsByAssetKey.set(rule.assetKey, bars);
+      }
       const signal = evaluateLatestSignal(rule, bars);
       if (!signal) continue;
 
@@ -176,7 +175,6 @@ export async function GET(request: NextRequest) {
   if (request.nextUrl.searchParams.get("health") === "1") {
     return NextResponse.json({
       checkedAt: new Date().toISOString(),
-      dataRefreshEnabled: process.env.CRON_REFRESH_MARKET_DATA !== "false",
       ok: true,
       route: "/api/cron/check-signals"
     });
@@ -184,6 +182,7 @@ export async function GET(request: NextRequest) {
   const startedAt = Date.now();
   const result = await runSignalCheck();
   await saveCronRun(result);
+  await updateDatasetSyncStatus("lastSignalTradeCheckAt", result.checkedAt);
   console.info("check-signals cron completed", {
     durationMs: Date.now() - startedAt,
     errors: result.errors.length,

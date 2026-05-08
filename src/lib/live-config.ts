@@ -39,8 +39,15 @@ export type DatasetStatus = {
   dataPrefix: string;
   lastSyncAt: string;
   strategyPrefix: string;
+  sync?: SyncStatus;
   uploadedFilesCount: number;
   updatedAt?: string;
+};
+
+export type SyncStatus = {
+  lastDataValidityRefreshAt?: string;
+  lastMarketDataSyncAt?: string;
+  lastSignalTradeCheckAt?: string;
 };
 
 export type DatasetAssetCoverage = {
@@ -89,8 +96,19 @@ function normalizeDatasetStatus(value: Partial<DatasetStatus> | null | undefined
     dataPrefix: value.dataPrefix,
     lastSyncAt: value.lastSyncAt,
     strategyPrefix: value.strategyPrefix,
+    sync: value.sync ? normalizeSyncStatus(value.sync) : undefined,
     uploadedFilesCount: value.uploadedFilesCount,
     updatedAt: typeof value.updatedAt === "string" ? value.updatedAt : undefined
+  };
+}
+
+function normalizeSyncStatus(value: unknown): SyncStatus {
+  const source = value && typeof value === "object" ? (value as Partial<SyncStatus>) : {};
+  return {
+    lastDataValidityRefreshAt:
+      typeof source.lastDataValidityRefreshAt === "string" ? source.lastDataValidityRefreshAt : undefined,
+    lastMarketDataSyncAt: typeof source.lastMarketDataSyncAt === "string" ? source.lastMarketDataSyncAt : undefined,
+    lastSignalTradeCheckAt: typeof source.lastSignalTradeCheckAt === "string" ? source.lastSignalTradeCheckAt : undefined
   };
 }
 
@@ -200,6 +218,7 @@ export async function getDatasetStatus(): Promise<DatasetStatus | null> {
 export async function saveDatasetStatus(status: DatasetStatus): Promise<DatasetStatus> {
   const normalized: DatasetStatus = {
     ...status,
+    sync: normalizeSyncStatus(status.sync),
     updatedAt: new Date().toISOString()
   };
 
@@ -224,6 +243,17 @@ export async function saveDatasetStatus(status: DatasetStatus): Promise<DatasetS
   };
 
   return normalized;
+}
+
+export async function updateDatasetSyncStatus(field: keyof SyncStatus, timestamp = new Date().toISOString()): Promise<DatasetStatus> {
+  const existing = (await getDatasetStatus()) ?? defaultDatasetStatus();
+  return saveDatasetStatus({
+    ...existing,
+    sync: {
+      ...(existing.sync ?? {}),
+      [field]: timestamp
+    }
+  });
 }
 
 export async function saveCronRun(result: CronResult): Promise<void> {
@@ -259,6 +289,7 @@ export function defaultDatasetStatus(): DatasetStatus {
     dataPrefix: storageObjectPath("data"),
     lastSyncAt: new Date(0).toISOString(),
     strategyPrefix: storageObjectPath("strategy"),
+    sync: {},
     uploadedFilesCount: 0
   };
 }

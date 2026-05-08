@@ -12,7 +12,6 @@ import TestAlertButton from "@/components/ui/test-alert-button";
 import ThemeToggle from "@/components/ui/theme-toggle";
 import { syncLiveSelection, syncStrategyEdits } from "@/app/live-selection-actions";
 import { sendTestTelegramAlert } from "@/app/telegram-actions";
-import { ensureBacktestHistoryFresh } from "@/lib/backtest-refresh";
 import {
   aggregateBacktest,
   getBacktestStats,
@@ -450,7 +449,8 @@ export default async function Home({ searchParams }: HomeProps) {
     safeRuntimeValue(getLiveConfig, EMPTY_LIVE_CONFIG),
     safeRuntimeValue(async () => (await getDatasetStatus()) ?? defaultDatasetStatus(), defaultDatasetStatus())
   ]);
-  await ensureBacktestHistoryFresh().catch((error) => console.error(error));
+  const syncStatus = datasetStatus?.sync ?? {};
+  const legacyDatasetSyncAt = datasetStatus?.sync ? undefined : datasetStatus?.lastSyncAt;
   const liveRuleByKey = new Map(liveRules.map((rule) => [rule.key, rule]));
   const statByKey = new Map(backtestStats.map((stat) => [stat.key, stat]));
 
@@ -878,11 +878,22 @@ export default async function Home({ searchParams }: HomeProps) {
               <span>Live-enabled sets</span>
               <strong>{fmtNumber(liveSelectionCount)}</strong>
             </div>
-            <div className="dataset-sync-tile">
-              <span>Dataset sync</span>
-              <strong>
-                <LocalDateTime value={datasetStatus?.lastSyncAt} fallback="Not synced yet" />
-              </strong>
+            <div className="dataset-sync-tile sync-tile">
+              <span className="sync-tile-title">Sync</span>
+              <dl className="sync-times">
+                <dt>Market data sync</dt>
+                <dd>
+                  <LocalDateTime value={syncStatus.lastMarketDataSyncAt ?? legacyDatasetSyncAt} fallback="Not synced yet" />
+                </dd>
+                <dt>Signal trade check</dt>
+                <dd>
+                  <LocalDateTime value={syncStatus.lastSignalTradeCheckAt} fallback="Not checked yet" />
+                </dd>
+                <dt>Data validity refresh</dt>
+                <dd>
+                  <LocalDateTime value={syncStatus.lastDataValidityRefreshAt ?? legacyDatasetSyncAt} fallback="Not refreshed yet" />
+                </dd>
+              </dl>
             </div>
           </div>
         </section>

@@ -523,6 +523,10 @@ async function saveRefreshStatus(summary: MarketDataRefreshSummary): Promise<voi
     ...existing,
     assetCoverage,
     lastSyncAt: summary.refreshedAt,
+    sync: {
+      ...(existing.sync ?? {}),
+      lastMarketDataSyncAt: summary.refreshedAt
+    },
     uploadedFilesCount: summary.uploadedFiles,
     updatedAt: summary.refreshedAt
   });

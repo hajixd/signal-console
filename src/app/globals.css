@@ -3268,6 +3268,10 @@ html[data-theme="light"] .strategyToggle input {
     grid-template-columns: 1fr;
   }
 
+  .sync-times {
+    grid-template-columns: 1fr;
+  }
+
   .topstepAccountDetails,
   .autoTradeModeStrip,
   .topstepAccountFields {
@@ -3981,6 +3985,7 @@ html[data-theme="light"] .tradeCandlestickPanel {
 }
 
 .dataset-sync-tile {
+  grid-column: 1 / -1;
   border-color: rgba(52, 211, 153, 0.24) !important;
   background: linear-gradient(135deg, rgba(52, 211, 153, 0.1), rgba(96, 165, 250, 0.035)) !important;
 }
@@ -3995,6 +4000,43 @@ html[data-theme="light"] .tradeCandlestickPanel {
   color: #d1fae5;
   font-size: 0.88rem;
   font-weight: 950;
+}
+
+.sync-tile {
+  align-content: start;
+  gap: 0.62rem !important;
+}
+
+.sync-tile-title {
+  display: block;
+}
+
+.sync-times {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.48rem 0.9rem;
+  margin: 0;
+}
+
+.sync-times dt,
+.sync-times dd {
+  min-width: 0;
+  margin: 0;
+}
+
+.sync-times dt {
+  color: rgba(167, 243, 208, 0.72);
+  font-size: 0.58rem;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.sync-times dd,
+.sync-times dd span {
+  color: #d1fae5;
+  font-size: 0.88rem;
+  font-weight: 950;
+  white-space: nowrap;
 }
 
 .history-table .ticker-cell {
@@ -4340,6 +4382,15 @@ html[data-theme="light"] .dataset-sync-tile span {
 
 html[data-theme="light"] .dataset-sync-tile strong,
 html[data-theme="light"] .dataset-sync-tile strong span {
+  color: #15803d;
+}
+
+html[data-theme="light"] .sync-times dt {
+  color: #16a34a;
+}
+
+html[data-theme="light"] .sync-times dd,
+html[data-theme="light"] .sync-times dd span {
   color: #15803d;
 }
 

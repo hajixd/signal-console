@@ -61,6 +61,8 @@ type TradeChartTrade = {
   sourceTimeframe?: TradeChartTimeframe;
   phase?: string;
   variantId?: string;
+  label?: string;
+  modelName?: string;
   entryType?: "market" | "limit";
   entryPrice: number;
   exitPrice: number;
@@ -139,8 +141,10 @@ type TradeDomOverlay = {
   x1?: number;
   x2?: number;
 };
-type StructureTone = "bullish" | "bearish" | "neutral" | "warning";
+type StructureTone = "bullish" | "bearish" | "neutral" | "warning" | "info";
+type StructureLineStyle = "solid" | "dashed" | "dotted";
 type StructureBox = {
+  border?: StructureLineStyle;
   endTime: Time;
   high: number;
   label: string;
@@ -149,11 +153,31 @@ type StructureBox = {
   tone: StructureTone;
 };
 type StructureLine = {
+  style?: StructureLineStyle;
   endTime: Time;
   label: string;
   price: number;
   startTime: Time;
   tone: StructureTone;
+  width?: number;
+};
+type StructureSegment = {
+  arrow?: boolean;
+  endPrice: number;
+  endTime: Time;
+  label: string;
+  startPrice: number;
+  startTime: Time;
+  style?: StructureLineStyle;
+  tone: StructureTone;
+  width?: number;
+};
+type StructurePath = {
+  label: string;
+  points: Array<{ price: number; time: Time }>;
+  style?: StructureLineStyle;
+  tone: StructureTone;
+  width?: number;
 };
 type StructureTag = {
   label: string;
@@ -165,6 +189,8 @@ type StructureTag = {
 type StrategyStructureVisuals = {
   boxes: StructureBox[];
   lines: StructureLine[];
+  paths: StructurePath[];
+  segments: StructureSegment[];
   tags: StructureTag[];
 };
 const REPLAY_SPEEDS: ReplaySpeed[] = [1, 2, 4, 8];
@@ -660,6 +686,31 @@ function chartXForTime(
   return startX + width * progress;
 }
 
+function structureXForTime(
+  chart: IChartApi,
+  candles: MappedCandle[],
+  rawTime: Time,
+  dataTimeframe: TradeChartTimeframe,
+  paneWidth: number
+): number | null {
+  const directCoordinate = chartXForTime(chart, candles, rawTime, dataTimeframe);
+  if (coordinateIsVisible(directCoordinate)) return directCoordinate;
+  if (typeof rawTime !== "number") return null;
+
+  const candle = replayCandleForTime(candles, rawTime);
+  if (!candle) return null;
+  const visibleRange = chart.timeScale().getVisibleLogicalRange();
+  if (!visibleRange) return null;
+  const rangeStart = Number(visibleRange.from);
+  const rangeEnd = Number(visibleRange.to);
+  if (!Number.isFinite(rangeStart) || !Number.isFinite(rangeEnd) || rangeEnd <= rangeStart) return null;
+
+  const index = candleIndex(candles, candle);
+  const progress = clamp((Number(rawTime) - Number(candle.time)) / timeframeSeconds(dataTimeframe), 0, 1);
+  const logical = index + progress;
+  return ((logical - rangeStart) / (rangeEnd - rangeStart)) * paneWidth;
+}
+
 function tradeDomOverlayGeometry(
   chart: IChartApi,
   series: CandleSeriesApi,
@@ -782,7 +833,7 @@ function pivotHigh(candles: MappedCandle[], index: number): boolean {
 }
 
 function emptyStructureVisuals(): StrategyStructureVisuals {
-  return { boxes: [], lines: [], tags: [] };
+  return { boxes: [], lines: [], paths: [], segments: [], tags: [] };
 }
 
 function averageCandleRange(candles: MappedCandle[], start: number, end: number): number {
@@ -795,136 +846,1062 @@ function averageCandleRange(candles: MappedCandle[], start: number, end: number)
   return ranges.length ? ranges.reduce((sum, range) => sum + range, 0) / ranges.length : 0;
 }
 
-function strategyStructureVisuals(snapshot: TradeVisualSnapshot, candles: MappedCandle[], enabled: boolean): StrategyStructureVisuals {
-  if (!enabled || !snapshot.currentReplayCandle || !candles.length) return emptyStructureVisuals();
+const SESSION_OPEN_MINUTES: Record<string, number> = {
+  asia: 18 * 60,
+  london: 3 * 60,
+  ny: 9 * 60 + 30,
+  pre_ny: 8 * 60 + 30
+};
 
-  const visuals = emptyStructureVisuals();
-  const phase = snapshot.trade.phase ?? "";
-  const currentPosition = candleIndex(candles, snapshot.currentReplayCandle);
-  const entryPosition = candleIndex(candles, snapshot.entryCandle);
-  const scanEnd = Math.min(currentPosition, Math.max(0, entryPosition));
-  const scanStart = Math.max(2, scanEnd - 90);
-  const direction = snapshot.trade.side === "long" ? 1 : -1;
-  const averageRange = Math.max(averageCandleRange(candles, Math.max(0, scanEnd - 30), scanEnd), Math.abs(snapshot.trade.entryPrice) * 0.0001, 0.01);
-  const rightEdge = candles[Math.max(currentPosition, entryPosition)] ?? snapshot.currentReplayCandle;
+const NY_DATE_FORMATTER = new Intl.DateTimeFormat("en-US", {
+  day: "2-digit",
+  month: "2-digit",
+  timeZone: "America/New_York",
+  year: "numeric"
+});
+const NY_TIME_FORMATTER = new Intl.DateTimeFormat("en-US", {
+  hour: "2-digit",
+  hour12: false,
+  minute: "2-digit",
+  timeZone: "America/New_York"
+});
 
-  if (/sweep|ict|ny_sweep/.test(phase)) {
-    for (let index = Math.max(scanStart, 14); index <= scanEnd; index += 1) {
+function structureToneForDirection(direction: number): StructureTone {
+  return direction === 1 ? "bullish" : "bearish";
+}
+
+function structureTagPositionForDirection(direction: number): StructureTag["position"] {
+  return direction === 1 ? "below" : "above";
+}
+
+function candleTime(candles: MappedCandle[], index: number): Time {
+  return candles[clamp(Math.round(index), 0, candles.length - 1)]!.time as Time;
+}
+
+function currentStructureTime(snapshot: TradeVisualSnapshot): Time | null {
+  return (snapshot.currentReplayTime ?? snapshot.currentReplayCandle?.time ?? null) as Time | null;
+}
+
+function variantTokens(variantId: string | undefined): string[] {
+  return (variantId ?? "")
+    .split("|")
+    .map((part) => part.trim())
+    .filter(Boolean);
+}
+
+function variantValue(variantId: string | undefined, key: string): string | null {
+  for (const token of variantTokens(variantId)) {
+    const separator = token.indexOf("=");
+    if (separator < 0) continue;
+    if (token.slice(0, separator) === key) return token.slice(separator + 1);
+  }
+
+  return null;
+}
+
+function variantNumber(variantId: string | undefined, key: string, fallback: number): number {
+  const parsed = Number(variantValue(variantId, key));
+  return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+function variantSession(variantId: string | undefined): string {
+  const token = variantTokens(variantId).find((part) => part in SESSION_OPEN_MINUTES || part === "all");
+  return token ?? "ny";
+}
+
+function strategyFingerprint(trade: TradeChartTrade): string {
+  return `${trade.phase ?? ""} ${trade.variantId ?? ""} ${trade.modelName ?? ""} ${trade.label ?? ""}`.toLowerCase();
+}
+
+function strategyUsesOrderBlock(trade: TradeChartTrade): boolean {
+  return /order[_\s-]?block|\bob_break|\bob_retest/.test(strategyFingerprint(trade));
+}
+
+function chartBarsFromMinutes(minutes: number, dataTimeframe: TradeChartTimeframe): number {
+  return Math.max(1, Math.round((minutes * 60) / timeframeSeconds(dataTimeframe)));
+}
+
+function chartBarsFromStrategyBars(strategyBars: number, trade: TradeChartTrade, dataTimeframe: TradeChartTimeframe): number {
+  const sourceTimeframe = trade.sourceTimeframe ?? "15m";
+  return Math.max(1, Math.round((strategyBars * timeframeSeconds(sourceTimeframe)) / timeframeSeconds(dataTimeframe)));
+}
+
+function rangeHighLow(candles: MappedCandle[], start: number, end: number): { high: number; low: number } | null {
+  const first = clamp(Math.floor(start), 0, candles.length - 1);
+  const last = clamp(Math.floor(end), first, candles.length - 1);
+  let high = -Infinity;
+  let low = Infinity;
+
+  for (let index = first; index <= last; index += 1) {
+    const candle = candles[index];
+    if (!candle) continue;
+    high = Math.max(high, candle.high);
+    low = Math.min(low, candle.low);
+  }
+
+  return Number.isFinite(high) && Number.isFinite(low) && high > low ? { high, low } : null;
+}
+
+function highestIndex(candles: MappedCandle[], start: number, end: number): number {
+  let bestIndex = clamp(Math.floor(start), 0, candles.length - 1);
+  let bestValue = -Infinity;
+  for (let index = bestIndex; index <= clamp(Math.floor(end), bestIndex, candles.length - 1); index += 1) {
+    if (candles[index]!.high > bestValue) {
+      bestValue = candles[index]!.high;
+      bestIndex = index;
+    }
+  }
+  return bestIndex;
+}
+
+function lowestIndex(candles: MappedCandle[], start: number, end: number): number {
+  let bestIndex = clamp(Math.floor(start), 0, candles.length - 1);
+  let bestValue = Infinity;
+  for (let index = bestIndex; index <= clamp(Math.floor(end), bestIndex, candles.length - 1); index += 1) {
+    if (candles[index]!.low < bestValue) {
+      bestValue = candles[index]!.low;
+      bestIndex = index;
+    }
+  }
+  return bestIndex;
+}
+
+function nyDateKey(time: Time): string {
+  return NY_DATE_FORMATTER.format(new Date(Number(time) * 1000));
+}
+
+function nyMinutes(time: Time): number {
+  const parts = NY_TIME_FORMATTER.formatToParts(new Date(Number(time) * 1000));
+  const hour = Number(parts.find((part) => part.type === "hour")?.value ?? 0);
+  const minute = Number(parts.find((part) => part.type === "minute")?.value ?? 0);
+  return (hour % 24) * 60 + minute;
+}
+
+function sessionStartIndex(candles: MappedCandle[], anchorIndex: number, variantId: string | undefined): number {
+  const session = variantSession(variantId);
+  if (session === "all") return Math.max(0, anchorIndex - 120);
+  const openMinutes = SESSION_OPEN_MINUTES[session] ?? SESSION_OPEN_MINUTES.ny;
+  const key = nyDateKey(candleTime(candles, anchorIndex));
+  let fallback = Math.max(0, anchorIndex - 120);
+
+  for (let index = 0; index <= anchorIndex; index += 1) {
+    const candle = candles[index]!;
+    if (nyDateKey(candle.time as Time) !== key) continue;
+    const minutes = nyMinutes(candle.time as Time);
+    if (minutes >= openMinutes) return index;
+    fallback = index;
+  }
+
+  return fallback;
+}
+
+function openingRangeIndices(
+  candles: MappedCandle[],
+  anchorIndex: number,
+  variantId: string | undefined,
+  rangeMinutes: number,
+  dataTimeframe: TradeChartTimeframe
+): { end: number; start: number } | null {
+  const session = variantSession(variantId);
+  if (session !== "all") {
+    const openMinutes = SESSION_OPEN_MINUTES[session] ?? SESSION_OPEN_MINUTES.ny;
+    const rangeEndMinutes = openMinutes + rangeMinutes;
+    const key = nyDateKey(candleTime(candles, anchorIndex));
+    let start = -1;
+    let end = -1;
+
+    for (let index = 0; index <= anchorIndex; index += 1) {
       const candle = candles[index]!;
-      const prior = candles.slice(Math.max(0, index - 14), index);
-      if (prior.length < 8) continue;
-      const priorHigh = Math.max(...prior.map((item) => item.high));
-      const priorLow = Math.min(...prior.map((item) => item.low));
-
-      if (candle.high > priorHigh && candle.close < priorHigh) {
-        visuals.lines.push({
-          endTime: candle.time as Time,
-          label: "Liquidity Sweep",
-          price: priorHigh,
-          startTime: prior[0]!.time as Time,
-          tone: "warning"
-        });
-        visuals.tags.push({ label: "Sweep", position: "above", price: candle.high, time: candle.time as Time, tone: "warning" });
-      } else if (candle.low < priorLow && candle.close > priorLow) {
-        visuals.lines.push({
-          endTime: candle.time as Time,
-          label: "Liquidity Sweep",
-          price: priorLow,
-          startTime: prior[0]!.time as Time,
-          tone: "warning"
-        });
-        visuals.tags.push({ label: "Sweep", position: "below", price: candle.low, time: candle.time as Time, tone: "warning" });
+      if (nyDateKey(candle.time as Time) !== key) continue;
+      const minutes = nyMinutes(candle.time as Time);
+      if (minutes >= openMinutes && minutes < rangeEndMinutes) {
+        if (start < 0) start = index;
+        end = index;
       }
     }
+
+    if (start >= 0 && end >= start) return { end, start };
   }
 
-  let lastLow: number | null = null;
-  let lastHigh: number | null = null;
-  for (let index = scanStart; index <= scanEnd; index += 1) {
+  const rangeBars = chartBarsFromMinutes(rangeMinutes, dataTimeframe);
+  const end = Math.max(0, anchorIndex - 1);
+  const start = Math.max(0, end - rangeBars + 1);
+  return end >= start ? { end, start } : null;
+}
+
+function tradeStructureEndTime(
+  snapshot: TradeVisualSnapshot,
+  candles: MappedCandle[],
+  currentPosition: number,
+  entryPosition: number,
+  extraBars = 24
+): Time {
+  const currentTime = currentStructureTime(snapshot);
+  const exitPosition = candleIndex(candles, snapshot.exitCandle);
+  const capPosition = exitPosition > entryPosition
+    ? exitPosition
+    : Math.min(candles.length - 1, entryPosition + extraBars);
+  const endPosition = Math.min(currentPosition, capPosition);
+  return endPosition === currentPosition && currentTime != null ? currentTime : candleTime(candles, endPosition);
+}
+
+function findBreakoutIndex(candles: MappedCandle[], start: number, end: number, level: number, direction: number): number | null {
+  for (let index = Math.max(0, start); index <= Math.min(candles.length - 1, end); index += 1) {
     const candle = candles[index]!;
-    if (pivotLow(candles, index)) {
-      if (lastLow != null && candle.low > lastLow) {
-        visuals.tags.push({ label: "HL", position: "below", price: candle.low, time: candle.time as Time, tone: "neutral" });
-      }
-      lastLow = candle.low;
+    if (direction === 1 && candle.close > level) return index;
+    if (direction === -1 && candle.close < level) return index;
+  }
+
+  return null;
+}
+
+function lineValueAtIndex(startIndex: number, startPrice: number, endIndex: number, endPrice: number, targetIndex: number): number {
+  if (endIndex === startIndex) return endPrice;
+  const progress = (targetIndex - startIndex) / (endIndex - startIndex);
+  return startPrice + (endPrice - startPrice) * progress;
+}
+
+function averageParts(raw: string | null, fallback: string): { kind: "EMA" | "SMA"; length: number } {
+  const token = (raw || fallback).toUpperCase();
+  const kind: "EMA" | "SMA" = token.startsWith("EMA") ? "EMA" : "SMA";
+  const length = Number(token.slice(3));
+  return { kind, length: Number.isFinite(length) ? Math.max(2, Math.round(length)) : Number(fallback.slice(3)) };
+}
+
+function movingAveragePoints(
+  candles: MappedCandle[],
+  start: number,
+  end: number,
+  kind: "EMA" | "SMA",
+  length: number
+): StructurePath["points"] {
+  const first = clamp(Math.floor(start), 0, candles.length - 1);
+  const last = clamp(Math.floor(end), first, candles.length - 1);
+  const warmStart = Math.max(0, first - length * 4);
+  const points: StructurePath["points"] = [];
+  let ema: number | null = null;
+  const alpha = 2 / (length + 1);
+
+  for (let index = warmStart; index <= last; index += 1) {
+    const candle = candles[index]!;
+    let value = Number.NaN;
+    if (kind === "EMA") {
+      ema = ema == null ? candle.close : alpha * candle.close + (1 - alpha) * ema;
+      value = ema;
+    } else if (index + 1 >= length) {
+      let total = 0;
+      for (let cursor = index - length + 1; cursor <= index; cursor += 1) total += candles[cursor]!.close;
+      value = total / length;
     }
-    if (pivotHigh(candles, index)) {
-      if (lastHigh != null && candle.high < lastHigh) {
-        visuals.tags.push({ label: "LH", position: "above", price: candle.high, time: candle.time as Time, tone: "neutral" });
-      }
-      lastHigh = candle.high;
+
+    if (index >= first && Number.isFinite(value)) points.push({ price: value, time: candle.time as Time });
+  }
+
+  return points;
+}
+
+function vwapPoints(candles: MappedCandle[], start: number, end: number): StructurePath["points"] {
+  const first = clamp(Math.floor(start), 0, candles.length - 1);
+  const last = clamp(Math.floor(end), first, candles.length - 1);
+  const points: StructurePath["points"] = [];
+  let volumeTotal = 0;
+  let priceVolumeTotal = 0;
+
+  for (let index = first; index <= last; index += 1) {
+    const candle = candles[index]!;
+    const volume = Math.max(1, candle.source.volume ?? 1);
+    const typical = (candle.high + candle.low + candle.close) / 3;
+    volumeTotal += volume;
+    priceVolumeTotal += typical * volume;
+    points.push({ price: priceVolumeTotal / volumeTotal, time: candle.time as Time });
+  }
+
+  return points;
+}
+
+function nearestPathPrice(points: StructurePath["points"], time: Time): number | null {
+  if (!points.length) return null;
+  const target = Number(time);
+  let best = points[0]!;
+  let bestDistance = Infinity;
+  for (const point of points) {
+    const distance = Math.abs(Number(point.time) - target);
+    if (distance < bestDistance) {
+      best = point;
+      bestDistance = distance;
+    }
+  }
+  return best.price;
+}
+
+function pivotIndices(candles: MappedCandle[], start: number, end: number, kind: "high" | "low"): number[] {
+  const result: number[] = [];
+  for (let index = Math.max(2, start); index <= Math.min(candles.length - 3, end); index += 1) {
+    if (kind === "high" ? pivotHigh(candles, index) : pivotLow(candles, index)) result.push(index);
+  }
+  return result;
+}
+
+function findLiquiditySweep(
+  candles: MappedCandle[],
+  start: number,
+  end: number,
+  lookback: number,
+  direction: number
+): { extreme: number; index: number; level: number; rangeStart: number } | null {
+  const first = Math.max(lookback + 1, start);
+  const last = Math.min(candles.length - 1, end);
+  let best: { extreme: number; index: number; level: number; rangeStart: number } | null = null;
+
+  for (let index = first; index <= last; index += 1) {
+    const rangeStart = Math.max(0, index - lookback);
+    const range = rangeHighLow(candles, rangeStart, index - 1);
+    const candle = candles[index]!;
+    if (!range) continue;
+
+    if (direction === -1 && candle.high > range.high && candle.close < range.high) {
+      if (!best || candle.high > best.extreme) best = { extreme: candle.high, index, level: range.high, rangeStart };
+    }
+    if (direction === 1 && candle.low < range.low && candle.close > range.low) {
+      if (!best || candle.low < best.extreme) best = { extreme: candle.low, index, level: range.low, rangeStart };
     }
   }
 
+  return best;
+}
+
+function findFairValueGap(
+  candles: MappedCandle[],
+  start: number,
+  end: number,
+  direction: number,
+  minimumGap: number
+): { endIndex: number; high: number; low: number; startIndex: number } | null {
+  for (let index = Math.max(2, start); index <= Math.min(candles.length - 1, end); index += 1) {
+    const left = candles[index - 2]!;
+    const candle = candles[index]!;
+    if (direction === 1 && candle.low > left.high + minimumGap) {
+      return { endIndex: index, high: candle.low, low: left.high, startIndex: index - 2 };
+    }
+    if (direction === -1 && candle.high < left.low - minimumGap) {
+      return { endIndex: index, high: left.low, low: candle.high, startIndex: index - 2 };
+    }
+  }
+
+  return null;
+}
+
+function addOpeningRangeVisuals(
+  visuals: StrategyStructureVisuals,
+  snapshot: TradeVisualSnapshot,
+  candles: MappedCandle[],
+  currentPosition: number,
+  entryPosition: number,
+  dataTimeframe: TradeChartTimeframe,
+  withRetest: boolean
+): void {
+  const direction = snapshot.trade.side === "long" ? 1 : -1;
+  const rangeMinutes = variantNumber(snapshot.trade.variantId, "range", 15);
+  const openingRange = openingRangeIndices(candles, entryPosition, snapshot.trade.variantId, rangeMinutes, dataTimeframe);
+  if (!openingRange || currentPosition < openingRange.start) return;
+
+  const visibleRangeEnd = Math.min(openingRange.end, currentPosition);
+  const partialRange = rangeHighLow(candles, openingRange.start, visibleRangeEnd);
+  const fullRange = rangeHighLow(candles, openingRange.start, openingRange.end);
+  if (!partialRange || !fullRange) return;
+
+  const tone = structureToneForDirection(direction);
+  const averageRange = Math.max(averageCandleRange(candles, openingRange.start, Math.max(openingRange.end, entryPosition)), Math.abs(snapshot.trade.entryPrice) * 0.0001, 0.01);
+  const structureEnd = tradeStructureEndTime(snapshot, candles, currentPosition, entryPosition, chartBarsFromMinutes(90, dataTimeframe));
+  visuals.boxes.push({
+    border: "solid",
+    endTime: candleTime(candles, visibleRangeEnd),
+    high: partialRange.high,
+    label: "Opening Range",
+    low: partialRange.low,
+    startTime: candleTime(candles, openingRange.start),
+    tone: "info"
+  });
+
+  if (currentPosition < openingRange.end) return;
+
+  visuals.lines.push({
+    endTime: structureEnd,
+    label: "",
+    price: fullRange.high,
+    startTime: candleTime(candles, openingRange.start),
+    tone: "info",
+    width: 1.25
+  });
+  visuals.lines.push({
+    endTime: structureEnd,
+    label: "",
+    price: fullRange.low,
+    startTime: candleTime(candles, openingRange.start),
+    tone: "info",
+    width: 1.25
+  });
+
+  const level = direction === 1 ? fullRange.high : fullRange.low;
+  const breakoutIndex = findBreakoutIndex(candles, openingRange.end + 1, Math.min(currentPosition, Math.max(entryPosition, openingRange.end + 1)), level, direction);
+  if (breakoutIndex == null) return;
+
+  const breakoutCandle = candles[breakoutIndex]!;
+  const band = averageRange * 0.22;
+  visuals.boxes.push({
+    border: "dashed",
+    endTime: withRetest ? structureEnd : candleTime(candles, breakoutIndex),
+    high: direction === 1 ? level + band : level,
+    label: withRetest ? "Retest Zone" : "Breakout Threshold",
+    low: direction === 1 ? level : level - band,
+    startTime: candleTime(candles, openingRange.end),
+    tone
+  });
+  visuals.segments.push({
+    arrow: true,
+    endPrice: breakoutCandle.close,
+    endTime: breakoutCandle.time as Time,
+    label: "Breakout Close",
+    startPrice: level,
+    startTime: candleTime(candles, openingRange.end),
+    tone,
+    width: 2
+  });
+
+  if (withRetest && currentPosition >= entryPosition) {
+    visuals.tags.push({
+      label: direction === 1 ? "Retest Hold" : "Retest Reject",
+      position: structureTagPositionForDirection(direction),
+      price: direction === 1 ? candles[entryPosition]!.low : candles[entryPosition]!.high,
+      time: candleTime(candles, entryPosition),
+      tone
+    });
+  }
+}
+
+function addSupportResistanceRetestVisuals(
+  visuals: StrategyStructureVisuals,
+  snapshot: TradeVisualSnapshot,
+  candles: MappedCandle[],
+  currentPosition: number,
+  entryPosition: number,
+  dataTimeframe: TradeChartTimeframe
+): void {
+  const direction = snapshot.trade.side === "long" ? 1 : -1;
+  const lookbackBars = chartBarsFromStrategyBars(Math.max(12, variantNumber(snapshot.trade.variantId, "range", 48)), snapshot.trade, dataTimeframe);
+  const retestBars = chartBarsFromMinutes(Math.max(30, variantNumber(snapshot.trade.variantId, "entry", 90)), dataTimeframe);
+  const baseEnd = Math.max(0, entryPosition - retestBars);
+  const baseStart = Math.max(0, baseEnd - lookbackBars + 1);
+  if (currentPosition < baseStart) return;
+
+  const baseRange = rangeHighLow(candles, baseStart, Math.min(baseEnd, currentPosition));
+  if (!baseRange) return;
+
+  const tone = structureToneForDirection(direction);
+  const level = direction === 1 ? baseRange.high : baseRange.low;
+  const averageRange = Math.max(averageCandleRange(candles, baseStart, entryPosition), Math.abs(snapshot.trade.entryPrice) * 0.0001, 0.01);
+  const structureEnd = tradeStructureEndTime(snapshot, candles, currentPosition, entryPosition, retestBars);
+  visuals.boxes.push({
+    endTime: candleTime(candles, Math.min(baseEnd, currentPosition)),
+    high: baseRange.high,
+    label: "S/R Base",
+    low: baseRange.low,
+    startTime: candleTime(candles, baseStart),
+    tone: "info"
+  });
+  visuals.lines.push({
+    endTime: structureEnd,
+    label: direction === 1 ? "Resistance Flip" : "Support Flip",
+    price: level,
+    startTime: candleTime(candles, baseStart),
+    tone,
+    width: 1.75
+  });
+
+  const breakoutIndex = findBreakoutIndex(candles, baseEnd + 1, Math.min(currentPosition, entryPosition), level, direction);
+  if (breakoutIndex != null) {
+    visuals.segments.push({
+      arrow: true,
+      endPrice: candles[breakoutIndex]!.close,
+      endTime: candleTime(candles, breakoutIndex),
+      label: "Break",
+      startPrice: level,
+      startTime: candleTime(candles, baseEnd),
+      tone,
+      width: 2
+    });
+  }
+
+  const retestHalfHeight = averageRange * 0.18;
+  visuals.boxes.push({
+    border: "dashed",
+    endTime: structureEnd,
+    high: level + retestHalfHeight,
+    label: "Retest Zone",
+    low: level - retestHalfHeight,
+    startTime: candleTime(candles, Math.min(currentPosition, Math.max(baseEnd, breakoutIndex ?? baseEnd))),
+    tone
+  });
+  if (currentPosition >= entryPosition) {
+    visuals.tags.push({
+      label: "Retest",
+      position: structureTagPositionForDirection(direction),
+      price: direction === 1 ? candles[entryPosition]!.low : candles[entryPosition]!.high,
+      time: candleTime(candles, entryPosition),
+      tone
+    });
+  }
+}
+
+function addTrendlineBreakVisuals(
+  visuals: StrategyStructureVisuals,
+  snapshot: TradeVisualSnapshot,
+  candles: MappedCandle[],
+  currentPosition: number,
+  entryPosition: number,
+  dataTimeframe: TradeChartTimeframe
+): void {
+  const direction = snapshot.trade.side === "long" ? 1 : -1;
+  const lookbackBars = chartBarsFromStrategyBars(Math.max(48, variantNumber(snapshot.trade.variantId, "range", 96)), snapshot.trade, dataTimeframe);
+  const start = Math.max(2, entryPosition - lookbackBars);
+  const end = Math.max(start + 1, Math.min(entryPosition - 1, currentPosition));
+  if (currentPosition < start || end <= start) return;
+
+  const pivotKind = direction === 1 ? "high" : "low";
+  const pivots = pivotIndices(candles, start, end, pivotKind);
+  let firstPivot = pivots[pivots.length - 2] ?? null;
+  let secondPivot = pivots[pivots.length - 1] ?? null;
+  if (firstPivot == null || secondPivot == null || firstPivot === secondPivot) {
+    const midpoint = Math.max(start + 1, Math.floor((start + end) / 2));
+    firstPivot = direction === 1 ? highestIndex(candles, start, midpoint) : lowestIndex(candles, start, midpoint);
+    secondPivot = direction === 1 ? highestIndex(candles, midpoint, end) : lowestIndex(candles, midpoint, end);
+  }
+  if (firstPivot === secondPivot) return;
+
+  const firstPrice = direction === 1 ? candles[firstPivot]!.high : candles[firstPivot]!.low;
+  const secondPrice = direction === 1 ? candles[secondPivot]!.high : candles[secondPivot]!.low;
+  const lineEndPosition = Math.min(currentPosition, Math.max(entryPosition, secondPivot + chartBarsFromStrategyBars(12, snapshot.trade, dataTimeframe)));
+  const lineEndPrice = lineValueAtIndex(firstPivot, firstPrice, secondPivot, secondPrice, lineEndPosition);
+  const tone = structureToneForDirection(direction);
+  visuals.segments.push({
+    endPrice: lineEndPrice,
+    endTime: candleTime(candles, lineEndPosition),
+    label: direction === 1 ? "Descending Trendline" : "Ascending Trendline",
+    startPrice: firstPrice,
+    startTime: candleTime(candles, firstPivot),
+    tone: "info",
+    width: 1.75
+  });
+  visuals.tags.push({
+    label: direction === 1 ? "LH" : "HL",
+    position: direction === 1 ? "above" : "below",
+    price: secondPrice,
+    time: candleTime(candles, secondPivot),
+    tone: "neutral"
+  });
+
+  if (currentPosition >= entryPosition) {
+    const entryLinePrice = lineValueAtIndex(firstPivot, firstPrice, secondPivot, secondPrice, entryPosition);
+    visuals.segments.push({
+      arrow: true,
+      endPrice: candles[entryPosition]!.close,
+      endTime: candleTime(candles, entryPosition),
+      label: "Trendline Break",
+      startPrice: entryLinePrice,
+      startTime: candleTime(candles, entryPosition),
+      tone,
+      width: 2.25
+    });
+  }
+}
+
+function addMovingAveragePullbackVisuals(
+  visuals: StrategyStructureVisuals,
+  snapshot: TradeVisualSnapshot,
+  candles: MappedCandle[],
+  currentPosition: number,
+  entryPosition: number,
+  dataTimeframe: TradeChartTimeframe,
+  touchMode = false
+): void {
+  const direction = snapshot.trade.side === "long" ? 1 : -1;
+  const tone = structureToneForDirection(direction);
+  const start = Math.max(0, entryPosition - chartBarsFromStrategyBars(96, snapshot.trade, dataTimeframe));
+  const end = Math.max(start, currentPosition);
+  const primaryAverage = touchMode
+    ? averageParts(variantValue(snapshot.trade.variantId, "ma"), "SMA20")
+    : { kind: "EMA" as const, length: 21 };
+  const primaryPoints = movingAveragePoints(candles, start, end, primaryAverage.kind, primaryAverage.length);
+  if (primaryPoints.length) {
+    visuals.paths.push({
+      label: `${primaryAverage.kind}${primaryAverage.length}`,
+      points: primaryPoints,
+      tone: "info",
+      width: 1.8
+    });
+  }
+
+  if (!touchMode) {
+    const signalPoints = movingAveragePoints(candles, start, end, "EMA", 9);
+    const trendPoints = movingAveragePoints(candles, start, end, "EMA", 50);
+    if (signalPoints.length) visuals.paths.push({ label: "EMA9", points: signalPoints, tone, width: 1.25 });
+    if (trendPoints.length) visuals.paths.push({ label: "EMA50", points: trendPoints, style: "dashed", tone: "neutral", width: 1.1 });
+  }
+
+  const anchorPrice = nearestPathPrice(primaryPoints, candleTime(candles, Math.min(entryPosition, currentPosition)));
+  if (anchorPrice == null) return;
+
+  const averageRange = Math.max(averageCandleRange(candles, Math.max(0, entryPosition - 32), entryPosition), Math.abs(snapshot.trade.entryPrice) * 0.0001, 0.01);
+  const structureEnd = tradeStructureEndTime(snapshot, candles, currentPosition, entryPosition, chartBarsFromStrategyBars(20, snapshot.trade, dataTimeframe));
+  visuals.boxes.push({
+    border: "dashed",
+    endTime: structureEnd,
+    high: anchorPrice + averageRange * 0.16,
+    label: touchMode ? "MA Touch Zone" : `${primaryAverage.kind}${primaryAverage.length} Pullback`,
+    low: anchorPrice - averageRange * 0.16,
+    startTime: candleTime(candles, Math.max(start, entryPosition - chartBarsFromStrategyBars(8, snapshot.trade, dataTimeframe))),
+    tone
+  });
+
+  if (currentPosition >= entryPosition) {
+    visuals.tags.push({
+      label: touchMode ? "MA Touch" : direction === 1 ? "Reclaim EMA9" : "Reject EMA9",
+      position: structureTagPositionForDirection(direction),
+      price: direction === 1 ? candles[entryPosition]!.low : candles[entryPosition]!.high,
+      time: candleTime(candles, entryPosition),
+      tone
+    });
+  }
+}
+
+function addMovingAverageCrossoverVisuals(
+  visuals: StrategyStructureVisuals,
+  snapshot: TradeVisualSnapshot,
+  candles: MappedCandle[],
+  currentPosition: number,
+  entryPosition: number,
+  dataTimeframe: TradeChartTimeframe
+): void {
+  const direction = snapshot.trade.side === "long" ? 1 : -1;
+  const fast = averageParts(variantValue(snapshot.trade.variantId, "fast"), "SMA50");
+  const slow = averageParts(variantValue(snapshot.trade.variantId, "slow"), "SMA200");
+  const start = Math.max(0, entryPosition - chartBarsFromStrategyBars(Math.max(slow.length, 100), snapshot.trade, dataTimeframe));
+  const end = Math.max(start, currentPosition);
+  const fastPoints = movingAveragePoints(candles, start, end, fast.kind, fast.length);
+  const slowPoints = movingAveragePoints(candles, start, end, slow.kind, slow.length);
+  const tone = structureToneForDirection(direction);
+  if (fastPoints.length) visuals.paths.push({ label: `${fast.kind}${fast.length}`, points: fastPoints, tone, width: 1.6 });
+  if (slowPoints.length) visuals.paths.push({ label: `${slow.kind}${slow.length}`, points: slowPoints, style: "dashed", tone: "neutral", width: 1.35 });
+  if (currentPosition >= entryPosition) {
+    visuals.tags.push({
+      label: direction === 1 ? "Bull Cross" : "Bear Cross",
+      position: structureTagPositionForDirection(direction),
+      price: candles[entryPosition]!.close,
+      time: candleTime(candles, entryPosition),
+      tone
+    });
+  }
+}
+
+function addVwapPullbackVisuals(
+  visuals: StrategyStructureVisuals,
+  snapshot: TradeVisualSnapshot,
+  candles: MappedCandle[],
+  currentPosition: number,
+  entryPosition: number,
+  dataTimeframe: TradeChartTimeframe
+): void {
+  const direction = snapshot.trade.side === "long" ? 1 : -1;
+  const sessionStart = sessionStartIndex(candles, entryPosition, snapshot.trade.variantId);
+  const start = Math.max(0, Math.min(sessionStart, entryPosition - chartBarsFromMinutes(90, dataTimeframe)));
+  const end = Math.max(start, currentPosition);
+  const points = vwapPoints(candles, start, end);
+  const tone = structureToneForDirection(direction);
+  if (points.length) visuals.paths.push({ label: "VWAP", points, tone: "info", width: 2 });
+
+  const vwapAtEntry = nearestPathPrice(points, candleTime(candles, Math.min(entryPosition, currentPosition)));
+  if (vwapAtEntry == null) return;
+  const averageRange = Math.max(averageCandleRange(candles, Math.max(0, entryPosition - 30), entryPosition), Math.abs(snapshot.trade.entryPrice) * 0.0001, 0.01);
+  const structureEnd = tradeStructureEndTime(snapshot, candles, currentPosition, entryPosition, chartBarsFromMinutes(90, dataTimeframe));
+  visuals.boxes.push({
+    border: "dashed",
+    endTime: structureEnd,
+    high: vwapAtEntry + averageRange * 0.18,
+    label: "VWAP Pullback",
+    low: vwapAtEntry - averageRange * 0.18,
+    startTime: candleTime(candles, Math.max(start, entryPosition - chartBarsFromMinutes(45, dataTimeframe))),
+    tone
+  });
+
+  if (entryPosition > start) {
+    const driveIndex = Math.max(start, entryPosition - chartBarsFromMinutes(30, dataTimeframe));
+    visuals.segments.push({
+      arrow: true,
+      endPrice: candles[entryPosition]!.close,
+      endTime: candleTime(candles, entryPosition),
+      label: direction === 1 ? "VWAP Reclaim" : "VWAP Reject",
+      startPrice: candles[driveIndex]!.close,
+      startTime: candleTime(candles, driveIndex),
+      tone,
+      width: 2
+    });
+  }
+}
+
+function addLiquiditySweepVisuals(
+  visuals: StrategyStructureVisuals,
+  snapshot: TradeVisualSnapshot,
+  candles: MappedCandle[],
+  currentPosition: number,
+  entryPosition: number,
+  dataTimeframe: TradeChartTimeframe,
+  ictMode = false
+): void {
+  const direction = snapshot.trade.side === "long" ? 1 : -1;
+  const signalPosition = candleIndex(candles, snapshot.signalCandle);
+  const lookback = chartBarsFromStrategyBars(ictMode ? 24 : 20, snapshot.trade, dataTimeframe);
+  const searchStart = Math.max(2, signalPosition - chartBarsFromStrategyBars(ictMode ? 12 : 28, snapshot.trade, dataTimeframe));
+  const searchEnd = Math.min(currentPosition, Math.max(signalPosition, entryPosition));
+  const sweep = findLiquiditySweep(candles, searchStart, searchEnd, lookback, direction);
+  const tone = structureToneForDirection(direction);
+  const structureEnd = tradeStructureEndTime(snapshot, candles, currentPosition, entryPosition, chartBarsFromStrategyBars(32, snapshot.trade, dataTimeframe));
+
+  if (sweep && currentPosition >= sweep.index) {
+    const sweepCandle = candles[sweep.index]!;
+    visuals.lines.push({
+      endTime: structureEnd,
+      label: direction === 1 ? "Sell-Side Liquidity" : "Buy-Side Liquidity",
+      price: sweep.level,
+      startTime: candleTime(candles, sweep.rangeStart),
+      style: "dashed",
+      tone: "warning",
+      width: 1.4
+    });
+    visuals.boxes.push({
+      border: "solid",
+      endTime: candleTime(candles, Math.min(candles.length - 1, sweep.index + 1)),
+      high: Math.max(sweep.level, sweep.extreme),
+      label: "Sweep Wick",
+      low: Math.min(sweep.level, sweep.extreme),
+      startTime: sweepCandle.time as Time,
+      tone: "warning"
+    });
+    visuals.segments.push({
+      arrow: true,
+      endPrice: sweepCandle.close,
+      endTime: sweepCandle.time as Time,
+      label: direction === 1 ? "Reclaim" : "Reject",
+      startPrice: sweep.extreme,
+      startTime: sweepCandle.time as Time,
+      tone,
+      width: 2
+    });
+    visuals.tags.push({
+      label: "Sweep",
+      position: direction === 1 ? "below" : "above",
+      price: sweep.extreme,
+      time: sweepCandle.time as Time,
+      tone: "warning"
+    });
+  }
+
+  if (!ictMode) return;
+
+  const averageRange = Math.max(averageCandleRange(candles, Math.max(0, signalPosition - 20), Math.max(signalPosition, entryPosition)), Math.abs(snapshot.trade.entryPrice) * 0.0001, 0.01);
+  const fvg = findFairValueGap(candles, Math.max(2, signalPosition - chartBarsFromStrategyBars(8, snapshot.trade, dataTimeframe)), Math.min(currentPosition, Math.max(signalPosition, entryPosition)), direction, averageRange * 0.04);
+  if (fvg) {
+    const fvgEndTime = currentPosition >= entryPosition
+      ? candleTime(candles, entryPosition)
+      : tradeStructureEndTime(snapshot, candles, currentPosition, entryPosition, chartBarsFromStrategyBars(12, snapshot.trade, dataTimeframe));
+    visuals.boxes.push({
+      border: "solid",
+      endTime: fvgEndTime,
+      high: fvg.high,
+      label: "FVG",
+      low: fvg.low,
+      startTime: candleTime(candles, fvg.startIndex),
+      tone
+    });
+    if (sweep) {
+      visuals.segments.push({
+        arrow: true,
+        endPrice: candles[fvg.endIndex]!.close,
+        endTime: candleTime(candles, fvg.endIndex),
+        label: "Displacement",
+        startPrice: sweep.extreme,
+        startTime: candleTime(candles, sweep.index),
+        tone,
+        width: 2.25
+      });
+    }
+  }
+}
+
+function addOrderBlockBreakoutVisuals(
+  visuals: StrategyStructureVisuals,
+  snapshot: TradeVisualSnapshot,
+  candles: MappedCandle[],
+  currentPosition: number,
+  entryPosition: number,
+  dataTimeframe: TradeChartTimeframe
+): void {
+  const direction = snapshot.trade.side === "long" ? 1 : -1;
+  const scanStart = Math.max(0, entryPosition - chartBarsFromStrategyBars(36, snapshot.trade, dataTimeframe));
+  const scanEnd = Math.min(currentPosition, Math.max(0, entryPosition - 1));
+  const averageRange = Math.max(averageCandleRange(candles, scanStart, Math.max(scanStart, entryPosition)), Math.abs(snapshot.trade.entryPrice) * 0.0001, 0.01);
   let orderBlockIndex: number | null = null;
-  for (let index = Math.min(scanEnd - 1, entryPosition - 1); index >= Math.max(scanStart, entryPosition - 32); index -= 1) {
-    const candle = candles[index]!;
-    const isOpposite = direction === 1 ? candle.close < candle.open : candle.close > candle.open;
-    if (!isOpposite) continue;
+  let displacementIndex: number | null = null;
 
-    const lookaheadEnd = Math.min(candles.length - 1, index + 5, currentPosition);
-    for (let cursor = index + 1; cursor <= lookaheadEnd; cursor += 1) {
+  for (let index = scanEnd; index >= scanStart; index -= 1) {
+    const candle = candles[index]!;
+    const oppositeCandle = direction === 1 ? candle.close < candle.open : candle.close > candle.open;
+    if (!oppositeCandle) continue;
+    for (let cursor = index + 1; cursor <= Math.min(candles.length - 1, index + chartBarsFromStrategyBars(6, snapshot.trade, dataTimeframe), currentPosition); cursor += 1) {
       const impulse = candles[cursor]!;
-      const displacement =
-        direction === 1
-          ? impulse.close > candle.high + averageRange * 0.15 && impulse.high - impulse.low >= averageRange * 0.9
-          : impulse.close < candle.low - averageRange * 0.15 && impulse.high - impulse.low >= averageRange * 0.9;
-      if (displacement) {
+      const displaced = direction === 1
+        ? impulse.close > candle.high + averageRange * 0.18
+        : impulse.close < candle.low - averageRange * 0.18;
+      if (displaced) {
         orderBlockIndex = index;
+        displacementIndex = cursor;
         break;
       }
     }
     if (orderBlockIndex != null) break;
   }
 
-  if (orderBlockIndex != null) {
-    const candle = candles[orderBlockIndex]!;
-    visuals.boxes.push({
-      endTime: rightEdge.time as Time,
-      high: candle.high,
-      label: direction === 1 ? "Bullish Order Block" : "Bearish Order Block",
-      low: candle.low,
-      startTime: candle.time as Time,
-      tone: direction === 1 ? "bullish" : "bearish"
+  if (orderBlockIndex == null) return;
+  const block = candles[orderBlockIndex]!;
+  const triggerPrice = direction === 1 ? block.high : block.low;
+  const tone = structureToneForDirection(direction);
+  const structureEnd = tradeStructureEndTime(snapshot, candles, currentPosition, entryPosition, chartBarsFromStrategyBars(32, snapshot.trade, dataTimeframe));
+  visuals.boxes.push({
+    border: "solid",
+    endTime: structureEnd,
+    high: block.high,
+    label: direction === 1 ? "Bullish Order Block" : "Bearish Order Block",
+    low: block.low,
+    startTime: block.time as Time,
+    tone
+  });
+  visuals.lines.push({
+    endTime: structureEnd,
+    label: "OB Break Level",
+    price: triggerPrice,
+    startTime: block.time as Time,
+    tone,
+    width: 1.5
+  });
+  if (displacementIndex != null) {
+    visuals.segments.push({
+      arrow: true,
+      endPrice: candles[displacementIndex]!.close,
+      endTime: candleTime(candles, displacementIndex),
+      label: "OB Breakout Close",
+      startPrice: triggerPrice,
+      startTime: block.time as Time,
+      tone,
+      width: 2.25
     });
   }
+}
 
-  if (/ict|fvg|sweep/.test(phase)) {
-    for (let index = Math.max(scanStart + 2, entryPosition - 28); index <= scanEnd; index += 1) {
-      const left = candles[index - 2];
-      const candle = candles[index];
-      if (!left || !candle) continue;
+function addParabolicFadeVisuals(
+  visuals: StrategyStructureVisuals,
+  snapshot: TradeVisualSnapshot,
+  candles: MappedCandle[],
+  currentPosition: number,
+  entryPosition: number,
+  dataTimeframe: TradeChartTimeframe
+): void {
+  const direction = snapshot.trade.side === "long" ? 1 : -1;
+  const lookback = chartBarsFromStrategyBars(18, snapshot.trade, dataTimeframe);
+  const start = Math.max(0, entryPosition - lookback);
+  const runStart = direction === 1 ? highestIndex(candles, start, entryPosition) : lowestIndex(candles, start, entryPosition);
+  const extreme = direction === 1 ? lowestIndex(candles, runStart, entryPosition) : highestIndex(candles, runStart, entryPosition);
+  const tone = structureToneForDirection(direction);
+  const structureEnd = tradeStructureEndTime(snapshot, candles, currentPosition, entryPosition, chartBarsFromStrategyBars(12, snapshot.trade, dataTimeframe));
+  visuals.segments.push({
+    arrow: true,
+    endPrice: direction === 1 ? candles[extreme]!.low : candles[extreme]!.high,
+    endTime: candleTime(candles, extreme),
+    label: "Parabolic Extension",
+    startPrice: candles[runStart]!.close,
+    startTime: candleTime(candles, runStart),
+    tone: "warning",
+    width: 2
+  });
+  visuals.boxes.push({
+    border: "dashed",
+    endTime: structureEnd,
+    high: direction === 1 ? candles[entryPosition]!.close : candles[extreme]!.high,
+    label: "Fade Zone",
+    low: direction === 1 ? candles[extreme]!.low : candles[entryPosition]!.close,
+    startTime: candleTime(candles, Math.max(start, entryPosition - chartBarsFromStrategyBars(4, snapshot.trade, dataTimeframe))),
+    tone
+  });
+  if (currentPosition >= entryPosition) {
+    visuals.tags.push({
+      label: "Fade Trigger",
+      position: structureTagPositionForDirection(direction),
+      price: direction === 1 ? candles[entryPosition]!.low : candles[entryPosition]!.high,
+      time: candleTime(candles, entryPosition),
+      tone
+    });
+  }
+}
 
-      if (direction === 1 && candle.low > left.high + averageRange * 0.08) {
-        visuals.boxes.push({
-          endTime: rightEdge.time as Time,
-          high: candle.low,
-          label: "FVG",
-          low: left.high,
-          startTime: left.time as Time,
-          tone: "bullish"
-        });
-        break;
-      }
-      if (direction === -1 && candle.high < left.low - averageRange * 0.08) {
-        visuals.boxes.push({
-          endTime: rightEdge.time as Time,
-          high: left.low,
-          label: "FVG",
-          low: candle.high,
-          startTime: left.time as Time,
-          tone: "bearish"
-        });
-        break;
-      }
+function addRangeEdgeVisuals(
+  visuals: StrategyStructureVisuals,
+  snapshot: TradeVisualSnapshot,
+  candles: MappedCandle[],
+  currentPosition: number,
+  entryPosition: number,
+  dataTimeframe: TradeChartTimeframe,
+  decileMode = false
+): void {
+  const direction = snapshot.trade.side === "long" ? 1 : -1;
+  const rangeBars = chartBarsFromStrategyBars(Math.max(5, variantNumber(snapshot.trade.variantId, "range", 96)), snapshot.trade, dataTimeframe);
+  const buckets = Math.max(5, variantNumber(snapshot.trade.variantId, "buckets", decileMode ? 10 : 20));
+  const start = Math.max(0, entryPosition - rangeBars + 1);
+  const end = Math.min(currentPosition, entryPosition);
+  const range = rangeHighLow(candles, start, end);
+  if (!range) return;
+
+  const span = range.high - range.low;
+  const position = clamp((candles[Math.min(entryPosition, currentPosition)]!.close - range.low) / span, 0, 0.999);
+  const bucket = Math.floor(position * buckets);
+  const bucketLow = range.low + (span / buckets) * bucket;
+  const bucketHigh = range.low + (span / buckets) * (bucket + 1);
+  const tone = structureToneForDirection(direction);
+  const structureEnd = tradeStructureEndTime(snapshot, candles, currentPosition, entryPosition, chartBarsFromStrategyBars(24, snapshot.trade, dataTimeframe));
+  visuals.boxes.push({
+    endTime: candleTime(candles, end),
+    high: range.high,
+    label: "Study Range",
+    low: range.low,
+    startTime: candleTime(candles, start),
+    tone: "info"
+  });
+  visuals.boxes.push({
+    border: "solid",
+    endTime: structureEnd,
+    high: bucketHigh,
+    label: decileMode ? `Decile ${bucket + 1}` : "Percentile Edge",
+    low: bucketLow,
+    startTime: candleTime(candles, Math.max(start, entryPosition - chartBarsFromStrategyBars(8, snapshot.trade, dataTimeframe))),
+    tone
+  });
+}
+
+function addImpulseVisuals(
+  visuals: StrategyStructureVisuals,
+  snapshot: TradeVisualSnapshot,
+  candles: MappedCandle[],
+  currentPosition: number,
+  entryPosition: number,
+  dataTimeframe: TradeChartTimeframe,
+  meanReversion = false
+): void {
+  const direction = snapshot.trade.side === "long" ? 1 : -1;
+  const start = Math.max(0, entryPosition - chartBarsFromStrategyBars(120, snapshot.trade, dataTimeframe));
+  const end = Math.max(start, currentPosition);
+  const ema30 = movingAveragePoints(candles, start, end, "EMA", 30);
+  const ema200 = movingAveragePoints(candles, start, end, "EMA", 200);
+  const tone = structureToneForDirection(direction);
+  if (ema30.length) visuals.paths.push({ label: "EMA30", points: ema30, tone: "info", width: 1.45 });
+  if (ema200.length) visuals.paths.push({ label: "EMA200", points: ema200, style: "dashed", tone: "neutral", width: 1.2 });
+
+  const signalStart = Math.max(start, entryPosition - chartBarsFromStrategyBars(5, snapshot.trade, dataTimeframe));
+  visuals.segments.push({
+    arrow: true,
+    endPrice: candles[entryPosition]!.close,
+    endTime: candleTime(candles, entryPosition),
+    label: meanReversion ? "Exhaustion Move" : "Signal Move",
+    startPrice: candles[signalStart]!.close,
+    startTime: candleTime(candles, signalStart),
+    tone: meanReversion ? "warning" : tone,
+    width: 2
+  });
+  if (meanReversion) {
+    const range = rangeHighLow(candles, signalStart, entryPosition);
+    if (range) {
+      visuals.boxes.push({
+        border: "dashed",
+        endTime: tradeStructureEndTime(snapshot, candles, currentPosition, entryPosition, chartBarsFromStrategyBars(12, snapshot.trade, dataTimeframe)),
+        high: range.high,
+        label: "Reversion Stretch",
+        low: range.low,
+        startTime: candleTime(candles, signalStart),
+        tone: "warning"
+      });
     }
   }
+}
 
+function finalizeStructureVisuals(visuals: StrategyStructureVisuals): StrategyStructureVisuals {
   return {
-    boxes: visuals.boxes.slice(-3),
-    lines: visuals.lines.slice(-3),
-    tags: visuals.tags.slice(-8)
+    boxes: visuals.boxes.slice(-7),
+    lines: visuals.lines.slice(-8),
+    paths: visuals.paths.slice(-4).map((path) => ({ ...path, points: path.points.slice(-220) })),
+    segments: visuals.segments.slice(-8),
+    tags: visuals.tags.slice(-10)
   };
+}
+
+function strategyStructureVisuals(
+  snapshot: TradeVisualSnapshot,
+  candles: MappedCandle[],
+  enabled: boolean,
+  dataTimeframe: TradeChartTimeframe
+): StrategyStructureVisuals {
+  if (!enabled || !snapshot.currentReplayCandle || !candles.length) return emptyStructureVisuals();
+
+  const visuals = emptyStructureVisuals();
+  const phase = (snapshot.trade.phase ?? "").toLowerCase();
+  const fingerprint = strategyFingerprint(snapshot.trade);
+  const currentPosition = candleIndex(candles, snapshot.currentReplayCandle);
+  const entryPosition = candleIndex(candles, snapshot.entryCandle);
+  if (entryPosition < 0 || currentPosition < 0) return emptyStructureVisuals();
+
+  if (strategyUsesOrderBlock(snapshot.trade)) {
+    addOrderBlockBreakoutVisuals(visuals, snapshot, candles, currentPosition, entryPosition, dataTimeframe);
+    return finalizeStructureVisuals(visuals);
+  }
+
+  if (phase === "reddit_orb_retest" || fingerprint.includes("orb retest")) {
+    addOpeningRangeVisuals(visuals, snapshot, candles, currentPosition, entryPosition, dataTimeframe, true);
+  } else if (phase === "reddit_orb_breakout" || fingerprint.includes("orb breakout") || fingerprint.includes("opening_drive")) {
+    addOpeningRangeVisuals(visuals, snapshot, candles, currentPosition, entryPosition, dataTimeframe, false);
+  } else if (phase === "support_resistance_retest" || fingerprint.includes("support resistance") || fingerprint.includes("claytrader")) {
+    addSupportResistanceRetestVisuals(visuals, snapshot, candles, currentPosition, entryPosition, dataTimeframe);
+  } else if (phase === "trendline_break" || phase === "tori_trendline_mtf" || fingerprint.includes("trendline")) {
+    addTrendlineBreakVisuals(visuals, snapshot, candles, currentPosition, entryPosition, dataTimeframe);
+  } else if (phase === "vwap_pullback" || fingerprint.includes("vwap")) {
+    addVwapPullbackVisuals(visuals, snapshot, candles, currentPosition, entryPosition, dataTimeframe);
+  } else if (phase === "moving_average_touch" || fingerprint.includes("support bounce")) {
+    addMovingAveragePullbackVisuals(visuals, snapshot, candles, currentPosition, entryPosition, dataTimeframe, true);
+  } else if (phase === "moving_average_crossover" || fingerprint.includes("sma50/sma200") || fingerprint.includes("cross")) {
+    addMovingAverageCrossoverVisuals(visuals, snapshot, candles, currentPosition, entryPosition, dataTimeframe);
+  } else if (phase === "reddit_ema_pullback" || phase === "ma_pullback" || phase === "ema_rider" || fingerprint.includes("ema pullback")) {
+    addMovingAveragePullbackVisuals(visuals, snapshot, candles, currentPosition, entryPosition, dataTimeframe);
+  } else if (phase === "ict_sweep_fvg" || fingerprint.includes("ict sweep fvg")) {
+    addLiquiditySweepVisuals(visuals, snapshot, candles, currentPosition, entryPosition, dataTimeframe, true);
+  } else if (phase === "ict_turtle_soup" || phase === "ny_sweep_playbook" || fingerprint.includes("turtle soup") || fingerprint.includes("ny sweep")) {
+    addLiquiditySweepVisuals(visuals, snapshot, candles, currentPosition, entryPosition, dataTimeframe);
+  } else if (phase === "parabolic_fade" || fingerprint.includes("parabolic")) {
+    addParabolicFadeVisuals(visuals, snapshot, candles, currentPosition, entryPosition, dataTimeframe);
+  } else if (phase === "percentile_range_study" || fingerprint.includes("percentile range")) {
+    addRangeEdgeVisuals(visuals, snapshot, candles, currentPosition, entryPosition, dataTimeframe);
+  } else if (phase === "decile_forward_edge" || fingerprint.includes("decile forward")) {
+    addRangeEdgeVisuals(visuals, snapshot, candles, currentPosition, entryPosition, dataTimeframe, true);
+  } else if (phase === "mean_reversion" || phase === "reddit_capitulation_reversion" || fingerprint.includes("capitulation") || fingerprint.includes("reversion")) {
+    addImpulseVisuals(visuals, snapshot, candles, currentPosition, entryPosition, dataTimeframe, true);
+  } else if (phase === "momentum" || fingerprint.includes("momentum")) {
+    addImpulseVisuals(visuals, snapshot, candles, currentPosition, entryPosition, dataTimeframe);
+  }
+
+  return finalizeStructureVisuals(visuals);
 }
 
 function strategyVisualMarkers(_snapshot: TradeVisualSnapshot, _candles: MappedCandle[], _enabled: boolean): SeriesMarker<Time>[] {
@@ -987,8 +1964,35 @@ function structureColor(tone: StructureTone): { fill: string; stroke: string; te
   if (tone === "warning") {
     return { fill: "rgba(251, 191, 36, 0.13)", stroke: "rgba(251, 191, 36, 0.75)", text: "#fbbf24" };
   }
+  if (tone === "info") {
+    return { fill: "rgba(56, 189, 248, 0.11)", stroke: "rgba(125, 211, 252, 0.68)", text: "#7dd3fc" };
+  }
 
   return { fill: "rgba(167, 139, 250, 0.13)", stroke: "rgba(167, 139, 250, 0.72)", text: "#a78bfa" };
+}
+
+function applyStructureDash(ctx: CanvasRenderingContext2D, style: StructureLineStyle | undefined): void {
+  if (style === "dotted") {
+    ctx.setLineDash([1, 5]);
+  } else if (style === "solid") {
+    ctx.setLineDash([]);
+  } else {
+    ctx.setLineDash([5, 4]);
+  }
+}
+
+function drawArrowHead(ctx: CanvasRenderingContext2D, x1: number, y1: number, x2: number, y2: number, color: string): void {
+  const angle = Math.atan2(y2 - y1, x2 - x1);
+  const size = 7;
+  ctx.save();
+  ctx.beginPath();
+  ctx.fillStyle = color;
+  ctx.moveTo(x2, y2);
+  ctx.lineTo(x2 - size * Math.cos(angle - Math.PI / 6), y2 - size * Math.sin(angle - Math.PI / 6));
+  ctx.lineTo(x2 - size * Math.cos(angle + Math.PI / 6), y2 - size * Math.sin(angle + Math.PI / 6));
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
 }
 
 function drawStructureVisuals(
@@ -999,12 +2003,20 @@ function drawStructureVisuals(
   state: ChartPositionOverlayState
 ): void {
   const { candles, dataTimeframe, structureVisuals } = state;
-  if (!structureVisuals.boxes.length && !structureVisuals.lines.length && !structureVisuals.tags.length) return;
+  if (
+    !structureVisuals.boxes.length &&
+    !structureVisuals.lines.length &&
+    !structureVisuals.paths.length &&
+    !structureVisuals.segments.length &&
+    !structureVisuals.tags.length
+  ) {
+    return;
+  }
 
   ctx.save();
   for (const box of structureVisuals.boxes) {
-    const x1 = chartXForTime(chart, candles, box.startTime, dataTimeframe);
-    const x2 = chartXForTime(chart, candles, box.endTime, dataTimeframe);
+    const x1 = structureXForTime(chart, candles, box.startTime, dataTimeframe, size.width);
+    const x2 = structureXForTime(chart, candles, box.endTime, dataTimeframe, size.width);
     const yHigh = series.priceToCoordinate(box.high);
     const yLow = series.priceToCoordinate(box.low);
     if (
@@ -1029,16 +2041,18 @@ function drawStructureVisuals(
     ctx.fillStyle = colors.fill;
     ctx.strokeStyle = colors.stroke;
     ctx.lineWidth = 1.25;
+    applyStructureDash(ctx, box.border ?? "solid");
     ctx.fillRect(x, y, width, height);
     ctx.strokeRect(x, y, width, height);
+    ctx.setLineDash([]);
     if (coordinateInPane(x + 6, size.width) && coordinateInPane(y + 12, size.height)) {
       drawOverlayText(ctx, box.label, clamp(x + 6, 6, size.width - 130), clamp(y + 12, 12, size.height - 8), colors.text);
     }
   }
 
   for (const line of structureVisuals.lines) {
-    const x1 = chartXForTime(chart, candles, line.startTime, dataTimeframe);
-    const x2 = chartXForTime(chart, candles, line.endTime, dataTimeframe);
+    const x1 = structureXForTime(chart, candles, line.startTime, dataTimeframe, size.width);
+    const x2 = structureXForTime(chart, candles, line.endTime, dataTimeframe, size.width);
     const y = series.priceToCoordinate(line.price);
     if (!coordinateIsVisible(x1) || !coordinateIsVisible(x2) || !coordinateInPane(y, size.height) || !coordinateRangeIntersectsPane(x1, x2, size.width)) {
       continue;
@@ -1047,19 +2061,91 @@ function drawStructureVisuals(
     const colors = structureColor(line.tone);
     ctx.beginPath();
     ctx.strokeStyle = colors.stroke;
-    ctx.lineWidth = 1.5;
-    ctx.setLineDash([5, 4]);
+    ctx.lineWidth = line.width ?? 1.5;
+    applyStructureDash(ctx, line.style ?? "dashed");
     ctx.moveTo(clamp(x1, 0, size.width), y);
     ctx.lineTo(clamp(x2, 0, size.width), y);
     ctx.stroke();
     ctx.setLineDash([]);
-    if (coordinateInPane(Math.min(x1, x2) + 6, size.width) && coordinateInPane(y - 11, size.height)) {
+    if (line.label && coordinateInPane(Math.min(x1, x2) + 6, size.width) && coordinateInPane(y - 11, size.height)) {
       drawOverlayText(ctx, line.label, clamp(Math.min(x1, x2) + 6, 6, size.width - 130), y - 11, colors.text);
     }
   }
 
+  for (const path of structureVisuals.paths) {
+    if (path.points.length < 2) continue;
+    const colors = structureColor(path.tone);
+    ctx.beginPath();
+    ctx.strokeStyle = colors.stroke;
+    ctx.lineWidth = path.width ?? 1.4;
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    applyStructureDash(ctx, path.style ?? "solid");
+    let hasStroke = false;
+    let labelPoint: { x: number; y: number } | null = null;
+
+    for (let index = 1; index < path.points.length; index += 1) {
+      const previous = path.points[index - 1]!;
+      const current = path.points[index]!;
+      const x1 = structureXForTime(chart, candles, previous.time, dataTimeframe, size.width);
+      const x2 = structureXForTime(chart, candles, current.time, dataTimeframe, size.width);
+      const y1 = series.priceToCoordinate(previous.price);
+      const y2 = series.priceToCoordinate(current.price);
+      if (!coordinateIsVisible(x1) || !coordinateIsVisible(x2) || !coordinateIsVisible(y1) || !coordinateIsVisible(y2)) continue;
+      if (!coordinateRangeIntersectsPane(x1, x2, size.width) || !coordinateRangeIntersectsPane(y1, y2, size.height)) continue;
+      ctx.moveTo(clamp(x1, 0, size.width), clamp(y1, 0, size.height));
+      ctx.lineTo(clamp(x2, 0, size.width), clamp(y2, 0, size.height));
+      hasStroke = true;
+      if (coordinateInPane(x2, size.width) && coordinateInPane(y2, size.height)) labelPoint = { x: x2, y: y2 };
+    }
+
+    if (hasStroke) ctx.stroke();
+    ctx.setLineDash([]);
+    if (labelPoint && coordinateInPane(labelPoint.x + 6, size.width) && coordinateInPane(labelPoint.y - 10, size.height)) {
+      drawOverlayText(ctx, path.label, clamp(labelPoint.x + 6, 6, size.width - 110), labelPoint.y - 10, colors.text);
+    }
+  }
+
+  for (const segment of structureVisuals.segments) {
+    const x1 = structureXForTime(chart, candles, segment.startTime, dataTimeframe, size.width);
+    const x2 = structureXForTime(chart, candles, segment.endTime, dataTimeframe, size.width);
+    const y1 = series.priceToCoordinate(segment.startPrice);
+    const y2 = series.priceToCoordinate(segment.endPrice);
+    if (
+      !coordinateIsVisible(x1) ||
+      !coordinateIsVisible(x2) ||
+      !coordinateIsVisible(y1) ||
+      !coordinateIsVisible(y2) ||
+      !coordinateRangeIntersectsPane(x1, x2, size.width) ||
+      !coordinateRangeIntersectsPane(y1, y2, size.height)
+    ) {
+      continue;
+    }
+
+    const colors = structureColor(segment.tone);
+    const drawX1 = clamp(x1, 0, size.width);
+    const drawX2 = clamp(x2, 0, size.width);
+    const drawY1 = clamp(y1, 0, size.height);
+    const drawY2 = clamp(y2, 0, size.height);
+    ctx.beginPath();
+    ctx.strokeStyle = colors.stroke;
+    ctx.lineWidth = segment.width ?? 1.6;
+    ctx.lineCap = "round";
+    applyStructureDash(ctx, segment.style ?? "solid");
+    ctx.moveTo(drawX1, drawY1);
+    ctx.lineTo(drawX2, drawY2);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    if (segment.arrow && coordinateInPane(x2, size.width) && coordinateInPane(y2, size.height)) {
+      drawArrowHead(ctx, drawX1, drawY1, drawX2, drawY2, colors.text);
+    }
+    if (coordinateInPane(x2 + 6, size.width) && coordinateInPane(y2 - 11, size.height)) {
+      drawOverlayText(ctx, segment.label, clamp(x2 + 6, 6, size.width - 140), y2 - 11, colors.text);
+    }
+  }
+
   for (const tag of structureVisuals.tags) {
-    const x = chartXForTime(chart, candles, tag.time, dataTimeframe);
+    const x = structureXForTime(chart, candles, tag.time, dataTimeframe, size.width);
     const y = series.priceToCoordinate(tag.price);
     if (!coordinateInPane(x, size.width) || !coordinateInPane(y, size.height)) continue;
 
@@ -1581,7 +2667,7 @@ export default function TradePriceChart({
       candles: mappedCandles,
       dataTimeframe: effectiveDataTimeframe,
       snapshot: initialSnapshot,
-      structureVisuals: strategyStructureVisuals(initialSnapshot, mappedCandles, showStrategyVisuals)
+      structureVisuals: strategyStructureVisuals(initialSnapshot, mappedCandles, showStrategyVisuals, effectiveDataTimeframe)
     });
     markers.setMarkers([...tradeMarkerList(initialSnapshot), ...strategyVisualMarkers(initialSnapshot, mappedCandles, showStrategyVisuals)]);
 
@@ -1677,7 +2763,7 @@ export default function TradePriceChart({
       candles: mappedCandles,
       dataTimeframe: effectiveDataTimeframe,
       snapshot,
-      structureVisuals: strategyStructureVisuals(snapshot, mappedCandles, showStrategyVisuals)
+      structureVisuals: strategyStructureVisuals(snapshot, mappedCandles, showStrategyVisuals, effectiveDataTimeframe)
     });
     markers.setMarkers([...tradeMarkerList(snapshot), ...strategyVisualMarkers(snapshot, mappedCandles, showStrategyVisuals)]);
   }, [candleData, chartTheme, currentPartialSource?.close, currentReplayCandle, currentReplayTime, effectiveDataTimeframe, entryCandle, exitCandle, mappedCandles, showStrategyVisuals, signalCandle, trade]);

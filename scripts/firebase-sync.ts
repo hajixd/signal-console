@@ -4,7 +4,7 @@ import { readdir, stat } from "node:fs/promises";
 import path from "node:path";
 import { buildLocalStrategyCatalog } from "../src/lib/backtest";
 import { firebaseBucket, hasFirebaseAdmin, storageObjectPath } from "../src/lib/firebase-admin";
-import { defaultDatasetStatus, getLiveConfig, saveDatasetStatus, saveLiveConfig } from "../src/lib/live-config";
+import { defaultDatasetStatus, getDatasetStatus, getLiveConfig, saveDatasetStatus, saveLiveConfig } from "../src/lib/live-config";
 
 type UploadRoot = {
   include: (filePath: string) => boolean;
@@ -247,11 +247,17 @@ async function main(): Promise<void> {
   });
 
   const fallbackStatus = defaultDatasetStatus();
+  const existingStatus = (await getDatasetStatus()) ?? fallbackStatus;
   await saveDatasetStatus({
+    ...existingStatus,
     backtestManifestPath: manifestDestination,
     dataPrefix: storageObjectPath("data"),
     lastSyncAt: generatedAt,
     strategyPrefix: storageObjectPath("strategy"),
+    sync: {
+      ...(existingStatus.sync ?? {}),
+      lastDataValidityRefreshAt: generatedAt
+    },
     uploadedFilesCount: uploadedFilesCount + 1,
     updatedAt: fallbackStatus.updatedAt
   });
