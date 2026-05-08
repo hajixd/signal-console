@@ -76,6 +76,22 @@ function normalizedStringArray(value: unknown): string[] {
   return Array.isArray(value) ? value.filter((item): item is string => typeof item === "string" && item.trim().length > 0) : [];
 }
 
+function omitUndefinedDeep<T>(value: T): T {
+  if (Array.isArray(value)) {
+    return value.map((item) => omitUndefinedDeep(item)) as T;
+  }
+
+  if (value && typeof value === "object" && !(value instanceof Date)) {
+    return Object.fromEntries(
+      Object.entries(value as Record<string, unknown>)
+        .filter(([, child]) => child !== undefined)
+        .map(([key, child]) => [key, omitUndefinedDeep(child)])
+    ) as T;
+  }
+
+  return value;
+}
+
 function normalizedStrategyEdits(value: unknown): Record<string, SavedStrategyEdit> {
   if (!value || typeof value !== "object") return {};
   const entries = Object.entries(value as Record<string, SavedStrategyEdit>).filter(([key]) => key.trim().length > 0);
@@ -154,12 +170,21 @@ function normalizeDatasetStatus(value: Partial<DatasetStatus> | null | undefined
 
 function normalizeSyncStatus(value: unknown): SyncStatus {
   const source = value && typeof value === "object" ? (value as Partial<SyncStatus>) : {};
-  return {
-    lastDataValidityRefreshAt:
-      typeof source.lastDataValidityRefreshAt === "string" ? source.lastDataValidityRefreshAt : undefined,
-    lastMarketDataSyncAt: typeof source.lastMarketDataSyncAt === "string" ? source.lastMarketDataSyncAt : undefined,
-    lastSignalTradeCheckAt: typeof source.lastSignalTradeCheckAt === "string" ? source.lastSignalTradeCheckAt : undefined
-  };
+  const status: SyncStatus = {};
+
+  if (typeof source.lastDataValidityRefreshAt === "string") {
+    status.lastDataValidityRefreshAt = source.lastDataValidityRefreshAt;
+  }
+
+  if (typeof source.lastMarketDataSyncAt === "string") {
+    status.lastMarketDataSyncAt = source.lastMarketDataSyncAt;
+  }
+
+  if (typeof source.lastSignalTradeCheckAt === "string") {
+    status.lastSignalTradeCheckAt = source.lastSignalTradeCheckAt;
+  }
+
+  return status;
 }
 
 function normalizeAssetCoverage(value: unknown): Record<string, DatasetAssetCoverage> {
@@ -229,6 +254,7 @@ export async function saveLiveConfig(config: LiveConfig): Promise<LiveConfig> {
     ...config,
     updatedAt: new Date().toISOString()
   });
+  const firestorePayload = omitUndefinedDeep(normalized);
 
   if (hasFirebaseAdmin()) {
     await firebaseDb()
@@ -236,8 +262,7 @@ export async function saveLiveConfig(config: LiveConfig): Promise<LiveConfig> {
       .doc("default")
       .set(
         {
-          ...normalized,
-          updatedAt: normalized.updatedAt,
+          ...firestorePayload,
           updatedAtServer: FieldValue.serverTimestamp()
         },
         { merge: true }
@@ -271,6 +296,7 @@ export async function saveDatasetStatus(status: DatasetStatus): Promise<DatasetS
     sync: normalizeSyncStatus(status.sync),
     updatedAt: new Date().toISOString()
   };
+  const firestorePayload = omitUndefinedDeep(normalized);
 
   if (hasFirebaseAdmin()) {
     await firebaseDb()
@@ -278,7 +304,7 @@ export async function saveDatasetStatus(status: DatasetStatus): Promise<DatasetS
       .doc("runtime")
       .set(
         {
-          ...normalized,
+          ...firestorePayload,
           updatedAtServer: FieldValue.serverTimestamp()
         },
         { merge: true }

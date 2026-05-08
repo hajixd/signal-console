@@ -5320,7 +5320,7 @@ html[data-theme="light"] .tradeReplaySlider input {
 
   .terminal-table tbody tr {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 1px 8px;
     border: 1px solid rgba(255, 255, 255, 0.075);
     background: rgba(255, 255, 255, 0.018);
@@ -5348,6 +5348,39 @@ html[data-theme="light"] .tradeReplaySlider input {
     font-weight: 900;
     line-height: 1;
     text-transform: uppercase;
+  }
+
+  .terminal-table td[data-label="Entry model"]::before,
+  .terminal-table td[data-label="Model"]::before {
+    content: "Model";
+  }
+
+  .terminal-table td[data-label="Direction"]::before {
+    content: "Side";
+  }
+
+  .terminal-table td[data-label="Take Profit"]::before {
+    content: "TP";
+  }
+
+  .terminal-table td[data-label="Stop Loss"]::before {
+    content: "SL";
+  }
+
+  .terminal-table td[data-label="Take Profit $"]::before {
+    content: "TP $";
+  }
+
+  .terminal-table td[data-label="Stop Loss $"]::before {
+    content: "SL $";
+  }
+
+  .terminal-table td[data-label="Auto Trade"]::before {
+    content: "Auto";
+  }
+
+  .terminal-table td[data-label="Signal time"]::before {
+    content: "Signal";
   }
 
   .terminal-table td:first-child {
@@ -5736,7 +5769,7 @@ html[data-theme="light"] .tradeReplaySlider input {
   }
 
   .terminal-table tbody tr {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 1px 6px;
   }
 

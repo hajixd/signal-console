@@ -603,7 +603,7 @@ export default function StrategySelector({
     setCustomScaleError("");
     setCustomScaleResult(null);
     setIsCustomScaleLoaded(true);
-  }, [customScaleRangeKey, persistedCustomScaleRange, persistedCustomScaleRangeSignature]);
+  }, [customScaleRangeKey, persistedCustomScaleRangeSignature]);
 
   useEffect(() => {
     if (!isCustomScaleLoaded) return;
