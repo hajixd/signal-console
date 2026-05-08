@@ -32,6 +32,10 @@ export type TradeHistoryRow = {
   signalTime: string;
   entryTime: string;
   exitTime: string;
+  sourceTimeframe?: TradeChartTimeframe;
+  phase?: string;
+  variantId?: string;
+  entryType?: "market" | "limit";
   entryPrice: number;
   exitPrice: number;
   targetPrice: number;
@@ -70,6 +74,12 @@ type ChartBar = TradeChartBar;
 type ChartState = {
   status: "idle" | "loading" | "ready" | "error";
   bars: ChartBar[];
+  replayBars?: ChartBar[];
+  replayTimeframe?: TradeChartTimeframe;
+  fallback?: boolean;
+  message?: string;
+  requestedTimeframe?: TradeChartTimeframe;
+  timeframe?: TradeChartTimeframe;
 };
 
 type CandleMenuState = {
@@ -78,7 +88,7 @@ type CandleMenuState = {
   candle: ChartBar;
 };
 
-const TRADE_CHART_CONTEXT_CANDLES = 80;
+const TRADE_CHART_CONTEXT_CANDLES = 240;
 
 function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
@@ -162,7 +172,7 @@ function nearestPositionForAnchor(bars: ChartBar[], indexValue: number, timeValu
 
 function tradePathStats(trade: TradeHistoryRow, bars: ChartBar[]): { mfe: number | null; mae: number | null } {
   const entryPosition = nearestPositionForAnchor(bars, trade.entryIndex, trade.entryTime);
-  const exitPosition = nearestPositionForAnchor(bars, trade.exitIndex, trade.exitTime);
+  const exitPosition = resolvedExitPositionForTrade(trade, bars);
   if (entryPosition == null || exitPosition == null || !bars.length) return { mfe: null, mae: null };
 
   const start = Math.min(entryPosition, exitPosition);
@@ -193,13 +203,12 @@ function priceTouched(bar: ChartBar, price: number): boolean {
   return Number.isFinite(price) && bar.low <= price && bar.high >= price;
 }
 
-function exitTargetPrice(trade: TradeHistoryRow): number {
-  const targetDistance = Math.abs(trade.exitPrice - trade.targetPrice);
-  const stopDistance = Math.abs(trade.exitPrice - trade.stopPrice);
-  const tolerance = Math.max(Math.abs(trade.exitPrice) * 0.00001, 0.00001);
-  if (targetDistance <= tolerance) return trade.targetPrice;
-  if (stopDistance <= tolerance) return trade.stopPrice;
-  return trade.exitPrice;
+function exitTouchPrice(trade: TradeHistoryRow): number | null {
+  const targetTolerance = Math.max(Math.abs(trade.targetPrice) * 0.00001, 0.00001);
+  const stopTolerance = Math.max(Math.abs(trade.stopPrice) * 0.00001, 0.00001);
+  if (Math.abs(trade.exitPrice - trade.targetPrice) <= targetTolerance) return trade.targetPrice;
+  if (Math.abs(trade.exitPrice - trade.stopPrice) <= stopTolerance) return trade.stopPrice;
+  return null;
 }
 
 function resolvedExitPositionForTrade(trade: TradeHistoryRow, bars: ChartBar[]): number | null {
@@ -207,7 +216,9 @@ function resolvedExitPositionForTrade(trade: TradeHistoryRow, bars: ChartBar[]):
   const fallbackExitPosition = nearestPositionForAnchor(bars, trade.exitIndex, trade.exitTime);
   if (entryPosition == null) return fallbackExitPosition;
 
-  const targetPrice = exitTargetPrice(trade);
+  const targetPrice = exitTouchPrice(trade);
+  if (targetPrice == null) return fallbackExitPosition;
+
   for (let position = entryPosition; position < bars.length; position += 1) {
     const bar = bars[position];
     if (bar && priceTouched(bar, targetPrice)) return position;
@@ -818,15 +829,46 @@ export default function TradeHistory({ rows }: TradeHistoryProps) {
     setChartState({ status: "loading", bars: [] });
     fetch(`/api/trade-chart?${params.toString()}`, { signal: controller.signal })
       .then((response) => (response.ok ? response.json() : Promise.reject(new Error("Chart unavailable"))))
-      .then((payload: { bars?: ChartBar[] }) => {
-        setChartState({ status: "ready", bars: payload.bars ?? [] });
-      })
+      .then(
+        (payload: {
+          bars?: ChartBar[];
+          replayBars?: ChartBar[];
+          replayTimeframe?: TradeChartTimeframe;
+          error?: string;
+          fallback?: boolean;
+          requestedTimeframe?: TradeChartTimeframe;
+          timeframe?: TradeChartTimeframe;
+        }) => {
+          const resolvedTimeframe = payload.timeframe && TRADE_CHART_TIMEFRAMES.some((option) => option.value === payload.timeframe)
+            ? payload.timeframe
+            : chartTimeframe;
+          const requestedTimeframe =
+            payload.requestedTimeframe && TRADE_CHART_TIMEFRAMES.some((option) => option.value === payload.requestedTimeframe)
+              ? payload.requestedTimeframe
+              : chartTimeframe;
+          setChartState({
+            status: "ready",
+            bars: payload.bars ?? [],
+            replayBars: payload.replayBars,
+            replayTimeframe: payload.replayTimeframe,
+            fallback: Boolean(payload.fallback),
+            message: payload.error,
+            requestedTimeframe,
+            timeframe: resolvedTimeframe
+          });
+        }
+      )
       .catch((error: Error) => {
         if (error.name !== "AbortError") setChartState({ status: "error", bars: [] });
       });
 
     return () => controller.abort();
   }, [activeTrade, chartTimeframe]);
+
+  const chartNotice =
+    chartState.fallback && chartState.requestedTimeframe && chartState.timeframe
+      ? `This timeframe is unavailable. Showing ${chartState.timeframe}.`
+      : undefined;
 
   const activeTradeModal = activeTrade ? (
     <div
@@ -880,7 +922,12 @@ export default function TradeHistory({ rows }: TradeHistoryProps) {
 
           <TradePriceChart
             bars={chartState.bars}
+            dataTimeframe={chartState.timeframe ?? chartTimeframe}
+            emptyMessage={chartState.message}
+            notice={chartNotice}
             onTimeframeChange={setChartTimeframe}
+            replayBars={chartState.replayBars}
+            replayTimeframe={chartState.replayTimeframe}
             status={chartState.status}
             timeframe={chartTimeframe}
             timeframes={TRADE_CHART_TIMEFRAMES}

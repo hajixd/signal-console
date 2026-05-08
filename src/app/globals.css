@@ -4149,6 +4149,10 @@ html[data-theme="light"] .tradeInfoBox strong {
   flex-wrap: wrap;
 }
 
+.tradeChartNotice {
+  color: #fbbf24;
+}
+
 .tradeTimeframeButtons {
   display: inline-flex;
   align-items: center;
@@ -4186,6 +4190,92 @@ html[data-theme="light"] .tradeInfoBox strong {
 
 .tradeChartLegend {
   z-index: 6;
+}
+
+.tradeKorraOverlay {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+  overflow: visible;
+}
+
+.tradeKorraProfit {
+  fill: rgba(53, 201, 113, 0.28);
+  stroke: rgba(53, 201, 113, 0.84);
+  stroke-width: 1;
+}
+
+.tradeKorraRisk {
+  fill: rgba(240, 69, 90, 0.26);
+  stroke: rgba(255, 76, 104, 0.78);
+  stroke-width: 1;
+}
+
+.tradeKorraEntryLine {
+  stroke: rgba(232, 238, 250, 0.82);
+  stroke-width: 1.5;
+}
+
+.tradeKorraTargetLine {
+  stroke: rgba(53, 201, 113, 0.9);
+  stroke-width: 1.5;
+}
+
+.tradeKorraStopLine {
+  stroke: rgba(255, 76, 104, 0.9);
+  stroke-width: 1.5;
+}
+
+.tradeKorraPath {
+  stroke: rgba(220, 230, 248, 0.9);
+  stroke-width: 2;
+  stroke-dasharray: 1 6;
+  stroke-linecap: round;
+}
+
+.tradeKorraLimit line {
+  stroke: rgba(251, 191, 36, 0.94);
+  stroke-width: 2;
+  stroke-dasharray: 6 4;
+}
+
+.tradeKorraLimit text,
+.tradeKorraMarker text {
+  fill: #dbeafe;
+  font-family: var(--font-geist-mono), monospace;
+  font-size: 10px;
+  font-weight: 850;
+  paint-order: stroke;
+  stroke: rgba(3, 3, 3, 0.88);
+  stroke-width: 3px;
+  text-transform: uppercase;
+}
+
+.tradeKorraLimit text {
+  fill: #fbbf24;
+}
+
+.tradeKorraMarker circle {
+  fill: #30b76f;
+  stroke: rgba(3, 3, 3, 0.95);
+  stroke-width: 1.5;
+}
+
+.tradeKorraMarker.entry.long circle {
+  fill: #30b76f;
+}
+
+.tradeKorraMarker.entry.short circle {
+  fill: #f0455a;
+}
+
+.tradeKorraMarker.limit circle {
+  fill: #fbbf24;
+}
+
+.tradeKorraMarker.exit circle {
+  fill: #35c971;
 }
 
 .tradeCandlestickPanel.isEmpty {
@@ -4398,6 +4488,10 @@ html[data-theme="light"] .tradeTimeframeButtons button.active {
   color: #1d4ed8;
 }
 
+html[data-theme="light"] .tradeChartNotice {
+  color: #b45309;
+}
+
 html[data-theme="light"] .tradeOutcomeBadge.up {
   border-color: rgba(5, 150, 105, 0.28);
   color: #16a34a;
@@ -4434,7 +4528,7 @@ html[data-theme="light"] .tradeCandleContextRow span {
 
 .tradeReplayPanel {
   display: grid;
-  grid-template-columns: auto minmax(220px, 1fr) auto;
+  grid-template-columns: minmax(190px, auto) minmax(220px, 1fr) minmax(260px, auto);
   align-items: center;
   gap: 9px;
   border-top: 1px solid rgba(255, 255, 255, 0.08);
@@ -4442,15 +4536,25 @@ html[data-theme="light"] .tradeCandleContextRow span {
   padding: 8px 10px;
 }
 
+.tradeReplayControls,
+.tradeReplayOptions {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
 .tradeReplayButtons,
-.tradeReplaySpeeds {
+.tradeReplaySpeeds,
+.tradeReplayMode {
   display: inline-flex;
   align-items: center;
   gap: 4px;
 }
 
 .tradeReplayButtons button,
-.tradeReplaySpeeds button {
+.tradeReplaySpeeds button,
+.tradeReplayMode button {
   min-height: 26px;
   border: 1px solid rgba(255, 255, 255, 0.12);
   background: rgba(255, 255, 255, 0.045);
@@ -4463,13 +4567,46 @@ html[data-theme="light"] .tradeCandleContextRow span {
   cursor: pointer;
 }
 
+.tradeReplayButtons.compact button,
+.tradeReplayMode button {
+  padding: 0 6px;
+}
+
 .tradeReplayButtons button:hover,
 .tradeReplayButtons button.active,
 .tradeReplaySpeeds button:hover,
-.tradeReplaySpeeds button.active {
+.tradeReplaySpeeds button.active,
+.tradeReplayMode button:hover,
+.tradeReplayMode button.active {
   border-color: rgba(52, 211, 153, 0.42);
   background: rgba(52, 211, 153, 0.14);
   color: #d1fae5;
+}
+
+.tradeReplayMode button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.tradeReplayToggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 26px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.045);
+  color: rgba(255, 255, 255, 0.76);
+  padding: 0 7px;
+  font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+  font-size: 9px;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.tradeReplayToggle input {
+  width: 12px;
+  height: 12px;
+  accent-color: #34d399;
 }
 
 .tradeReplaySlider {
@@ -4508,7 +4645,9 @@ html[data-theme="light"] .tradeReplayPanel {
 }
 
 html[data-theme="light"] .tradeReplayButtons button,
-html[data-theme="light"] .tradeReplaySpeeds button {
+html[data-theme="light"] .tradeReplaySpeeds button,
+html[data-theme="light"] .tradeReplayMode button,
+html[data-theme="light"] .tradeReplayToggle {
   border-color: rgba(15, 23, 42, 0.12);
   background: #f8fafc;
   color: #475569;
@@ -4517,7 +4656,9 @@ html[data-theme="light"] .tradeReplaySpeeds button {
 html[data-theme="light"] .tradeReplayButtons button:hover,
 html[data-theme="light"] .tradeReplayButtons button.active,
 html[data-theme="light"] .tradeReplaySpeeds button:hover,
-html[data-theme="light"] .tradeReplaySpeeds button.active {
+html[data-theme="light"] .tradeReplaySpeeds button.active,
+html[data-theme="light"] .tradeReplayMode button:hover,
+html[data-theme="light"] .tradeReplayMode button.active {
   border-color: rgba(5, 150, 105, 0.28);
   background: #dcfce7;
   color: #16a34a;
@@ -4554,12 +4695,17 @@ html[data-theme="light"] .tradeReplaySlider input {
   }
 
   .tradeReplayButtons,
-  .tradeReplaySpeeds {
+  .tradeReplaySpeeds,
+  .tradeReplayMode,
+  .tradeReplayControls,
+  .tradeReplayOptions {
     justify-content: stretch;
+    flex-wrap: wrap;
   }
 
   .tradeReplayButtons button,
-  .tradeReplaySpeeds button {
+  .tradeReplaySpeeds button,
+  .tradeReplayMode button {
     flex: 1;
   }
 

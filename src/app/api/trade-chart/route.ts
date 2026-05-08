@@ -1,3 +1,5 @@
+import { open, readFile } from "node:fs/promises";
+import path from "node:path";
 import { NextResponse } from "next/server";
 import { assetForSymbol, isMarket } from "@/lib/assets";
 import { readDataText } from "@/lib/project-data";
@@ -16,30 +18,36 @@ type MarketBar = {
 };
 
 const lineCache = new Map<string, string[]>();
-const SUPPORTED_TIMEFRAMES = new Set(["1m", "5m", "15m", "30m", "45m", "1h", "4h", "1d", "1w"]);
+const boundaryCache = new Map<string, { first: number; last: number } | null>();
+const TIMEFRAME_ORDER = ["1m", "5m", "15m", "30m", "45m", "1h", "4h", "1d", "1w"] as const;
+const SUPPORTED_TIMEFRAMES = new Set<string>(TIMEFRAME_ORDER);
+const TIMEFRAME_SECONDS: Record<(typeof TIMEFRAME_ORDER)[number], number> = {
+  "1m": 60,
+  "5m": 5 * 60,
+  "15m": 15 * 60,
+  "30m": 30 * 60,
+  "45m": 45 * 60,
+  "1h": 60 * 60,
+  "4h": 4 * 60 * 60,
+  "1d": 24 * 60 * 60,
+  "1w": 7 * 24 * 60 * 60
+};
 const DEFAULT_TIMEFRAME = "15m";
-const DEFAULT_CONTEXT_CANDLES = 80;
+const DEFAULT_CONTEXT_CANDLES = 240;
+const MAX_CONTEXT_CANDLES = 1000;
 
 function chartTimeframe(value: string | null): string {
   return value && SUPPORTED_TIMEFRAMES.has(value) ? value : DEFAULT_TIMEFRAME;
 }
 
 function contextCandles(value: string | null): number {
-  return Math.max(8, Math.min(DEFAULT_CONTEXT_CANDLES, Math.round(numericParam(value, DEFAULT_CONTEXT_CANDLES))));
-}
-
-function marketDataPath(symbolValue: string, marketValue: string, timeframe: string): string | null {
-  const asset = assetForSymbol(symbolValue);
-  const market = marketValue.trim().toLowerCase();
-  if (!asset) return null;
-  if (market && isMarket(market) && market !== asset.market) return null;
-  return `${timeframe}/${asset.dataFile}`;
+  return Math.max(8, Math.min(MAX_CONTEXT_CANDLES, Math.round(numericParam(value, DEFAULT_CONTEXT_CANDLES))));
 }
 
 async function marketLines(relativePath: string): Promise<string[]> {
   const cached = lineCache.get(relativePath);
   if (cached) return cached;
-  const text = await readDataText(relativePath);
+  const text = await readChartDataText(relativePath);
   const lines = text.trim().split(/\r?\n/);
   lineCache.set(relativePath, lines);
   return lines;
@@ -48,6 +56,302 @@ async function marketLines(relativePath: string): Promise<string[]> {
 function numericParam(value: string | null, fallback: number): number {
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+function timeframeCandidates(timeframe: string): string[] {
+  const startIndex = TIMEFRAME_ORDER.indexOf(timeframe as (typeof TIMEFRAME_ORDER)[number]);
+  if (startIndex < 0) return [DEFAULT_TIMEFRAME];
+
+  return [
+    ...TIMEFRAME_ORDER.slice(startIndex),
+    ...TIMEFRAME_ORDER.slice(0, startIndex).reverse()
+  ];
+}
+
+function maxNearestDistanceSeconds(timeframe: string): number {
+  return TIMEFRAME_SECONDS[timeframe as (typeof TIMEFRAME_ORDER)[number]] ?? TIMEFRAME_SECONDS[DEFAULT_TIMEFRAME];
+}
+
+function localDataPath(relativePath: string): string {
+  return path.join(
+    process.cwd(),
+    "data",
+    ...relativePath.replace(/\\/g, "/").replace(/^\/+/, "").replace(/^data\/+/, "").split("/").filter(Boolean)
+  );
+}
+
+async function readChartDataText(relativePath: string): Promise<string> {
+  if (process.env.NODE_ENV !== "production") {
+    try {
+      return await readFile(localDataPath(relativePath), "utf8");
+    } catch {
+      return readDataText(relativePath);
+    }
+  }
+
+  return readDataText(relativePath);
+}
+
+function parsedTimestamp(line: string | undefined): number | null {
+  if (!line) return null;
+  const timestamp = Number(line.split(",", 1)[0]);
+  return Number.isFinite(timestamp) ? timestamp : null;
+}
+
+function nextLineBreak(text: string, start: number): number {
+  const lineFeed = text.indexOf("\n", start);
+  return lineFeed >= 0 ? lineFeed : text.length;
+}
+
+async function localFileBoundary(relativePath: string): Promise<{ first: number; last: number } | null> {
+  if (boundaryCache.has(relativePath)) return boundaryCache.get(relativePath) ?? null;
+
+  let handle: Awaited<ReturnType<typeof open>> | null = null;
+  try {
+    handle = await open(localDataPath(relativePath), "r");
+    const stat = await handle.stat();
+    const headSize = Math.min(4096, stat.size);
+    const tailSize = Math.min(65536, stat.size);
+    const head = Buffer.alloc(headSize);
+    const tail = Buffer.alloc(tailSize);
+    await handle.read(head, 0, headSize, 0);
+    await handle.read(tail, 0, tailSize, Math.max(0, stat.size - tailSize));
+
+    const first = head
+      .toString("utf8")
+      .split(/\r?\n/)
+      .slice(1)
+      .map(parsedTimestamp)
+      .find((timestamp): timestamp is number => timestamp !== null);
+    const last = tail
+      .toString("utf8")
+      .trim()
+      .split(/\r?\n/)
+      .reverse()
+      .map(parsedTimestamp)
+      .find((timestamp): timestamp is number => timestamp !== null);
+    const boundary = first != null && last != null ? { first, last } : null;
+    boundaryCache.set(relativePath, boundary);
+    return boundary;
+  } catch {
+    boundaryCache.set(relativePath, null);
+    return null;
+  } finally {
+    await handle?.close();
+  }
+}
+
+function secondsFromSearchTime(rawTime: string | null): number | null {
+  const parsed = rawTime ? Date.parse(rawTime) : NaN;
+  return Number.isFinite(parsed) ? Math.floor(parsed / 1000) : null;
+}
+
+async function localFileMightCoverTrade(
+  relativePath: string,
+  entryTime: string | null,
+  exitTime: string | null,
+  timeframe: string
+): Promise<boolean> {
+  if (process.env.NODE_ENV === "production") return true;
+
+  const boundary = await localFileBoundary(relativePath);
+  if (!boundary) return true;
+
+  const tolerance = maxNearestDistanceSeconds(timeframe);
+  const targets = [secondsFromSearchTime(entryTime), secondsFromSearchTime(exitTime)].filter(
+    (value): value is number => value !== null
+  );
+
+  return targets.every((target) => target >= boundary.first - tolerance && target <= boundary.last + tolerance);
+}
+
+async function localLineAtOrAfter(
+  handle: Awaited<ReturnType<typeof open>>,
+  fileSize: number,
+  position: number
+): Promise<{ line: string; offset: number; timestamp: number } | null> {
+  const chunkSize = Math.min(16_384, Math.max(0, fileSize - position));
+  if (chunkSize <= 0) return null;
+
+  const buffer = Buffer.alloc(chunkSize);
+  const { bytesRead } = await handle.read(buffer, 0, chunkSize, position);
+  if (bytesRead <= 0) return null;
+
+  const text = buffer.subarray(0, bytesRead).toString("utf8");
+  let lineStart = position === 0 ? 0 : text.indexOf("\n") + 1;
+  if (lineStart <= 0) return null;
+
+  while (lineStart < text.length) {
+    const lineEnd = nextLineBreak(text, lineStart);
+    const line = text.slice(lineStart, lineEnd).trim();
+    const timestamp = parsedTimestamp(line);
+    if (timestamp != null) {
+      return {
+        line,
+        offset: position + lineStart,
+        timestamp
+      };
+    }
+    lineStart = lineEnd + 1;
+  }
+
+  return null;
+}
+
+async function localOffsetForTimestamp(
+  handle: Awaited<ReturnType<typeof open>>,
+  fileSize: number,
+  targetSeconds: number
+): Promise<number | null> {
+  let left = 0;
+  let right = Math.max(0, fileSize - 1);
+  let bestOffset: number | null = null;
+
+  while (left <= right) {
+    const middle = Math.floor((left + right) / 2);
+    const sample = await localLineAtOrAfter(handle, fileSize, middle);
+    if (!sample) {
+      right = middle - 1;
+      continue;
+    }
+
+    if (sample.timestamp < targetSeconds) {
+      left = Math.max(middle + 1, sample.offset + sample.line.length + 1);
+    } else {
+      bestOffset = sample.offset;
+      right = middle - 1;
+    }
+  }
+
+  if (bestOffset != null) return bestOffset;
+  return (await localLineAtOrAfter(handle, fileSize, 0))?.offset ?? null;
+}
+
+async function localWindowBars(
+  relativePath: string,
+  context: number,
+  entryTime: string | null,
+  exitTime: string | null,
+  timeframe: string
+): Promise<MarketBar[] | null> {
+  const entrySeconds = secondsFromSearchTime(entryTime);
+  const exitSeconds = secondsFromSearchTime(exitTime);
+  if (entrySeconds == null || exitSeconds == null) return null;
+
+  const timeframeSeconds = maxNearestDistanceSeconds(timeframe);
+  return localBarsInTimeWindow(
+    relativePath,
+    Math.min(entrySeconds, exitSeconds) - context * timeframeSeconds,
+    Math.max(entrySeconds, exitSeconds) + context * timeframeSeconds
+  );
+}
+
+async function localBarsInTimeWindow(relativePath: string, startSeconds: number, endSeconds: number): Promise<MarketBar[] | null> {
+  if (process.env.NODE_ENV === "production") return null;
+
+  let handle: Awaited<ReturnType<typeof open>> | null = null;
+  try {
+    handle = await open(localDataPath(relativePath), "r");
+    const stat = await handle.stat();
+    const startOffset = await localOffsetForTimestamp(handle, stat.size, startSeconds);
+    if (startOffset == null) return null;
+
+    const bars: MarketBar[] = [];
+    const chunkSize = 131_072;
+    let position = startOffset;
+    let remainder = "";
+    let done = false;
+
+    while (!done && position < stat.size) {
+      const buffer = Buffer.alloc(Math.min(chunkSize, stat.size - position));
+      const { bytesRead } = await handle.read(buffer, 0, buffer.length, position);
+      if (bytesRead <= 0) break;
+      position += bytesRead;
+
+      const text = remainder + buffer.subarray(0, bytesRead).toString("utf8");
+      const lines = text.split(/\r?\n/);
+      remainder = lines.pop() ?? "";
+
+      for (const line of lines) {
+        const timestamp = parsedTimestamp(line);
+        if (timestamp == null || timestamp < startSeconds) continue;
+        if (timestamp > endSeconds) {
+          done = true;
+          break;
+        }
+
+        const bar = parseBar(line, bars.length);
+        if (bar) bars.push(bar);
+      }
+    }
+
+    if (!done && remainder) {
+      const timestamp = parsedTimestamp(remainder);
+      if (timestamp != null && timestamp >= startSeconds && timestamp <= endSeconds) {
+        const bar = parseBar(remainder, bars.length);
+        if (bar) bars.push(bar);
+      }
+    }
+
+    return bars.length ? bars : null;
+  } catch {
+    return null;
+  } finally {
+    await handle?.close();
+  }
+}
+
+async function barsInTimeWindow(relativePath: string, startSeconds: number, endSeconds: number): Promise<MarketBar[] | null> {
+  const localBars = await localBarsInTimeWindow(relativePath, startSeconds, endSeconds);
+  if (localBars) return localBars;
+
+  try {
+    const lines = await marketLines(relativePath);
+    const startIndex = indexAtOrBefore(lines, startSeconds) ?? 0;
+    const endIndex = indexAtOrBefore(lines, endSeconds) ?? Math.max(0, lines.length - 2);
+    const bars: MarketBar[] = [];
+
+    for (let index = Math.max(0, startIndex); index <= endIndex; index += 1) {
+      const bar = parseBar(lines[index + 1] ?? "", bars.length);
+      if (bar) bars.push(bar);
+    }
+
+    return bars.length ? bars : null;
+  } catch {
+    return null;
+  }
+}
+
+async function replayBarsForTradeWindow({
+  assetDataFile,
+  context,
+  entryTime,
+  exitTime,
+  selectedTimeframe
+}: {
+  assetDataFile: string;
+  context: number;
+  entryTime: string | null;
+  exitTime: string | null;
+  selectedTimeframe: string;
+}): Promise<MarketBar[] | null> {
+  if (selectedTimeframe === "1m") return null;
+
+  const entrySeconds = secondsFromSearchTime(entryTime);
+  const exitSeconds = secondsFromSearchTime(exitTime);
+  if (entrySeconds == null || exitSeconds == null) return null;
+
+  const timeframeSeconds = maxNearestDistanceSeconds(selectedTimeframe);
+  const filePath = `1m/${assetDataFile}`;
+  const hasLocalCoverage = await localFileMightCoverTrade(filePath, entryTime, exitTime, "1m");
+  if (!hasLocalCoverage) return null;
+
+  const replayContextSeconds = Math.min(3 * 24 * 60 * 60, Math.max(6 * 60 * 60, context * timeframeSeconds));
+  return barsInTimeWindow(
+    filePath,
+    Math.min(entrySeconds, exitSeconds) - replayContextSeconds,
+    Math.max(entrySeconds, exitSeconds) + replayContextSeconds
+  );
 }
 
 function parseBar(line: string, index: number): MarketBar | null {
@@ -71,9 +375,7 @@ function parseBar(line: string, index: number): MarketBar | null {
 }
 
 function timestampForLine(line: string | undefined): number | null {
-  if (!line) return null;
-  const timestamp = Number(line.split(",", 1)[0]);
-  return Number.isFinite(timestamp) ? timestamp : null;
+  return parsedTimestamp(line);
 }
 
 function indexAtOrBefore(lines: string[], targetSeconds: number): number | null {
@@ -100,14 +402,14 @@ function indexAtOrBefore(lines: string[], targetSeconds: number): number | null 
   return best;
 }
 
-function nearestIndexForTime(lines: string[], rawTime: string | null, fallbackIndex: number): number {
+function nearestIndexForTime(lines: string[], rawTime: string | null, fallbackIndex: number, timeframe: string): number | null {
   const parsed = rawTime ? Date.parse(rawTime) : NaN;
   if (!Number.isFinite(parsed)) return fallbackIndex;
 
   const lastIndex = Math.max(0, lines.length - 2);
   const targetSeconds = Math.floor(parsed / 1000);
   const before = indexAtOrBefore(lines, targetSeconds);
-  if (before == null) return fallbackIndex;
+  if (before == null) return null;
 
   const candidates = [before, Math.min(lastIndex, before + 1)];
   let bestIndex = before;
@@ -123,7 +425,52 @@ function nearestIndexForTime(lines: string[], rawTime: string | null, fallbackIn
     }
   }
 
+  if (bestDistance > maxNearestDistanceSeconds(timeframe)) return null;
+
   return bestIndex;
+}
+
+async function barsForTimeframe({
+  context,
+  entryIndex,
+  entryTime,
+  exitIndex,
+  exitTime,
+  filePath,
+  timeframe
+}: {
+  context: number;
+  entryIndex: number;
+  entryTime: string | null;
+  exitIndex: number;
+  exitTime: string | null;
+  filePath: string;
+  timeframe: string;
+}): Promise<MarketBar[] | null> {
+  const hasLocalCoverage = await localFileMightCoverTrade(filePath, entryTime, exitTime, timeframe);
+  if (!hasLocalCoverage) return null;
+
+  const localBars = await localWindowBars(filePath, context, entryTime, exitTime, timeframe);
+  if (localBars) return localBars;
+
+  const lines = await marketLines(filePath);
+  const lastIndex = Math.max(0, lines.length - 2);
+  const resolvedEntryIndex = nearestIndexForTime(lines, entryTime, entryIndex, timeframe);
+  const resolvedExitIndex = nearestIndexForTime(lines, exitTime, exitIndex, timeframe);
+  if (resolvedEntryIndex == null || resolvedExitIndex == null) return null;
+
+  const tradeStart = Math.min(resolvedEntryIndex, resolvedExitIndex);
+  const tradeEnd = Math.max(resolvedEntryIndex, resolvedExitIndex);
+  const startIndex = Math.max(0, tradeStart - context);
+  const endIndex = Math.min(lastIndex, tradeEnd + context);
+  const bars: MarketBar[] = [];
+
+  for (let index = startIndex; index <= endIndex; index += 1) {
+    const bar = parseBar(lines[index + 1] ?? "", index);
+    if (bar) bars.push(bar);
+  }
+
+  return bars;
 }
 
 export async function GET(request: Request) {
@@ -134,30 +481,51 @@ export async function GET(request: Request) {
   const exitIndex = Math.max(0, Math.round(numericParam(searchParams.get("exitIndex"), entryIndex)));
   const context = contextCandles(searchParams.get("context"));
   const timeframe = chartTimeframe(searchParams.get("timeframe"));
-  const filePath = marketDataPath(symbol, market, timeframe);
+  const asset = assetForSymbol(symbol);
+  const normalizedMarket = market.trim().toLowerCase();
 
-  if (!filePath) {
+  if (!asset || (normalizedMarket && isMarket(normalizedMarket) && normalizedMarket !== asset.market)) {
     return NextResponse.json({ bars: [], error: "Missing symbol" }, { status: 400 });
   }
 
-  try {
-    const lines = await marketLines(filePath);
-    const lastIndex = Math.max(0, lines.length - 2);
-    const resolvedEntryIndex = nearestIndexForTime(lines, searchParams.get("entryTime"), entryIndex);
-    const resolvedExitIndex = nearestIndexForTime(lines, searchParams.get("exitTime"), exitIndex);
-    const tradeStart = Math.min(resolvedEntryIndex, resolvedExitIndex);
-    const tradeEnd = Math.max(resolvedEntryIndex, resolvedExitIndex);
-    const startIndex = Math.max(0, tradeStart - context);
-    const endIndex = Math.min(lastIndex, tradeEnd + context);
-    const bars: MarketBar[] = [];
-
-    for (let index = startIndex; index <= endIndex; index += 1) {
-      const bar = parseBar(lines[index + 1] ?? "", index);
-      if (bar) bars.push(bar);
+  for (const candidate of timeframeCandidates(timeframe)) {
+    const filePath = `${candidate}/${asset.dataFile}`;
+    try {
+      const bars = await barsForTimeframe({
+        context,
+        entryIndex,
+        entryTime: searchParams.get("entryTime"),
+        exitIndex,
+        exitTime: searchParams.get("exitTime"),
+        filePath,
+        timeframe: candidate
+      });
+      if (bars?.length) {
+        const replayBars = await replayBarsForTradeWindow({
+          assetDataFile: asset.dataFile,
+          context,
+          entryTime: searchParams.get("entryTime"),
+          exitTime: searchParams.get("exitTime"),
+          selectedTimeframe: candidate
+        });
+        return NextResponse.json({
+          bars,
+          fallback: candidate !== timeframe,
+          replayBars: replayBars ?? undefined,
+          replayTimeframe: replayBars?.length ? "1m" : undefined,
+          requestedTimeframe: timeframe,
+          timeframe: candidate
+        });
+      }
+    } catch {
+      continue;
     }
-
-    return NextResponse.json({ bars });
-  } catch {
-    return NextResponse.json({ bars: [], error: "Chart data unavailable" }, { status: 404 });
   }
+
+  return NextResponse.json({
+    bars: [],
+    error: "No chart data covers this trade.",
+    requestedTimeframe: timeframe,
+    timeframe
+  });
 }

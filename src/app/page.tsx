@@ -4,6 +4,7 @@ import SelectedStrategyStats from "@/components/strategies/selected-strategy-sta
 import StrategySelector from "@/components/strategies/strategy-selector";
 import EditableTradeHistory from "@/components/trades/editable-trade-history";
 import { type TradeHistoryRow } from "@/components/trades/trade-history";
+import { type TradeChartTimeframe } from "@/components/trades/trade-price-chart";
 import AutoRefresh from "@/components/ui/auto-refresh";
 import LocalDateTime from "@/components/ui/local-date-time";
 import MarketSwitchTabs from "@/components/ui/market-switch-tabs";
@@ -33,6 +34,7 @@ import type { TradeAlert } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 const DEFAULT_SELECTED_STRATEGY_COUNT = 1;
+const TRADE_CHART_TIMEFRAME_VALUES = new Set<TradeChartTimeframe>(["1m", "5m", "15m", "30m", "45m", "1h", "4h", "1d"]);
 const HISTORY_VISIBLE_TRADE_LIMIT = 500;
 const EMPTY_LIVE_CONFIG: LiveConfig = {
   dashboardSelectedDatasetIds: [],
@@ -188,6 +190,18 @@ function parseSelection(value: string | undefined, allKeys: string[], defaultKey
   const allowed = new Set(allKeys);
   if (!value) return defaultKeys.filter((key) => allowed.has(key));
   return value.split(",").filter((key) => allowed.has(key));
+}
+
+function tradeSourceTimeframe(trade: BacktestTrade): TradeChartTimeframe {
+  const timeframe = trade.variantId?.split("|").find((part) => part.startsWith("tf="))?.slice(3);
+  return timeframe && TRADE_CHART_TIMEFRAME_VALUES.has(timeframe as TradeChartTimeframe)
+    ? (timeframe as TradeChartTimeframe)
+    : "15m";
+}
+
+function tradeEntryType(trade: BacktestTrade): "market" | "limit" {
+  const fingerprint = `${trade.phase} ${trade.variantId ?? ""} ${trade.modelName ?? ""} ${trade.label}`.toLowerCase();
+  return fingerprint.includes("ict_sweep_fvg") || fingerprint.includes("ict sweep fvg") ? "limit" : "market";
 }
 
 function parseMarketTab(value: string | undefined): MarketTabKey {
@@ -599,6 +613,10 @@ export default async function Home({ searchParams }: HomeProps) {
       signalTime: trade.signalTime,
       entryTime: trade.entryTime,
       exitTime: trade.exitTime,
+      sourceTimeframe: tradeSourceTimeframe(trade),
+      phase: trade.phase,
+      variantId: trade.variantId,
+      entryType: tradeEntryType(trade),
       entryPrice: trade.entryPrice,
       exitPrice: trade.exitPrice,
       targetPrice,
