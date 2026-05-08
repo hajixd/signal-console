@@ -36,6 +36,8 @@ import gbpUsdNySweepLogitStrategy from "@strategy/gbp_usd_ny_sweep_logit/strateg
 import gbpUsdNySweepStumpStrategy from "@strategy/gbp_usd_ny_sweep_stump/strategy";
 import gbpUsdNySweepStumpOnBritishPoundFuturesStrategy from "@strategy/gbp_usd_ny_sweep_stump_on_british_pound_futures/strategy";
 import gbpUsdNySweepStumpOnEuroFuturesStrategy from "@strategy/gbp_usd_ny_sweep_stump_on_euro_futures/strategy";
+import goldSpotEchoNeuralMeanReversionBalancedStrategy from "@strategy/gold_spot_echo_neural_mean_reversion_balanced/strategy";
+import goldSpotEchoNeuralMeanReversionStrategy from "@strategy/gold_spot_echo_neural_mean_reversion/strategy";
 import goldSpotEchoNeuralMomentumBalancedStrategy from "@strategy/gold_spot_echo_neural_momentum_balanced/strategy";
 import goldSpotEchoNeuralMomentumStrategy from "@strategy/gold_spot_echo_neural_momentum/strategy";
 import goldFuturesHumbledTraderVwapPullbackOppositeStrategy from "@strategy/gold_futures_humbled_trader_vwap_pullback_opposite/strategy";
@@ -127,6 +129,8 @@ export const STRATEGY_DEFINITIONS: StrategyDefinition[] = [
   gbpUsdNySweepStumpStrategy,
   gbpUsdNySweepStumpOnBritishPoundFuturesStrategy,
   gbpUsdNySweepStumpOnEuroFuturesStrategy,
+  goldSpotEchoNeuralMeanReversionBalancedStrategy,
+  goldSpotEchoNeuralMeanReversionStrategy,
   goldSpotEchoNeuralMomentumBalancedStrategy,
   goldSpotEchoNeuralMomentumStrategy,
   goldFuturesHumbledTraderVwapPullbackOppositeStrategy,
