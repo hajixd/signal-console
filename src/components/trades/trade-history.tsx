@@ -908,12 +908,9 @@ export default function TradeHistory({ rows }: TradeHistoryProps) {
             <InfoBox label="Exit Price" value={activeTrade.exitPriceLabel} />
           </div>
 
-          <div className="tradeModalMetrics two">
+          <div className="tradeModalMetrics six">
             <InfoBox label="PnL" value={activeTrade.pnlLabel} valueClassName={activeTrade.pnlClassName} tone={activeTrade.pnlClassName === "up" ? "green" : activeTrade.pnlClassName === "down" ? "red" : "neutral"} />
             <InfoBox label="Duration" value={activeDurationLabel} />
-          </div>
-
-          <div className="tradeModalMetrics four">
             <InfoBox label="Take Profit" value={`${activeTrade.targetPriceLabel} / ${activeTrade.targetLabel}`} tone="green" />
             <InfoBox label="Stop Loss" value={`${activeTrade.stopPriceLabel} / ${activeTrade.riskLabel}`} tone="red" />
             <InfoBox label="Peak (MFE)" value={activeStats.mfe == null ? "--" : formatSignedMoney(activeStats.mfe)} tone="green" />

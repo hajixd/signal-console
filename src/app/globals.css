@@ -5949,3 +5949,311 @@ html[data-theme="light"] .tradeReplaySlider input {
     grid-row: 3;
   }
 }
+
+/* Trade modal refinement */
+.tradeModal,
+html[data-theme="light"] .tradeModal,
+.tradeModal.up-row,
+.tradeModal.down-row,
+.tradeModal.neutral-row,
+html[data-theme="light"] .tradeModal.up-row,
+html[data-theme="light"] .tradeModal.down-row,
+html[data-theme="light"] .tradeModal.neutral-row {
+  width: min(1280px, calc(100vw - 28px));
+  height: min(940px, calc(100svh - 24px));
+  max-height: calc(100svh - 24px);
+  border-color: rgba(255, 255, 255, 0.14);
+  border-radius: 8px !important;
+  background:
+    linear-gradient(180deg, rgba(34, 197, 94, 0.055), transparent 220px),
+    rgba(8, 9, 10, 0.985);
+  box-shadow: 0 30px 120px rgba(0, 0, 0, 0.72), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+.tradeModalHead {
+  min-height: 54px;
+  border-bottom-color: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.025);
+  padding: 10px 14px;
+}
+
+.tradeModalTitle {
+  gap: 6px 12px;
+}
+
+.tradeModalTitle strong,
+html[data-theme="light"] .tradeModalTitle strong {
+  color: rgba(255, 255, 255, 0.96);
+  font-size: 16px;
+}
+
+.tradeModalHead button,
+html[data-theme="light"] .tradeModalHead button,
+.tradeOutcomeBadge {
+  border-radius: 6px !important;
+}
+
+.tradeModalBody {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr);
+  gap: 7px;
+  overflow-y: auto;
+  padding: 10px 12px 12px;
+}
+
+.tradeModalMetrics,
+.tradeModalDetailsStrip {
+  gap: 7px;
+  margin: 0;
+}
+
+.tradeModalMetrics.six {
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+}
+
+.tradeInfoBox,
+html[data-theme="light"] .tradeInfoBox {
+  min-height: 48px;
+  border-color: rgba(255, 255, 255, 0.12);
+  border-radius: 6px !important;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.018)),
+    rgba(6, 8, 10, 0.92);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.035);
+  padding: 8px 10px;
+}
+
+.tradeInfoBox.tone-green {
+  border-color: rgba(52, 211, 153, 0.28);
+  background:
+    linear-gradient(180deg, rgba(52, 211, 153, 0.13), rgba(52, 211, 153, 0.035)),
+    rgba(5, 14, 11, 0.94);
+}
+
+.tradeInfoBox.tone-red {
+  border-color: rgba(248, 113, 113, 0.28);
+  background:
+    linear-gradient(180deg, rgba(248, 113, 113, 0.13), rgba(248, 113, 113, 0.035)),
+    rgba(15, 7, 8, 0.94);
+}
+
+.tradeInfoBox.tone-blue {
+  border-color: rgba(96, 165, 250, 0.28);
+  background:
+    linear-gradient(180deg, rgba(96, 165, 250, 0.13), rgba(96, 165, 250, 0.035)),
+    rgba(6, 10, 17, 0.94);
+}
+
+.tradeInfoBox strong,
+.tradeInfoBox strong *,
+html[data-theme="light"] .tradeInfoBox strong,
+.tradeChartLegend > strong,
+.tradeChartLegend span strong,
+.tradeCandlestickHeadMeta strong,
+.tradeReplaySlider span,
+.tradeReplaySlider strong {
+  font-weight: 950 !important;
+}
+
+.tradeCandlestickPanel,
+html[data-theme="light"] .tradeCandlestickPanel {
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  border-color: rgba(255, 255, 255, 0.13);
+  border-radius: 8px !important;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.035), transparent 120px),
+    rgba(0, 0, 0, 0.86);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04), inset 0 22px 70px rgba(0, 0, 0, 0.52);
+}
+
+.tradeCandlestickHead {
+  flex: 0 0 auto;
+  border-bottom-color: rgba(255, 255, 255, 0.09);
+  background: rgba(255, 255, 255, 0.022);
+  padding: 8px 10px;
+}
+
+.tradeCandlestickHead strong {
+  font-size: 13px;
+}
+
+.tradeTimeframeButtons button,
+.tradeReplayButtons button,
+.tradeReplaySpeeds button,
+.tradeReplayMode button,
+.tradeReplayToggle,
+.tradeReplaySlider,
+.tradeChartLegend > strong,
+.tradeChartLegend span {
+  border-radius: 6px !important;
+}
+
+.tradeTimeframeButtons button {
+  height: 24px;
+  border-color: rgba(255, 255, 255, 0.13);
+  background: rgba(255, 255, 255, 0.035);
+  transition:
+    background 140ms ease,
+    border-color 140ms ease,
+    color 140ms ease;
+}
+
+.tradePriceChartWrap {
+  flex: 1 1 auto;
+  min-height: 360px;
+  height: clamp(360px, 50svh, 560px);
+  border-top: 1px solid rgba(255, 255, 255, 0.045);
+  background: #020303;
+}
+
+.tradePriceChart {
+  height: 100%;
+}
+
+.tradeChartLegend {
+  top: 10px;
+  left: 12px;
+  right: 12px;
+  gap: 5px;
+}
+
+.tradeChartLegend > strong,
+.tradeChartLegend span {
+  border-color: rgba(255, 255, 255, 0.12);
+  background: rgba(6, 7, 8, 0.82);
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.42);
+  color: rgba(255, 255, 255, 0.74);
+  padding: 6px 8px;
+}
+
+.tradeReplayPanel {
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas:
+    "controls options"
+    "slider slider";
+  align-items: center;
+  gap: 8px 12px;
+  border-top-color: rgba(255, 255, 255, 0.1);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0.012)),
+    rgba(4, 5, 6, 0.96);
+  padding: 10px 12px;
+}
+
+.tradeReplayControls {
+  grid-area: controls;
+  flex-wrap: wrap;
+}
+
+.tradeReplayOptions {
+  grid-area: options;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+
+.tradeReplaySlider {
+  grid-area: slider;
+  grid-template-columns: minmax(190px, auto) minmax(0, 1fr) auto;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.035);
+  padding: 8px 10px;
+}
+
+.tradeReplaySlider input {
+  height: 16px;
+}
+
+.tradeReplaySlider input::-webkit-slider-thumb {
+  cursor: grab;
+}
+
+html[data-theme="light"] .tradeModal,
+html[data-theme="light"] .tradeModal.up-row,
+html[data-theme="light"] .tradeModal.down-row,
+html[data-theme="light"] .tradeModal.neutral-row {
+  border-color: rgba(15, 23, 42, 0.12);
+  background:
+    linear-gradient(180deg, rgba(22, 163, 74, 0.055), transparent 220px),
+    rgba(255, 255, 255, 0.985);
+  box-shadow: 0 30px 90px rgba(15, 23, 42, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.78);
+}
+
+html[data-theme="light"] .tradeInfoBox {
+  border-color: rgba(15, 23, 42, 0.11);
+  background: #ffffff;
+}
+
+html[data-theme="light"] .tradeReplaySlider {
+  border-color: rgba(15, 23, 42, 0.1);
+  background: #f8fafc;
+}
+
+@media (max-width: 920px) {
+  .tradeModal,
+  html[data-theme="light"] .tradeModal,
+  .tradeModal.up-row,
+  .tradeModal.down-row,
+  .tradeModal.neutral-row,
+  html[data-theme="light"] .tradeModal.up-row,
+  html[data-theme="light"] .tradeModal.down-row,
+  html[data-theme="light"] .tradeModal.neutral-row {
+    width: calc(100vw - 16px);
+    height: calc(100svh - 16px);
+    max-height: calc(100svh - 16px);
+  }
+
+  .tradeModalBody {
+    grid-template-rows: auto auto auto;
+  }
+
+  .tradeModalMetrics.four,
+  .tradeModalMetrics.two,
+  .tradeModalMetrics.six {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .tradePriceChartWrap {
+    height: clamp(340px, 48svh, 460px);
+    min-height: 340px;
+  }
+
+  .tradeReplayPanel {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "controls"
+      "options"
+      "slider";
+  }
+
+  .tradeReplayOptions {
+    justify-content: stretch;
+  }
+}
+
+@media (max-width: 680px) {
+  .tradeModalBody {
+    padding: 6px;
+  }
+
+  .tradePriceChartWrap,
+  .tradePriceChart {
+    min-height: 300px;
+    height: 300px;
+  }
+
+  .tradeReplaySlider {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 430px) {
+  .tradePriceChartWrap,
+  .tradePriceChart {
+    min-height: 276px;
+    height: 276px;
+  }
+}

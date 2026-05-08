@@ -2482,7 +2482,7 @@ export default function TradePriceChart({
 
     const isLight = chartTheme === "light";
     const backgroundColor = isLight ? "#f8fafc" : "#030303";
-    const textColor = isLight ? "rgba(15, 23, 42, 0.68)" : "rgba(255, 255, 255, 0.68)";
+    const textColor = isLight ? "rgba(15, 23, 42, 0.82)" : "rgba(255, 255, 255, 0.82)";
     const gridColor = isLight ? "rgba(15, 23, 42, 0.08)" : "rgba(255, 255, 255, 0.08)";
     const axisColor = isLight ? "rgba(15, 23, 42, 0.14)" : "rgba(255, 255, 255, 0.14)";
     const crosshairColor = isLight ? "rgba(15, 23, 42, 0.34)" : "rgba(255, 255, 255, 0.35)";
@@ -2495,12 +2495,12 @@ export default function TradePriceChart({
     const chart = createChart(container, {
       autoSize: true,
       width: container.clientWidth,
-      height: Math.max(300, container.clientHeight || 318),
+      height: Math.max(360, container.clientHeight || 390),
       layout: {
         background: { type: ColorType.Solid, color: backgroundColor },
         textColor,
         fontFamily: "'IBM Plex Mono', 'SFMono-Regular', Menlo, Monaco, Consolas, monospace",
-        fontSize: 11
+        fontSize: 12
       },
       grid: {
         vertLines: { color: gridColor, style: LineStyle.Dashed, visible: true },
