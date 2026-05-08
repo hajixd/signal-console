@@ -38,6 +38,77 @@ function passesEchoFilters(bar: EnrichedBar, side: Side, rule: StrategyRule): bo
   return true;
 }
 
+function finiteNumber(value: number | null | undefined, fallback = 0): number {
+  return typeof value === "number" && Number.isFinite(value) ? value : fallback;
+}
+
+function sideSign(side: Side): number {
+  return side === LONG ? 1 : -1;
+}
+
+function sigmoid(value: number): number {
+  const clipped = Math.max(-30, Math.min(30, value));
+  return 1 / (1 + Math.exp(-clipped));
+}
+
+function echoFeatureVector(bars: EnrichedBar[], index: number, side: Side): number[] | null {
+  const bar = bars[index];
+  const prior = bars[index - 5];
+  if (!bar || !prior) return null;
+  const direction = sideSign(side);
+  const atr100 = finiteNumber(bar.atr100, 0);
+  const atr14 = finiteNumber(bar.atr14, atr100);
+  if (atr100 <= 0 || atr14 <= 0) return null;
+  const ema30 = finiteNumber(bar.ema30, bar.close);
+  const ema200 = finiteNumber(bar.ema200, bar.close);
+  const closeLocation = finiteNumber(bar.closeLocation, 0.5);
+  const directionalCloseLocation = side === LONG ? closeLocation * 2 - 1 : (1 - closeLocation) * 2 - 1;
+  const sessionVwap = finiteNumber(bar.sessionVwap, bar.close);
+
+  return [
+    (direction * (ema30 - ema200)) / atr100,
+    direction * finiteNumber(bar.closeEma200Atr, 0),
+    (direction * (bar.close - prior.close)) / atr100,
+    direction * finiteNumber(bar.ret3Atr, 0),
+    direction * finiteNumber(bar.bodyAtr, 0),
+    direction * finiteNumber(bar.rsi14Centered, 0),
+    direction * ((finiteNumber(bar.rsi2, 50) - 50) / 50),
+    direction * finiteNumber(bar.bbZ20, 0),
+    directionalCloseLocation,
+    (direction * (bar.close - sessionVwap)) / atr14,
+    (bar.nyMinutes - 720) / 720,
+    bar.nyWeekday / 4
+  ];
+}
+
+function echoModelScore(rule: StrategyRule, bars: EnrichedBar[], index: number, side: Side): number | null {
+  const model = rule.echoModel;
+  if (!model) return null;
+  const features = echoFeatureVector(bars, index, side);
+  if (!features) return null;
+  if (
+    model.featureMeans.length !== features.length ||
+    model.featureScales.length !== features.length ||
+    model.hiddenWeights.length !== model.hiddenBias.length ||
+    model.outputWeights.length !== model.hiddenWeights.length
+  ) {
+    return null;
+  }
+
+  let output = model.outputBias;
+  for (let row = 0; row < model.hiddenWeights.length; row += 1) {
+    const weights = model.hiddenWeights[row];
+    if (!weights || weights.length !== features.length) return null;
+    let hidden = model.hiddenBias[row] ?? 0;
+    for (let column = 0; column < features.length; column += 1) {
+      const scale = model.featureScales[column] || 1;
+      hidden += ((features[column]! - model.featureMeans[column]!) / scale) * weights[column]!;
+    }
+    output += Math.tanh(hidden) * model.outputWeights[row]!;
+  }
+  return sigmoid(output);
+}
+
 export function evaluateEchoStylePhase(rule: StrategyRule, bars: EnrichedBar[], signalIndex: number): StrategySignal | null {
   const signalBar = bars[signalIndex];
   if (!signalBar || signalBar.ema30 === null || signalBar.ema200 === null) return null;
@@ -77,6 +148,9 @@ export function evaluateEchoStylePhase(rule: StrategyRule, bars: EnrichedBar[], 
 
   if (!side) return null;
 
+  const confidence = echoModelScore(rule, bars, signalIndex, side);
+  if (rule.echoModel && (confidence === null || confidence < rule.echoModel.threshold)) return null;
+
   const direction = side === LONG ? 1 : -1;
   const entryPrice = roundToTick(signalBar.close, rule.tickSize);
   const takeProfitPrice = roundToTick(entryPrice + direction * rule.tpUnits * rule.tickSize, rule.tickSize);
@@ -88,6 +162,7 @@ export function evaluateEchoStylePhase(rule: StrategyRule, bars: EnrichedBar[], 
     stopLossPrice,
     tpUnits: rule.tpUnits,
     slUnits: rule.slUnits,
-    signalTime: signalBar.time
+    signalTime: signalBar.time,
+    ...(confidence === null ? {} : { confidence, score: confidence })
   };
 }

@@ -2,6 +2,7 @@ import type { EnrichedBar } from "@/lib/indicators";
 import type {
   DynamicStopLossPolicy,
   DynamicTakeProfitPolicy,
+  EchoNeuralModel,
   EntryType,
   SizePolicy,
   StopLossPolicy,
@@ -45,6 +46,7 @@ export type StrategyRuntimeDefaults = {
   sizePolicy?: SizePolicy;
   dynamicStopLossPolicy?: DynamicStopLossPolicy;
   dynamicTakeProfitPolicy?: DynamicTakeProfitPolicy;
+  echoModel?: EchoNeuralModel;
   oneTradePerDay?: boolean;
   costUnits?: number;
   invertSignal?: boolean;
@@ -80,6 +82,18 @@ type StrategyMetadataDynamicTakeProfitPolicy = {
   rewardMultiple?: number | null;
 };
 
+type StrategyMetadataEchoNeuralModel = {
+  kind?: string | null;
+  threshold?: number | null;
+  featureNames?: string[] | null;
+  featureMeans?: number[] | null;
+  featureScales?: number[] | null;
+  hiddenWeights?: number[][] | null;
+  hiddenBias?: number[] | null;
+  outputWeights?: number[] | null;
+  outputBias?: number | null;
+};
+
 export type StrategyMetadataDefaults = {
   variantId?: string | null;
   source?: string | null;
@@ -97,6 +111,7 @@ export type StrategyMetadataDefaults = {
   sizePolicy?: StrategyMetadataSizePolicy | null;
   dynamicStopLossPolicy?: StrategyMetadataDynamicStopLossPolicy | null;
   dynamicTakeProfitPolicy?: StrategyMetadataDynamicTakeProfitPolicy | null;
+  echoModel?: StrategyMetadataEchoNeuralModel | null;
   oneTradePerDay?: boolean | null;
   costUnits?: number | null;
   invertSignal?: boolean | null;
@@ -198,6 +213,49 @@ function normalizeDynamicTakeProfitPolicy(
   };
 }
 
+function numericArray(values: number[] | null | undefined): number[] | undefined {
+  if (!Array.isArray(values) || values.some((value) => !Number.isFinite(value))) return undefined;
+  return values;
+}
+
+function numericMatrix(values: number[][] | null | undefined): number[][] | undefined {
+  if (!Array.isArray(values)) return undefined;
+  return values.every((row) => Array.isArray(row) && row.every((value) => Number.isFinite(value))) ? values : undefined;
+}
+
+function normalizeEchoModel(model: StrategyMetadataEchoNeuralModel | null | undefined): EchoNeuralModel | undefined {
+  if (!model || model.kind !== "neural") return undefined;
+  const threshold = definedNumber(model.threshold);
+  const featureMeans = numericArray(model.featureMeans);
+  const featureScales = numericArray(model.featureScales);
+  const hiddenWeights = numericMatrix(model.hiddenWeights);
+  const hiddenBias = numericArray(model.hiddenBias);
+  const outputWeights = numericArray(model.outputWeights);
+  const outputBias = definedNumber(model.outputBias);
+  if (
+    threshold === undefined ||
+    !featureMeans ||
+    !featureScales ||
+    !hiddenWeights ||
+    !hiddenBias ||
+    !outputWeights ||
+    outputBias === undefined
+  ) {
+    return undefined;
+  }
+  return {
+    kind: model.kind,
+    threshold,
+    featureNames: Array.isArray(model.featureNames) ? model.featureNames : undefined,
+    featureMeans,
+    featureScales,
+    hiddenWeights,
+    hiddenBias,
+    outputWeights,
+    outputBias
+  };
+}
+
 export function runtimeDefaultsFromMetadata(metadata: StrategyMetadataDefaults): StrategyRuntimeDefaults {
   return {
     variantId: metadata.variantId ?? undefined,
@@ -216,6 +274,7 @@ export function runtimeDefaultsFromMetadata(metadata: StrategyMetadataDefaults):
     sizePolicy: normalizeSizePolicy(metadata.sizePolicy),
     dynamicStopLossPolicy: normalizeDynamicStopLossPolicy(metadata.dynamicStopLossPolicy),
     dynamicTakeProfitPolicy: normalizeDynamicTakeProfitPolicy(metadata.dynamicTakeProfitPolicy),
+    echoModel: normalizeEchoModel(metadata.echoModel),
     oneTradePerDay: definedBoolean(metadata.oneTradePerDay),
     costUnits: definedNumber(metadata.costUnits),
     invertSignal: definedBoolean(metadata.invertSignal)

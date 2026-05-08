@@ -39,6 +39,18 @@ export type SizePolicy = {
   maxConfidence?: number;
 };
 
+export type EchoNeuralModel = {
+  kind: "neural";
+  threshold: number;
+  featureNames?: string[];
+  featureMeans: number[];
+  featureScales: number[];
+  hiddenWeights: number[][];
+  hiddenBias: number[];
+  outputWeights: number[];
+  outputBias: number;
+};
+
 export type DynamicStopLossPolicy = {
   mode: "trail_prior_bar" | "trail_hourly_pivot";
   bufferUnits?: number;
@@ -98,6 +110,7 @@ export type StrategyRule = {
   sizePolicy?: SizePolicy;
   dynamicStopLossPolicy?: DynamicStopLossPolicy;
   dynamicTakeProfitPolicy?: DynamicTakeProfitPolicy;
+  echoModel?: EchoNeuralModel;
   oneTradePerDay?: boolean;
   costUnits?: number;
   estimatedWinRatePct: number;

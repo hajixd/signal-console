@@ -195,7 +195,12 @@ function formatPct(value: number): string {
 function formatMarket(value: string | undefined): string {
   if (!value) return "Market";
   if (value === "multi") return "Multi-market";
-  return value.charAt(0).toUpperCase() + value.slice(1);
+  return value
+    .replaceAll("_", " ")
+    .split(" ")
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
 }
 
 function splitSizeLabel(value: string): { contracts: number; sizeName: string } {

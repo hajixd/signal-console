@@ -208,6 +208,13 @@ function parseMarketTab(value: string | undefined): MarketTabKey {
   return value === "forex" ? "forex" : "futures";
 }
 
+function strategyVisibleInMarket(strategyMarket: string | undefined, activeMarket: MarketTabKey): boolean {
+  if (activeMarket === "forex") {
+    return strategyMarket === "forex" || strategyMarket === "gold_spot";
+  }
+  return strategyMarket === activeMarket;
+}
+
 function averageNumbers(values: number[]): number {
   return values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : 0;
 }
@@ -559,7 +566,7 @@ export default async function Home({ searchParams }: HomeProps) {
       if (left.trades === 0 || right.trades === 0) return left.trades === right.trades ? 0 : left.trades ? -1 : 1;
       return right.profitFactor - left.profitFactor;
     });
-  const strategyOptions = allStrategyOptions.filter((option) => option.market === activeMarket);
+  const strategyOptions = allStrategyOptions.filter((option) => strategyVisibleInMarket(option.market, activeMarket));
   const optionByKey = new Map(strategyOptions.map((option) => [option.key, option]));
   const allKeys = strategyOptions.map((option) => option.key);
   const persistedLiveEnabledKeys = liveConfig.enabledDatasetIds.filter((key) => allKeys.includes(key));

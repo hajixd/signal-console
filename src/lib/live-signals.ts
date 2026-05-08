@@ -120,6 +120,7 @@ function statToRule(stat: BacktestStat, strategyEdits: Record<string, SavedStrat
     sizePolicy: defaults.sizePolicy,
     dynamicStopLossPolicy: defaults.dynamicStopLossPolicy,
     dynamicTakeProfitPolicy: defaults.dynamicTakeProfitPolicy,
+    echoModel: defaults.echoModel,
     oneTradePerDay: defaults.oneTradePerDay,
     costUnits: defaults.costUnits,
     estimatedWinRatePct: stat.winRatePct,
