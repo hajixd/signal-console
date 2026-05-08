@@ -625,6 +625,14 @@ function coordinateIsVisible(value: number | null): value is number {
   return value != null && Number.isFinite(value);
 }
 
+function coordinateInPane(value: number | null, max: number, padding = 0): value is number {
+  return coordinateIsVisible(value) && value >= -padding && value <= max + padding;
+}
+
+function coordinateRangeIntersectsPane(first: number, second: number, max: number): boolean {
+  return coordinateIsVisible(first) && coordinateIsVisible(second) && Math.max(first, second) >= 0 && Math.min(first, second) <= max;
+}
+
 function chartXForTime(
   chart: IChartApi,
   candles: MappedCandle[],
@@ -999,27 +1007,42 @@ function drawStructureVisuals(
     const x2 = chartXForTime(chart, candles, box.endTime, dataTimeframe);
     const yHigh = series.priceToCoordinate(box.high);
     const yLow = series.priceToCoordinate(box.low);
-    if (!coordinateIsVisible(x1) || !coordinateIsVisible(x2) || !coordinateIsVisible(yHigh) || !coordinateIsVisible(yLow)) continue;
+    if (
+      !coordinateIsVisible(x1) ||
+      !coordinateIsVisible(x2) ||
+      !coordinateIsVisible(yHigh) ||
+      !coordinateIsVisible(yLow) ||
+      !coordinateRangeIntersectsPane(x1, x2, size.width) ||
+      !coordinateRangeIntersectsPane(yHigh, yLow, size.height)
+    ) {
+      continue;
+    }
 
     const colors = structureColor(box.tone);
     const x = clamp(Math.min(x1, x2), 0, size.width);
-    const width = Math.max(8, Math.abs(x2 - x1));
+    const xEnd = clamp(Math.max(x1, x2), 0, size.width);
     const y = clamp(Math.min(yHigh, yLow), 0, size.height);
-    const height = Math.max(4, Math.abs(yLow - yHigh));
+    const yEnd = clamp(Math.max(yHigh, yLow), 0, size.height);
+    const width = Math.max(8, xEnd - x);
+    const height = Math.max(4, yEnd - y);
 
     ctx.fillStyle = colors.fill;
     ctx.strokeStyle = colors.stroke;
     ctx.lineWidth = 1.25;
-    ctx.fillRect(x, y, Math.min(width, size.width - x), height);
-    ctx.strokeRect(x, y, Math.min(width, size.width - x), height);
-    drawOverlayText(ctx, box.label, clamp(x + 6, 6, size.width - 130), clamp(y + 12, 12, size.height - 8), colors.text);
+    ctx.fillRect(x, y, width, height);
+    ctx.strokeRect(x, y, width, height);
+    if (coordinateInPane(x + 6, size.width) && coordinateInPane(y + 12, size.height)) {
+      drawOverlayText(ctx, box.label, clamp(x + 6, 6, size.width - 130), clamp(y + 12, 12, size.height - 8), colors.text);
+    }
   }
 
   for (const line of structureVisuals.lines) {
     const x1 = chartXForTime(chart, candles, line.startTime, dataTimeframe);
     const x2 = chartXForTime(chart, candles, line.endTime, dataTimeframe);
     const y = series.priceToCoordinate(line.price);
-    if (!coordinateIsVisible(x1) || !coordinateIsVisible(x2) || !coordinateIsVisible(y)) continue;
+    if (!coordinateIsVisible(x1) || !coordinateIsVisible(x2) || !coordinateInPane(y, size.height) || !coordinateRangeIntersectsPane(x1, x2, size.width)) {
+      continue;
+    }
 
     const colors = structureColor(line.tone);
     ctx.beginPath();
@@ -1030,25 +1053,28 @@ function drawStructureVisuals(
     ctx.lineTo(clamp(x2, 0, size.width), y);
     ctx.stroke();
     ctx.setLineDash([]);
-    drawOverlayText(ctx, line.label, clamp(Math.min(x1, x2) + 6, 6, size.width - 130), clamp(y - 11, 12, size.height - 8), colors.text);
+    if (coordinateInPane(Math.min(x1, x2) + 6, size.width) && coordinateInPane(y - 11, size.height)) {
+      drawOverlayText(ctx, line.label, clamp(Math.min(x1, x2) + 6, 6, size.width - 130), y - 11, colors.text);
+    }
   }
 
   for (const tag of structureVisuals.tags) {
     const x = chartXForTime(chart, candles, tag.time, dataTimeframe);
     const y = series.priceToCoordinate(tag.price);
-    if (!coordinateIsVisible(x) || !coordinateIsVisible(y)) continue;
+    if (!coordinateInPane(x, size.width) || !coordinateInPane(y, size.height)) continue;
 
     const colors = structureColor(tag.tone);
-    const markerY = clamp(y + (tag.position === "above" ? -10 : 10), 6, size.height - 6);
+    const markerY = y + (tag.position === "above" ? -10 : 10);
+    if (!coordinateInPane(markerY, size.height, 4)) continue;
     ctx.beginPath();
     ctx.fillStyle = colors.text;
-    ctx.arc(clamp(x, 0, size.width), markerY, 3.5, 0, Math.PI * 2);
+    ctx.arc(x, markerY, 3.5, 0, Math.PI * 2);
     ctx.fill();
     drawOverlayText(
       ctx,
       tag.label,
-      clamp(x - 7, 6, size.width - 60),
-      clamp(markerY + (tag.position === "above" ? -12 : 13), 12, size.height - 8),
+      x - 7,
+      markerY + (tag.position === "above" ? -12 : 13),
       colors.text
     );
   }
