@@ -26,7 +26,19 @@ export type SavedStrategyEdit = {
   tpUnits?: number;
 };
 
+export type LiveMarket = "forex" | "futures";
+
+export type SavedCustomScaleRange = {
+  riskCeiling?: string;
+  riskFloor?: string;
+  targetCeiling?: string;
+  targetFloor?: string;
+};
+
+export type SavedCustomScaleRanges = Partial<Record<LiveMarket, SavedCustomScaleRange>>;
+
 export type LiveConfig = {
+  customScaleRanges: SavedCustomScaleRanges;
   dashboardSelectedDatasetIds: string[];
   enabledDatasetIds: string[];
   strategyEdits: Record<string, SavedStrategyEdit>;
@@ -70,8 +82,46 @@ function normalizedStrategyEdits(value: unknown): Record<string, SavedStrategyEd
   return Object.fromEntries(entries);
 }
 
+function normalizedRangeValue(value: unknown): string | undefined {
+  const text = typeof value === "string" ? value.trim() : typeof value === "number" && Number.isFinite(value) ? String(value) : "";
+  if (!text) return undefined;
+  const numeric = Number(text);
+  return Number.isFinite(numeric) && numeric > 0 ? text : undefined;
+}
+
+function normalizedCustomScaleRange(value: unknown): SavedCustomScaleRange | undefined {
+  if (!value || typeof value !== "object") return undefined;
+  const source = value as Partial<Record<keyof SavedCustomScaleRange, unknown>>;
+  const range: SavedCustomScaleRange = {};
+  const targetFloor = normalizedRangeValue(source.targetFloor);
+  const targetCeiling = normalizedRangeValue(source.targetCeiling);
+  const riskFloor = normalizedRangeValue(source.riskFloor);
+  const riskCeiling = normalizedRangeValue(source.riskCeiling);
+
+  if (targetFloor !== undefined) range.targetFloor = targetFloor;
+  if (targetCeiling !== undefined) range.targetCeiling = targetCeiling;
+  if (riskFloor !== undefined) range.riskFloor = riskFloor;
+  if (riskCeiling !== undefined) range.riskCeiling = riskCeiling;
+
+  return Object.keys(range).length ? range : undefined;
+}
+
+function normalizedCustomScaleRanges(value: unknown): SavedCustomScaleRanges {
+  if (!value || typeof value !== "object") return {};
+  const source = value as Partial<Record<LiveMarket, unknown>>;
+  const ranges: SavedCustomScaleRanges = {};
+  const forex = normalizedCustomScaleRange(source.forex);
+  const futures = normalizedCustomScaleRange(source.futures);
+
+  if (forex) ranges.forex = forex;
+  if (futures) ranges.futures = futures;
+
+  return ranges;
+}
+
 function normalizeLiveConfig(value: Partial<LiveConfig> | null | undefined): LiveConfig {
   return {
+    customScaleRanges: normalizedCustomScaleRanges(value?.customScaleRanges),
     dashboardSelectedDatasetIds: normalizedStringArray(value?.dashboardSelectedDatasetIds),
     enabledDatasetIds: normalizedStringArray(value?.enabledDatasetIds),
     strategyEdits: normalizedStrategyEdits(value?.strategyEdits),

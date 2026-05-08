@@ -15,8 +15,13 @@ function parseLiveConfig(value: unknown): LiveConfig {
     payload.strategyEdits && typeof payload.strategyEdits === "object"
       ? (payload.strategyEdits as LiveConfig["strategyEdits"])
       : {};
+  const customScaleRanges =
+    payload.customScaleRanges && typeof payload.customScaleRanges === "object"
+      ? (payload.customScaleRanges as LiveConfig["customScaleRanges"])
+      : {};
 
   return {
+    customScaleRanges,
     dashboardSelectedDatasetIds: parseStringArray(payload.dashboardSelectedDatasetIds),
     enabledDatasetIds: parseStringArray(payload.enabledDatasetIds),
     strategyEdits

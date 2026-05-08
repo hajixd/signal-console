@@ -26,6 +26,7 @@ async function main(): Promise<void> {
   const dashboardSelectedDatasetIds = parseListArg("--dashboard") ?? existing.dashboardSelectedDatasetIds;
 
   const saved = await saveLiveConfig({
+    customScaleRanges: existing.customScaleRanges,
     enabledDatasetIds,
     dashboardSelectedDatasetIds,
     strategyEdits: existing.strategyEdits

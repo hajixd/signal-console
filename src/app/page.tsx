@@ -10,7 +10,7 @@ import LocalDateTime from "@/components/ui/local-date-time";
 import MarketSwitchTabs from "@/components/ui/market-switch-tabs";
 import TestAlertButton from "@/components/ui/test-alert-button";
 import ThemeToggle from "@/components/ui/theme-toggle";
-import { syncLiveSelection, syncStrategyEdits } from "@/app/live-selection-actions";
+import { syncCustomScaleRange, syncLiveSelection, syncStrategyEdits } from "@/app/live-selection-actions";
 import { sendTestTelegramAlert } from "@/app/telegram-actions";
 import {
   aggregateBacktest,
@@ -36,6 +36,7 @@ const DEFAULT_SELECTED_STRATEGY_COUNT = 1;
 const TRADE_CHART_TIMEFRAME_VALUES = new Set<TradeChartTimeframe>(["1m", "5m", "15m", "30m", "45m", "1h", "4h", "1d"]);
 const HISTORY_VISIBLE_TRADE_LIMIT = 500;
 const EMPTY_LIVE_CONFIG: LiveConfig = {
+  customScaleRanges: {},
   dashboardSelectedDatasetIds: [],
   enabledDatasetIds: [],
   strategyEdits: {}
@@ -723,8 +724,10 @@ export default async function Home({ searchParams }: HomeProps) {
             selectedKeys={selectedKeys}
             defaultKeys={defaultSelectedKeys}
             persistedLiveKeys={persistedLiveEnabledKeys}
+            persistedCustomScaleRange={liveConfig.customScaleRanges[activeMarket] ?? {}}
             persistedStrategyEdits={liveConfig.strategyEdits}
             persistLiveSelection={syncLiveSelection}
+            persistCustomScaleRange={syncCustomScaleRange}
             persistStrategyEdits={syncStrategyEdits}
           />
         </section>

@@ -39,14 +39,18 @@ type StrategyOption = {
   liveSupported: boolean;
 };
 
+type MarketKey = "forex" | "futures";
+
 type StrategySelectorProps = {
-  market: "forex" | "futures";
+  market: MarketKey;
   strategies: StrategyOption[];
   selectedKeys: string[];
   defaultKeys: string[];
   persistedLiveKeys: string[];
+  persistedCustomScaleRange: CustomScaleRangeSeed;
   persistedStrategyEdits: StrategyEditSeedMap;
   persistLiveSelection: (selectedKeys: string[], scopeKeys?: string[]) => Promise<void>;
+  persistCustomScaleRange: (market: MarketKey, range: CustomScaleRangeSeed) => Promise<void>;
   persistStrategyEdits: (edits: StrategyEditSeedMap) => Promise<void>;
 };
 
@@ -58,6 +62,7 @@ type CustomScaleRangeInput = {
   targetCeiling: string;
   targetFloor: string;
 };
+type CustomScaleRangeSeed = Partial<Record<keyof CustomScaleRangeInput, unknown>>;
 type CustomScaleDollarRange = {
   riskCeiling: number;
   riskFloor: number;
@@ -92,12 +97,46 @@ function isCustomScaleRangeInput(value: unknown): value is Partial<CustomScaleRa
   return Boolean(value && typeof value === "object");
 }
 
-function customScaleRangeStorageKey(market: StrategySelectorProps["market"]): string {
+function customScaleRangeStorageKey(market: MarketKey): string {
   return `${CUSTOM_SCALE_RANGE_STORAGE_KEY_PREFIX}:${market}`;
 }
 
-function loadClientCustomScaleRange(storageKey: string): CustomScaleRangeInput {
-  if (typeof window === "undefined") return EMPTY_CUSTOM_SCALE_RANGE;
+function normalizeCustomScaleRangeInput(value: CustomScaleRangeSeed | null | undefined): CustomScaleRangeInput {
+  return {
+    riskCeiling: typeof value?.riskCeiling === "string" ? value.riskCeiling : "",
+    riskFloor: typeof value?.riskFloor === "string" ? value.riskFloor : "",
+    targetCeiling: typeof value?.targetCeiling === "string" ? value.targetCeiling : "",
+    targetFloor: typeof value?.targetFloor === "string" ? value.targetFloor : ""
+  };
+}
+
+function compactCustomScaleRangeInput(value: CustomScaleRangeInput): CustomScaleRangeSeed {
+  const compact: CustomScaleRangeSeed = {};
+  const riskCeiling = value.riskCeiling.trim();
+  const riskFloor = value.riskFloor.trim();
+  const targetCeiling = value.targetCeiling.trim();
+  const targetFloor = value.targetFloor.trim();
+
+  if (riskCeiling) compact.riskCeiling = riskCeiling;
+  if (riskFloor) compact.riskFloor = riskFloor;
+  if (targetCeiling) compact.targetCeiling = targetCeiling;
+  if (targetFloor) compact.targetFloor = targetFloor;
+
+  return compact;
+}
+
+function customScaleRangeSignature(value: CustomScaleRangeInput): string {
+  const compact = compactCustomScaleRangeInput(value);
+  return JSON.stringify(
+    Object.keys(compact)
+      .sort()
+      .map((key) => [key, compact[key as keyof CustomScaleRangeInput]])
+  );
+}
+
+function loadClientCustomScaleRange(storageKey: string, persistedRange: CustomScaleRangeSeed = {}): CustomScaleRangeInput {
+  const persisted = normalizeCustomScaleRangeInput(persistedRange);
+  if (hasCustomScaleRangeValue(persisted) || typeof window === "undefined") return persisted;
 
   try {
     const raw = window.localStorage.getItem(storageKey);
@@ -466,15 +505,19 @@ export default function StrategySelector({
   selectedKeys,
   defaultKeys,
   persistedLiveKeys,
+  persistedCustomScaleRange,
   persistedStrategyEdits,
   persistLiveSelection,
+  persistCustomScaleRange,
   persistStrategyEdits
 }: StrategySelectorProps) {
   const router = useRouter();
   const pathname = usePathname();
   const [, startSavingSelection] = useTransition();
   const [isSavingEdits, startSavingEdits] = useTransition();
+  const [, startSavingCustomScaleRange] = useTransition();
   const [isLoaded, setIsLoaded] = useState(false);
+  const [isCustomScaleLoaded, setIsCustomScaleLoaded] = useState(false);
   const [edits, setEdits] = useState<StrategyEditMap>({});
   const [activeKey, setActiveKey] = useState<string | null>(null);
   const [draft, setDraft] = useState<StrategyEdit | null>(null);
@@ -484,7 +527,9 @@ export default function StrategySelector({
   const [optimisticSelectedKeys, setOptimisticSelectedKeys] = useState(selectedKeys);
   const [isCustomScaleOpen, setIsCustomScaleOpen] = useState(false);
   const customScaleRangeKey = customScaleRangeStorageKey(market);
-  const [customScaleRange, setCustomScaleRange] = useState<CustomScaleRangeInput>(() => loadClientCustomScaleRange(customScaleRangeKey));
+  const [customScaleRange, setCustomScaleRange] = useState<CustomScaleRangeInput>(() =>
+    loadClientCustomScaleRange(customScaleRangeKey, persistedCustomScaleRange)
+  );
   const [customScaleError, setCustomScaleError] = useState("");
   const [customScaleResult, setCustomScaleResult] = useState<CustomScaleResult | null>(null);
   const selected = new Set(optimisticSelectedKeys);
@@ -497,12 +542,19 @@ export default function StrategySelector({
   const selectionSignature = selectedKeys.join("|");
   const optimisticSelectionSignature = optimisticSelectedKeys.join("|");
   const persistedLiveSelectionSignature = persistedLiveKeys.join("|");
+  const persistedCustomScaleRangeInput = normalizeCustomScaleRangeInput(persistedCustomScaleRange);
+  const persistedCustomScaleRangeSignature = customScaleRangeSignature(persistedCustomScaleRangeInput);
+  const currentCustomScaleRangeSignature = customScaleRangeSignature(customScaleRange);
   const normalizedPersistedEdits = normalizeEditMap(strategies, persistedStrategyEdits);
   const persistedEditsSignature = serializeEdits(normalizedPersistedEdits);
   const currentEditSignature = serializeEdits(edits);
   const lastSyncedSelectionRef = useRef<string>("");
+  const lastSyncedCustomScaleRangeRef = useRef<string>("");
   const lastSyncedEditsRef = useRef<string>("");
   const selectionSyncTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const customScaleSyncTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const latestCustomScaleRangeSignatureRef = useRef<string>(currentCustomScaleRangeSignature);
+  const customScaleSyncRunRef = useRef(0);
   const latestEditSignatureRef = useRef<string>(currentEditSignature);
   const editSyncTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const editSyncRunRef = useRef(0);
@@ -515,6 +567,7 @@ export default function StrategySelector({
   useEffect(() => {
     return () => {
       if (selectionSyncTimerRef.current) clearTimeout(selectionSyncTimerRef.current);
+      if (customScaleSyncTimerRef.current) clearTimeout(customScaleSyncTimerRef.current);
     };
   }, []);
 
@@ -545,19 +598,73 @@ export default function StrategySelector({
   }, [edits, isLoaded]);
 
   useEffect(() => {
-    setCustomScaleRange(loadClientCustomScaleRange(customScaleRangeKey));
+    setIsCustomScaleLoaded(false);
+    setCustomScaleRange(loadClientCustomScaleRange(customScaleRangeKey, persistedCustomScaleRange));
     setCustomScaleError("");
     setCustomScaleResult(null);
-  }, [customScaleRangeKey]);
+    setIsCustomScaleLoaded(true);
+  }, [customScaleRangeKey, persistedCustomScaleRange, persistedCustomScaleRangeSignature]);
 
   useEffect(() => {
+    if (!isCustomScaleLoaded) return;
     if (typeof window === "undefined") return;
     if (hasCustomScaleRangeValue(customScaleRange)) {
       window.localStorage.setItem(customScaleRangeKey, JSON.stringify(customScaleRange));
     } else {
       window.localStorage.removeItem(customScaleRangeKey);
     }
-  }, [customScaleRange, customScaleRangeKey]);
+  }, [customScaleRange, customScaleRangeKey, isCustomScaleLoaded]);
+
+  useEffect(() => {
+    if (!isCustomScaleLoaded) return;
+    if (currentCustomScaleRangeSignature === persistedCustomScaleRangeSignature) {
+      lastSyncedCustomScaleRangeRef.current = currentCustomScaleRangeSignature;
+      latestCustomScaleRangeSignatureRef.current = currentCustomScaleRangeSignature;
+      if (customScaleSyncTimerRef.current) {
+        clearTimeout(customScaleSyncTimerRef.current);
+        customScaleSyncTimerRef.current = null;
+      }
+      return;
+    }
+    latestCustomScaleRangeSignatureRef.current = currentCustomScaleRangeSignature;
+    if (customScaleSyncTimerRef.current) clearTimeout(customScaleSyncTimerRef.current);
+
+    const syncRun = customScaleSyncRunRef.current + 1;
+    customScaleSyncRunRef.current = syncRun;
+    customScaleSyncTimerRef.current = setTimeout(() => {
+      const rangeToSync = compactCustomScaleRangeInput(customScaleRange);
+      const signatureToSync = currentCustomScaleRangeSignature;
+      lastSyncedCustomScaleRangeRef.current = signatureToSync;
+      customScaleSyncTimerRef.current = null;
+
+      startSavingCustomScaleRange(async () => {
+        try {
+          await persistCustomScaleRange(market, rangeToSync);
+          if (customScaleSyncRunRef.current === syncRun && latestCustomScaleRangeSignatureRef.current === signatureToSync) {
+            router.refresh();
+          }
+        } catch (error) {
+          console.error("Failed to sync custom strategy range", error);
+          if (customScaleSyncRunRef.current === syncRun) lastSyncedCustomScaleRangeRef.current = "";
+        }
+      });
+    }, SELECTION_SYNC_DELAY_MS);
+
+    return () => {
+      if (customScaleSyncTimerRef.current) {
+        clearTimeout(customScaleSyncTimerRef.current);
+        customScaleSyncTimerRef.current = null;
+      }
+    };
+  }, [
+    currentCustomScaleRangeSignature,
+    customScaleRange,
+    isCustomScaleLoaded,
+    market,
+    persistCustomScaleRange,
+    persistedCustomScaleRangeSignature,
+    router
+  ]);
 
   useEffect(() => {
     if (optimisticSelectionSignature === persistedLiveSelectionSignature) {

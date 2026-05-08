@@ -240,6 +240,7 @@ async function main(): Promise<void> {
   const dashboardDefault = liveDatasetIds.slice(0, 1);
 
   await saveLiveConfig({
+    customScaleRanges: existingConfig.customScaleRanges,
     dashboardSelectedDatasetIds:
       existingConfig.dashboardSelectedDatasetIds.length > 0 ? existingConfig.dashboardSelectedDatasetIds : dashboardDefault,
     enabledDatasetIds: existingConfig.enabledDatasetIds.length > 0 ? existingConfig.enabledDatasetIds : liveDatasetIds,

@@ -5746,3 +5746,173 @@ html[data-theme="light"] .tradeReplaySlider input {
     height: 224px;
   }
 }
+
+@media (max-width: 680px) {
+  .market-tabs,
+  .market-tab {
+    min-height: 28px;
+  }
+
+  .terminal-head {
+    gap: 5px;
+    padding: 5px 8px;
+  }
+
+  .asset-meta h1 {
+    font-size: 15px;
+  }
+
+  .backtest-card {
+    gap: 5px;
+    padding: 6px 5px;
+  }
+
+  .backtest-card-head h2 {
+    font-size: 12px;
+  }
+
+  .backtest-stats-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 4px;
+  }
+
+  .backtest-stat-card {
+    min-height: 38px;
+    padding: 4px;
+  }
+
+  .backtest-stat-card span,
+  .telegram-grid span {
+    font-size: 7.5px;
+  }
+
+  .backtest-stat-card strong {
+    font-size: 11px;
+  }
+
+  .backtest-stat-card.date-stat-card strong,
+  .date-stat-card .localDateTimeStack span {
+    font-size: 10px;
+  }
+
+  .date-stat-card .localDateTimeStack small {
+    font-size: 8px;
+  }
+
+  .strategySearch input,
+  .challenge-rule-form input,
+  .fieldControl input,
+  .lockedField {
+    min-height: 26px;
+  }
+
+  .basketListRow {
+    grid-template-columns: 48px minmax(0, 1fr) minmax(0, 1fr) 44px;
+    grid-auto-flow: row;
+    align-items: center;
+    gap: 4px 6px;
+  }
+
+  .basketListRow > .basketTicker {
+    grid-column: 1;
+    grid-row: 1;
+    align-self: center;
+    justify-self: start;
+    min-height: 24px;
+  }
+
+  .basketListRow > .basketModel {
+    grid-column: 2 / 4;
+    grid-row: 1;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1px;
+    align-self: center;
+  }
+
+  .basketListRow > .basketModel::before {
+    content: none;
+  }
+
+  .basketModel strong {
+    font-size: 11px;
+  }
+
+  .basketModel span {
+    font-size: 8.5px;
+  }
+
+  .basketListRow > .strategyToggle {
+    grid-column: 4;
+    grid-row: 1;
+    align-self: center;
+  }
+
+  .basketListRow > span:not(.basketTicker) {
+    min-height: 21px;
+    align-content: center;
+    border-top: 1px solid rgba(255, 255, 255, 0.055);
+    padding-top: 3px;
+    overflow: hidden;
+    font-size: 10px;
+    line-height: 1.05;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .basketListRow > span:not(.basketTicker)::before {
+    font-size: 7px;
+  }
+
+  .basketListRow > span[data-label="Take Profit"]::before {
+    content: "TP";
+  }
+
+  .basketListRow > span[data-label="Stop Loss"]::before {
+    content: "SL";
+  }
+
+  .basketListRow > span[data-label="Unit/contract size"]::before {
+    content: "Size";
+  }
+
+  .basketListRow > span[data-label="PF"] {
+    grid-column: 1;
+    grid-row: 2;
+  }
+
+  .basketListRow > span[data-label="Win"] {
+    grid-column: 2;
+    grid-row: 2;
+  }
+
+  .basketListRow > span[data-label="Trades"] {
+    grid-column: 3;
+    grid-row: 2;
+  }
+
+  .basketListRow > span[data-label="Take Profit"] {
+    grid-column: 4;
+    grid-row: 2;
+  }
+
+  .basketListRow > span[data-label="Stop Loss"] {
+    grid-column: 1;
+    grid-row: 3;
+  }
+
+  .basketListRow > span[data-label="RRR"] {
+    grid-column: 2;
+    grid-row: 3;
+  }
+
+  .basketListRow > span[data-label="Unit/contract size"] {
+    grid-column: 3;
+    grid-row: 3;
+  }
+
+  .basketListRow > span[data-label="Scale"] {
+    grid-column: 4;
+    grid-row: 3;
+  }
+}
