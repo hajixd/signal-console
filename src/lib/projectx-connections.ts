@@ -3,7 +3,7 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { FieldValue } from "firebase-admin/firestore";
 import { firebaseDb, hasFirebaseAdmin } from "@/lib/firebase-admin";
-import type { ProjectXAccount } from "@/lib/projectx";
+import type { ProjectXAccount, ProjectXConnectionSummary } from "@/lib/projectx";
 
 const PROJECTX_CONNECTION_COLLECTION = "topstepProjectXConnections";
 const PROJECTX_CONNECTION_LOCAL_PATH = path.join(process.cwd(), ".local", "topstep-projectx-connections.json");
@@ -118,7 +118,29 @@ function safeToStoredConnection(value: StoredProjectXConnectionPayload | null | 
   }
 }
 
+function toConnectionSummary(value: StoredProjectXConnectionPayload | null | undefined): ProjectXConnectionSummary | null {
+  if (!value?.id) return null;
+  const accounts = normalizeAccounts(value.accounts ?? []);
+  const autoTradePaused = value.autoTradePaused !== false;
+  const pausedAccountIds = normalizePausedAccountIds(value.pausedAccountIds, accounts, autoTradePaused);
+  return {
+    accounts,
+    autoTradePaused: accounts.length > 0 && pausedAccountIds.length === accounts.length,
+    connectedAt: typeof value.connectedAt === "string" ? value.connectedAt : new Date(0).toISOString(),
+    id: value.id,
+    pausedAccountIds,
+    readable: Boolean(safeToStoredConnection(value)),
+    status: value.status === "expired" ? "expired" : "connected",
+    updatedAt: typeof value.updatedAt === "string" ? value.updatedAt : new Date(0).toISOString(),
+    userName: typeof value.userName === "string" ? value.userName : undefined
+  };
+}
+
 function newestConnectionFirst(left: StoredProjectXConnection, right: StoredProjectXConnection): number {
+  return Date.parse(right.updatedAt) - Date.parse(left.updatedAt);
+}
+
+function newestSummaryFirst(left: ProjectXConnectionSummary, right: ProjectXConnectionSummary): number {
   return Date.parse(right.updatedAt) - Date.parse(left.updatedAt);
 }
 
@@ -165,8 +187,26 @@ export async function getStoredProjectXConnections(): Promise<StoredProjectXConn
     .sort(newestConnectionFirst);
 }
 
+export async function getStoredProjectXConnectionSummaries(): Promise<ProjectXConnectionSummary[]> {
+  if (hasFirebaseAdmin()) {
+    const snapshot = await firebaseDb().collection(PROJECTX_CONNECTION_COLLECTION).get();
+    return snapshot.docs
+      .map((doc) => toConnectionSummary(doc.data() as StoredProjectXConnectionPayload | undefined))
+      .filter((connection): connection is ProjectXConnectionSummary => connection !== null && connection.status === "connected")
+      .sort(newestSummaryFirst);
+  }
+
+  const connections = await readLocalConnections();
+  return Object.values(connections)
+    .map((connection) => toConnectionSummary(connection))
+    .filter((connection): connection is ProjectXConnectionSummary => connection !== null && connection.status === "connected")
+    .sort(newestSummaryFirst);
+}
+
 export async function getLatestStoredProjectXConnection(preferredId?: string): Promise<StoredProjectXConnection | null> {
-  const preferredConnection = preferredId ? await getStoredProjectXConnection(preferredId) : null;
+  const preferredConnection = preferredId
+    ? await getStoredProjectXConnection(preferredId).catch(() => null)
+    : null;
   if (preferredConnection?.status === "connected") return preferredConnection;
   return (await getStoredProjectXConnections())[0] ?? null;
 }

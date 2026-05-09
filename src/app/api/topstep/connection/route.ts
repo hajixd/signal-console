@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto";
 import {
   deleteStoredProjectXConnection,
   getLatestStoredProjectXConnection,
+  getStoredProjectXConnectionSummaries,
   getStoredProjectXConnection,
   projectXConnectionStoreMode,
   saveStoredProjectXConnection,
@@ -24,12 +25,14 @@ const CONNECTION_MAX_AGE_SECONDS = 180 * 24 * 60 * 60;
 
 type ConnectPayload = {
   apiKey?: unknown;
+  connectionId?: unknown;
   userName?: unknown;
 };
 
 type UpdatePayload = {
   accountId?: unknown;
   autoTradePaused?: unknown;
+  connectionId?: unknown;
 };
 
 function normalizeText(value: unknown): string {
@@ -38,6 +41,15 @@ function normalizeText(value: unknown): string {
 
 function connectionIdFromRequest(request: NextRequest): string | undefined {
   const value = request.cookies.get(TOPSTEP_PROJECTX_CONNECTION_COOKIE)?.value?.trim();
+  return value && /^[0-9A-Za-z_-]{16,80}$/.test(value) ? value : undefined;
+}
+
+function normalizeConnectionId(value: unknown): string | undefined {
+  return typeof value === "string" && /^[0-9A-Za-z_-]{16,80}$/.test(value.trim()) ? value.trim() : undefined;
+}
+
+function preferredConnectionId(): string | undefined {
+  const value = process.env.PROJECTX_AUTO_TRADE_CONNECTION_ID?.trim();
   return value && /^[0-9A-Za-z_-]{16,80}$/.test(value) ? value : undefined;
 }
 
@@ -52,7 +64,7 @@ async function visibleConnectionIdFromRequest(request: NextRequest): Promise<str
     }
   }
 
-  return (await getLatestStoredProjectXConnection())?.id;
+  return (await getLatestStoredProjectXConnection(preferredConnectionId()))?.id;
 }
 
 function setConnectionCookie(response: NextResponse, connectionId: string): void {
@@ -89,16 +101,23 @@ function jsonStatus(payload: ProjectXConnectionStatus, init?: ResponseInit): Nex
   );
 }
 
+async function withConnectionSummaries(status: ProjectXConnectionStatus): Promise<ProjectXConnectionStatus> {
+  return {
+    ...status,
+    connections: await getStoredProjectXConnectionSummaries()
+  };
+}
+
 async function connectedStatus(connectionId: string): Promise<{ status: ProjectXConnectionStatus; refreshedToken?: string }> {
   const connection = await getStoredProjectXConnection(connectionId);
   if (!connection) {
     return {
-      status: {
+      status: await withConnectionSummaries({
         accounts: [],
         autoTradePaused: true,
         connected: false,
         persisted: false
-      }
+      })
     };
   }
 
@@ -121,6 +140,7 @@ async function connectedStatus(connectionId: string): Promise<{ status: ProjectX
       autoTradePaused: connection.autoTradePaused,
       checkedAt: new Date().toISOString(),
       connected: true,
+      connections: await getStoredProjectXConnectionSummaries(),
       pausedAccountIds: connection.pausedAccountIds,
       persisted: true,
       refreshed: Boolean(refreshedToken),
@@ -133,7 +153,7 @@ async function connectedStatus(connectionId: string): Promise<{ status: ProjectX
 export async function GET(request: NextRequest) {
   const connectionId = await visibleConnectionIdFromRequest(request);
   if (!connectionId) {
-    return jsonStatus({ accounts: [], autoTradePaused: true, connected: false, persisted: false });
+    return jsonStatus(await withConnectionSummaries({ accounts: [], autoTradePaused: true, connected: false, persisted: false }));
   }
 
   try {
@@ -146,6 +166,7 @@ export async function GET(request: NextRequest) {
       accounts: [],
       autoTradePaused: true,
       connected: false,
+      connections: await getStoredProjectXConnectionSummaries(),
       error: readableProjectXError(error),
       persisted: false
     });
@@ -165,6 +186,7 @@ export async function POST(request: NextRequest) {
         accounts: [],
         autoTradePaused: true,
         connected: false,
+        connections: await getStoredProjectXConnectionSummaries(),
         error: "Enter both the TopstepX username and API key.",
         persisted: false
       },
@@ -173,7 +195,7 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const connectionId = connectionIdFromRequest(request) ?? randomUUID();
+    const connectionId = normalizeConnectionId(payload.connectionId) ?? connectionIdFromRequest(request) ?? randomUUID();
     const token = await loginProjectXApiKey(userName, apiKey);
     const accounts = await searchProjectXAccounts(token, true);
     await saveStoredProjectXConnection({
@@ -189,6 +211,7 @@ export async function POST(request: NextRequest) {
       autoTradePaused: true,
       checkedAt: new Date().toISOString(),
       connected: true,
+      connections: await getStoredProjectXConnectionSummaries(),
       pausedAccountIds: accounts.map((account) => account.id),
       persisted: true,
       userName
@@ -201,6 +224,7 @@ export async function POST(request: NextRequest) {
         accounts: [],
         autoTradePaused: true,
         connected: false,
+        connections: await getStoredProjectXConnectionSummaries(),
         error: readableProjectXError(error),
         persisted: false
       },
@@ -210,13 +234,15 @@ export async function POST(request: NextRequest) {
 }
 
 export async function PATCH(request: NextRequest) {
-  const connectionId = connectionIdFromRequest(request);
+  const payload = ((await request.json().catch(() => ({}))) ?? {}) as UpdatePayload;
+  const connectionId = normalizeConnectionId(payload.connectionId) ?? connectionIdFromRequest(request);
   if (!connectionId) {
     return jsonStatus(
       {
         accounts: [],
         autoTradePaused: true,
         connected: false,
+        connections: await getStoredProjectXConnectionSummaries(),
         error: "Add a ProjectX account before changing auto-trade status.",
         persisted: false
       },
@@ -224,7 +250,6 @@ export async function PATCH(request: NextRequest) {
     );
   }
 
-  const payload = ((await request.json().catch(() => ({}))) ?? {}) as UpdatePayload;
   const autoTradePaused = payload.autoTradePaused === false ? false : true;
   const accountId = typeof payload.accountId === "number" && Number.isInteger(payload.accountId) ? payload.accountId : undefined;
 
@@ -235,6 +260,7 @@ export async function PATCH(request: NextRequest) {
         accounts: [],
         autoTradePaused: true,
         connected: false,
+        connections: await getStoredProjectXConnectionSummaries(),
         error: "ProjectX account is no longer connected.",
         persisted: false
       },
@@ -249,6 +275,7 @@ export async function PATCH(request: NextRequest) {
     autoTradePaused: connection.autoTradePaused,
     checkedAt: connection.lastCheckedAt,
     connected: true,
+    connections: await getStoredProjectXConnectionSummaries(),
     pausedAccountIds: connection.pausedAccountIds,
     persisted: true,
     userName: connection.userName
@@ -258,7 +285,7 @@ export async function PATCH(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
-  const connectionId = connectionIdFromRequest(request);
+  const connectionId = normalizeConnectionId(request.nextUrl.searchParams.get("connectionId")) ?? connectionIdFromRequest(request);
   if (connectionId) {
     await deleteStoredProjectXConnection(connectionId);
   }
@@ -267,6 +294,7 @@ export async function DELETE(request: NextRequest) {
     accounts: [],
     autoTradePaused: true,
     connected: false,
+    connections: await getStoredProjectXConnectionSummaries(),
     persisted: false
   });
   clearConnectionCookie(response);

@@ -9,7 +9,7 @@ import {
   type AutoTradeProvider,
   type AutoTradeProviderId
 } from "@/lib/auto-trade-platforms";
-import type { ProjectXAccount, ProjectXConnectionStatus } from "@/lib/projectx";
+import type { ProjectXAccount, ProjectXConnectionStatus, ProjectXConnectionSummary } from "@/lib/projectx";
 
 const EMPTY_STATUS: ProjectXConnectionStatus = {
   accounts: [],
@@ -243,6 +243,7 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
   const [genericFields, setGenericFields] = useState<Record<string, string>>(() => defaultConnectionFields(selectedProviderId));
   const [showAdvancedFields, setShowAdvancedFields] = useState(false);
   const [activeProjectXFolderId, setActiveProjectXFolderId] = useState<string | null>(null);
+  const [reconnectProjectXConnectionId, setReconnectProjectXConnectionId] = useState<string | null>(null);
 
   const marketLabel = autoTradeMarketLabel(market);
   const selectedFirm = propFirms.find((firm) => firm.id === selectedFirmId) ?? propFirms[0]!;
@@ -255,20 +256,29 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
   const canConnectSelectedProvider = selectedProviderReady && selectedProvider.id === "projectx" && selectedProvider.status === "live" && market === "futures";
   const storageLabel = status.storageMode === "firebase" ? "Firebase" : "local dev storage";
   const displayUserName = status.userName || userName || "--";
-  const pausedAccountIds = new Set(status.pausedAccountIds ?? status.accounts.map((account) => account.id));
   const visibleAccounts = market === "futures" ? status.accounts : [];
-  const projectXAccountFolders = useMemo(
+  const projectXAccountFolders = useMemo<ProjectXConnectionSummary[]>(
     () =>
-      visibleAccounts.length
-        ? [
-            {
-              accounts: visibleAccounts,
-              id: `projectx-${displayUserName.toLowerCase()}`,
-              login: displayUserName
-            }
-          ]
+      market === "futures"
+        ? status.connections?.length
+          ? status.connections
+          : visibleAccounts.length
+            ? [
+                {
+                  accounts: visibleAccounts,
+                  autoTradePaused: status.autoTradePaused,
+                  connectedAt: status.checkedAt ?? new Date(0).toISOString(),
+                  id: `projectx-${displayUserName.toLowerCase()}`,
+                  pausedAccountIds: status.pausedAccountIds,
+                  readable: true,
+                  status: "connected" as const,
+                  updatedAt: status.checkedAt ?? new Date(0).toISOString(),
+                  userName: displayUserName
+                }
+              ]
+            : []
         : [],
-    [displayUserName, visibleAccounts]
+    [displayUserName, market, status.autoTradePaused, status.checkedAt, status.connections, status.pausedAccountIds, visibleAccounts]
   );
   const visibleSavedConnections = savedConnections.filter((connection) => providers.some((provider) => provider.id === connection.id));
   const activeProjectXFolder = projectXAccountFolders.find((folder) => folder.id === activeProjectXFolderId);
@@ -294,6 +304,7 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
 
   useEffect(() => {
     setIsAddingAccount(false);
+    setReconnectProjectXConnectionId(null);
     setActiveProjectXFolderId(null);
     setSelectedFirmId(firstPropFirmId(market));
     setGenericFields(defaultConnectionFields(firstProviderId(providers)));
@@ -373,12 +384,14 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
         },
         body: JSON.stringify({
           apiKey,
+          connectionId: reconnectProjectXConnectionId,
           userName
         })
       });
       const nextStatus = await parseConnectionResponse(response);
       setStatus(nextStatus);
       setApiKey("");
+      setReconnectProjectXConnectionId(null);
       setActiveProjectXFolderId(null);
       setIsAddingAccount(false);
     } catch (error) {
@@ -424,10 +437,10 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
     }
   }
 
-  async function handleDisconnect() {
+  async function handleDisconnect(connectionId?: string) {
     setIsDisconnecting(true);
     try {
-      const response = await fetch("/api/topstep/connection", {
+      const response = await fetch(connectionId ? `/api/topstep/connection?connectionId=${encodeURIComponent(connectionId)}` : "/api/topstep/connection", {
         method: "DELETE"
       });
       const nextStatus = await parseConnectionResponse(response);
@@ -461,7 +474,7 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
     }
   }
 
-  async function handleAutoTradePaused(accountId: number, nextPaused: boolean) {
+  async function handleAutoTradePaused(accountId: number, nextPaused: boolean, connectionId?: string) {
     setIsUpdatingPaused(true);
     try {
       const response = await fetch("/api/topstep/connection", {
@@ -471,7 +484,8 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
         },
         body: JSON.stringify({
           accountId,
-          autoTradePaused: nextPaused
+          autoTradePaused: nextPaused,
+          connectionId
         })
       });
       const nextStatus = await parseConnectionResponse(response);
@@ -484,6 +498,16 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
     } finally {
       setIsUpdatingPaused(false);
     }
+  }
+
+  function handleProjectXReconnect(connectionId: string, login: string | undefined) {
+    setReconnectProjectXConnectionId(connectionId);
+    setSelectedFirmId("topstep");
+    setSelectedProviderId("projectx");
+    setUserName(login ?? "");
+    setApiKey("");
+    setActiveProjectXFolderId(null);
+    setIsAddingAccount(true);
   }
 
   async function handleGenericPaused(providerId: AutoTradeProviderId, nextPaused: boolean) {
@@ -512,7 +536,10 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
     <div className="topstepConnection">
       <div className="topstepConnectionActions topstepPrimaryActions">
         {isAddingAccount ? (
-          <button type="button" onClick={() => setIsAddingAccount(false)}>
+          <button type="button" onClick={() => {
+            setReconnectProjectXConnectionId(null);
+            setIsAddingAccount(false);
+          }}>
             Back to Accounts
           </button>
         ) : activeProjectXFolder ? (
@@ -646,7 +673,7 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
               <div className="topstepFolderPageHead">
                 <div>
                   <span>Login</span>
-                  <strong>{activeProjectXFolder.login}</strong>
+                  <strong>{activeProjectXFolder.userName ?? "--"}</strong>
                 </div>
                 <div>
                   <span>Provider</span>
@@ -663,8 +690,11 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
               </div>
               <div className="topstepFolderAccounts">
                 {activeProjectXFolder.accounts.map((account) => {
-                  const accountPaused = pausedAccountIds.has(account.id);
-                  const connectionStatus = accountConnectionStatus(account, accountPaused);
+                  const folderPausedAccountIds = new Set(activeProjectXFolder.pausedAccountIds ?? activeProjectXFolder.accounts.map((item) => item.id));
+                  const accountPaused = folderPausedAccountIds.has(account.id);
+                  const connectionStatus = activeProjectXFolder.readable
+                    ? accountConnectionStatus(account, accountPaused)
+                    : { className: "status failed", dotClassName: "statusDot red", label: "Disconnected" };
                   return (
                     <div className="topstepAccountRow isNested" key={`projectx-${account.id}`}>
                       <div className="topstepAccountFields">
@@ -693,11 +723,15 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
                           className={accountPaused ? "playButton" : "pauseButton"}
                           type="button"
                           disabled={isUpdatingPaused || isDisconnecting}
-                          onClick={() => handleAutoTradePaused(account.id, !accountPaused)}
+                          onClick={() =>
+                            activeProjectXFolder.readable
+                              ? handleAutoTradePaused(account.id, !accountPaused, activeProjectXFolder.id)
+                              : handleProjectXReconnect(activeProjectXFolder.id, activeProjectXFolder.userName)
+                          }
                         >
-                          {isUpdatingPaused ? "Updating..." : accountPaused ? "Play" : "Pause"}
+                          {isUpdatingPaused ? "Updating..." : activeProjectXFolder.readable ? (accountPaused ? "Play" : "Pause") : "Reconnect"}
                         </button>
-                        <button className="dangerButton" type="button" disabled={isDisconnecting} onClick={() => handleDisconnect()}>
+                        <button className="dangerButton" type="button" disabled={isDisconnecting} onClick={() => handleDisconnect(activeProjectXFolder.id)}>
                           {isDisconnecting ? "Removing..." : "Remove"}
                         </button>
                       </div>
@@ -713,7 +747,7 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
                   <span className="topstepFolderIcon" aria-hidden="true" />
                   <div className="topstepFolderIdentity">
                     <span>Login</span>
-                    <strong>{folder.login}</strong>
+                    <strong>{folder.userName ?? "--"}</strong>
                   </div>
                   <div className="topstepFolderMeta provider">
                     <span>Provider</span>

@@ -13,11 +13,24 @@ export type ProjectXConnectionStatus = {
   autoTradePaused?: boolean;
   checkedAt?: string;
   connected: boolean;
+  connections?: ProjectXConnectionSummary[];
   error?: string;
   persisted?: boolean;
   refreshed?: boolean;
   pausedAccountIds?: number[];
   storageMode?: "firebase" | "local";
+  userName?: string;
+};
+
+export type ProjectXConnectionSummary = {
+  accounts: ProjectXAccount[];
+  autoTradePaused?: boolean;
+  connectedAt: string;
+  id: string;
+  pausedAccountIds?: number[];
+  readable: boolean;
+  status: "connected" | "expired";
+  updatedAt: string;
   userName?: string;
 };
 
