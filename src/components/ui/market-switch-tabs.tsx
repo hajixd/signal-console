@@ -9,11 +9,12 @@ type MarketSwitchTab = {
 };
 
 type MarketSwitchTabsProps = {
-  activeMarket: "forex" | "futures";
+  activeMarket: MarketSwitchTab["key"];
+  persistActiveMarket?: (market: MarketSwitchTab["key"]) => Promise<void>;
   tabs: MarketSwitchTab[];
 };
 
-export default function MarketSwitchTabs({ activeMarket, tabs }: MarketSwitchTabsProps) {
+export default function MarketSwitchTabs({ activeMarket, persistActiveMarket, tabs }: MarketSwitchTabsProps) {
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -52,6 +53,9 @@ export default function MarketSwitchTabs({ activeMarket, tabs }: MarketSwitchTab
               event.preventDefault();
               setPendingMarket(tab.key);
               startTransition(() => {
+                if (persistActiveMarket) {
+                  void persistActiveMarket(tab.key).catch((error) => console.error("Failed to save active market", error));
+                }
                 router.push(hrefs[tab.key], { scroll: false });
               });
             }}

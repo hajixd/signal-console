@@ -10,7 +10,14 @@ import LocalDateTime from "@/components/ui/local-date-time";
 import MarketSwitchTabs from "@/components/ui/market-switch-tabs";
 import TestAlertButton from "@/components/ui/test-alert-button";
 import ThemeToggle from "@/components/ui/theme-toggle";
-import { syncCustomScaleRange, syncLiveSelection, syncStrategyEdits } from "@/app/live-selection-actions";
+import {
+  syncActiveMarket,
+  syncChallengeRulesForMarket,
+  syncCustomScaleRange,
+  syncLiveSelection,
+  syncStrategyEdits,
+  syncTheme
+} from "@/app/live-selection-actions";
 import { sendTestTelegramAlert } from "@/app/telegram-actions";
 import {
   aggregateBacktest,
@@ -37,6 +44,7 @@ const TRADE_CHART_TIMEFRAME_VALUES = new Set<TradeChartTimeframe>(["1m", "5m", "
 const HISTORY_VISIBLE_TRADE_LIMIT = 500;
 const EMPTY_LIVE_CONFIG: LiveConfig = {
   customScaleRanges: {},
+  dashboardSettings: {},
   dashboardSelectedDatasetIds: [],
   enabledDatasetIds: [],
   strategyEdits: {}
@@ -204,15 +212,33 @@ function tradeEntryType(trade: BacktestTrade): "market" | "limit" {
   return fingerprint.includes("ict_sweep_fvg") || fingerprint.includes("ict sweep fvg") ? "limit" : "market";
 }
 
-function parseMarketTab(value: string | undefined): MarketTabKey {
-  return value === "forex" ? "forex" : "futures";
+function validMarketTab(value: string | undefined): MarketTabKey | undefined {
+  if (value === "gold_spot") return "forex";
+  return value === "forex" || value === "futures" ? value : undefined;
+}
+
+function parseMarketTab(value: string | undefined, fallback?: string): MarketTabKey {
+  return validMarketTab(value) ?? validMarketTab(fallback) ?? "futures";
 }
 
 function strategyVisibleInMarket(strategyMarket: string | undefined, activeMarket: MarketTabKey): boolean {
-  if (activeMarket === "forex") {
-    return strategyMarket === "forex" || strategyMarket === "gold_spot";
-  }
-  return strategyMarket === activeMarket;
+  return normalizedDashboardMarket(strategyMarket) === activeMarket;
+}
+
+function normalizedDashboardMarket(value: string | undefined): MarketTabKey | undefined {
+  if (value === "gold_spot") return "forex";
+  return value === "forex" || value === "futures" ? value : undefined;
+}
+
+function marketLabel(value: string | undefined): string {
+  const market = normalizedDashboardMarket(value) ?? value;
+  if (!market) return "Market";
+  return market
+    .replaceAll("_", " ")
+    .split(" ")
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
 }
 
 function averageNumbers(values: number[]): number {
@@ -259,15 +285,37 @@ function numericParam(value: string | undefined, fallback: number, min = 0): num
   return Math.max(min, parsed);
 }
 
-function challengeRulesFromParams(params: Awaited<HomeProps["searchParams"]> | undefined): ChallengeRules {
+function challengeRulesFromParams(
+  params: Awaited<HomeProps["searchParams"]> | undefined,
+  fallback: ChallengeRules = DEFAULT_CHALLENGE_RULES
+): ChallengeRules {
   return {
-    startingBalance: numericParam(params?.accountSize, DEFAULT_CHALLENGE_RULES.startingBalance, 1),
-    profitTarget: numericParam(params?.profitTarget, DEFAULT_CHALLENGE_RULES.profitTarget, 1),
-    maximumLossLimit: numericParam(params?.maxLoss, DEFAULT_CHALLENGE_RULES.maximumLossLimit),
-    dailyLossLimit: numericParam(params?.dailyLoss, DEFAULT_CHALLENGE_RULES.dailyLossLimit),
-    dailyProfitLock: numericParam(params?.dailyLock, DEFAULT_CHALLENGE_RULES.dailyProfitLock),
-    dailyLossStop: numericParam(params?.dailyStop, DEFAULT_CHALLENGE_RULES.dailyLossStop)
+    startingBalance: numericParam(params?.accountSize, fallback.startingBalance, 1),
+    profitTarget: numericParam(params?.profitTarget, fallback.profitTarget, 1),
+    maximumLossLimit: numericParam(params?.maxLoss, fallback.maximumLossLimit),
+    dailyLossLimit: numericParam(params?.dailyLoss, fallback.dailyLossLimit),
+    dailyProfitLock: numericParam(params?.dailyLock, fallback.dailyProfitLock),
+    dailyLossStop: numericParam(params?.dailyStop, fallback.dailyLossStop)
   };
+}
+
+type SyncTileState = "idle" | "running" | "success" | "failed";
+
+function syncTileState(run: { startedAt?: string; state?: string } | undefined, lastSuccessfulAt?: string): SyncTileState {
+  if (run?.state === "running") {
+    const startedAt = run.startedAt ? Date.parse(run.startedAt) : Number.NaN;
+    return Number.isFinite(startedAt) && Date.now() - startedAt > 10 * 60_000 ? "failed" : "running";
+  }
+  if (run?.state === "failed") return "failed";
+  if (run?.state === "success" || lastSuccessfulAt) return "success";
+  return "idle";
+}
+
+function syncTileLabel(state: SyncTileState): string {
+  if (state === "running") return "Running";
+  if (state === "success") return "Success";
+  if (state === "failed") return "Failed";
+  return "Waiting";
 }
 
 function accountSizeMultiplier(rules: ChallengeRules): number {
@@ -458,9 +506,6 @@ function challengeSessionCount(trades: { entryTime: string; pnlDollars: number }
 
 export default async function Home({ searchParams }: HomeProps) {
   const params = await searchParams;
-  const activeMarket = parseMarketTab(params?.market);
-  const challengeRules = challengeRulesFromParams(params);
-  const accountMultiplier = accountSizeMultiplier(challengeRules);
   const [liveTrades, strategyCatalog, backtestStats, backtestTrades, liveRules, liveConfig, datasetStatus] = await Promise.all([
     safeRuntimeValue(getTrades, []),
     getStrategyCatalog(),
@@ -470,8 +515,19 @@ export default async function Home({ searchParams }: HomeProps) {
     safeRuntimeValue(getLiveConfig, EMPTY_LIVE_CONFIG),
     safeRuntimeValue(async () => (await getDatasetStatus()) ?? defaultDatasetStatus(), defaultDatasetStatus())
   ]);
+  const activeMarket = parseMarketTab(params?.market, liveConfig.dashboardSettings.activeMarket);
+  const persistedMarketChallengeRules = liveConfig.dashboardSettings.challengeRulesByMarket?.[activeMarket];
+  const persistedChallengeRulesSource = persistedMarketChallengeRules ?? liveConfig.dashboardSettings.challengeRules;
+  const persistedChallengeRules = persistedChallengeRulesSource
+    ? { ...DEFAULT_CHALLENGE_RULES, ...persistedChallengeRulesSource }
+    : DEFAULT_CHALLENGE_RULES;
+  const challengeRules = challengeRulesFromParams(params, persistedChallengeRules);
+  const accountMultiplier = accountSizeMultiplier(challengeRules);
   const syncStatus = datasetStatus?.sync ?? {};
   const legacyDatasetSyncAt = datasetStatus?.sync ? undefined : datasetStatus?.lastSyncAt;
+  const marketDataSyncState = syncTileState(syncStatus.marketDataSync, syncStatus.lastMarketDataSyncAt ?? legacyDatasetSyncAt);
+  const signalTradeCheckState = syncTileState(syncStatus.signalTradeCheck, syncStatus.lastSignalTradeCheckAt);
+  const dataValidityRefreshState = syncTileState(syncStatus.dataValidityRefresh, syncStatus.lastDataValidityRefreshAt ?? legacyDatasetSyncAt);
   const now = new Date();
   const nextMarketDataSyncAt = nextCronRunIso((date) => date.getUTCMinutes() % 5 === 0, now);
   const nextSignalTradeCheckAt = nextCronRunIso((date) => [2, 17, 32, 47].includes(date.getUTCMinutes()), now);
@@ -504,7 +560,9 @@ export default async function Home({ searchParams }: HomeProps) {
       ).sort();
       const displaySymbols = symbols.length ? symbols : [entry.symbol];
       const markets = uniqueValues(
-        [...stats.map((stat) => stat.market), ...trades.map((trade) => trade.market)].filter((value): value is string => Boolean(value))
+        [...stats.map((stat) => stat.market), ...trades.map((trade) => trade.market)]
+          .map((value) => normalizedDashboardMarket(value) ?? value)
+          .filter((value): value is string => Boolean(value))
       ).sort();
       const phases = uniqueValues(stats.map((stat) => stat.phase).filter(Boolean)).sort();
       const logicalKeys = uniqueValues(stats.map((stat) => stat.logicalKey).filter(Boolean)).sort();
@@ -527,7 +585,7 @@ export default async function Home({ searchParams }: HomeProps) {
           entry.label,
           entry.symbol,
           ...entry.timeframes,
-          entry.market,
+          normalizedDashboardMarket(entry.market) ?? entry.market,
           ...displaySymbols,
           ...phases,
           ...stats.map((stat) => `${stat.symbol} ${stat.phase}`),
@@ -539,7 +597,7 @@ export default async function Home({ searchParams }: HomeProps) {
         timeframeLabel: entry.timeframes.join(", "),
         symbol: assetLabel(displaySymbols),
         phase: phases[0] ?? entry.key,
-        market: markets.length === 1 ? markets[0] : markets.length > 1 ? "multi" : entry.market,
+        market: markets.length === 1 ? markets[0] : markets.length > 1 ? "multi" : normalizedDashboardMarket(entry.market) ?? entry.market,
         winRatePct: aggregate.winRatePct,
         profitFactor: aggregate.profitFactor,
         trades: aggregate.trades,
@@ -628,7 +686,7 @@ export default async function Home({ searchParams }: HomeProps) {
       indexLabel: fmtNumber(index + 1),
       symbol: trade.symbol,
       modelName: optionByKey.get(trade.datasetId)?.label ?? trade.label,
-      marketLabel: trade.market ? trade.market.replaceAll("_", " ") : "Market",
+      marketLabel: marketLabel(trade.market),
       market: trade.market,
       side: trade.side,
       sideLabel: sideLabel(trade.side),
@@ -682,7 +740,7 @@ export default async function Home({ searchParams }: HomeProps) {
       entryTime: trade.entryTime,
       pnlDollars: tradeDollarPnl(trade, optionByKey.get(trade.datasetId)?.sizeMultiplier ?? 1)
     }));
-  const challengeReplaySeed = `trading-bot:${selectedKeys.join("|")}`;
+  const challengeReplaySeed = `trading-bot:${activeMarket}:${selectedKeys.join("|")}`;
   const challengeHistoricalSessions = challengeSessionCount(challengeReplayTrades);
   const telegramBotUsername = process.env.TELEGRAM_BOT_USERNAME?.replace(/^@/, "");
   const telegramConfigured = Boolean(process.env.TELEGRAM_BOT_TOKEN && (process.env.TELEGRAM_GROUP_CHAT_ID || process.env.TELEGRAM_CHAT_ID));
@@ -690,23 +748,25 @@ export default async function Home({ searchParams }: HomeProps) {
   const alertStore = storageMode();
   const assetStore = projectAssetMode();
   const liveSelectionCount = persistedLiveEnabledKeys.length || persistedSelectedKeys.length;
+  const executionMarket = activeMarket;
+  const persistChallengeRules = syncChallengeRulesForMarket.bind(null, activeMarket);
 
   return (
     <main className="terminal">
       <AutoRefresh />
       <section className="terminal-workspace marketView" id="signals" key={activeMarket}>
-        <MarketSwitchTabs activeMarket={activeMarket} tabs={MARKET_TABS} />
+        <MarketSwitchTabs activeMarket={activeMarket} tabs={MARKET_TABS} persistActiveMarket={syncActiveMarket} />
         <header className="terminal-head">
           <div className="asset-meta">
             <h1>Trading Bot</h1>
           </div>
           <div className="terminal-actions">
-            <ThemeToggle />
+            <ThemeToggle initialTheme={liveConfig.dashboardSettings.theme} persistTheme={syncTheme} />
             <a className="terminal-action" href={telegramLink} target="_blank" rel="noreferrer">
               {telegramBotUsername ? "Open Telegram bot" : "Open BotFather"}
             </a>
             <TestAlertButton disabled={!telegramConfigured} sendTestAlert={sendTestTelegramAlert} />
-            <AutoTradingConnectionDrawer market={activeMarket} />
+            <AutoTradingConnectionDrawer market={executionMarket} />
           </div>
         </header>
 
@@ -729,7 +789,6 @@ export default async function Home({ searchParams }: HomeProps) {
             market={activeMarket}
             strategies={strategyOptions}
             selectedKeys={selectedKeys}
-            defaultKeys={defaultSelectedKeys}
             persistedLiveKeys={persistedLiveEnabledKeys}
             persistedCustomScaleRange={liveConfig.customScaleRanges[activeMarket] ?? {}}
             persistedStrategyEdits={liveConfig.strategyEdits}
@@ -750,7 +809,10 @@ export default async function Home({ searchParams }: HomeProps) {
           </div>
           <ChallengeReplay
             initialRules={challengeRules}
+            persistedRules={Boolean(persistedMarketChallengeRules)}
+            persistRules={persistChallengeRules}
             seedPrefix={challengeReplaySeed}
+            storageKey={`trading-bot:challenge-rules:v1:${activeMarket}`}
             strategies={strategyOptions}
             trades={challengeReplayTrades}
             persistedStrategyEdits={liveConfig.strategyEdits}
@@ -916,9 +978,11 @@ export default async function Home({ searchParams }: HomeProps) {
             <span className="status sent">active</span>
           </div>
           <div className="sync-grid" aria-label="Dataset sync status">
-            <div className="dataset-sync-tile">
+            <div className={`dataset-sync-tile sync-state-${marketDataSyncState}`}>
               <span className="sync-tile-name">Market data sync</span>
               <dl className="sync-tile-times">
+                <dt>Status</dt>
+                <dd>{syncTileLabel(marketDataSyncState)}</dd>
                 <dt>Last</dt>
                 <dd>
                   <LocalDateTime value={syncStatus.lastMarketDataSyncAt ?? legacyDatasetSyncAt} fallback="Not synced yet" />
@@ -927,11 +991,15 @@ export default async function Home({ searchParams }: HomeProps) {
                 <dd>
                   <LocalDateTime value={nextMarketDataSyncAt} />
                 </dd>
+                <dt>Interval</dt>
+                <dd>Every 5 minutes</dd>
               </dl>
             </div>
-            <div className="dataset-sync-tile">
+            <div className={`dataset-sync-tile sync-state-${signalTradeCheckState}`}>
               <span className="sync-tile-name">Signal trade check</span>
               <dl className="sync-tile-times">
+                <dt>Status</dt>
+                <dd>{syncTileLabel(signalTradeCheckState)}</dd>
                 <dt>Last</dt>
                 <dd>
                   <LocalDateTime value={syncStatus.lastSignalTradeCheckAt} fallback="Not checked yet" />
@@ -940,11 +1008,15 @@ export default async function Home({ searchParams }: HomeProps) {
                 <dd>
                   <LocalDateTime value={nextSignalTradeCheckAt} />
                 </dd>
+                <dt>Interval</dt>
+                <dd>Every 15 minutes</dd>
               </dl>
             </div>
-            <div className="dataset-sync-tile">
+            <div className={`dataset-sync-tile sync-state-${dataValidityRefreshState}`}>
               <span className="sync-tile-name">Data validity refresh</span>
               <dl className="sync-tile-times">
+                <dt>Status</dt>
+                <dd>{syncTileLabel(dataValidityRefreshState)}</dd>
                 <dt>Last</dt>
                 <dd>
                   <LocalDateTime value={syncStatus.lastDataValidityRefreshAt ?? legacyDatasetSyncAt} fallback="Not refreshed yet" />
@@ -953,6 +1025,8 @@ export default async function Home({ searchParams }: HomeProps) {
                 <dd>
                   <LocalDateTime value={nextDataValidityRefreshAt} />
                 </dd>
+                <dt>Interval</dt>
+                <dd>Every 12 hours</dd>
               </dl>
             </div>
           </div>

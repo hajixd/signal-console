@@ -293,6 +293,12 @@ button {
   }
 }
 
+@keyframes strategySelectionSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .asset-meta span {
   color: var(--text-dim);
   font-size: 0.74rem;
@@ -918,6 +924,11 @@ html[data-theme="light"] .themeDarkLabel {
   box-shadow: inset 2px 0 0 rgba(96, 165, 250, 0.72);
 }
 
+.basketListRow.isSavingSelection {
+  background: rgba(234, 179, 8, 0.045);
+  box-shadow: inset 2px 0 0 rgba(234, 179, 8, 0.72);
+}
+
 .basketListRow.isDisabled .basketTicker,
 .basketListRow.isDisabled .basketModel strong,
 .basketListRow.isDisabled > span {
@@ -1000,6 +1011,16 @@ html[data-theme="light"] .themeDarkLabel {
   font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
   font-size: 0.6rem;
   text-transform: uppercase;
+}
+
+.basketListRow.isSavingSelection .strategyToggle::after {
+  content: "";
+  width: 9px;
+  height: 9px;
+  border: 1px solid rgba(250, 204, 21, 0.28);
+  border-top-color: rgba(250, 204, 21, 0.94);
+  border-radius: 999px;
+  animation: strategySelectionSpin 720ms linear infinite;
 }
 
 .strategyModalBackdrop {
@@ -1833,6 +1854,9 @@ html[data-theme="light"] .themeDarkLabel {
 
 .topstepConnectForm label span,
 .topstepAccountRow span,
+.topstepFolderPageHead span,
+.topstepFolderIdentity span,
+.topstepFolderMeta span,
 .topstepConnectionFoot span {
   color: var(--text-faint);
   font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
@@ -1869,6 +1893,106 @@ html[data-theme="light"] .themeDarkLabel {
   gap: 0.5rem;
 }
 
+.topstepAccountFolderButton,
+.topstepAccountFolderPage {
+  min-width: 0;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.topstepAccountFolderButton {
+  min-width: 0;
+  width: 100%;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1.4fr) minmax(0, 0.85fr) minmax(0, 0.95fr) auto;
+  grid-template-areas: "icon identity provider platform count";
+  align-items: center;
+  gap: 0.62rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.02);
+  padding: 0.72rem 0.78rem;
+  color: inherit;
+  cursor: pointer;
+  text-align: left;
+}
+
+.topstepAccountFolderButton:hover {
+  border-color: rgba(96, 165, 250, 0.28);
+  background: rgba(96, 165, 250, 0.055);
+}
+
+.topstepFolderIcon {
+  grid-area: icon;
+  width: 0.88rem;
+  height: 0.64rem;
+  border: 1px solid rgba(148, 163, 184, 0.68);
+  border-top-width: 3px;
+  background: rgba(148, 163, 184, 0.08);
+}
+
+.topstepAccountFolderPage {
+  display: grid;
+  gap: 0.5rem;
+  padding: 0.5rem;
+}
+
+.topstepFolderPageHead {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.52rem;
+  padding: 0.28rem 0.28rem 0.44rem;
+}
+
+.topstepFolderPageHead > div {
+  min-width: 0;
+  display: grid;
+  gap: 0.16rem;
+}
+
+.topstepFolderIdentity,
+.topstepFolderMeta,
+.topstepFolderCount {
+  min-width: 0;
+  display: grid;
+  gap: 0.16rem;
+}
+
+.topstepFolderIdentity {
+  grid-area: identity;
+}
+
+.topstepFolderMeta.provider {
+  grid-area: provider;
+}
+
+.topstepFolderMeta.platform {
+  grid-area: platform;
+}
+
+.topstepFolderCount {
+  grid-area: count;
+  justify-items: end;
+}
+
+.topstepFolderPageHead strong,
+.topstepFolderIdentity strong,
+.topstepFolderMeta strong,
+.topstepFolderCount strong {
+  min-width: 0;
+  overflow: hidden;
+  color: rgba(255, 255, 255, 0.9);
+  font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+  font-size: 0.72rem;
+  font-weight: 950;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.topstepFolderAccounts {
+  display: grid;
+  gap: 0.5rem;
+}
+
 .topstepAccountRow {
   min-width: 0;
   display: grid;
@@ -1877,6 +2001,11 @@ html[data-theme="light"] .themeDarkLabel {
   border: 1px solid rgba(255, 255, 255, 0.08);
   background: rgba(255, 255, 255, 0.025);
   padding: 0.68rem;
+}
+
+.topstepAccountRow.isNested {
+  border-color: rgba(255, 255, 255, 0.07);
+  background: rgba(0, 0, 0, 0.18);
 }
 
 .topstepAccountFields {
@@ -2014,6 +2143,25 @@ html[data-theme="light"] .themeDarkLabel {
 .topstepDrawerPanel .topstepAccountRow,
 .topstepDrawerPanel .topstepConnectionFoot {
   grid-template-columns: 1fr;
+}
+
+.topstepDrawerPanel .topstepAccountFolderButton {
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-areas:
+    "icon identity count"
+    ". provider provider"
+    ". platform platform";
+  align-items: start;
+}
+
+.topstepDrawerPanel .topstepFolderCount {
+  align-self: center;
+}
+
+.topstepDrawerPanel .topstepFolderMeta {
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: baseline;
+  gap: 0.42rem;
 }
 
 .topstepDrawerPanel .topstepConnectionActions {
@@ -2840,11 +2988,35 @@ html[data-theme="light"] .autoTradeSelectControl select option:disabled {
   color: rgba(100, 116, 139, 0.62);
 }
 
+html[data-theme="light"] .topstepAccountFolderButton,
+html[data-theme="light"] .topstepAccountFolderPage,
 html[data-theme="light"] .topstepAccountRow,
 html[data-theme="light"] .autoTradeProviderOption,
 html[data-theme="light"] .topstepAccountEmpty {
   border-color: var(--line);
   background: #ffffff;
+}
+
+html[data-theme="light"] .topstepAccountFolderButton:hover {
+  border-color: rgba(37, 99, 235, 0.24);
+  background: rgba(37, 99, 235, 0.06);
+}
+
+html[data-theme="light"] .topstepAccountRow.isNested {
+  border-color: rgba(15, 23, 42, 0.08);
+  background: #f8fafc;
+}
+
+html[data-theme="light"] .topstepFolderIcon {
+  border-color: rgba(71, 85, 105, 0.78);
+  background: rgba(100, 116, 139, 0.08);
+}
+
+html[data-theme="light"] .topstepFolderPageHead strong,
+html[data-theme="light"] .topstepFolderIdentity strong,
+html[data-theme="light"] .topstepFolderMeta strong,
+html[data-theme="light"] .topstepFolderCount strong {
+  color: rgba(15, 23, 42, 0.9);
 }
 
 html[data-theme="light"] .autoTradeUnavailable,
@@ -3056,6 +3228,11 @@ html[data-theme="light"] .basketListRow.hasCustom {
   box-shadow: inset 2px 0 0 rgba(37, 99, 235, 0.72);
 }
 
+html[data-theme="light"] .basketListRow.isSavingSelection {
+  background: rgba(234, 179, 8, 0.1);
+  box-shadow: inset 2px 0 0 rgba(202, 138, 4, 0.74);
+}
+
 html[data-theme="light"] .basketListRow.isDisabled {
   background: rgba(15, 23, 42, 0.015);
 }
@@ -3064,6 +3241,11 @@ html[data-theme="light"] .basketListRow.isDisabled .basketTicker,
 html[data-theme="light"] .basketListRow.isDisabled .basketModel strong,
 html[data-theme="light"] .basketListRow.isDisabled > span {
   color: rgba(15, 23, 42, 0.4) !important;
+}
+
+html[data-theme="light"] .basketListRow.isSavingSelection .strategyToggle::after {
+  border-color: rgba(202, 138, 4, 0.24);
+  border-top-color: rgba(161, 98, 7, 0.92);
 }
 
 html[data-theme="light"] .basketListEmpty {
@@ -4041,18 +4223,47 @@ html[data-theme="light"] .tradeCandlestickPanel {
   display: grid;
   gap: 0.38rem;
   padding: 0.62rem 0.68rem;
-  border: 1px solid rgba(52, 211, 153, 0.24);
+  border: 1px solid rgba(148, 163, 184, 0.22);
   border-radius: 12px;
-  border-color: rgba(52, 211, 153, 0.24) !important;
-  background: linear-gradient(135deg, rgba(52, 211, 153, 0.1), rgba(96, 165, 250, 0.035)) !important;
+  background: linear-gradient(135deg, rgba(148, 163, 184, 0.1), rgba(15, 23, 42, 0.18));
+  transition:
+    background 160ms ease,
+    border-color 160ms ease;
+}
+
+.dataset-sync-tile.sync-state-running {
+  border-color: rgba(234, 179, 8, 0.38);
+  background: linear-gradient(135deg, rgba(234, 179, 8, 0.16), rgba(250, 204, 21, 0.045));
+}
+
+.dataset-sync-tile.sync-state-success {
+  border-color: rgba(52, 211, 153, 0.3);
+  background: linear-gradient(135deg, rgba(52, 211, 153, 0.12), rgba(96, 165, 250, 0.035));
+}
+
+.dataset-sync-tile.sync-state-failed {
+  border-color: rgba(248, 113, 113, 0.36);
+  background: linear-gradient(135deg, rgba(248, 113, 113, 0.15), rgba(127, 29, 29, 0.08));
 }
 
 .sync-tile-name {
   display: block;
-  color: rgba(167, 243, 208, 0.84);
+  color: rgba(203, 213, 225, 0.82);
   font-size: 0.55rem;
   font-weight: 950;
   text-transform: uppercase;
+}
+
+.dataset-sync-tile.sync-state-running .sync-tile-name {
+  color: rgba(253, 224, 71, 0.9);
+}
+
+.dataset-sync-tile.sync-state-success .sync-tile-name {
+  color: rgba(167, 243, 208, 0.86);
+}
+
+.dataset-sync-tile.sync-state-failed .sync-tile-name {
+  color: rgba(254, 202, 202, 0.9);
 }
 
 .sync-tile-times {
@@ -4070,7 +4281,7 @@ html[data-theme="light"] .tradeCandlestickPanel {
 }
 
 .sync-tile-times dt {
-  color: rgba(167, 243, 208, 0.58);
+  color: rgba(203, 213, 225, 0.58);
   font-size: 0.5rem;
   font-weight: 950;
   text-transform: uppercase;
@@ -4078,12 +4289,39 @@ html[data-theme="light"] .tradeCandlestickPanel {
 
 .sync-tile-times dd,
 .sync-tile-times dd span {
-  color: #d1fae5;
+  color: rgba(241, 245, 249, 0.9);
   font-size: 0.7rem;
   font-weight: 950;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.dataset-sync-tile.sync-state-running .sync-tile-times dt {
+  color: rgba(253, 224, 71, 0.6);
+}
+
+.dataset-sync-tile.sync-state-running .sync-tile-times dd,
+.dataset-sync-tile.sync-state-running .sync-tile-times dd span {
+  color: rgba(254, 249, 195, 0.96);
+}
+
+.dataset-sync-tile.sync-state-success .sync-tile-times dt {
+  color: rgba(167, 243, 208, 0.6);
+}
+
+.dataset-sync-tile.sync-state-success .sync-tile-times dd,
+.dataset-sync-tile.sync-state-success .sync-tile-times dd span {
+  color: #d1fae5;
+}
+
+.dataset-sync-tile.sync-state-failed .sync-tile-times dt {
+  color: rgba(254, 202, 202, 0.62);
+}
+
+.dataset-sync-tile.sync-state-failed .sync-tile-times dd,
+.dataset-sync-tile.sync-state-failed .sync-tile-times dd span {
+  color: rgba(254, 226, 226, 0.96);
 }
 
 .history-table .ticker-cell {
@@ -4419,21 +4657,66 @@ html[data-theme="light"] .backtest-stat-card.tone-down {
 }
 
 html[data-theme="light"] .dataset-sync-tile {
-  border-color: rgba(5, 150, 105, 0.28) !important;
-  background: linear-gradient(135deg, #ecfdf5, rgba(239, 246, 255, 0.74)) !important;
+  border-color: rgba(100, 116, 139, 0.22);
+  background: linear-gradient(135deg, #f1f5f9, rgba(248, 250, 252, 0.86));
+}
+
+html[data-theme="light"] .dataset-sync-tile.sync-state-running {
+  border-color: rgba(202, 138, 4, 0.34);
+  background: linear-gradient(135deg, #fef9c3, rgba(254, 252, 232, 0.7));
+}
+
+html[data-theme="light"] .dataset-sync-tile.sync-state-success {
+  border-color: rgba(5, 150, 105, 0.28);
+  background: linear-gradient(135deg, #ecfdf5, rgba(239, 246, 255, 0.74));
+}
+
+html[data-theme="light"] .dataset-sync-tile.sync-state-failed {
+  border-color: rgba(220, 38, 38, 0.26);
+  background: linear-gradient(135deg, #fef2f2, rgba(255, 241, 242, 0.72));
 }
 
 html[data-theme="light"] .sync-tile-name {
+  color: #64748b;
+}
+
+html[data-theme="light"] .dataset-sync-tile.sync-state-running .sync-tile-name {
+  color: #a16207;
+}
+
+html[data-theme="light"] .dataset-sync-tile.sync-state-success .sync-tile-name {
   color: #16a34a;
 }
 
+html[data-theme="light"] .dataset-sync-tile.sync-state-failed .sync-tile-name {
+  color: #dc2626;
+}
+
 html[data-theme="light"] .sync-tile-times dt {
-  color: #16a34a;
+  color: #64748b;
 }
 
 html[data-theme="light"] .sync-tile-times dd,
 html[data-theme="light"] .sync-tile-times dd span {
+  color: #334155;
+}
+
+html[data-theme="light"] .dataset-sync-tile.sync-state-running .sync-tile-times dt,
+html[data-theme="light"] .dataset-sync-tile.sync-state-running .sync-tile-times dd,
+html[data-theme="light"] .dataset-sync-tile.sync-state-running .sync-tile-times dd span {
+  color: #854d0e;
+}
+
+html[data-theme="light"] .dataset-sync-tile.sync-state-success .sync-tile-times dt,
+html[data-theme="light"] .dataset-sync-tile.sync-state-success .sync-tile-times dd,
+html[data-theme="light"] .dataset-sync-tile.sync-state-success .sync-tile-times dd span {
   color: #15803d;
+}
+
+html[data-theme="light"] .dataset-sync-tile.sync-state-failed .sync-tile-times dt,
+html[data-theme="light"] .dataset-sync-tile.sync-state-failed .sync-tile-times dd,
+html[data-theme="light"] .dataset-sync-tile.sync-state-failed .sync-tile-times dd span {
+  color: #b91c1c;
 }
 
 html[data-theme="light"] .history-table .ticker-cell {
@@ -5498,6 +5781,8 @@ html[data-theme="light"] .tradeReplaySlider input {
   }
 
   .topstepAccountRow,
+  .topstepAccountFolderButton,
+  .topstepAccountFolderPage,
   .topstepAccountEmpty,
   .autoTradeProviderOption {
     min-height: 0;
@@ -5506,6 +5791,9 @@ html[data-theme="light"] .tradeReplaySlider input {
   }
 
   .topstepAccountRow strong,
+  .topstepFolderIdentity strong,
+  .topstepFolderMeta strong,
+  .topstepFolderCount strong,
   .topstepConnectionMeta strong,
   .topstepConnectionState small,
   .topstepAccountEmpty span {

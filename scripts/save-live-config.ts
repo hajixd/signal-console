@@ -27,6 +27,7 @@ async function main(): Promise<void> {
 
   const saved = await saveLiveConfig({
     customScaleRanges: existing.customScaleRanges,
+    dashboardSettings: existing.dashboardSettings,
     enabledDatasetIds,
     dashboardSelectedDatasetIds,
     strategyEdits: existing.strategyEdits

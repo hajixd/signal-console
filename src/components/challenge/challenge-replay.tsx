@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import ChallengeRulesForm from "@/components/challenge/challenge-rules-form";
 import {
   strategyContractScale,
@@ -24,7 +24,10 @@ type ChallengeReplayInputTrade = ChallengeReplayTrade & {
 
 type ChallengeReplayProps = {
   initialRules: ChallengeRules;
+  persistedRules?: boolean;
+  persistRules?: (rules: ChallengeRules) => Promise<void>;
   seedPrefix: string;
+  storageKey?: string;
   strategies: StrategyEditOption[];
   trades: ChallengeReplayInputTrade[];
   persistedStrategyEdits?: StrategyEditSeedMap;
@@ -191,27 +194,48 @@ function rulesSeed(rules: ChallengeRules): string {
   ].join("|");
 }
 
-export default function ChallengeReplay({ initialRules, seedPrefix, strategies, trades, persistedStrategyEdits }: ChallengeReplayProps) {
+export default function ChallengeReplay({
+  initialRules,
+  persistedRules = false,
+  persistRules,
+  seedPrefix,
+  storageKey,
+  strategies,
+  trades,
+  persistedStrategyEdits
+}: ChallengeReplayProps) {
   const [rules, setRules] = useState(() => normalizeRules(initialRules, DEFAULT_CHALLENGE_RULES));
+  const [, startSavingRules] = useTransition();
   const edits = useStrategyEdits(strategies, persistedStrategyEdits);
   const strategyByKey = useMemo(() => new Map(strategies.map((strategy) => [strategy.key, strategy])), [strategies]);
+  const rulesStorageKey = storageKey ?? STORAGE_KEY;
 
   useEffect(() => {
+    if (persistedRules) {
+      setRules(normalizeRules(initialRules, DEFAULT_CHALLENGE_RULES));
+      return;
+    }
+
     try {
-      const raw = window.localStorage.getItem(STORAGE_KEY);
-      if (raw) setRules(normalizeRules(JSON.parse(raw), initialRules));
+      const raw = window.localStorage.getItem(rulesStorageKey);
+      setRules(raw ? normalizeRules(JSON.parse(raw), initialRules) : normalizeRules(initialRules, DEFAULT_CHALLENGE_RULES));
     } catch {
       setRules(normalizeRules(initialRules, DEFAULT_CHALLENGE_RULES));
     }
-  }, [initialRules]);
+  }, [initialRules, persistedRules, rulesStorageKey]);
 
   function applyRules(nextRules: ChallengeRules) {
     const normalized = normalizeRules(nextRules, rules);
     setRules(normalized);
     try {
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(normalized));
+      window.localStorage.setItem(rulesStorageKey, JSON.stringify(normalized));
     } catch {
       // Local storage can be unavailable in private contexts; in-memory state still updates.
+    }
+    if (persistRules) {
+      startSavingRules(() => {
+        void persistRules(normalized).catch((error) => console.error("Failed to save challenge rules", error));
+      });
     }
   }
 

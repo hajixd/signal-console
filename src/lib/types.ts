@@ -164,6 +164,12 @@ export type TradeAlert = {
 };
 
 export type CronResult = {
+  assetTimings?: Array<{
+    assetKey: string;
+    durationMs: number;
+    rules: number;
+    symbol: string;
+  }>;
   checkedAt: string;
   dataRefresh?: {
     assets: Array<{

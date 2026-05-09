@@ -1,7 +1,7 @@
 "use server";
 
 import { getLiveConfig, saveLiveConfig } from "@/lib/live-config";
-import type { LiveMarket, SavedCustomScaleRange } from "@/lib/live-config";
+import type { ChallengeRulesMarket, LiveMarket, SavedChallengeRules, SavedCustomScaleRange, SavedTheme } from "@/lib/live-config";
 import { STRATEGY_DEFINITIONS } from "@/lib/strategy-loader";
 
 const VALID_STRATEGY_IDS = new Set(STRATEGY_DEFINITIONS.map((strategy) => strategy.id));
@@ -15,6 +15,7 @@ type PersistedStrategyEdit = {
 };
 
 type PersistedCustomScaleRange = Partial<Record<keyof SavedCustomScaleRange, unknown>>;
+type PersistedChallengeRules = Partial<Record<keyof SavedChallengeRules, unknown>>;
 
 function normalizeSelectedKeys(selectedKeys: string[]): string[] {
   return [...new Set(selectedKeys.map((key) => key.trim()).filter((key) => VALID_STRATEGY_IDS.has(key)))];
@@ -31,7 +32,16 @@ function normalizePositiveNumber(value: unknown): number | undefined {
 }
 
 function normalizeMarket(value: string): LiveMarket | null {
+  return value === "forex" || value === "futures" || value === "gold_spot" ? value : null;
+}
+
+function normalizeChallengeMarket(value: string): ChallengeRulesMarket | null {
+  if (value === "gold_spot") return "forex";
   return value === "forex" || value === "futures" ? value : null;
+}
+
+function normalizeTheme(value: string): SavedTheme | null {
+  return value === "dark" || value === "light" ? value : null;
 }
 
 function normalizeRangeValue(value: unknown): string | undefined {
@@ -52,6 +62,35 @@ function normalizeCustomScaleRange(range: PersistedCustomScaleRange): SavedCusto
   if (targetCeiling !== undefined) normalized.targetCeiling = targetCeiling;
   if (riskFloor !== undefined) normalized.riskFloor = riskFloor;
   if (riskCeiling !== undefined) normalized.riskCeiling = riskCeiling;
+
+  return normalized;
+}
+
+function normalizePositiveSetting(value: unknown): number | undefined {
+  const numeric = Number(value);
+  return Number.isFinite(numeric) && numeric > 0 ? Math.round(numeric * 100) / 100 : undefined;
+}
+
+function normalizeNonNegativeSetting(value: unknown): number | undefined {
+  const numeric = Number(value);
+  return Number.isFinite(numeric) && numeric >= 0 ? Math.round(numeric * 100) / 100 : undefined;
+}
+
+function normalizeChallengeRules(rules: PersistedChallengeRules): SavedChallengeRules {
+  const normalized: SavedChallengeRules = {};
+  const startingBalance = normalizePositiveSetting(rules.startingBalance);
+  const profitTarget = normalizePositiveSetting(rules.profitTarget);
+  const maximumLossLimit = normalizeNonNegativeSetting(rules.maximumLossLimit);
+  const dailyLossLimit = normalizeNonNegativeSetting(rules.dailyLossLimit);
+  const dailyProfitLock = normalizeNonNegativeSetting(rules.dailyProfitLock);
+  const dailyLossStop = normalizeNonNegativeSetting(rules.dailyLossStop);
+
+  if (startingBalance !== undefined) normalized.startingBalance = startingBalance;
+  if (profitTarget !== undefined) normalized.profitTarget = profitTarget;
+  if (maximumLossLimit !== undefined) normalized.maximumLossLimit = maximumLossLimit;
+  if (dailyLossLimit !== undefined) normalized.dailyLossLimit = dailyLossLimit;
+  if (dailyProfitLock !== undefined) normalized.dailyProfitLock = dailyProfitLock;
+  if (dailyLossStop !== undefined) normalized.dailyLossStop = dailyLossStop;
 
   return normalized;
 }
@@ -100,6 +139,15 @@ function customScaleRangeSignature(range: SavedCustomScaleRange | undefined): st
   );
 }
 
+function challengeRulesSignature(rules: SavedChallengeRules | undefined): string {
+  const source = rules ?? {};
+  return JSON.stringify(
+    Object.keys(source)
+      .sort()
+      .map((key) => [key, source[key as keyof SavedChallengeRules]])
+  );
+}
+
 export async function syncLiveSelection(selectedKeys: string[], scopeKeys?: string[]): Promise<void> {
   const normalized = normalizeSelectedKeys(selectedKeys);
   const normalizedScope = scopeKeys ? new Set(normalizeSelectedKeys(scopeKeys)) : null;
@@ -119,10 +167,9 @@ export async function syncLiveSelection(selectedKeys: string[], scopeKeys?: stri
   }
 
   await saveLiveConfig({
-    customScaleRanges: existing.customScaleRanges,
+    ...existing,
     enabledDatasetIds: nextEnabledDatasetIds,
-    dashboardSelectedDatasetIds: nextDashboardSelectedDatasetIds,
-    strategyEdits: existing.strategyEdits
+    dashboardSelectedDatasetIds: nextDashboardSelectedDatasetIds
   });
 }
 
@@ -135,9 +182,7 @@ export async function syncStrategyEdits(edits: Record<string, PersistedStrategyE
   }
 
   await saveLiveConfig({
-    customScaleRanges: existing.customScaleRanges,
-    enabledDatasetIds: existing.enabledDatasetIds,
-    dashboardSelectedDatasetIds: existing.dashboardSelectedDatasetIds,
+    ...existing,
     strategyEdits: normalized
   });
 }
@@ -161,9 +206,85 @@ export async function syncCustomScaleRange(market: string, range: PersistedCusto
   }
 
   await saveLiveConfig({
-    customScaleRanges: nextCustomScaleRanges,
-    enabledDatasetIds: existing.enabledDatasetIds,
-    dashboardSelectedDatasetIds: existing.dashboardSelectedDatasetIds,
-    strategyEdits: existing.strategyEdits
+    ...existing,
+    customScaleRanges: nextCustomScaleRanges
+  });
+}
+
+export async function syncActiveMarket(market: string): Promise<void> {
+  const normalizedMarket = normalizeChallengeMarket(market);
+  if (!normalizedMarket) return;
+
+  const existing = await getLiveConfig();
+  if (existing.dashboardSettings.activeMarket === normalizedMarket) {
+    return;
+  }
+
+  await saveLiveConfig({
+    ...existing,
+    dashboardSettings: {
+      ...existing.dashboardSettings,
+      activeMarket: normalizedMarket
+    }
+  });
+}
+
+export async function syncChallengeRules(rules: PersistedChallengeRules): Promise<void> {
+  const normalized = normalizeChallengeRules(rules);
+  if (!Object.keys(normalized).length) return;
+
+  const existing = await getLiveConfig();
+  if (challengeRulesSignature(existing.dashboardSettings.challengeRules) === challengeRulesSignature(normalized)) {
+    return;
+  }
+
+  await saveLiveConfig({
+    ...existing,
+    dashboardSettings: {
+      ...existing.dashboardSettings,
+      challengeRules: normalized
+    }
+  });
+}
+
+export async function syncChallengeRulesForMarket(market: string, rules: PersistedChallengeRules): Promise<void> {
+  const normalizedMarket = normalizeChallengeMarket(market);
+  if (!normalizedMarket) return;
+
+  const normalized = normalizeChallengeRules(rules);
+  if (!Object.keys(normalized).length) return;
+
+  const existing = await getLiveConfig();
+  if (challengeRulesSignature(existing.dashboardSettings.challengeRulesByMarket?.[normalizedMarket]) === challengeRulesSignature(normalized)) {
+    return;
+  }
+
+  await saveLiveConfig({
+    ...existing,
+    dashboardSettings: {
+      ...existing.dashboardSettings,
+      challengeRulesByMarket: {
+        ...(existing.dashboardSettings.challengeRulesByMarket ?? {}),
+        [normalizedMarket]: normalized
+      }
+    }
+  });
+}
+
+export async function syncTheme(theme: string): Promise<void> {
+  const normalizedTheme = normalizeTheme(theme);
+  if (!normalizedTheme) return;
+
+  const existing = await getLiveConfig();
+  if (existing.dashboardSettings.theme === normalizedTheme) {
+    return;
+  }
+
+  await saveLiveConfig({
+    ...existing,
+    dashboardSettings: {
+      ...existing.dashboardSettings,
+      theme: normalizedTheme
+    }
   });
 }

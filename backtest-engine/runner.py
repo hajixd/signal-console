@@ -485,6 +485,19 @@ def write_backtest_csv(csv_path: Path, asset: AssetConfig, trades: np.ndarray, r
 
 
 @dataclass(frozen=True)
+class EchoModel:
+    kind: str
+    threshold: float
+    feature_names: tuple[str, ...]
+    feature_means: tuple[float, ...]
+    feature_scales: tuple[float, ...]
+    hidden_weights: tuple[tuple[float, ...], ...]
+    hidden_bias: tuple[float, ...]
+    output_weights: tuple[float, ...]
+    output_bias: float
+
+
+@dataclass(frozen=True)
 class BacktestStrategy:
     id: str
     label: str
@@ -507,6 +520,7 @@ class BacktestStrategy:
     size_policy: "SizePolicy | None" = None
     dynamic_stop_loss_policy: "DynamicStopLossPolicy | None" = None
     dynamic_take_profit_policy: "DynamicTakeProfitPolicy | None" = None
+    echo_model: EchoModel | None = None
     one_trade_per_day: bool = False
     cost_units: float = 0.0
     invert_signal: bool = False
@@ -715,6 +729,7 @@ ALLOWED_METADATA_KEYS = {
     "sizePolicy",
     "dynamicStopLossPolicy",
     "dynamicTakeProfitPolicy",
+    "echoModel",
     "oneTradePerDay",
     "costUnits",
     "invertSignal",
@@ -757,6 +772,20 @@ PRICE_MODE_FIXED = "fixed"
 PRICE_MODE_CUSTOM = "custom"
 SIZE_MODE_AUTO = "auto"
 SIZE_MODE_CUSTOM = "custom"
+ECHO_MODEL_FEATURE_NAMES = (
+    "trend_ema30_ema200_atr100",
+    "close_ema200_atr",
+    "ret5_atr100",
+    "ret3_atr14",
+    "body_atr14",
+    "rsi14_centered",
+    "rsi2_centered",
+    "bb_z20",
+    "close_location",
+    "vwap_distance_atr14",
+    "ny_minute",
+    "ny_weekday",
+)
 
 
 def required_text(payload: dict[str, Any], key: str, metadata_path: Path) -> str:
@@ -892,6 +921,87 @@ def parse_dynamic_take_profit_policy(payload: dict[str, Any], metadata_path: Pat
     return DynamicTakeProfitPolicy(mode=mode, buffer_units=buffer_units, reward_multiple=reward_multiple)
 
 
+def required_float_list(payload: dict[str, Any], key: str, metadata_path: Path) -> tuple[float, ...]:
+    value = payload.get(key)
+    if not isinstance(value, list) or not value:
+        raise ValueError(f"Expected {key} to be a non-empty numeric array in {metadata_path}")
+    output: list[float] = []
+    for item in value:
+        try:
+            parsed = float(item)
+        except (TypeError, ValueError) as exc:
+            raise ValueError(f"Expected {key} to contain only numbers in {metadata_path}") from exc
+        if not math.isfinite(parsed):
+            raise ValueError(f"Expected {key} to contain only finite numbers in {metadata_path}")
+        output.append(parsed)
+    return tuple(output)
+
+
+def required_float_matrix(payload: dict[str, Any], key: str, metadata_path: Path) -> tuple[tuple[float, ...], ...]:
+    value = payload.get(key)
+    if not isinstance(value, list) or not value:
+        raise ValueError(f"Expected {key} to be a non-empty numeric matrix in {metadata_path}")
+    rows: list[tuple[float, ...]] = []
+    for row in value:
+        if not isinstance(row, list) or not row:
+            raise ValueError(f"Expected each {key} row to be a non-empty numeric array in {metadata_path}")
+        rows.append(tuple(required_float_list({"row": row}, "row", metadata_path)))
+    return tuple(rows)
+
+
+def parse_echo_model(payload: dict[str, Any], metadata_path: Path) -> EchoModel | None:
+    model = optional_payload_object(payload, "echoModel", metadata_path)
+    if model is None:
+        return None
+    kind = required_object_text(model, "kind", metadata_path)
+    if kind != "neural":
+        raise ValueError(f"Unsupported echoModel.kind '{kind}' in {metadata_path}")
+    threshold = optional_object_float(model, "threshold", metadata_path)
+    if threshold is None or threshold < 0 or threshold > 1:
+        raise ValueError(f"echoModel.threshold must be between 0 and 1 in {metadata_path}")
+
+    raw_names = model.get("featureNames")
+    if raw_names is None:
+        feature_names = ECHO_MODEL_FEATURE_NAMES
+    elif isinstance(raw_names, list) and all(isinstance(item, str) and item for item in raw_names):
+        feature_names = tuple(raw_names)
+    else:
+        raise ValueError(f"echoModel.featureNames must be an array of strings in {metadata_path}")
+
+    feature_means = required_float_list(model, "featureMeans", metadata_path)
+    feature_scales = required_float_list(model, "featureScales", metadata_path)
+    hidden_weights = required_float_matrix(model, "hiddenWeights", metadata_path)
+    hidden_bias = required_float_list(model, "hiddenBias", metadata_path)
+    output_weights = required_float_list(model, "outputWeights", metadata_path)
+    output_bias = optional_object_float(model, "outputBias", metadata_path)
+    if output_bias is None:
+        raise ValueError(f"echoModel.outputBias must be numeric in {metadata_path}")
+
+    feature_count = len(ECHO_MODEL_FEATURE_NAMES)
+    if feature_names != ECHO_MODEL_FEATURE_NAMES:
+        raise ValueError(f"echoModel.featureNames must match the shared Echo feature order in {metadata_path}")
+    if len(feature_means) != feature_count or len(feature_scales) != feature_count:
+        raise ValueError(f"echoModel feature mean/scale lengths must be {feature_count} in {metadata_path}")
+    if any(scale <= 0 for scale in feature_scales):
+        raise ValueError(f"echoModel.featureScales must be positive in {metadata_path}")
+    if len(hidden_weights) != len(hidden_bias) or len(output_weights) != len(hidden_weights):
+        raise ValueError(f"echoModel hidden/output dimensions do not align in {metadata_path}")
+    if any(len(row) != feature_count for row in hidden_weights):
+        raise ValueError(f"Each echoModel.hiddenWeights row must have {feature_count} entries in {metadata_path}")
+
+    return EchoModel(
+        kind=kind,
+        threshold=threshold,
+        feature_names=feature_names,
+        feature_means=feature_means,
+        feature_scales=feature_scales,
+        hidden_weights=hidden_weights,
+        hidden_bias=hidden_bias,
+        output_weights=output_weights,
+        output_bias=output_bias,
+    )
+
+
 def strategy_from_metadata(metadata_path: Path) -> BacktestStrategy:
     payload = json.loads(metadata_path.read_text(encoding="utf-8"))
     validate_metadata_keys(payload, metadata_path)
@@ -921,6 +1031,7 @@ def strategy_from_metadata(metadata_path: Path) -> BacktestStrategy:
         size_policy=parse_size_policy(payload, metadata_path),
         dynamic_stop_loss_policy=parse_dynamic_stop_loss_policy(payload, metadata_path),
         dynamic_take_profit_policy=parse_dynamic_take_profit_policy(payload, metadata_path),
+        echo_model=parse_echo_model(payload, metadata_path),
         one_trade_per_day=bool(payload.get("oneTradePerDay", False)),
         cost_units=optional_payload_float(payload, "costUnits") if "costUnits" in payload else 0.0,
         invert_signal=bool(payload.get("invertSignal", False)),
@@ -1781,6 +1892,193 @@ def evaluate_support_resistance_retest(
     return price_target_signal(entry_price, stop_loss, side, config.rr, asset)
 
 
+def round_number_levels(low: float, high: float, step: float, reach: float) -> list[float]:
+    first = math.floor((low - reach) / step) * step
+    last = math.ceil((high + reach) / step) * step
+    levels: list[float] = []
+    level = first
+    while level <= last + step * 0.5:
+        levels.append(level)
+        level += step
+    return levels
+
+
+def round_rejection_signal(
+    strategy: BacktestStrategy,
+    data: EnrichedData,
+    index: int,
+    asset: AssetConfig,
+    side: int,
+    level: float,
+    stop_buffer_points: float,
+    min_risk_points: float,
+    max_risk_points: float,
+    rr: float,
+    bar_range: float,
+    wick_pct: float,
+) -> dict[str, Any] | None:
+    score = round_number_model_score(strategy, data, index, asset, side, level, bar_range, wick_pct)
+    if score < variant_float(strategy.variant_id, "min", 0.0):
+        return None
+
+    entry_price = round_price(float(data.close[index]), asset.tick_size)
+    stop_reference = min(float(data.low[index]), level) if side == 1 else max(float(data.high[index]), level)
+    stop_loss = round_price(stop_reference - side * stop_buffer_points, asset.tick_size)
+    risk_points = abs(entry_price - stop_loss)
+    if risk_points < min_risk_points or risk_points > max_risk_points:
+        return None
+
+    signal = price_target_signal(entry_price, stop_loss, side, rr, asset)
+    if signal is None:
+        return None
+    signal["score"] = score
+    signal["confidence"] = score
+    signal["min_risk_units"] = min_risk_points / asset.tick_size
+    signal["max_risk_units"] = max_risk_points / asset.tick_size
+    return signal
+
+
+def round_number_model(strategy: BacktestStrategy) -> str:
+    model = variant_value(strategy.variant_id, "model") or "none"
+    return model if model in {"none", "stump", "bayes", "logit"} else "none"
+
+
+def round_number_model_score(
+    strategy: BacktestStrategy,
+    data: EnrichedData,
+    index: int,
+    asset: AssetConfig,
+    side: int,
+    level: float,
+    bar_range: float,
+    wick_pct: float,
+) -> float:
+    model = round_number_model(strategy)
+    if model == "none":
+        return 1.0
+
+    prior_close_distance = float(data.close[index - 1] - level) if side == 1 else float(level - data.close[index - 1])
+    close_distance = float(data.close[index] - level) if side == 1 else float(level - data.close[index])
+    high_low_distance = float(level - data.low[index]) if side == 1 else float(data.high[index] - level)
+    previous_max = max(asset.tick_size, variant_float(strategy.variant_id, "prev_max", math.inf))
+    reclaim_points = max(asset.tick_size, variant_float(strategy.variant_id, "reclaim", 3.0))
+    touch_points = max(asset.tick_size, variant_float(strategy.variant_id, "touch", 12.0))
+    min_wick_pct = min(0.9, max(0.05, variant_float(strategy.variant_id, "wick", 0.36)))
+    atr = float(data.atr14[index]) if maybe_number(data.atr14[index]) and data.atr14[index] > 0 else bar_range
+    trend = (
+        side * (float(data.ema30[index]) - float(data.ema200[index])) / atr
+        if maybe_number(data.ema30[index]) and maybe_number(data.ema200[index]) and atr > 0
+        else 0.0
+    )
+    rsi2 = float(data.rsi2[index]) if maybe_number(data.rsi2[index]) else 50.0
+    directional_rsi = (50.0 - rsi2) / 50.0 if side == 1 else (rsi2 - 50.0) / 50.0
+
+    if model == "stump":
+        return 0.74 if prior_close_distance <= previous_max and close_distance >= reclaim_points else 0.42
+
+    if model == "bayes":
+        log_odds = -0.70
+        log_odds += 1.10 if prior_close_distance <= previous_max else -0.55
+        log_odds += 0.25 if wick_pct >= min_wick_pct + 0.20 else -0.05
+        log_odds += 0.20 if high_low_distance >= touch_points else -0.05
+        log_odds += 0.15 if close_distance >= reclaim_points * 2.0 else 0.0
+        log_odds += 0.12 if directional_rsi > 0.0 else -0.06
+        log_odds += 0.12 if trend < -0.50 else -0.12 if trend > 1.50 else 0.0
+        return sigmoid(log_odds)
+
+    return sigmoid(
+        -1.15
+        - 0.055 * prior_close_distance
+        + 0.018 * close_distance
+        + 1.20 * wick_pct
+        + 0.012 * high_low_distance
+        + 0.15 * directional_rsi
+        - 0.04 * max(0.0, trend)
+    )
+
+
+def evaluate_round_number_rejection(
+    strategy: BacktestStrategy, data: EnrichedData, index: int, asset: AssetConfig, config: RuntimeConfig
+) -> dict[str, Any] | None:
+    if index < 1 or not strategy_entry_window(data, index, config):
+        return None
+    if np.isnan(data.atr14[index]) or np.isnan(data.close_location[index]) or asset.tick_size <= 0:
+        return None
+
+    step = max(10.0, variant_float(strategy.variant_id, "step", 100.0))
+    touch_points = max(asset.tick_size, variant_float(strategy.variant_id, "touch", 12.0))
+    sweep_points = max(touch_points, variant_float(strategy.variant_id, "sweep", touch_points * 2.0))
+    reclaim_points = max(asset.tick_size, variant_float(strategy.variant_id, "reclaim", 3.0))
+    min_wick_pct = min(0.9, max(0.05, variant_float(strategy.variant_id, "wick", 0.36)))
+    min_range_atr = max(0.0, variant_float(strategy.variant_id, "atr_min", 0.25))
+    max_range_atr = max(0.5, variant_float(strategy.variant_id, "atr_max", 2.75))
+    min_risk_points = max(asset.tick_size, variant_float(strategy.variant_id, "risk_min", 10.0))
+    max_risk_points = max(asset.tick_size, variant_float(strategy.variant_id, "risk_max", 80.0))
+    stop_buffer_points = max(asset.tick_size, variant_float(strategy.variant_id, "stop", 4.0))
+
+    low = float(data.low[index])
+    high = float(data.high[index])
+    open_ = float(data.open[index])
+    close = float(data.close[index])
+    previous_close = float(data.close[index - 1])
+    bar_range = high - low
+    if not maybe_number(bar_range) or bar_range <= 0:
+        return None
+
+    range_atr = bar_range / float(data.atr14[index])
+    if range_atr < min_range_atr or range_atr > max_range_atr:
+        return None
+
+    lower_wick = min(open_, close) - low
+    upper_wick = high - max(open_, close)
+    close_location = float(data.close_location[index])
+
+    for level in round_number_levels(low, high, step, sweep_points):
+        swept_support = low <= level + touch_points and low >= level - sweep_points
+        reclaimed_support = close >= level + reclaim_points and previous_close >= level + reclaim_points
+        support_wick = lower_wick / bar_range >= min_wick_pct and close_location >= 0.58
+        if swept_support and reclaimed_support and support_wick and allowed_by_trend(data, index, 1, config.trend):
+            signal = round_rejection_signal(
+                strategy,
+                data,
+                index,
+                asset,
+                1,
+                level,
+                stop_buffer_points,
+                min_risk_points,
+                max_risk_points,
+                config.rr,
+                bar_range,
+                lower_wick / bar_range,
+            )
+            if signal is not None:
+                return signal
+
+        swept_resistance = high >= level - touch_points and high <= level + sweep_points
+        rejected_resistance = close <= level - reclaim_points and previous_close <= level - reclaim_points
+        resistance_wick = upper_wick / bar_range >= min_wick_pct and close_location <= 0.42
+        if swept_resistance and rejected_resistance and resistance_wick and allowed_by_trend(data, index, -1, config.trend):
+            signal = round_rejection_signal(
+                strategy,
+                data,
+                index,
+                asset,
+                -1,
+                level,
+                stop_buffer_points,
+                min_risk_points,
+                max_risk_points,
+                config.rr,
+                bar_range,
+                upper_wick / bar_range,
+            )
+            if signal is not None:
+                return signal
+
+    return None
+
+
 def evaluate_trendline_break(
     strategy: BacktestStrategy, data: EnrichedData, index: int, asset: AssetConfig, config: RuntimeConfig
 ) -> dict[str, Any] | None:
@@ -1839,6 +2137,69 @@ def passes_echo_filters(strategy: BacktestStrategy, data: EnrichedData, index: i
     return True
 
 
+def safe_feature(value: float, fallback: float = 0.0) -> float:
+    try:
+        parsed = float(value)
+    except (TypeError, ValueError):
+        return fallback
+    return parsed if maybe_number(parsed) else fallback
+
+
+def echo_model_features(data: EnrichedData, index: int, side: int) -> tuple[float, ...] | None:
+    if index < 5:
+        return None
+    atr100 = safe_feature(data.atr100[index])
+    atr14 = safe_feature(data.atr14[index], atr100)
+    if atr100 <= 0 or atr14 <= 0:
+        return None
+    close = float(data.close[index])
+    ema30_value = safe_feature(data.ema30[index], close)
+    ema200_value = safe_feature(data.ema200[index], close)
+    close_location = safe_feature(data.close_location[index], 0.5)
+    directional_close_location = close_location * 2.0 - 1.0 if side == 1 else (1.0 - close_location) * 2.0 - 1.0
+    session_vwap = safe_feature(data.session_vwap[index], close)
+    return (
+        side * (ema30_value - ema200_value) / atr100,
+        side * safe_feature(data.close_ema200_atr[index]),
+        side * (close - float(data.close[index - 5])) / atr100,
+        side * safe_feature(data.ret3_atr[index]),
+        side * safe_feature(data.body_atr[index]),
+        side * safe_feature(data.rsi14_centered[index]),
+        side * ((safe_feature(data.rsi2[index], 50.0) - 50.0) / 50.0),
+        side * safe_feature(data.bb_z20[index]),
+        directional_close_location,
+        side * (close - session_vwap) / atr14,
+        (int(data.ny_minutes[index]) - 720) / 720,
+        int(data.ny_weekdays[index]) / 4,
+    )
+
+
+def echo_model_score(model: EchoModel, data: EnrichedData, index: int, side: int) -> float | None:
+    features = echo_model_features(data, index, side)
+    if features is None:
+        return None
+    output = model.output_bias
+    for weights, bias, output_weight in zip(model.hidden_weights, model.hidden_bias, model.output_weights, strict=True):
+        hidden = bias
+        for feature, mean, scale, weight in zip(features, model.feature_means, model.feature_scales, weights, strict=True):
+            hidden += ((feature - mean) / scale) * weight
+        output += math.tanh(hidden) * output_weight
+    output = max(-30.0, min(30.0, output))
+    return 1.0 / (1.0 + math.exp(-output))
+
+
+def apply_echo_model_filter(strategy: BacktestStrategy, data: EnrichedData, index: int, side: int, signal: dict[str, Any]) -> dict[str, Any] | None:
+    if strategy.echo_model is None:
+        return signal
+    score = echo_model_score(strategy.echo_model, data, index, side)
+    if score is None or score < strategy.echo_model.threshold:
+        return None
+    filtered = dict(signal)
+    filtered["score"] = score
+    filtered["confidence"] = score
+    return filtered
+
+
 def echo_style_signal(strategy: BacktestStrategy, side: int) -> dict[str, Any]:
     return {
         "entry_mode": "market",
@@ -1872,7 +2233,7 @@ def evaluate_momentum(strategy: BacktestStrategy, data: EnrichedData, index: int
     if side == 0:
         return None
 
-    return echo_style_signal(strategy, side)
+    return apply_echo_model_filter(strategy, data, index, side, echo_style_signal(strategy, side))
 
 
 def evaluate_mean_reversion(
@@ -1901,7 +2262,7 @@ def evaluate_mean_reversion(
     if side == 0:
         return None
 
-    return echo_style_signal(strategy, side)
+    return apply_echo_model_filter(strategy, data, index, side, echo_style_signal(strategy, side))
 
 
 def range_position(data: EnrichedData, index: int, range_bars: int) -> float | None:
@@ -2686,6 +3047,8 @@ def evaluate_strategy_signal(
         signal = evaluate_vwap_pullback(strategy, data, index, asset, config)
     elif strategy.phase == "support_resistance_retest":
         signal = evaluate_support_resistance_retest(strategy, data, index, asset, config)
+    elif strategy.phase == "round_number_rejection":
+        signal = evaluate_round_number_rejection(strategy, data, index, asset, config)
     elif strategy.phase == "trendline_break":
         signal = evaluate_trendline_break(strategy, data, index, asset, config)
     elif strategy.phase == "tori_trendline_mtf":
@@ -2714,6 +3077,7 @@ def evaluate_strategy_signal(
         "parabolic_fade",
         "vwap_pullback",
         "support_resistance_retest",
+        "round_number_rejection",
         "trendline_break",
         "tori_trendline_mtf",
     }:

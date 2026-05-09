@@ -1,11 +1,10 @@
 import { createHash } from "node:crypto";
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { appendFile, mkdir, open, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { assetForKey, type AssetDefinition } from "@/lib/assets";
 import { firebaseBucket, hasFirebaseAdmin, storageObjectPath } from "@/lib/firebase-admin";
 import { defaultDatasetStatus, getDatasetStatus, saveDatasetStatus, type DatasetAssetCoverage } from "@/lib/live-config";
 import { fetchMarketBars } from "@/lib/market-data";
-import { readProjectTextIfExists } from "@/lib/project-assets";
 import type { Bar, StrategyRule } from "@/lib/types";
 
 const DERIVED_TIMEFRAMES = [
@@ -74,7 +73,9 @@ type TwelveDataResponse = {
 };
 
 export type MarketDataRefreshAsset = DatasetAssetCoverage & {
+  appendedRows: number;
   assetKey: string;
+  durationMs: number;
   uploadedFiles: number;
 };
 
@@ -82,12 +83,17 @@ export type MarketDataRefreshSummary = {
   assets: MarketDataRefreshAsset[];
   errors: Array<{ assetKey: string; message: string; symbol: string }>;
   refreshedAt: string;
+  totalDurationMs: number;
   uploadedFiles: number;
 };
 
 export type MarketDataRefreshResult = {
   barsByAssetKey: Map<string, Bar[]>;
   summary: MarketDataRefreshSummary;
+};
+
+export type MarketDataRefreshOptions = {
+  minExistingRows?: number;
 };
 
 function localProjectPath(relativePath: string): string {
@@ -431,13 +437,116 @@ async function writeLocalText(relativePath: string, text: string): Promise<void>
   await writeFile(filePath, text, "utf8");
 }
 
-async function uploadText(relativePath: string, text: string): Promise<void> {
-  await writeLocalText(relativePath, text);
-  if (!hasFirebaseAdmin()) return;
+async function appendLocalText(relativePath: string, text: string): Promise<void> {
+  const filePath = localProjectPath(relativePath);
+  await mkdir(path.dirname(filePath), { recursive: true });
+  await appendFile(filePath, text, "utf8");
+}
 
-  const destination = storageObjectPath(relativePath);
+type StoredCsvState = {
+  endsWithNewline: boolean;
+  exists: boolean;
+  firstBarTime?: number;
+  lastBarTime?: number;
+  rows?: number;
+};
+
+function csvDataLine(bar: CsvBar): string {
+  return [bar.time, bar.open, bar.high, bar.low, bar.close, bar.volume].map(csvNumber).join(",");
+}
+
+function serializeCsvDataLines(bars: CsvBar[]): string {
+  return bars.map(csvDataLine).join("\n") + (bars.length ? "\n" : "");
+}
+
+function firstDataTimestamp(text: string): number | undefined {
+  for (const line of text.split(/\r?\n/)) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith("time,")) continue;
+    const timestamp = Number(trimmed.split(",", 1)[0]);
+    if (Number.isFinite(timestamp)) return timestamp;
+  }
+  return undefined;
+}
+
+function lastDataTimestamp(text: string): number | undefined {
+  const lines = text.trimEnd().split(/\r?\n/);
+  for (let index = lines.length - 1; index >= 0; index -= 1) {
+    const trimmed = lines[index]?.trim();
+    if (!trimmed || trimmed.startsWith("time,")) continue;
+    const timestamp = Number(trimmed.split(",", 1)[0]);
+    if (Number.isFinite(timestamp)) return timestamp;
+  }
+  return undefined;
+}
+
+async function localCsvState(relativePath: string, coverage: DatasetAssetCoverage | undefined): Promise<StoredCsvState> {
+  let handle: Awaited<ReturnType<typeof open>> | null = null;
+  try {
+    handle = await open(localProjectPath(relativePath), "r");
+    const stat = await handle.stat();
+    if (!stat.size) return { endsWithNewline: true, exists: false, rows: coverage?.rows };
+
+    const headSize = Math.min(4096, stat.size);
+    const tailSize = Math.min(65536, stat.size);
+    const head = Buffer.alloc(headSize);
+    const tail = Buffer.alloc(tailSize);
+    await handle.read(head, 0, headSize, 0);
+    await handle.read(tail, 0, tailSize, Math.max(0, stat.size - tailSize));
+    const tailText = tail.toString("utf8");
+
+    return {
+      endsWithNewline: tailText.endsWith("\n"),
+      exists: true,
+      firstBarTime: secondsFromIso(coverage?.firstBarAt ?? "") ?? firstDataTimestamp(head.toString("utf8")),
+      lastBarTime: lastDataTimestamp(tailText),
+      rows: coverage?.rows
+    };
+  } catch {
+    return { endsWithNewline: true, exists: false, rows: coverage?.rows };
+  } finally {
+    await handle?.close();
+  }
+}
+
+async function remoteCsvState(relativePath: string, coverage: DatasetAssetCoverage | undefined): Promise<StoredCsvState> {
+  const file = firebaseBucket().file(storageObjectPath(relativePath));
+
+  try {
+    const [metadata] = await file.getMetadata();
+    const size = Number(metadata.size ?? 0);
+    if (!Number.isFinite(size) || size <= 0) return { endsWithNewline: true, exists: false, rows: coverage?.rows };
+
+    const [tail] = await file.download({
+      start: Math.max(0, size - 65536),
+      validation: false
+    });
+    const tailText = tail.toString("utf8");
+
+    return {
+      endsWithNewline: tailText.endsWith("\n"),
+      exists: true,
+      firstBarTime: secondsFromIso(coverage?.firstBarAt ?? "") ?? undefined,
+      lastBarTime: lastDataTimestamp(tailText),
+      rows: coverage?.rows
+    };
+  } catch {
+    return localCsvState(relativePath, coverage);
+  }
+}
+
+async function storedCsvState(relativePath: string, coverage: DatasetAssetCoverage | undefined): Promise<StoredCsvState> {
+  return hasFirebaseAdmin() ? remoteCsvState(relativePath, coverage) : localCsvState(relativePath, coverage);
+}
+
+function remoteTempObjectPath(relativePath: string, label: string): string {
+  const safePath = relativePath.replace(/[^0-9A-Za-z._/-]/g, "_").replace(/\//g, "_");
+  return storageObjectPath(`tmp/market-data-sync/${Date.now()}-${process.pid}-${label}-${safePath}`);
+}
+
+async function saveRemoteText(relativePath: string, text: string): Promise<void> {
   const md5Hash = createHash("md5").update(text).digest("base64");
-  await firebaseBucket().file(destination).save(text, {
+  await firebaseBucket().file(storageObjectPath(relativePath)).save(text, {
     contentType: "text/csv; charset=utf-8",
     metadata: {
       cacheControl: "private, max-age=0, no-transform",
@@ -447,63 +556,88 @@ async function uploadText(relativePath: string, text: string): Promise<void> {
   });
 }
 
-async function readExistingBars(asset: AssetDefinition, timeframe = "15m"): Promise<CsvBar[]> {
-  const relativePath = `data/${timeframe}/${asset.dataFile}`;
-  const remoteOrLocal = await readProjectTextIfExists(relativePath);
-  if (remoteOrLocal !== null) return parseCsvBars(remoteOrLocal);
+async function appendRemoteText(relativePath: string, text: string, existing: StoredCsvState): Promise<void> {
+  if (!existing.exists) {
+    await saveRemoteText(relativePath, `time,open,high,low,close,volume\n${text}`);
+    return;
+  }
+
+  const bucket = firebaseBucket();
+  const destinationPath = storageObjectPath(relativePath);
+  const appendPath = remoteTempObjectPath(relativePath, "append");
+  const combinedPath = remoteTempObjectPath(relativePath, "combined");
+  const appendObject = bucket.file(appendPath);
+  const combinedObject = bucket.file(combinedPath);
+
+  await appendObject.save(text, {
+    contentType: "text/csv; charset=utf-8",
+    metadata: {
+      cacheControl: "private, max-age=0, no-transform"
+    },
+    resumable: false
+  });
 
   try {
-    return parseCsvBars(await readFile(localProjectPath(relativePath), "utf8"));
-  } catch {
-    return [];
+    await bucket.combine([bucket.file(destinationPath), appendObject], combinedObject);
+    await combinedObject.copy(bucket.file(destinationPath), {
+      cacheControl: "private, max-age=0, no-transform",
+      contentType: "text/csv; charset=utf-8"
+    });
+  } finally {
+    await Promise.allSettled([appendObject.delete(), combinedObject.delete()]);
   }
 }
 
-async function persistAssetBars(
+async function appendStoredCsvRows(relativePath: string, bars: CsvBar[], existing: StoredCsvState): Promise<void> {
+  if (!bars.length) return;
+  const prefix = existing.exists && !existing.endsWithNewline ? "\n" : "";
+  const text = `${prefix}${serializeCsvDataLines(bars)}`;
+
+  if (hasFirebaseAdmin()) {
+    await appendRemoteText(relativePath, text, existing);
+    return;
+  }
+
+  if (!existing.exists) {
+    await writeLocalText(relativePath, `time,open,high,low,close,volume\n${serializeCsvDataLines(bars)}`);
+    return;
+  }
+
+  await appendLocalText(relativePath, text);
+}
+
+function newBarsAfter(existing: StoredCsvState, incomingBars: CsvBar[]): CsvBar[] {
+  const seen = new Set<number>();
+  return incomingBars
+    .filter((bar) => existing.lastBarTime == null || bar.time > existing.lastBarTime)
+    .filter((bar) => {
+      if (seen.has(bar.time)) return false;
+      seen.add(bar.time);
+      return true;
+    })
+    .sort((left, right) => left.time - right.time);
+}
+
+function appendedCoverage(
   asset: AssetDefinition,
-  bars: CsvBar[],
-  refreshedAt: string,
-  smallTimeframes?: {
-    fiveMinuteBars: CsvBar[];
-    oneMinuteBars: CsvBar[];
-  }
-): Promise<MarketDataRefreshAsset> {
-  let uploadedFiles = 0;
-  const timeframes: string[] = [];
-
-  if (smallTimeframes?.oneMinuteBars.length) {
-    await uploadText(`data/1m/${asset.dataFile}`, serializeCsvBars(smallTimeframes.oneMinuteBars));
-    uploadedFiles += 1;
-    timeframes.push("1m");
-  }
-
-  if (smallTimeframes?.fiveMinuteBars.length) {
-    await uploadText(`data/5m/${asset.dataFile}`, serializeCsvBars(smallTimeframes.fiveMinuteBars));
-    uploadedFiles += 1;
-    timeframes.push("5m");
-  }
-
-  await uploadText(`data/15m/${asset.dataFile}`, serializeCsvBars(bars));
-  uploadedFiles += 1;
-  timeframes.push("15m");
-
-  for (const timeframe of DERIVED_TIMEFRAMES) {
-    const derived = resampleBars(bars, timeframe.seconds);
-    await uploadText(`data/${timeframe.label}/${asset.dataFile}`, serializeCsvBars(derived));
-    uploadedFiles += 1;
-    timeframes.push(timeframe.label);
-  }
+  existing: StoredCsvState,
+  appendedBars: CsvBar[],
+  refreshedAt: string
+): Omit<MarketDataRefreshAsset, "durationMs"> {
+  const firstBarTime = existing.firstBarTime ?? appendedBars[0]?.time;
+  const lastBarTime = appendedBars.at(-1)?.time ?? existing.lastBarTime;
 
   return {
+    appendedRows: appendedBars.length,
     assetKey: asset.key,
     dataFile: asset.dataFile,
-    firstBarAt: isoFromSeconds(bars[0]?.time),
-    lastBarAt: isoFromSeconds(bars.at(-1)?.time),
-    rows: bars.length,
+    firstBarAt: isoFromSeconds(firstBarTime),
+    lastBarAt: isoFromSeconds(lastBarTime),
+    rows: (existing.rows ?? 0) + appendedBars.length,
     symbol: asset.symbol,
-    timeframes,
+    timeframes: ["15m"],
     updatedAt: refreshedAt,
-    uploadedFiles
+    uploadedFiles: appendedBars.length ? 1 : 0
   };
 }
 
@@ -514,7 +648,9 @@ async function saveRefreshStatus(summary: MarketDataRefreshSummary): Promise<voi
   };
 
   for (const asset of summary.assets) {
-    const { assetKey, uploadedFiles, ...coverage } = asset;
+    const { appendedRows, assetKey, durationMs, uploadedFiles, ...coverage } = asset;
+    void appendedRows;
+    void durationMs;
     void uploadedFiles;
     assetCoverage[assetKey] = coverage;
   }
@@ -541,53 +677,64 @@ function uniqueAssetRules(rules: StrategyRule[]): StrategyRule[] {
 }
 
 export async function refreshMarketDataForRules(rules: StrategyRule[]): Promise<MarketDataRefreshResult> {
+  return refreshMarketDataForRulesWithOptions(rules);
+}
+
+export async function refreshMarketDataForRulesWithOptions(
+  rules: StrategyRule[],
+  options: MarketDataRefreshOptions = {}
+): Promise<MarketDataRefreshResult> {
+  const startedAt = Date.now();
   const refreshedAt = new Date().toISOString();
+  const existingStatus = await getDatasetStatus();
+  const assetCoverage = existingStatus?.assetCoverage ?? {};
   const summary: MarketDataRefreshSummary = {
     assets: [],
     errors: [],
     refreshedAt,
+    totalDurationMs: 0,
     uploadedFiles: 0
   };
   const barsByAssetKey = new Map<string, Bar[]>();
 
   for (const rule of uniqueAssetRules(rules)) {
+    const assetStartedAt = Date.now();
     const asset = assetForKey(rule.assetKey);
     try {
-      const liveBars = await fetchMarketBars(rule);
+      const relativePath = `data/15m/${asset.dataFile}`;
+      const existing = await storedCsvState(relativePath, assetCoverage[asset.key]);
+      const latestClosed15m = closedBarStartSeconds(15 * ONE_MINUTE_SECONDS);
+
+      if (existing.exists && existing.lastBarTime != null && existing.lastBarTime >= latestClosed15m) {
+        const coverage = appendedCoverage(asset, existing, [], refreshedAt);
+        summary.assets.push({
+          ...coverage,
+          durationMs: Date.now() - assetStartedAt
+        });
+        continue;
+      }
+
+      const liveBars = await fetchMarketBars(
+        rule,
+        existing.lastBarTime == null ? {} : { afterSeconds: existing.lastBarTime }
+      );
       barsByAssetKey.set(rule.assetKey, liveBars);
 
-      const existingBars = await readExistingBars(asset);
       const incomingBars = liveBars.map(barFromLiveBar).filter((bar): bar is CsvBar => Boolean(bar));
-      const mergedBars = mergeBars(existingBars, incomingBars);
-      if (!mergedBars.length) {
+      const appendedBars = newBarsAfter(existing, incomingBars);
+      if (!existing.exists && !appendedBars.length) {
         throw new Error("No bars were available to persist.");
       }
 
-      let smallTimeframes: { fiveMinuteBars: CsvBar[]; oneMinuteBars: CsvBar[] } | undefined;
-      try {
-        const incomingOneMinuteBars = await fetchOneMinuteBars(asset);
-        if (incomingOneMinuteBars.length) {
-          const existingOneMinuteBars = await readExistingBars(asset, "1m");
-          const existingFiveMinuteBars = await readExistingBars(asset, "5m");
-          const oneMinuteBars = mergeBars(existingOneMinuteBars, incomingOneMinuteBars);
-          const fiveMinuteBars = mergeBars(existingFiveMinuteBars, resampleBars(incomingOneMinuteBars, FIVE_MINUTE_SECONDS));
-          smallTimeframes = {
-            fiveMinuteBars,
-            oneMinuteBars
-          };
-        }
-      } catch (error) {
-        summary.errors.push({
-          assetKey: asset.key,
-          symbol: asset.symbol,
-          message: `1m/5m refresh failed; 15m+ still updated: ${
-            error instanceof Error ? error.message : "Unknown small-timeframe refresh error"
-          }`
-        });
+      if (appendedBars.length) {
+        await appendStoredCsvRows(relativePath, appendedBars, existing);
       }
 
-      const coverage = await persistAssetBars(asset, mergedBars, refreshedAt, smallTimeframes);
-      summary.assets.push(coverage);
+      const coverage = appendedCoverage(asset, existing, appendedBars, refreshedAt);
+      summary.assets.push({
+        ...coverage,
+        durationMs: Date.now() - assetStartedAt
+      });
       summary.uploadedFiles += coverage.uploadedFiles;
     } catch (error) {
       summary.errors.push({
@@ -597,6 +744,8 @@ export async function refreshMarketDataForRules(rules: StrategyRule[]): Promise<
       });
     }
   }
+
+  summary.totalDurationMs = Date.now() - startedAt;
 
   if (summary.assets.length) {
     await saveRefreshStatus(summary);

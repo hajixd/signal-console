@@ -1,8 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useTransition } from "react";
 
 type Theme = "dark" | "light";
+type ThemeToggleProps = {
+  initialTheme?: Theme;
+  persistTheme?: (theme: Theme) => Promise<void>;
+};
 
 const STORAGE_KEY = "trading-bot-theme";
 const LEGACY_STORAGE_KEY = "signal-console-theme";
@@ -18,14 +22,15 @@ function readTheme(): Theme {
   return stored === "light" ? "light" : "dark";
 }
 
-export default function ThemeToggle() {
+export default function ThemeToggle({ initialTheme, persistTheme }: ThemeToggleProps) {
   const [theme, setTheme] = useState<Theme>("dark");
+  const [, startSavingTheme] = useTransition();
 
   useEffect(() => {
-    const currentTheme = readTheme();
+    const currentTheme = initialTheme ?? readTheme();
     setTheme(currentTheme);
     applyTheme(currentTheme);
-  }, []);
+  }, [initialTheme]);
 
   function toggleTheme() {
     const nextTheme: Theme = theme === "dark" ? "light" : "dark";
@@ -33,6 +38,11 @@ export default function ThemeToggle() {
     applyTheme(nextTheme);
     window.localStorage.setItem(STORAGE_KEY, nextTheme);
     window.localStorage.removeItem(LEGACY_STORAGE_KEY);
+    if (persistTheme) {
+      startSavingTheme(() => {
+        void persistTheme(nextTheme).catch((error) => console.error("Failed to save theme", error));
+      });
+    }
   }
 
   return (

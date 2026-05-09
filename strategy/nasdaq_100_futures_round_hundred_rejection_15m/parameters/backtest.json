@@ -1,0 +1,11 @@
+{
+  "strategyId": "nasdaq_100_futures_round_hundred_rejection_15m",
+  "label": "NQ Round Hundred Rejection 15m",
+  "folder": "nasdaq_100_futures_round_hundred_rejection_15m",
+  "assetKey": "nasdaq_100_futures",
+  "phase": "round_number_rejection",
+  "variantId": "round_number_rejection|pre_ny|tf=15m|step=100|touch=12|sweep=36|reclaim=10|wick=0.38|atr_min=0.15|atr_max=3.5|risk_min=8|risk_max=60|stop=4|rr=3.0|trend=short_only|max_bars=12|one_trade=1",
+  "source": "psychological_round_number_support_resistance",
+  "oneTradePerDay": true,
+  "costUnits": 0
+}

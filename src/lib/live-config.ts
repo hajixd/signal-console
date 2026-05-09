@@ -26,7 +26,9 @@ export type SavedStrategyEdit = {
   tpUnits?: number;
 };
 
-export type LiveMarket = "forex" | "futures";
+export type LiveMarket = "forex" | "futures" | "gold_spot";
+export type DashboardMarket = "forex" | "futures";
+export type ChallengeRulesMarket = DashboardMarket;
 
 export type SavedCustomScaleRange = {
   riskCeiling?: string;
@@ -37,8 +39,29 @@ export type SavedCustomScaleRange = {
 
 export type SavedCustomScaleRanges = Partial<Record<LiveMarket, SavedCustomScaleRange>>;
 
+export type SavedChallengeRules = {
+  dailyLossLimit?: number;
+  dailyLossStop?: number;
+  dailyProfitLock?: number;
+  maximumLossLimit?: number;
+  profitTarget?: number;
+  startingBalance?: number;
+};
+
+export type SavedChallengeRulesByMarket = Partial<Record<ChallengeRulesMarket, SavedChallengeRules>>;
+
+export type SavedTheme = "dark" | "light";
+
+export type SavedDashboardSettings = {
+  activeMarket?: DashboardMarket;
+  challengeRules?: SavedChallengeRules;
+  challengeRulesByMarket?: SavedChallengeRulesByMarket;
+  theme?: SavedTheme;
+};
+
 export type LiveConfig = {
   customScaleRanges: SavedCustomScaleRanges;
+  dashboardSettings: SavedDashboardSettings;
   dashboardSelectedDatasetIds: string[];
   enabledDatasetIds: string[];
   strategyEdits: Record<string, SavedStrategyEdit>;
@@ -57,9 +80,24 @@ export type DatasetStatus = {
 };
 
 export type SyncStatus = {
+  dataValidityRefresh?: SyncRunStatus;
   lastDataValidityRefreshAt?: string;
   lastMarketDataSyncAt?: string;
   lastSignalTradeCheckAt?: string;
+  marketDataSync?: SyncRunStatus;
+  signalTradeCheck?: SyncRunStatus;
+};
+
+export type SyncRunKey = "dataValidityRefresh" | "marketDataSync" | "signalTradeCheck";
+export type SyncRunState = "idle" | "running" | "success" | "failed";
+export type SyncTimestampField = "lastDataValidityRefreshAt" | "lastMarketDataSyncAt" | "lastSignalTradeCheckAt";
+
+export type SyncRunStatus = {
+  durationMs?: number;
+  error?: string;
+  finishedAt?: string;
+  startedAt?: string;
+  state: SyncRunState;
 };
 
 export type DatasetAssetCoverage = {
@@ -74,6 +112,19 @@ export type DatasetAssetCoverage = {
 
 function normalizedStringArray(value: unknown): string[] {
   return Array.isArray(value) ? value.filter((item): item is string => typeof item === "string" && item.trim().length > 0) : [];
+}
+
+function normalizedMarket(value: unknown): LiveMarket | undefined {
+  return value === "forex" || value === "futures" || value === "gold_spot" ? value : undefined;
+}
+
+function normalizedDashboardMarket(value: unknown): DashboardMarket | undefined {
+  if (value === "gold_spot") return "forex";
+  return value === "forex" || value === "futures" ? value : undefined;
+}
+
+function normalizedTheme(value: unknown): SavedTheme | undefined {
+  return value === "dark" || value === "light" ? value : undefined;
 }
 
 function omitUndefinedDeep<T>(value: T): T {
@@ -122,15 +173,78 @@ function normalizedCustomScaleRange(value: unknown): SavedCustomScaleRange | und
   return Object.keys(range).length ? range : undefined;
 }
 
+function normalizedPositiveSetting(value: unknown): number | undefined {
+  const numeric = Number(value);
+  return Number.isFinite(numeric) && numeric > 0 ? Math.round(numeric * 100) / 100 : undefined;
+}
+
+function normalizedNonNegativeSetting(value: unknown): number | undefined {
+  const numeric = Number(value);
+  return Number.isFinite(numeric) && numeric >= 0 ? Math.round(numeric * 100) / 100 : undefined;
+}
+
+function normalizedChallengeRules(value: unknown): SavedChallengeRules | undefined {
+  if (!value || typeof value !== "object") return undefined;
+  const source = value as Partial<Record<keyof SavedChallengeRules, unknown>>;
+  const rules: SavedChallengeRules = {};
+  const startingBalance = normalizedPositiveSetting(source.startingBalance);
+  const profitTarget = normalizedPositiveSetting(source.profitTarget);
+  const maximumLossLimit = normalizedNonNegativeSetting(source.maximumLossLimit);
+  const dailyLossLimit = normalizedNonNegativeSetting(source.dailyLossLimit);
+  const dailyProfitLock = normalizedNonNegativeSetting(source.dailyProfitLock);
+  const dailyLossStop = normalizedNonNegativeSetting(source.dailyLossStop);
+
+  if (startingBalance !== undefined) rules.startingBalance = startingBalance;
+  if (profitTarget !== undefined) rules.profitTarget = profitTarget;
+  if (maximumLossLimit !== undefined) rules.maximumLossLimit = maximumLossLimit;
+  if (dailyLossLimit !== undefined) rules.dailyLossLimit = dailyLossLimit;
+  if (dailyProfitLock !== undefined) rules.dailyProfitLock = dailyProfitLock;
+  if (dailyLossStop !== undefined) rules.dailyLossStop = dailyLossStop;
+
+  return Object.keys(rules).length ? rules : undefined;
+}
+
+function normalizedChallengeRulesByMarket(value: unknown): SavedChallengeRulesByMarket | undefined {
+  if (!value || typeof value !== "object") return undefined;
+  const source = value as Partial<Record<ChallengeRulesMarket, unknown>>;
+  const rulesByMarket: SavedChallengeRulesByMarket = {};
+  const forex = normalizedChallengeRules(source.forex);
+  const futures = normalizedChallengeRules(source.futures);
+
+  if (forex) rulesByMarket.forex = forex;
+  if (futures) rulesByMarket.futures = futures;
+
+  return Object.keys(rulesByMarket).length ? rulesByMarket : undefined;
+}
+
+function normalizedDashboardSettings(value: unknown): SavedDashboardSettings {
+  if (!value || typeof value !== "object") return {};
+  const source = value as Partial<SavedDashboardSettings>;
+  const settings: SavedDashboardSettings = {};
+  const activeMarket = normalizedDashboardMarket(source.activeMarket);
+  const theme = normalizedTheme(source.theme);
+  const challengeRules = normalizedChallengeRules(source.challengeRules);
+  const challengeRulesByMarket = normalizedChallengeRulesByMarket(source.challengeRulesByMarket);
+
+  if (activeMarket) settings.activeMarket = activeMarket;
+  if (theme) settings.theme = theme;
+  if (challengeRules) settings.challengeRules = challengeRules;
+  if (challengeRulesByMarket) settings.challengeRulesByMarket = challengeRulesByMarket;
+
+  return settings;
+}
+
 function normalizedCustomScaleRanges(value: unknown): SavedCustomScaleRanges {
   if (!value || typeof value !== "object") return {};
   const source = value as Partial<Record<LiveMarket, unknown>>;
   const ranges: SavedCustomScaleRanges = {};
   const forex = normalizedCustomScaleRange(source.forex);
   const futures = normalizedCustomScaleRange(source.futures);
+  const goldSpot = normalizedCustomScaleRange(source.gold_spot);
 
   if (forex) ranges.forex = forex;
   if (futures) ranges.futures = futures;
+  if (goldSpot) ranges.gold_spot = goldSpot;
 
   return ranges;
 }
@@ -138,6 +252,7 @@ function normalizedCustomScaleRanges(value: unknown): SavedCustomScaleRanges {
 function normalizeLiveConfig(value: Partial<LiveConfig> | null | undefined): LiveConfig {
   return {
     customScaleRanges: normalizedCustomScaleRanges(value?.customScaleRanges),
+    dashboardSettings: normalizedDashboardSettings(value?.dashboardSettings),
     dashboardSelectedDatasetIds: normalizedStringArray(value?.dashboardSelectedDatasetIds),
     enabledDatasetIds: normalizedStringArray(value?.enabledDatasetIds),
     strategyEdits: normalizedStrategyEdits(value?.strategyEdits),
@@ -171,6 +286,21 @@ function normalizeDatasetStatus(value: Partial<DatasetStatus> | null | undefined
 function normalizeSyncStatus(value: unknown): SyncStatus {
   const source = value && typeof value === "object" ? (value as Partial<SyncStatus>) : {};
   const status: SyncStatus = {};
+  const dataValidityRefresh = normalizeSyncRunStatus(source.dataValidityRefresh);
+  const marketDataSync = normalizeSyncRunStatus(source.marketDataSync);
+  const signalTradeCheck = normalizeSyncRunStatus(source.signalTradeCheck);
+
+  if (dataValidityRefresh) {
+    status.dataValidityRefresh = dataValidityRefresh;
+  }
+
+  if (marketDataSync) {
+    status.marketDataSync = marketDataSync;
+  }
+
+  if (signalTradeCheck) {
+    status.signalTradeCheck = signalTradeCheck;
+  }
 
   if (typeof source.lastDataValidityRefreshAt === "string") {
     status.lastDataValidityRefreshAt = source.lastDataValidityRefreshAt;
@@ -185,6 +315,33 @@ function normalizeSyncStatus(value: unknown): SyncStatus {
   }
 
   return status;
+}
+
+function normalizeSyncRunStatus(value: unknown): SyncRunStatus | undefined {
+  if (!value || typeof value !== "object") return undefined;
+  const source = value as Partial<SyncRunStatus>;
+  const explicitState = source.state === "idle" || source.state === "running" || source.state === "success" || source.state === "failed"
+    ? source.state
+    : undefined;
+  const startedAt = typeof source.startedAt === "string" ? source.startedAt : undefined;
+  const finishedAt = typeof source.finishedAt === "string" ? source.finishedAt : undefined;
+  const error = typeof source.error === "string" && source.error.trim() ? source.error.trim().slice(0, 800) : undefined;
+  const durationMs = typeof source.durationMs === "number" && Number.isFinite(source.durationMs) && source.durationMs >= 0
+    ? Math.round(source.durationMs)
+    : undefined;
+  const state: SyncRunState = explicitState ?? (error ? "failed" : finishedAt ? "success" : startedAt ? "running" : "idle");
+
+  if (state === "idle" && !startedAt && !finishedAt && !error && durationMs === undefined) {
+    return undefined;
+  }
+
+  return {
+    durationMs,
+    error,
+    finishedAt,
+    startedAt,
+    state
+  };
 }
 
 function normalizeAssetCoverage(value: unknown): Record<string, DatasetAssetCoverage> {
@@ -260,13 +417,10 @@ export async function saveLiveConfig(config: LiveConfig): Promise<LiveConfig> {
     await firebaseDb()
       .collection(LIVE_CONFIG_COLLECTION)
       .doc("default")
-      .set(
-        {
-          ...firestorePayload,
-          updatedAtServer: FieldValue.serverTimestamp()
-        },
-        { merge: true }
-      );
+      .set({
+        ...firestorePayload,
+        updatedAtServer: FieldValue.serverTimestamp()
+      });
   } else {
     await writeJsonFile(LIVE_CONFIG_LOCAL_PATH, normalized);
   }
@@ -302,13 +456,10 @@ export async function saveDatasetStatus(status: DatasetStatus): Promise<DatasetS
     await firebaseDb()
       .collection(DATASET_STATUS_COLLECTION)
       .doc("runtime")
-      .set(
-        {
-          ...firestorePayload,
-          updatedAtServer: FieldValue.serverTimestamp()
-        },
-        { merge: true }
-      );
+      .set({
+        ...firestorePayload,
+        updatedAtServer: FieldValue.serverTimestamp()
+      });
   } else {
     await writeJsonFile(DATASET_STATUS_LOCAL_PATH, normalized);
   }
@@ -321,7 +472,7 @@ export async function saveDatasetStatus(status: DatasetStatus): Promise<DatasetS
   return normalized;
 }
 
-export async function updateDatasetSyncStatus(field: keyof SyncStatus, timestamp = new Date().toISOString()): Promise<DatasetStatus> {
+export async function updateDatasetSyncStatus(field: SyncTimestampField, timestamp = new Date().toISOString()): Promise<DatasetStatus> {
   const existing = (await getDatasetStatus()) ?? defaultDatasetStatus();
   return saveDatasetStatus({
     ...existing,
@@ -329,6 +480,40 @@ export async function updateDatasetSyncStatus(field: keyof SyncStatus, timestamp
       ...(existing.sync ?? {}),
       [field]: timestamp
     }
+  });
+}
+
+const SYNC_TIMESTAMP_FIELD_BY_RUN_KEY: Record<SyncRunKey, SyncTimestampField> = {
+  dataValidityRefresh: "lastDataValidityRefreshAt",
+  marketDataSync: "lastMarketDataSyncAt",
+  signalTradeCheck: "lastSignalTradeCheckAt"
+};
+
+export async function updateDatasetSyncRunStatus(
+  runKey: SyncRunKey,
+  runStatus: Partial<SyncRunStatus> & { state: SyncRunState }
+): Promise<DatasetStatus> {
+  const existing = (await getDatasetStatus()) ?? defaultDatasetStatus();
+  const previousRun = runStatus.state === "running" ? undefined : existing.sync?.[runKey];
+  const normalizedRun = normalizeSyncRunStatus({
+    ...(previousRun ?? {}),
+    ...runStatus
+  });
+  const sync: SyncStatus = {
+    ...(existing.sync ?? {})
+  };
+
+  if (normalizedRun) {
+    sync[runKey] = normalizedRun;
+  }
+
+  if (runStatus.state === "success" && runStatus.finishedAt) {
+    sync[SYNC_TIMESTAMP_FIELD_BY_RUN_KEY[runKey]] = runStatus.finishedAt;
+  }
+
+  return saveDatasetStatus({
+    ...existing,
+    sync
   });
 }
 

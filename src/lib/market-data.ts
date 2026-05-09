@@ -37,6 +37,10 @@ type TwelveDataResponse = {
   values?: Array<Record<string, string>>;
 };
 
+type MarketBarsOptions = {
+  afterSeconds?: number;
+};
+
 function normalizePrice(value: number | string | undefined): number {
   const numeric = Number(value);
   if (!Number.isFinite(numeric)) return Number.NaN;
@@ -134,10 +138,10 @@ function parseDatabentoJson(text: string): Bar[] {
   return aggregateTo15m(records);
 }
 
-export async function fetchMarketBars(rule: StrategyRule): Promise<Bar[]> {
+export async function fetchMarketBars(rule: StrategyRule, options: MarketBarsOptions = {}): Promise<Bar[]> {
   const asset = assetForKey(rule.assetKey);
-  if (asset.market === "futures") return fetchDatabentoBars(asset.databentoSymbol, asset.symbol);
-  if (asset.market !== "crypto" && process.env.OANDA_API_TOKEN) return fetchOandaBars(asset.oandaSymbol ?? asset.symbol);
+  if (asset.market === "futures") return fetchDatabentoBars(asset.databentoSymbol, asset.symbol, options);
+  if (asset.market !== "crypto" && process.env.OANDA_API_TOKEN) return fetchOandaBars(asset.oandaSymbol ?? asset.symbol, options);
   return fetchTwelveDataBars(asset.twelveDataSymbol ?? asset.symbol);
 }
 
@@ -150,14 +154,21 @@ async function requestDatabentoBars(apiKey: string, params: URLSearchParams): Pr
   });
 }
 
-async function fetchDatabentoBars(databentoSymbol: string | undefined, symbol: string): Promise<Bar[]> {
+function providerStartDate(options: MarketBarsOptions, fallbackLookbackMs: number, intervalSeconds: number): Date {
+  const start = options.afterSeconds
+    ? new Date((options.afterSeconds + intervalSeconds) * 1000)
+    : new Date(Date.now() - fallbackLookbackMs);
+  start.setUTCSeconds(0, 0);
+  return start;
+}
+
+async function fetchDatabentoBars(databentoSymbol: string | undefined, symbol: string, options: MarketBarsOptions): Promise<Bar[]> {
   const apiKey = process.env.DATABENTO_API_KEY;
   if (!apiKey) throw new Error("Missing DATABENTO_API_KEY");
   if (!databentoSymbol) throw new Error(`Missing Databento symbol for ${symbol}`);
 
-  const start = new Date(Date.now() - 12 * 24 * 60 * 60 * 1000);
+  const start = providerStartDate(options, 12 * 24 * 60 * 60 * 1000, 15 * 60);
   const end = new Date();
-  start.setUTCSeconds(0, 0);
   end.setUTCSeconds(0, 0);
   const params = new URLSearchParams({
     dataset: "GLBX.MDP3",
@@ -238,15 +249,20 @@ async function fetchTwelveDataBars(symbol: string): Promise<Bar[]> {
   throw new Error(`TwelveData failed for all API keys: ${failures.join(" | ")}`);
 }
 
-async function fetchOandaBars(instrument: string): Promise<Bar[]> {
+async function fetchOandaBars(instrument: string, options: MarketBarsOptions): Promise<Bar[]> {
   const token = process.env.OANDA_API_TOKEN;
   if (!token) throw new Error("Missing OANDA_API_TOKEN");
   const baseUrl = process.env.OANDA_API_BASE_URL ?? "https://api-fxpractice.oanda.com";
   const params = new URLSearchParams({
     price: "M",
-    granularity: "M15",
-    count: "1500"
+    granularity: "M15"
   });
+  if (options.afterSeconds) {
+    params.set("from", providerStartDate(options, 0, 15 * 60).toISOString());
+    params.set("to", endIsoMinute());
+  } else {
+    params.set("count", "1500");
+  }
   const response = await fetch(`${baseUrl}/v3/instruments/${instrument}/candles?${params.toString()}`, {
     headers: {
       Authorization: `Bearer ${token}`
@@ -270,4 +286,10 @@ async function fetchOandaBars(instrument: string): Promise<Bar[]> {
       .filter((bar) => [bar.open, bar.high, bar.low, bar.close].every(Number.isFinite))
       .sort((left, right) => Date.parse(left.time) - Date.parse(right.time))
   );
+}
+
+function endIsoMinute(): string {
+  const end = new Date();
+  end.setUTCSeconds(0, 0);
+  return end.toISOString();
 }

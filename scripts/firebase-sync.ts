@@ -241,6 +241,7 @@ async function main(): Promise<void> {
 
   await saveLiveConfig({
     customScaleRanges: existingConfig.customScaleRanges,
+    dashboardSettings: existingConfig.dashboardSettings,
     dashboardSelectedDatasetIds:
       existingConfig.dashboardSelectedDatasetIds.length > 0 ? existingConfig.dashboardSelectedDatasetIds : dashboardDefault,
     enabledDatasetIds: existingConfig.enabledDatasetIds.length > 0 ? existingConfig.enabledDatasetIds : liveDatasetIds,

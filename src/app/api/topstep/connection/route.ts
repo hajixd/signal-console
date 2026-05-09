@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { randomUUID } from "node:crypto";
 import {
   deleteStoredProjectXConnection,
+  getLatestStoredProjectXConnection,
   getStoredProjectXConnection,
   projectXConnectionStoreMode,
   saveStoredProjectXConnection,
@@ -38,6 +39,20 @@ function normalizeText(value: unknown): string {
 function connectionIdFromRequest(request: NextRequest): string | undefined {
   const value = request.cookies.get(TOPSTEP_PROJECTX_CONNECTION_COOKIE)?.value?.trim();
   return value && /^[0-9A-Za-z_-]{16,80}$/.test(value) ? value : undefined;
+}
+
+async function visibleConnectionIdFromRequest(request: NextRequest): Promise<string | undefined> {
+  const cookieConnectionId = connectionIdFromRequest(request);
+  if (cookieConnectionId) {
+    try {
+      const connection = await getStoredProjectXConnection(cookieConnectionId);
+      if (connection?.status === "connected") return cookieConnectionId;
+    } catch {
+      // If the cookie points at an unreadable/deleted connection, fall back to the shared Firebase connection.
+    }
+  }
+
+  return (await getLatestStoredProjectXConnection())?.id;
 }
 
 function setConnectionCookie(response: NextResponse, connectionId: string): void {
@@ -116,7 +131,7 @@ async function connectedStatus(connectionId: string): Promise<{ status: ProjectX
 }
 
 export async function GET(request: NextRequest) {
-  const connectionId = connectionIdFromRequest(request);
+  const connectionId = await visibleConnectionIdFromRequest(request);
   if (!connectionId) {
     return jsonStatus({ accounts: [], autoTradePaused: true, connected: false, persisted: false });
   }

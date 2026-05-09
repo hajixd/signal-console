@@ -204,6 +204,10 @@ function accountConnectionStatus(account: ProjectXAccount, autoTradePaused: bool
   return { className: accountStatusClass(account), dotClassName: "statusDot green", label: "Connected" };
 }
 
+function accountCountLabel(count: number): string {
+  return `${count} account${count === 1 ? "" : "s"}`;
+}
+
 async function parseConnectionResponse(response: Response): Promise<ProjectXConnectionStatus> {
   const payload = (await response.json().catch(() => EMPTY_STATUS)) as ProjectXConnectionStatus;
   if (!response.ok) {
@@ -238,6 +242,7 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
   const [savedConnections, setSavedConnections] = useState<SavedAutoTradeConnection[]>([]);
   const [genericFields, setGenericFields] = useState<Record<string, string>>(() => defaultConnectionFields(selectedProviderId));
   const [showAdvancedFields, setShowAdvancedFields] = useState(false);
+  const [activeProjectXFolderId, setActiveProjectXFolderId] = useState<string | null>(null);
 
   const marketLabel = autoTradeMarketLabel(market);
   const selectedFirm = propFirms.find((firm) => firm.id === selectedFirmId) ?? propFirms[0]!;
@@ -252,7 +257,21 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
   const displayUserName = status.userName || userName || "--";
   const pausedAccountIds = new Set(status.pausedAccountIds ?? status.accounts.map((account) => account.id));
   const visibleAccounts = market === "futures" ? status.accounts : [];
+  const projectXAccountFolders = useMemo(
+    () =>
+      visibleAccounts.length
+        ? [
+            {
+              accounts: visibleAccounts,
+              id: `projectx-${displayUserName.toLowerCase()}`,
+              login: displayUserName
+            }
+          ]
+        : [],
+    [displayUserName, visibleAccounts]
+  );
   const visibleSavedConnections = savedConnections.filter((connection) => providers.some((provider) => provider.id === connection.id));
+  const activeProjectXFolder = projectXAccountFolders.find((folder) => folder.id === activeProjectXFolderId);
   const selectedProviderFields = CONNECTION_FIELDS[selectedProvider.id] ?? [];
   const primaryProviderFields = selectedProviderFields.filter((field) => !field.advanced);
   const advancedProviderFields = selectedProviderFields.filter((field) => field.advanced);
@@ -275,10 +294,17 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
 
   useEffect(() => {
     setIsAddingAccount(false);
+    setActiveProjectXFolderId(null);
     setSelectedFirmId(firstPropFirmId(market));
     setGenericFields(defaultConnectionFields(firstProviderId(providers)));
     setShowAdvancedFields(false);
   }, [market]);
+
+  useEffect(() => {
+    if (activeProjectXFolderId && !projectXAccountFolders.some((folder) => folder.id === activeProjectXFolderId)) {
+      setActiveProjectXFolderId(null);
+    }
+  }, [activeProjectXFolderId, projectXAccountFolders]);
 
   useEffect(() => {
     setGenericFields(defaultConnectionFields(selectedProviderId));
@@ -353,6 +379,7 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
       const nextStatus = await parseConnectionResponse(response);
       setStatus(nextStatus);
       setApiKey("");
+      setActiveProjectXFolderId(null);
       setIsAddingAccount(false);
     } catch (error) {
       setStatus({
@@ -488,6 +515,15 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
           <button type="button" onClick={() => setIsAddingAccount(false)}>
             Back to Accounts
           </button>
+        ) : activeProjectXFolder ? (
+          <>
+            <button type="button" onClick={() => setActiveProjectXFolderId(null)}>
+              Back to Folders
+            </button>
+            <button type="button" disabled={isChecking || isConnecting || market !== "futures"} onClick={() => refreshConnection()}>
+              {isChecking ? "Checking..." : "Refresh"}
+            </button>
+          </>
         ) : (
           <>
             <button type="button" onClick={() => setIsAddingAccount(true)}>
@@ -605,58 +641,93 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
               <strong>No {marketLabel.toLowerCase()} auto-trade accounts connected</strong>
               <span>Use Add Account to pick a {marketLabel.toLowerCase()} connector. Accounts from the other market stay hidden here.</span>
             </div>
+          ) : activeProjectXFolder ? (
+            <div className="topstepAccountFolderPage">
+              <div className="topstepFolderPageHead">
+                <div>
+                  <span>Login</span>
+                  <strong>{activeProjectXFolder.login}</strong>
+                </div>
+                <div>
+                  <span>Provider</span>
+                  <strong>ProjectX</strong>
+                </div>
+                <div>
+                  <span>Platform</span>
+                  <strong>TopstepX / Futures</strong>
+                </div>
+                <div>
+                  <span>Accounts</span>
+                  <strong>{accountCountLabel(activeProjectXFolder.accounts.length)}</strong>
+                </div>
+              </div>
+              <div className="topstepFolderAccounts">
+                {activeProjectXFolder.accounts.map((account) => {
+                  const accountPaused = pausedAccountIds.has(account.id);
+                  const connectionStatus = accountConnectionStatus(account, accountPaused);
+                  return (
+                    <div className="topstepAccountRow isNested" key={`projectx-${account.id}`}>
+                      <div className="topstepAccountFields">
+                        <div>
+                          <span>Account number</span>
+                          <strong>{account.id}</strong>
+                        </div>
+                        <div>
+                          <span>Account name</span>
+                          <strong>{account.name}</strong>
+                        </div>
+                        <div>
+                          <span>Balance</span>
+                          <strong>{fmtMoney(account.balance)}</strong>
+                        </div>
+                        <div>
+                          <span>Status</span>
+                          <strong className={`topstepStatusValue ${connectionStatus.className}`}>
+                            <span aria-hidden="true" className={connectionStatus.dotClassName} />
+                            {connectionStatus.label}
+                          </strong>
+                        </div>
+                      </div>
+                      <div className="topstepAccountControls">
+                        <button
+                          className={accountPaused ? "playButton" : "pauseButton"}
+                          type="button"
+                          disabled={isUpdatingPaused || isDisconnecting}
+                          onClick={() => handleAutoTradePaused(account.id, !accountPaused)}
+                        >
+                          {isUpdatingPaused ? "Updating..." : accountPaused ? "Play" : "Pause"}
+                        </button>
+                        <button className="dangerButton" type="button" disabled={isDisconnecting} onClick={() => handleDisconnect()}>
+                          {isDisconnecting ? "Removing..." : "Remove"}
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
           ) : (
             <>
-              {visibleAccounts.map((account) => {
-                const accountPaused = pausedAccountIds.has(account.id);
-                const connectionStatus = accountConnectionStatus(account, accountPaused);
-                return (
-                  <div className="topstepAccountRow" key={`projectx-${account.id}`}>
-                    <div className="topstepAccountFields">
-                      <div>
-                        <span>Provider</span>
-                        <strong>ProjectX</strong>
-                      </div>
-                      <div>
-                        <span>Platform</span>
-                        <strong>TopstepX / Futures</strong>
-                      </div>
-                      <div>
-                        <span>Login</span>
-                        <strong>{displayUserName}</strong>
-                      </div>
-                      <div>
-                        <span>Account number</span>
-                        <strong>{account.id}</strong>
-                      </div>
-                      <div>
-                        <span>Balance</span>
-                        <strong>{fmtMoney(account.balance)}</strong>
-                      </div>
-                      <div>
-                        <span>Status</span>
-                        <strong className={`topstepStatusValue ${connectionStatus.className}`}>
-                          <span aria-hidden="true" className={connectionStatus.dotClassName} />
-                          {connectionStatus.label}
-                        </strong>
-                      </div>
-                    </div>
-                    <div className="topstepAccountControls">
-                      <button
-                        className={accountPaused ? "playButton" : "pauseButton"}
-                        type="button"
-                        disabled={isUpdatingPaused || isDisconnecting}
-                        onClick={() => handleAutoTradePaused(account.id, !accountPaused)}
-                      >
-                        {isUpdatingPaused ? "Updating..." : accountPaused ? "Play" : "Pause"}
-                      </button>
-                      <button className="dangerButton" type="button" disabled={isDisconnecting} onClick={() => handleDisconnect()}>
-                        {isDisconnecting ? "Removing..." : "Remove"}
-                      </button>
-                    </div>
+              {projectXAccountFolders.map((folder) => (
+                <button className="topstepAccountFolderButton" key={folder.id} onClick={() => setActiveProjectXFolderId(folder.id)} type="button">
+                  <span className="topstepFolderIcon" aria-hidden="true" />
+                  <div className="topstepFolderIdentity">
+                    <span>Login</span>
+                    <strong>{folder.login}</strong>
                   </div>
-                );
-              })}
+                  <div className="topstepFolderMeta provider">
+                    <span>Provider</span>
+                    <strong>ProjectX</strong>
+                  </div>
+                  <div className="topstepFolderMeta platform">
+                    <span>Platform</span>
+                    <strong>TopstepX / Futures</strong>
+                  </div>
+                  <div className="topstepFolderCount">
+                    <strong>{accountCountLabel(folder.accounts.length)}</strong>
+                  </div>
+                </button>
+              ))}
               {visibleSavedConnections.map((connection) => {
                 const provider = providers.find((item) => item.id === connection.id);
                 const connectionReady = autoTradeProviderFullyFunctioning(connection.id);

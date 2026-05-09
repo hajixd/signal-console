@@ -45,7 +45,6 @@ type StrategySelectorProps = {
   market: MarketKey;
   strategies: StrategyOption[];
   selectedKeys: string[];
-  defaultKeys: string[];
   persistedLiveKeys: string[];
   persistedCustomScaleRange: CustomScaleRangeSeed;
   persistedStrategyEdits: StrategyEditSeedMap;
@@ -194,6 +193,7 @@ function formatPct(value: number): string {
 
 function formatMarket(value: string | undefined): string {
   if (!value) return "Market";
+  if (value === "gold_spot") return "Forex";
   if (value === "multi") return "Multi-market";
   return value
     .replaceAll("_", " ")
@@ -508,7 +508,6 @@ export default function StrategySelector({
   market,
   strategies,
   selectedKeys,
-  defaultKeys,
   persistedLiveKeys,
   persistedCustomScaleRange,
   persistedStrategyEdits,
@@ -523,6 +522,7 @@ export default function StrategySelector({
   const [, startSavingCustomScaleRange] = useTransition();
   const [isLoaded, setIsLoaded] = useState(false);
   const [isCustomScaleLoaded, setIsCustomScaleLoaded] = useState(false);
+  const [savingSelectionKeys, setSavingSelectionKeys] = useState<string[]>([]);
   const [edits, setEdits] = useState<StrategyEditMap>({});
   const [activeKey, setActiveKey] = useState<string | null>(null);
   const [draft, setDraft] = useState<StrategyEdit | null>(null);
@@ -554,7 +554,11 @@ export default function StrategySelector({
   const persistedEditsSignature = serializeEdits(normalizedPersistedEdits);
   const currentEditSignature = serializeEdits(edits);
   const lastSyncedSelectionRef = useRef<string>("");
+  const pendingSelectionSignatureRef = useRef<string>("");
+  const latestSelectionSignatureRef = useRef<string>(optimisticSelectionSignature);
+  const selectionSyncRunRef = useRef(0);
   const lastSyncedCustomScaleRangeRef = useRef<string>("");
+  const pendingCustomScaleRangeSignatureRef = useRef<string>("");
   const lastSyncedEditsRef = useRef<string>("");
   const selectionSyncTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const customScaleSyncTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -564,10 +568,33 @@ export default function StrategySelector({
   const editSyncTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const editSyncRunRef = useRef(0);
   const editControlsDisabled = isSavingEdits;
+  const savingSelectionKeySet = useMemo(() => new Set(savingSelectionKeys), [savingSelectionKeys]);
 
   useEffect(() => {
+    latestSelectionSignatureRef.current = optimisticSelectionSignature;
+  }, [optimisticSelectionSignature]);
+
+  useEffect(() => {
+    latestCustomScaleRangeSignatureRef.current = currentCustomScaleRangeSignature;
+  }, [currentCustomScaleRangeSignature]);
+
+  useEffect(() => {
+    const pendingSelectionSignature = pendingSelectionSignatureRef.current;
+    if (
+      pendingSelectionSignature &&
+      selectionSignature !== pendingSelectionSignature &&
+      persistedLiveSelectionSignature !== pendingSelectionSignature
+    ) {
+      return;
+    }
+
+    if (pendingSelectionSignature && (selectionSignature === pendingSelectionSignature || persistedLiveSelectionSignature === pendingSelectionSignature)) {
+      pendingSelectionSignatureRef.current = "";
+      setSavingSelectionKeys([]);
+    }
+
     setOptimisticSelectedKeys(selectedKeys);
-  }, [selectionSignature, selectedKeys]);
+  }, [persistedLiveSelectionSignature, selectionSignature, selectedKeys]);
 
   useEffect(() => {
     return () => {
@@ -603,12 +630,20 @@ export default function StrategySelector({
   }, [edits, isLoaded]);
 
   useEffect(() => {
+    const pendingCustomScaleRangeSignature = pendingCustomScaleRangeSignatureRef.current;
+    if (pendingCustomScaleRangeSignature && persistedCustomScaleRangeSignature !== pendingCustomScaleRangeSignature) return;
+    if (isCustomScaleOpen && currentCustomScaleRangeSignature !== persistedCustomScaleRangeSignature) return;
+
+    if (pendingCustomScaleRangeSignature && persistedCustomScaleRangeSignature === pendingCustomScaleRangeSignature) {
+      pendingCustomScaleRangeSignatureRef.current = "";
+    }
+
     setIsCustomScaleLoaded(false);
     setCustomScaleRange(loadClientCustomScaleRange(customScaleRangeKey, persistedCustomScaleRange));
     setCustomScaleError("");
     setCustomScaleResult(null);
     setIsCustomScaleLoaded(true);
-  }, [customScaleRangeKey, persistedCustomScaleRangeSignature]);
+  }, [currentCustomScaleRangeSignature, customScaleRangeKey, isCustomScaleOpen, persistedCustomScaleRange, persistedCustomScaleRangeSignature]);
 
   useEffect(() => {
     if (!isCustomScaleLoaded) return;
@@ -631,6 +666,7 @@ export default function StrategySelector({
       }
       return;
     }
+    if (lastSyncedCustomScaleRangeRef.current === currentCustomScaleRangeSignature) return;
     latestCustomScaleRangeSignatureRef.current = currentCustomScaleRangeSignature;
     if (customScaleSyncTimerRef.current) clearTimeout(customScaleSyncTimerRef.current);
 
@@ -640,17 +676,18 @@ export default function StrategySelector({
       const rangeToSync = compactCustomScaleRangeInput(customScaleRange);
       const signatureToSync = currentCustomScaleRangeSignature;
       lastSyncedCustomScaleRangeRef.current = signatureToSync;
+      pendingCustomScaleRangeSignatureRef.current = signatureToSync;
       customScaleSyncTimerRef.current = null;
 
       startSavingCustomScaleRange(async () => {
         try {
           await persistCustomScaleRange(market, rangeToSync);
-          if (customScaleSyncRunRef.current === syncRun && latestCustomScaleRangeSignatureRef.current === signatureToSync) {
-            router.refresh();
-          }
         } catch (error) {
           console.error("Failed to sync custom strategy range", error);
-          if (customScaleSyncRunRef.current === syncRun) lastSyncedCustomScaleRangeRef.current = "";
+          if (customScaleSyncRunRef.current === syncRun) {
+            lastSyncedCustomScaleRangeRef.current = "";
+            pendingCustomScaleRangeSignatureRef.current = "";
+          }
         }
       });
     }, SELECTION_SYNC_DELAY_MS);
@@ -667,13 +704,14 @@ export default function StrategySelector({
     isCustomScaleLoaded,
     market,
     persistCustomScaleRange,
-    persistedCustomScaleRangeSignature,
-    router
+    persistedCustomScaleRangeSignature
   ]);
 
   useEffect(() => {
     if (optimisticSelectionSignature === persistedLiveSelectionSignature) {
       lastSyncedSelectionRef.current = optimisticSelectionSignature;
+      pendingSelectionSignatureRef.current = "";
+      setSavingSelectionKeys([]);
       if (selectionSyncTimerRef.current) {
         clearTimeout(selectionSyncTimerRef.current);
         selectionSyncTimerRef.current = null;
@@ -683,19 +721,29 @@ export default function StrategySelector({
     if (lastSyncedSelectionRef.current === optimisticSelectionSignature) return;
 
     if (selectionSyncTimerRef.current) clearTimeout(selectionSyncTimerRef.current);
+    const syncRun = selectionSyncRunRef.current + 1;
+    selectionSyncRunRef.current = syncRun;
     selectionSyncTimerRef.current = setTimeout(() => {
       const selectedKeysToSync = optimisticSelectedKeys;
       const signatureToSync = optimisticSelectionSignature;
       lastSyncedSelectionRef.current = signatureToSync;
+      pendingSelectionSignatureRef.current = signatureToSync;
       selectionSyncTimerRef.current = null;
 
       startSavingSelection(async () => {
         try {
           await persistLiveSelection(selectedKeysToSync, strategyScopeKeys);
-          router.refresh();
+          if (selectionSyncRunRef.current === syncRun && latestSelectionSignatureRef.current === signatureToSync) {
+            setSavingSelectionKeys([]);
+            router.refresh();
+          }
         } catch (error) {
           console.error("Failed to sync live strategy selection", error);
-          lastSyncedSelectionRef.current = "";
+          if (selectionSyncRunRef.current === syncRun) {
+            lastSyncedSelectionRef.current = "";
+            pendingSelectionSignatureRef.current = "";
+            setSavingSelectionKeys([]);
+          }
         }
       });
     }, SELECTION_SYNC_DELAY_MS);
@@ -719,6 +767,7 @@ export default function StrategySelector({
       }
       return;
     }
+    if (lastSyncedEditsRef.current === currentEditSignature) return;
     latestEditSignatureRef.current = currentEditSignature;
     if (editSyncTimerRef.current) clearTimeout(editSyncTimerRef.current);
 
@@ -733,9 +782,6 @@ export default function StrategySelector({
       startSavingEdits(async () => {
         try {
           await persistStrategyEdits(editsToSync);
-          if (editSyncRunRef.current === syncRun && latestEditSignatureRef.current === signatureToSync) {
-            router.refresh();
-          }
         } catch (error) {
           console.error("Failed to sync strategy edits", error);
           if (editSyncRunRef.current === syncRun) lastSyncedEditsRef.current = "";
@@ -749,7 +795,7 @@ export default function StrategySelector({
         editSyncTimerRef.current = null;
       }
     };
-  }, [currentEditSignature, edits, isLoaded, persistStrategyEdits, persistedEditsSignature, router]);
+  }, [currentEditSignature, edits, isLoaded, persistStrategyEdits, persistedEditsSignature]);
 
   useEffect(() => {
     if (!activeKey && !isCustomScaleOpen) return undefined;
@@ -776,7 +822,17 @@ export default function StrategySelector({
     };
   }, [activeKey, isCustomScaleOpen]);
 
-  function navigate(nextKeys: string[], nextDefaultKeys = defaultKeys) {
+  function navigate(nextKeys: string[]) {
+    const currentKeySet = new Set(optimisticSelectedKeys);
+    const nextKeySet = new Set(nextKeys);
+    const touchedKeys = strategyScopeKeys.filter((key) => currentKeySet.has(key) !== nextKeySet.has(key));
+
+    if (touchedKeys.length) {
+      setSavingSelectionKeys((current) => [...new Set([...current, ...touchedKeys])]);
+    }
+
+    pendingSelectionSignatureRef.current = nextKeys.join("|");
+    latestSelectionSignatureRef.current = nextKeys.join("|");
     setOptimisticSelectedKeys(nextKeys);
   }
 
@@ -1101,12 +1157,13 @@ export default function StrategySelector({
         {sortedStrategies.map((strategy) => {
           const checked = selected.has(strategy.key);
           const custom = Boolean(edits[strategy.key]);
+          const isSavingSelection = savingSelectionKeySet.has(strategy.key);
           const effective = currentEdit(strategy);
           const effectiveRiskRewardRatio = riskRewardRatio(effective.targetDollars, effective.riskDollars);
           const hasBacktestTrades = strategy.trades > 0;
           return (
             <div
-              className={`basketListRow ${checked ? "isEnabled" : "isDisabled"} ${custom ? "hasCustom" : ""}`}
+              className={`basketListRow ${checked ? "isEnabled" : "isDisabled"} ${custom ? "hasCustom" : ""} ${isSavingSelection ? "isSavingSelection" : ""}`}
               role="button"
               tabIndex={0}
               key={strategy.key}
@@ -1142,9 +1199,10 @@ export default function StrategySelector({
                 <input
                   type="checkbox"
                   checked={checked}
+                  aria-busy={isSavingSelection}
                   onChange={() => toggleStrategy(strategy.key)}
                 />
-                <span>{checked ? "On" : "Off"}</span>
+                <span>{isSavingSelection ? "Saving" : checked ? "On" : "Off"}</span>
               </label>
             </div>
           );
@@ -1272,9 +1330,8 @@ export default function StrategySelector({
               <label className="fieldControl">
                 <span>Take Profit floor $</span>
                 <input
-                  type="number"
-                  min="0.01"
-                  step="0.01"
+                  type="text"
+                  inputMode="decimal"
                   value={customScaleRange.targetFloor}
                   onChange={(event) => updateCustomScaleRange("targetFloor", event.target.value)}
                   autoFocus
@@ -1283,9 +1340,8 @@ export default function StrategySelector({
               <label className="fieldControl">
                 <span>Take Profit ceiling $</span>
                 <input
-                  type="number"
-                  min="0.01"
-                  step="0.01"
+                  type="text"
+                  inputMode="decimal"
                   value={customScaleRange.targetCeiling}
                   onChange={(event) => updateCustomScaleRange("targetCeiling", event.target.value)}
                 />
@@ -1293,9 +1349,8 @@ export default function StrategySelector({
               <label className="fieldControl">
                 <span>Stop Loss floor $</span>
                 <input
-                  type="number"
-                  min="0.01"
-                  step="0.01"
+                  type="text"
+                  inputMode="decimal"
                   value={customScaleRange.riskFloor}
                   onChange={(event) => updateCustomScaleRange("riskFloor", event.target.value)}
                 />
@@ -1303,9 +1358,8 @@ export default function StrategySelector({
               <label className="fieldControl">
                 <span>Stop Loss ceiling $</span>
                 <input
-                  type="number"
-                  min="0.01"
-                  step="0.01"
+                  type="text"
+                  inputMode="decimal"
                   value={customScaleRange.riskCeiling}
                   onChange={(event) => updateCustomScaleRange("riskCeiling", event.target.value)}
                 />

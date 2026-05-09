@@ -2,13 +2,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { executeAutoTrade } from "@/lib/auto-trader";
 import { autoTradeMarketForSignal } from "@/lib/auto-trade-platforms";
 import { dollarPerUnit } from "@/lib/instruments";
-import { fetchMarketBars } from "@/lib/market-data";
-import { saveCronRun, updateDatasetSyncStatus } from "@/lib/live-config";
+import { fetchStoredMarketBars } from "@/lib/market-data-store";
+import { saveCronRun, updateDatasetSyncRunStatus } from "@/lib/live-config";
 import { activeRules, evaluateLatestSignal } from "@/lib/live-signals";
 import { hasTrade, saveTrade } from "@/lib/storage";
 import { sendTelegram } from "@/lib/telegram";
 import { TOPSTEP_100K_ACCOUNT, reviewTopstepSignal, withTopstepGuardNote } from "@/lib/topstep";
-import type { CronResult, TradeAlert } from "@/lib/types";
+import type { Bar, CronResult, TradeAlert } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -18,6 +18,10 @@ function isAuthorized(request: NextRequest): "ok" | "missing-secret" | "bad-secr
   const secret = process.env.CRON_SECRET;
   if (!secret) return process.env.NODE_ENV === "production" ? "missing-secret" : "ok";
   return request.headers.get("authorization") === `Bearer ${secret}` ? "ok" : "bad-secret";
+}
+
+function errorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : "Unknown signal check error";
 }
 
 function signalDollars(trade: TradeAlert): { targetDollars: number; riskDollars: number } {
@@ -35,6 +39,22 @@ function genericSignalScore(trade: TradeAlert, riskDollars: number, targetDollar
   return trade.estimatedWinRatePct / 50 + Math.log1p(boundedProfitFactor) + Math.min(rewardRisk, 4) * 0.18;
 }
 
+function recordAssetTiming(
+  timings: Map<string, { assetKey: string; durationMs: number; rules: number; symbol: string }>,
+  rule: { assetKey: string; symbol: string },
+  durationMs: number
+): void {
+  const current = timings.get(rule.assetKey) ?? {
+    assetKey: rule.assetKey,
+    durationMs: 0,
+    rules: 0,
+    symbol: rule.symbol
+  };
+  current.durationMs += durationMs;
+  current.rules += 1;
+  timings.set(rule.assetKey, current);
+}
+
 async function runSignalCheck(): Promise<CronResult> {
   const result: CronResult = {
     checkedAt: new Date().toISOString(),
@@ -45,13 +65,15 @@ async function runSignalCheck(): Promise<CronResult> {
   };
   const candidates: Array<{ signal: ReturnType<typeof withTopstepGuardNote>; score: number; riskDollars: number }> = [];
   const rules = await activeRules();
-  const barsByAssetKey = new Map<string, Awaited<ReturnType<typeof fetchMarketBars>>>();
+  const barsByAssetKey = new Map<string, Bar[]>();
+  const assetTimings = new Map<string, { assetKey: string; durationMs: number; rules: number; symbol: string }>();
 
   for (const rule of rules) {
+    const ruleStartedAt = Date.now();
     try {
       let bars = barsByAssetKey.get(rule.assetKey);
       if (!bars) {
-        bars = await fetchMarketBars(rule);
+        bars = await fetchStoredMarketBars(rule);
         barsByAssetKey.set(rule.assetKey, bars);
       }
       const signal = evaluateLatestSignal(rule, bars);
@@ -93,8 +115,12 @@ async function runSignalCheck(): Promise<CronResult> {
         symbol: rule.symbol,
         message: error instanceof Error ? error.message : "Unknown error"
       });
+    } finally {
+      recordAssetTiming(assetTimings, rule, Date.now() - ruleStartedAt);
     }
   }
+
+  result.assetTimings = [...assetTimings.values()];
 
   const configuredMaxAlerts = Number(process.env.AUTO_TRADE_MAX_ALERTS_PER_CHECK ?? process.env.TOPSTEP_MAX_ALERTS_PER_CHECK ?? TOPSTEP_100K_ACCOUNT.maxAlertsPerCheck);
   const configuredMaxRisk = Number(process.env.AUTO_TRADE_MAX_RISK_PER_CHECK ?? process.env.TOPSTEP_MAX_RISK_PER_CHECK ?? TOPSTEP_100K_ACCOUNT.maxRiskPerCheck);
@@ -180,17 +206,51 @@ export async function GET(request: NextRequest) {
     });
   }
   const startedAt = Date.now();
-  const result = await runSignalCheck();
-  await saveCronRun(result);
-  await updateDatasetSyncStatus("lastSignalTradeCheckAt", result.checkedAt);
-  console.info("check-signals cron completed", {
-    durationMs: Date.now() - startedAt,
-    errors: result.errors.length,
-    generated: result.generated.length,
-    skippedDuplicates: result.skippedDuplicates.length,
-    skippedRisk: result.skippedRisk.length
-  });
-  return NextResponse.json(result);
+  const startedAtIso = new Date(startedAt).toISOString();
+  await updateDatasetSyncRunStatus("signalTradeCheck", {
+    error: undefined,
+    finishedAt: undefined,
+    startedAt: startedAtIso,
+    state: "running"
+  }).catch((error) => console.error("Failed to mark signal check running", error));
+
+  try {
+    const result = await runSignalCheck();
+    await saveCronRun(result);
+    const durationMs = Date.now() - startedAt;
+    const finishedAt = new Date().toISOString();
+    const failed = result.errors.length > 0;
+
+    await updateDatasetSyncRunStatus("signalTradeCheck", {
+      durationMs,
+      error: failed ? result.errors.map((entry) => `${entry.symbol}: ${entry.message}`).join("; ") : undefined,
+      finishedAt,
+      startedAt: startedAtIso,
+      state: failed ? "failed" : "success"
+    }).catch((error) => console.error("Failed to mark signal check finished", error));
+
+    console.info("check-signals cron completed", {
+      assetTimings: result.assetTimings,
+      durationMs,
+      errors: result.errors.length,
+      generated: result.generated.length,
+      skippedDuplicates: result.skippedDuplicates.length,
+      skippedRisk: result.skippedRisk.length
+    });
+    return NextResponse.json(result);
+  } catch (error) {
+    const durationMs = Date.now() - startedAt;
+    const message = errorMessage(error);
+    await updateDatasetSyncRunStatus("signalTradeCheck", {
+      durationMs,
+      error: message,
+      finishedAt: new Date().toISOString(),
+      startedAt: startedAtIso,
+      state: "failed"
+    }).catch((statusError) => console.error("Failed to mark signal check failed", statusError));
+    console.error("check-signals cron failed", error);
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
 }
 
 export async function POST(request: NextRequest) {

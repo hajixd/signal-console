@@ -779,34 +779,83 @@ function CandleContextMenu({ state }: { state: CandleMenuState }) {
 }
 
 export default function TradeHistory({ rows }: TradeHistoryProps) {
-  const [activeTrade, setActiveTrade] = useState<TradeHistoryRow | null>(null);
+  const [activeTradeId, setActiveTradeId] = useState<string | null>(null);
   const [chartState, setChartState] = useState<ChartState>({ status: "idle", bars: [] });
   const [chartTimeframe, setChartTimeframe] = useState<TradeChartTimeframe>("15m");
+  const activeTrade = useMemo(
+    () => (activeTradeId ? rows.find((row) => row.id === activeTradeId) ?? null : null),
+    [activeTradeId, rows]
+  );
+  const activeChartTrade = useMemo(
+    () =>
+      activeTrade
+        ? {
+            id: activeTrade.id,
+            symbol: activeTrade.symbol,
+            side: activeTrade.side,
+            entryIndex: activeTrade.entryIndex,
+            exitIndex: activeTrade.exitIndex,
+            signalTime: activeTrade.signalTime,
+            entryTime: activeTrade.entryTime,
+            exitTime: activeTrade.exitTime,
+            sourceTimeframe: activeTrade.sourceTimeframe,
+            phase: activeTrade.phase,
+            variantId: activeTrade.variantId,
+            modelName: activeTrade.modelName,
+            entryType: activeTrade.entryType,
+            entryPrice: activeTrade.entryPrice,
+            exitPrice: activeTrade.exitPrice,
+            targetPrice: activeTrade.targetPrice,
+            stopPrice: activeTrade.stopPrice,
+            pnlLabel: activeTrade.pnlLabel
+          }
+        : null,
+    [
+      activeTrade?.entryIndex,
+      activeTrade?.entryPrice,
+      activeTrade?.entryTime,
+      activeTrade?.entryType,
+      activeTrade?.exitIndex,
+      activeTrade?.exitPrice,
+      activeTrade?.exitTime,
+      activeTrade?.id,
+      activeTrade?.modelName,
+      activeTrade?.phase,
+      activeTrade?.pnlLabel,
+      activeTrade?.side,
+      activeTrade?.signalTime,
+      activeTrade?.sourceTimeframe,
+      activeTrade?.stopPrice,
+      activeTrade?.symbol,
+      activeTrade?.targetPrice,
+      activeTrade?.variantId
+    ]
+  );
   const activeStats = activeTrade ? tradePathStats(activeTrade, chartState.bars) : { mfe: null, mae: null };
   const activeDurationLabel = activeTrade ? correctedDurationLabel(activeTrade, chartState.bars) : "";
 
-  useEffect(() => {
-    if (!activeTrade) return;
-    setActiveTrade(rows.find((row) => row.id === activeTrade.id) ?? null);
-  }, [activeTrade, rows]);
+  function openTrade(trade: TradeHistoryRow) {
+    setChartTimeframe(trade.sourceTimeframe ?? "15m");
+    setActiveTradeId(trade.id);
+  }
 
   useEffect(() => {
-    if (activeTrade) setChartTimeframe("15m");
-  }, [activeTrade?.id]);
+    if (activeTradeId && !activeTrade) setActiveTradeId(null);
+  }, [activeTrade, activeTradeId]);
 
   useEffect(() => {
-    if (!activeTrade) return undefined;
+    if (!activeTradeId) return undefined;
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     function closeOnEscape(event: KeyboardEvent) {
-      if (event.key === "Escape") setActiveTrade(null);
+      if (event.key === "Escape") setActiveTradeId(null);
     }
     document.addEventListener("keydown", closeOnEscape);
     return () => {
       document.body.style.overflow = previousOverflow;
       document.removeEventListener("keydown", closeOnEscape);
     };
-  }, [activeTrade]);
+  }, [activeTradeId]);
 
   useEffect(() => {
     if (!activeTrade) {
@@ -863,7 +912,16 @@ export default function TradeHistory({ rows }: TradeHistoryProps) {
       });
 
     return () => controller.abort();
-  }, [activeTrade, chartTimeframe]);
+  }, [
+    activeTrade?.entryIndex,
+    activeTrade?.entryTime,
+    activeTrade?.exitIndex,
+    activeTrade?.exitTime,
+    activeTrade?.id,
+    activeTrade?.market,
+    activeTrade?.symbol,
+    chartTimeframe
+  ]);
 
   const chartNotice =
     chartState.fallback && chartState.requestedTimeframe && chartState.timeframe
@@ -875,7 +933,7 @@ export default function TradeHistory({ rows }: TradeHistoryProps) {
       className="tradeModalBackdrop"
       role="presentation"
       onMouseDown={(event) => {
-        if (event.target === event.currentTarget) setActiveTrade(null);
+        if (event.target === event.currentTarget) setActiveTradeId(null);
       }}
     >
       <section
@@ -894,7 +952,7 @@ export default function TradeHistory({ rows }: TradeHistoryProps) {
             <span className={`tradeOutcomeBadge ${activeTrade.pnlClassName}`}>
               {activeTrade.pnlClassName === "up" ? "WIN" : activeTrade.pnlClassName === "down" ? "LOSS" : "FLAT"}
             </span>
-            <button type="button" onClick={() => setActiveTrade(null)}>
+            <button type="button" onClick={() => setActiveTradeId(null)}>
               Close
             </button>
           </div>
@@ -928,7 +986,7 @@ export default function TradeHistory({ rows }: TradeHistoryProps) {
             status={chartState.status}
             timeframe={chartTimeframe}
             timeframes={TRADE_CHART_TIMEFRAMES}
-            trade={activeTrade}
+            trade={activeChartTrade ?? activeTrade}
           />
         </div>
       </section>
@@ -979,11 +1037,11 @@ export default function TradeHistory({ rows }: TradeHistoryProps) {
                 role="button"
                 tabIndex={0}
                 aria-label={`Open ${trade.symbol} ${trade.modelName} trade details`}
-                onClick={() => setActiveTrade(trade)}
+                onClick={() => openTrade(trade)}
                 onKeyDown={(event) => {
                   if (event.key === "Enter" || event.key === " ") {
                     event.preventDefault();
-                    setActiveTrade(trade);
+                    openTrade(trade);
                   }
                 }}
               >

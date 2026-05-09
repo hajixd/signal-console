@@ -427,17 +427,31 @@ function tradeLogicalRange(candles: MappedCandle[], entryCandle: MappedCandle | 
   const end = Math.max(entryPosition, exitPosition);
   const tradeWindow = Math.max(10, end - start + 1);
   const fullCandleCount = Math.max(1, candles.length);
-  const windowSize = Math.max(45, Math.ceil(tradeWindow * 3));
-  const leftPadding = Math.max(8, Math.ceil(tradeWindow * 0.65));
-  const rightPadding = Math.max(12, Math.ceil(tradeWindow * 1.2));
-  const rightWhitespace = Math.max(8, Math.ceil(windowSize * 0.18));
-  let from = Math.max(0, start - leftPadding);
-  let to = Math.min(fullCandleCount - 1 + rightWhitespace, end + rightPadding);
+  const windowSize = Math.max(60, Math.ceil(tradeWindow * 3));
+  const edgeWhitespace = Math.max(30, Math.ceil(windowSize * 0.5));
+  const minFrom = -edgeWhitespace;
+  const maxTo = fullCandleCount - 1 + edgeWhitespace;
+  const midpoint = (start + end) / 2;
+  let from = midpoint - (windowSize - 1) / 2;
+  let to = midpoint + (windowSize - 1) / 2;
 
-  if (to - from + 1 < windowSize) to = Math.min(fullCandleCount - 1 + rightWhitespace, from + windowSize - 1);
-  if (to - from + 1 < windowSize) from = Math.max(0, to - windowSize + 1);
+  if (from < minFrom) {
+    to += minFrom - from;
+    from = minFrom;
+  }
+  if (to > maxTo) {
+    const overshoot = to - maxTo;
+    from = Math.max(minFrom, from - overshoot);
+    to = maxTo;
+  }
 
   return { from, to };
+}
+
+function applyTradeChartRange(chart: IChartApi, series: CandleSeriesApi, logicalRange: NumberRange, priceRange: NumberRange | null): void {
+  chart.timeScale().setVisibleLogicalRange(logicalRange);
+  series.priceScale().applyOptions({ autoScale: false, scaleMargins: { top: 0.12, bottom: 0.16 } });
+  if (priceRange) series.priceScale().setVisibleRange(priceRange);
 }
 
 function tradePriceRange(candles: MappedCandle[], levels: number[], logicalRange: NumberRange): NumberRange | null {
@@ -2681,19 +2695,26 @@ export default function TradePriceChart({
     lockedPriceRangeRef.current = priceRange;
     rangeReadyRef.current = false;
 
-    chart.timeScale().setVisibleLogicalRange(logicalRange);
-    series.priceScale().applyOptions({ autoScale: false, scaleMargins: { top: 0.12, bottom: 0.16 } });
-    if (priceRange) series.priceScale().setVisibleRange(priceRange);
+    applyTradeChartRange(chart, series, logicalRange, priceRange);
+    let secondRangeAnimationFrame = 0;
     const rangeAnimationFrame = window.requestAnimationFrame(() => {
-      chart.timeScale().setVisibleLogicalRange(logicalRange);
-      if (priceRange) series.priceScale().setVisibleRange(priceRange);
-      rangeReadyRef.current = true;
+      applyTradeChartRange(chart, series, logicalRange, priceRange);
+      secondRangeAnimationFrame = window.requestAnimationFrame(() => {
+        applyTradeChartRange(chart, series, logicalRange, priceRange);
+        rangeReadyRef.current = true;
+      });
     });
+    const rangeTimeout = window.setTimeout(() => {
+      applyTradeChartRange(chart, series, logicalRange, priceRange);
+      rangeReadyRef.current = true;
+    }, 180);
 
     const handleCrosshairMove = (param: { time?: unknown }) => {
       if (typeof param.time !== "number") return;
       const source = sourceByTime.get(param.time);
-      if (source) setActiveBar(source);
+      if (source) {
+        setActiveBar((current) => (current?.time === source.time ? current : source));
+      }
     };
 
     chart.subscribeCrosshairMove(handleCrosshairMove);
@@ -2701,6 +2722,8 @@ export default function TradePriceChart({
     return () => {
       chart.unsubscribeCrosshairMove(handleCrosshairMove);
       window.cancelAnimationFrame(rangeAnimationFrame);
+      if (secondRangeAnimationFrame) window.cancelAnimationFrame(secondRangeAnimationFrame);
+      window.clearTimeout(rangeTimeout);
       markers.detach();
       series.detachPrimitive(positionOverlay);
       chart.remove();
@@ -2745,8 +2768,12 @@ export default function TradePriceChart({
     series.setData(candleData);
 
     series.priceScale().applyOptions({ autoScale: false });
-    if (currentPriceRange) series.priceScale().setVisibleRange(currentPriceRange);
-    if (currentLogicalRange) chart.timeScale().setVisibleLogicalRange(currentLogicalRange);
+    if (!rangeReadyRef.current && lockedLogicalRangeRef.current) {
+      applyTradeChartRange(chart, series, lockedLogicalRangeRef.current, lockedPriceRangeRef.current);
+    } else {
+      if (currentPriceRange) series.priceScale().setVisibleRange(currentPriceRange);
+      if (currentLogicalRange) chart.timeScale().setVisibleLogicalRange(currentLogicalRange);
+    }
 
     const snapshot: TradeVisualSnapshot = {
       currentPrice: currentPartialSource?.close ?? null,

@@ -51,6 +51,15 @@ function applyStrategyEdit(rule: StrategyRule, edit: SavedStrategyEdit | undefin
   };
 }
 
+function explicitRuleTimeframe(rule: StrategyRule): string | null {
+  return rule.variantId?.split("|").find((part) => part.startsWith("tf="))?.slice(3) || null;
+}
+
+function isSupportedLiveTimeframe(rule: StrategyRule): boolean {
+  const timeframe = explicitRuleTimeframe(rule);
+  return !timeframe || timeframe === "15m";
+}
+
 function finiteNumber(value: number | null | undefined): value is number {
   return typeof value === "number" && Number.isFinite(value);
 }
@@ -148,7 +157,7 @@ export async function activeRules(): Promise<StrategyRule[]> {
   if (!selectedDatasetIds.length) return [];
 
   const enabled = new Set(selectedDatasetIds);
-  return rules.filter((rule) => rule.datasetId && enabled.has(rule.datasetId));
+  return rules.filter((rule) => rule.datasetId && enabled.has(rule.datasetId) && isSupportedLiveTimeframe(rule));
 }
 
 export function evaluateLatestSignal(rule: StrategyRule, rawBars: Bar[]): TradeAlert | null {
