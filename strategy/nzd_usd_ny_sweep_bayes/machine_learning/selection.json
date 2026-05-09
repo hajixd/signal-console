@@ -4,8 +4,28 @@
   "folder": "nzd_usd_ny_sweep_bayes",
   "assetKey": "nzd_usd",
   "phase": "ny_sweep_playbook",
-  "variantId": "ny_sweep_v4|model=bayes|min=0.70|start=420|end=600|max_tests=2|risk_min=0|risk_max=30|min_wick=0.35|rr=2|max_bars=288|one_trade=1",
-  "source": "ny_sweep_playbook_v4_bayes",
-  "oneTradePerDay": true,
-  "costUnits": 0.0
+  "variantId": "ny_sweep_v4|model=bayes|min=0.68|start=420|end=600|max_tests=2|risk_min=0|risk_max=30|min_wick=0.35|rr=1.75|max_bars=96|one_trade=0",
+  "source": "pre_2022_ml_holdout_rebuild_2026_05",
+  "oneTradePerDay": false,
+  "costUnits": 0.0,
+  "trainingWindow": {
+    "start": "asset_start",
+    "end": "2021-12-31"
+  },
+  "forwardWindow": {
+    "start": "2022-01-01",
+    "end": "asset_latest"
+  },
+  "selectionMethod": "Deterministic lightweight bayes scorer/parameter set selected on candles before 2022-01-01; post-2022 backtest output regenerated without refitting.",
+  "selectedTrainingProfitFactor": 2.634199,
+  "selectedTrainingTrades": 10,
+  "selectedForwardProfitFactor": 1.751454,
+  "selectedForwardTrades": 20,
+  "forwardWins": 10,
+  "forwardLosses": 10,
+  "forwardTotalR": 7.514541,
+  "forwardAverageR": 0.375727,
+  "forwardMaxDrawdownR": 5.272727,
+  "verificationSummary": "Rebuilt ML holdout with fast deterministic engine mode. Training/certification uses only data before 2022-01-01; generated CSV and displayed stats use trades from 2022-01-01 onward. Training: 10 trades, PF 2.63, 6.54R. Forward: 20 trades, PF 1.75, 7.51R.",
+  "researchSummary": "Pre-2022 rebuilt NZD/USD NY Sweep V4 Naive Bayes lightweight bayes configuration. The deterministic scorer/parameters were selected on history before 2022-01-01; post-2022 trades are forward output."
 }

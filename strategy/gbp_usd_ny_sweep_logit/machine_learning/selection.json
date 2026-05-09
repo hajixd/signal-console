@@ -4,8 +4,28 @@
   "folder": "gbp_usd_ny_sweep_logit",
   "assetKey": "gbp_usd",
   "phase": "ny_sweep_playbook",
-  "variantId": "ny_sweep_v4|model=logit|min=0.5|start=420|end=510|max_tests=1|risk_min=8|risk_max=27|min_wick=0.15|rr=2|max_bars=144|one_trade=1",
-  "source": "metadata_tuner_holdout_2026",
+  "variantId": "ny_sweep_v4|model=logit|min=0.48|start=420|end=540|max_tests=1|risk_min=6|risk_max=32|min_wick=0.15|rr=1.75|max_bars=96|one_trade=0",
+  "source": "pre_2022_ml_holdout_rebuild_2026_05",
   "oneTradePerDay": false,
-  "costUnits": 0.0
+  "costUnits": 0.0,
+  "trainingWindow": {
+    "start": "asset_start",
+    "end": "2021-12-31"
+  },
+  "forwardWindow": {
+    "start": "2022-01-01",
+    "end": "asset_latest"
+  },
+  "selectionMethod": "Deterministic lightweight logit scorer/parameter set selected on candles before 2022-01-01; post-2022 backtest output regenerated without refitting.",
+  "selectedTrainingProfitFactor": 1.216919,
+  "selectedTrainingTrades": 39,
+  "selectedForwardProfitFactor": 1.567398,
+  "selectedForwardTrades": 93,
+  "forwardWins": 44,
+  "forwardLosses": 49,
+  "forwardTotalR": 27.953792,
+  "forwardAverageR": 0.300578,
+  "forwardMaxDrawdownR": 7,
+  "verificationSummary": "Rebuilt ML holdout with fast deterministic engine mode. Training/certification uses only data before 2022-01-01; generated CSV and displayed stats use trades from 2022-01-01 onward. Training: 39 trades, PF 1.22, 4.99R. Forward: 93 trades, PF 1.57, 27.95R.",
+  "researchSummary": "Pre-2022 rebuilt GBP/USD NY Sweep V4 Logit lightweight logit configuration. The deterministic scorer/parameters were selected on history before 2022-01-01; post-2022 trades are forward output."
 }

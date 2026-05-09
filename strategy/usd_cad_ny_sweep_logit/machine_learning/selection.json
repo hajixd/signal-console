@@ -4,8 +4,28 @@
   "folder": "usd_cad_ny_sweep_logit",
   "assetKey": "usd_cad",
   "phase": "ny_sweep_playbook",
-  "variantId": "ny_sweep_v4|model=logit|min=0.54|start=480|end=540|max_tests=2|risk_min=0|risk_max=30|min_wick=0|rr=2|max_bars=288|one_trade=1",
-  "source": "ny_sweep_playbook_v4_logit",
-  "oneTradePerDay": true,
-  "costUnits": 0.0
+  "variantId": "ny_sweep_v4|model=logit|min=0.54|start=480|end=570|max_tests=2|risk_min=0|risk_max=35|min_wick=0|rr=1.75|max_bars=144|one_trade=0",
+  "source": "pre_2022_ml_holdout_rebuild_2026_05",
+  "oneTradePerDay": false,
+  "costUnits": 0.0,
+  "trainingWindow": {
+    "start": "asset_start",
+    "end": "2021-12-31"
+  },
+  "forwardWindow": {
+    "start": "2022-01-01",
+    "end": "asset_latest"
+  },
+  "selectionMethod": "Deterministic lightweight logit scorer/parameter set selected on candles before 2022-01-01; post-2022 backtest output regenerated without refitting.",
+  "selectedTrainingProfitFactor": 1.31622,
+  "selectedTrainingTrades": 21,
+  "selectedForwardProfitFactor": 1.575361,
+  "selectedForwardTrades": 40,
+  "forwardWins": 19,
+  "forwardLosses": 21,
+  "forwardTotalR": 12.082581,
+  "forwardAverageR": 0.302065,
+  "forwardMaxDrawdownR": 5.789394,
+  "verificationSummary": "Rebuilt ML holdout with fast deterministic engine mode. Training/certification uses only data before 2022-01-01; generated CSV and displayed stats use trades from 2022-01-01 onward. Training: 21 trades, PF 1.32, 3.79R. Forward: 40 trades, PF 1.58, 12.08R.",
+  "researchSummary": "Pre-2022 rebuilt USD/CAD NY Sweep V4 Logit lightweight logit configuration. The deterministic scorer/parameters were selected on history before 2022-01-01; post-2022 trades are forward output."
 }

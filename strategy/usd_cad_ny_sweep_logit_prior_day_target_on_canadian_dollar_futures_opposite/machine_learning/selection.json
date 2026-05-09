@@ -4,8 +4,8 @@
   "folder": "usd_cad_ny_sweep_logit_prior_day_target_on_canadian_dollar_futures_opposite",
   "assetKey": "canadian_dollar_futures",
   "phase": "ny_sweep_playbook",
-  "variantId": "ny_sweep_v4|model=logit|min=0.5|start=480|end=570|max_tests=2|risk_min=0|risk_max=35|min_wick=0|rr=1.75|max_bars=96|one_trade=0",
-  "source": "metadata_tuner_holdout_2026",
+  "variantId": "ny_sweep_v4|model=logit|min=0.48|start=480|end=600|max_tests=2|risk_min=0|risk_max=40|min_wick=0|rr=1.5|max_bars=96|one_trade=0",
+  "source": "pre_2022_ml_holdout_rebuild_2026_05",
   "oneTradePerDay": false,
   "stopLossPolicy": {
     "mode": "signal_extreme",
@@ -23,5 +23,25 @@
     "maxConfidence": 0.8
   },
   "costUnits": 0.0,
-  "invertSignal": true
+  "invertSignal": true,
+  "trainingWindow": {
+    "start": "asset_start",
+    "end": "2021-12-31"
+  },
+  "forwardWindow": {
+    "start": "2022-01-01",
+    "end": "asset_latest"
+  },
+  "selectionMethod": "Deterministic lightweight logit scorer/parameter set selected on candles before 2022-01-01; post-2022 backtest output regenerated without refitting.",
+  "selectedTrainingProfitFactor": 1.247337,
+  "selectedTrainingTrades": 377,
+  "selectedForwardProfitFactor": 1.269689,
+  "selectedForwardTrades": 153,
+  "forwardWins": 32,
+  "forwardLosses": 121,
+  "forwardTotalR": 32.632376,
+  "forwardAverageR": 0.213284,
+  "forwardMaxDrawdownR": 27.452381,
+  "verificationSummary": "Rebuilt ML holdout with fast deterministic engine mode. Training/certification uses only data before 2022-01-01; generated CSV and displayed stats use trades from 2022-01-01 onward. Training: 377 trades, PF 1.25, 72.27R. Forward: 153 trades, PF 1.27, 32.63R.",
+  "researchSummary": "Pre-2022 rebuilt USD/CAD NY Sweep Logit Prior-Day Target on Canadian Dollar Futures Opposite lightweight logit configuration. The deterministic scorer/parameters were selected on history before 2022-01-01; post-2022 trades are forward output."
 }

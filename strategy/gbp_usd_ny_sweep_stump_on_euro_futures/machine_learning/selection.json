@@ -4,8 +4,28 @@
   "folder": "gbp_usd_ny_sweep_stump_on_euro_futures",
   "assetKey": "euro_futures",
   "phase": "ny_sweep_playbook",
-  "variantId": "ny_sweep_v4|model=stump|min=0.60|start=420|end=510|max_tests=2|risk_min=10|risk_max=22|min_wick=0.50|rr=2|max_bars=288|one_trade=1",
-  "source": "ny_sweep_playbook_v4_stump",
-  "oneTradePerDay": true,
-  "costUnits": 0.0
+  "variantId": "ny_sweep_v4|model=stump|min=0.6|start=420|end=540|max_tests=2|risk_min=10|risk_max=27|min_wick=0.5|rr=1.75|max_bars=144|one_trade=0",
+  "source": "pre_2022_ml_holdout_rebuild_2026_05",
+  "oneTradePerDay": false,
+  "costUnits": 0.0,
+  "trainingWindow": {
+    "start": "asset_start",
+    "end": "2021-12-31"
+  },
+  "forwardWindow": {
+    "start": "2022-01-01",
+    "end": "asset_latest"
+  },
+  "selectionMethod": "Deterministic lightweight stump scorer/parameter set selected on candles before 2022-01-01; post-2022 backtest output regenerated without refitting.",
+  "selectedTrainingProfitFactor": 1.21421,
+  "selectedTrainingTrades": 171,
+  "selectedForwardProfitFactor": 1.17742,
+  "selectedForwardTrades": 62,
+  "forwardWins": 25,
+  "forwardLosses": 37,
+  "forwardTotalR": 6.564522,
+  "forwardAverageR": 0.105879,
+  "forwardMaxDrawdownR": 10,
+  "verificationSummary": "Rebuilt ML holdout with fast deterministic engine mode. Training/certification uses only data before 2022-01-01; generated CSV and displayed stats use trades from 2022-01-01 onward. Training: 171 trades, PF 1.21, 21.64R. Forward: 62 trades, PF 1.18, 6.56R.",
+  "researchSummary": "Pre-2022 rebuilt GBP/USD NY Sweep V4 Stump on Euro Futures lightweight stump configuration. The deterministic scorer/parameters were selected on history before 2022-01-01; post-2022 trades are forward output."
 }

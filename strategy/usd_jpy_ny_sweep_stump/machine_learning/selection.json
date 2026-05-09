@@ -4,12 +4,31 @@
   "folder": "usd_jpy_ny_sweep_stump",
   "assetKey": "usd_jpy",
   "phase": "ny_sweep_playbook",
-  "variantId": "ny_sweep_v4|model=stump|min=0.60|start=420|end=540|max_tests=1|risk_min=10|risk_max=22|min_wick=0.50|rr=2|max_bars=288|one_trade=1",
-  "source": "tuning_summary_recovered_2026",
-  "selectionMethod": "materialized_from_tuning_summary",
+  "variantId": "ny_sweep_v4|model=stump|min=0.58|start=420|end=570|max_tests=1|risk_min=8|risk_max=27|min_wick=0.5|rr=2|max_bars=288|one_trade=0",
+  "source": "pre_2022_ml_holdout_rebuild_2026_05",
+  "selectionMethod": "Deterministic lightweight stump scorer/parameter set selected on candles before 2022-01-01; post-2022 backtest output regenerated without refitting.",
   "recoveredForwardProfitFactor": 2.666667,
   "recoveredForwardTrades": 28,
   "recoveredForwardTotalR": 20.0,
-  "oneTradePerDay": true,
-  "costUnits": 0.0
+  "oneTradePerDay": false,
+  "costUnits": 0.0,
+  "trainingWindow": {
+    "start": "asset_start",
+    "end": "2021-12-31"
+  },
+  "forwardWindow": {
+    "start": "2022-01-01",
+    "end": "asset_latest"
+  },
+  "selectedTrainingProfitFactor": 2,
+  "selectedTrainingTrades": 8,
+  "selectedForwardProfitFactor": 2,
+  "selectedForwardTrades": 44,
+  "forwardWins": 22,
+  "forwardLosses": 22,
+  "forwardTotalR": 22,
+  "forwardAverageR": 0.5,
+  "forwardMaxDrawdownR": 5,
+  "verificationSummary": "Rebuilt ML holdout with fast deterministic engine mode. Training/certification uses only data before 2022-01-01; generated CSV and displayed stats use trades from 2022-01-01 onward. Training: 8 trades, PF 2.00, 4.00R. Forward: 44 trades, PF 2.00, 22.00R.",
+  "researchSummary": "Pre-2022 rebuilt USD/JPY NY Sweep V4 Stump lightweight stump configuration. The deterministic scorer/parameters were selected on history before 2022-01-01; post-2022 trades are forward output."
 }

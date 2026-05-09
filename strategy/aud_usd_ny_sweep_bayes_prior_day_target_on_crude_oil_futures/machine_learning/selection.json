@@ -4,8 +4,8 @@
   "folder": "aud_usd_ny_sweep_bayes_prior_day_target_on_crude_oil_futures",
   "assetKey": "crude_oil_futures",
   "phase": "ny_sweep_playbook",
-  "variantId": "ny_sweep_v4|model=bayes|min=0.52|start=420|end=510|max_tests=3|risk_min=10|risk_max=15|min_wick=0.35|rr=2|max_bars=288|one_trade=1",
-  "source": "metadata_tuner_holdout_2026",
+  "variantId": "ny_sweep_v4|model=bayes|min=0.52|start=420|end=510|max_tests=3|risk_min=10|risk_max=15|min_wick=0.35|rr=2|max_bars=288|one_trade=0",
+  "source": "pre_2022_ml_holdout_rebuild_2026_05",
   "oneTradePerDay": false,
   "stopLossPolicy": {
     "mode": "signal_extreme",
@@ -22,5 +22,25 @@
     "minConfidence": 0.6,
     "maxConfidence": 0.8
   },
-  "costUnits": 0.0
+  "costUnits": 0.0,
+  "trainingWindow": {
+    "start": "asset_start",
+    "end": "2021-12-31"
+  },
+  "forwardWindow": {
+    "start": "2022-01-01",
+    "end": "asset_latest"
+  },
+  "selectionMethod": "Deterministic lightweight bayes scorer/parameter set selected on candles before 2022-01-01; post-2022 backtest output regenerated without refitting.",
+  "selectedTrainingProfitFactor": 0.976093,
+  "selectedTrainingTrades": 137,
+  "selectedForwardProfitFactor": 1.736944,
+  "selectedForwardTrades": 26,
+  "forwardWins": 7,
+  "forwardLosses": 19,
+  "forwardTotalR": 14.001931,
+  "forwardAverageR": 0.538536,
+  "forwardMaxDrawdownR": 8.384615,
+  "verificationSummary": "Rebuilt ML holdout with fast deterministic engine mode. Training/certification uses only data before 2022-01-01; generated CSV and displayed stats use trades from 2022-01-01 onward. Training: 137 trades, PF 0.98, -2.63R. Forward: 26 trades, PF 1.74, 14.00R.",
+  "researchSummary": "Pre-2022 rebuilt AUD/USD NY Sweep Bayes Prior-Day Target on Crude Oil Futures lightweight bayes configuration. The deterministic scorer/parameters were selected on history before 2022-01-01; post-2022 trades are forward output."
 }

@@ -5,20 +5,27 @@
   "assetKey": "nasdaq_100_futures",
   "phase": "round_number_rejection",
   "variantId": "round_number_rejection|pre_ny|tf=15m|model=stump|min=0.70|step=100|touch=12|sweep=36|reclaim=10|prev_max=13.5|wick=0.38|atr_min=0.15|atr_max=3.5|risk_min=8|risk_max=60|stop=4|rr=3.0|trend=short_only|max_bars=12|one_trade=1",
-  "source": "psychological_round_number_decision_stump",
-  "researchSummary": "NQ 15m round-hundred resistance rejection strategy filtered by a one-feature decision stump. The selected setup keeps short-only pre-NY rejections where the prior 15m close is still within 13.5 points below the same 100-point handle, matching the theory that clustered limit orders repeatedly defend those handles before rejection.",
-  "selectionMethod": "Feature table built from completed round-hundred rejection candidates; a decision-stump gate over prior-close distance to the 100-point handle was widened from 13 to 13.5 points to increase trade count while keeping full-period profit factor above 2.",
-  "trainingWindow": "2022-01-01 through 2024-12-31",
-  "forwardWindow": "2025-01-01 through 2026-05-05",
-  "selectedTrainingProfitFactor": 2.36855,
-  "selectedTrainingTrades": 42,
-  "selectedForwardProfitFactor": 1.125,
-  "selectedForwardTrades": 11,
-  "forwardWins": 3,
-  "forwardLosses": 8,
-  "forwardTotalR": 1,
-  "forwardAverageR": 0.090909,
-  "forwardMaxDrawdownR": 7,
+  "source": "pre_2022_ml_holdout_rebuild_2026_05",
+  "researchSummary": "Pre-2022 rebuilt NQ Round Hundred Rejection 15m lightweight stump configuration. The deterministic scorer/parameters were selected on history before 2022-01-01; post-2022 trades are forward output.",
+  "selectionMethod": "Deterministic lightweight stump scorer/parameter set selected on candles before 2022-01-01; post-2022 backtest output regenerated without refitting.",
+  "trainingWindow": {
+    "start": "asset_start",
+    "end": "2021-12-31"
+  },
+  "forwardWindow": {
+    "start": "2022-01-01",
+    "end": "asset_latest"
+  },
+  "selectedTrainingProfitFactor": 0.71254,
+  "selectedTrainingTrades": 152,
+  "selectedForwardProfitFactor": 2.01651,
+  "selectedForwardTrades": 53,
+  "forwardWins": 24,
+  "forwardLosses": 29,
+  "forwardTotalR": 28.725819,
+  "forwardAverageR": 0.541997,
+  "forwardMaxDrawdownR": 8,
   "oneTradePerDay": true,
-  "costUnits": 0
+  "costUnits": 0.0,
+  "verificationSummary": "Rebuilt ML holdout with fast deterministic engine mode. Training/certification uses only data before 2022-01-01; generated CSV and displayed stats use trades from 2022-01-01 onward. Training: 152 trades, PF 0.71, -20.78R. Forward: 53 trades, PF 2.02, 28.73R."
 }
