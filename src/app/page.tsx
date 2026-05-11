@@ -301,10 +301,14 @@ function challengeRulesFromParams(
 
 type SyncTileState = "idle" | "running" | "success" | "failed";
 
-function syncTileState(run: { startedAt?: string; state?: string } | undefined, lastSuccessfulAt?: string): SyncTileState {
+function syncTileState(
+  run: { startedAt?: string; state?: string } | undefined,
+  lastSuccessfulAt?: string,
+  runningTimeoutMs = 10 * 60_000
+): SyncTileState {
   if (run?.state === "running") {
     const startedAt = run.startedAt ? Date.parse(run.startedAt) : Number.NaN;
-    return Number.isFinite(startedAt) && Date.now() - startedAt > 10 * 60_000 ? "failed" : "running";
+    return Number.isFinite(startedAt) && Date.now() - startedAt > runningTimeoutMs ? "failed" : "running";
   }
   if (run?.state === "failed") return "failed";
   if (run?.state === "success" || lastSuccessfulAt) return "success";
@@ -527,7 +531,11 @@ export default async function Home({ searchParams }: HomeProps) {
   const legacyDatasetSyncAt = datasetStatus?.sync ? undefined : datasetStatus?.lastSyncAt;
   const marketDataSyncState = syncTileState(syncStatus.marketDataSync, syncStatus.lastMarketDataSyncAt ?? legacyDatasetSyncAt);
   const signalTradeCheckState = syncTileState(syncStatus.signalTradeCheck, syncStatus.lastSignalTradeCheckAt);
-  const dataValidityRefreshState = syncTileState(syncStatus.dataValidityRefresh, syncStatus.lastDataValidityRefreshAt ?? legacyDatasetSyncAt);
+  const dataValidityRefreshState = syncTileState(
+    syncStatus.dataValidityRefresh,
+    syncStatus.lastDataValidityRefreshAt ?? legacyDatasetSyncAt,
+    6 * 60 * 60_000
+  );
   const now = new Date();
   const nextMarketDataSyncAt = nextCronRunIso((date) => date.getUTCMinutes() % 5 === 0, now);
   const nextSignalTradeCheckAt = nextCronRunIso((date) => [2, 17, 32, 47].includes(date.getUTCMinutes()), now);

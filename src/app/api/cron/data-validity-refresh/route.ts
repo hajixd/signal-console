@@ -44,16 +44,17 @@ export async function GET(request: NextRequest) {
   try {
     const result = await dispatchBacktestRefresh("data-validity-refresh");
     const durationMs = Date.now() - startedAt;
-    const finishedAt = new Date().toISOString();
     const failed = !result.ok || result.status >= 400;
 
-    await updateDatasetSyncRunStatus("dataValidityRefresh", {
-      durationMs,
-      error: failed ? `Refresh returned status ${result.status}` : undefined,
-      finishedAt,
-      startedAt: startedAtIso,
-      state: failed ? "failed" : "success"
-    }).catch((error) => console.error("Failed to mark data validity refresh finished", error));
+    if (failed) {
+      await updateDatasetSyncRunStatus("dataValidityRefresh", {
+        durationMs,
+        error: `Refresh returned status ${result.status}`,
+        finishedAt: new Date().toISOString(),
+        startedAt: startedAtIso,
+        state: "failed"
+      }).catch((error) => console.error("Failed to mark data validity refresh failed", error));
+    }
 
     console.info("data-validity-refresh cron completed", {
       durationMs,

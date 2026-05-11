@@ -44,14 +44,21 @@ export async function GET(request: NextRequest) {
 
   try {
     const rules = await activeRules();
+    if (!rules.length) {
+      throw new Error("No active live strategies are enabled for market data sync.");
+    }
+
     const result = await refreshMarketDataForRules(rules);
     const durationMs = Date.now() - startedAt;
     const finishedAt = new Date().toISOString();
-    const failed = result.summary.errors.length > 0;
+    const failed = result.summary.errors.length > 0 || result.summary.assets.length === 0;
+    const failureMessage = result.summary.errors.length
+      ? result.summary.errors.map((entry) => `${entry.symbol}: ${entry.message}`).join("; ")
+      : "No market data assets were refreshed.";
 
     await updateDatasetSyncRunStatus("marketDataSync", {
       durationMs,
-      error: failed ? result.summary.errors.map((entry) => `${entry.symbol}: ${entry.message}`).join("; ") : undefined,
+      error: failed ? failureMessage : undefined,
       finishedAt,
       startedAt: startedAtIso,
       state: failed ? "failed" : "success"

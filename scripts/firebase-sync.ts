@@ -250,6 +250,11 @@ async function main(): Promise<void> {
 
   const fallbackStatus = defaultDatasetStatus();
   const existingStatus = (await getDatasetStatus()) ?? fallbackStatus;
+  const dataValidityStartedAt = existingStatus.sync?.dataValidityRefresh?.startedAt;
+  const dataValidityStartedMs = dataValidityStartedAt ? Date.parse(dataValidityStartedAt) : Number.NaN;
+  const dataValidityDurationMs = Number.isFinite(dataValidityStartedMs)
+    ? Math.max(0, Date.parse(generatedAt) - dataValidityStartedMs)
+    : undefined;
   await saveDatasetStatus({
     ...existingStatus,
     backtestManifestPath: manifestDestination,
@@ -258,10 +263,16 @@ async function main(): Promise<void> {
     strategyPrefix: storageObjectPath("strategy"),
     sync: {
       ...(existingStatus.sync ?? {}),
+      dataValidityRefresh: {
+        durationMs: dataValidityDurationMs,
+        finishedAt: generatedAt,
+        startedAt: dataValidityStartedAt ?? generatedAt,
+        state: "success"
+      },
       lastDataValidityRefreshAt: generatedAt
     },
     uploadedFilesCount: uploadedFilesCount + 1,
-    updatedAt: fallbackStatus.updatedAt
+    updatedAt: generatedAt
   });
 
   console.log(`uploaded manifest ${manifestDestination}`);

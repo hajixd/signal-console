@@ -65,6 +65,10 @@ async function runSignalCheck(): Promise<CronResult> {
   };
   const candidates: Array<{ signal: ReturnType<typeof withTopstepGuardNote>; score: number; riskDollars: number }> = [];
   const rules = await activeRules();
+  if (!rules.length) {
+    throw new Error("No active live strategies are enabled for signal checks.");
+  }
+
   const barsByAssetKey = new Map<string, Bar[]>();
   const assetTimings = new Map<string, { assetKey: string; durationMs: number; rules: number; symbol: string }>();
 

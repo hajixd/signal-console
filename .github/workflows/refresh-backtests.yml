@@ -1,6 +1,8 @@
 name: Refresh Backtests
 
 on:
+  schedule:
+    - cron: "0 */12 * * *"
   workflow_dispatch:
 
 concurrency:

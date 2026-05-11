@@ -2,15 +2,15 @@
   "crons": [
     {
       "path": "/api/cron/market-data-sync",
-      "schedule": "0 14 * * *"
+      "schedule": "*/5 * * * *"
     },
     {
       "path": "/api/cron/check-signals",
-      "schedule": "5 14 * * *"
+      "schedule": "2,17,32,47 * * * *"
     },
     {
       "path": "/api/cron/data-validity-refresh",
-      "schedule": "10 14 * * *"
+      "schedule": "0 */12 * * *"
     }
   ]
 }
