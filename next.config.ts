@@ -11,13 +11,14 @@ const nextConfig: NextConfig = {
       "./cache/**",
       "./data/**",
       "./docs/**",
-      "./strategy/**/backtest_trades.csv",
       "./strategy/research_summary.csv",
       "./strategy/tuning_summary.csv"
     ]
   },
   outputFileTracingIncludes: {
     "/*": [
+      "./cache/backtest-manifest.json",
+      "./strategy/**/backtest_trades.csv",
       "./node_modules/@google-cloud/**",
       "./node_modules/firebase-admin/**",
       "./node_modules/gaxios/**",
