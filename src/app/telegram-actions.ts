@@ -1,6 +1,6 @@
 "use server";
 
-import { sendTelegramText, telegramConfigured } from "@/lib/telegram";
+import { sendTelegramText, telegramConfigured, telegramGroupInviteLink } from "@/lib/telegram";
 
 export type TestTelegramAlertResult = {
   error?: string;
@@ -10,11 +10,13 @@ export type TestTelegramAlertResult = {
 
 function defaultMessage(): string {
   return [
-    "Trading Bot test alert",
-    `Checked at ${new Date().toISOString()}`,
+    "<b>Trading Bot Alerts</b>",
+    "<b>Manual Test</b>",
+    `Checked at: ${new Date().toISOString()}`,
+    telegramGroupInviteLink() ? `Join link: ${telegramGroupInviteLink()}` : "",
     "",
-    "This is a manual verification alert from the dashboard header."
-  ].join("\n");
+    "This group is ready for live trade signals and TP/SL updates."
+  ].filter(Boolean).join("\n");
 }
 
 export async function sendTestTelegramAlert(): Promise<TestTelegramAlertResult> {

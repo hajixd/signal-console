@@ -469,6 +469,17 @@ Optional Topstep-style live limits:
 - `TOPSTEP_MAX_ALERTS_PER_CHECK`
 - `TOPSTEP_MAX_RISK_PER_CHECK`
 
+Telegram alerts:
+
+- `TELEGRAM_BOT_TOKEN`
+- `TELEGRAM_GROUP_CHAT_ID`
+- `TELEGRAM_GROUP_INVITE_LINK`
+- `TELEGRAM_GROUP_TITLE`
+- `TELEGRAM_TRADE_UPDATE_LOOKBACK_HOURS`
+- `TELEGRAM_BOT_USERNAME`
+
+Create the Telegram group in Telegram, add the bot as a member, make it an admin if you want it to post without restrictions, then set `TELEGRAM_GROUP_CHAT_ID` to the group chat id. Set `TELEGRAM_GROUP_INVITE_LINK` to the group's public or invite link so dashboard users can join from the header. The signal cron sends organized entry alerts and one TP/SL follow-up when a recent stored trade reaches its level. `TELEGRAM_TRADE_UPDATE_LOOKBACK_HOURS` defaults to 72 to avoid backfilling old alerts into a new group.
+
 ## Admin Routes
 
 Both admin routes require `Authorization: Bearer <APP_ADMIN_SECRET>` and fall back to `CRON_SECRET` if `APP_ADMIN_SECRET` is unset.

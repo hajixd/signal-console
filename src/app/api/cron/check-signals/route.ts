@@ -2,11 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { executeAutoTrade } from "@/lib/auto-trader";
 import { autoTradeMarketForSignal } from "@/lib/auto-trade-platforms";
 import { dollarPerUnit } from "@/lib/instruments";
-import { fetchStoredMarketBars } from "@/lib/market-data-store";
+import { fetchStoredAssetBars, fetchStoredMarketBars } from "@/lib/market-data-store";
 import { saveCronRun, updateDatasetSyncRunStatus } from "@/lib/live-config";
 import { activeRules, evaluateLatestSignal } from "@/lib/live-signals";
-import { hasTrade, saveTrade } from "@/lib/storage";
-import { sendTelegram } from "@/lib/telegram";
+import { getTrades, hasTrade, saveTrade } from "@/lib/storage";
+import { sendTelegram, sendTelegramOutcome } from "@/lib/telegram";
 import { TOPSTEP_100K_ACCOUNT, reviewTopstepSignal, withTopstepGuardNote } from "@/lib/topstep";
 import type { Bar, CronResult, TradeAlert } from "@/lib/types";
 
@@ -31,6 +31,95 @@ function signalDollars(trade: TradeAlert): { targetDollars: number; riskDollars:
     riskDollars: Math.abs(trade.slUnits * unitValue * sizeMultiplier),
     targetDollars: Math.abs(trade.tpUnits * unitValue * sizeMultiplier)
   };
+}
+
+type TradeLifecycleHit = {
+  pnlDollars: number;
+  price: number;
+  rMultiple: number;
+  status: "take_profit" | "stop_loss";
+  time: string;
+};
+
+function lifecycleLookbackMs(): number {
+  const hours = Number(process.env.TELEGRAM_TRADE_UPDATE_LOOKBACK_HOURS ?? 72);
+  return (Number.isFinite(hours) && hours > 0 ? hours : 72) * 60 * 60_000;
+}
+
+function tradeLifecycleHit(trade: TradeAlert, bars: Bar[]): TradeLifecycleHit | null {
+  const signalTime = Date.parse(trade.signalTime);
+  const trackedBars = bars.filter((bar) => Date.parse(bar.time) > signalTime);
+  if (!trackedBars.length) return null;
+  const dollars = signalDollars(trade);
+  const rewardRisk = dollars.riskDollars > 0 ? dollars.targetDollars / dollars.riskDollars : 0;
+
+  for (const bar of trackedBars) {
+    const hitTakeProfit =
+      trade.side === "long" ? bar.high >= trade.takeProfitPrice : bar.low <= trade.takeProfitPrice;
+    const hitStopLoss =
+      trade.side === "long" ? bar.low <= trade.stopLossPrice : bar.high >= trade.stopLossPrice;
+
+    if (!hitTakeProfit && !hitStopLoss) continue;
+
+    const status = hitStopLoss ? "stop_loss" : "take_profit";
+    return {
+      pnlDollars: status === "take_profit" ? dollars.targetDollars : -dollars.riskDollars,
+      price: status === "take_profit" ? trade.takeProfitPrice : trade.stopLossPrice,
+      rMultiple: status === "take_profit" ? rewardRisk : -1,
+      status,
+      time: bar.time
+    };
+  }
+
+  return null;
+}
+
+async function notifyTradeLifecycles(result: CronResult, barsByAssetKey: Map<string, Bar[]>): Promise<void> {
+  const oldestSignalTime = Date.now() - lifecycleLookbackMs();
+  const openTrades = (await getTrades()).filter(
+    (trade) =>
+      trade.status === "alerted" &&
+      !trade.lifecycleNotifiedAt &&
+      trade.lifecycleStatus !== "take_profit" &&
+      trade.lifecycleStatus !== "stop_loss" &&
+      (Date.parse(trade.signalTime) || 0) >= oldestSignalTime &&
+      Boolean(trade.assetKey)
+  );
+
+  for (const trade of openTrades) {
+    try {
+      const assetKey = trade.assetKey!;
+      let bars = barsByAssetKey.get(assetKey);
+      if (!bars) {
+        bars = await fetchStoredAssetBars(assetKey);
+        barsByAssetKey.set(assetKey, bars);
+      }
+
+      const hit = tradeLifecycleHit(trade, bars);
+      if (!hit) continue;
+
+      const updatedTrade: TradeAlert = {
+        ...trade,
+        lifecycleNotifiedAt: new Date().toISOString(),
+        lifecyclePnlDollars: hit.pnlDollars,
+        lifecyclePrice: hit.price,
+        lifecycleRMultiple: hit.rMultiple,
+        lifecycleStatus: hit.status,
+        lifecycleTime: hit.time
+      };
+      const notification = await sendTelegramOutcome(updatedTrade);
+      await saveTrade({
+        ...updatedTrade,
+        telegramLifecycleError: notification.error,
+        telegramLifecycleStatus: notification.status
+      });
+    } catch (error) {
+      result.errors.push({
+        symbol: trade.symbol,
+        message: `Trade lifecycle check failed: ${errorMessage(error)}`
+      });
+    }
+  }
 }
 
 function genericSignalScore(trade: TradeAlert, riskDollars: number, targetDollars: number): number {
@@ -190,6 +279,8 @@ async function runSignalCheck(): Promise<CronResult> {
     await saveTrade(trade);
     result.generated.push(trade);
   }
+
+  await notifyTradeLifecycles(result, barsByAssetKey);
 
   return result;
 }

@@ -35,6 +35,7 @@ import { defaultDatasetStatus, getDatasetStatus, getLiveConfig, type LiveConfig 
 import { allRules } from "@/lib/live-signals";
 import { projectAssetMode } from "@/lib/project-assets";
 import { getTrades, storageMode } from "@/lib/storage";
+import { telegramGroupInviteLink } from "@/lib/telegram";
 import { topstepSessionKey } from "@/lib/topstep";
 import type { TradeAlert } from "@/lib/types";
 
@@ -752,7 +753,8 @@ export default async function Home({ searchParams }: HomeProps) {
   const challengeHistoricalSessions = challengeSessionCount(challengeReplayTrades);
   const telegramBotUsername = process.env.TELEGRAM_BOT_USERNAME?.replace(/^@/, "");
   const telegramConfigured = Boolean(process.env.TELEGRAM_BOT_TOKEN && (process.env.TELEGRAM_GROUP_CHAT_ID || process.env.TELEGRAM_CHAT_ID));
-  const telegramLink = telegramBotUsername ? `https://t.me/${telegramBotUsername}` : "https://t.me/BotFather";
+  const telegramInviteLink = telegramGroupInviteLink();
+  const telegramLink = telegramInviteLink ?? (telegramBotUsername ? `https://t.me/${telegramBotUsername}` : "https://t.me/BotFather");
   const alertStore = storageMode();
   const assetStore = projectAssetMode();
   const liveSelectionCount = persistedLiveEnabledKeys.length || persistedSelectedKeys.length;
@@ -771,7 +773,7 @@ export default async function Home({ searchParams }: HomeProps) {
           <div className="terminal-actions">
             <ThemeToggle initialTheme={liveConfig.dashboardSettings.theme} persistTheme={syncTheme} />
             <a className="terminal-action" href={telegramLink} target="_blank" rel="noreferrer">
-              {telegramBotUsername ? "Open Telegram bot" : "Open BotFather"}
+              {telegramInviteLink ? "Join Telegram group" : telegramBotUsername ? "Open Telegram bot" : "Open BotFather"}
             </a>
             <TestAlertButton disabled={!telegramConfigured} sendTestAlert={sendTestTelegramAlert} />
             <AutoTradingConnectionDrawer market={executionMarket} />

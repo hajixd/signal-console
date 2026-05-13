@@ -51,6 +51,14 @@ function formatSignalTime(value: string): string {
   }).format(new Date(value));
 }
 
+function telegramGroupTitle(): string {
+  return process.env.TELEGRAM_GROUP_TITLE?.trim() || "Trading Bot Alerts";
+}
+
+export function telegramGroupInviteLink(): string | undefined {
+  return process.env.TELEGRAM_GROUP_INVITE_LINK?.trim() || process.env.TELEGRAM_GROUP_LINK?.trim();
+}
+
 function autoTradeLine(trade: TradeAlert): string {
   if (!trade.autoTradeStatus) return "";
   const provider = trade.autoTradeProviderName ?? trade.autoTradeOrders?.find((order) => order.providerName)?.providerName ?? "Auto trade";
@@ -89,11 +97,14 @@ export function formatTelegramMessage(trade: TradeAlert): string {
   const executionModes = [trade.entryType, trade.tpMode, trade.slMode, trade.sizeMode].filter(Boolean).join(" / ");
   const side = trade.side === "long" ? "BUY" : "SELL";
   const autoTrade = autoTradeLine(trade);
+  const groupLink = telegramGroupInviteLink();
   const lines = [
-    `<b>Signal</b>`,
-    `${escapeHtml(trade.symbol)} ${side} | ${escapeHtml(truncate(trade.strategy, 120))}`,
+    `<b>${escapeHtml(telegramGroupTitle())}</b>`,
+    `<b>New Trade Signal</b>`,
+    `${escapeHtml(trade.symbol)} ${side}`,
+    `${escapeHtml(truncate(trade.strategy, 120))}`,
     "",
-    `<b>Plan</b>`,
+    `<b>Trade Plan</b>`,
     `Entry: ${formatPrice(trade.entryPrice)} (${escapeHtml(trade.entryMode)})`,
     `Take profit: ${formatPrice(trade.takeProfitPrice)} / ${formatMoney(targetDollars)}`,
     `Stop loss: ${formatPrice(trade.stopLossPrice)} / ${formatMoney(riskDollars)}`,
@@ -112,6 +123,38 @@ export function formatTelegramMessage(trade: TradeAlert): string {
     "",
     `<b>Meta</b>`,
     `Signal candle: ${escapeHtml(formatSignalTime(trade.signalTime))}`,
+    groupLink ? `Join: ${escapeHtml(groupLink)}` : "",
+    `<code>${escapeHtml(trade.id)}</code>`
+  ].filter(Boolean);
+  return fitTelegramMessage(lines.join("\n"));
+}
+
+export function formatTelegramOutcomeMessage(trade: TradeAlert): string {
+  const outcome = trade.lifecycleStatus;
+  const isTarget = outcome === "take_profit";
+  const title = isTarget ? "Take Profit Hit" : outcome === "stop_loss" ? "Stop Loss Hit" : "Trade Update";
+  const pnl = trade.lifecyclePnlDollars;
+  const rMultiple = trade.lifecycleRMultiple;
+  const price = trade.lifecyclePrice;
+  const time = trade.lifecycleTime;
+  const side = trade.side === "long" ? "BUY" : "SELL";
+  const lines = [
+    `<b>${escapeHtml(telegramGroupTitle())}</b>`,
+    `<b>${title}</b>`,
+    `${escapeHtml(trade.symbol)} ${side}`,
+    `${escapeHtml(truncate(trade.strategy, 120))}`,
+    "",
+    `<b>Result</b>`,
+    price !== undefined ? `Exit: ${formatPrice(price)}` : "",
+    pnl !== undefined ? `P/L: ${formatMoney(pnl)}` : "",
+    rMultiple !== undefined ? `R multiple: ${formatNumber(rMultiple)}R` : "",
+    time ? `Hit time: ${escapeHtml(formatSignalTime(time))}` : "",
+    "",
+    `<b>Original Plan</b>`,
+    `Entry: ${formatPrice(trade.entryPrice)}`,
+    `Take profit: ${formatPrice(trade.takeProfitPrice)}`,
+    `Stop loss: ${formatPrice(trade.stopLossPrice)}`,
+    "",
     `<code>${escapeHtml(trade.id)}</code>`
   ].filter(Boolean);
   return fitTelegramMessage(lines.join("\n"));
@@ -158,4 +201,8 @@ export async function sendTelegramText(text: string): Promise<{ status: "sent" |
 
 export async function sendTelegram(trade: TradeAlert): Promise<{ status: "sent" | "skipped" | "failed"; error?: string }> {
   return sendTelegramText(formatTelegramMessage(trade));
+}
+
+export async function sendTelegramOutcome(trade: TradeAlert): Promise<{ status: "sent" | "skipped" | "failed"; error?: string }> {
+  return sendTelegramText(formatTelegramOutcomeMessage(trade));
 }

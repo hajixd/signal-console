@@ -157,8 +157,16 @@ export type TradeAlert = {
   sizeMultiplier?: number;
   estimatedWinRatePct: number;
   liveProfitFactor: number;
+  lifecycleNotifiedAt?: string;
+  lifecyclePnlDollars?: number;
+  lifecyclePrice?: number;
+  lifecycleRMultiple?: number;
+  lifecycleStatus?: "open" | "take_profit" | "stop_loss";
+  lifecycleTime?: string;
   status: "alerted" | "skipped";
   telegramStatus: "sent" | "skipped" | "failed";
+  telegramLifecycleError?: string;
+  telegramLifecycleStatus?: "sent" | "skipped" | "failed";
   telegramError?: string;
   notes?: string;
 };

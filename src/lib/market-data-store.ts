@@ -81,8 +81,8 @@ function parseTailBars(text: string, limit: number): Bar[] {
     .slice(-limit);
 }
 
-export async function fetchStoredMarketBars(rule: StrategyRule, limit = DEFAULT_BAR_LIMIT): Promise<Bar[]> {
-  const asset = assetForKey(rule.assetKey);
+export async function fetchStoredAssetBars(assetKey: string, limit = DEFAULT_BAR_LIMIT): Promise<Bar[]> {
+  const asset = assetForKey(assetKey);
   const relativePath = `15m/${asset.dataFile}`;
   const tailBytes = Math.max(MIN_TAIL_BYTES, limit * 128);
   const bars = parseTailBars(await readDataTail(relativePath, tailBytes), limit);
@@ -92,4 +92,8 @@ export async function fetchStoredMarketBars(rule: StrategyRule, limit = DEFAULT_
   }
 
   return bars;
+}
+
+export async function fetchStoredMarketBars(rule: StrategyRule, limit = DEFAULT_BAR_LIMIT): Promise<Bar[]> {
+  return fetchStoredAssetBars(rule.assetKey, limit);
 }
