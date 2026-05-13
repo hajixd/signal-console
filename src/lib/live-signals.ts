@@ -41,13 +41,14 @@ function applyStrategyEdit(rule: StrategyRule, edit: SavedStrategyEdit | undefin
 
   const tpUnits = positiveNumber(edit.tpUnits);
   const slUnits = positiveNumber(edit.slUnits);
+  const scale = positiveNumber(edit.scale);
   const sizeMultiplier = positiveNumber(edit.contracts);
 
   return {
     ...rule,
     tpUnits: tpUnits ?? rule.tpUnits,
     slUnits: slUnits ?? rule.slUnits,
-    sizeMultiplier: sizeMultiplier ?? rule.sizeMultiplier
+    sizeMultiplier: scale ? (rule.sizeMultiplier ?? 1) * scale : sizeMultiplier ?? rule.sizeMultiplier
   };
 }
 

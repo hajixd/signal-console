@@ -323,6 +323,32 @@ function syncTileLabel(state: SyncTileState): string {
   return "Waiting";
 }
 
+type SyncTileRun = {
+  error?: string;
+  finishedAt?: string;
+  startedAt?: string;
+  state?: string;
+};
+
+function syncTileFailedAt(state: SyncTileState, run: SyncTileRun | undefined): string | undefined {
+  if (state !== "failed") return undefined;
+  return run?.finishedAt ?? run?.startedAt;
+}
+
+function SyncTileStatus({ run, state }: { run?: SyncTileRun; state: SyncTileState }) {
+  const failedAt = syncTileFailedAt(state, run);
+  return (
+    <span className="sync-status-value" title={run?.error}>
+      <span>{syncTileLabel(state)}</span>
+      {failedAt ? (
+        <span className="sync-status-date">
+          at <LocalDateTime value={failedAt} />
+        </span>
+      ) : null}
+    </span>
+  );
+}
+
 function accountSizeMultiplier(rules: ChallengeRules): number {
   return Math.max(0.01, rules.startingBalance / DEFAULT_CHALLENGE_RULES.startingBalance);
 }
@@ -992,7 +1018,7 @@ export default async function Home({ searchParams }: HomeProps) {
               <span className="sync-tile-name">Market data sync</span>
               <dl className="sync-tile-times">
                 <dt>Status</dt>
-                <dd>{syncTileLabel(marketDataSyncState)}</dd>
+                <dd><SyncTileStatus run={syncStatus.marketDataSync} state={marketDataSyncState} /></dd>
                 <dt>Last</dt>
                 <dd>
                   <LocalDateTime value={syncStatus.lastMarketDataSyncAt ?? legacyDatasetSyncAt} fallback="Not synced yet" />
@@ -1009,7 +1035,7 @@ export default async function Home({ searchParams }: HomeProps) {
               <span className="sync-tile-name">Signal trade check</span>
               <dl className="sync-tile-times">
                 <dt>Status</dt>
-                <dd>{syncTileLabel(signalTradeCheckState)}</dd>
+                <dd><SyncTileStatus run={syncStatus.signalTradeCheck} state={signalTradeCheckState} /></dd>
                 <dt>Last</dt>
                 <dd>
                   <LocalDateTime value={syncStatus.lastSignalTradeCheckAt} fallback="Not checked yet" />
@@ -1026,7 +1052,7 @@ export default async function Home({ searchParams }: HomeProps) {
               <span className="sync-tile-name">Data validity refresh</span>
               <dl className="sync-tile-times">
                 <dt>Status</dt>
-                <dd>{syncTileLabel(dataValidityRefreshState)}</dd>
+                <dd><SyncTileStatus run={syncStatus.dataValidityRefresh} state={dataValidityRefreshState} /></dd>
                 <dt>Last</dt>
                 <dd>
                   <LocalDateTime value={syncStatus.lastDataValidityRefreshAt ?? legacyDatasetSyncAt} fallback="Not refreshed yet" />

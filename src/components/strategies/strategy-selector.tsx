@@ -252,6 +252,7 @@ function defaultEdit(strategy: StrategyOption): StrategyEdit {
     modelName: strategy.label,
     contracts: roundControlValue(size.contracts),
     sizeName: size.sizeName,
+    scale: 1,
     tpUnits: roundControlValue(strategy.tpUnits),
     slUnits: roundControlValue(strategy.slUnits),
     targetDollars: roundControlValue(strategy.targetDollars),
@@ -280,7 +281,14 @@ function unitsFromDollars(strategy: StrategyOption, dollars: number, contracts: 
 
 function normalizeEdit(strategy: StrategyOption, edit: StrategyEdit): StrategyEdit {
   const fallback = defaultEdit(strategy);
-  const contracts = Number.isFinite(edit.contracts) && edit.contracts > 0 ? roundControlValue(edit.contracts) : fallback.contracts;
+  const savedScale = Number.isFinite(edit.scale) && edit.scale > 0 ? roundControlValue(edit.scale) : undefined;
+  const hasContracts = Number.isFinite(edit.contracts) && edit.contracts > 0;
+  const contracts =
+    hasContracts
+      ? roundControlValue(edit.contracts)
+      : savedScale
+        ? roundControlValue(fallback.contracts * savedScale)
+        : fallback.contracts;
   let tpUnits = Number.isFinite(edit.tpUnits) && edit.tpUnits > 0 ? roundControlValue(edit.tpUnits) : 0;
   let slUnits = Number.isFinite(edit.slUnits) && edit.slUnits > 0 ? roundControlValue(edit.slUnits) : 0;
   let targetDollars = Number.isFinite(edit.targetDollars) && edit.targetDollars > 0 ? roundControlValue(edit.targetDollars) : 0;
@@ -300,6 +308,7 @@ function normalizeEdit(strategy: StrategyOption, edit: StrategyEdit): StrategyEd
     modelName: fallback.modelName,
     contracts,
     sizeName: fallback.sizeName,
+    scale: roundControlValue(scaleForContracts(strategy, contracts)),
     tpUnits,
     slUnits,
     targetDollars,
@@ -318,6 +327,7 @@ function isDefaultEdit(strategy: StrategyOption, edit: StrategyEdit): boolean {
     normalized.modelName === fallback.modelName &&
     normalized.sizeName === fallback.sizeName &&
     nearlyEqual(normalized.contracts, fallback.contracts) &&
+    nearlyEqual(normalized.scale, fallback.scale) &&
     nearlyEqual(normalized.tpUnits, fallback.tpUnits) &&
     nearlyEqual(normalized.slUnits, fallback.slUnits) &&
     nearlyEqual(normalized.targetDollars, fallback.targetDollars) &&
@@ -374,6 +384,7 @@ function editWithContracts(strategy: StrategyOption, edit: StrategyEdit, contrac
   return {
     ...normalized,
     contracts,
+    scale: roundControlValue(scaleForContracts(strategy, contracts)),
     targetDollars: dollarsFromUnits(strategy, normalized.tpUnits, contracts),
     riskDollars: dollarsFromUnits(strategy, normalized.slUnits, contracts)
   };
@@ -405,6 +416,7 @@ function scaledEdit(strategy: StrategyOption, edit: StrategyEdit, multiplier: nu
   return {
     ...normalized,
     contracts,
+    scale: roundControlValue(scaleForContracts(strategy, contracts)),
     targetDollars: dollarsFromUnits(strategy, normalized.tpUnits, contracts),
     riskDollars: dollarsFromUnits(strategy, normalized.slUnits, contracts)
   };
@@ -1020,6 +1032,7 @@ export default function StrategySelector({
       return {
         ...current,
         contracts,
+        scale: roundControlValue(scaleForContracts(activeStrategy, contracts)),
         targetDollars: dollarsFromUnits(activeStrategy, current.tpUnits, contracts),
         riskDollars: dollarsFromUnits(activeStrategy, current.slUnits, contracts)
       };

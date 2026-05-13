@@ -9,6 +9,7 @@ const VALID_STRATEGY_IDS = new Set(STRATEGY_DEFINITIONS.map((strategy) => strate
 type PersistedStrategyEdit = {
   contracts?: number;
   riskDollars?: number;
+  scale?: number;
   slUnits?: number;
   targetDollars?: number;
   tpUnits?: number;
@@ -103,12 +104,14 @@ function normalizeStrategyEdits(edits: Record<string, PersistedStrategyEdit>): R
 
       const normalized: PersistedStrategyEdit = {};
       const contracts = normalizePositiveNumber(edit.contracts);
+      const scale = normalizePositiveNumber(edit.scale);
       const tpUnits = normalizePositiveNumber(edit.tpUnits);
       const slUnits = normalizePositiveNumber(edit.slUnits);
       const targetDollars = normalizePositiveNumber(edit.targetDollars);
       const riskDollars = normalizePositiveNumber(edit.riskDollars);
 
       if (contracts !== undefined) normalized.contracts = contracts;
+      if (scale !== undefined) normalized.scale = scale;
       if (tpUnits !== undefined) normalized.tpUnits = tpUnits;
       if (slUnits !== undefined) normalized.slUnits = slUnits;
       if (targetDollars !== undefined) normalized.targetDollars = targetDollars;

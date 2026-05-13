@@ -21,6 +21,7 @@ let datasetStatusCache: DatasetStatusCache = null;
 export type SavedStrategyEdit = {
   contracts?: number;
   riskDollars?: number;
+  scale?: number;
   slUnits?: number;
   targetDollars?: number;
   tpUnits?: number;

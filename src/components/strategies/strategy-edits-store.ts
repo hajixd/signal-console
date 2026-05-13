@@ -19,6 +19,7 @@ export type StrategyEdit = {
   modelName: string;
   contracts: number;
   sizeName: string;
+  scale: number;
   tpUnits: number;
   slUnits: number;
   targetDollars: number;
@@ -63,6 +64,7 @@ export function defaultStrategyEdit(strategy: StrategyEditOption): StrategyEdit 
     modelName: strategy.label,
     contracts: roundControlValue(size.contracts),
     sizeName: size.sizeName,
+    scale: 1,
     tpUnits: roundControlValue(strategy.tpUnits),
     slUnits: roundControlValue(strategy.slUnits),
     targetDollars: roundControlValue(strategy.targetDollars),
@@ -86,7 +88,14 @@ function unitsFromDollars(strategy: StrategyEditOption, dollars: number, contrac
 
 export function normalizeStrategyEdit(strategy: StrategyEditOption, edit: StrategyEdit): StrategyEdit {
   const fallback = defaultStrategyEdit(strategy);
-  const contracts = Number.isFinite(edit.contracts) && edit.contracts > 0 ? roundControlValue(edit.contracts) : fallback.contracts;
+  const savedScale = Number.isFinite(edit.scale) && edit.scale > 0 ? roundControlValue(edit.scale) : undefined;
+  const hasContracts = Number.isFinite(edit.contracts) && edit.contracts > 0;
+  const contracts =
+    hasContracts
+      ? roundControlValue(edit.contracts)
+      : savedScale
+        ? roundControlValue(fallback.contracts * savedScale)
+        : fallback.contracts;
   let tpUnits = Number.isFinite(edit.tpUnits) && edit.tpUnits > 0 ? roundControlValue(edit.tpUnits) : 0;
   let slUnits = Number.isFinite(edit.slUnits) && edit.slUnits > 0 ? roundControlValue(edit.slUnits) : 0;
   let targetDollars = Number.isFinite(edit.targetDollars) && edit.targetDollars > 0 ? roundControlValue(edit.targetDollars) : 0;
@@ -106,6 +115,7 @@ export function normalizeStrategyEdit(strategy: StrategyEditOption, edit: Strate
     modelName: fallback.modelName,
     contracts,
     sizeName: fallback.sizeName,
+    scale: roundControlValue(strategyScaleForContracts(strategy, contracts)),
     tpUnits,
     slUnits,
     targetDollars,

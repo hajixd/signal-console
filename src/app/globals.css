@@ -4297,6 +4297,26 @@ html[data-theme="light"] .tradeCandlestickPanel {
   white-space: nowrap;
 }
 
+.sync-tile-times dd .sync-status-value {
+  display: inline-flex;
+  max-width: 100%;
+  flex-wrap: wrap;
+  gap: 0.2rem;
+  line-height: 1.2;
+  overflow: visible;
+  text-overflow: clip;
+  white-space: normal;
+}
+
+.sync-tile-times dd .sync-status-date,
+.sync-tile-times dd .sync-status-date span {
+  font-size: 0.66rem;
+  opacity: 0.88;
+  overflow: visible;
+  text-overflow: clip;
+  white-space: normal;
+}
+
 .dataset-sync-tile.sync-state-running .sync-tile-times dt {
   color: rgba(253, 224, 71, 0.6);
 }
