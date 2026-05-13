@@ -18,6 +18,7 @@ const nextConfig: NextConfig = {
   outputFileTracingIncludes: {
     "/*": [
       "./cache/backtest-manifest.json",
+      "./cache/live-data-tails.json",
       "./strategy/**/backtest_trades.csv",
       "./node_modules/@google-cloud/**",
       "./node_modules/firebase-admin/**",

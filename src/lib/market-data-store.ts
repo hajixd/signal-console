@@ -2,10 +2,23 @@ import { open } from "node:fs/promises";
 import path from "node:path";
 import { assetForKey } from "@/lib/assets";
 import { firebaseBucket, hasFirebaseAdmin, storageObjectPath } from "@/lib/firebase-admin";
+import { fetchMarketBars } from "@/lib/market-data";
+import { readProjectTextIfExists } from "@/lib/project-assets";
 import type { Bar, StrategyRule } from "@/lib/types";
 
 const DEFAULT_BAR_LIMIT = 1500;
 const MIN_TAIL_BYTES = 512 * 1024;
+const LIVE_DATA_TAILS_PATH = "cache/live-data-tails.json";
+const DEFAULT_SIGNAL_STALE_MS = 6 * 60 * 60_000;
+
+type CachedBar = [string, number, number, number, number, number?];
+type LiveDataTailCache = {
+  barLimit?: number;
+  files?: Record<string, CachedBar[]>;
+  generatedAt?: string;
+};
+
+let liveDataTailCache: Promise<LiveDataTailCache | null> | null = null;
 
 function localDataPath(relativePath: string): string {
   return path.join(
@@ -81,11 +94,94 @@ function parseTailBars(text: string, limit: number): Bar[] {
     .slice(-limit);
 }
 
+function signalStaleMs(): number {
+  const minutes = Number(process.env.LIVE_SIGNAL_STALE_MINUTES ?? process.env.MARKET_DATA_STALE_MINUTES);
+  return Number.isFinite(minutes) && minutes > 0 ? minutes * 60_000 : DEFAULT_SIGNAL_STALE_MS;
+}
+
+function barTimeMs(bar: Bar): number | null {
+  const time = Date.parse(bar.time);
+  return Number.isFinite(time) ? time : null;
+}
+
+function latestBarMs(bars: Bar[]): number | null {
+  let latest: number | null = null;
+  for (const bar of bars) {
+    const time = barTimeMs(bar);
+    if (time == null) continue;
+    latest = latest == null ? time : Math.max(latest, time);
+  }
+  return latest;
+}
+
+function hasFreshSignalBars(bars: Bar[]): boolean {
+  const latest = latestBarMs(bars);
+  return latest != null && Date.now() - latest <= signalStaleMs();
+}
+
+function mergeBars(storedBars: Bar[], liveBars: Bar[], limit: number): Bar[] {
+  const byTime = new Map<string, Bar>();
+  for (const bar of [...storedBars, ...liveBars]) {
+    if (barTimeMs(bar) == null) continue;
+    byTime.set(bar.time, bar);
+  }
+
+  return [...byTime.values()]
+    .sort((left, right) => Date.parse(left.time) - Date.parse(right.time))
+    .slice(-limit);
+}
+
+async function readLiveDataTailCache(): Promise<LiveDataTailCache | null> {
+  if (!liveDataTailCache) {
+    liveDataTailCache = readProjectTextIfExists(LIVE_DATA_TAILS_PATH).then((raw) => {
+      if (!raw) return null;
+      try {
+        const parsed = JSON.parse(raw) as LiveDataTailCache;
+        return parsed && typeof parsed === "object" ? parsed : null;
+      } catch {
+        return null;
+      }
+    });
+  }
+
+  return liveDataTailCache;
+}
+
+async function readCachedBars(relativePath: string, limit: number): Promise<Bar[]> {
+  const normalized = relativePath.replace(/\\/g, "/").replace(/^data\/+/, "");
+  const cache = await readLiveDataTailCache();
+  const rows = cache?.files?.[normalized];
+  if (!Array.isArray(rows)) return [];
+
+  return rows
+    .slice(-limit)
+    .map(([time, open, high, low, close, volume]) => ({
+      time,
+      open,
+      high,
+      low,
+      close,
+      volume: volume ?? 0
+    }))
+    .filter((bar) => [bar.open, bar.high, bar.low, bar.close].every(Number.isFinite));
+}
+
+async function loadStoredBars(relativePath: string, limit: number, tailBytes: number): Promise<Bar[]> {
+  try {
+    const bars = parseTailBars(await readDataTail(relativePath, tailBytes), limit);
+    if (bars.length >= Math.min(limit, 260)) return bars;
+  } catch {
+    // Fall through to the deploy-time cache.
+  }
+
+  return readCachedBars(relativePath, limit);
+}
+
 export async function fetchStoredAssetBars(assetKey: string, limit = DEFAULT_BAR_LIMIT): Promise<Bar[]> {
   const asset = assetForKey(assetKey);
   const relativePath = `15m/${asset.dataFile}`;
   const tailBytes = Math.max(MIN_TAIL_BYTES, limit * 128);
-  const bars = parseTailBars(await readDataTail(relativePath, tailBytes), limit);
+  const bars = await loadStoredBars(relativePath, limit, tailBytes);
 
   if (bars.length < Math.min(limit, 260)) {
     throw new Error(`Stored 15m data for ${asset.symbol} only had ${bars.length} readable bars.`);
@@ -95,5 +191,37 @@ export async function fetchStoredAssetBars(assetKey: string, limit = DEFAULT_BAR
 }
 
 export async function fetchStoredMarketBars(rule: StrategyRule, limit = DEFAULT_BAR_LIMIT): Promise<Bar[]> {
-  return fetchStoredAssetBars(rule.assetKey, limit);
+  let storedBars: Bar[] = [];
+  let storedError: unknown;
+
+  try {
+    storedBars = await fetchStoredAssetBars(rule.assetKey, limit);
+    if (hasFreshSignalBars(storedBars)) return storedBars;
+  } catch (error) {
+    storedError = error;
+  }
+
+  try {
+    const latestStored = latestBarMs(storedBars);
+    const liveBars = await fetchMarketBars(rule, latestStored ? { afterSeconds: Math.floor(latestStored / 1000) } : {});
+    const merged = mergeBars(storedBars, liveBars, limit);
+    if (merged.length >= Math.min(limit, 260) && hasFreshSignalBars(merged)) return merged;
+    const latest = latestBarMs(merged);
+    throw new Error(
+      latest
+        ? `Live data for ${rule.symbol} is stale; latest 15m bar is ${new Date(latest).toISOString()}.`
+        : `Live data for ${rule.symbol} did not include readable 15m bars.`
+    );
+  } catch (error) {
+    if (storedBars.length >= Math.min(limit, 260)) {
+      const latest = latestBarMs(storedBars);
+      throw new Error(
+        latest
+          ? `Stored data for ${rule.symbol} is stale at ${new Date(latest).toISOString()} and provider refresh failed: ${error instanceof Error ? error.message : "Unknown provider error"}`
+          : `Stored data for ${rule.symbol} had no readable timestamps and provider refresh failed: ${error instanceof Error ? error.message : "Unknown provider error"}`
+      );
+    }
+    if (storedError instanceof Error) throw storedError;
+    throw error;
+  }
 }
