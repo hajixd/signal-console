@@ -330,19 +330,26 @@ type SyncTileRun = {
   state?: string;
 };
 
-function syncTileFailedAt(state: SyncTileState, run: SyncTileRun | undefined): string | undefined {
-  if (state !== "failed") return undefined;
-  return run?.finishedAt ?? run?.startedAt;
+function syncTileStatusTimestamp(
+  state: SyncTileState,
+  run: SyncTileRun | undefined
+): { label: string; value: string } | undefined {
+  if (state === "running" && run?.startedAt) return { label: "started", value: run.startedAt };
+  if (state === "failed") {
+    const value = run?.finishedAt ?? run?.startedAt;
+    return value ? { label: "at", value } : undefined;
+  }
+  return undefined;
 }
 
 function SyncTileStatus({ run, state }: { run?: SyncTileRun; state: SyncTileState }) {
-  const failedAt = syncTileFailedAt(state, run);
+  const timestamp = syncTileStatusTimestamp(state, run);
   return (
     <span className="sync-status-value" title={run?.error}>
       <span>{syncTileLabel(state)}</span>
-      {failedAt ? (
+      {timestamp ? (
         <span className="sync-status-date">
-          at <LocalDateTime value={failedAt} />
+          {timestamp.label} <LocalDateTime value={timestamp.value} />
         </span>
       ) : null}
     </span>
