@@ -16,6 +16,28 @@ function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : "Unknown data validity refresh error";
 }
 
+type RefreshDispatchResult = Awaited<ReturnType<typeof dispatchBacktestRefresh>>;
+
+function compactBodyValue(value: unknown): string | undefined {
+  if (typeof value === "string" && value.trim()) return value.trim();
+  if (Array.isArray(value) && value.length) return value.map((item) => String(item)).join(", ");
+  if (value && typeof value === "object") return JSON.stringify(value);
+  return undefined;
+}
+
+function refreshFailureMessage(result: RefreshDispatchResult): string {
+  const body = result.body ?? {};
+  const error = compactBodyValue(body.error) ?? `Refresh returned status ${result.status}`;
+  const missing = compactBodyValue(body.missing);
+  const details = compactBodyValue(body.details);
+  const parts = [error];
+
+  if (missing) parts.push(`missing ${missing}`);
+  if (details) parts.push(details);
+
+  return parts.join(": ").slice(0, 800);
+}
+
 export async function GET(request: NextRequest) {
   const auth = isAuthorized(request);
   if (auth === "missing-secret") {
@@ -47,9 +69,10 @@ export async function GET(request: NextRequest) {
     const failed = !result.ok || result.status >= 400;
 
     if (failed) {
+      const failureMessage = refreshFailureMessage(result);
       await updateDatasetSyncRunStatus("dataValidityRefresh", {
         durationMs,
-        error: `Refresh returned status ${result.status}`,
+        error: failureMessage,
         finishedAt: new Date().toISOString(),
         startedAt: startedAtIso,
         state: "failed"
@@ -58,6 +81,7 @@ export async function GET(request: NextRequest) {
 
     console.info("data-validity-refresh cron completed", {
       durationMs,
+      errorSummary: failed ? refreshFailureMessage(result) : undefined,
       ok: result.ok,
       status: result.status
     });

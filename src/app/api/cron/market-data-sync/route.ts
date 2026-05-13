@@ -17,6 +17,34 @@ function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : "Unknown market data sync error";
 }
 
+type MarketDataSyncError = {
+  message: string;
+  symbol: string;
+};
+
+function cleanProviderMessage(message: string): string {
+  return message.replace(/\.\.\.[A-Za-z0-9_-]{4}/g, "...REDACTED");
+}
+
+function symbolList(symbols: string[]): string {
+  const visible = symbols.slice(0, 12).join(", ");
+  return symbols.length > 12 ? `${visible}, +${symbols.length - 12} more` : visible;
+}
+
+function marketDataFailureMessage(errors: MarketDataSyncError[], refreshedAssetCount: number): string {
+  if (!errors.length) return refreshedAssetCount === 0 ? "No market data assets were refreshed." : "";
+
+  const groups = new Map<string, string[]>();
+  for (const entry of errors) {
+    const message = cleanProviderMessage(entry.message);
+    groups.set(message, [...(groups.get(message) ?? []), entry.symbol]);
+  }
+
+  return [...groups.entries()]
+    .map(([message, symbols]) => `${symbols.length} asset${symbols.length === 1 ? "" : "s"} (${symbolList(symbols)}): ${message}`)
+    .join("; ");
+}
+
 export async function GET(request: NextRequest) {
   const auth = isAuthorized(request);
   if (auth === "missing-secret") {
@@ -52,9 +80,7 @@ export async function GET(request: NextRequest) {
     const durationMs = Date.now() - startedAt;
     const finishedAt = new Date().toISOString();
     const failed = result.summary.errors.length > 0 || result.summary.assets.length === 0;
-    const failureMessage = result.summary.errors.length
-      ? result.summary.errors.map((entry) => `${entry.symbol}: ${entry.message}`).join("; ")
-      : "No market data assets were refreshed.";
+    const failureMessage = marketDataFailureMessage(result.summary.errors, result.summary.assets.length);
 
     await updateDatasetSyncRunStatus("marketDataSync", {
       durationMs,
@@ -74,6 +100,7 @@ export async function GET(request: NextRequest) {
       assets: result.summary.assets.length,
       durationMs,
       errors: result.summary.errors.length,
+      errorSummary: failureMessage || undefined,
       totalDurationMs: result.summary.totalDurationMs,
       uploadedFiles: result.summary.uploadedFiles
     });

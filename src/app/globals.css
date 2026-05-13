@@ -4317,6 +4317,18 @@ html[data-theme="light"] .tradeCandlestickPanel {
   white-space: normal;
 }
 
+.sync-tile-times dd .sync-status-error {
+  display: block;
+  margin-top: 0.18rem;
+  max-width: 100%;
+  color: rgba(254, 202, 202, 0.86);
+  font-size: 0.58rem;
+  line-height: 1.3;
+  overflow: hidden;
+  text-overflow: clip;
+  white-space: normal;
+}
+
 .dataset-sync-tile.sync-state-running .sync-tile-times dt {
   color: rgba(253, 224, 71, 0.6);
 }
@@ -4737,6 +4749,10 @@ html[data-theme="light"] .dataset-sync-tile.sync-state-failed .sync-tile-times d
 html[data-theme="light"] .dataset-sync-tile.sync-state-failed .sync-tile-times dd,
 html[data-theme="light"] .dataset-sync-tile.sync-state-failed .sync-tile-times dd span {
   color: #b91c1c;
+}
+
+html[data-theme="light"] .sync-tile-times dd .sync-status-error {
+  color: #991b1b;
 }
 
 html[data-theme="light"] .history-table .ticker-cell {

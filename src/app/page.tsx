@@ -332,9 +332,14 @@ type SyncTileRun = {
 
 function syncTileStatusTimestamp(
   state: SyncTileState,
-  run: SyncTileRun | undefined
+  run: SyncTileRun | undefined,
+  lastSuccessfulAt?: string
 ): { label: string; value: string } | undefined {
   if (state === "running" && run?.startedAt) return { label: "started", value: run.startedAt };
+  if (state === "success") {
+    const value = run?.finishedAt ?? lastSuccessfulAt;
+    return value ? { label: "at", value } : undefined;
+  }
   if (state === "failed") {
     const value = run?.finishedAt ?? run?.startedAt;
     return value ? { label: "at", value } : undefined;
@@ -342,17 +347,37 @@ function syncTileStatusTimestamp(
   return undefined;
 }
 
-function SyncTileStatus({ run, state }: { run?: SyncTileRun; state: SyncTileState }) {
-  const timestamp = syncTileStatusTimestamp(state, run);
+function syncTileErrorText(state: SyncTileState, run: SyncTileRun | undefined): string | undefined {
+  if (state !== "failed" || !run?.error) return undefined;
+  return run.error.length > 220 ? `${run.error.slice(0, 217)}...` : run.error;
+}
+
+function SyncTileStatus({
+  lastSuccessfulAt,
+  run,
+  state
+}: {
+  lastSuccessfulAt?: string;
+  run?: SyncTileRun;
+  state: SyncTileState;
+}) {
+  const timestamp = syncTileStatusTimestamp(state, run, lastSuccessfulAt);
   return (
-    <span className="sync-status-value" title={run?.error}>
-      <span>{syncTileLabel(state)}</span>
-      {timestamp ? (
-        <span className="sync-status-date">
-          {timestamp.label} <LocalDateTime value={timestamp.value} />
+    <>
+      <span className="sync-status-value" title={run?.error}>
+        <span>{syncTileLabel(state)}</span>
+        {timestamp ? (
+          <span className="sync-status-date">
+            {timestamp.label} <LocalDateTime value={timestamp.value} />
+          </span>
+        ) : null}
+      </span>
+      {syncTileErrorText(state, run) ? (
+        <span className="sync-status-error" title={run?.error}>
+          {syncTileErrorText(state, run)}
         </span>
       ) : null}
-    </span>
+    </>
   );
 }
 
@@ -1025,7 +1050,13 @@ export default async function Home({ searchParams }: HomeProps) {
               <span className="sync-tile-name">Market data sync</span>
               <dl className="sync-tile-times">
                 <dt>Status</dt>
-                <dd><SyncTileStatus run={syncStatus.marketDataSync} state={marketDataSyncState} /></dd>
+                <dd>
+                  <SyncTileStatus
+                    lastSuccessfulAt={syncStatus.lastMarketDataSyncAt ?? legacyDatasetSyncAt}
+                    run={syncStatus.marketDataSync}
+                    state={marketDataSyncState}
+                  />
+                </dd>
                 <dt>Last</dt>
                 <dd>
                   <LocalDateTime value={syncStatus.lastMarketDataSyncAt ?? legacyDatasetSyncAt} fallback="Not synced yet" />
@@ -1042,7 +1073,13 @@ export default async function Home({ searchParams }: HomeProps) {
               <span className="sync-tile-name">Signal trade check</span>
               <dl className="sync-tile-times">
                 <dt>Status</dt>
-                <dd><SyncTileStatus run={syncStatus.signalTradeCheck} state={signalTradeCheckState} /></dd>
+                <dd>
+                  <SyncTileStatus
+                    lastSuccessfulAt={syncStatus.lastSignalTradeCheckAt}
+                    run={syncStatus.signalTradeCheck}
+                    state={signalTradeCheckState}
+                  />
+                </dd>
                 <dt>Last</dt>
                 <dd>
                   <LocalDateTime value={syncStatus.lastSignalTradeCheckAt} fallback="Not checked yet" />
@@ -1059,7 +1096,13 @@ export default async function Home({ searchParams }: HomeProps) {
               <span className="sync-tile-name">Data validity refresh</span>
               <dl className="sync-tile-times">
                 <dt>Status</dt>
-                <dd><SyncTileStatus run={syncStatus.dataValidityRefresh} state={dataValidityRefreshState} /></dd>
+                <dd>
+                  <SyncTileStatus
+                    lastSuccessfulAt={syncStatus.lastDataValidityRefreshAt ?? legacyDatasetSyncAt}
+                    run={syncStatus.dataValidityRefresh}
+                    state={dataValidityRefreshState}
+                  />
+                </dd>
                 <dt>Last</dt>
                 <dd>
                   <LocalDateTime value={syncStatus.lastDataValidityRefreshAt ?? legacyDatasetSyncAt} fallback="Not refreshed yet" />
