@@ -2,6 +2,7 @@ import { createCipheriv, createDecipheriv, createHash, randomBytes } from "node:
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { FieldValue } from "firebase-admin/firestore";
+import { hashAccessCode, verifyAccessCode } from "@/lib/account-access-code";
 import { autoTradeProviderById, type AutoTradeProviderId } from "@/lib/auto-trade-platforms";
 import { firebaseDb, hasFirebaseAdmin } from "@/lib/firebase-admin";
 import { omitUndefinedDeep } from "@/lib/firestore-utils";
@@ -12,6 +13,7 @@ const TOKEN_CIPHER_VERSION = "v1";
 const TOKEN_CIPHER_ALGORITHM = "aes-256-gcm";
 
 export type AutoTradeConnection = {
+  accessCodeHash?: string;
   accountId?: string;
   accountName?: string;
   connectedAt: string;
@@ -77,6 +79,7 @@ function toConnection(value: StoredAutoTradeConnection | null | undefined): Auto
   const provider = autoTradeProviderById(value.id);
   if (!provider) return null;
   return {
+    accessCodeHash: typeof value.accessCodeHash === "string" ? value.accessCodeHash : undefined,
     accountId: value.accountId,
     accountName: value.accountName,
     connectedAt: typeof value.connectedAt === "string" ? value.connectedAt : new Date(0).toISOString(),
@@ -138,6 +141,8 @@ export async function listAutoTradeConnections(): Promise<AutoTradeConnection[]>
 }
 
 export async function saveAutoTradeConnection(input: {
+  accessCode?: string;
+  accessCodeHash?: string;
   accountId?: string;
   accountName?: string;
   fields: Record<string, string>;
@@ -151,6 +156,7 @@ export async function saveAutoTradeConnection(input: {
   const now = new Date().toISOString();
   const cleanFields = Object.fromEntries(Object.entries(input.fields).filter(([, value]) => Boolean(value?.trim())));
   const payload: StoredAutoTradeConnection = {
+    accessCodeHash: input.accessCode ? hashAccessCode(input.accessCode) : input.accessCodeHash ?? existing?.accessCodeHash,
     accountId: input.accountId,
     accountName: input.accountName,
     connectedAt: existing?.connectedAt ?? now,
@@ -183,6 +189,7 @@ export async function setAutoTradeConnectionPaused(providerId: AutoTradeProvider
   const connection = await getAutoTradeConnection(providerId);
   if (!connection) return null;
   return saveAutoTradeConnection({
+    accessCodeHash: connection.accessCodeHash,
     accountId: connection.accountId,
     accountName: connection.accountName,
     fields: connection.fields,
@@ -197,6 +204,7 @@ export async function setAutoTradeConnectionPaused(providerId: AutoTradeProvider
 
 async function persistPaused(connection: AutoTradeConnection): Promise<AutoTradeConnection> {
   const payload: StoredAutoTradeConnection = {
+    accessCodeHash: connection.accessCodeHash,
     accountId: connection.accountId,
     accountName: connection.accountName,
     connectedAt: connection.connectedAt,
@@ -231,6 +239,14 @@ export async function deleteAutoTradeConnection(providerId: AutoTradeProviderId)
   const connections = await readLocal();
   delete connections[providerId];
   await writeLocal(connections);
+}
+
+export async function verifyAutoTradeConnectionAccessCode(providerId: AutoTradeProviderId, accessCode: string): Promise<boolean> {
+  const payload = hasFirebaseAdmin()
+    ? ((await firebaseDb().collection(COLLECTION).doc(providerId).get()).data() as StoredAutoTradeConnection | undefined)
+    : (await readLocal())[providerId];
+  if (!payload || payload.status !== "connected") return false;
+  return verifyAccessCode(accessCode, typeof payload.accessCodeHash === "string" ? payload.accessCodeHash : undefined);
 }
 
 export function parseAutoTradeProviderId(value: unknown): AutoTradeProviderId | null {

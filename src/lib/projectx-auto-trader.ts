@@ -205,6 +205,7 @@ async function refreshedConnection(): Promise<StoredProjectXConnection | null> {
   const activeToken = refreshedToken ?? connection.token;
   const accounts = await searchProjectXAccounts(activeToken, true);
   return saveStoredProjectXConnection({
+    accessCodeHash: connection.accessCodeHash,
     accounts,
     autoTradePaused: connection.autoTradePaused,
     connectedAt: connection.connectedAt,

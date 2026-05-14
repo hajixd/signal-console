@@ -1540,6 +1540,157 @@ html[data-theme="light"] .themeDarkLabel {
   gap: 0.65rem;
 }
 
+.autoTradeGatePanel {
+  min-height: 180px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.02);
+  padding: 0.8rem;
+}
+
+.autoTradeChoiceGrid {
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.65rem;
+}
+
+.autoTradeChoiceCard {
+  min-height: 126px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.025);
+  color: rgba(255, 255, 255, 0.92);
+  cursor: pointer;
+  font-size: 1.45rem;
+  font-weight: 850;
+  letter-spacing: 0;
+}
+
+.autoTradeChoiceCard:hover,
+.autoTradeChoiceCard:focus-visible {
+  border-color: rgba(212, 175, 55, 0.42);
+  background: rgba(212, 175, 55, 0.07);
+  color: #ffffff;
+  outline: none;
+}
+
+.autoTradePinForm {
+  position: relative;
+  width: 100%;
+  min-height: 150px;
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: 0.75rem;
+}
+
+.autoTradePinHidden {
+  position: absolute;
+  inset: 0;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.autoTradePinGrid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 46px));
+  justify-content: center;
+  gap: 0.45rem;
+}
+
+.autoTradePinBox {
+  width: 46px;
+  height: 56px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.025);
+  color: rgba(255, 255, 255, 0.94);
+  font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+  font-size: 1.28rem;
+  font-weight: 900;
+}
+
+.autoTradePinBox.filled {
+  border-color: rgba(255, 255, 255, 0.24);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.autoTradePinBox.active {
+  border-color: rgba(212, 175, 55, 0.48);
+  box-shadow: inset 0 0 0 1px rgba(212, 175, 55, 0.18);
+}
+
+.autoTradeGateError {
+  min-height: 1rem;
+  color: rgba(254, 202, 202, 0.94);
+  font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+  font-size: 0.6rem;
+  font-weight: 900;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.autoTradeModeBar {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.autoTradeModeBadge {
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 32px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.035);
+  color: rgba(255, 255, 255, 0.82);
+  font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+  font-size: 0.62rem;
+  font-weight: 950;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.autoTradeModeBadge.admin {
+  border-color: rgba(212, 175, 55, 0.36);
+  background: rgba(212, 175, 55, 0.08);
+  color: #f8e7a1;
+}
+
+.autoTradeModeBadge.user {
+  border-color: rgba(96, 165, 250, 0.3);
+  background: rgba(96, 165, 250, 0.08);
+  color: #c8ddff;
+}
+
+.autoTradeModeBar button,
+.autoTradeFolderGate button {
+  min-height: 32px;
+  border: 1px solid rgba(96, 165, 250, 0.28);
+  background: rgba(96, 165, 250, 0.09);
+  color: #c8ddff;
+  padding: 0 0.7rem;
+  font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+  font-size: 0.6rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.autoTradeModeBar button:hover,
+.autoTradeFolderGate button:hover:not(:disabled) {
+  border-color: rgba(96, 165, 250, 0.5);
+  background: rgba(96, 165, 250, 0.15);
+  color: #ffffff;
+}
+
 .autoTradeModeStrip {
   min-width: 0;
   display: grid;
@@ -1823,7 +1974,7 @@ html[data-theme="light"] .themeDarkLabel {
 }
 
 .topstepConnectForm {
-  grid-template-columns: minmax(190px, 0.8fr) minmax(220px, 1fr) auto;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   align-items: end;
 }
 
@@ -2099,6 +2250,63 @@ html[data-theme="light"] .themeDarkLabel {
   color: var(--text-dim);
   font-size: 0.72rem;
   line-height: 1.42;
+}
+
+.autoTradeFolderGate {
+  min-width: 0;
+  display: grid;
+  gap: 0.55rem;
+  border: 1px solid rgba(212, 175, 55, 0.2);
+  background: rgba(212, 175, 55, 0.045);
+  padding: 0.75rem;
+}
+
+.autoTradeFolderGate > div,
+.autoTradeFolderGate label {
+  min-width: 0;
+  display: grid;
+  gap: 0.22rem;
+}
+
+.autoTradeFolderGate span {
+  color: var(--text-faint);
+  font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+  font-size: 0.58rem;
+  font-weight: 900;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.autoTradeFolderGate strong {
+  min-width: 0;
+  overflow: hidden;
+  color: rgba(255, 255, 255, 0.9);
+  font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+  font-size: 0.78rem;
+  font-weight: 950;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.autoTradeFolderGate input {
+  min-width: 0;
+  min-height: 36px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.035);
+  color: rgba(255, 255, 255, 0.9);
+  padding: 0 0.62rem;
+  outline: none;
+}
+
+.autoTradeFolderGate input:focus {
+  border-color: rgba(212, 175, 55, 0.48);
+  box-shadow: inset 0 0 0 1px rgba(212, 175, 55, 0.18);
+}
+
+.autoTradeFolderGate small {
+  color: rgba(254, 202, 202, 0.94);
+  font-size: 0.68rem;
+  font-weight: 800;
 }
 
 .autoTradeUnavailable,
@@ -2939,6 +3147,7 @@ html[data-theme="light"] .topstepConnectionMeta strong,
 html[data-theme="light"] .autoTradeProviderOption strong,
 html[data-theme="light"] .topstepAccountRow strong,
 html[data-theme="light"] .topstepAccountEmpty strong,
+html[data-theme="light"] .autoTradeFolderGate strong,
 html[data-theme="light"] .topstepConnectionFoot strong {
   color: rgba(15, 23, 42, 0.9);
 }
@@ -2949,7 +3158,8 @@ html[data-theme="light"] .topstepConnectionMeta div {
 
 html[data-theme="light"] .autoTradeSelectControl select,
 html[data-theme="light"] .topstepConnectForm input,
-html[data-theme="light"] .topstepConnectForm select {
+html[data-theme="light"] .topstepConnectForm select,
+html[data-theme="light"] .autoTradeFolderGate input {
   border-color: rgba(15, 23, 42, 0.14);
   background:
     linear-gradient(45deg, transparent 50%, rgba(71, 85, 105, 0.82) 50%) calc(100% - 16px) 50% / 6px 6px no-repeat,
@@ -2979,9 +3189,52 @@ html[data-theme="light"] .topstepAccountFolderButton,
 html[data-theme="light"] .topstepAccountFolderPage,
 html[data-theme="light"] .topstepAccountRow,
 html[data-theme="light"] .autoTradeProviderOption,
-html[data-theme="light"] .topstepAccountEmpty {
+html[data-theme="light"] .topstepAccountEmpty,
+html[data-theme="light"] .autoTradeGatePanel {
   border-color: var(--line);
   background: #ffffff;
+}
+
+html[data-theme="light"] .autoTradeChoiceCard,
+html[data-theme="light"] .autoTradePinBox {
+  border-color: rgba(15, 23, 42, 0.14);
+  background: #f8fafc;
+  color: rgba(15, 23, 42, 0.88);
+}
+
+html[data-theme="light"] .autoTradeChoiceCard:hover,
+html[data-theme="light"] .autoTradeChoiceCard:focus-visible {
+  border-color: rgba(180, 83, 9, 0.34);
+  background: #fffbeb;
+  color: #92400e;
+}
+
+html[data-theme="light"] .autoTradePinBox.filled {
+  border-color: rgba(15, 23, 42, 0.24);
+  background: #ffffff;
+}
+
+html[data-theme="light"] .autoTradeModeBadge {
+  border-color: rgba(15, 23, 42, 0.12);
+  background: #ffffff;
+  color: rgba(15, 23, 42, 0.76);
+}
+
+html[data-theme="light"] .autoTradeModeBadge.admin {
+  border-color: rgba(180, 83, 9, 0.28);
+  background: #fffbeb;
+  color: #92400e;
+}
+
+html[data-theme="light"] .autoTradeModeBadge.user {
+  border-color: rgba(37, 99, 235, 0.24);
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+html[data-theme="light"] .autoTradeFolderGate {
+  border-color: rgba(180, 83, 9, 0.22);
+  background: #fffbeb;
 }
 
 html[data-theme="light"] .topstepAccountFolderButton:hover {
@@ -3029,7 +3282,9 @@ html[data-theme="light"] .topstepConnectionFoot {
 
 html[data-theme="light"] .topstepConnectionActions button,
 html[data-theme="light"] .topstepConnectForm button,
-html[data-theme="light"] .topstepAccountControls button {
+html[data-theme="light"] .topstepAccountControls button,
+html[data-theme="light"] .autoTradeModeBar button,
+html[data-theme="light"] .autoTradeFolderGate button {
   border-color: rgba(37, 99, 235, 0.2);
   background: rgba(37, 99, 235, 0.06);
   color: #1d4ed8;
@@ -3037,7 +3292,9 @@ html[data-theme="light"] .topstepAccountControls button {
 
 html[data-theme="light"] .topstepConnectionActions button:hover:not(:disabled),
 html[data-theme="light"] .topstepConnectForm button:hover:not(:disabled),
-html[data-theme="light"] .topstepAccountControls button:hover:not(:disabled) {
+html[data-theme="light"] .topstepAccountControls button:hover:not(:disabled),
+html[data-theme="light"] .autoTradeModeBar button:hover,
+html[data-theme="light"] .autoTradeFolderGate button:hover:not(:disabled) {
   border-color: rgba(37, 99, 235, 0.34);
   background: rgba(37, 99, 235, 0.1);
   color: #1e40af;
@@ -5759,6 +6016,7 @@ html[data-theme="light"] .tradeReplaySlider input {
   .autoTradeSelectControl span,
   .topstepConnectForm label span,
   .topstepAccountRow span,
+  .autoTradeFolderGate span,
   .topstepConnectionFoot span,
   .topstepConnectionMeta span,
   .autoTradeProviderOption span {
@@ -5768,13 +6026,17 @@ html[data-theme="light"] .tradeReplaySlider input {
   .topstepDrawerHead button,
   .topstepConnectionActions button,
   .topstepConnectForm button,
-  .topstepAccountControls button {
+  .topstepAccountControls button,
+  .autoTradeModeBar button,
+  .autoTradeFolderGate button {
     min-height: 26px;
     padding: 0 7px;
     font-size: 8.5px;
   }
 
   .autoTradeModeStrip,
+  .autoTradeModeBar,
+  .autoTradeFolderGate,
   .autoTradeSelectGrid,
   .topstepConnectForm,
   .topstepAccountFields,
@@ -5787,7 +6049,8 @@ html[data-theme="light"] .tradeReplaySlider input {
 
   .autoTradeSelectControl select,
   .topstepConnectForm input,
-  .topstepConnectForm select {
+  .topstepConnectForm select,
+  .autoTradeFolderGate input {
     min-height: 29px;
     padding-left: 7px;
     font-size: 11px;
@@ -5797,6 +6060,7 @@ html[data-theme="light"] .tradeReplaySlider input {
   .topstepAccountFolderButton,
   .topstepAccountFolderPage,
   .topstepAccountEmpty,
+  .autoTradeGatePanel,
   .autoTradeProviderOption {
     min-height: 0;
     gap: 5px;
@@ -5804,6 +6068,7 @@ html[data-theme="light"] .tradeReplaySlider input {
   }
 
   .topstepAccountRow strong,
+  .autoTradeFolderGate strong,
   .topstepFolderIdentity strong,
   .topstepFolderMeta strong,
   .topstepFolderCount strong,

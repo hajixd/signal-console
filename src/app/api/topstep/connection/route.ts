@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { randomUUID } from "node:crypto";
+import { isValidAccessCode } from "@/lib/account-access-code";
 import {
   deleteStoredProjectXConnection,
   getLatestStoredProjectXConnection,
@@ -24,6 +25,7 @@ const TOPSTEP_PROJECTX_CONNECTION_COOKIE = "topstep_projectx_connection_id";
 const CONNECTION_MAX_AGE_SECONDS = 180 * 24 * 60 * 60;
 
 type ConnectPayload = {
+  accessCode?: unknown;
   apiKey?: unknown;
   connectionId?: unknown;
   userName?: unknown;
@@ -125,6 +127,7 @@ async function connectedStatus(connectionId: string): Promise<{ status: ProjectX
   const activeToken = refreshedToken ?? connection.token;
   const accounts = await searchProjectXAccounts(activeToken, true);
   await saveStoredProjectXConnection({
+    accessCodeHash: connection.accessCodeHash,
     accounts,
     autoTradePaused: connection.autoTradePaused,
     connectedAt: connection.connectedAt,
@@ -179,6 +182,7 @@ export async function POST(request: NextRequest) {
   const payload = ((await request.json().catch(() => ({}))) ?? {}) as ConnectPayload;
   const userName = normalizeText(payload.userName);
   const apiKey = normalizeText(payload.apiKey);
+  const accessCode = normalizeText(payload.accessCode);
 
   if (!userName || !apiKey) {
     return jsonStatus(
@@ -194,11 +198,26 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  if (!isValidAccessCode(accessCode)) {
+    return jsonStatus(
+      {
+        accounts: [],
+        autoTradePaused: true,
+        connected: false,
+        connections: await getStoredProjectXConnectionSummaries(),
+        error: "Create a 4-12 digit account code.",
+        persisted: false
+      },
+      { status: 400 }
+    );
+  }
+
   try {
     const connectionId = normalizeConnectionId(payload.connectionId) ?? connectionIdFromRequest(request) ?? randomUUID();
     const token = await loginProjectXApiKey(userName, apiKey);
     const accounts = await searchProjectXAccounts(token, true);
     await saveStoredProjectXConnection({
+      accessCode,
       accounts,
       autoTradePaused: true,
       id: connectionId,

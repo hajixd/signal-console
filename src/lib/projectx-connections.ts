@@ -2,6 +2,7 @@ import { randomBytes, createCipheriv, createDecipheriv, createHash } from "node:
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { FieldValue } from "firebase-admin/firestore";
+import { hashAccessCode, verifyAccessCode } from "@/lib/account-access-code";
 import { firebaseDb, hasFirebaseAdmin } from "@/lib/firebase-admin";
 import { omitUndefinedDeep } from "@/lib/firestore-utils";
 import type { ProjectXAccount, ProjectXConnectionSummary } from "@/lib/projectx";
@@ -14,6 +15,7 @@ const TOKEN_CIPHER_ALGORITHM = "aes-256-gcm";
 export type ProjectXConnectionStoreMode = "firebase" | "local";
 
 type StoredProjectXConnectionPayload = {
+  accessCodeHash?: string;
   accounts: ProjectXAccount[];
   accountCount: number;
   autoTradePaused?: boolean;
@@ -95,6 +97,7 @@ function toStoredConnection(value: StoredProjectXConnectionPayload | null | unde
   const autoTradePaused = value.autoTradePaused !== false;
   const pausedAccountIds = normalizePausedAccountIds(value.pausedAccountIds, accounts, autoTradePaused);
   return {
+    accessCodeHash: typeof value.accessCodeHash === "string" ? value.accessCodeHash : undefined,
     accounts,
     accountCount: typeof value.accountCount === "number" ? value.accountCount : accounts.length,
     autoTradePaused: accounts.length > 0 && pausedAccountIds.length === accounts.length,
@@ -213,6 +216,8 @@ export async function getLatestStoredProjectXConnection(preferredId?: string): P
 }
 
 export async function saveStoredProjectXConnection(input: {
+  accessCode?: string;
+  accessCodeHash?: string;
   accounts: ProjectXAccount[];
   autoTradePaused?: boolean;
   connectedAt?: string;
@@ -225,6 +230,7 @@ export async function saveStoredProjectXConnection(input: {
   const accounts = normalizeAccounts(input.accounts);
   const pausedAccountIds = normalizePausedAccountIds(input.pausedAccountIds, accounts, input.autoTradePaused !== false);
   const payload: StoredProjectXConnectionPayload = {
+    accessCodeHash: input.accessCode ? hashAccessCode(input.accessCode) : input.accessCodeHash,
     accounts,
     accountCount: accounts.length,
     autoTradePaused: accounts.length > 0 && pausedAccountIds.length === accounts.length,
@@ -281,12 +287,21 @@ export async function setStoredProjectXConnectionPaused(id: string, autoTradePau
 
   return saveStoredProjectXConnection({
     accounts: connection.accounts,
+    accessCodeHash: connection.accessCodeHash,
     connectedAt: connection.connectedAt,
     id,
     pausedAccountIds: [...pausedAccountIds],
     token: connection.token,
     userName: connection.userName
   });
+}
+
+export async function verifyStoredProjectXConnectionAccessCode(id: string, accessCode: string): Promise<boolean> {
+  const payload = hasFirebaseAdmin()
+    ? ((await firebaseDb().collection(PROJECTX_CONNECTION_COLLECTION).doc(id).get()).data() as StoredProjectXConnectionPayload | undefined)
+    : (await readLocalConnections())[id];
+  if (!payload || payload.status !== "connected") return false;
+  return verifyAccessCode(accessCode, typeof payload.accessCodeHash === "string" ? payload.accessCodeHash : undefined);
 }
 
 export async function deleteStoredProjectXConnection(id: string): Promise<void> {

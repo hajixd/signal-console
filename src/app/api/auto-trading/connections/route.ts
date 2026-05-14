@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { isValidAccessCode } from "@/lib/account-access-code";
 import {
   autoTradeConnectionStoreMode,
   deleteAutoTradeConnection,
@@ -13,6 +14,7 @@ export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 type SavePayload = {
+  accessCode?: unknown;
   accountId?: unknown;
   accountName?: unknown;
   fields?: unknown;
@@ -77,8 +79,14 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Enter the provider credentials before connecting." }, { status: 400 });
   }
 
+  const accessCode = text(payload.accessCode);
+  if (!isValidAccessCode(accessCode)) {
+    return NextResponse.json({ error: "Create a 4-12 digit account code." }, { status: 400 });
+  }
+
   try {
     const connection = await saveAutoTradeConnection({
+      accessCode,
       accountId: text(payload.accountId),
       accountName: text(payload.accountName),
       fields,
