@@ -63,6 +63,22 @@ function selectedPathPrefixes(): string[] {
   );
 }
 
+function selectedExactPaths(): string[] {
+  const raw = process.argv.find((value) => value.startsWith("--paths="));
+  if (!raw) return [];
+  return unique(
+    raw
+      .slice("--paths=".length)
+      .split(",")
+      .map((value) => value.trim().replace(/\\/g, "/").replace(/^\/+/, ""))
+      .filter(Boolean)
+  );
+}
+
+function ignoreMissingRequested(): boolean {
+  return process.argv.includes("--ignore-missing");
+}
+
 function relativePathFromStorageName(name: string): string | null {
   const rootPrefix = storageObjectPath("");
   const prefix = rootPrefix ? rootPrefix.replace(/\/+$/, "") + "/" : "";
@@ -80,6 +96,30 @@ async function downloadFile(storageName: string, relativePath: string): Promise<
 async function main(): Promise<void> {
   if (!hasFirebaseAdmin()) {
     throw new Error("Firebase Admin credentials are missing. Set FIREBASE_SERVICE_ACCOUNT_JSON or the split FIREBASE_* variables first.");
+  }
+
+  const exactPaths = selectedExactPaths();
+  const ignoreMissing = ignoreMissingRequested();
+  if (exactPaths.length) {
+    let downloadedCount = 0;
+    let missingCount = 0;
+
+    for (const relativePath of exactPaths) {
+      const storageName = storageObjectPath(relativePath);
+      try {
+        await downloadFile(storageName, relativePath);
+        downloadedCount += 1;
+        console.log(`downloaded ${storageName} -> ${relativePath}`);
+      } catch (error) {
+        if (!ignoreMissing) throw error;
+        missingCount += 1;
+        console.log(`missing ${storageName}`);
+      }
+    }
+
+    console.log(`downloaded files ${downloadedCount}`);
+    if (missingCount) console.log(`missing files ${missingCount}`);
+    return;
   }
 
   const roots = selectedPullRoots();

@@ -498,7 +498,7 @@ def main() -> None:
 
     if args.prepare_data:
         print("Rebuilding derived timeframes from data/15m", flush=True)
-        prepare_data()
+        prepare_data(asset_filters=[asset.key for asset in targets])
 
     if failures:
         print("Completed with provider failures:", flush=True)

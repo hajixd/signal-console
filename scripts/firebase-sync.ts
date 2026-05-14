@@ -72,6 +72,18 @@ function selectedPathPrefixes(): string[] {
   );
 }
 
+function selectedExactPaths(): string[] {
+  const raw = process.argv.find((value) => value.startsWith("--paths="));
+  if (!raw) return [];
+  return unique(
+    raw
+      .slice("--paths=".length)
+      .split(",")
+      .map((value) => value.trim().replace(/\\/g, "/").replace(/^\/+/, ""))
+      .filter(Boolean)
+  );
+}
+
 function contentType(filePath: string): string {
   const ext = path.extname(filePath).toLowerCase();
   if (ext === ".json") return "application/json";
@@ -136,18 +148,31 @@ async function remoteFilesForRoots(roots: UploadRoot[]): Promise<Map<string, Rem
   return remoteFiles;
 }
 
-async function filterChangedFiles(relativePaths: string[], roots: UploadRoot[]): Promise<string[]> {
+async function remoteFileForPath(relativePath: string): Promise<RemoteFileInfo | undefined> {
+  const file = firebaseBucket().file(storageObjectPath(relativePath));
+  try {
+    const [metadata] = await file.getMetadata();
+    return {
+      md5Hash: metadata.md5Hash,
+      size: metadata.size ? Number(metadata.size) : undefined
+    };
+  } catch {
+    return undefined;
+  }
+}
+
+async function filterChangedFiles(relativePaths: string[], roots: UploadRoot[], exactPathsMode = false): Promise<string[]> {
   if (!changedOnlyRequested()) {
     return relativePaths;
   }
 
-  const remoteFiles = await remoteFilesForRoots(roots);
+  const remoteFiles = exactPathsMode ? new Map<string, RemoteFileInfo>() : await remoteFilesForRoots(roots);
   const changedPaths: string[] = [];
   let skippedCount = 0;
 
   for (const relativePath of relativePaths) {
     const destination = storageObjectPath(relativePath);
-    const remoteFile = remoteFiles.get(destination);
+    const remoteFile = exactPathsMode ? await remoteFileForPath(relativePath) : remoteFiles.get(destination);
     if (!remoteFile) {
       changedPaths.push(relativePath);
       continue;
@@ -201,19 +226,22 @@ async function main(): Promise<void> {
   }
 
   const roots = selectedUploadRoots();
+  const exactPaths = selectedExactPaths();
   const pathPrefixes = selectedPathPrefixes();
-  const files = unique(
-    (
-      await Promise.all(
-        roots.map((entry) => walk(entry.root, entry.include))
-      )
-    ).flat()
-  );
+  const files = exactPaths.length
+    ? exactPaths
+    : unique(
+        (
+          await Promise.all(
+            roots.map((entry) => walk(entry.root, entry.include))
+          )
+        ).flat()
+      );
   const matchingFiles =
     pathPrefixes.length > 0
       ? files.filter((relativePath) => pathPrefixes.some((prefix) => relativePath.startsWith(prefix)))
       : files;
-  const filesToUpload = await filterChangedFiles(matchingFiles, roots);
+  const filesToUpload = await filterChangedFiles(matchingFiles, roots, exactPaths.length > 0);
 
   const uploadedFilesCount = await uploadFiles(filesToUpload);
   const catalog = await buildLocalStrategyCatalog();

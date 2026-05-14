@@ -50,22 +50,25 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install -r requirements.txt
 
-      - name: Pull current runtime assets from Firebase
-        run: node --import tsx scripts/firebase-pull.ts --roots=data,strategy
+      - name: Plan targeted Firebase refresh inputs
+        run: |
+          mkdir -p .local
+          node --import tsx scripts/backtest-refresh-plan.ts --out=.local/backtest-refresh-plan.json
+          echo "DATA_PULL_PATHS=$(node --import tsx scripts/backtest-refresh-plan.ts --field=dataPullPaths)" >> "$GITHUB_ENV"
+          echo "BACKTEST_CSV_PATHS=$(node --import tsx scripts/backtest-refresh-plan.ts --field=backtestCsvPaths)" >> "$GITHUB_ENV"
+          echo "SOURCE_ASSET_KEYS=$(node --import tsx scripts/backtest-refresh-plan.ts --field=sourceAssetKeys)" >> "$GITHUB_ENV"
+
+      - name: Pull current source candles from Firebase
+        run: node --import tsx scripts/firebase-pull.ts --paths="$DATA_PULL_PATHS"
+
+      - name: Pull current backtest CSVs from Firebase
+        run: node --import tsx scripts/firebase-pull.ts --paths="$BACKTEST_CSV_PATHS" --ignore-missing
+
+      - name: Rebuild derived timeframes locally
+        run: python backtest-engine/runner.py prepare-data --asset "$SOURCE_ASSET_KEYS"
 
       - name: Capture current data tails
         run: node --import tsx scripts/capture-data-tails.ts --out=.local/data-tail-state.json
-
-      - name: Refresh 15m source data and derived folders
-        env:
-          AUTO_REFRESH_LOOKBACK_DAYS: ${{ vars.AUTO_REFRESH_LOOKBACK_DAYS || '7' }}
-        run: |
-          python backtest-engine/import_provider_data.py \
-            --all-assets \
-            --incremental \
-            --continue-on-error \
-            --lookback-days "$AUTO_REFRESH_LOOKBACK_DAYS" \
-            --prepare-data
 
       - name: Run backtests
         env:
@@ -76,5 +79,5 @@ jobs:
             --incremental-overlap-days "$AUTO_BACKTEST_OVERLAP_DAYS" \
             --incremental-start-state .local/data-tail-state.json
 
-      - name: Upload changed runtime assets to Firebase
-        run: node --import tsx scripts/firebase-sync.ts --roots=config,data,strategy --changed-only
+      - name: Upload changed backtest CSVs and manifest to Firebase
+        run: node --import tsx scripts/firebase-sync.ts --paths="$BACKTEST_CSV_PATHS" --changed-only

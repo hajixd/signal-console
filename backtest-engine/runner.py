@@ -157,13 +157,38 @@ def source_csv_path(asset: AssetConfig, source_dir: Path) -> Path:
     raise FileNotFoundError(f"Missing source file for {asset.symbol} in {source_dir}")
 
 
-def prepare_data(source_dir: Path | None = None) -> None:
+def normalize_asset_filters(asset_filters: Iterable[str] | None) -> set[str]:
+    if not asset_filters:
+        return set()
+    return {
+        item.strip()
+        for raw_filter in asset_filters
+        for item in raw_filter.split(",")
+        if item.strip()
+    }
+
+
+def select_assets_for_prepare(assets: list[AssetConfig], asset_filters: Iterable[str] | None) -> list[AssetConfig]:
+    requested = normalize_asset_filters(asset_filters)
+    if not requested:
+        return assets
+
+    selected = [asset for asset in assets if asset.key in requested or asset.symbol in requested or asset.data_file in requested]
+    matched = {asset.key for asset in selected} | {asset.symbol for asset in selected} | {asset.data_file for asset in selected}
+    missing = sorted(requested - matched)
+    if missing:
+        raise ValueError(f"No configured asset matched prepare-data filter(s): {', '.join(missing)}")
+    return selected
+
+
+def prepare_data(source_dir: Path | None = None, asset_filters: Iterable[str] | None = None) -> None:
     assets = load_assets()
+    selected_assets = select_assets_for_prepare(assets, asset_filters)
     base_dir = DATA_ROOT / "15m"
     base_dir.mkdir(parents=True, exist_ok=True)
     resolved_source_dir = source_dir.resolve() if source_dir else base_dir.resolve()
 
-    for asset in assets:
+    for asset in selected_assets:
         source_path = source_csv_path(asset, resolved_source_dir)
         base_frame = read_legacy_csv(source_path)
         write_candle_csv(base_dir / asset.data_file, base_frame)
@@ -4147,6 +4172,7 @@ def parse_args() -> argparse.Namespace:
 
     prepare = subparsers.add_parser("prepare-data", help="Import 15m candles and build higher timeframes")
     prepare.add_argument("--source", help="Optional source folder. Defaults to data/15m and also accepts the old legacy filenames.")
+    prepare.add_argument("--asset", action="append", help="Optional asset key/symbol/data file filter. Repeat or comma-separate values.")
 
     run = subparsers.add_parser("run-backtests", help="Regenerate strategy backtest CSV files")
     run.add_argument("--strategy", action="append", help="Optional strategy id/folder/asset filter. Repeat to include multiple.")
@@ -4176,7 +4202,7 @@ def parse_args() -> argparse.Namespace:
 def main() -> None:
     args = parse_args()
     if args.command == "prepare-data":
-        prepare_data(Path(args.source).resolve() if args.source else None)
+        prepare_data(Path(args.source).resolve() if args.source else None, asset_filters=args.asset)
         return
     if args.command == "run-backtests":
         run_backtests(
