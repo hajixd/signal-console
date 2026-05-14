@@ -1,4 +1,5 @@
 export const AUTO_TRADE_ACCOUNT_MODE_STORAGE_KEY = "tradingbot-auto-trade-account-mode";
+export const AUTO_TRADE_ACCOUNT_MODE_CHANGE_EVENT = "tradingbot:auto-trade-account-mode-change";
 export const AUTO_TRADE_ADMIN_ACCESS_CODE = "12345";
 export const AUTO_TRADE_ACCESS_CODE_MAX_LENGTH = 12;
 
@@ -17,9 +18,11 @@ export function savedAccountMode(): AutoTradeAccountMode | null {
 export function saveAccountMode(mode: AutoTradeAccountMode): void {
   if (typeof window === "undefined") return;
   window.sessionStorage.setItem(AUTO_TRADE_ACCOUNT_MODE_STORAGE_KEY, mode);
+  window.dispatchEvent(new Event(AUTO_TRADE_ACCOUNT_MODE_CHANGE_EVENT));
 }
 
 export function clearSavedAccountMode(): void {
   if (typeof window === "undefined") return;
   window.sessionStorage.removeItem(AUTO_TRADE_ACCOUNT_MODE_STORAGE_KEY);
+  window.dispatchEvent(new Event(AUTO_TRADE_ACCOUNT_MODE_CHANGE_EVENT));
 }

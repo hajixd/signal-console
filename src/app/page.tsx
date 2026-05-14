@@ -1,5 +1,6 @@
 import ChallengeReplay from "@/components/challenge/challenge-replay";
 import AutoTradeAccountGate from "@/components/auto-trading/auto-trade-account-gate";
+import AutoTradeAccountModeSwitch from "@/components/auto-trading/auto-trade-account-mode-switch";
 import AutoTradingConnectionDrawer from "@/components/auto-trading/auto-trading-connection-drawer";
 import SelectedStrategyStats from "@/components/strategies/selected-strategy-stats";
 import StrategySelector from "@/components/strategies/strategy-selector";
@@ -108,6 +109,22 @@ type StrategyOption = {
   stat?: BacktestStat;
 };
 
+type DataValidityTone = "good" | "warning" | "bad";
+
+type DataValidityIssue = {
+  count: number;
+  label: string;
+  tone: Exclude<DataValidityTone, "good">;
+};
+
+type DataValidityResult = {
+  detailTitle: string;
+  issues: DataValidityIssue[];
+  label: string;
+  summary: string;
+  tone: DataValidityTone;
+};
+
 function fmtPrice(value: number): string {
   return new Intl.NumberFormat("en-US", {
     maximumFractionDigits: 5
@@ -124,6 +141,22 @@ function fmtNumber(value: number): string {
     minimumFractionDigits: Number.isInteger(value) ? 0 : 2,
     maximumFractionDigits: 2
   }).format(value);
+}
+
+function dataValidityRank(tone: DataValidityTone): number {
+  if (tone === "bad") return 2;
+  if (tone === "warning") return 1;
+  return 0;
+}
+
+function dataValidityIssueRank(issue: DataValidityIssue): number {
+  return dataValidityRank(issue.tone);
+}
+
+function dataValidityClass(tone: DataValidityTone): string {
+  if (tone === "bad") return "bad";
+  if (tone === "warning") return "warning";
+  return "good";
 }
 
 function fmtPct(value: number): string {
@@ -435,6 +468,119 @@ function tradeTargetDollars(trade: BacktestTrade, sizeMultiplier = 1): number {
 function tradeRiskDollars(trade: BacktestTrade, sizeMultiplier = 1): number {
   const netRiskUnits = Math.abs(trade.slUnits) + tradeCostUnits(trade);
   return Math.abs(netRiskUnits * dollarPerUnit(trade.symbol, trade.entryPrice) * tradeSizeMultiplier(trade, sizeMultiplier));
+}
+
+function analyzeBacktestDataValidity({
+  backtestBehindMarketData,
+  now = Date.now(),
+  optionByKey,
+  trades
+}: {
+  backtestBehindMarketData: boolean;
+  now?: number;
+  optionByKey: Map<string, StrategyOption>;
+  trades: BacktestTrade[];
+}): DataValidityResult {
+  const issues: DataValidityIssue[] = [];
+
+  if (!trades.length) {
+    return {
+      detailTitle: "No stored backtest trades are available for this market.",
+      issues: [{ count: 1, label: "No trades", tone: "bad" }],
+      label: "No data",
+      summary: "Nothing to validate",
+      tone: "bad"
+    };
+  }
+
+  const duplicateFingerprints = new Map<string, number>();
+  let futureDated = 0;
+  let impossibleDurations = 0;
+  let invalidMath = 0;
+  let invalidPrices = 0;
+  let invalidTimes = 0;
+  let missingStrategies = 0;
+
+  for (const trade of trades) {
+    const signalTime = Date.parse(trade.signalTime);
+    const entryTime = Date.parse(trade.entryTime);
+    const exitTime = Date.parse(trade.exitTime);
+    const hasInvalidTime = !Number.isFinite(signalTime) || !Number.isFinite(entryTime) || !Number.isFinite(exitTime);
+
+    if (hasInvalidTime) {
+      invalidTimes += 1;
+    } else {
+      if (exitTime < entryTime || trade.exitIndex < trade.entryIndex || trade.barsHeld < 0) impossibleDurations += 1;
+      if (signalTime > now + 86_400_000 || entryTime > now + 86_400_000 || exitTime > now + 86_400_000) futureDated += 1;
+    }
+
+    if (!Number.isFinite(trade.entryPrice) || !Number.isFinite(trade.exitPrice) || trade.entryPrice <= 0 || trade.exitPrice <= 0) {
+      invalidPrices += 1;
+    }
+
+    const dollarPnl = tradeDollarPnl(trade, optionByKey.get(trade.datasetId)?.sizeMultiplier ?? 1);
+    if (
+      !Number.isFinite(trade.barsHeld) ||
+      !Number.isFinite(trade.netUnits) ||
+      !Number.isFinite(trade.rMultiple) ||
+      !Number.isFinite(trade.slUnits) ||
+      !Number.isFinite(trade.tpUnits) ||
+      !Number.isFinite(dollarPnl)
+    ) {
+      invalidMath += 1;
+    }
+
+    if (!optionByKey.has(trade.datasetId)) missingStrategies += 1;
+
+    const fingerprint = [
+      trade.datasetId,
+      trade.symbol,
+      trade.side,
+      trade.entryTime,
+      trade.exitTime,
+      trade.entryPrice,
+      trade.exitPrice
+    ].join("|");
+    duplicateFingerprints.set(fingerprint, (duplicateFingerprints.get(fingerprint) ?? 0) + 1);
+  }
+
+  const duplicateTrades = [...duplicateFingerprints.values()].reduce((sum, count) => sum + Math.max(0, count - 1), 0);
+  const duplicatePct = (duplicateTrades / trades.length) * 100;
+
+  if (invalidTimes) issues.push({ count: invalidTimes, label: "Invalid timestamps", tone: "bad" });
+  if (impossibleDurations) issues.push({ count: impossibleDurations, label: "Impossible durations", tone: "bad" });
+  if (invalidPrices) issues.push({ count: invalidPrices, label: "Invalid prices", tone: "bad" });
+  if (invalidMath) issues.push({ count: invalidMath, label: "Invalid math", tone: "bad" });
+  if (futureDated) issues.push({ count: futureDated, label: "Future-dated trades", tone: "bad" });
+  if (missingStrategies) issues.push({ count: missingStrategies, label: "Missing strategy rows", tone: "warning" });
+  if (duplicateTrades) {
+    issues.push({
+      count: duplicateTrades,
+      label: `Potential duplicates (${fmtNumber(duplicatePct)}%)`,
+      tone: duplicatePct >= 5 ? "bad" : "warning"
+    });
+  }
+  if (backtestBehindMarketData) issues.push({ count: 1, label: "Backtest behind market data", tone: "warning" });
+
+  const tone = issues.reduce<DataValidityTone>(
+    (current, issue) => (dataValidityIssueRank(issue) > dataValidityRank(current) ? issue.tone : current),
+    "good"
+  );
+  const sortedIssues = [...issues].sort((left, right) => dataValidityIssueRank(right) - dataValidityIssueRank(left) || right.count - left.count);
+  const issueSummary = sortedIssues
+    .slice(0, 2)
+    .map((issue) => `${fmtNumber(issue.count)} ${issue.label.toLowerCase()}`)
+    .join(" / ");
+
+  return {
+    detailTitle: sortedIssues.length
+      ? sortedIssues.map((issue) => `${issue.label}: ${fmtNumber(issue.count)}`).join("\n")
+      : `Checked ${fmtNumber(trades.length)} trades with no anomalies found.`,
+    issues: sortedIssues,
+    label: tone === "bad" ? "Sus" : tone === "warning" ? "Review" : "Clean",
+    summary: issueSummary || `${fmtNumber(trades.length)} trades checked`,
+    tone
+  };
 }
 
 function recentStrategyTrades(trades: BacktestTrade[]): BacktestTrade[] {
@@ -804,6 +950,11 @@ export default async function Home({ searchParams }: HomeProps) {
     hiddenHistoryTradeCount > 0
       ? `Showing latest ${fmtNumber(visibleTradeHistoryRows.length)} of ${fmtNumber(activeMarketBacktestTrades.length)} trades`
       : `Showing ${fmtNumber(visibleTradeHistoryRows.length)} trades`;
+  const dataValidity = analyzeBacktestDataValidity({
+    backtestBehindMarketData,
+    optionByKey,
+    trades: activeMarketBacktestTrades
+  });
   const challengeReplayTrades = selectedBacktestTrades.map((trade) => ({
       key: trade.datasetId,
       entryTime: trade.entryTime,
@@ -826,7 +977,10 @@ export default async function Home({ searchParams }: HomeProps) {
       <AutoRefresh />
       <AutoTradeAccountGate />
       <section className="terminal-workspace marketView" id="signals" key={activeMarket}>
-        <MarketSwitchTabs activeMarket={activeMarket} tabs={MARKET_TABS} persistActiveMarket={syncActiveMarket} />
+        <div className="marketTopShell">
+          <AutoTradeAccountModeSwitch />
+          <MarketSwitchTabs activeMarket={activeMarket} tabs={MARKET_TABS} persistActiveMarket={syncActiveMarket} />
+        </div>
         <header className="terminal-head">
           <div className="asset-meta">
             <h1>Trading Bot</h1>
@@ -899,7 +1053,18 @@ export default async function Home({ searchParams }: HomeProps) {
                 <LocalDateTime value={latestBacktestTradeAt} fallback="unknown" />.
               </p>
             </div>
-            <span className={`count-pill${backtestBehindMarketData ? " warning" : ""}`}>{historyCountLabel}</span>
+            <div className="historyHeadActions">
+              <div
+                className={`dataValidityBox ${dataValidityClass(dataValidity.tone)}`}
+                title={dataValidity.detailTitle}
+                aria-label={`Data Validity: ${dataValidity.label}. ${dataValidity.summary}`}
+              >
+                <span>Data Validity</span>
+                <strong>{dataValidity.label}</strong>
+                <small>{dataValidity.summary}</small>
+              </div>
+              <span className={`count-pill${backtestBehindMarketData ? " warning" : ""}`}>{historyCountLabel}</span>
+            </div>
           </div>
 
           {activeMarketBacktestTrades.length === 0 ? (

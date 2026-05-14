@@ -2,11 +2,9 @@
 
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import {
-  AUTO_TRADE_ADMIN_ACCESS_CODE,
+  AUTO_TRADE_ACCOUNT_MODE_CHANGE_EVENT,
   AUTO_TRADE_ACCESS_CODE_MAX_LENGTH,
-  clearSavedAccountMode,
   cleanAccessCode,
-  saveAccountMode,
   savedAccountMode,
   type AutoTradeAccountMode
 } from "@/components/auto-trading/auto-trade-account-mode";
@@ -26,6 +24,7 @@ const EMPTY_STATUS: ProjectXConnectionStatus = {
 };
 
 const ACCESS_CODE_MAX_LENGTH = AUTO_TRADE_ACCESS_CODE_MAX_LENGTH;
+const FOLDER_UNLOCK_CODE_MAX_LENGTH = 5;
 
 type SavedAutoTradeConnection = {
   accountId?: string;
@@ -255,9 +254,6 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
   const [isUnlockingFolder, setIsUnlockingFolder] = useState(false);
   const [accountMode, setAccountMode] = useState<AutoTradeAccountMode | null>(null);
   const [isAccountModeReady, setIsAccountModeReady] = useState(false);
-  const [accountEntryMode, setAccountEntryMode] = useState<AutoTradeAccountMode | null>(null);
-  const [adminCodeInput, setAdminCodeInput] = useState("");
-  const [accountAccessError, setAccountAccessError] = useState("");
   const [savedConnections, setSavedConnections] = useState<SavedAutoTradeConnection[]>([]);
   const [genericFields, setGenericFields] = useState<Record<string, string>>(() => defaultConnectionFields(selectedProviderId));
   const [showAdvancedFields, setShowAdvancedFields] = useState(false);
@@ -267,7 +263,7 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
   const [folderAccessError, setFolderAccessError] = useState("");
   const [unlockedProjectXFolderIds, setUnlockedProjectXFolderIds] = useState<string[]>([]);
   const [reconnectProjectXConnectionId, setReconnectProjectXConnectionId] = useState<string | null>(null);
-  const adminCodeInputRef = useRef<HTMLInputElement | null>(null);
+  const folderCodeInputRef = useRef<HTMLInputElement | null>(null);
 
   const marketLabel = autoTradeMarketLabel(market);
   const selectedFirm = propFirms.find((firm) => firm.id === selectedFirmId) ?? propFirms[0]!;
@@ -312,8 +308,24 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
   const isAdminMode = accountMode === "Admin";
 
   useEffect(() => {
-    setAccountMode(savedAccountMode());
+    function syncAccountMode() {
+      const nextMode = savedAccountMode();
+      setAccountMode(nextMode);
+      if (!nextMode) {
+        setIsAddingAccount(false);
+        setReconnectProjectXConnectionId(null);
+        setActiveProjectXFolderId(null);
+        setPendingProjectXFolder(null);
+        setFolderCodeInput("");
+        setFolderAccessError("");
+        setUnlockedProjectXFolderIds([]);
+      }
+    }
+
+    syncAccountMode();
     setIsAccountModeReady(true);
+    window.addEventListener(AUTO_TRADE_ACCOUNT_MODE_CHANGE_EVENT, syncAccountMode);
+    return () => window.removeEventListener(AUTO_TRADE_ACCOUNT_MODE_CHANGE_EVENT, syncAccountMode);
   }, []);
 
   useEffect(() => {
@@ -359,10 +371,10 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
   }, [selectedProviderId]);
 
   useEffect(() => {
-    if (accountEntryMode !== "Admin" || accountMode) return;
-    const frame = window.requestAnimationFrame(() => adminCodeInputRef.current?.focus());
+    if (!pendingProjectXFolder) return;
+    const frame = window.requestAnimationFrame(() => folderCodeInputRef.current?.focus());
     return () => window.cancelAnimationFrame(frame);
-  }, [accountEntryMode, accountMode]);
+  }, [pendingProjectXFolder]);
 
   useEffect(() => {
     if (pendingProjectXFolder && !projectXAccountFolders.some((folder) => folder.id === pendingProjectXFolder.id)) {
@@ -371,40 +383,6 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
       setFolderAccessError("");
     }
   }, [pendingProjectXFolder, projectXAccountFolders]);
-
-  function grantAccountMode(mode: AutoTradeAccountMode) {
-    setAccountMode(mode);
-    setAccountEntryMode(null);
-    setAdminCodeInput("");
-    setAccountAccessError("");
-    saveAccountMode(mode);
-  }
-
-  function handleAdminUnlock(code = adminCodeInput) {
-    if (code.length < 5) return;
-    if (code === AUTO_TRADE_ADMIN_ACCESS_CODE) {
-      grantAccountMode("Admin");
-      return;
-    }
-
-    setAdminCodeInput("");
-    setAccountAccessError("Incorrect code");
-    window.requestAnimationFrame(() => adminCodeInputRef.current?.focus());
-  }
-
-  function handleSwitchAccountMode() {
-    setAccountMode(null);
-    setAccountEntryMode(null);
-    setAdminCodeInput("");
-    setAccountAccessError("");
-    setIsAddingAccount(false);
-    setActiveProjectXFolderId(null);
-    setPendingProjectXFolder(null);
-    setFolderCodeInput("");
-    setFolderAccessError("");
-    setUnlockedProjectXFolderIds([]);
-    clearSavedAccountMode();
-  }
 
   function requestProjectXFolder(folder: ProjectXConnectionSummary) {
     if (unlockedProjectXFolderIds.includes(folder.id)) {
@@ -640,9 +618,10 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
     }
   }
 
-  async function handleUnlockProjectXFolder(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+  async function unlockProjectXFolder(code = folderCodeInput) {
     if (!pendingProjectXFolder) return;
+    const accessCode = cleanAccessCode(code, FOLDER_UNLOCK_CODE_MAX_LENGTH);
+    if (!accessCode || isUnlockingFolder) return;
 
     setIsUnlockingFolder(true);
     setFolderAccessError("");
@@ -651,7 +630,7 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
-          accessCode: folderCodeInput,
+          accessCode,
           connectionId: pendingProjectXFolder.id,
           type: "projectx"
         })
@@ -668,9 +647,15 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
     } catch (error) {
       setFolderCodeInput("");
       setFolderAccessError(error instanceof Error ? error.message : "Incorrect code.");
+      window.requestAnimationFrame(() => folderCodeInputRef.current?.focus());
     } finally {
       setIsUnlockingFolder(false);
     }
+  }
+
+  function handleUnlockProjectXFolder(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    void unlockProjectXFolder();
   }
 
   if (!isAccountModeReady) {
@@ -684,82 +669,9 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
   if (!accountMode) {
     return (
       <div className="topstepConnection">
-        <div className="autoTradeGatePanel">
-          {accountEntryMode === "Admin" ? (
-            <form
-              className="autoTradePinForm"
-              onClick={() => adminCodeInputRef.current?.focus()}
-              onSubmit={(event) => {
-                event.preventDefault();
-                handleAdminUnlock();
-              }}
-            >
-              <input
-                aria-label="Admin code"
-                autoFocus
-                className="autoTradePinHidden"
-                inputMode="numeric"
-                maxLength={5}
-                onChange={(event) => {
-                  const nextValue = cleanAccessCode(event.target.value, 5);
-                  setAdminCodeInput(nextValue);
-                  setAccountAccessError("");
-                  if (nextValue.length === 5) handleAdminUnlock(nextValue);
-                }}
-                onKeyDown={(event) => {
-                  if (event.key === "Escape") {
-                    setAccountEntryMode(null);
-                    setAdminCodeInput("");
-                    setAccountAccessError("");
-                  }
-
-                  if (event.key === "Backspace" && adminCodeInput.length === 0) {
-                    setAccountEntryMode(null);
-                    setAccountAccessError("");
-                  }
-                }}
-                pattern="[0-9]*"
-                ref={adminCodeInputRef}
-                value={adminCodeInput}
-              />
-              <div className="autoTradePinGrid" aria-hidden>
-                {Array.from({ length: 5 }, (_, index) => {
-                  const digit = adminCodeInput[index] ?? "";
-                  const isActiveSlot = adminCodeInput.length === index && adminCodeInput.length < 5;
-                  return (
-                    <button
-                      aria-label={`Digit ${index + 1}`}
-                      className={`autoTradePinBox${digit ? " filled" : ""}${isActiveSlot ? " active" : ""}`}
-                      key={`auto-trade-pin-${index + 1}`}
-                      onClick={() => adminCodeInputRef.current?.focus()}
-                      tabIndex={-1}
-                      type="button"
-                    >
-                      {digit}
-                    </button>
-                  );
-                })}
-              </div>
-              {accountAccessError ? <div className="autoTradeGateError">{accountAccessError}</div> : null}
-            </form>
-          ) : (
-            <div className="autoTradeChoiceGrid">
-              <button
-                className="autoTradeChoiceCard"
-                onClick={() => {
-                  setAccountEntryMode("Admin");
-                  setAdminCodeInput("");
-                  setAccountAccessError("");
-                }}
-                type="button"
-              >
-                Admin
-              </button>
-              <button className="autoTradeChoiceCard" onClick={() => grantAccountMode("User")} type="button">
-                User
-              </button>
-            </div>
-          )}
+        <div className="topstepAccountEmpty autoTradeModeNotice">
+          <strong>Choose account mode</strong>
+          <span>Use the mode control above the market tabs to continue.</span>
         </div>
       </div>
     );
@@ -767,12 +679,6 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
 
   return (
     <div className="topstepConnection">
-      <div className="autoTradeModeBar">
-        <span className={`autoTradeModeBadge ${accountMode.toLowerCase()}`}>{accountMode}</span>
-        <button type="button" onClick={handleSwitchAccountMode}>
-          Switch
-        </button>
-      </div>
       <div className="topstepConnectionActions topstepPrimaryActions">
         {isAddingAccount ? (
           <button type="button" onClick={() => {
@@ -954,31 +860,54 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
               </span>
             </div>
           ) : pendingProjectXFolder ? (
-            <form className="autoTradeFolderGate" onSubmit={handleUnlockProjectXFolder}>
+            <form className="autoTradeFolderGate" onClick={() => folderCodeInputRef.current?.focus()} onSubmit={handleUnlockProjectXFolder}>
               <div>
                 <span>Locked folder</span>
                 <strong>{pendingProjectXFolder.userName ?? "ProjectX account"}</strong>
               </div>
-              <label>
+              <div className="autoTradeFolderPinField">
                 <span>Folder code</span>
                 <input
                   autoFocus
+                  className="autoTradePinHidden"
                   autoComplete="current-password"
                   inputMode="numeric"
-                  maxLength={ACCESS_CODE_MAX_LENGTH}
+                  maxLength={FOLDER_UNLOCK_CODE_MAX_LENGTH}
                   onChange={(event) => {
-                    setFolderCodeInput(cleanAccessCode(event.target.value));
+                    const nextValue = cleanAccessCode(event.target.value, FOLDER_UNLOCK_CODE_MAX_LENGTH);
+                    setFolderCodeInput(nextValue);
                     setFolderAccessError("");
+                    if (nextValue.length === FOLDER_UNLOCK_CODE_MAX_LENGTH) void unlockProjectXFolder(nextValue);
                   }}
-                  pattern="[0-9]{4,12}"
-                  placeholder="Enter code"
+                  onKeyDown={(event) => {
+                    if (event.key === "Backspace" && folderCodeInput.length === 0) {
+                      setPendingProjectXFolder(null);
+                      setFolderAccessError("");
+                    }
+                  }}
+                  pattern="[0-9]*"
+                  ref={folderCodeInputRef}
                   required
                   type="password"
                   value={folderCodeInput}
                 />
-              </label>
+                <div className="autoTradePinGrid autoTradeCompactPinGrid" aria-hidden>
+                  {Array.from({ length: FOLDER_UNLOCK_CODE_MAX_LENGTH }, (_, index) => {
+                    const digit = folderCodeInput[index] ?? "";
+                    const isActiveSlot = folderCodeInput.length === index && folderCodeInput.length < FOLDER_UNLOCK_CODE_MAX_LENGTH;
+                    return (
+                      <span
+                        className={`autoTradePinBox${digit ? " filled" : ""}${isActiveSlot ? " active" : ""}`}
+                        key={`projectx-folder-pin-${index + 1}`}
+                      >
+                        {digit}
+                      </span>
+                    );
+                  })}
+                </div>
+              </div>
               {folderAccessError ? <small>{folderAccessError}</small> : null}
-              <button type="submit" disabled={isUnlockingFolder}>
+              <button type="submit" disabled={isUnlockingFolder || !folderCodeInput}>
                 {isUnlockingFolder ? "Unlocking..." : "Open Folder"}
               </button>
             </form>

@@ -154,6 +154,17 @@ button {
   gap: 0.75rem;
 }
 
+.marketTopShell {
+  position: sticky;
+  top: 0;
+  z-index: 55;
+  display: grid;
+  gap: 0.45rem;
+  padding: 0.05rem 0 0.2rem;
+  background: linear-gradient(180deg, #080b10 0%, rgba(8, 11, 16, 0.96) 72%, rgba(8, 11, 16, 0));
+  backdrop-filter: blur(12px);
+}
+
 .marketView {
   animation: marketViewEnter 120ms ease-out both;
 }
@@ -584,6 +595,82 @@ html[data-theme="light"] .themeDarkLabel {
   border-color: rgba(245, 158, 11, 0.5);
   background: rgba(245, 158, 11, 0.12);
   color: #fcd58b;
+}
+
+.historyHeadActions {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: stretch;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+.dataValidityBox {
+  min-width: 172px;
+  max-width: 260px;
+  display: grid;
+  gap: 0.12rem;
+  align-content: center;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.035);
+  padding: 0.42rem 0.55rem;
+}
+
+.dataValidityBox span,
+.dataValidityBox small {
+  min-width: 0;
+  overflow: hidden;
+  font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+  font-weight: 900;
+  letter-spacing: 0;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.dataValidityBox span {
+  color: rgba(255, 255, 255, 0.48);
+  font-size: 0.52rem;
+}
+
+.dataValidityBox strong {
+  color: rgba(255, 255, 255, 0.94);
+  font-size: 0.86rem;
+  font-weight: 950;
+  line-height: 1;
+}
+
+.dataValidityBox small {
+  color: rgba(255, 255, 255, 0.66);
+  font-size: 0.54rem;
+}
+
+.dataValidityBox.good {
+  border-color: rgba(52, 211, 153, 0.32);
+  background: rgba(52, 211, 153, 0.075);
+}
+
+.dataValidityBox.good strong {
+  color: #bbf7d0;
+}
+
+.dataValidityBox.warning {
+  border-color: rgba(245, 158, 11, 0.46);
+  background: rgba(245, 158, 11, 0.105);
+}
+
+.dataValidityBox.warning strong {
+  color: #fde68a;
+}
+
+.dataValidityBox.bad {
+  border-color: rgba(248, 113, 113, 0.48);
+  background: rgba(248, 113, 113, 0.105);
+}
+
+.dataValidityBox.bad strong {
+  color: #fecaca;
 }
 
 .strategyPicker {
@@ -1661,6 +1748,43 @@ html[data-theme="light"] .themeDarkLabel {
   gap: 0.45rem;
 }
 
+.autoTradeTopModeBar {
+  width: 100%;
+}
+
+.autoTradeTopModePanel {
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: #0b0b0b;
+  box-shadow: 0 18px 45px rgba(0, 0, 0, 0.38);
+  padding: 0.42rem 0.55rem;
+}
+
+.autoTradeTopChoiceGrid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.autoTradeTopChoiceGrid .autoTradeChoiceCard {
+  min-height: 34px;
+  font-size: 0.72rem;
+}
+
+.autoTradeTopPinForm {
+  min-height: 40px;
+}
+
+.autoTradeCompactPinGrid {
+  grid-template-columns: repeat(5, minmax(0, 34px));
+  gap: 0.34rem;
+}
+
+.autoTradeCompactPinGrid .autoTradePinBox {
+  width: 34px;
+  height: 34px;
+  font-size: 0.9rem;
+}
+
 .autoTradeModeBadge {
   min-width: 0;
   display: inline-flex;
@@ -2281,7 +2405,8 @@ html[data-theme="light"] .themeDarkLabel {
 }
 
 .autoTradeFolderGate > div,
-.autoTradeFolderGate label {
+.autoTradeFolderGate label,
+.autoTradeFolderPinField {
   min-width: 0;
   display: grid;
   gap: 0.22rem;
@@ -2307,7 +2432,17 @@ html[data-theme="light"] .themeDarkLabel {
   white-space: nowrap;
 }
 
-.autoTradeFolderGate input {
+.autoTradeFolderPinField {
+  position: relative;
+  justify-items: start;
+  gap: 0.38rem;
+}
+
+.autoTradeFolderPinField .autoTradePinGrid {
+  justify-content: start;
+}
+
+.autoTradeFolderGate input:not(.autoTradePinHidden) {
   min-width: 0;
   min-height: 36px;
   border: 1px solid rgba(255, 255, 255, 0.12);
@@ -2317,7 +2452,7 @@ html[data-theme="light"] .themeDarkLabel {
   outline: none;
 }
 
-.autoTradeFolderGate input:focus {
+.autoTradeFolderGate input:not(.autoTradePinHidden):focus {
   border-color: rgba(212, 175, 55, 0.48);
   box-shadow: inset 0 0 0 1px rgba(212, 175, 55, 0.18);
 }
@@ -3013,8 +3148,13 @@ html[data-theme="light"] .terminal {
   background: #f5f7fb;
 }
 
+html[data-theme="light"] .marketTopShell {
+  background: linear-gradient(180deg, #f5f7fb 0%, rgba(245, 247, 251, 0.96) 72%, rgba(245, 247, 251, 0));
+}
+
 html[data-theme="light"] .terminal-head,
 html[data-theme="light"] .market-tabs,
+html[data-theme="light"] .autoTradeTopModePanel,
 html[data-theme="light"] .backtest-card {
   border-color: var(--line);
   background: #ffffff;
@@ -3139,6 +3279,47 @@ html[data-theme="light"] .count-pill.warning {
   color: #92400e;
 }
 
+html[data-theme="light"] .dataValidityBox {
+  border-color: rgba(15, 23, 42, 0.12);
+  background: #f8fafc;
+}
+
+html[data-theme="light"] .dataValidityBox span,
+html[data-theme="light"] .dataValidityBox small {
+  color: rgba(15, 23, 42, 0.52);
+}
+
+html[data-theme="light"] .dataValidityBox strong {
+  color: #0f172a;
+}
+
+html[data-theme="light"] .dataValidityBox.good {
+  border-color: rgba(22, 163, 74, 0.26);
+  background: #f0fdf4;
+}
+
+html[data-theme="light"] .dataValidityBox.good strong {
+  color: #15803d;
+}
+
+html[data-theme="light"] .dataValidityBox.warning {
+  border-color: rgba(217, 119, 6, 0.32);
+  background: #fffbeb;
+}
+
+html[data-theme="light"] .dataValidityBox.warning strong {
+  color: #92400e;
+}
+
+html[data-theme="light"] .dataValidityBox.bad {
+  border-color: rgba(220, 38, 38, 0.28);
+  background: #fef2f2;
+}
+
+html[data-theme="light"] .dataValidityBox.bad strong {
+  color: #b91c1c;
+}
+
 html[data-theme="light"] .pickerActions button:hover:not(:disabled) {
   border-color: rgba(37, 99, 235, 0.35);
   background: #eff6ff;
@@ -3186,7 +3367,7 @@ html[data-theme="light"] .topstepConnectionMeta div {
 html[data-theme="light"] .autoTradeSelectControl select,
 html[data-theme="light"] .topstepConnectForm input,
 html[data-theme="light"] .topstepConnectForm select,
-html[data-theme="light"] .autoTradeFolderGate input {
+html[data-theme="light"] .autoTradeFolderGate input:not(.autoTradePinHidden) {
   border-color: rgba(15, 23, 42, 0.14);
   background:
     linear-gradient(45deg, transparent 50%, rgba(71, 85, 105, 0.82) 50%) calc(100% - 16px) 50% / 6px 6px no-repeat,
@@ -5419,16 +5600,24 @@ html[data-theme="light"] .tradeReplaySlider input {
     padding: 5px 5px 24px;
   }
 
-  .market-tabs {
+  .marketTopShell {
     position: sticky;
     top: 0;
     z-index: 45;
+    gap: 4px;
+    padding: 0 0 5px;
+    background: rgba(7, 9, 13, 0.96);
+    backdrop-filter: blur(14px);
+  }
+
+  .market-tabs {
+    position: relative;
+    z-index: 1;
     min-height: 32px;
     border-right: 0;
     border-left: 0;
     background: rgba(8, 10, 14, 0.96);
     box-shadow: none;
-    backdrop-filter: blur(14px);
   }
 
   .market-tab {
@@ -5441,6 +5630,35 @@ html[data-theme="light"] .tradeReplaySlider input {
   .market-tab.active {
     background: rgba(96, 165, 250, 0.14);
     box-shadow: inset 0 -1px 0 var(--accent);
+  }
+
+  .autoTradeTopModeBar {
+    gap: 5px;
+  }
+
+  .autoTradeTopModePanel {
+    padding: 5px;
+  }
+
+  .autoTradeTopChoiceGrid {
+    gap: 5px;
+  }
+
+  .autoTradeTopChoiceGrid .autoTradeChoiceCard,
+  .autoTradeTopModeBar .autoTradeModeBadge,
+  .autoTradeTopModeBar button {
+    min-height: 29px;
+  }
+
+  .autoTradeCompactPinGrid {
+    grid-template-columns: repeat(5, minmax(0, 30px));
+    gap: 4px;
+  }
+
+  .autoTradeCompactPinGrid .autoTradePinBox {
+    width: 30px;
+    height: 30px;
+    font-size: 11px;
   }
 
   .marketSwitchStatus {
@@ -5515,6 +5733,31 @@ html[data-theme="light"] .tradeReplaySlider input {
     flex-direction: row;
     align-items: center;
     gap: 6px;
+  }
+
+  .historyHeadActions {
+    min-width: 0;
+    flex: 0 1 58%;
+    gap: 4px;
+  }
+
+  .dataValidityBox {
+    min-width: 92px;
+    max-width: 130px;
+    border-radius: 8px;
+    padding: 4px 5px;
+  }
+
+  .dataValidityBox span {
+    font-size: 7.5px;
+  }
+
+  .dataValidityBox strong {
+    font-size: 10px;
+  }
+
+  .dataValidityBox small {
+    font-size: 7.5px;
   }
 
   .backtest-card-head > div {
@@ -5879,6 +6122,15 @@ html[data-theme="light"] .tradeReplaySlider input {
     background: transparent;
   }
 
+  .terminal-table-wrap.historyScroll {
+    max-height: 58svh;
+    overflow: auto;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.012);
+    scrollbar-color: rgba(255, 255, 255, 0.22) transparent;
+    scrollbar-width: thin;
+  }
+
   .terminal-table,
   .live-alert-table,
   .history-table {
@@ -6077,7 +6329,7 @@ html[data-theme="light"] .tradeReplaySlider input {
   .autoTradeSelectControl select,
   .topstepConnectForm input,
   .topstepConnectForm select,
-  .autoTradeFolderGate input {
+  .autoTradeFolderGate input:not(.autoTradePinHidden) {
     min-height: 29px;
     padding-left: 7px;
     font-size: 11px;
@@ -6305,11 +6557,16 @@ html[data-theme="light"] .tradeReplaySlider input {
     background: #f5f7fb;
   }
 
+  html[data-theme="light"] .marketTopShell {
+    background: rgba(245, 247, 251, 0.96);
+  }
+
   html[data-theme="light"] .market-tabs {
     background: rgba(255, 255, 255, 0.96);
   }
 
   html[data-theme="light"] .terminal-head,
+  html[data-theme="light"] .autoTradeTopModePanel,
   html[data-theme="light"] .backtest-card {
     border-color: rgba(15, 23, 42, 0.1);
     background: #ffffff;
@@ -6318,6 +6575,7 @@ html[data-theme="light"] .tradeReplaySlider input {
   html[data-theme="light"] .backtest-stat-card,
   html[data-theme="light"] .telegram-grid div,
   html[data-theme="light"] .basketList,
+  html[data-theme="light"] .terminal-table-wrap.historyScroll,
   html[data-theme="light"] .terminal-table tbody tr,
   html[data-theme="light"] .topstepAccountRow,
   html[data-theme="light"] .topstepAccountEmpty,

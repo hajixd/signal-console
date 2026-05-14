@@ -995,7 +995,7 @@ export default function TradeHistory({ rows }: TradeHistoryProps) {
 
   return (
     <>
-      <div className="terminal-table-wrap tall">
+      <div className="terminal-table-wrap tall historyScroll">
         <table className="terminal-table history-table">
           <colgroup>
             <col className="history-col-index" />
