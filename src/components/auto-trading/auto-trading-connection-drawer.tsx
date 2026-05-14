@@ -71,11 +71,7 @@ export default function AutoTradingConnectionDrawer({ market }: AutoTradingConne
         title={`${marketLabel} auto trading`}
         type="button"
       >
-        <span aria-hidden="true" className="topstepDrawerIcon">
-          <span />
-          <span />
-          <span />
-        </span>
+        <span className="topstepDrawerLabel">Auto-Trade</span>
       </button>
 
       {drawer ? createPortal(drawer, document.body) : null}
