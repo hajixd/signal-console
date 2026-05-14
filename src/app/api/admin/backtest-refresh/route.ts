@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import {
   dispatchBacktestRefresh,
   getBacktestRefreshConfigStatus,
+  listBacktestRefreshWorkflowRuns,
   verifyBacktestRefreshWorkflowAccess
 } from "@/lib/backtest-refresh";
 import { isAdminAuthorized } from "@/lib/admin-api";
@@ -16,15 +17,18 @@ export async function GET(request: Request) {
   }
 
   const url = new URL(request.url);
-  const [freshness, verification] = await Promise.all([
+  const includeRuns = url.searchParams.get("runs") === "1";
+  const [freshness, verification, runs] = await Promise.all([
     getBacktestCatalogFreshness(),
-    url.searchParams.get("verify") === "1" ? verifyBacktestRefreshWorkflowAccess() : Promise.resolve(null)
+    url.searchParams.get("verify") === "1" ? verifyBacktestRefreshWorkflowAccess() : Promise.resolve(null),
+    includeRuns ? listBacktestRefreshWorkflowRuns() : Promise.resolve(null)
   ]);
 
   return NextResponse.json({
     config: getBacktestRefreshConfigStatus(),
     freshness,
     route: "/api/admin/backtest-refresh",
+    runs,
     verification
   });
 }

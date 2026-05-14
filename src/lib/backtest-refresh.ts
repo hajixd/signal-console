@@ -21,6 +21,15 @@ type RefreshConfigStatus = {
   workflow: string;
 };
 
+export type BacktestRefreshWorkflowRun = {
+  conclusion?: string | null;
+  createdAt?: string;
+  htmlUrl?: string;
+  id: number;
+  status?: string | null;
+  updatedAt?: string;
+};
+
 function envValue(...keys: string[]): string {
   for (const key of keys) {
     const value = process.env[key]?.trim();
@@ -114,6 +123,84 @@ export async function verifyBacktestRefreshWorkflowAccess(): Promise<RefreshDisp
       workflowName: workflow.name,
       workflowPath: workflow.path,
       workflowState: workflow.state
+    }
+  };
+}
+
+export async function listBacktestRefreshWorkflowRuns(perPage = 5): Promise<RefreshDispatchResult> {
+  const config = githubRefreshConfig();
+  const missing = Object.entries(config)
+    .filter(([, value]) => !value)
+    .map(([key]) => key);
+
+  if (missing.length) {
+    return {
+      ok: false,
+      status: 503,
+      body: {
+        error: "Missing GitHub workflow dispatch configuration",
+        missing
+      }
+    };
+  }
+
+  const params = new URLSearchParams({
+    branch: config.ref,
+    per_page: String(Math.max(1, Math.min(20, Math.round(perPage))))
+  });
+  const response = await fetch(
+    `https://api.github.com/repos/${config.owner}/${config.repo}/actions/workflows/${WORKFLOW_FILE}/runs?${params.toString()}`,
+    {
+      headers: {
+        Accept: "application/vnd.github+json",
+        Authorization: `Bearer ${config.token}`,
+        "User-Agent": "signal-console-vercel-admin",
+        "X-GitHub-Api-Version": "2022-11-28"
+      },
+      cache: "no-store"
+    }
+  );
+
+  if (!response.ok) {
+    const text = await response.text();
+    return {
+      ok: false,
+      status: response.status,
+      body: {
+        error: "GitHub workflow run lookup failed",
+        details: text || response.statusText
+      }
+    };
+  }
+
+  const payload = (await response.json()) as {
+    workflow_runs?: Array<{
+      conclusion?: string | null;
+      created_at?: string;
+      html_url?: string;
+      id: number;
+      status?: string | null;
+      updated_at?: string;
+    }>;
+  };
+  const runs: BacktestRefreshWorkflowRun[] = (payload.workflow_runs ?? []).map((run) => ({
+    conclusion: run.conclusion,
+    createdAt: run.created_at,
+    htmlUrl: run.html_url,
+    id: run.id,
+    status: run.status,
+    updatedAt: run.updated_at
+  }));
+
+  return {
+    ok: true,
+    status: 200,
+    body: {
+      owner: config.owner,
+      repo: config.repo,
+      ref: config.ref,
+      workflow: WORKFLOW_FILE,
+      runs
     }
   };
 }
