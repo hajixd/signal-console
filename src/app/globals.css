@@ -163,6 +163,22 @@ button {
   backdrop-filter: blur(12px);
 }
 
+.marketTopShell .autoTradeTopModeBar {
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.45rem;
+}
+
+.marketTopShell .autoTradeModeBadge,
+.marketTopShell .autoTradeTopModeBar button {
+  width: 100%;
+  min-height: 42px;
+  height: 42px;
+  border-radius: 12px;
+  font-size: 0.68rem;
+}
+
 .marketView {
   animation: marketViewEnter 120ms ease-out both;
 }
@@ -613,15 +629,15 @@ html[data-theme="light"] .themeDarkLabel {
 }
 
 .dataValidityBox {
-  min-width: 172px;
-  max-width: 260px;
+  min-width: 0;
+  max-width: none;
   display: grid;
-  gap: 0.12rem;
-  align-content: center;
+  gap: 0.38rem;
+  align-content: start;
   border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 10px;
+  border-radius: 12px;
   background: rgba(255, 255, 255, 0.035);
-  padding: 0.42rem 0.55rem;
+  padding: 0.62rem 0.68rem;
 }
 
 .dataValidityBox span,
@@ -642,6 +658,7 @@ html[data-theme="light"] .themeDarkLabel {
 }
 
 .dataValidityBox strong {
+  display: block;
   color: rgba(255, 255, 255, 0.94);
   font-size: 0.86rem;
   font-weight: 950;
@@ -678,6 +695,10 @@ html[data-theme="light"] .themeDarkLabel {
 
 .dataValidityBox.bad strong {
   color: #fecaca;
+}
+
+.dataValidityBox .sync-tile-times dd {
+  white-space: normal;
 }
 
 .strategyPicker {
@@ -4845,16 +4866,6 @@ html[data-theme="light"] .tradeCandlestickPanel {
   gap: 0.6rem;
 }
 
-.syncValidityFooter {
-  display: flex;
-  justify-content: flex-end;
-}
-
-.syncValidityBox {
-  width: min(360px, 100%);
-  max-width: none;
-}
-
 .dataset-sync-tile {
   min-width: 0;
   display: grid;
@@ -5876,7 +5887,7 @@ html[data-theme="light"] .tradeReplaySlider input {
   .terminal-actions {
     width: 100%;
     display: grid;
-    grid-template-columns: minmax(118px, 1.35fr) 42px minmax(0, 1fr) minmax(0, 1fr) minmax(74px, 0.8fr);
+    grid-template-columns: 42px minmax(0, 1.25fr) minmax(0, 1fr) minmax(74px, 0.8fr);
     gap: 4px;
   }
 
@@ -5947,10 +5958,10 @@ html[data-theme="light"] .tradeReplaySlider input {
   }
 
   .dataValidityBox {
-    min-width: 92px;
-    max-width: 130px;
+    min-width: 0;
+    max-width: none;
     border-radius: 8px;
-    padding: 4px 5px;
+    padding: 7px 6px;
   }
 
   .dataValidityBox span {

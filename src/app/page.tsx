@@ -424,15 +424,22 @@ function DataValidityBox({
   className?: string;
   dataValidity: DataValidityResult;
 }) {
+  const syncStateClass = dataValidity.tone === "good" ? "success" : dataValidity.tone === "bad" ? "failed" : "running";
   return (
     <div
-      className={`dataValidityBox ${className} ${dataValidityClass(dataValidity.tone)}`.trim()}
+      className={`dataset-sync-tile dataValidityBox sync-state-${syncStateClass} ${className} ${dataValidityClass(dataValidity.tone)}`.trim()}
       title={dataValidity.detailTitle}
       aria-label={`Review Validity: ${dataValidity.label}. ${dataValidity.summary}`}
     >
-      <span>Review Validity</span>
-      <strong>{dataValidity.label}</strong>
-      <small>{dataValidity.summary}</small>
+      <span className="sync-tile-name">Review validity</span>
+      <dl className="sync-tile-times">
+        <dt>Status</dt>
+        <dd>
+          <strong>{dataValidity.label}</strong>
+        </dd>
+        <dt>Checks</dt>
+        <dd>{dataValidity.summary}</dd>
+      </dl>
     </div>
   );
 }
@@ -999,6 +1006,7 @@ export default async function Home({ searchParams }: HomeProps) {
       <AutoTradeAccountGate />
       <section className="terminal-workspace marketView" id="signals" key={activeMarket}>
         <div className="marketTopShell">
+          <AutoTradeAccountModeSwitch />
           <MarketSwitchTabs activeMarket={activeMarket} tabs={MARKET_TABS} persistActiveMarket={syncActiveMarket} />
         </div>
         <header className="terminal-head">
@@ -1006,7 +1014,6 @@ export default async function Home({ searchParams }: HomeProps) {
             <h1>Trading Bot</h1>
           </div>
           <div className="terminal-actions">
-            <AutoTradeAccountModeSwitch />
             <ThemeToggle initialTheme={liveConfig.dashboardSettings.theme} persistTheme={syncTheme} />
             <a className="terminal-action" href={telegramLink} target="_blank" rel="noreferrer">
               {telegramInviteLink ? "Join Telegram group" : telegramBotUsername ? "Open Telegram bot" : "Open BotFather"}
@@ -1292,9 +1299,7 @@ export default async function Home({ searchParams }: HomeProps) {
                 <dd>{fmtNumber(backtestFreshness.trades)}</dd>
               </dl>
             </div>
-          </div>
-          <div className="syncValidityFooter">
-            <DataValidityBox className="syncValidityBox" dataValidity={dataValidity} />
+            <DataValidityBox dataValidity={dataValidity} />
           </div>
         </section>
       </section>
