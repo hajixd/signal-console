@@ -21,13 +21,11 @@
 
 html {
   max-width: 100%;
-  overflow-x: clip;
   scroll-behavior: smooth;
 }
 
 body {
   max-width: 100%;
-  overflow-x: clip;
   margin: 0;
   background: var(--bg);
   color: var(--text);
