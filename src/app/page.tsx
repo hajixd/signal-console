@@ -1,4 +1,5 @@
 import ChallengeReplay from "@/components/challenge/challenge-replay";
+import AdminOnlyText from "@/components/auto-trading/admin-only-text";
 import AutoTradeAccountGate from "@/components/auto-trading/auto-trade-account-gate";
 import AutoTradeAccountModeSwitch from "@/components/auto-trading/auto-trade-account-mode-switch";
 import AutoTradingConnectionDrawer from "@/components/auto-trading/auto-trading-connection-drawer";
@@ -413,6 +414,26 @@ function SyncTileStatus({
         </span>
       ) : null}
     </>
+  );
+}
+
+function DataValidityBox({
+  className = "",
+  dataValidity
+}: {
+  className?: string;
+  dataValidity: DataValidityResult;
+}) {
+  return (
+    <div
+      className={`dataValidityBox ${className} ${dataValidityClass(dataValidity.tone)}`.trim()}
+      title={dataValidity.detailTitle}
+      aria-label={`Review Validity: ${dataValidity.label}. ${dataValidity.summary}`}
+    >
+      <span>Review Validity</span>
+      <strong>{dataValidity.label}</strong>
+      <small>{dataValidity.summary}</small>
+    </div>
   );
 }
 
@@ -978,7 +999,6 @@ export default async function Home({ searchParams }: HomeProps) {
       <AutoTradeAccountGate />
       <section className="terminal-workspace marketView" id="signals" key={activeMarket}>
         <div className="marketTopShell">
-          <AutoTradeAccountModeSwitch />
           <MarketSwitchTabs activeMarket={activeMarket} tabs={MARKET_TABS} persistActiveMarket={syncActiveMarket} />
         </div>
         <header className="terminal-head">
@@ -986,6 +1006,7 @@ export default async function Home({ searchParams }: HomeProps) {
             <h1>Trading Bot</h1>
           </div>
           <div className="terminal-actions">
+            <AutoTradeAccountModeSwitch />
             <ThemeToggle initialTheme={liveConfig.dashboardSettings.theme} persistTheme={syncTheme} />
             <a className="terminal-action" href={telegramLink} target="_blank" rel="noreferrer">
               {telegramInviteLink ? "Join Telegram group" : telegramBotUsername ? "Open Telegram bot" : "Open BotFather"}
@@ -1054,15 +1075,6 @@ export default async function Home({ searchParams }: HomeProps) {
               </p>
             </div>
             <div className="historyHeadActions">
-              <div
-                className={`dataValidityBox ${dataValidityClass(dataValidity.tone)}`}
-                title={dataValidity.detailTitle}
-                aria-label={`Data Validity: ${dataValidity.label}. ${dataValidity.summary}`}
-              >
-                <span>Data Validity</span>
-                <strong>{dataValidity.label}</strong>
-                <small>{dataValidity.summary}</small>
-              </div>
               <span className={`count-pill${backtestBehindMarketData ? " warning" : ""}`}>{historyCountLabel}</span>
             </div>
           </div>
@@ -1136,8 +1148,8 @@ export default async function Home({ searchParams }: HomeProps) {
                       <td data-label="#">{fmtNumber(index + 1)}</td>
                       <td className="ticker-cell" data-label="Ticker">{trade.symbol}</td>
                       <td className="main-cell" data-label="Model">
-                        <span>{trade.strategy}</span>
-                        <small>{trade.entryMode}</small>
+                        <AdminOnlyText value={trade.strategy} />
+                        <small><AdminOnlyText value={trade.entryMode} fallback="Strategy details locked" /></small>
                       </td>
                       <td data-label="Direction">
                         <span className={sideClass(trade.side)}>{sideLabel(trade.side)}</span>
@@ -1280,6 +1292,9 @@ export default async function Home({ searchParams }: HomeProps) {
                 <dd>{fmtNumber(backtestFreshness.trades)}</dd>
               </dl>
             </div>
+          </div>
+          <div className="syncValidityFooter">
+            <DataValidityBox className="syncValidityBox" dataValidity={dataValidity} />
           </div>
         </section>
       </section>

@@ -3,13 +3,11 @@
 import { useEffect, useState } from "react";
 import {
   AUTO_TRADE_ACCOUNT_MODE_CHANGE_EVENT,
-  clearSavedAccountMode,
   savedAccountMode,
   type AutoTradeAccountMode
 } from "@/components/auto-trading/auto-trade-account-mode";
 
-export default function AutoTradeAccountModeSwitch() {
-  const [isReady, setIsReady] = useState(false);
+export function useAutoTradeAccountMode(): AutoTradeAccountMode | null {
   const [accountMode, setAccountMode] = useState<AutoTradeAccountMode | null>(null);
 
   useEffect(() => {
@@ -18,23 +16,13 @@ export default function AutoTradeAccountModeSwitch() {
     }
 
     syncAccountMode();
-    setIsReady(true);
     window.addEventListener(AUTO_TRADE_ACCOUNT_MODE_CHANGE_EVENT, syncAccountMode);
     return () => window.removeEventListener(AUTO_TRADE_ACCOUNT_MODE_CHANGE_EVENT, syncAccountMode);
   }, []);
 
-  function handleSwitchAccountMode() {
-    clearSavedAccountMode();
-  }
+  return accountMode;
+}
 
-  if (!isReady || !accountMode) return null;
-
-  return (
-    <div className="autoTradeModeBar autoTradeTopModeBar">
-      <span className={`autoTradeModeBadge ${accountMode.toLowerCase()}`}>{accountMode}</span>
-      <button type="button" onClick={handleSwitchAccountMode}>
-        Switch
-      </button>
-    </div>
-  );
+export function useAutoTradeAdminMode(): boolean {
+  return useAutoTradeAccountMode() === "Admin";
 }

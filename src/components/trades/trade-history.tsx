@@ -10,6 +10,7 @@ import {
   type WheelEvent as ReactWheelEvent
 } from "react";
 import { createPortal } from "react-dom";
+import { useAutoTradeAdminMode } from "@/components/auto-trading/use-auto-trade-account-mode";
 import TradePriceChart, { TRADE_CHART_TIMEFRAMES, type TradeChartBar, type TradeChartTimeframe } from "@/components/trades/trade-price-chart";
 import LocalDateTime from "@/components/ui/local-date-time";
 
@@ -782,6 +783,8 @@ export default function TradeHistory({ rows }: TradeHistoryProps) {
   const [activeTradeId, setActiveTradeId] = useState<string | null>(null);
   const [chartState, setChartState] = useState<ChartState>({ status: "idle", bars: [] });
   const [chartTimeframe, setChartTimeframe] = useState<TradeChartTimeframe>("15m");
+  const isAdminMode = useAutoTradeAdminMode();
+  const isRestricted = !isAdminMode;
   const activeTrade = useMemo(
     () => (activeTradeId ? rows.find((row) => row.id === activeTradeId) ?? null : null),
     [activeTradeId, rows]
@@ -835,9 +838,14 @@ export default function TradeHistory({ rows }: TradeHistoryProps) {
   const activeDurationLabel = activeTrade ? correctedDurationLabel(activeTrade, chartState.bars) : "";
 
   function openTrade(trade: TradeHistoryRow) {
+    if (isRestricted) return;
     setChartTimeframe(trade.sourceTimeframe ?? "15m");
     setActiveTradeId(trade.id);
   }
+
+  useEffect(() => {
+    if (isRestricted) setActiveTradeId(null);
+  }, [isRestricted]);
 
   useEffect(() => {
     if (activeTradeId && !activeTrade) setActiveTradeId(null);
@@ -858,7 +866,7 @@ export default function TradeHistory({ rows }: TradeHistoryProps) {
   }, [activeTradeId]);
 
   useEffect(() => {
-    if (!activeTrade) {
+    if (!activeTrade || isRestricted) {
       setChartState({ status: "idle", bars: [] });
       return undefined;
     }
@@ -920,7 +928,8 @@ export default function TradeHistory({ rows }: TradeHistoryProps) {
     activeTrade?.id,
     activeTrade?.market,
     activeTrade?.symbol,
-    chartTimeframe
+    chartTimeframe,
+    isRestricted
   ]);
 
   const chartNotice =
@@ -928,7 +937,7 @@ export default function TradeHistory({ rows }: TradeHistoryProps) {
       ? `This timeframe is unavailable. Showing ${chartState.timeframe}.`
       : undefined;
 
-  const activeTradeModal = activeTrade ? (
+  const activeTradeModal = !isRestricted && activeTrade ? (
     <div
       className="tradeModalBackdrop"
       role="presentation"
@@ -1030,45 +1039,50 @@ export default function TradeHistory({ rows }: TradeHistoryProps) {
             </tr>
           </thead>
           <tbody>
-            {rows.map((trade) => (
-              <tr
-                className={`historyTradeRow ${trade.rowClassName}`}
-                key={trade.id}
-                role="button"
-                tabIndex={0}
-                aria-label={`Open ${trade.symbol} ${trade.modelName} trade details`}
-                onClick={() => openTrade(trade)}
-                onKeyDown={(event) => {
-                  if (event.key === "Enter" || event.key === " ") {
-                    event.preventDefault();
-                    openTrade(trade);
-                  }
-                }}
-              >
-                <td data-label="#">{trade.indexLabel}</td>
-                <td className="ticker-cell" data-label="Ticker">{trade.symbol}</td>
-                <td className="main-cell" data-label="Entry model">
-                  <span>{trade.modelName}</span>
-                  <small><LocalDateTime value={trade.entryTime} /></small>
-                </td>
-                <td data-label="Direction">
-                  <span className={trade.sideClassName}>{trade.sideLabel}</span>
-                </td>
-                <td data-label="Entry">{trade.entryPriceLabel}</td>
-                <td data-label="Exit">{trade.exitPriceLabel}</td>
-                <td data-label="Duration">
-                  {trade.durationLabel} <span className="durationDetail">/ {trade.durationDetailLabel}</span>
-                </td>
-                <td data-label="Exit by">
-                  <span className={exitReasonClassName(trade.exitReasonLabel)}>{trade.exitReasonLabel}</span>
-                </td>
-                <td className={trade.pnlClassName} data-label="P&L $">{trade.pnlLabel}</td>
-                <td className={trade.pnlClassName} data-label="R">{trade.rMultipleLabel}</td>
-                <td data-label="Size">{trade.sizeLabel}</td>
-                <td className="take-profit-cell" data-label="Take Profit $">{trade.targetLabel}</td>
-                <td className="stop-loss-cell" data-label="Stop Loss $">{trade.riskLabel}</td>
-              </tr>
-            ))}
+            {rows.map((trade) => {
+              const displayedModelName = isRestricted ? "Admin only" : trade.modelName;
+              return (
+                <tr
+                  className={`historyTradeRow ${trade.rowClassName}${isRestricted ? " isAccessRestricted" : ""}`}
+                  key={trade.id}
+                  role={isRestricted ? undefined : "button"}
+                  tabIndex={isRestricted ? -1 : 0}
+                  aria-disabled={isRestricted}
+                  aria-label={isRestricted ? `${trade.symbol} trade details locked` : `Open ${trade.symbol} ${trade.modelName} trade details`}
+                  onClick={isRestricted ? undefined : () => openTrade(trade)}
+                  onKeyDown={(event) => {
+                    if (isRestricted) return;
+                    if (event.key === "Enter" || event.key === " ") {
+                      event.preventDefault();
+                      openTrade(trade);
+                    }
+                  }}
+                >
+                  <td data-label="#">{trade.indexLabel}</td>
+                  <td className="ticker-cell" data-label="Ticker">{trade.symbol}</td>
+                  <td className="main-cell" data-label="Entry model">
+                    <span className={isRestricted ? "adminOnlyMaskedText" : undefined}>{displayedModelName}</span>
+                    <small>{isRestricted ? "Strategy details locked" : <LocalDateTime value={trade.entryTime} />}</small>
+                  </td>
+                  <td data-label="Direction">
+                    <span className={trade.sideClassName}>{trade.sideLabel}</span>
+                  </td>
+                  <td data-label="Entry">{trade.entryPriceLabel}</td>
+                  <td data-label="Exit">{trade.exitPriceLabel}</td>
+                  <td data-label="Duration">
+                    {trade.durationLabel} <span className="durationDetail">/ {trade.durationDetailLabel}</span>
+                  </td>
+                  <td data-label="Exit by">
+                    <span className={exitReasonClassName(trade.exitReasonLabel)}>{trade.exitReasonLabel}</span>
+                  </td>
+                  <td className={trade.pnlClassName} data-label="P&L $">{trade.pnlLabel}</td>
+                  <td className={trade.pnlClassName} data-label="R">{trade.rMultipleLabel}</td>
+                  <td data-label="Size">{trade.sizeLabel}</td>
+                  <td className="take-profit-cell" data-label="Take Profit $">{trade.targetLabel}</td>
+                  <td className="stop-loss-cell" data-label="Stop Loss $">{trade.riskLabel}</td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>

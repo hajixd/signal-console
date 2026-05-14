@@ -366,6 +366,14 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
   }, [activeProjectXFolderId, projectXAccountFolders]);
 
   useEffect(() => {
+    if (!pendingProjectXFolder || folderCodeInput.length !== FOLDER_UNLOCK_CODE_MAX_LENGTH || isUnlockingFolder) return;
+    const frame = window.requestAnimationFrame(() => {
+      void unlockProjectXFolder(folderCodeInput);
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [folderCodeInput, isUnlockingFolder, pendingProjectXFolder]);
+
+  useEffect(() => {
     setGenericFields(defaultConnectionFields(selectedProviderId));
     setShowAdvancedFields(false);
   }, [selectedProviderId]);
@@ -877,7 +885,6 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
                     const nextValue = cleanAccessCode(event.target.value, FOLDER_UNLOCK_CODE_MAX_LENGTH);
                     setFolderCodeInput(nextValue);
                     setFolderAccessError("");
-                    if (nextValue.length === FOLDER_UNLOCK_CODE_MAX_LENGTH) void unlockProjectXFolder(nextValue);
                   }}
                   onKeyDown={(event) => {
                     if (event.key === "Backspace" && folderCodeInput.length === 0) {
@@ -907,8 +914,8 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
                 </div>
               </div>
               {folderAccessError ? <small>{folderAccessError}</small> : null}
-              <button type="submit" disabled={isUnlockingFolder || !folderCodeInput}>
-                {isUnlockingFolder ? "Unlocking..." : "Open Folder"}
+              <button type="submit" disabled={isUnlockingFolder || !folderCodeInput || folderCodeInput.length === FOLDER_UNLOCK_CODE_MAX_LENGTH}>
+                {isUnlockingFolder || folderCodeInput.length === FOLDER_UNLOCK_CODE_MAX_LENGTH ? "Opening..." : "Open Folder"}
               </button>
             </form>
           ) : activeProjectXFolder ? (

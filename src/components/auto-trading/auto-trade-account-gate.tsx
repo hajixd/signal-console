@@ -3,6 +3,7 @@
 import { FormEvent, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import {
+  AUTO_TRADE_ACCOUNT_MODE_CHANGE_EVENT,
   AUTO_TRADE_ADMIN_ACCESS_CODE,
   cleanAccessCode,
   type AutoTradeAccountMode,
@@ -19,8 +20,17 @@ export default function AutoTradeAccountGate() {
   const adminCodeInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
-    setAccountMode(savedAccountMode());
+    function syncAccountMode() {
+      setAccountMode(savedAccountMode());
+      setAccountEntryMode(null);
+      setAdminCodeInput("");
+      setAccountAccessError("");
+    }
+
+    syncAccountMode();
     setIsReady(true);
+    window.addEventListener(AUTO_TRADE_ACCOUNT_MODE_CHANGE_EVENT, syncAccountMode);
+    return () => window.removeEventListener(AUTO_TRADE_ACCOUNT_MODE_CHANGE_EVENT, syncAccountMode);
   }, []);
 
   useEffect(() => {

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState, useTransition } from "react";
+import { useAutoTradeAdminMode } from "@/components/auto-trading/use-auto-trade-account-mode";
 import ChallengeRulesForm from "@/components/challenge/challenge-rules-form";
 import {
   strategyContractScale,
@@ -206,6 +207,8 @@ export default function ChallengeReplay({
 }: ChallengeReplayProps) {
   const [rules, setRules] = useState(() => normalizeRules(initialRules, DEFAULT_CHALLENGE_RULES));
   const [, startSavingRules] = useTransition();
+  const isAdminMode = useAutoTradeAdminMode();
+  const isRestricted = !isAdminMode;
   const edits = useStrategyEdits(strategies, persistedStrategyEdits);
   const strategyByKey = useMemo(() => new Map(strategies.map((strategy) => [strategy.key, strategy])), [strategies]);
   const rulesStorageKey = storageKey ?? STORAGE_KEY;
@@ -225,6 +228,7 @@ export default function ChallengeReplay({
   }, [initialRules, persistedRules, rulesStorageKey]);
 
   function applyRules(nextRules: ChallengeRules) {
+    if (isRestricted) return;
     const normalized = normalizeRules(nextRules, rules);
     setRules(normalized);
     try {
@@ -260,8 +264,8 @@ export default function ChallengeReplay({
   );
 
   return (
-    <>
-      <ChallengeRulesForm key={rulesSeed(rules)} rules={rules} onApply={applyRules} />
+    <div className={`challengeReplay${isRestricted ? " adminOnlyRestrictedSurface" : ""}`} aria-disabled={isRestricted}>
+      <ChallengeRulesForm key={rulesSeed(rules)} readOnly={isRestricted} rules={rules} onApply={applyRules} />
       <div className="challenge-grid">
         <ChallengeReplayPanel title="Historical" stats={challengeReplay.historical} rates={challengeReplay.historicalPassRates} />
         <ChallengeReplayPanel title="Monte Carlo" stats={challengeReplay.monteCarlo} rates={challengeReplay.monteCarloPassRates} />
@@ -273,6 +277,6 @@ export default function ChallengeReplay({
         <span>Daily lock: {fmtMoney(rules.dailyProfitLock)}</span>
         <span>Daily stop: {fmtMoney(rules.dailyLossStop)}</span>
       </div>
-    </>
+    </div>
   );
 }

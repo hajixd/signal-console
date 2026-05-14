@@ -3,6 +3,7 @@
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { createPortal } from "react-dom";
+import { useAutoTradeAdminMode } from "@/components/auto-trading/use-auto-trade-account-mode";
 import {
   emitStrategyEditsChanged,
   loadClientStrategyEdits,
@@ -568,6 +569,8 @@ export default function StrategySelector({
   const [, startSavingSelection] = useTransition();
   const [isSavingEdits, startSavingEdits] = useTransition();
   const [, startSavingCustomScaleRange] = useTransition();
+  const isAdminMode = useAutoTradeAdminMode();
+  const isRestricted = !isAdminMode;
   const [isLoaded, setIsLoaded] = useState(false);
   const [isCustomScaleLoaded, setIsCustomScaleLoaded] = useState(false);
   const [savingSelectionKeys, setSavingSelectionKeys] = useState<string[]>([]);
@@ -592,7 +595,7 @@ export default function StrategySelector({
   const selected = new Set(optimisticSelectedKeys);
   const activeStrategy = strategies.find((strategy) => strategy.key === activeKey);
   const hasEdits = Object.keys(edits).length > 0;
-  const normalizedSearchQuery = searchQuery.trim().toLowerCase();
+  const normalizedSearchQuery = isRestricted ? "" : searchQuery.trim().toLowerCase();
   const orderByKey = new Map(strategies.map((strategy, index) => [strategy.key, index]));
   const strategyScopeKeys = useMemo(() => strategies.map((strategy) => strategy.key), [strategies]);
   const strategyScopeSignature = strategyScopeKeys.join("|");
@@ -619,8 +622,24 @@ export default function StrategySelector({
   const latestEditSignatureRef = useRef<string>(currentEditSignature);
   const editSyncTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const editSyncRunRef = useRef(0);
-  const editControlsDisabled = isSavingEdits;
+  const editControlsDisabled = isSavingEdits || isRestricted;
+  const selectionControlsDisabled = isRestricted;
   const savingSelectionKeySet = useMemo(() => new Set(savingSelectionKeys), [savingSelectionKeys]);
+
+  useEffect(() => {
+    if (!isRestricted) return;
+    setActiveKey(null);
+    setDraft(null);
+    setIsCustomScaleOpen(false);
+    setIsCustomSelectionOpen(false);
+    setSearchQuery("");
+    setSortColumn(null);
+    setSortDirection("desc");
+    setCustomScaleError("");
+    setCustomScaleResult(null);
+    setCustomSelectionError("");
+    setCustomSelectionResult(null);
+  }, [isRestricted]);
 
   useEffect(() => {
     latestSelectionSignatureRef.current = optimisticSelectionSignature;
@@ -884,6 +903,7 @@ export default function StrategySelector({
   }, [activeKey, isCustomScaleOpen, isCustomSelectionOpen]);
 
   function navigate(nextKeys: string[]) {
+    if (selectionControlsDisabled) return;
     const currentKeySet = new Set(optimisticSelectedKeys);
     const nextKeySet = new Set(nextKeys);
     const touchedKeys = strategyScopeKeys.filter((key) => currentKeySet.has(key) !== nextKeySet.has(key));
@@ -898,6 +918,7 @@ export default function StrategySelector({
   }
 
   function toggleStrategy(key: string) {
+    if (selectionControlsDisabled) return;
     const nextKeys = selected.has(key) ? optimisticSelectedKeys.filter((item) => item !== key) : [...optimisticSelectedKeys, key];
     navigate(nextKeys);
   }
@@ -936,6 +957,7 @@ export default function StrategySelector({
   });
 
   function toggleSort(column: SortColumn) {
+    if (isRestricted) return;
     if (sortColumn === column) {
       setSortDirection((current) => (current === "asc" ? "desc" : "asc"));
       return;
@@ -954,6 +976,7 @@ export default function StrategySelector({
   }
 
   function openEditor(strategy: StrategyOption) {
+    if (isRestricted) return;
     setActiveKey(strategy.key);
     setDraft(currentEdit(strategy));
   }
@@ -964,6 +987,7 @@ export default function StrategySelector({
   }
 
   function saveEditor() {
+    if (editControlsDisabled) return;
     if (!activeStrategy || !draft) return;
     const normalized = normalizeEdit(activeStrategy, draft);
     setEdits((current) => {
@@ -979,6 +1003,7 @@ export default function StrategySelector({
   }
 
   function resetActiveStrategy() {
+    if (editControlsDisabled) return;
     if (!activeStrategy) return;
     setEdits((current) => {
       const next = { ...current };
@@ -989,11 +1014,13 @@ export default function StrategySelector({
   }
 
   function resetAllEdits() {
+    if (editControlsDisabled) return;
     setEdits({});
     if (activeStrategy) setDraft(defaultEdit(activeStrategy));
   }
 
   function scaleAllContracts(multiplier: number) {
+    if (editControlsDisabled) return;
     setEdits((current) => {
       const next: StrategyEditMap = { ...current };
       for (const strategy of strategies) {
@@ -1011,6 +1038,7 @@ export default function StrategySelector({
   }
 
   function openCustomScale() {
+    if (editControlsDisabled) return;
     setCustomScaleError("");
     setCustomScaleResult(null);
     setIsCustomScaleOpen(true);
@@ -1023,6 +1051,7 @@ export default function StrategySelector({
   }
 
   function openCustomSelection() {
+    if (selectionControlsDisabled) return;
     setCustomSelectionError("");
     setCustomSelectionResult(null);
     setIsCustomSelectionOpen(true);
@@ -1163,14 +1192,14 @@ export default function StrategySelector({
   }
 
   return (
-    <div className="strategyPicker">
+    <div className={`strategyPicker${isRestricted ? " adminOnlyRestrictedSurface" : ""}`} aria-disabled={isRestricted}>
       <div className="pickerHeader">
         <span>Strategies</span>
         <div className="pickerActions">
-          <button type="button" onClick={openCustomSelection} disabled={strategies.length === 0}>
+          <button type="button" onClick={openCustomSelection} disabled={selectionControlsDisabled || strategies.length === 0}>
             Custom Selection
           </button>
-          <button type="button" onClick={() => navigate([])} disabled={optimisticSelectedKeys.length === 0}>
+          <button type="button" onClick={() => navigate([])} disabled={selectionControlsDisabled || optimisticSelectedKeys.length === 0}>
             Clear
           </button>
           <button type="button" onClick={resetAllEdits} disabled={editControlsDisabled || !hasEdits}>
@@ -1184,21 +1213,24 @@ export default function StrategySelector({
           <span>Search</span>
           <input
             type="search"
-            placeholder="Strategy, asset, or phase"
-            value={searchQuery}
-            onChange={(event) => setSearchQuery(event.target.value)}
+            disabled={isRestricted}
+            placeholder={isRestricted ? "Admin access required" : "Strategy, asset, or phase"}
+            value={isRestricted ? "" : searchQuery}
+            onChange={(event) => {
+              if (!isRestricted) setSearchQuery(event.target.value);
+            }}
           />
         </label>
         <div className="bulkScale">
           <span>All scale</span>
           <div className="scaleButtons" aria-label="Scale all strategy rows">
-            <button type="button" onClick={() => scaleAllContracts(0.5)}>
+            <button type="button" onClick={() => scaleAllContracts(0.5)} disabled={editControlsDisabled || strategies.length === 0}>
               0.5x
             </button>
-            <button type="button" onClick={() => scaleAllContracts(2)}>
+            <button type="button" onClick={() => scaleAllContracts(2)} disabled={editControlsDisabled || strategies.length === 0}>
               2x
             </button>
-            <button type="button" onClick={() => scaleAllContracts(4)}>
+            <button type="button" onClick={() => scaleAllContracts(4)} disabled={editControlsDisabled || strategies.length === 0}>
               4x
             </button>
             <button type="button" onClick={openCustomScale} disabled={editControlsDisabled || strategies.length === 0}>
@@ -1213,47 +1245,47 @@ export default function StrategySelector({
 
       <div className="basketList" role="list" aria-label="Strategy enable list">
         <div className="basketListHeader">
-          <button className={sortButtonClass("ticker")} type="button" onClick={() => toggleSort("ticker")}>
+          <button className={sortButtonClass("ticker")} type="button" onClick={() => toggleSort("ticker")} disabled={isRestricted}>
             <span>Assets</span>
             <strong>{sortIndicator("ticker")}</strong>
           </button>
-          <button className={sortButtonClass("model")} type="button" onClick={() => toggleSort("model")}>
+          <button className={sortButtonClass("model")} type="button" onClick={() => toggleSort("model")} disabled={isRestricted}>
             <span>Strategy</span>
             <strong>{sortIndicator("model")}</strong>
           </button>
-          <button className={sortButtonClass("profitFactor")} type="button" onClick={() => toggleSort("profitFactor")}>
+          <button className={sortButtonClass("profitFactor")} type="button" onClick={() => toggleSort("profitFactor")} disabled={isRestricted}>
             <span>PF</span>
             <strong>{sortIndicator("profitFactor")}</strong>
           </button>
-          <button className={sortButtonClass("winRate")} type="button" onClick={() => toggleSort("winRate")}>
+          <button className={sortButtonClass("winRate")} type="button" onClick={() => toggleSort("winRate")} disabled={isRestricted}>
             <span>Win</span>
             <strong>{sortIndicator("winRate")}</strong>
           </button>
-          <button className={sortButtonClass("trades")} type="button" onClick={() => toggleSort("trades")}>
+          <button className={sortButtonClass("trades")} type="button" onClick={() => toggleSort("trades")} disabled={isRestricted}>
             <span>Trades</span>
             <strong>{sortIndicator("trades")}</strong>
           </button>
-          <button className={sortButtonClass("target")} type="button" onClick={() => toggleSort("target")}>
+          <button className={sortButtonClass("target")} type="button" onClick={() => toggleSort("target")} disabled={isRestricted}>
             <span>Take Profit</span>
             <strong>{sortIndicator("target")}</strong>
           </button>
-          <button className={sortButtonClass("risk")} type="button" onClick={() => toggleSort("risk")}>
+          <button className={sortButtonClass("risk")} type="button" onClick={() => toggleSort("risk")} disabled={isRestricted}>
             <span>Stop Loss</span>
             <strong>{sortIndicator("risk")}</strong>
           </button>
-          <button className={sortButtonClass("rrr")} type="button" onClick={() => toggleSort("rrr")}>
+          <button className={sortButtonClass("rrr")} type="button" onClick={() => toggleSort("rrr")} disabled={isRestricted}>
             <span>RRR</span>
             <strong>{sortIndicator("rrr")}</strong>
           </button>
-          <button className={sortButtonClass("size")} type="button" onClick={() => toggleSort("size")}>
+          <button className={sortButtonClass("size")} type="button" onClick={() => toggleSort("size")} disabled={isRestricted}>
             <span>Unit/contract size</span>
             <strong>{sortIndicator("size")}</strong>
           </button>
-          <button className={sortButtonClass("scale")} type="button" onClick={() => toggleSort("scale")}>
+          <button className={sortButtonClass("scale")} type="button" onClick={() => toggleSort("scale")} disabled={isRestricted}>
             <span>Scale</span>
             <strong>{sortIndicator("scale")}</strong>
           </button>
-          <button className={sortButtonClass("enabled")} type="button" onClick={() => toggleSort("enabled")}>
+          <button className={sortButtonClass("enabled")} type="button" onClick={() => toggleSort("enabled")} disabled={isRestricted}>
             <span>Enabled</span>
             <strong>{sortIndicator("enabled")}</strong>
           </button>
@@ -1266,14 +1298,17 @@ export default function StrategySelector({
           const effective = currentEdit(strategy);
           const effectiveRiskRewardRatio = riskRewardRatio(effective.targetDollars, effective.riskDollars);
           const hasBacktestTrades = strategy.trades > 0;
+          const displayedModelName = isRestricted ? "Admin only" : effective.modelName;
           return (
             <div
-              className={`basketListRow ${checked ? "isEnabled" : "isDisabled"} ${custom ? "hasCustom" : ""} ${isSavingSelection ? "isSavingSelection" : ""}`}
-              role="button"
-              tabIndex={0}
+              className={`basketListRow ${checked ? "isEnabled" : "isDisabled"} ${custom ? "hasCustom" : ""} ${isSavingSelection ? "isSavingSelection" : ""}${isRestricted ? " isAccessRestricted" : ""}`}
+              role={isRestricted ? "listitem" : "button"}
+              tabIndex={isRestricted ? -1 : 0}
+              aria-disabled={isRestricted}
               key={strategy.key}
-              onClick={() => openEditor(strategy)}
+              onClick={isRestricted ? undefined : () => openEditor(strategy)}
               onKeyDown={(event) => {
+                if (isRestricted) return;
                 if (event.key === "Enter" || event.key === " ") {
                   event.preventDefault();
                   openEditor(strategy);
@@ -1284,10 +1319,11 @@ export default function StrategySelector({
                 {strategy.symbol}
               </span>
               <div className="basketModel" data-label="Strategy">
-                <strong>{effective.modelName}</strong>
+                <strong className={isRestricted ? "adminOnlyMaskedText" : undefined}>{displayedModelName}</strong>
                 <span>
-                  {formatMarket(strategy.market)} / {strategy.timeframeLabel} / {strategy.liveSupported ? "live-ready" : "backtest only"}
-                  {custom ? " / custom unit" : ""}
+                  {isRestricted
+                    ? "Strategy details locked"
+                    : `${formatMarket(strategy.market)} / ${strategy.timeframeLabel} / ${strategy.liveSupported ? "live-ready" : "backtest only"}${custom ? " / custom unit" : ""}`}
                 </span>
               </div>
               <span className={hasBacktestTrades ? (strategy.profitFactor >= 1 ? "up" : "down") : "neutral"} data-label="PF">
@@ -1300,11 +1336,16 @@ export default function StrategySelector({
               <span data-label="RRR">{displayRiskRewardLabel(strategy, effectiveRiskRewardRatio, hasBacktestTrades)}</span>
               <span data-label="Unit/contract size">{displaySizeLabel(strategy, effective.contracts, effective.sizeName)}</span>
               <span data-label="Scale">{formatScaleRatio(scaleForContracts(strategy, effective.contracts))}</span>
-              <label className="strategyToggle" data-label="Enabled" onClick={(event) => event.stopPropagation()}>
+              <label
+                className={`strategyToggle${selectionControlsDisabled ? " isLocked" : ""}`}
+                data-label="Enabled"
+                onClick={selectionControlsDisabled ? undefined : (event) => event.stopPropagation()}
+              >
                 <input
                   type="checkbox"
                   checked={checked}
                   aria-busy={isSavingSelection}
+                  disabled={selectionControlsDisabled || isSavingSelection}
                   onChange={() => toggleStrategy(strategy.key)}
                 />
                 <span>{isSavingSelection ? "Saving" : checked ? "On" : "Off"}</span>
@@ -1317,7 +1358,7 @@ export default function StrategySelector({
         ) : null}
       </div>
 
-      {activeStrategy && draft ? createPortal((
+      {!isRestricted && activeStrategy && draft ? createPortal((
         <div className="strategyModalBackdrop" role="presentation" onMouseDown={closeEditor}>
           <form
             className="strategyModal"
@@ -1408,7 +1449,7 @@ export default function StrategySelector({
         </div>
       ), document.body) : null}
 
-      {isCustomScaleOpen ? createPortal((
+      {!isRestricted && isCustomScaleOpen ? createPortal((
         <div className="strategyModalBackdrop" role="presentation" onMouseDown={closeCustomScale}>
           <form
             className="strategyModal customScaleModal"
@@ -1498,7 +1539,7 @@ export default function StrategySelector({
         </div>
       ), document.body) : null}
 
-      {isCustomSelectionOpen ? createPortal((
+      {!isRestricted && isCustomSelectionOpen ? createPortal((
         <div className="strategyModalBackdrop" role="presentation" onMouseDown={closeCustomSelection}>
           <form
             className="strategyModal customScaleModal"

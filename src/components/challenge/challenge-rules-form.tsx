@@ -4,6 +4,7 @@ import { useTransition } from "react";
 import type { ChallengeRules } from "@/lib/challenge";
 
 type ChallengeRulesFormProps = {
+  readOnly?: boolean;
   rules: ChallengeRules;
   onApply: (rules: ChallengeRules) => void;
 };
@@ -24,10 +25,11 @@ function rulesFromForm(formData: FormData, fallback: ChallengeRules): ChallengeR
   };
 }
 
-export default function ChallengeRulesForm({ rules, onApply }: ChallengeRulesFormProps) {
+export default function ChallengeRulesForm({ readOnly = false, rules, onApply }: ChallengeRulesFormProps) {
   const [isPending, startTransition] = useTransition();
 
   function applyRules(formData: FormData) {
+    if (readOnly) return;
     const nextRules = rulesFromForm(formData, rules);
     startTransition(() => {
       onApply(nextRules);
@@ -36,7 +38,8 @@ export default function ChallengeRulesForm({ rules, onApply }: ChallengeRulesFor
 
   return (
     <form
-      className="challenge-rule-form"
+      className={`challenge-rule-form${readOnly ? " isAccessRestricted adminOnlyRestrictedSurface" : ""}`}
+      aria-disabled={readOnly}
       onSubmit={(event) => {
         event.preventDefault();
         applyRules(new FormData(event.currentTarget));
@@ -44,38 +47,38 @@ export default function ChallengeRulesForm({ rules, onApply }: ChallengeRulesFor
     >
       <label>
         <span>Account size</span>
-        <input type="number" min="1000" step="1000" name="accountSize" defaultValue={rules.startingBalance} />
+        <input type="number" min="1000" step="1000" name="accountSize" defaultValue={rules.startingBalance} disabled={readOnly} />
       </label>
       <label>
         <span>Profit target</span>
-        <input type="number" min="100" step="100" name="profitTarget" defaultValue={rules.profitTarget} />
+        <input type="number" min="100" step="100" name="profitTarget" defaultValue={rules.profitTarget} disabled={readOnly} />
       </label>
       <label>
         <span>Max loss</span>
-        <input type="number" min="0" step="100" name="maxLoss" defaultValue={rules.maximumLossLimit} />
+        <input type="number" min="0" step="100" name="maxLoss" defaultValue={rules.maximumLossLimit} disabled={readOnly} />
       </label>
       <label>
         <span>Daily loss</span>
-        <input type="number" min="0" step="100" name="dailyLoss" defaultValue={rules.dailyLossLimit} />
+        <input type="number" min="0" step="100" name="dailyLoss" defaultValue={rules.dailyLossLimit} disabled={readOnly} />
       </label>
       <label>
         <span>Daily lock</span>
-        <input type="number" min="0" step="100" name="dailyLock" defaultValue={rules.dailyProfitLock} />
+        <input type="number" min="0" step="100" name="dailyLock" defaultValue={rules.dailyProfitLock} disabled={readOnly} />
       </label>
       <label>
         <span>Daily stop</span>
-        <input type="number" min="0" step="100" name="dailyStop" defaultValue={rules.dailyLossStop} />
+        <input type="number" min="0" step="100" name="dailyStop" defaultValue={rules.dailyLossStop} disabled={readOnly} />
       </label>
       <button
         type="button"
-        disabled={isPending}
+        disabled={isPending || readOnly}
         onClick={(event) => {
           if (event.currentTarget.form) {
             applyRules(new FormData(event.currentTarget.form));
           }
         }}
       >
-        {isPending ? "Applying" : "Apply"}
+        {readOnly ? "Admin only" : isPending ? "Applying" : "Apply"}
       </button>
     </form>
   );
