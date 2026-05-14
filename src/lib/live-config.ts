@@ -2,6 +2,7 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { FieldValue } from "firebase-admin/firestore";
 import { firebaseDb, hasFirebaseAdmin, storageObjectPath } from "@/lib/firebase-admin";
+import { omitUndefinedDeep } from "@/lib/firestore-utils";
 import type { CronResult } from "@/lib/types";
 
 const LIVE_CONFIG_CACHE_TTL_MS = 30_000;
@@ -126,22 +127,6 @@ function normalizedDashboardMarket(value: unknown): DashboardMarket | undefined 
 
 function normalizedTheme(value: unknown): SavedTheme | undefined {
   return value === "dark" || value === "light" ? value : undefined;
-}
-
-function omitUndefinedDeep<T>(value: T): T {
-  if (Array.isArray(value)) {
-    return value.map((item) => omitUndefinedDeep(item)) as T;
-  }
-
-  if (value && typeof value === "object" && !(value instanceof Date)) {
-    return Object.fromEntries(
-      Object.entries(value as Record<string, unknown>)
-        .filter(([, child]) => child !== undefined)
-        .map(([key, child]) => [key, omitUndefinedDeep(child)])
-    ) as T;
-  }
-
-  return value;
 }
 
 function normalizedStrategyEdits(value: unknown): Record<string, SavedStrategyEdit> {
@@ -527,21 +512,22 @@ export async function saveCronRun(result: CronResult): Promise<void> {
     errorCount: result.errors.length,
     createdAt: new Date().toISOString()
   };
+  const safePayload = omitUndefinedDeep(payload);
 
   if (hasFirebaseAdmin()) {
     await firebaseDb()
       .collection(CRON_RUN_COLLECTION)
       .doc(result.checkedAt.replace(/[^0-9A-Za-z_-]/g, "_"))
       .set({
-        ...payload,
+        ...safePayload,
         createdAtServer: FieldValue.serverTimestamp()
       });
     return;
   }
 
   const localPath = path.join(process.cwd(), ".local", "signal-console-cron-runs.json");
-  const existing = (await readJsonFile<typeof payload[]>(localPath)) ?? [];
-  await writeJsonFile(localPath, [payload, ...existing].slice(0, 100));
+  const existing = (await readJsonFile<typeof safePayload[]>(localPath)) ?? [];
+  await writeJsonFile(localPath, [safePayload, ...existing].slice(0, 100));
 }
 
 export function defaultDatasetStatus(): DatasetStatus {

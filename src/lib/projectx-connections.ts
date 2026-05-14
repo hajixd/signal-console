@@ -3,6 +3,7 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { FieldValue } from "firebase-admin/firestore";
 import { firebaseDb, hasFirebaseAdmin } from "@/lib/firebase-admin";
+import { omitUndefinedDeep } from "@/lib/firestore-utils";
 import type { ProjectXAccount, ProjectXConnectionSummary } from "@/lib/projectx";
 
 const PROJECTX_CONNECTION_COLLECTION = "topstepProjectXConnections";
@@ -244,10 +245,10 @@ export async function saveStoredProjectXConnection(input: {
       .collection(PROJECTX_CONNECTION_COLLECTION)
       .doc(input.id)
       .set(
-        {
+        omitUndefinedDeep({
           ...payload,
           updatedAtServer: FieldValue.serverTimestamp()
-        },
+        }),
         { merge: true }
       );
   } else {

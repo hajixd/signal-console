@@ -26,7 +26,7 @@ For deploys, the app is now designed to keep heavy runtime CSV assets out of Ver
 4. Each `strategy/<folder>/` stores one strategy definition, one metadata file, and its generated backtest output.
 5. The Python backtest engine reads strategy metadata and writes `backtest_trades.csv` back into each strategy folder.
 6. The Next.js app reads those CSVs to build the dashboard.
-7. The cron APIs split runtime work into market-data sync, signal/trade checks, and slower Data Validity refreshes.
+7. The cron APIs split runtime work into market-data sync and signal/trade checks.
 
 ## Project Structure
 
@@ -82,7 +82,7 @@ tradingBot/
 - `requirements.txt`: Python backtest dependencies.
 - `storage.rules`: locked-down Firebase Storage rules for server-only use.
 - `tsconfig.json`: TypeScript compiler config and repo path aliases.
-- `vercel.json`: Vercel Pro cron schedule for market-data sync, signal checks, and Data Validity refreshes.
+- `vercel.json`: Vercel Pro cron schedule for market-data sync and signal checks.
 
 ### `config/`
 
@@ -121,7 +121,6 @@ tradingBot/
 - `src/app/api/trade-chart/route.ts`: returns a 15m candle window around a selected trade for charting.
 - `src/app/api/cron/market-data-sync/route.ts`: 5-minute live market data refresh endpoint.
 - `src/app/api/cron/check-signals/route.ts`: 15-minute live signal/trade check endpoint used by cron and manual calls.
-- `src/app/api/cron/data-validity-refresh/route.ts`: 12-hour endpoint that dispatches the full data/backtest refresh workflow.
 
 ### `src/components/`
 
@@ -324,7 +323,6 @@ Important: `research_trader_strategies.py` clears and rebuilds the `strategy/` d
 - `src/lib/live-signals.ts` converts backtest stats into live `StrategyRule` objects.
 - `/api/cron/market-data-sync` refreshes recent provider bars for enabled live assets and updates chart data.
 - `/api/cron/check-signals` fetches recent market bars once per live asset, evaluates live-enabled strategies, runs Topstep-style risk guards, deduplicates alerts, stores them, and optionally sends Telegram messages or auto-trades.
-- `/api/cron/data-validity-refresh` dispatches the full GitHub data/backtest workflow. The dashboard's Data Validity timestamp updates when `scripts/firebase-sync.ts` completes at the end of that workflow.
 - Alert storage lives in Firestore if Firebase Admin is configured, otherwise `.local/trading-bot-alerts.json`.
 
 ## Vercel And Firebase Runtime

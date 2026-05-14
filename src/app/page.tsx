@@ -590,15 +590,9 @@ export default async function Home({ searchParams }: HomeProps) {
   const legacyDatasetSyncAt = datasetStatus?.sync ? undefined : datasetStatus?.lastSyncAt;
   const marketDataSyncState = syncTileState(syncStatus.marketDataSync, syncStatus.lastMarketDataSyncAt ?? legacyDatasetSyncAt);
   const signalTradeCheckState = syncTileState(syncStatus.signalTradeCheck, syncStatus.lastSignalTradeCheckAt);
-  const dataValidityRefreshState = syncTileState(
-    syncStatus.dataValidityRefresh,
-    syncStatus.lastDataValidityRefreshAt ?? legacyDatasetSyncAt,
-    6 * 60 * 60_000
-  );
   const now = new Date();
   const nextMarketDataSyncAt = nextCronRunIso((date) => date.getUTCMinutes() % 5 === 0, now);
   const nextSignalTradeCheckAt = nextCronRunIso((date) => [2, 17, 32, 47].includes(date.getUTCMinutes()), now);
-  const nextDataValidityRefreshAt = nextCronRunIso((date) => date.getUTCMinutes() === 0 && date.getUTCHours() % 12 === 0, now);
   const liveRuleByKey = new Map(liveRules.map((rule) => [rule.key, rule]));
   const statByKey = new Map(backtestStats.map((stat) => [stat.key, stat]));
 
@@ -1090,29 +1084,6 @@ export default async function Home({ searchParams }: HomeProps) {
                 </dd>
                 <dt>Interval</dt>
                 <dd>Every 15 minutes</dd>
-              </dl>
-            </div>
-            <div className={`dataset-sync-tile sync-state-${dataValidityRefreshState}`}>
-              <span className="sync-tile-name">Data validity refresh</span>
-              <dl className="sync-tile-times">
-                <dt>Status</dt>
-                <dd>
-                  <SyncTileStatus
-                    lastSuccessfulAt={syncStatus.lastDataValidityRefreshAt ?? legacyDatasetSyncAt}
-                    run={syncStatus.dataValidityRefresh}
-                    state={dataValidityRefreshState}
-                  />
-                </dd>
-                <dt>Last</dt>
-                <dd>
-                  <LocalDateTime value={syncStatus.lastDataValidityRefreshAt ?? legacyDatasetSyncAt} fallback="Not refreshed yet" />
-                </dd>
-                <dt>Next scheduled</dt>
-                <dd>
-                  <LocalDateTime value={nextDataValidityRefreshAt} />
-                </dd>
-                <dt>Interval</dt>
-                <dd>Every 12 hours</dd>
               </dl>
             </div>
           </div>

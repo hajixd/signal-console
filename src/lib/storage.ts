@@ -1,6 +1,7 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { firebaseDb, hasFirebaseAdmin } from "@/lib/firebase-admin";
+import { omitUndefinedDeep } from "@/lib/firestore-utils";
 import type { TradeAlert } from "./types";
 
 const TRADE_COLLECTION = "signalConsoleAlerts";
@@ -59,20 +60,22 @@ export async function hasTrade(id: string): Promise<boolean> {
 }
 
 export async function saveTrade(trade: TradeAlert): Promise<void> {
+  const payload = omitUndefinedDeep({
+    ...trade,
+    createdAtMillis: Date.parse(trade.createdAt) || Date.now(),
+    signalTimeMillis: Date.parse(trade.signalTime) || Date.now(),
+    updatedAt: new Date().toISOString()
+  });
+
   if (hasFirebaseAdmin()) {
     await firebaseDb()
       .collection(TRADE_COLLECTION)
       .doc(trade.id)
-      .set({
-        ...trade,
-        createdAtMillis: Date.parse(trade.createdAt) || Date.now(),
-        signalTimeMillis: Date.parse(trade.signalTime) || Date.now(),
-        updatedAt: new Date().toISOString()
-      });
+      .set(payload);
     return;
   }
   const trades = await readLocal();
-  await writeLocal([trade, ...trades.filter((item) => item.id !== trade.id)].slice(0, 500));
+  await writeLocal([payload, ...trades.filter((item) => item.id !== trade.id)].slice(0, 500));
 }
 
 export function storageMode(): "firebase" | "local" {

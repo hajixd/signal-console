@@ -4,6 +4,7 @@ import path from "node:path";
 import { FieldValue } from "firebase-admin/firestore";
 import { autoTradeProviderById, type AutoTradeProviderId } from "@/lib/auto-trade-platforms";
 import { firebaseDb, hasFirebaseAdmin } from "@/lib/firebase-admin";
+import { omitUndefinedDeep } from "@/lib/firestore-utils";
 
 const COLLECTION = "autoTradeConnections";
 const LOCAL_PATH = path.join(process.cwd(), ".local", "auto-trade-connections.json");
@@ -168,7 +169,7 @@ export async function saveAutoTradeConnection(input: {
     await firebaseDb()
       .collection(COLLECTION)
       .doc(input.providerId)
-      .set({ ...payload, updatedAtServer: FieldValue.serverTimestamp() }, { merge: true });
+      .set(omitUndefinedDeep({ ...payload, updatedAtServer: FieldValue.serverTimestamp() }), { merge: true });
   } else {
     const connections = await readLocal();
     connections[input.providerId] = payload;
@@ -210,7 +211,10 @@ async function persistPaused(connection: AutoTradeConnection): Promise<AutoTrade
     updatedAt: new Date().toISOString()
   };
   if (hasFirebaseAdmin()) {
-    await firebaseDb().collection(COLLECTION).doc(connection.id).set({ ...payload, updatedAtServer: FieldValue.serverTimestamp() }, { merge: true });
+    await firebaseDb()
+      .collection(COLLECTION)
+      .doc(connection.id)
+      .set(omitUndefinedDeep({ ...payload, updatedAtServer: FieldValue.serverTimestamp() }), { merge: true });
   } else {
     const connections = await readLocal();
     connections[connection.id] = payload;
