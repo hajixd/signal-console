@@ -104,6 +104,7 @@ export type StrategyRule = {
   slUnits: number;
   tickSize: number;
   unitLabel: string;
+  sizeScale?: number;
   sizeMultiplier?: number;
   stopLossPolicy?: StopLossPolicy;
   takeProfitPolicy?: TakeProfitPolicy;
@@ -154,6 +155,7 @@ export type TradeAlert = {
   slMode?: BacktestPriceMode;
   sizeMode?: BacktestSizeMode;
   unitLabel: string;
+  sizeScale?: number;
   sizeMultiplier?: number;
   estimatedWinRatePct: number;
   liveProfitFactor: number;

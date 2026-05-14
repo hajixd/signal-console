@@ -1,7 +1,7 @@
 import { enrichBars } from "@/lib/indicators";
 import { assetForKey, defaultTickSize } from "@/lib/assets";
 import { getBacktestStats, type BacktestStat } from "@/lib/backtest";
-import { recommendedSizeMultiplier } from "@/lib/instruments";
+import { instrumentSizeLabel, recommendedSizeMultiplier } from "@/lib/instruments";
 import { getLiveConfig, type SavedStrategyEdit } from "@/lib/live-config";
 import { STRATEGY_DEFINITIONS } from "@/lib/strategy-loader";
 import type { StrategySignal } from "@/lib/strategy-definition";
@@ -36,19 +36,51 @@ function positiveNumber(value: unknown): number | undefined {
   return Number.isFinite(numeric) && numeric > 0 ? numeric : undefined;
 }
 
+function roundScaleValue(value: number): number {
+  return Math.round(value * 100) / 100;
+}
+
+function leadingSizeNumber(label: string): number | undefined {
+  const match = label.trim().match(/^(\d+(?:\.\d+)?)/);
+  if (!match) return undefined;
+  return positiveNumber(match[1]);
+}
+
+function scaleFromLegacyContracts(rule: StrategyRule, contracts: number | undefined): number | undefined {
+  if (!contracts) return undefined;
+  const baseSizeMultiplier = positiveNumber(rule.sizeMultiplier) ?? 1;
+  const baseContracts = leadingSizeNumber(instrumentSizeLabel(rule.symbol, baseSizeMultiplier));
+  return baseContracts ? roundScaleValue(contracts / baseContracts) : undefined;
+}
+
+function editScale(rule: StrategyRule, edit: SavedStrategyEdit): number | undefined {
+  return positiveNumber(edit.scale) ?? scaleFromLegacyContracts(rule, positiveNumber(edit.contracts));
+}
+
+function scaledSizePolicy(policy: StrategyRule["sizePolicy"], scale: number | undefined): StrategyRule["sizePolicy"] {
+  if (!policy || !scale) return policy;
+  return {
+    ...policy,
+    minMultiplier: roundScaleValue(policy.minMultiplier * scale),
+    maxMultiplier: roundScaleValue(policy.maxMultiplier * scale)
+  };
+}
+
 function applyStrategyEdit(rule: StrategyRule, edit: SavedStrategyEdit | undefined): StrategyRule {
   if (!edit) return rule;
 
   const tpUnits = positiveNumber(edit.tpUnits);
   const slUnits = positiveNumber(edit.slUnits);
-  const scale = positiveNumber(edit.scale);
-  const sizeMultiplier = positiveNumber(edit.contracts);
+  const scale = editScale(rule, edit);
+  const baseSizeMultiplier = positiveNumber(rule.sizeMultiplier) ?? 1;
 
   return {
     ...rule,
     tpUnits: tpUnits ?? rule.tpUnits,
     slUnits: slUnits ?? rule.slUnits,
-    sizeMultiplier: scale ? (rule.sizeMultiplier ?? 1) * scale : sizeMultiplier ?? rule.sizeMultiplier
+    sizeScale: scale ?? rule.sizeScale,
+    sizePolicy: scaledSizePolicy(rule.sizePolicy, scale),
+    sizeMultiplier: scale ? roundScaleValue(baseSizeMultiplier * scale) : rule.sizeMultiplier
   };
 }
 

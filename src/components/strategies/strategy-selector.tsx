@@ -79,6 +79,18 @@ type CustomScaleResult = {
   total: number;
   unchanged: number;
 };
+type CustomSelectionInput = {
+  minProfitFactor: string;
+  minWinRate: string;
+};
+type CustomSelectionCriteria = {
+  minProfitFactor: number;
+  minWinRate: number;
+};
+type CustomSelectionResult = {
+  selected: number;
+  total: number;
+};
 
 const STORAGE_KEY = STRATEGY_EDITS_STORAGE_KEY;
 const CUSTOM_SCALE_RANGE_STORAGE_KEY_PREFIX = "trading-bot-custom-scale-range";
@@ -90,6 +102,10 @@ const EMPTY_CUSTOM_SCALE_RANGE: CustomScaleRangeInput = {
   riskFloor: "",
   targetCeiling: "",
   targetFloor: ""
+};
+const EMPTY_CUSTOM_SELECTION: CustomSelectionInput = {
+  minProfitFactor: "",
+  minWinRate: ""
 };
 
 function isCustomScaleRangeInput(value: unknown): value is Partial<CustomScaleRangeInput> {
@@ -217,15 +233,15 @@ function formatSizeLabel(contracts: number, sizeName: string): string {
 }
 
 function displayTargetLabel(strategy: StrategyOption, value: number): string {
-  return strategy.tpMode === "custom" ? "Custom" : formatMoney(value);
+  return strategy.tpMode === "custom" ? "Custom Unit" : formatMoney(value);
 }
 
 function displayRiskLabel(strategy: StrategyOption, value: number): string {
-  return strategy.slMode === "custom" ? "Custom" : formatMoney(value);
+  return strategy.slMode === "custom" ? "Custom Unit" : formatMoney(value);
 }
 
 function displaySizeLabel(strategy: StrategyOption, contracts: number, sizeName: string): string {
-  return strategy.sizeMode === "custom" ? "Custom" : formatSizeLabel(contracts, sizeName);
+  return strategy.sizeMode === "custom" ? "Custom Unit" : formatSizeLabel(contracts, sizeName);
 }
 
 function riskRewardRatio(targetDollars: number, riskDollars: number): number | undefined {
@@ -234,7 +250,7 @@ function riskRewardRatio(targetDollars: number, riskDollars: number): number | u
 
 function displayRiskRewardLabel(strategy: StrategyOption, value: number | undefined, hasBacktestTrades: boolean): string {
   if (!hasBacktestTrades) return "--";
-  if (strategy.rrrMode === "custom") return "Custom";
+  if (strategy.rrrMode === "custom") return "Custom Unit";
   return Number.isFinite(value) ? formatNumber(value ?? 0) : "--";
 }
 
@@ -446,6 +462,26 @@ function parseCustomScaleRange(input: CustomScaleRangeInput): { error?: string; 
   };
 }
 
+function parseCustomSelection(input: CustomSelectionInput): { criteria?: CustomSelectionCriteria; error?: string } {
+  const minProfitFactor = Number(input.minProfitFactor);
+  const minWinRate = Number(input.minWinRate);
+
+  if (!Number.isFinite(minProfitFactor) || minProfitFactor < 0) {
+    return { error: "Enter a valid minimum profit factor." };
+  }
+
+  if (!Number.isFinite(minWinRate) || minWinRate < 0 || minWinRate > 100) {
+    return { error: "Enter a minimum win rate from 0 to 100." };
+  }
+
+  return {
+    criteria: {
+      minProfitFactor,
+      minWinRate
+    }
+  };
+}
+
 function dollarsInRange(value: number, floor: number, ceiling: number): boolean {
   return value + 0.01 >= floor && value - 0.01 <= ceiling;
 }
@@ -543,12 +579,16 @@ export default function StrategySelector({
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
   const [optimisticSelectedKeys, setOptimisticSelectedKeys] = useState(selectedKeys);
   const [isCustomScaleOpen, setIsCustomScaleOpen] = useState(false);
+  const [isCustomSelectionOpen, setIsCustomSelectionOpen] = useState(false);
   const customScaleRangeKey = customScaleRangeStorageKey(market);
   const [customScaleRange, setCustomScaleRange] = useState<CustomScaleRangeInput>(() =>
     loadClientCustomScaleRange(customScaleRangeKey, persistedCustomScaleRange)
   );
   const [customScaleError, setCustomScaleError] = useState("");
   const [customScaleResult, setCustomScaleResult] = useState<CustomScaleResult | null>(null);
+  const [customSelection, setCustomSelection] = useState<CustomSelectionInput>(EMPTY_CUSTOM_SELECTION);
+  const [customSelectionError, setCustomSelectionError] = useState("");
+  const [customSelectionResult, setCustomSelectionResult] = useState<CustomSelectionResult | null>(null);
   const selected = new Set(optimisticSelectedKeys);
   const activeStrategy = strategies.find((strategy) => strategy.key === activeKey);
   const hasEdits = Object.keys(edits).length > 0;
@@ -810,7 +850,7 @@ export default function StrategySelector({
   }, [currentEditSignature, edits, isLoaded, persistStrategyEdits, persistedEditsSignature]);
 
   useEffect(() => {
-    if (!activeKey && !isCustomScaleOpen) return undefined;
+    if (!activeKey && !isCustomScaleOpen && !isCustomSelectionOpen) return undefined;
 
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
@@ -823,6 +863,12 @@ export default function StrategySelector({
         setCustomScaleResult(null);
         return;
       }
+      if (isCustomSelectionOpen) {
+        setIsCustomSelectionOpen(false);
+        setCustomSelectionError("");
+        setCustomSelectionResult(null);
+        return;
+      }
       setActiveKey(null);
       setDraft(null);
     }
@@ -832,7 +878,7 @@ export default function StrategySelector({
       document.body.style.overflow = previousOverflow;
       document.removeEventListener("keydown", closeOnEscape);
     };
-  }, [activeKey, isCustomScaleOpen]);
+  }, [activeKey, isCustomScaleOpen, isCustomSelectionOpen]);
 
   function navigate(nextKeys: string[]) {
     const currentKeySet = new Set(optimisticSelectedKeys);
@@ -973,6 +1019,18 @@ export default function StrategySelector({
     setCustomScaleResult(null);
   }
 
+  function openCustomSelection() {
+    setCustomSelectionError("");
+    setCustomSelectionResult(null);
+    setIsCustomSelectionOpen(true);
+  }
+
+  function closeCustomSelection() {
+    setIsCustomSelectionOpen(false);
+    setCustomSelectionError("");
+    setCustomSelectionResult(null);
+  }
+
   function updateCustomScaleRange(field: keyof CustomScaleRangeInput, value: string) {
     setCustomScaleRange((current) => ({ ...current, [field]: value }));
     setCustomScaleError("");
@@ -1017,11 +1075,39 @@ export default function StrategySelector({
   function submitCustomScaleRange() {
     const parsed = parseCustomScaleRange(customScaleRange);
     if (!parsed.range) {
-      setCustomScaleError(parsed.error ?? "Custom range could not be applied.");
+      setCustomScaleError(parsed.error ?? "Custom Unit range could not be applied.");
       setCustomScaleResult(null);
       return;
     }
     applyCustomScaleRange(parsed.range);
+  }
+
+  function updateCustomSelection(field: keyof CustomSelectionInput, value: string) {
+    setCustomSelection((current) => ({ ...current, [field]: value }));
+    setCustomSelectionError("");
+    setCustomSelectionResult(null);
+  }
+
+  function submitCustomSelection() {
+    const parsed = parseCustomSelection(customSelection);
+    if (!parsed.criteria) {
+      setCustomSelectionError(parsed.error ?? "Custom Selection could not be applied.");
+      setCustomSelectionResult(null);
+      return;
+    }
+
+    const criteria = parsed.criteria;
+    const nextKeys = strategies
+      .filter(
+        (strategy) =>
+          strategy.trades > 0 &&
+          strategy.profitFactor >= criteria.minProfitFactor &&
+          strategy.winRatePct >= criteria.minWinRate
+      )
+      .map((strategy) => strategy.key);
+
+    navigate(nextKeys);
+    setCustomSelectionResult({ selected: nextKeys.length, total: strategies.length });
   }
 
   function updateContracts(value: number) {
@@ -1078,6 +1164,9 @@ export default function StrategySelector({
       <div className="pickerHeader">
         <span>Strategies</span>
         <div className="pickerActions">
+          <button type="button" onClick={openCustomSelection} disabled={strategies.length === 0}>
+            Custom Selection
+          </button>
           <button type="button" onClick={() => navigate([])} disabled={optimisticSelectedKeys.length === 0}>
             Clear
           </button>
@@ -1110,7 +1199,7 @@ export default function StrategySelector({
               4x
             </button>
             <button type="button" onClick={openCustomScale} disabled={editControlsDisabled || strategies.length === 0}>
-              Custom
+              Custom Unit
             </button>
           </div>
         </div>
@@ -1195,7 +1284,7 @@ export default function StrategySelector({
                 <strong>{effective.modelName}</strong>
                 <span>
                   {formatMarket(strategy.market)} / {strategy.timeframeLabel} / {strategy.liveSupported ? "live-ready" : "backtest only"}
-                  {custom ? " / custom" : ""}
+                  {custom ? " / custom unit" : ""}
                 </span>
               </div>
               <span className={hasBacktestTrades ? (strategy.profitFactor >= 1 ? "up" : "down") : "neutral"} data-label="PF">
@@ -1320,7 +1409,7 @@ export default function StrategySelector({
         <div className="strategyModalBackdrop" role="presentation" onMouseDown={closeCustomScale}>
           <form
             className="strategyModal customScaleModal"
-            aria-label="Custom range scale"
+            aria-label="Custom Unit range scale"
             aria-modal="true"
             role="dialog"
             onSubmit={(event) => {
@@ -1332,7 +1421,7 @@ export default function StrategySelector({
             <div className="strategyModalHead">
               <div>
                 <span>All scale</span>
-                <strong>Custom range</strong>
+                <strong>Custom Unit range</strong>
               </div>
               <button type="button" onClick={closeCustomScale}>
                 Close
@@ -1401,6 +1490,76 @@ export default function StrategySelector({
                 Clear
               </button>
               <button type="submit">Apply</button>
+            </div>
+          </form>
+        </div>
+      ), document.body) : null}
+
+      {isCustomSelectionOpen ? createPortal((
+        <div className="strategyModalBackdrop" role="presentation" onMouseDown={closeCustomSelection}>
+          <form
+            className="strategyModal customScaleModal"
+            aria-label="Custom Selection"
+            aria-modal="true"
+            role="dialog"
+            onSubmit={(event) => {
+              event.preventDefault();
+              submitCustomSelection();
+            }}
+            onMouseDown={(event) => event.stopPropagation()}
+          >
+            <div className="strategyModalHead">
+              <div>
+                <span>Strategy selection</span>
+                <strong>Custom Selection</strong>
+              </div>
+              <button type="button" onClick={closeCustomSelection}>
+                Close
+              </button>
+            </div>
+
+            <div className="strategyModalGrid">
+              <label className="fieldControl">
+                <span>Minimum PF</span>
+                <input
+                  type="text"
+                  inputMode="decimal"
+                  value={customSelection.minProfitFactor}
+                  onChange={(event) => updateCustomSelection("minProfitFactor", event.target.value)}
+                  autoFocus
+                />
+              </label>
+              <label className="fieldControl">
+                <span>Minimum win rate %</span>
+                <input
+                  type="text"
+                  inputMode="decimal"
+                  value={customSelection.minWinRate}
+                  onChange={(event) => updateCustomSelection("minWinRate", event.target.value)}
+                />
+              </label>
+            </div>
+
+            {customSelectionError ? <div className="customScaleNotice isError">{customSelectionError}</div> : null}
+            {customSelectionResult ? (
+              <div className={`customScaleNotice${customSelectionResult.selected ? "" : " isWarning"}`}>
+                <span>{formatNumber(customSelectionResult.selected)} selected</span>
+                <span>{formatNumber(customSelectionResult.total)} scanned</span>
+              </div>
+            ) : null}
+
+            <div className="strategyModalActions">
+              <button
+                type="button"
+                onClick={() => {
+                  setCustomSelection(EMPTY_CUSTOM_SELECTION);
+                  setCustomSelectionError("");
+                  setCustomSelectionResult(null);
+                }}
+              >
+                Clear
+              </button>
+              <button type="submit">Select</button>
             </div>
           </form>
         </div>

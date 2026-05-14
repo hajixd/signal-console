@@ -189,6 +189,7 @@ export function planTradeAlert(
     slMode,
     sizeMode,
     unitLabel: rule.unitLabel,
+    sizeScale: finiteNumber(rule.sizeScale) && rule.sizeScale > 0 ? rule.sizeScale : undefined,
     sizeMultiplier: sizeMultiplier ?? 1,
     estimatedWinRatePct: rule.estimatedWinRatePct,
     liveProfitFactor: rule.liveProfitFactor,

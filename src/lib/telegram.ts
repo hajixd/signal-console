@@ -17,6 +17,12 @@ function formatNumber(value: number, digits = 2): string {
   }).format(value);
 }
 
+function formatScale(value: number): string {
+  return new Intl.NumberFormat("en-US", {
+    maximumFractionDigits: 2
+  }).format(value);
+}
+
 function formatMoney(value: number): string {
   return new Intl.NumberFormat("en-US", {
     style: "currency",
@@ -91,6 +97,8 @@ function fitTelegramMessage(text: string): string {
 export function formatTelegramMessage(trade: TradeAlert): string {
   const dollarUnit = dollarPerUnit(trade.symbol, trade.entryPrice);
   const sizeMultiplier = trade.sizeMultiplier ?? 1;
+  const rawSizeScale = trade.sizeScale;
+  const sizeScale = typeof rawSizeScale === "number" && Number.isFinite(rawSizeScale) && rawSizeScale > 0 ? rawSizeScale : undefined;
   const targetDollars = Math.abs(trade.tpUnits * dollarUnit * sizeMultiplier);
   const riskDollars = Math.abs(trade.slUnits * dollarUnit * sizeMultiplier);
   const rewardRisk = riskDollars > 0 ? targetDollars / riskDollars : 0;
@@ -109,6 +117,7 @@ export function formatTelegramMessage(trade: TradeAlert): string {
     `Take profit: ${formatPrice(trade.takeProfitPrice)} / ${formatMoney(targetDollars)}`,
     `Stop loss: ${formatPrice(trade.stopLossPrice)} / ${formatMoney(riskDollars)}`,
     `Size: ${escapeHtml(instrumentSizeLabel(trade.symbol, sizeMultiplier))}`,
+    sizeScale && Math.abs(sizeScale - 1) > 0.005 ? `Scale: ${escapeHtml(formatScale(sizeScale))}x` : "",
     "",
     `<b>Stats</b>`,
     `Win odds: ${formatNumber(trade.estimatedWinRatePct, 1)}%`,
