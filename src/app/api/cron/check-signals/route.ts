@@ -46,6 +46,34 @@ function lifecycleLookbackMs(): number {
   return (Number.isFinite(hours) && hours > 0 ? hours : 72) * 60 * 60_000;
 }
 
+function repeatSuppressionLookbackMs(): number {
+  const hours = Number(process.env.SIGNAL_REPEAT_SUPPRESSION_HOURS ?? 12);
+  return (Number.isFinite(hours) && hours > 0 ? hours : 12) * 60 * 60_000;
+}
+
+function repeatSignalKey(trade: Pick<TradeAlert, "logicalStrategyKey" | "side" | "strategy" | "strategyId" | "strategyKey" | "symbol">): string | null {
+  const strategyKey = trade.logicalStrategyKey ?? trade.strategyKey ?? trade.strategyId ?? trade.strategy;
+  if (!strategyKey || !trade.symbol || !trade.side) return null;
+  return [trade.symbol, strategyKey, trade.side].join("\t");
+}
+
+function recentRepeatTrade(signal: TradeAlert, trades: TradeAlert[], lookbackMs: number): TradeAlert | null {
+  const key = repeatSignalKey(signal);
+  const signalTimeMs = Date.parse(signal.signalTime);
+  if (!key || !Number.isFinite(signalTimeMs)) return null;
+
+  for (const trade of trades) {
+    if (trade.id === signal.id || repeatSignalKey(trade) !== key) continue;
+    const tradeTimeMs = Date.parse(trade.signalTime);
+    if (!Number.isFinite(tradeTimeMs)) continue;
+    if (tradeTimeMs >= signalTimeMs - lookbackMs && tradeTimeMs <= signalTimeMs) {
+      return trade;
+    }
+  }
+
+  return null;
+}
+
 function tradeLifecycleHit(trade: TradeAlert, bars: Bar[]): TradeLifecycleHit | null {
   const signalTime = Date.parse(trade.signalTime);
   const trackedBars = bars.filter((bar) => Date.parse(bar.time) > signalTime);
@@ -153,6 +181,9 @@ async function runSignalCheck(): Promise<CronResult> {
     errors: []
   };
   const candidates: Array<{ signal: ReturnType<typeof withTopstepGuardNote>; score: number; riskDollars: number }> = [];
+  const recentTrades = await getTrades();
+  const repeatLookbackMs = repeatSuppressionLookbackMs();
+  const candidateRepeatKeys = new Set<string>();
   const rules = await activeRules();
   if (!rules.length) {
     throw new Error("No active live strategies are enabled for signal checks.");
@@ -175,6 +206,21 @@ async function runSignalCheck(): Promise<CronResult> {
       if (await hasTrade(signal.id)) {
         result.skippedDuplicates.push(signal.id);
         continue;
+      }
+
+      const repeat = recentRepeatTrade(signal, recentTrades, repeatLookbackMs);
+      if (repeat) {
+        result.skippedDuplicates.push(`${signal.id} repeats ${repeat.id}`);
+        continue;
+      }
+
+      const candidateRepeatKey = repeatSignalKey(signal);
+      if (candidateRepeatKey && candidateRepeatKeys.has(candidateRepeatKey)) {
+        result.skippedDuplicates.push(`${signal.id} repeats another signal in this check`);
+        continue;
+      }
+      if (candidateRepeatKey) {
+        candidateRepeatKeys.add(candidateRepeatKey);
       }
 
       const signalMarket = autoTradeMarketForSignal(signal.market);

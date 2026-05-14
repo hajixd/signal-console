@@ -22,6 +22,12 @@ function normalizeSelectedKeys(selectedKeys: string[]): string[] {
   return [...new Set(selectedKeys.map((key) => key.trim()).filter((key) => VALID_STRATEGY_IDS.has(key)))];
 }
 
+function normalizeStrategyScopeKeys(scopeKeys: string[] | undefined): Set<string> | null {
+  if (!scopeKeys) return null;
+  const normalized = normalizeSelectedKeys(scopeKeys);
+  return normalized.length ? new Set(normalized) : null;
+}
+
 function sameSelection(left: string[], right: string[]): boolean {
   if (left.length !== right.length) return false;
   return left.every((value, index) => value === right[index]);
@@ -176,17 +182,24 @@ export async function syncLiveSelection(selectedKeys: string[], scopeKeys?: stri
   });
 }
 
-export async function syncStrategyEdits(edits: Record<string, PersistedStrategyEdit>): Promise<void> {
+export async function syncStrategyEdits(edits: Record<string, PersistedStrategyEdit>, scopeKeys?: string[]): Promise<void> {
   const normalized = normalizeStrategyEdits(edits);
+  const normalizedScope = normalizeStrategyScopeKeys(scopeKeys);
   const existing = await getLiveConfig();
+  const nextStrategyEdits = normalizedScope
+    ? {
+        ...Object.fromEntries(Object.entries(existing.strategyEdits).filter(([key]) => !normalizedScope.has(key))),
+        ...normalized
+      }
+    : normalized;
 
-  if (strategyEditSignature(existing.strategyEdits) === strategyEditSignature(normalized)) {
+  if (strategyEditSignature(existing.strategyEdits) === strategyEditSignature(nextStrategyEdits)) {
     return;
   }
 
   await saveLiveConfig({
     ...existing,
-    strategyEdits: normalized
+    strategyEdits: nextStrategyEdits
   });
 }
 

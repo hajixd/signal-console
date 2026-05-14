@@ -21,6 +21,7 @@ import {
 import { sendTestTelegramAlert } from "@/app/telegram-actions";
 import {
   aggregateBacktest,
+  getBacktestCatalogFreshness,
   getBacktestStats,
   getBacktestTrades,
   getStrategyCatalog,
@@ -569,14 +570,15 @@ function challengeSessionCount(trades: { entryTime: string; pnlDollars: number }
 
 export default async function Home({ searchParams }: HomeProps) {
   const params = await searchParams;
-  const [liveTrades, strategyCatalog, backtestStats, backtestTrades, liveRules, liveConfig, datasetStatus] = await Promise.all([
+  const [liveTrades, strategyCatalog, backtestStats, backtestTrades, liveRules, liveConfig, datasetStatus, backtestFreshness] = await Promise.all([
     safeRuntimeValue(getTrades, []),
     getStrategyCatalog(),
     getBacktestStats(),
     getBacktestTrades(),
     allRules(),
     safeRuntimeValue(getLiveConfig, EMPTY_LIVE_CONFIG),
-    safeRuntimeValue(async () => (await getDatasetStatus()) ?? defaultDatasetStatus(), defaultDatasetStatus())
+    safeRuntimeValue(async () => (await getDatasetStatus()) ?? defaultDatasetStatus(), defaultDatasetStatus()),
+    getBacktestCatalogFreshness()
   ]);
   const activeMarket = parseMarketTab(params?.market, liveConfig.dashboardSettings.activeMarket);
   const persistedMarketChallengeRules = liveConfig.dashboardSettings.challengeRulesByMarket?.[activeMarket];
@@ -590,6 +592,11 @@ export default async function Home({ searchParams }: HomeProps) {
   const legacyDatasetSyncAt = datasetStatus?.sync ? undefined : datasetStatus?.lastSyncAt;
   const marketDataSyncState = syncTileState(syncStatus.marketDataSync, syncStatus.lastMarketDataSyncAt ?? legacyDatasetSyncAt);
   const signalTradeCheckState = syncTileState(syncStatus.signalTradeCheck, syncStatus.lastSignalTradeCheckAt);
+  const latestBacktestTradeAt = backtestFreshness.latestTradeAt;
+  const latestMarketDataSyncAt = syncStatus.lastMarketDataSyncAt ?? legacyDatasetSyncAt;
+  const backtestBehindMarketData =
+    Boolean(latestBacktestTradeAt && latestMarketDataSyncAt) &&
+    Date.parse(latestBacktestTradeAt!) < Date.parse(latestMarketDataSyncAt!);
   const now = new Date();
   const nextMarketDataSyncAt = nextCronRunIso((date) => date.getUTCMinutes() % 5 === 0, now);
   const nextSignalTradeCheckAt = nextCronRunIso((date) => [2, 17, 32, 47].includes(date.getUTCMinutes()), now);
@@ -885,9 +892,12 @@ export default async function Home({ searchParams }: HomeProps) {
           <div className="backtest-card-head">
             <div>
               <h2>Backtest History</h2>
-              <p>Trade-by-trade dollar history for every stored backtest trade in the active market.</p>
+              <p>
+                Stored backtest trades for the active market. Latest stored trade:{" "}
+                <LocalDateTime value={latestBacktestTradeAt} fallback="unknown" />.
+              </p>
             </div>
-            <span className="count-pill">{historyCountLabel}</span>
+            <span className={`count-pill${backtestBehindMarketData ? " warning" : ""}`}>{historyCountLabel}</span>
           </div>
 
           {activeMarketBacktestTrades.length === 0 ? (
@@ -1084,6 +1094,23 @@ export default async function Home({ searchParams }: HomeProps) {
                 </dd>
                 <dt>Interval</dt>
                 <dd>Every 15 minutes</dd>
+              </dl>
+            </div>
+            <div className={`dataset-sync-tile sync-state-${backtestBehindMarketData ? "failed" : latestBacktestTradeAt ? "success" : "idle"}`}>
+              <span className="sync-tile-name">Backtest history</span>
+              <dl className="sync-tile-times">
+                <dt>Status</dt>
+                <dd>{backtestBehindMarketData ? "Behind market data" : latestBacktestTradeAt ? "Current snapshot" : "No snapshot"}</dd>
+                <dt>Latest trade</dt>
+                <dd>
+                  <LocalDateTime value={latestBacktestTradeAt} fallback="Unknown" />
+                </dd>
+                <dt>Manifest</dt>
+                <dd>
+                  <LocalDateTime value={backtestFreshness.generatedAt} fallback="Unknown" />
+                </dd>
+                <dt>Stored trades</dt>
+                <dd>{fmtNumber(backtestFreshness.trades)}</dd>
               </dl>
             </div>
           </div>

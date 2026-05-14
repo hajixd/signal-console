@@ -50,7 +50,7 @@ type StrategySelectorProps = {
   persistedStrategyEdits: StrategyEditSeedMap;
   persistLiveSelection: (selectedKeys: string[], scopeKeys?: string[]) => Promise<void>;
   persistCustomScaleRange: (market: MarketKey, range: CustomScaleRangeSeed) => Promise<void>;
-  persistStrategyEdits: (edits: StrategyEditSeedMap) => Promise<void>;
+  persistStrategyEdits: (edits: StrategyEditSeedMap, scopeKeys?: string[]) => Promise<void>;
 };
 
 type SortColumn = "ticker" | "model" | "profitFactor" | "winRate" | "trades" | "target" | "risk" | "rrr" | "size" | "scale" | "enabled";
@@ -95,7 +95,7 @@ type CustomSelectionResult = {
 const STORAGE_KEY = STRATEGY_EDITS_STORAGE_KEY;
 const CUSTOM_SCALE_RANGE_STORAGE_KEY_PREFIX = "trading-bot-custom-scale-range";
 const STRATEGY_SIZES_PARAM = "strategySizes";
-const EDIT_RENDER_DELAY_MS = 2500;
+const EDIT_RENDER_DELAY_MS = 650;
 const SELECTION_SYNC_DELAY_MS = 650;
 const EMPTY_CUSTOM_SCALE_RANGE: CustomScaleRangeInput = {
   riskCeiling: "",
@@ -833,7 +833,10 @@ export default function StrategySelector({
 
       startSavingEdits(async () => {
         try {
-          await persistStrategyEdits(editsToSync);
+          await persistStrategyEdits(editsToSync, strategyScopeKeys);
+          if (editSyncRunRef.current === syncRun && latestEditSignatureRef.current === signatureToSync) {
+            router.refresh();
+          }
         } catch (error) {
           console.error("Failed to sync strategy edits", error);
           if (editSyncRunRef.current === syncRun) lastSyncedEditsRef.current = "";
@@ -847,7 +850,7 @@ export default function StrategySelector({
         editSyncTimerRef.current = null;
       }
     };
-  }, [currentEditSignature, edits, isLoaded, persistStrategyEdits, persistedEditsSignature]);
+  }, [currentEditSignature, edits, isLoaded, persistStrategyEdits, persistedEditsSignature, router, strategyScopeKeys]);
 
   useEffect(() => {
     if (!activeKey && !isCustomScaleOpen && !isCustomSelectionOpen) return undefined;
