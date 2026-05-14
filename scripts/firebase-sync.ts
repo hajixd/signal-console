@@ -1,8 +1,8 @@
 import { createHash } from "node:crypto";
 import { createReadStream } from "node:fs";
-import { readdir, stat } from "node:fs/promises";
+import { readFile, readdir, stat } from "node:fs/promises";
 import path from "node:path";
-import { buildLocalStrategyCatalog } from "../src/lib/backtest";
+import { buildLocalStrategyCatalog, type StrategyCatalog } from "../src/lib/backtest";
 import { firebaseBucket, hasFirebaseAdmin, storageObjectPath } from "../src/lib/firebase-admin";
 import { defaultDatasetStatus, getDatasetStatus, getLiveConfig, saveDatasetStatus, saveLiveConfig } from "../src/lib/live-config";
 
@@ -14,6 +14,26 @@ type UploadRoot = {
 type RemoteFileInfo = {
   md5Hash?: string;
   size?: number;
+};
+
+type DataTailState = {
+  tails?: Record<
+    string,
+    Record<
+      string,
+      {
+        lastBarAt?: string;
+        lastBarTime?: number;
+      }
+    >
+  >;
+};
+
+type ComputedThroughMarker = {
+  assetKey: string;
+  lastBarAt?: string;
+  lastBarTime?: number;
+  timeframe: string;
 };
 
 const UPLOAD_ROOTS: UploadRoot[] = [
@@ -80,6 +100,23 @@ function selectedExactPaths(): string[] {
       .slice("--paths=".length)
       .split(",")
       .map((value) => value.trim().replace(/\\/g, "/").replace(/^\/+/, ""))
+      .filter(Boolean)
+  );
+}
+
+function selectedComputedThroughStatePath(): string | undefined {
+  const raw = process.argv.find((value) => value.startsWith("--computed-through-state="));
+  return raw?.slice("--computed-through-state=".length).trim() || undefined;
+}
+
+function selectedCatalogStrategyIds(): string[] {
+  const raw = process.argv.find((value) => value.startsWith("--catalog-strategy-ids="));
+  if (!raw) return [];
+  return unique(
+    raw
+      .slice("--catalog-strategy-ids=".length)
+      .split(",")
+      .map((value) => value.trim())
       .filter(Boolean)
   );
 }
@@ -220,6 +257,43 @@ async function uploadFiles(relativePaths: string[]): Promise<number> {
   return uploadedCount;
 }
 
+async function readDataTailState(filePath: string | undefined): Promise<DataTailState | null> {
+  if (!filePath) return null;
+  return JSON.parse(await readFile(path.resolve(process.cwd(), filePath), "utf8")) as DataTailState;
+}
+
+async function readExistingManifestCatalog(): Promise<StrategyCatalog | null> {
+  try {
+    return JSON.parse(await readFile(path.join(process.cwd(), "cache", "backtest-manifest.json"), "utf8")) as StrategyCatalog;
+  } catch {
+    return null;
+  }
+}
+
+function isoFromSeconds(value: number | undefined): string | undefined {
+  return typeof value === "number" && Number.isFinite(value) ? new Date(value * 1000).toISOString() : undefined;
+}
+
+function mergeCatalog(base: StrategyCatalog, update: StrategyCatalog, changedStrategyIds: string[]): StrategyCatalog {
+  const changed = new Set(changedStrategyIds);
+  const trades = [
+    ...base.trades.filter((trade) => !changed.has(trade.datasetId)),
+    ...update.trades
+  ].sort((left, right) => Date.parse(right.entryTime) - Date.parse(left.entryTime));
+
+  return {
+    entries: [
+      ...base.entries.filter((entry) => !changed.has(entry.key)),
+      ...update.entries
+    ].sort((left, right) => left.key.localeCompare(right.key)),
+    stats: [
+      ...base.stats.filter((stat) => !changed.has(stat.datasetId)),
+      ...update.stats
+    ].sort((left, right) => left.datasetId.localeCompare(right.datasetId)),
+    trades
+  };
+}
+
 async function main(): Promise<void> {
   if (!hasFirebaseAdmin()) {
     throw new Error("Firebase Admin credentials are missing. Set FIREBASE_SERVICE_ACCOUNT_JSON or the split FIREBASE_* variables first.");
@@ -244,12 +318,47 @@ async function main(): Promise<void> {
   const filesToUpload = await filterChangedFiles(matchingFiles, roots, exactPaths.length > 0);
 
   const uploadedFilesCount = await uploadFiles(filesToUpload);
-  const catalog = await buildLocalStrategyCatalog();
+  const catalogStrategyIds = selectedCatalogStrategyIds();
+  const localCatalog = await buildLocalStrategyCatalog(catalogStrategyIds.length ? catalogStrategyIds : undefined);
+  const existingManifest = catalogStrategyIds.length ? await readExistingManifestCatalog() : null;
+  const catalog = existingManifest ? mergeCatalog(existingManifest, localCatalog, catalogStrategyIds) : localCatalog;
+  const dataTailState = await readDataTailState(selectedComputedThroughStatePath());
+  const updatedComputedStrategyIds = catalogStrategyIds.length ? new Set(catalogStrategyIds) : null;
+  const existingComputedEntries = Object.entries(existingManifest?.computedThroughByStrategy ?? {}) as Array<
+    [string, ComputedThroughMarker]
+  >;
+  const updatedComputedEntries = catalog.entries
+    .filter((entry) => !updatedComputedStrategyIds || updatedComputedStrategyIds.has(entry.key))
+    .map((entry): [string, ComputedThroughMarker] | null => {
+      const timeframe = entry.timeframes[0] ?? "15m";
+      const tail = dataTailState?.tails?.[entry.assetKey]?.[timeframe];
+      if (!tail?.lastBarTime) return null;
+      return [
+        entry.key,
+        {
+          assetKey: entry.assetKey,
+          lastBarAt: tail.lastBarAt ?? isoFromSeconds(tail.lastBarTime),
+          lastBarTime: tail.lastBarTime,
+          timeframe
+        }
+      ];
+    })
+    .filter((entry): entry is [string, ComputedThroughMarker] => entry !== null);
+  const computedThroughByStrategy = Object.fromEntries([...existingComputedEntries, ...updatedComputedEntries]);
+  const computedThroughTimes: number[] = [];
+  for (const entry of Object.values(computedThroughByStrategy)) {
+    if (typeof entry.lastBarTime === "number" && Number.isFinite(entry.lastBarTime)) {
+      computedThroughTimes.push(entry.lastBarTime);
+    }
+  }
+  const computedThroughAt = computedThroughTimes.length ? isoFromSeconds(Math.min(...computedThroughTimes)) : undefined;
   const generatedAt = new Date().toISOString();
   const manifestRelativePath = "cache/backtest-manifest.json";
   const manifestDestination = storageObjectPath(manifestRelativePath);
   const manifest = {
     catalogVersion: 1,
+    ...(computedThroughAt ? { computedThroughAt } : {}),
+    ...(Object.keys(computedThroughByStrategy).length ? { computedThroughByStrategy } : {}),
     generatedAt,
     ...catalog
   };

@@ -5,7 +5,7 @@ on:
 
 concurrency:
   group: refresh-backtests
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 permissions:
   contents: read
@@ -50,34 +50,70 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install -r requirements.txt
 
-      - name: Plan targeted Firebase refresh inputs
+      - name: Prepare refresh workspace
+        run: mkdir -p .local
+
+      - name: Pull current backtest manifest from Firebase
+        run: node --import tsx scripts/firebase-pull.ts --paths=cache/backtest-manifest.json --ignore-missing
+
+      - name: Plan source candle tail window
         run: |
-          mkdir -p .local
-          node --import tsx scripts/backtest-refresh-plan.ts --out=.local/backtest-refresh-plan.json
-          echo "DATA_PULL_PATHS=$(node --import tsx scripts/backtest-refresh-plan.ts --field=dataPullPaths)" >> "$GITHUB_ENV"
-          echo "BACKTEST_CSV_PATHS=$(node --import tsx scripts/backtest-refresh-plan.ts --field=backtestCsvPaths)" >> "$GITHUB_ENV"
-          echo "SOURCE_ASSET_KEYS=$(node --import tsx scripts/backtest-refresh-plan.ts --field=sourceAssetKeys)" >> "$GITHUB_ENV"
+          node --import tsx scripts/backtest-stale-plan.ts --out=.local/source-tail-plan.json --incremental-start-state-out=.local/source-tail-start-state.json
+          echo "SOURCE_STALE_DATA_PULL_PATHS=$(node --import tsx scripts/backtest-stale-plan.ts --field=staleDataPullPaths)" >> "$GITHUB_ENV"
+          echo "SOURCE_STALE_SOURCE_ASSET_KEYS=$(node --import tsx scripts/backtest-stale-plan.ts --field=staleSourceAssetKeys)" >> "$GITHUB_ENV"
+          echo "SOURCE_STALE_STRATEGY_IDS=$(node --import tsx scripts/backtest-stale-plan.ts --field=staleStrategyIds)" >> "$GITHUB_ENV"
+
+      - name: No stale backtests
+        if: env.SOURCE_STALE_STRATEGY_IDS == ''
+        run: echo "Backtest manifest is already computed through the latest market-data coverage."
 
       - name: Pull current source candles from Firebase
-        run: node --import tsx scripts/firebase-pull.ts --paths="$DATA_PULL_PATHS"
-
-      - name: Pull current backtest CSVs from Firebase
-        run: node --import tsx scripts/firebase-pull.ts --paths="$BACKTEST_CSV_PATHS" --ignore-missing
+        if: env.SOURCE_STALE_STRATEGY_IDS != ''
+        env:
+          AUTO_BACKTEST_DATA_TAIL_ROWS: ${{ vars.AUTO_BACKTEST_DATA_TAIL_ROWS || '12000' }}
+          AUTO_BACKTEST_OVERLAP_DAYS: ${{ vars.AUTO_BACKTEST_OVERLAP_DAYS || '7' }}
+        run: |
+          node --import tsx scripts/firebase-pull.ts \
+            --paths="$SOURCE_STALE_DATA_PULL_PATHS" \
+            --tail-rows="$AUTO_BACKTEST_DATA_TAIL_ROWS" \
+            --tail-since-state=.local/source-tail-start-state.json \
+            --tail-overlap-days="$AUTO_BACKTEST_OVERLAP_DAYS"
 
       - name: Rebuild derived timeframes locally
-        run: python backtest-engine/runner.py prepare-data --asset "$SOURCE_ASSET_KEYS"
+        if: env.SOURCE_STALE_STRATEGY_IDS != ''
+        run: python backtest-engine/runner.py prepare-data --asset "$SOURCE_STALE_SOURCE_ASSET_KEYS"
 
       - name: Capture current data tails
+        if: env.SOURCE_STALE_STRATEGY_IDS != ''
         run: node --import tsx scripts/capture-data-tails.ts --out=.local/data-tail-state.json
 
-      - name: Run backtests
+      - name: Plan stale backtests
+        if: env.SOURCE_STALE_STRATEGY_IDS != ''
+        run: |
+          node --import tsx scripts/backtest-stale-plan.ts --out=.local/backtest-stale-plan.json --incremental-start-state-out=.local/backtest-incremental-start-state.json
+          echo "STALE_BACKTEST_CSV_PATHS=$(node --import tsx scripts/backtest-stale-plan.ts --field=staleBacktestCsvPaths)" >> "$GITHUB_ENV"
+          echo "STALE_STRATEGY_IDS=$(node --import tsx scripts/backtest-stale-plan.ts --field=staleStrategyIds)" >> "$GITHUB_ENV"
+
+      - name: No stale backtests after source pull
+        if: env.SOURCE_STALE_STRATEGY_IDS != '' && env.STALE_STRATEGY_IDS == ''
+        run: echo "Backtest manifest is already computed through the current candle tails."
+
+      - name: Pull stale backtest CSVs from Firebase
+        if: env.STALE_STRATEGY_IDS != ''
+        run: node --import tsx scripts/firebase-pull.ts --paths="$STALE_BACKTEST_CSV_PATHS" --ignore-missing
+
+      - name: Run stale backtests
+        if: env.STALE_STRATEGY_IDS != ''
         env:
           AUTO_BACKTEST_OVERLAP_DAYS: ${{ vars.AUTO_BACKTEST_OVERLAP_DAYS || '7' }}
         run: |
           python backtest-engine/runner.py run-backtests \
+            --strategy "$STALE_STRATEGY_IDS" \
+            --timings \
             --incremental \
             --incremental-overlap-days "$AUTO_BACKTEST_OVERLAP_DAYS" \
-            --incremental-start-state .local/data-tail-state.json
+            --incremental-start-state .local/backtest-incremental-start-state.json
 
       - name: Upload changed backtest CSVs and manifest to Firebase
-        run: node --import tsx scripts/firebase-sync.ts --paths="$BACKTEST_CSV_PATHS" --changed-only
+        if: env.STALE_STRATEGY_IDS != ''
+        run: node --import tsx scripts/firebase-sync.ts --paths="$STALE_BACKTEST_CSV_PATHS" --changed-only --catalog-strategy-ids="$STALE_STRATEGY_IDS" --computed-through-state=.local/data-tail-state.json

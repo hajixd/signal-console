@@ -3649,7 +3649,11 @@ def run_single_strategy(
     pending_order: PendingOrder | None = None
     last_entry_day = -1
 
-    for index in range(data.times.shape[0]):
+    loop_start_index = 0
+    if start_ts > BACKTEST_START_TS:
+        loop_start_index = max(0, int(np.searchsorted(data.times, start_ts, side="left")) - 1)
+
+    for index in range(loop_start_index, data.times.shape[0]):
         if open_trade is not None:
             apply_dynamic_trade_management(strategy, open_trade, data, index, asset)
             exit_result = trade_exit(open_trade, data, index, asset.tick_size)
@@ -3937,7 +3941,12 @@ def selected_backtest_strategies(strategy_filters: list[str] | None = None) -> l
     if not strategy_filters:
         return strategies
 
-    requested = [item.strip() for item in strategy_filters if item and item.strip()]
+    requested = [
+        value.strip()
+        for item in strategy_filters
+        for value in item.split(",")
+        if value.strip()
+    ]
     if not requested:
         return strategies
 
@@ -4058,6 +4067,9 @@ def run_backtests(
                     print(f"  enriched {asset.key} {timeframe}")
 
             if timings:
+                tail_skip_index = max(0, int(np.searchsorted(enriched_cache[cache_key].times, effective_start_ts, side="left")) - 1)
+                if tail_skip_index:
+                    print(f"  tail window skips {tail_skip_index} historical bar(s)")
                 print(f"  running {strategy.id}")
             trades = run_single_strategy(
                 strategy,

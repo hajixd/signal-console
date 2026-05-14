@@ -266,8 +266,9 @@ export async function dispatchBacktestRefresh(reason = "manual"): Promise<Refres
 
 export async function ensureBacktestHistoryFresh(): Promise<RefreshDispatchResult | null> {
   const freshness = await getBacktestCatalogFreshness();
-  const generatedAt = freshness.generatedAt ? Date.parse(freshness.generatedAt) : 0;
-  const stale = !generatedAt || Date.now() - generatedAt > maxRefreshAgeMs();
+  const freshnessAt = freshness.generatedAt ?? freshness.computedThroughAt;
+  const freshnessTime = freshnessAt ? Date.parse(freshnessAt) : 0;
+  const stale = !freshnessTime || Date.now() - freshnessTime > maxRefreshAgeMs();
 
   if (!stale) return null;
   if (Date.now() - lastStaleDispatchAt < DISPATCH_THROTTLE_MS) {

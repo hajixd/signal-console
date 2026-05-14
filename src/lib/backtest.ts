@@ -104,8 +104,18 @@ export type StrategyCatalogEntry = {
   timeframes: string[];
 };
 
-type StrategyCatalog = {
+export type StrategyCatalog = {
   catalogVersion?: number;
+  computedThroughAt?: string;
+  computedThroughByStrategy?: Record<
+    string,
+    {
+      assetKey: string;
+      lastBarAt?: string;
+      lastBarTime?: number;
+      timeframe: string;
+    }
+  >;
   entries: StrategyCatalogEntry[];
   generatedAt?: string;
   stats: BacktestStat[];
@@ -434,10 +444,14 @@ function isoFromMillis(value: number): string | undefined {
   return value > 0 && Number.isFinite(value) ? new Date(value).toISOString() : undefined;
 }
 
-export async function buildLocalStrategyCatalog(): Promise<StrategyCatalog> {
+export async function buildLocalStrategyCatalog(strategyIds?: Iterable<string>): Promise<StrategyCatalog> {
+  const selectedStrategyIds = strategyIds ? new Set(strategyIds) : null;
+  const strategies = selectedStrategyIds
+    ? STRATEGY_DEFINITIONS.filter((strategy) => selectedStrategyIds.has(strategy.id))
+    : STRATEGY_DEFINITIONS;
   const trades: BacktestTrade[] = [];
 
-  for (const strategy of STRATEGY_DEFINITIONS) {
+  for (const strategy of strategies) {
     const csvPath = path.posix.join(STRATEGY_ROOT, strategy.folder, strategy.backtestFileName);
     const rows = await readCsvRows(csvPath, "local");
     trades.push(
@@ -449,13 +463,13 @@ export async function buildLocalStrategyCatalog(): Promise<StrategyCatalog> {
 
   trades.sort((left, right) => Date.parse(right.entryTime) - Date.parse(left.entryTime));
 
-  const stats = STRATEGY_DEFINITIONS.flatMap((strategy) => {
+  const stats = strategies.flatMap((strategy) => {
     const strategyTrades = trades.filter((trade) => trade.datasetId === strategy.id);
     return strategyTrades.length ? [backtestStatFromTrades(strategy, strategyTrades)] : [];
   });
 
   return {
-    entries: STRATEGY_DEFINITIONS.map((strategy) => {
+    entries: strategies.map((strategy) => {
       const asset = assetForKey(strategy.assetKey);
       return {
       key: strategy.id,
@@ -481,7 +495,11 @@ async function buildStrategyCatalog(): Promise<StrategyCatalog> {
   if (process.env.BACKTEST_FORCE_LOCAL === "1") return buildLocalStrategyCatalog();
 
   const manifestLatestTradeTime = latestTradeTime(manifest);
-  if (manifestLatestTradeTime && Date.now() - manifestLatestTradeTime <= MANIFEST_STALE_AFTER_MS) {
+  const manifestComputedThroughTime = Date.parse(manifest.computedThroughAt ?? "");
+  const manifestFreshnessTime = Number.isFinite(manifestComputedThroughTime)
+    ? manifestComputedThroughTime
+    : manifestLatestTradeTime;
+  if (manifestFreshnessTime && Date.now() - manifestFreshnessTime <= MANIFEST_STALE_AFTER_MS) {
     return manifest;
   }
 
@@ -525,6 +543,7 @@ export async function getBacktestTrades(): Promise<BacktestTrade[]> {
 }
 
 export async function getBacktestCatalogFreshness(): Promise<{
+  computedThroughAt?: string;
   generatedAt?: string;
   latestTradeAt?: string;
   trades: number;
@@ -532,6 +551,7 @@ export async function getBacktestCatalogFreshness(): Promise<{
   try {
     const catalog = await loadStrategyCatalog();
     return {
+      computedThroughAt: catalog.computedThroughAt,
       generatedAt: catalog.generatedAt,
       latestTradeAt: isoFromMillis(latestTradeTime(catalog)),
       trades: catalog.trades.length
