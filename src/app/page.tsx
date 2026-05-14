@@ -1,4 +1,5 @@
 import ChallengeReplay from "@/components/challenge/challenge-replay";
+import AutoTradeAccountGate from "@/components/auto-trading/auto-trade-account-gate";
 import AutoTradingConnectionDrawer from "@/components/auto-trading/auto-trading-connection-drawer";
 import SelectedStrategyStats from "@/components/strategies/selected-strategy-stats";
 import StrategySelector from "@/components/strategies/strategy-selector";
@@ -823,6 +824,7 @@ export default async function Home({ searchParams }: HomeProps) {
   return (
     <main className="terminal">
       <AutoRefresh />
+      <AutoTradeAccountGate />
       <section className="terminal-workspace marketView" id="signals" key={activeMarket}>
         <MarketSwitchTabs activeMarket={activeMarket} tabs={MARKET_TABS} persistActiveMarket={syncActiveMarket} />
         <header className="terminal-head">

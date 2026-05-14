@@ -2,6 +2,15 @@
 
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import {
+  AUTO_TRADE_ADMIN_ACCESS_CODE,
+  AUTO_TRADE_ACCESS_CODE_MAX_LENGTH,
+  clearSavedAccountMode,
+  cleanAccessCode,
+  saveAccountMode,
+  savedAccountMode,
+  type AutoTradeAccountMode
+} from "@/components/auto-trading/auto-trade-account-mode";
+import {
   autoTradeMarketLabel,
   autoTradeProviderFullyFunctioning,
   autoTradeProvidersForMarket,
@@ -16,11 +25,7 @@ const EMPTY_STATUS: ProjectXConnectionStatus = {
   connected: false
 };
 
-const AUTO_TRADE_ACCOUNT_MODE_STORAGE_KEY = "tradingbot-auto-trade-account-mode";
-const AUTO_TRADE_ADMIN_ACCESS_CODE = "12345";
-const ACCESS_CODE_MAX_LENGTH = 12;
-
-type AutoTradeAccountMode = "Admin" | "User";
+const ACCESS_CODE_MAX_LENGTH = AUTO_TRADE_ACCESS_CODE_MAX_LENGTH;
 
 type SavedAutoTradeConnection = {
   accountId?: string;
@@ -157,16 +162,6 @@ function defaultConnectionFields(providerId: AutoTradeProviderId): Record<string
 function genericAccountName(fields: Record<string, string>, firm: PropFirmOption, provider: AutoTradeProvider): string {
   const account = fields.accountName || fields.accountId || fields.login || fields.username || fields.email || fields.accNum;
   return account ? `${firm.label} / ${account}` : `${firm.label} / ${provider.shortLabel}`;
-}
-
-function cleanAccessCode(value: string, maxLength = ACCESS_CODE_MAX_LENGTH): string {
-  return value.replace(/\D/g, "").slice(0, maxLength);
-}
-
-function savedAccountMode(): AutoTradeAccountMode | null {
-  if (typeof window === "undefined") return null;
-  const value = window.sessionStorage.getItem(AUTO_TRADE_ACCOUNT_MODE_STORAGE_KEY);
-  return value === "Admin" || value === "User" ? value : null;
 }
 
 function fmtMoney(value: number | undefined): string {
@@ -382,9 +377,7 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
     setAccountEntryMode(null);
     setAdminCodeInput("");
     setAccountAccessError("");
-    if (typeof window !== "undefined") {
-      window.sessionStorage.setItem(AUTO_TRADE_ACCOUNT_MODE_STORAGE_KEY, mode);
-    }
+    saveAccountMode(mode);
   }
 
   function handleAdminUnlock(code = adminCodeInput) {
@@ -410,9 +403,7 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
     setFolderCodeInput("");
     setFolderAccessError("");
     setUnlockedProjectXFolderIds([]);
-    if (typeof window !== "undefined") {
-      window.sessionStorage.removeItem(AUTO_TRADE_ACCOUNT_MODE_STORAGE_KEY);
-    }
+    clearSavedAccountMode();
   }
 
   function requestProjectXFolder(folder: ProjectXConnectionSummary) {

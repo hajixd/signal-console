@@ -415,6 +415,25 @@ html[data-theme="light"] .themeDarkLabel {
   animation: topstepDrawerIn 260ms cubic-bezier(0.19, 1, 0.22, 1) both;
 }
 
+.autoTradeStartupGateLayer {
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+}
+
+.autoTradeStartupGate {
+  position: relative;
+  z-index: 1;
+  width: min(430px, 100%);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background:
+    linear-gradient(180deg, rgba(96, 165, 250, 0.08), transparent 150px),
+    #0b0b0b;
+  box-shadow: 0 28px 90px rgba(0, 0, 0, 0.58);
+  padding: 0.9rem;
+  animation: topstepDrawerIn 220ms cubic-bezier(0.19, 1, 0.22, 1) both;
+}
+
 .topstepDrawerHead {
   position: sticky;
   top: -1rem;
@@ -3071,6 +3090,14 @@ html[data-theme="light"] .topstepDrawerPanel {
     linear-gradient(180deg, rgba(37, 99, 235, 0.08), transparent 165px),
     #ffffff;
   box-shadow: -28px 0 90px rgba(15, 23, 42, 0.18);
+}
+
+html[data-theme="light"] .autoTradeStartupGate {
+  border-color: rgba(15, 23, 42, 0.14);
+  background:
+    linear-gradient(180deg, rgba(37, 99, 235, 0.08), transparent 150px),
+    #ffffff;
+  box-shadow: 0 28px 90px rgba(15, 23, 42, 0.18);
 }
 
 html[data-theme="light"] .topstepDrawerHead {
