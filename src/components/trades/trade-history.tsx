@@ -10,6 +10,7 @@ import {
   type WheelEvent as ReactWheelEvent
 } from "react";
 import { createPortal } from "react-dom";
+import { useAutoTradeAdminMode } from "@/components/auto-trading/use-auto-trade-account-mode";
 import TradePriceChart, { TRADE_CHART_TIMEFRAMES, type TradeChartBar, type TradeChartTimeframe } from "@/components/trades/trade-price-chart";
 import LocalDateTime from "@/components/ui/local-date-time";
 
@@ -782,7 +783,7 @@ export default function TradeHistory({ rows }: TradeHistoryProps) {
   const [activeTradeId, setActiveTradeId] = useState<string | null>(null);
   const [chartState, setChartState] = useState<ChartState>({ status: "idle", bars: [] });
   const [chartTimeframe, setChartTimeframe] = useState<TradeChartTimeframe>("15m");
-  const isRestricted = false;
+  const isRestricted = !useAutoTradeAdminMode();
   const activeTrade = useMemo(
     () => (activeTradeId ? rows.find((row) => row.id === activeTradeId) ?? null : null),
     [activeTradeId, rows]

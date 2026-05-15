@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState, useTransition } from "react";
+import { useAutoTradeAdminMode } from "@/components/auto-trading/use-auto-trade-account-mode";
 import ChallengeRulesForm from "@/components/challenge/challenge-rules-form";
 import {
   strategyContractScale,
@@ -213,7 +214,7 @@ export default function ChallengeReplay({
   const [challengeReplay, setChallengeReplay] = useState<ChallengeReplaySummary>(() => emptyChallengeReplaySummary());
   const [isRecalculating, setIsRecalculating] = useState(true);
   const [, startSavingRules] = useTransition();
-  const isRestricted = false;
+  const isRestricted = !useAutoTradeAdminMode();
   const edits = useStrategyEdits(strategies, persistedStrategyEdits);
   const strategyByKey = useMemo(() => new Map(strategies.map((strategy) => [strategy.key, strategy])), [strategies]);
   const rulesStorageKey = storageKey ?? STORAGE_KEY;

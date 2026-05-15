@@ -1,4 +1,5 @@
 import ChallengeReplay from "@/components/challenge/challenge-replay";
+import AdminOnlyText from "@/components/auto-trading/admin-only-text";
 import AutoTradeAccountGate from "@/components/auto-trading/auto-trade-account-gate";
 import AutoTradeAccountModeSwitch from "@/components/auto-trading/auto-trade-account-mode-switch";
 import AutoTradingConnectionDrawer from "@/components/auto-trading/auto-trading-connection-drawer";
@@ -237,7 +238,11 @@ function parseSelection(value: string | undefined, allKeys: string[], defaultKey
 }
 
 function tradeSourceTimeframe(trade: BacktestTrade): TradeChartTimeframe {
-  const timeframe = trade.variantId?.split("|").find((part) => part.startsWith("tf="))?.slice(3);
+  return timeframeFromVariant(trade.variantId);
+}
+
+function timeframeFromVariant(variantId: string | undefined): TradeChartTimeframe {
+  const timeframe = variantId?.split("|").find((part) => part.startsWith("tf="))?.slice(3);
   return timeframe && TRADE_CHART_TIMEFRAME_VALUES.has(timeframe as TradeChartTimeframe)
     ? (timeframe as TradeChartTimeframe)
     : "15m";
@@ -463,8 +468,80 @@ function tradeSizeMultiplier(trade: BacktestTrade, fallback = 1): number {
   return trade.sizeMultiplierHint ?? fallback;
 }
 
+type ClosedLiveLifecycleStatus = Exclude<NonNullable<TradeAlert["lifecycleStatus"]>, "open">;
+type LiveTradeEvent = {
+  className: string;
+  label: string;
+  title: string;
+};
+
+function finiteNumberOr(value: number | undefined, fallback: number): number {
+  return value !== undefined && Number.isFinite(value) ? value : fallback;
+}
+
 function liveRowClass(trade: TradeAlert): string {
   return trade.side === "long" ? "up-row" : "down-row";
+}
+
+function isClosedLifecycleStatus(status: TradeAlert["lifecycleStatus"]): status is ClosedLiveLifecycleStatus {
+  return status === "take_profit" || status === "stop_loss" || status === "max_bars";
+}
+
+function liveTradeClosed(trade: TradeAlert): trade is TradeAlert & { lifecycleStatus: ClosedLiveLifecycleStatus; lifecycleTime: string } {
+  return isClosedLifecycleStatus(trade.lifecycleStatus) && Boolean(trade.lifecycleTime);
+}
+
+function liveTradeHasLimitOrder(trade: TradeAlert): boolean {
+  const fingerprint = `${trade.entryType ?? ""} ${trade.entryMode} ${trade.strategy}`.toLowerCase();
+  return trade.entryType === "limit" || fingerprint.includes("limit order") || fingerprint.includes("retrace limit") || fingerprint.includes("ote limit");
+}
+
+function liveTradeExitReasonLabel(trade: TradeAlert): string {
+  return isClosedLifecycleStatus(trade.lifecycleStatus) ? fmtExitReason(trade.lifecycleStatus) : "--";
+}
+
+function liveTradeExitStatusClass(trade: TradeAlert): string {
+  if (trade.lifecycleStatus === "take_profit") return "sent";
+  if (trade.lifecycleStatus === "stop_loss") return "failed";
+  if (trade.lifecycleStatus === "max_bars") return "skipped";
+  return "skipped";
+}
+
+function liveTradeEvents(trade: TradeAlert): LiveTradeEvent[] {
+  const hasLimitOrder = liveTradeHasLimitOrder(trade);
+  const events: LiveTradeEvent[] = [];
+
+  if (trade.entryType === "limit") {
+    events.push({
+      className: "limit",
+      label: "Limit Order",
+      title: "Strategy generated a limit-order signal."
+    });
+  } else {
+    events.push({
+      className: "entry",
+      label: "Trade Entry",
+      title: "Strategy generated a trade-entry signal."
+    });
+    if (hasLimitOrder) {
+      events.push({
+        className: "limit",
+        label: "Limit Order",
+        title: "Strategy includes a limit-order component for this signal."
+      });
+    }
+  }
+
+  if (liveTradeClosed(trade)) {
+    const exitClass = trade.lifecycleStatus === "take_profit" ? "exit win" : trade.lifecycleStatus === "stop_loss" ? "exit loss" : "exit neutral";
+    events.push({
+      className: exitClass,
+      label: "Trade Exit",
+      title: `${liveTradeExitReasonLabel(trade)} at ${fmtPrice(finiteNumberOr(trade.lifecyclePrice, trade.entryPrice))}`
+    });
+  }
+
+  return events;
 }
 
 function autoTradeStatusClass(trade: TradeAlert): string {
@@ -731,6 +808,36 @@ function alertRiskDollars(trade: TradeAlert): number {
   return Math.abs(trade.slUnits * dollarPerUnit(trade.symbol, trade.entryPrice) * (trade.sizeMultiplier ?? 1));
 }
 
+function alertTargetDollarsWithSize(trade: TradeAlert, sizeMultiplier: number): number {
+  return Math.abs(trade.tpUnits * dollarPerUnit(trade.symbol, trade.entryPrice) * sizeMultiplier);
+}
+
+function alertRiskDollarsWithSize(trade: TradeAlert, sizeMultiplier: number): number {
+  return Math.abs(trade.slUnits * dollarPerUnit(trade.symbol, trade.entryPrice) * sizeMultiplier);
+}
+
+function inferredAlertPriceUnit(trade: TradeAlert, fallback = 1): number {
+  if (fallback > 0 && Number.isFinite(fallback)) return fallback;
+  const targetDelta = Math.abs(trade.takeProfitPrice - trade.entryPrice);
+  if (targetDelta > 0 && trade.tpUnits > 0) return targetDelta / trade.tpUnits;
+  const stopDelta = Math.abs(trade.entryPrice - trade.stopLossPrice);
+  if (stopDelta > 0 && trade.slUnits > 0) return stopDelta / trade.slUnits;
+  return 1;
+}
+
+function liveTradeHistoryFingerprint(strategyKey: string, symbol: string, side: string, signalTime: string): string {
+  const parsedSignalTime = Date.parse(signalTime);
+  const normalizedSignalTime = Number.isFinite(parsedSignalTime) ? new Date(parsedSignalTime).toISOString() : signalTime;
+  return `${strategyKey}|${symbol}|${side}|${normalizedSignalTime}`;
+}
+
+function approximateBarsHeld(startValue: string, endValue: string, timeframeMinutes = 15): number {
+  const start = Date.parse(startValue);
+  const end = Date.parse(endValue);
+  if (!Number.isFinite(start) || !Number.isFinite(end) || end <= start) return 1;
+  return Math.max(1, Math.round((end - start) / (timeframeMinutes * 60_000)));
+}
+
 function challengeSessionCount(trades: { entryTime: string; pnlDollars: number }[]): number {
   const sessions = new Set<string>();
   for (const trade of trades) {
@@ -879,9 +986,24 @@ export default async function Home({ searchParams }: HomeProps) {
   const selectedKeys = parseSelection(params?.strategies, allKeys, defaultSelectedKeys);
   const selectedKeySet = new Set(selectedKeys);
   const activeMarketKeySet = new Set(allKeys);
+  const optionByLiveKey = new Map<string, StrategyOption>();
+  for (const option of strategyOptions) {
+    for (const key of [option.key, option.datasetId, option.logicalKey, ...option.logicalKeys]) {
+      if (key) optionByLiveKey.set(key, option);
+    }
+  }
+  const optionForLiveTrade = (trade: TradeAlert): StrategyOption | undefined => {
+    for (const key of [trade.datasetId, trade.strategyKey, trade.logicalStrategyKey, trade.strategyId]) {
+      if (!key) continue;
+      const option = optionByLiveKey.get(key);
+      if (option) return option;
+    }
+    return strategyOptions.find((option) => option.aliases.includes(trade.strategy));
+  };
   const selectedLiveKeys = new Set(
     strategyOptions.filter((option) => selectedKeySet.has(option.key) && option.liveSupported).flatMap((option) => option.logicalKeys)
   );
+  const selectedLiveTradeKeys = new Set([...selectedKeySet, ...selectedLiveKeys]);
   const selectedStrategyNames = new Set(
     strategyOptions
       .filter((option) => selectedKeySet.has(option.key))
@@ -889,13 +1011,16 @@ export default async function Home({ searchParams }: HomeProps) {
   );
   const selectedLiveTrades = liveTrades.filter(
     (trade) =>
-      (trade.strategyKey && selectedLiveKeys.has(trade.strategyKey)) ||
-      (trade.logicalStrategyKey && selectedLiveKeys.has(trade.logicalStrategyKey)) ||
+      (trade.datasetId && selectedLiveTradeKeys.has(trade.datasetId)) ||
+      (trade.strategyKey && selectedLiveTradeKeys.has(trade.strategyKey)) ||
+      (trade.logicalStrategyKey && selectedLiveTradeKeys.has(trade.logicalStrategyKey)) ||
       selectedStrategyNames.has(trade.strategy)
+  );
+  const activeMarketLiveTrades = liveTrades.filter(
+    (trade) => Boolean(optionForLiveTrade(trade)) || normalizedDashboardMarket(trade.market) === activeMarket
   );
   const selectedBacktestTrades = backtestTrades.filter((trade) => selectedKeySet.has(trade.datasetId));
   const activeMarketBacktestTrades = backtestTrades.filter((trade) => activeMarketKeySet.has(trade.datasetId));
-  const visibleBacktestHistoryTrades = activeMarketBacktestTrades.slice(0, HISTORY_VISIBLE_TRADE_LIMIT);
   const selectedDataEndAt =
     strategyOptions
       .filter((option) => selectedKeySet.has(option.key))
@@ -908,7 +1033,8 @@ export default async function Home({ searchParams }: HomeProps) {
     basePnlDollars: tradeDollarPnl(trade, optionByKey.get(trade.datasetId)?.sizeMultiplier ?? 1),
     rMultiple: trade.rMultiple
   }));
-  const tradeHistoryRows: TradeHistoryRow[] = visibleBacktestHistoryTrades.map((trade, index) => {
+  const visibleStoredBacktestHistoryTrades = activeMarketBacktestTrades.slice(0, HISTORY_VISIBLE_TRADE_LIMIT);
+  const storedBacktestHistoryRows: TradeHistoryRow[] = visibleStoredBacktestHistoryTrades.map((trade, index) => {
     const sizeMultiplier = optionByKey.get(trade.datasetId)?.sizeMultiplier ?? 1;
     const tradeMultiplier = tradeSizeMultiplier(trade, sizeMultiplier);
     const dollarPnl = tradeDollarPnl(trade, sizeMultiplier);
@@ -971,12 +1097,117 @@ export default async function Home({ searchParams }: HomeProps) {
       slUnitsLabel: `${fmtNumber(trade.slUnits)} ${unitLabel}`
     };
   });
-  const visibleTradeHistoryRows = tradeHistoryRows;
-  const hiddenHistoryTradeCount = Math.max(0, activeMarketBacktestTrades.length - visibleTradeHistoryRows.length);
+  const storedBacktestFingerprints = new Set(
+    activeMarketBacktestTrades.map((trade) => liveTradeHistoryFingerprint(trade.datasetId, trade.symbol, trade.side, trade.signalTime))
+  );
+  const closedLiveHistoryRows: TradeHistoryRow[] = activeMarketLiveTrades
+    .filter(liveTradeClosed)
+    .filter((trade) => {
+      const option = optionForLiveTrade(trade);
+      const strategyKey = option?.key ?? trade.datasetId ?? trade.strategyKey ?? trade.logicalStrategyKey ?? trade.strategyId ?? trade.strategy;
+      if (storedBacktestFingerprints.has(liveTradeHistoryFingerprint(strategyKey, trade.symbol, trade.side, trade.signalTime))) return false;
+      return (
+        Number.isFinite(trade.entryPrice) &&
+        trade.entryPrice > 0 &&
+        Number.isFinite(finiteNumberOr(trade.lifecyclePrice, trade.entryPrice)) &&
+        Date.parse(trade.signalTime) > 0 &&
+        Date.parse(trade.lifecycleTime) > 0
+      );
+    })
+    .map((trade, index) => {
+      const option = optionForLiveTrade(trade);
+      const strategyKey = option?.key ?? trade.datasetId ?? trade.strategyKey ?? trade.logicalStrategyKey ?? trade.strategyId ?? `live-${trade.id}`;
+      const ruleKey = trade.logicalStrategyKey ?? trade.strategyKey ?? option?.logicalKeys[0] ?? strategyKey;
+      const ruleTickSize = liveRuleByKey.get(ruleKey)?.tickSize;
+      const priceUnit = inferredAlertPriceUnit(trade, ruleTickSize);
+      const sizeMultiplier = finiteNumberOr(trade.sizeMultiplier, option?.sizeMultiplier ?? 1);
+      const targetDollars = alertTargetDollarsWithSize(trade, sizeMultiplier);
+      const riskDollars = alertRiskDollarsWithSize(trade, sizeMultiplier);
+      const exitPrice = finiteNumberOr(trade.lifecyclePrice, trade.entryPrice);
+      const pnlDollars = finiteNumberOr(
+        trade.lifecyclePnlDollars,
+        trade.lifecycleStatus === "take_profit" ? targetDollars : trade.lifecycleStatus === "stop_loss" ? -riskDollars : 0
+      );
+      const rMultiple = finiteNumberOr(trade.lifecycleRMultiple, riskDollars > 0 ? pnlDollars / riskDollars : 0);
+      const sideMultiplier = trade.side === "long" ? 1 : -1;
+      const netUnits = priceUnit > 0 ? ((exitPrice - trade.entryPrice) * sideMultiplier) / priceUnit : 0;
+      const unitLabel = instrumentUnitLabel(trade.symbol);
+      const barsHeld = approximateBarsHeld(trade.signalTime, trade.lifecycleTime);
+
+      return {
+        id: `live-${trade.id}-${index}`,
+        strategyKey,
+        rowClassName: resultRowClass(pnlDollars),
+        pnlClassName: resultClass(pnlDollars),
+        pnlDollars,
+        indexLabel: fmtNumber(index + 1),
+        symbol: trade.symbol,
+        modelName: option?.label ?? trade.strategy,
+        marketLabel: marketLabel(trade.market),
+        market: trade.market,
+        side: trade.side,
+        sideLabel: sideLabel(trade.side),
+        sideClassName: sideClass(trade.side),
+        entryIndex: 0,
+        exitIndex: Math.max(1, barsHeld),
+        signalTime: trade.signalTime,
+        entryTime: trade.signalTime,
+        exitTime: trade.lifecycleTime,
+        sourceTimeframe: timeframeFromVariant(option?.variantId),
+        phase: option?.phase,
+        variantId: option?.variantId,
+        entryType: trade.entryType ?? "market",
+        entryPrice: trade.entryPrice,
+        exitPrice,
+        targetPrice: trade.takeProfitPrice,
+        stopPrice: trade.stopLossPrice,
+        signalTimeLabel: fmtTime(trade.signalTime),
+        entryTimeLabel: fmtTime(trade.signalTime),
+        exitTimeLabel: fmtTime(trade.lifecycleTime),
+        entryPriceLabel: fmtDollarPrice(trade.entryPrice),
+        exitPriceLabel: fmtDollarPrice(exitPrice),
+        targetPriceLabel: fmtDollarPrice(trade.takeProfitPrice),
+        stopPriceLabel: fmtDollarPrice(trade.stopLossPrice),
+        durationLabel: `${fmtNumber(barsHeld)} bars`,
+        durationDetailLabel: fmtDuration(trade.signalTime, trade.lifecycleTime),
+        exitReasonLabel: fmtExitReason(trade.lifecycleStatus),
+        pnlLabel: fmtMoney(pnlDollars, true),
+        rMultipleLabel: `${fmtNumber(rMultiple)}R`,
+        netUnitsLabel: `${fmtNumber(netUnits)} ${unitLabel}`,
+        sizeLabel: instrumentSizeLabel(trade.symbol, sizeMultiplier),
+        sizeMultiplier,
+        targetRiskLabel: `${fmtMoney(targetDollars)} / ${fmtMoney(-riskDollars)}`,
+        targetLabel: fmtMoney(targetDollars),
+        riskLabel: fmtMoney(-riskDollars),
+        targetDollars,
+        riskDollars,
+        dollarsPerPricePoint: priceUnit > 0 ? (dollarPerUnit(trade.symbol, trade.entryPrice) * sizeMultiplier) / priceUnit : 0,
+        tpUnitsLabel: `${fmtNumber(trade.tpUnits)} ${unitLabel}`,
+        slUnitsLabel: `${fmtNumber(trade.slUnits)} ${unitLabel}`
+      };
+    });
+  const historyTotalTradeCount = activeMarketBacktestTrades.length + closedLiveHistoryRows.length;
+  const tradeHistoryRows = [...storedBacktestHistoryRows, ...closedLiveHistoryRows]
+    .sort(
+      (left, right) =>
+        Date.parse(right.entryTime) - Date.parse(left.entryTime) ||
+        Date.parse(right.exitTime) - Date.parse(left.exitTime) ||
+        right.pnlDollars - left.pnlDollars
+    )
+    .map((row, index) => ({
+      ...row,
+      indexLabel: fmtNumber(index + 1)
+    }));
+  const visibleTradeHistoryRows = tradeHistoryRows.slice(0, HISTORY_VISIBLE_TRADE_LIMIT);
+  const hiddenHistoryTradeCount = Math.max(0, historyTotalTradeCount - visibleTradeHistoryRows.length);
   const historyCountLabel =
     hiddenHistoryTradeCount > 0
-      ? `Showing latest ${fmtNumber(visibleTradeHistoryRows.length)} of ${fmtNumber(activeMarketBacktestTrades.length)} trades`
+      ? `Showing latest ${fmtNumber(visibleTradeHistoryRows.length)} of ${fmtNumber(historyTotalTradeCount)} trades`
       : `Showing ${fmtNumber(visibleTradeHistoryRows.length)} trades`;
+  const historySourceLabel = closedLiveHistoryRows.length
+    ? `${historyCountLabel} / ${fmtNumber(closedLiveHistoryRows.length)} closed live`
+    : historyCountLabel;
+  const latestHistoryTradeAt = tradeHistoryRows[0]?.entryTime ?? latestBacktestTradeAt;
   const dataValidity = analyzeBacktestDataValidity({
     backtestBehindMarketData,
     optionByKey,
@@ -1076,19 +1307,19 @@ export default async function Home({ searchParams }: HomeProps) {
             <div>
               <h2>Backtest History</h2>
               <p>
-                Stored backtest trades for the active market. Latest stored trade:{" "}
-                <LocalDateTime value={latestBacktestTradeAt} fallback="unknown" />.
+                Stored backtest trades plus closed live alerts for the active market. Latest history trade:{" "}
+                <LocalDateTime value={latestHistoryTradeAt} fallback="unknown" />.
               </p>
             </div>
             <div className="historyHeadActions">
-              <span className={`count-pill${backtestBehindMarketData ? " warning" : ""}`}>{historyCountLabel}</span>
+              <span className={`count-pill${backtestBehindMarketData ? " warning" : ""}`}>{historySourceLabel}</span>
             </div>
           </div>
 
-          {activeMarketBacktestTrades.length === 0 ? (
+          {tradeHistoryRows.length === 0 ? (
             <div className="empty-state">
               <strong>No backtest trades match</strong>
-              <span>No stored backtest trades are available for this market.</span>
+              <span>No stored backtest trades or closed live alerts are available for this market.</span>
             </div>
           ) : (
             <EditableTradeHistory
@@ -1120,7 +1351,9 @@ export default async function Home({ searchParams }: HomeProps) {
                   <col className="live-col-index" />
                   <col className="live-col-ticker" />
                   <col className="live-col-model" />
+                  <col className="live-col-event" />
                   <col className="live-col-direction" />
+                  <col className="live-col-price" />
                   <col className="live-col-price" />
                   <col className="live-col-price" />
                   <col className="live-col-price" />
@@ -1136,8 +1369,10 @@ export default async function Home({ searchParams }: HomeProps) {
                     <th>#</th>
                     <th>Ticker</th>
                     <th>Model</th>
+                    <th>Event</th>
                     <th>Direction</th>
                     <th>Entry</th>
+                    <th>Exit</th>
                     <th>Take Profit</th>
                     <th>Stop Loss</th>
                     <th>Target $</th>
@@ -1154,13 +1389,32 @@ export default async function Home({ searchParams }: HomeProps) {
                       <td data-label="#">{fmtNumber(index + 1)}</td>
                       <td className="ticker-cell" data-label="Ticker">{trade.symbol}</td>
                       <td className="main-cell" data-label="Model">
-                        {trade.strategy}
-                        <small>{trade.entryMode}</small>
+                        <AdminOnlyText value={trade.strategy} />
+                        <small><AdminOnlyText value={trade.entryMode} fallback="Strategy details locked" /></small>
+                      </td>
+                      <td className="event-cell" data-label="Event">
+                        <span className="eventStack">
+                          {liveTradeEvents(trade).map((event) => (
+                            <span className={`eventPill ${event.className}`} key={`${trade.id}-${event.label}`} title={event.title}>
+                              {event.label}
+                            </span>
+                          ))}
+                        </span>
                       </td>
                       <td data-label="Direction">
                         <span className={sideClass(trade.side)}>{sideLabel(trade.side)}</span>
                       </td>
                       <td data-label="Entry">{fmtDollarPrice(trade.entryPrice)}</td>
+                      <td className="exit-cell" data-label="Exit">
+                        {liveTradeClosed(trade) ? (
+                          <>
+                            <span className={`status ${liveTradeExitStatusClass(trade)}`}>{liveTradeExitReasonLabel(trade)}</span>
+                            <small>{fmtDollarPrice(finiteNumberOr(trade.lifecyclePrice, trade.entryPrice))}</small>
+                          </>
+                        ) : (
+                          <span className="status skipped">open</span>
+                        )}
+                      </td>
                       <td data-label="Take Profit">{fmtPrice(trade.takeProfitPrice)}</td>
                       <td data-label="Stop Loss">{fmtPrice(trade.stopLossPrice)}</td>
                       <td data-label="Target $">{fmtMoney(alertTargetDollars(trade))}</td>
