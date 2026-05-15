@@ -6,14 +6,14 @@ import { fetchStoredAssetBars, fetchStoredMarketBars } from "@/lib/market-data-s
 import { saveCronRun, updateDatasetSyncRunStatus } from "@/lib/live-config";
 import { activeRules, evaluateLatestSignal } from "@/lib/live-signals";
 import { claimTrade, getTrades, hasTrade, saveTrade } from "@/lib/storage";
-import { sendTelegram, sendTelegramOutcome } from "@/lib/telegram";
+import { sendTelegram, sendTelegramManagement, sendTelegramOutcome } from "@/lib/telegram";
 import {
   buildSupplementalLimitOrderTrade,
   primaryOrderSizeMultiplier,
   supplementalLimitOrderPrice
 } from "@/lib/trade-limit-orders";
 import { TOPSTEP_100K_ACCOUNT, reviewTopstepSignal, withTopstepGuardNote } from "@/lib/topstep";
-import type { Bar, CronResult, TradeAlert } from "@/lib/types";
+import type { Bar, CronResult, StrategyRule, TradeAlert, TradeManagementEvent } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -112,50 +112,418 @@ function recentRepeatTrade(signal: TradeAlert, trades: TradeAlert[], lookbackMs:
   return null;
 }
 
-function tradeLifecycleHit(trade: TradeAlert, bars: Bar[]): TradeLifecycleHit | null {
+type LifecycleAndManagementEvaluation = {
+  hit: TradeLifecycleHit | null;
+  managementEvents: TradeManagementEvent[];
+};
+
+const MANAGEMENT_AUTO_TRADE_NOTE =
+  "ProjectX order modification is not configured in this app yet; this management event was logged and sent as a notification.";
+
+function finiteNumber(value: number | null | undefined): value is number {
+  return typeof value === "number" && Number.isFinite(value);
+}
+
+function effectivePriceUnit(trade: TradeAlert, rule: StrategyRule | null): number {
+  if (rule?.tickSize && rule.tickSize > 0) return rule.tickSize;
+  const stopDistance = Math.abs(trade.entryPrice - trade.stopLossPrice);
+  if (stopDistance > 0 && trade.slUnits > 0) return stopDistance / trade.slUnits;
+  const targetDistance = Math.abs(trade.takeProfitPrice - trade.entryPrice);
+  if (targetDistance > 0 && trade.tpUnits > 0) return targetDistance / trade.tpUnits;
+  return 1;
+}
+
+function roundToPriceUnit(value: number, priceUnit: number): number {
+  if (!(priceUnit > 0) || !Number.isFinite(priceUnit)) return value;
+  return Number((Math.round(value / priceUnit) * priceUnit).toFixed(10));
+}
+
+function priceChanged(left: number, right: number, priceUnit: number): boolean {
+  const minimumMove = Math.max(priceUnit * 0.1, 1e-8);
+  return Math.abs(left - right) >= minimumMove;
+}
+
+function improvesStop(trade: TradeAlert, candidate: number, currentStop: number, priceUnit: number): boolean {
+  if (!(candidate > 0) || !priceChanged(candidate, currentStop, priceUnit)) return false;
+  return trade.side === "long" ? candidate > currentStop : candidate < currentStop;
+}
+
+function improvesTakeProfit(trade: TradeAlert, candidate: number, currentTakeProfit: number, priceUnit: number): boolean {
+  if (!(candidate > 0) || !priceChanged(candidate, currentTakeProfit, priceUnit)) return false;
+  return trade.side === "long" ? candidate > currentTakeProfit : candidate < currentTakeProfit;
+}
+
+function managementEventId(trade: TradeAlert, type: TradeManagementEvent["type"], time: string, price: number): string {
+  const parsedTime = Date.parse(time);
+  const normalizedTime = Number.isFinite(parsedTime) ? new Date(parsedTime).toISOString() : time;
+  return `${trade.id}:${type}:${normalizedTime}:${price.toFixed(10)}`;
+}
+
+function orderedManagementEvents(trade: TradeAlert): TradeManagementEvent[] {
+  return [...(trade.managementEvents ?? [])]
+    .filter((event) => finiteNumber(event.price))
+    .sort((left, right) => Date.parse(left.time) - Date.parse(right.time));
+}
+
+function hasEquivalentManagementEvent(events: TradeManagementEvent[], event: TradeManagementEvent, priceUnit: number): boolean {
+  return events.some(
+    (current) =>
+      current.id === event.id ||
+      (current.type === event.type &&
+        current.time === event.time &&
+        finiteNumber(current.price) &&
+        !priceChanged(current.price, event.price, priceUnit))
+  );
+}
+
+function mergeManagementEvents(existing: TradeManagementEvent[] | undefined, additions: TradeManagementEvent[]): TradeManagementEvent[] {
+  const merged = new Map<string, TradeManagementEvent>();
+  for (const event of [...(existing ?? []), ...additions]) {
+    merged.set(event.id, event);
+  }
+  return [...merged.values()].sort((left, right) => Date.parse(left.time) - Date.parse(right.time));
+}
+
+function trackedBarsAfterSignal(trade: TradeAlert, bars: Bar[]): Bar[] {
   const signalTime = Date.parse(trade.signalTime);
-  const trackedBars = bars.filter((bar) => Date.parse(bar.time) > signalTime);
-  if (!trackedBars.length) return null;
-  const dollars = signalDollars(trade);
-  const rewardRisk = dollars.riskDollars > 0 ? dollars.targetDollars / dollars.riskDollars : 0;
+  return bars
+    .filter((bar) => {
+      const time = Date.parse(bar.time);
+      return Number.isFinite(time) && time > signalTime;
+    })
+    .sort((left, right) => Date.parse(left.time) - Date.parse(right.time));
+}
 
-  const maxBars = typeof trade.maxBars === "number" && Number.isFinite(trade.maxBars) && trade.maxBars > 0 ? Math.round(trade.maxBars) : null;
-  const priceRisk = Math.abs(trade.entryPrice - trade.stopLossPrice);
-  const sideMultiplier = trade.side === "long" ? 1 : -1;
+function tradeStrategyKeys(trade: TradeAlert): Set<string> {
+  return new Set(
+    [trade.logicalStrategyKey, trade.strategyKey, trade.datasetId, trade.strategyId, trade.strategy]
+      .filter((value): value is string => Boolean(value))
+  );
+}
 
-  for (const [index, bar] of trackedBars.entries()) {
-    const hitTakeProfit =
-      trade.side === "long" ? bar.high >= trade.takeProfitPrice : bar.low <= trade.takeProfitPrice;
-    const hitStopLoss =
-      trade.side === "long" ? bar.low <= trade.stopLossPrice : bar.high >= trade.stopLossPrice;
+function matchingRuleForTrade(trade: TradeAlert, rules: StrategyRule[]): StrategyRule | null {
+  const keys = tradeStrategyKeys(trade);
+  const keyedMatch = rules.find(
+    (rule) =>
+      keys.has(rule.key) ||
+      keys.has(rule.logicalKey) ||
+      (rule.datasetId ? keys.has(rule.datasetId) : false) ||
+      keys.has(rule.strategyId) ||
+      keys.has(rule.label)
+  );
+  if (keyedMatch) return keyedMatch;
 
-    if (hitTakeProfit || hitStopLoss) {
-      const status = hitStopLoss ? "stop_loss" : "take_profit";
-      return {
-        pnlDollars: status === "take_profit" ? dollars.targetDollars : -dollars.riskDollars,
-        price: status === "take_profit" ? trade.takeProfitPrice : trade.stopLossPrice,
-        rMultiple: status === "take_profit" ? rewardRisk : -1,
-        status,
-        time: bar.time
-      };
-    }
+  return (
+    rules.find((rule) => rule.assetKey === trade.assetKey && rule.symbol === trade.symbol) ??
+    rules.find((rule) => rule.symbol === trade.symbol && rule.market === trade.market) ??
+    null
+  );
+}
 
-    if (maxBars && index + 1 >= maxBars && priceRisk > 0) {
-      const rMultiple = ((bar.close - trade.entryPrice) * sideMultiplier) / priceRisk;
-      return {
-        pnlDollars: rMultiple * dollars.riskDollars,
-        price: bar.close,
-        rMultiple,
-        status: "max_bars",
-        time: bar.time
-      };
+function stopManagementCandidate(
+  trade: TradeAlert,
+  rule: StrategyRule | null,
+  trackedBars: Bar[],
+  index: number,
+  currentStop: number,
+  initialRisk: number,
+  priceUnit: number
+): { label?: string; price: number; reason: string } | null {
+  const policy = rule?.dynamicStopLossPolicy;
+  if (!policy) return null;
+
+  const bar = trackedBars[index];
+  if (!bar) return null;
+
+  const buffer = (policy.bufferUnits ?? 0) * priceUnit;
+  const candidates: Array<{ label?: string; price: number; reason: string }> = [];
+  const direction = trade.side === "long" ? 1 : -1;
+  const favorableOneR =
+    initialRisk > 0 &&
+    (trade.side === "long"
+      ? bar.high >= trade.entryPrice + initialRisk
+      : bar.low <= trade.entryPrice - initialRisk);
+
+  if (favorableOneR) {
+    candidates.push({
+      label: "Break Even",
+      price: trade.entryPrice,
+      reason: "Move SL to Break Even after price moved at least 1R in favor."
+    });
+  }
+
+  if (policy.mode === "trail_prior_bar" && index > 0) {
+    const priorBar = trackedBars[index - 1]!;
+    candidates.push({
+      price: trade.side === "long" ? priorBar.low - buffer : priorBar.high + buffer,
+      reason: "Trail SL using the prior completed bar."
+    });
+  }
+
+  if (policy.mode === "trail_hourly_pivot" && index > 0) {
+    const lookbackBars = trackedBars.slice(Math.max(0, index - 4), index);
+    if (lookbackBars.length >= 2) {
+      const pivot = trade.side === "long"
+        ? Math.min(...lookbackBars.map((lookbackBar) => lookbackBar.low)) - buffer
+        : Math.max(...lookbackBars.map((lookbackBar) => lookbackBar.high)) + buffer;
+      candidates.push({
+        price: pivot,
+        reason: "Trail SL using the latest hourly pivot window."
+      });
     }
   }
 
-  return null;
+  const improvingCandidates = candidates
+    .map((candidate) => ({ ...candidate, price: roundToPriceUnit(candidate.price, priceUnit) }))
+    .filter((candidate) => improvesStop(trade, candidate.price, currentStop, priceUnit));
+  if (!improvingCandidates.length) return null;
+
+  return improvingCandidates.sort((left, right) => direction * (right.price - left.price))[0] ?? null;
 }
 
-async function notifyTradeLifecycles(result: CronResult, barsByAssetKey: Map<string, Bar[]>): Promise<void> {
+function takeProfitManagementCandidate(
+  trade: TradeAlert,
+  rule: StrategyRule | null,
+  trackedBars: Bar[],
+  index: number,
+  currentTakeProfit: number,
+  currentStop: number,
+  priceUnit: number
+): { price: number; reason: string } | null {
+  const policy = rule?.dynamicTakeProfitPolicy;
+  if (!policy) return null;
+
+  const buffer = (policy.bufferUnits ?? 0) * priceUnit;
+  const direction = trade.side === "long" ? 1 : -1;
+  const candidates: Array<{ price: number; reason: string }> = [];
+
+  if (policy.mode === "trail_prior_bar" && index > 0) {
+    const priorBar = trackedBars[index - 1]!;
+    candidates.push({
+      price: trade.side === "long" ? priorBar.high + buffer : priorBar.low - buffer,
+      reason: "Trail TP using the prior completed bar."
+    });
+  }
+
+  if (policy.mode === "trail_hourly_extreme" && index > 0) {
+    const lookbackBars = trackedBars.slice(Math.max(0, index - 4), index);
+    if (lookbackBars.length >= 2) {
+      const extreme = trade.side === "long"
+        ? Math.max(...lookbackBars.map((lookbackBar) => lookbackBar.high)) + buffer
+        : Math.min(...lookbackBars.map((lookbackBar) => lookbackBar.low)) - buffer;
+      candidates.push({
+        price: extreme,
+        reason: "Trail TP using the latest hourly extreme window."
+      });
+    }
+  }
+
+  if (policy.mode === "risk_multiple" && policy.rewardMultiple && policy.rewardMultiple > 0) {
+    const liveRisk = Math.abs(trade.entryPrice - currentStop);
+    if (liveRisk > 0) {
+      candidates.push({
+        price: trade.entryPrice + direction * liveRisk * policy.rewardMultiple,
+        reason: `Edit TP to maintain ${policy.rewardMultiple}R against the managed stop.`
+      });
+    }
+  }
+
+  const improvingCandidates = candidates
+    .map((candidate) => ({ ...candidate, price: roundToPriceUnit(candidate.price, priceUnit) }))
+    .filter((candidate) => improvesTakeProfit(trade, candidate.price, currentTakeProfit, priceUnit));
+  if (!improvingCandidates.length) return null;
+
+  return improvingCandidates.sort((left, right) => direction * (right.price - left.price))[0] ?? null;
+}
+
+function limitOrderManagementCandidate(
+  trade: TradeAlert,
+  currentLimitOrderPrice: number | undefined,
+  currentStop: number,
+  currentTakeProfit: number,
+  priceUnit: number
+): { price: number; reason: string } | null {
+  if (!finiteNumber(currentLimitOrderPrice)) return null;
+
+  const candidate = supplementalLimitOrderPrice({
+    ...trade,
+    stopLossPrice: currentStop,
+    takeProfitPrice: currentTakeProfit
+  });
+  if (!finiteNumber(candidate)) return null;
+  const price = roundToPriceUnit(candidate, priceUnit);
+  if (!priceChanged(price, currentLimitOrderPrice, priceUnit)) return null;
+
+  return {
+    price,
+    reason: "Edit the resting supplemental limit order to match the managed risk plan."
+  };
+}
+
+function lifecycleHitAt(
+  trade: TradeAlert,
+  dollars: { riskDollars: number; targetDollars: number },
+  price: number,
+  status: TradeLifecycleHit["status"],
+  time: string
+): TradeLifecycleHit {
+  const initialRisk = Math.abs(trade.entryPrice - trade.stopLossPrice);
+  const sideMultiplier = trade.side === "long" ? 1 : -1;
+  const rMultiple =
+    initialRisk > 0
+      ? ((price - trade.entryPrice) * sideMultiplier) / initialRisk
+      : status === "take_profit"
+        ? dollars.targetDollars / Math.max(dollars.riskDollars, 1)
+        : -1;
+
+  return {
+    pnlDollars: rMultiple * dollars.riskDollars,
+    price,
+    rMultiple,
+    status,
+    time
+  };
+}
+
+function evaluateTradeLifecycleAndManagement(
+  trade: TradeAlert,
+  bars: Bar[],
+  rule: StrategyRule | null
+): LifecycleAndManagementEvaluation {
+  const trackedBars = trackedBarsAfterSignal(trade, bars);
+  if (!trackedBars.length) return { hit: null, managementEvents: [] };
+
+  const dollars = signalDollars(trade);
+  const maxBars = typeof trade.maxBars === "number" && Number.isFinite(trade.maxBars) && trade.maxBars > 0 ? Math.round(trade.maxBars) : null;
+  const initialRisk = Math.abs(trade.entryPrice - trade.stopLossPrice);
+  const priceUnit = effectivePriceUnit(trade, rule);
+  const knownEvents = orderedManagementEvents(trade);
+  const newManagementEvents: TradeManagementEvent[] = [];
+
+  let currentStop = trade.stopLossPrice;
+  let currentTakeProfit = trade.takeProfitPrice;
+  let currentLimitOrderPrice = finiteNumber(trade.limitOrderPrice)
+    ? trade.limitOrderPrice
+    : supplementalLimitOrderPrice(trade) ?? undefined;
+  let knownEventIndex = 0;
+
+  const applyKnownEventsBefore = (timestamp: number) => {
+    while (knownEventIndex < knownEvents.length) {
+      const event = knownEvents[knownEventIndex]!;
+      const eventTime = Date.parse(event.time);
+      if (!Number.isFinite(eventTime) || eventTime >= timestamp) break;
+      if (event.type === "edit_sl") currentStop = event.price;
+      if (event.type === "edit_tp") currentTakeProfit = event.price;
+      if (event.type === "edit_limit") currentLimitOrderPrice = event.price;
+      knownEventIndex += 1;
+    }
+  };
+
+  const addManagementEvent = (
+    type: TradeManagementEvent["type"],
+    time: string,
+    price: number,
+    previousPrice: number | undefined,
+    reason: string,
+    label?: string,
+    plan?: Pick<TradeManagementEvent, "entryPrice" | "stopLossPrice" | "takeProfitPrice">
+  ) => {
+    const roundedPrice = roundToPriceUnit(price, priceUnit);
+    const event: TradeManagementEvent = {
+      autoTradeError: MANAGEMENT_AUTO_TRADE_NOTE,
+      autoTradeStatus: "skipped",
+      createdAt: new Date().toISOString(),
+      entryPrice: plan?.entryPrice,
+      id: managementEventId(trade, type, time, roundedPrice),
+      label,
+      previousPrice,
+      price: roundedPrice,
+      reason,
+      stopLossPrice: plan?.stopLossPrice,
+      takeProfitPrice: plan?.takeProfitPrice,
+      time,
+      type
+    };
+    if (!hasEquivalentManagementEvent([...knownEvents, ...newManagementEvents], event, priceUnit)) {
+      newManagementEvents.push(event);
+    }
+  };
+
+  for (const [index, bar] of trackedBars.entries()) {
+    const barTime = Date.parse(bar.time);
+    if (Number.isFinite(barTime)) applyKnownEventsBefore(barTime);
+
+    const hitTakeProfit = trade.side === "long" ? bar.high >= currentTakeProfit : bar.low <= currentTakeProfit;
+    const hitStopLoss = trade.side === "long" ? bar.low <= currentStop : bar.high >= currentStop;
+
+    if (hitTakeProfit || hitStopLoss) {
+      const status = hitStopLoss ? "stop_loss" : "take_profit";
+      const price = status === "take_profit" ? currentTakeProfit : currentStop;
+      return {
+        hit: lifecycleHitAt(trade, dollars, price, status, bar.time),
+        managementEvents: newManagementEvents
+      };
+    }
+
+    if (maxBars && index + 1 >= maxBars && initialRisk > 0) {
+      return {
+        hit: lifecycleHitAt(trade, dollars, bar.close, "max_bars", bar.time),
+        managementEvents: newManagementEvents
+      };
+    }
+
+    const stopCandidate = stopManagementCandidate(trade, rule, trackedBars, index, currentStop, initialRisk, priceUnit);
+    if (stopCandidate) {
+      const previousPrice = currentStop;
+      currentStop = stopCandidate.price;
+      addManagementEvent("edit_sl", bar.time, stopCandidate.price, previousPrice, stopCandidate.reason, stopCandidate.label, {
+        entryPrice: trade.entryPrice,
+        stopLossPrice: currentStop,
+        takeProfitPrice: currentTakeProfit
+      });
+    }
+
+    const takeProfitCandidate = takeProfitManagementCandidate(
+      trade,
+      rule,
+      trackedBars,
+      index,
+      currentTakeProfit,
+      currentStop,
+      priceUnit
+    );
+    if (takeProfitCandidate) {
+      const previousPrice = currentTakeProfit;
+      currentTakeProfit = takeProfitCandidate.price;
+      addManagementEvent("edit_tp", bar.time, takeProfitCandidate.price, previousPrice, takeProfitCandidate.reason, undefined, {
+        entryPrice: trade.entryPrice,
+        stopLossPrice: currentStop,
+        takeProfitPrice: currentTakeProfit
+      });
+    }
+
+    const limitCandidate = limitOrderManagementCandidate(
+      trade,
+      currentLimitOrderPrice,
+      currentStop,
+      currentTakeProfit,
+      priceUnit
+    );
+    if (limitCandidate) {
+      const previousPrice = currentLimitOrderPrice;
+      currentLimitOrderPrice = limitCandidate.price;
+      addManagementEvent("edit_limit", bar.time, limitCandidate.price, previousPrice, limitCandidate.reason, undefined, {
+        entryPrice: currentLimitOrderPrice,
+        stopLossPrice: currentStop,
+        takeProfitPrice: currentTakeProfit
+      });
+    }
+  }
+
+  return { hit: null, managementEvents: newManagementEvents };
+}
+
+async function notifyTradeLifecycles(result: CronResult, barsByAssetKey: Map<string, Bar[]>, rules: StrategyRule[]): Promise<void> {
   const oldestSignalTime = Date.now() - lifecycleLookbackMs();
   const openTrades = (await getTrades()).filter(
     (trade) =>
@@ -177,17 +545,37 @@ async function notifyTradeLifecycles(result: CronResult, barsByAssetKey: Map<str
         barsByAssetKey.set(assetKey, bars);
       }
 
-      const hit = tradeLifecycleHit(trade, bars);
-      if (!hit) continue;
+      const evaluation = evaluateTradeLifecycleAndManagement(trade, bars, matchingRuleForTrade(trade, rules));
+      const notifiedManagementEvents: TradeManagementEvent[] = [];
+      for (const event of evaluation.managementEvents) {
+        const notification = await sendTelegramManagement(trade, event);
+        notifiedManagementEvents.push({
+          ...event,
+          telegramError: notification.error,
+          telegramStatus: notification.status
+        });
+      }
+
+      const tradeWithManagementEvents: TradeAlert = notifiedManagementEvents.length
+        ? {
+            ...trade,
+            managementEvents: mergeManagementEvents(trade.managementEvents, notifiedManagementEvents)
+          }
+        : trade;
+
+      if (!evaluation.hit) {
+        if (notifiedManagementEvents.length) await saveTrade(tradeWithManagementEvents);
+        continue;
+      }
 
       const updatedTrade: TradeAlert = {
-        ...trade,
+        ...tradeWithManagementEvents,
         lifecycleNotifiedAt: new Date().toISOString(),
-        lifecyclePnlDollars: hit.pnlDollars,
-        lifecyclePrice: hit.price,
-        lifecycleRMultiple: hit.rMultiple,
-        lifecycleStatus: hit.status,
-        lifecycleTime: hit.time
+        lifecyclePnlDollars: evaluation.hit.pnlDollars,
+        lifecyclePrice: evaluation.hit.price,
+        lifecycleRMultiple: evaluation.hit.rMultiple,
+        lifecycleStatus: evaluation.hit.status,
+        lifecycleTime: evaluation.hit.time
       };
       const notification = await sendTelegramOutcome(updatedTrade);
       await saveTrade({
@@ -457,7 +845,7 @@ async function runSignalCheck(): Promise<CronResult> {
     result.generated.push(trade);
   }
 
-  await notifyTradeLifecycles(result, barsByAssetKey);
+  await notifyTradeLifecycles(result, barsByAssetKey, rules);
 
   return result;
 }

@@ -3299,6 +3299,24 @@ html[data-theme="light"] .themeDarkLabel {
   color: #fde68a;
 }
 
+.eventPill.management.tp {
+  border-color: rgba(45, 212, 191, 0.32);
+  background: rgba(45, 212, 191, 0.1);
+  color: #99f6e4;
+}
+
+.eventPill.management.sl {
+  border-color: rgba(251, 146, 60, 0.34);
+  background: rgba(251, 146, 60, 0.1);
+  color: #fed7aa;
+}
+
+.eventPill.management.limit {
+  border-color: rgba(216, 180, 254, 0.32);
+  background: rgba(216, 180, 254, 0.1);
+  color: #e9d5ff;
+}
+
 .eventPill.exit.win {
   border-color: rgba(52, 211, 153, 0.3);
   background: rgba(52, 211, 153, 0.1);

@@ -62,6 +62,24 @@ export type DynamicTakeProfitPolicy = {
   rewardMultiple?: number;
 };
 
+export type TradeManagementEvent = {
+  autoTradeError?: string;
+  autoTradeStatus?: "disabled" | "dry_run" | "failed" | "placed" | "skipped";
+  createdAt: string;
+  entryPrice?: number;
+  id: string;
+  label?: string;
+  previousPrice?: number;
+  price: number;
+  reason?: string;
+  stopLossPrice?: number;
+  takeProfitPrice?: number;
+  telegramError?: string;
+  telegramStatus?: "sent" | "skipped" | "failed";
+  time: string;
+  type: "edit_tp" | "edit_sl" | "edit_limit";
+};
+
 export type Bar = {
   time: string;
   open: number;
@@ -183,6 +201,7 @@ export type TradeAlert = {
   lifecycleRMultiple?: number;
   lifecycleStatus?: "open" | "take_profit" | "stop_loss" | "max_bars";
   lifecycleTime?: string;
+  managementEvents?: TradeManagementEvent[];
   maxBars?: number;
   status: "alerted" | "skipped";
   telegramStatus: "sent" | "skipped" | "failed";

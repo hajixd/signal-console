@@ -1,4 +1,4 @@
-import type { TradeAlert } from "./types";
+import type { TradeAlert, TradeManagementEvent } from "./types";
 import { dollarPerUnit, instrumentSizeLabel } from "./instruments";
 
 const TELEGRAM_MAX_TEXT_LENGTH = 3900;
@@ -174,6 +174,35 @@ export function formatTelegramOutcomeMessage(trade: TradeAlert): string {
   return fitTelegramMessage(joinTelegramLines(lines));
 }
 
+function managementEventTitle(event: TradeManagementEvent): string {
+  if (event.type === "edit_tp") return "Edit TP";
+  if (event.type === "edit_sl") return "Edit SL";
+  return "Edit Limit Order";
+}
+
+export function formatTelegramManagementMessage(trade: TradeAlert, event: TradeManagementEvent): string {
+  const side = trade.side === "long" ? "BUY" : "SELL";
+  const previous = event.previousPrice !== undefined ? `Previous <code>${formatPrice(event.previousPrice)}</code>` : undefined;
+  const reason = event.reason ? `Reason: ${escapeHtml(truncate(event.reason, 180))}` : undefined;
+  const lines = [
+    `<b>${escapeHtml(telegramGroupTitle())}</b>`,
+    `<b><u>${managementEventTitle(event).toUpperCase()}</u></b>`,
+    `<b>${escapeHtml(trade.symbol)}</b> <u>${side}</u>`,
+    "",
+    `<b>Updated Level</b>`,
+    `New <code>${formatPrice(event.price)}</code>`,
+    previous,
+    reason,
+    "",
+    `<b>Current Plan</b>`,
+    `Entry <code>${formatPrice(event.entryPrice ?? trade.entryPrice)}</code>`,
+    `TP <code>${formatPrice(event.takeProfitPrice ?? (event.type === "edit_tp" ? event.price : trade.takeProfitPrice))}</code>`,
+    `SL <code>${formatPrice(event.stopLossPrice ?? (event.type === "edit_sl" ? event.price : trade.stopLossPrice))}</code>`,
+    `Event <u>${escapeHtml(formatSignalTime(event.time))}</u>`
+  ];
+  return fitTelegramMessage(joinTelegramLines(lines));
+}
+
 export function telegramConfigured(): boolean {
   return Boolean(process.env.TELEGRAM_BOT_TOKEN && telegramChatId());
 }
@@ -219,4 +248,11 @@ export async function sendTelegram(trade: TradeAlert): Promise<{ status: "sent" 
 
 export async function sendTelegramOutcome(trade: TradeAlert): Promise<{ status: "sent" | "skipped" | "failed"; error?: string }> {
   return sendTelegramText(formatTelegramOutcomeMessage(trade));
+}
+
+export async function sendTelegramManagement(
+  trade: TradeAlert,
+  event: TradeManagementEvent
+): Promise<{ status: "sent" | "skipped" | "failed"; error?: string }> {
+  return sendTelegramText(formatTelegramManagementMessage(trade, event));
 }

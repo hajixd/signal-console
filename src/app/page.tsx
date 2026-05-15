@@ -46,7 +46,7 @@ import {
   supplementalLimitOrderPrice,
   supplementalLimitOrderSizeMultiplier
 } from "@/lib/trade-limit-orders";
-import type { TradeAlert } from "@/lib/types";
+import type { TradeAlert, TradeManagementEvent } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 const DEFAULT_SELECTED_STRATEGY_COUNT = 1;
@@ -484,8 +484,9 @@ function tradeSizeMultiplier(trade: BacktestTrade, fallback = 1): number {
 type ClosedLiveLifecycleStatus = Exclude<NonNullable<TradeAlert["lifecycleStatus"]>, "open">;
 type LiveTradeEvent = {
   className: string;
-  kind: "entry" | "limit" | "exit";
+  kind: "edit_limit" | "edit_sl" | "edit_tp" | "entry" | "limit" | "exit";
   label: string;
+  managementEvent?: TradeManagementEvent;
   title: string;
 };
 
@@ -520,6 +521,28 @@ function liveTradeExitStatusClass(trade: TradeAlert): string {
   return "skipped";
 }
 
+function isManagementLiveTradeEvent(event: LiveTradeEvent): event is LiveTradeEvent & { managementEvent: TradeManagementEvent } {
+  return Boolean(event.managementEvent);
+}
+
+function managementEventLabel(event: TradeManagementEvent): string {
+  if (event.type === "edit_tp") return "Edit TP";
+  if (event.type === "edit_sl") return "Edit SL";
+  return "Edit Limit";
+}
+
+function managementEventClass(event: TradeManagementEvent): string {
+  if (event.type === "edit_tp") return "management tp";
+  if (event.type === "edit_sl") return "management sl";
+  return "management limit";
+}
+
+function managementEventTitle(event: TradeManagementEvent): string {
+  const previous = event.previousPrice !== undefined ? ` from ${fmtPrice(event.previousPrice)}` : "";
+  const reason = event.reason ? ` - ${event.reason}` : "";
+  return `${managementEventLabel(event)}${previous} to ${fmtPrice(event.price)}${reason}`;
+}
+
 function liveTradeEvents(trade: TradeAlert): LiveTradeEvent[] {
   const hasLimitOrder = liveTradeHasLimitOrder(trade);
   const events: LiveTradeEvent[] = [];
@@ -548,6 +571,18 @@ function liveTradeEvents(trade: TradeAlert): LiveTradeEvent[] {
     }
   }
 
+  for (const managementEvent of [...(trade.managementEvents ?? [])]
+    .filter((event) => Number.isFinite(event.price))
+    .sort((left, right) => Date.parse(left.time) - Date.parse(right.time))) {
+    events.push({
+      className: managementEventClass(managementEvent),
+      kind: managementEvent.type,
+      label: managementEventLabel(managementEvent),
+      managementEvent,
+      title: managementEventTitle(managementEvent)
+    });
+  }
+
   if (liveTradeClosed(trade)) {
     const exitClass = trade.lifecycleStatus === "take_profit" ? "exit win" : trade.lifecycleStatus === "stop_loss" ? "exit loss" : "exit neutral";
     events.push({
@@ -562,22 +597,28 @@ function liveTradeEvents(trade: TradeAlert): LiveTradeEvent[] {
 }
 
 function liveTradeEventTime(trade: TradeAlert, event: LiveTradeEvent): string {
+  if (isManagementLiveTradeEvent(event)) return event.managementEvent.time;
   return event.kind === "exit" && liveTradeClosed(trade) ? trade.lifecycleTime : trade.signalTime;
 }
 
 function liveTradeEventTelegramStatus(trade: TradeAlert, event: LiveTradeEvent): TradeAlert["telegramStatus"] {
+  if (isManagementLiveTradeEvent(event)) return event.managementEvent.telegramStatus ?? "skipped";
   if (event.kind === "exit") return trade.telegramLifecycleStatus ?? trade.telegramStatus;
   if (event.kind === "limit") return trade.limitOrderTelegramStatus ?? trade.telegramStatus;
   return trade.telegramStatus;
 }
 
 function liveTradeEventEntryPrice(trade: TradeAlert, event: LiveTradeEvent): number {
+  if (isManagementLiveTradeEvent(event) && event.managementEvent.entryPrice !== undefined) return event.managementEvent.entryPrice;
+  if (event.kind === "edit_limit" && isManagementLiveTradeEvent(event)) return event.managementEvent.price;
   if (event.kind !== "limit") return trade.entryPrice;
   return finiteNumberOr(trade.limitOrderPrice, supplementalLimitOrderPrice(trade) ?? trade.entryPrice);
 }
 
 function liveTradeEventSizeMultiplier(trade: TradeAlert, event: LiveTradeEvent): number {
-  if (event.kind === "limit") return finiteNumberOr(trade.limitOrderSizeMultiplier, supplementalLimitOrderSizeMultiplier(trade));
+  if (event.kind === "limit" || event.kind === "edit_limit") {
+    return finiteNumberOr(trade.limitOrderSizeMultiplier, supplementalLimitOrderSizeMultiplier(trade));
+  }
   if (event.kind === "entry") return finiteNumberOr(trade.entryOrderSizeMultiplier, primaryOrderSizeMultiplier(trade));
   return trade.sizeMultiplier ?? 1;
 }
@@ -587,19 +628,31 @@ function liveTradeEventSizeLabel(trade: TradeAlert, event: LiveTradeEvent): stri
 }
 
 function liveTradeEventPriceUnit(trade: TradeAlert, event: LiveTradeEvent): number {
-  return inferredAlertPriceUnit(trade);
+  return inferredAlertPriceUnit(trade, 0);
 }
 
 function liveTradeEventTpUnits(trade: TradeAlert, event: LiveTradeEvent): number {
-  if (event.kind !== "limit") return trade.tpUnits;
+  if (event.kind === "entry" || event.kind === "exit") return trade.tpUnits;
   const priceUnit = liveTradeEventPriceUnit(trade, event);
-  return priceUnit > 0 ? Math.abs(trade.takeProfitPrice - liveTradeEventEntryPrice(trade, event)) / priceUnit : trade.tpUnits;
+  return priceUnit > 0 ? Math.abs(liveTradeEventTakeProfitPrice(trade, event) - liveTradeEventEntryPrice(trade, event)) / priceUnit : trade.tpUnits;
 }
 
 function liveTradeEventSlUnits(trade: TradeAlert, event: LiveTradeEvent): number {
-  if (event.kind !== "limit") return trade.slUnits;
+  if (event.kind === "entry" || event.kind === "exit") return trade.slUnits;
   const priceUnit = liveTradeEventPriceUnit(trade, event);
-  return priceUnit > 0 ? Math.abs(liveTradeEventEntryPrice(trade, event) - trade.stopLossPrice) / priceUnit : trade.slUnits;
+  return priceUnit > 0 ? Math.abs(liveTradeEventEntryPrice(trade, event) - liveTradeEventStopLossPrice(trade, event)) / priceUnit : trade.slUnits;
+}
+
+function liveTradeEventTakeProfitPrice(trade: TradeAlert, event: LiveTradeEvent): number {
+  if (isManagementLiveTradeEvent(event) && event.managementEvent.takeProfitPrice !== undefined) return event.managementEvent.takeProfitPrice;
+  if (event.kind === "edit_tp" && isManagementLiveTradeEvent(event)) return event.managementEvent.price;
+  return trade.takeProfitPrice;
+}
+
+function liveTradeEventStopLossPrice(trade: TradeAlert, event: LiveTradeEvent): number {
+  if (isManagementLiveTradeEvent(event) && event.managementEvent.stopLossPrice !== undefined) return event.managementEvent.stopLossPrice;
+  if (event.kind === "edit_sl" && isManagementLiveTradeEvent(event)) return event.managementEvent.price;
+  return trade.stopLossPrice;
 }
 
 function liveTradeEventTargetDollars(trade: TradeAlert, event: LiveTradeEvent): number {
@@ -624,10 +677,12 @@ function autoTradeStatusLabel(trade: TradeAlert): string {
 }
 
 function liveTradeEventAutoTradeStatus(trade: TradeAlert, event: LiveTradeEvent): TradeAlert["autoTradeStatus"] | undefined {
+  if (isManagementLiveTradeEvent(event)) return event.managementEvent.autoTradeStatus;
   return event.kind === "limit" ? trade.limitOrderAutoTradeStatus ?? trade.autoTradeStatus : trade.autoTradeStatus;
 }
 
 function liveTradeEventAutoTradeError(trade: TradeAlert, event: LiveTradeEvent): string | undefined {
+  if (isManagementLiveTradeEvent(event)) return event.managementEvent.autoTradeError;
   return event.kind === "limit" ? trade.limitOrderAutoTradeError ?? trade.autoTradeError : trade.autoTradeError;
 }
 
@@ -1557,8 +1612,8 @@ export default async function Home({ searchParams }: HomeProps) {
                                       <span className="status skipped">Pending</span>
                                     )}
                                   </span>
-                                  <span data-label="Take Profit">{fmtPrice(trade.takeProfitPrice)}</span>
-                                  <span data-label="Stop Loss">{fmtPrice(trade.stopLossPrice)}</span>
+                                  <span data-label="Take Profit">{fmtPrice(liveTradeEventTakeProfitPrice(trade, event))}</span>
+                                  <span data-label="Stop Loss">{fmtPrice(liveTradeEventStopLossPrice(trade, event))}</span>
                                   <span data-label="Target $">{fmtMoney(liveTradeEventTargetDollars(trade, event))}</span>
                                   <span data-label="Risk $">{fmtMoney(liveTradeEventRiskDollars(trade, event))}</span>
                                   <span data-label="Odds">{fmtPct(trade.estimatedWinRatePct)}</span>
