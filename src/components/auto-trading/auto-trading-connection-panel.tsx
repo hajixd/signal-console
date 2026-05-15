@@ -920,9 +920,6 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
                 </div>
               </div>
               {folderAccessError ? <small>{folderAccessError}</small> : null}
-              <button type="submit" disabled={isUnlockingFolder || !folderCodeInput || folderCodeInput.length === FOLDER_UNLOCK_CODE_MAX_LENGTH}>
-                {isUnlockingFolder || folderCodeInput.length === FOLDER_UNLOCK_CODE_MAX_LENGTH ? "Opening..." : "Open Folder"}
-              </button>
             </form>
           ) : activeProjectXFolder ? (
             <div className="topstepAccountFolderPage">
