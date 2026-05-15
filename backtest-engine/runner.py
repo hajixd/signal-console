@@ -762,6 +762,10 @@ ALLOWED_METADATA_KEYS = {
     # audit context without breaking the executable backtest contract.
     "sourceUrls",
     "researchSummary",
+    "crossMarketSourceStrategyId",
+    "crossMarketBestProfitFactor",
+    "crossMarketBestTrades",
+    "crossMarketBestTotalR",
     "trader",
     "playbook",
     "selectionMethod",

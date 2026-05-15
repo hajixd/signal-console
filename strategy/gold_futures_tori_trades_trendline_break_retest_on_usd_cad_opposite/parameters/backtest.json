@@ -1,0 +1,35 @@
+{
+  "strategyId": "gold_futures_tori_trades_trendline_break_retest_on_usd_cad_opposite",
+  "label": "GC Tori Trades Trendline Break Retest on USD/CAD Opposite",
+  "folder": "gold_futures_tori_trades_trendline_break_retest_on_usd_cad_opposite",
+  "assetKey": "usd_cad",
+  "phase": "tori_trendline_mtf",
+  "variantId": "tori_trendline_mtf|all|lookback=24|swing=2|touch=2|gap=1|lead=4|break=0.02|tol=0.3|stop_buf=0.1|risk=3|rr=2|target_lookback=48|max_bars=80|one_trade=0",
+  "source": "tori_public_mtf_research_2026",
+  "sourceUrls": [
+    "https://toritradez.com/blog/all/perfect-trade-trend-line-setup",
+    "https://toritradez.com/blog/all/trend-line-trading-masterclass-a-to-z",
+    "https://toritradez.com/blog/all/low-risk-trend-line-trading-break-retest-bounce",
+    "https://www.tradezella.com/strategies/trendline-strategy",
+    "https://fxreplay.com/strategies/tori-trades-trendlines-strategy"
+  ],
+  "researchSummary": "Top-down Tori proxy: prior completed daily bias, hourly action/safety lines, next-15m execution, swing-pivot trailing stop, and structure-aware targets.",
+  "dynamicStopLossPolicy": {
+    "mode": "trail_hourly_pivot",
+    "bufferUnits": 0
+  },
+  "dynamicTakeProfitPolicy": {
+    "mode": "trail_hourly_extreme",
+    "bufferUnits": 0
+  },
+  "sizePolicy": {
+    "mode": "confidence",
+    "minMultiplier": 1,
+    "maxMultiplier": 2,
+    "minConfidence": 0.45,
+    "maxConfidence": 0.85
+  },
+  "oneTradePerDay": false,
+  "costUnits": 0,
+  "invertSignal": true
+}

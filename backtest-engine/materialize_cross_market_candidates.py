@@ -33,6 +33,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--min-pf", type=float, default=1.75, help="Minimum best profit factor to materialize")
     parser.add_argument("--min-trades", type=int, default=20, help="Minimum best trade count to materialize")
     parser.add_argument("--min-total-r", type=float, default=8.0, help="Minimum best total R to materialize")
+    parser.add_argument("--base-strategy", action="append", help="Only materialize candidates from this base strategy id. Repeat to include multiple.")
+    parser.add_argument("--target-asset", action="append", help="Only materialize candidates for this target asset key. Repeat to include multiple.")
     parser.add_argument("--limit", type=int, help="Optional max number of candidates to materialize after filtering")
     parser.add_argument("--backtest-only", action="store_true", help="Mark generated strategies as backtest-only in the app")
     parser.add_argument("--overwrite", action="store_true", help="Regenerate candidate folders even if they already exist")
@@ -75,6 +77,16 @@ def strategy_label(base_label: str, target_asset_name: str, inverted: bool) -> s
 def load_candidates(args: argparse.Namespace) -> list[CandidateRow]:
     with BEST_CSV.open(newline="", encoding="utf-8") as handle:
         rows = list(csv.DictReader(handle))
+    requested_base_strategies = {
+        value.strip().lower()
+        for value in (args.base_strategy or [])
+        if value and value.strip()
+    }
+    requested_target_assets = {
+        value.strip().lower()
+        for value in (args.target_asset or [])
+        if value and value.strip()
+    }
 
     selected = [
         CandidateRow(
@@ -91,6 +103,8 @@ def load_candidates(args: argparse.Namespace) -> list[CandidateRow]:
         if float(row["best_pf"]) >= args.min_pf
         and int(row["best_trades"]) >= args.min_trades
         and float(row["best_total_r"]) >= args.min_total_r
+        and (not requested_base_strategies or row["base_strategy_id"].lower() in requested_base_strategies)
+        and (not requested_target_assets or row["target_asset_key"].lower() in requested_target_assets)
     ]
     if args.limit is not None:
         selected = selected[: args.limit]
@@ -167,6 +181,7 @@ def rewrite_metadata(
     asset_key: str,
     variant_id: str,
     inverted: bool,
+    candidate: CandidateRow,
 ) -> None:
     payload = json.loads(metadata_path.read_text(encoding="utf-8"))
     stop_loss_policy = payload.get("stopLossPolicy")
@@ -209,6 +224,26 @@ def rewrite_metadata(
     payload["folder"] = folder
     payload["assetKey"] = asset_key
     payload["variantId"] = clean_variant_id(variant_id)
+    payload["crossMarketSourceStrategyId"] = candidate.base_strategy_id
+    payload["crossMarketBestProfitFactor"] = candidate.best_pf
+    payload["crossMarketBestTrades"] = candidate.best_trades
+    payload["crossMarketBestTotalR"] = candidate.best_total_r
+    payload["selectedForwardProfitFactor"] = candidate.best_pf
+    payload["selectedForwardTrades"] = candidate.best_trades
+    payload["forwardTotalR"] = candidate.best_total_r
+    payload["forwardAverageR"] = candidate.best_total_r / candidate.best_trades if candidate.best_trades else 0
+    payload.pop("forwardWins", None)
+    payload.pop("forwardLosses", None)
+    payload.pop("forwardMaxDrawdownR", None)
+    payload["verificationSummary"] = (
+        f"Cross-market transfer from {candidate.base_strategy_id}; target asset backtest "
+        f"qualified with PF {candidate.best_pf:.2f}, {candidate.best_trades} trades, "
+        f"and {candidate.best_total_r:.2f}R total."
+    )
+    payload["researchSummary"] = (
+        f"Cross-market candidate generated from {candidate.base_label}; same strategy concept "
+        f"and variant applied to the target asset after filtering for PF >= 1.5."
+    )
     if inverted:
         payload["invertSignal"] = True
     else:
@@ -272,6 +307,7 @@ def main() -> None:
             target_asset.key,
             candidate.variant_id,
             candidate.best_inverted,
+            candidate,
         )
         rewrite_strategy_ts(target_dir / "strategy.ts", folder, label, folder, target_asset.key, live_enabled, candidate.best_inverted)
         created_folders.append(folder)

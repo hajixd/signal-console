@@ -495,7 +495,12 @@ function finiteNumberOr(value: number | undefined, fallback: number): number {
 }
 
 function liveRowClass(trade: TradeAlert): string {
-  return trade.side === "long" ? "up-row" : "down-row";
+  if (Number.isFinite(trade.lifecyclePnlDollars)) {
+    return resultRowClass(trade.lifecyclePnlDollars!);
+  }
+  if (trade.lifecycleStatus === "take_profit") return "up-row";
+  if (trade.lifecycleStatus === "stop_loss") return "down-row";
+  return "neutral-row";
 }
 
 function isClosedLifecycleStatus(status: TradeAlert["lifecycleStatus"]): status is ClosedLiveLifecycleStatus {

@@ -1,8 +1,8 @@
+import audUsdIctTurtleSoupStrategy from "@strategy/aud_usd_ict_turtle_soup/strategy";
 import audUsdNySweepBayesStrategy from "@strategy/aud_usd_ny_sweep_bayes/strategy";
 import audUsdNySweepBayesPriorDayTargetStrategy from "@strategy/aud_usd_ny_sweep_bayes_prior_day_target/strategy";
 import audUsdNySweepBayesPriorDayTargetOnCrudeOilFuturesStrategy from "@strategy/aud_usd_ny_sweep_bayes_prior_day_target_on_crude_oil_futures/strategy";
 import audUsdNySweepBayesPriorDayTargetOnRussell2000FuturesStrategy from "@strategy/aud_usd_ny_sweep_bayes_prior_day_target_on_russell_2000_futures/strategy";
-import audUsdIctTurtleSoupStrategy from "@strategy/aud_usd_ict_turtle_soup/strategy";
 import audUsdNySweepLogitStrategy from "@strategy/aud_usd_ny_sweep_logit/strategy";
 import audUsdNySweepLogitOnBritishPoundFuturesStrategy from "@strategy/aud_usd_ny_sweep_logit_on_british_pound_futures/strategy";
 import audUsdNySweepLogitOnEuroFuturesStrategy from "@strategy/aud_usd_ny_sweep_logit_on_euro_futures/strategy";
@@ -31,33 +31,38 @@ import gbpUsdHumbledTraderVwapPullbackStrategy from "@strategy/gbp_usd_humbled_t
 import gbpUsdIctTurtleSoupStrategy from "@strategy/gbp_usd_ict_turtle_soup/strategy";
 import gbpUsdMeanReversionStrategy from "@strategy/gbp_usd_mean_reversion/strategy";
 import gbpUsdNySweepBayesStrategy from "@strategy/gbp_usd_ny_sweep_bayes/strategy";
+import gbpUsdNySweepBayesOnNewZealandDollarFuturesStrategy from "@strategy/gbp_usd_ny_sweep_bayes_on_new_zealand_dollar_futures/strategy";
 import gbpUsdNySweepBayesPriorDayTargetOnSp500FuturesStrategy from "@strategy/gbp_usd_ny_sweep_bayes_prior_day_target_on_sp_500_futures/strategy";
 import gbpUsdNySweepLogitStrategy from "@strategy/gbp_usd_ny_sweep_logit/strategy";
 import gbpUsdNySweepStumpStrategy from "@strategy/gbp_usd_ny_sweep_stump/strategy";
 import gbpUsdNySweepStumpOnBritishPoundFuturesStrategy from "@strategy/gbp_usd_ny_sweep_stump_on_british_pound_futures/strategy";
 import gbpUsdNySweepStumpOnEuroFuturesStrategy from "@strategy/gbp_usd_ny_sweep_stump_on_euro_futures/strategy";
-import goldFuturesEchoNeuralMeanReversionBalancedStrategy from "@strategy/gold_futures_echo_neural_mean_reversion_balanced/strategy";
 import goldFuturesEchoNeuralMeanReversionStrategy from "@strategy/gold_futures_echo_neural_mean_reversion/strategy";
-import goldFuturesEchoNeuralMomentumBalancedStrategy from "@strategy/gold_futures_echo_neural_momentum_balanced/strategy";
+import goldFuturesEchoNeuralMeanReversionBalancedStrategy from "@strategy/gold_futures_echo_neural_mean_reversion_balanced/strategy";
 import goldFuturesEchoNeuralMomentumStrategy from "@strategy/gold_futures_echo_neural_momentum/strategy";
-import goldSpotEchoNeuralMeanReversionBalancedStrategy from "@strategy/gold_spot_echo_neural_mean_reversion_balanced/strategy";
-import goldSpotEchoNeuralMeanReversionStrategy from "@strategy/gold_spot_echo_neural_mean_reversion/strategy";
-import goldSpotEchoNeuralMomentumBalancedStrategy from "@strategy/gold_spot_echo_neural_momentum_balanced/strategy";
-import goldSpotEchoNeuralMomentumStrategy from "@strategy/gold_spot_echo_neural_momentum/strategy";
+import goldFuturesEchoNeuralMomentumBalancedStrategy from "@strategy/gold_futures_echo_neural_momentum_balanced/strategy";
 import goldFuturesHumbledTraderVwapPullbackOppositeStrategy from "@strategy/gold_futures_humbled_trader_vwap_pullback_opposite/strategy";
 import goldFuturesIctSweepFvgStrategy from "@strategy/gold_futures_ict_sweep_fvg/strategy";
 import goldFuturesRedditEmaPullbackStrategy from "@strategy/gold_futures_reddit_ema_pullback/strategy";
 import goldFuturesRedditOrbBreakoutStrategy from "@strategy/gold_futures_reddit_orb_breakout/strategy";
 import goldFuturesToriTradesTrendlineBreakRetestStrategy from "@strategy/gold_futures_tori_trades_trendline_break_retest/strategy";
+import goldFuturesToriTradesTrendlineBreakRetestOnAudNzdOppositeStrategy from "@strategy/gold_futures_tori_trades_trendline_break_retest_on_aud_nzd_opposite/strategy";
+import goldFuturesToriTradesTrendlineBreakRetestOnEurCadStrategy from "@strategy/gold_futures_tori_trades_trendline_break_retest_on_eur_cad/strategy";
+import goldFuturesToriTradesTrendlineBreakRetestOnUsdCadOppositeStrategy from "@strategy/gold_futures_tori_trades_trendline_break_retest_on_usd_cad_opposite/strategy";
+import goldFuturesToriTradesTrendlineBreakRetestOnUsdJpyStrategy from "@strategy/gold_futures_tori_trades_trendline_break_retest_on_usd_jpy/strategy";
+import goldSpotEchoNeuralMeanReversionStrategy from "@strategy/gold_spot_echo_neural_mean_reversion/strategy";
+import goldSpotEchoNeuralMeanReversionBalancedStrategy from "@strategy/gold_spot_echo_neural_mean_reversion_balanced/strategy";
+import goldSpotEchoNeuralMomentumStrategy from "@strategy/gold_spot_echo_neural_momentum/strategy";
+import goldSpotEchoNeuralMomentumBalancedStrategy from "@strategy/gold_spot_echo_neural_momentum_balanced/strategy";
 import goldSpotToriTradesTrendlineBreakRetestStrategy from "@strategy/gold_spot_tori_trades_trendline_break_retest/strategy";
 import nasdaq100FuturesClaytraderSupportResistanceRetestStrategy from "@strategy/nasdaq_100_futures_claytrader_support_resistance_retest/strategy";
 import nasdaq100FuturesDecileForwardEdge5mStrategy from "@strategy/nasdaq_100_futures_decile_forward_edge_5m/strategy";
 import nasdaq100FuturesMomentumStrategy from "@strategy/nasdaq_100_futures_momentum/strategy";
+import nasdaq100FuturesPercentileRangeStudy15mStrategy from "@strategy/nasdaq_100_futures_percentile_range_study_15m/strategy";
 import nasdaq100FuturesPercentileRangeStudy1hStrategy from "@strategy/nasdaq_100_futures_percentile_range_study_1h/strategy";
 import nasdaq100FuturesPercentileRangeStudy1mStrategy from "@strategy/nasdaq_100_futures_percentile_range_study_1m/strategy";
-import nasdaq100FuturesPercentileRangeStudy5mStrategy from "@strategy/nasdaq_100_futures_percentile_range_study_5m/strategy";
-import nasdaq100FuturesPercentileRangeStudy15mStrategy from "@strategy/nasdaq_100_futures_percentile_range_study_15m/strategy";
 import nasdaq100FuturesPercentileRangeStudy30mStrategy from "@strategy/nasdaq_100_futures_percentile_range_study_30m/strategy";
+import nasdaq100FuturesPercentileRangeStudy5mStrategy from "@strategy/nasdaq_100_futures_percentile_range_study_5m/strategy";
 import nasdaq100FuturesRedditEmaPullbackStrategy from "@strategy/nasdaq_100_futures_reddit_ema_pullback/strategy";
 import nasdaq100FuturesRedditOrbBreakoutStrategy from "@strategy/nasdaq_100_futures_reddit_orb_breakout/strategy";
 import nasdaq100FuturesRedditOrbRetestStrategy from "@strategy/nasdaq_100_futures_reddit_orb_retest/strategy";
@@ -68,8 +73,8 @@ import nasdaq100FuturesToriTradesTrendlineBreakRetestStrategy from "@strategy/na
 import nzdUsdNySweepBayesStrategy from "@strategy/nzd_usd_ny_sweep_bayes/strategy";
 import nzdUsdNySweepLogitStrategy from "@strategy/nzd_usd_ny_sweep_logit/strategy";
 import nzdUsdNySweepStumpStrategy from "@strategy/nzd_usd_ny_sweep_stump/strategy";
-import russell2000FuturesIctSweepFvgStrategy from "@strategy/russell_2000_futures_ict_sweep_fvg/strategy";
 import russell2000FuturesClaytraderSupportResistanceRetestStrategy from "@strategy/russell_2000_futures_claytrader_support_resistance_retest/strategy";
+import russell2000FuturesIctSweepFvgStrategy from "@strategy/russell_2000_futures_ict_sweep_fvg/strategy";
 import russell2000FuturesRedditOrbRetestStrategy from "@strategy/russell_2000_futures_reddit_orb_retest/strategy";
 import silverFuturesRedditCapitulationReversionStrategy from "@strategy/silver_futures_reddit_capitulation_reversion/strategy";
 import sp500FuturesRedditOrbBreakoutStrategy from "@strategy/sp_500_futures_reddit_orb_breakout/strategy";
@@ -96,11 +101,11 @@ import type { StrategyDefinition } from "@/lib/strategy-definition";
 export type { StrategyDefinition, StrategySignal } from "@/lib/strategy-definition";
 
 export const STRATEGY_DEFINITIONS: StrategyDefinition[] = [
+  audUsdIctTurtleSoupStrategy,
   audUsdNySweepBayesStrategy,
   audUsdNySweepBayesPriorDayTargetStrategy,
   audUsdNySweepBayesPriorDayTargetOnCrudeOilFuturesStrategy,
   audUsdNySweepBayesPriorDayTargetOnRussell2000FuturesStrategy,
-  audUsdIctTurtleSoupStrategy,
   audUsdNySweepLogitStrategy,
   audUsdNySweepLogitOnBritishPoundFuturesStrategy,
   audUsdNySweepLogitOnEuroFuturesStrategy,
@@ -129,33 +134,38 @@ export const STRATEGY_DEFINITIONS: StrategyDefinition[] = [
   gbpUsdIctTurtleSoupStrategy,
   gbpUsdMeanReversionStrategy,
   gbpUsdNySweepBayesStrategy,
+  gbpUsdNySweepBayesOnNewZealandDollarFuturesStrategy,
   gbpUsdNySweepBayesPriorDayTargetOnSp500FuturesStrategy,
   gbpUsdNySweepLogitStrategy,
   gbpUsdNySweepStumpStrategy,
   gbpUsdNySweepStumpOnBritishPoundFuturesStrategy,
   gbpUsdNySweepStumpOnEuroFuturesStrategy,
-  goldFuturesEchoNeuralMeanReversionBalancedStrategy,
   goldFuturesEchoNeuralMeanReversionStrategy,
-  goldFuturesEchoNeuralMomentumBalancedStrategy,
+  goldFuturesEchoNeuralMeanReversionBalancedStrategy,
   goldFuturesEchoNeuralMomentumStrategy,
-  goldSpotEchoNeuralMeanReversionBalancedStrategy,
-  goldSpotEchoNeuralMeanReversionStrategy,
-  goldSpotEchoNeuralMomentumBalancedStrategy,
-  goldSpotEchoNeuralMomentumStrategy,
+  goldFuturesEchoNeuralMomentumBalancedStrategy,
   goldFuturesHumbledTraderVwapPullbackOppositeStrategy,
   goldFuturesIctSweepFvgStrategy,
   goldFuturesRedditEmaPullbackStrategy,
   goldFuturesRedditOrbBreakoutStrategy,
   goldFuturesToriTradesTrendlineBreakRetestStrategy,
+  goldFuturesToriTradesTrendlineBreakRetestOnAudNzdOppositeStrategy,
+  goldFuturesToriTradesTrendlineBreakRetestOnEurCadStrategy,
+  goldFuturesToriTradesTrendlineBreakRetestOnUsdCadOppositeStrategy,
+  goldFuturesToriTradesTrendlineBreakRetestOnUsdJpyStrategy,
+  goldSpotEchoNeuralMeanReversionStrategy,
+  goldSpotEchoNeuralMeanReversionBalancedStrategy,
+  goldSpotEchoNeuralMomentumStrategy,
+  goldSpotEchoNeuralMomentumBalancedStrategy,
   goldSpotToriTradesTrendlineBreakRetestStrategy,
   nasdaq100FuturesClaytraderSupportResistanceRetestStrategy,
   nasdaq100FuturesDecileForwardEdge5mStrategy,
   nasdaq100FuturesMomentumStrategy,
-  nasdaq100FuturesPercentileRangeStudy1mStrategy,
-  nasdaq100FuturesPercentileRangeStudy5mStrategy,
   nasdaq100FuturesPercentileRangeStudy15mStrategy,
-  nasdaq100FuturesPercentileRangeStudy30mStrategy,
   nasdaq100FuturesPercentileRangeStudy1hStrategy,
+  nasdaq100FuturesPercentileRangeStudy1mStrategy,
+  nasdaq100FuturesPercentileRangeStudy30mStrategy,
+  nasdaq100FuturesPercentileRangeStudy5mStrategy,
   nasdaq100FuturesRedditEmaPullbackStrategy,
   nasdaq100FuturesRedditOrbBreakoutStrategy,
   nasdaq100FuturesRedditOrbRetestStrategy,
