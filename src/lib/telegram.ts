@@ -79,12 +79,19 @@ function autoTradeLine(trade: TradeAlert): string {
     const placed = trade.autoTradeOrders.filter((order) => order.status === "placed").length;
     const dryRuns = trade.autoTradeOrders.filter((order) => order.status === "dry_run").length;
     const failed = trade.autoTradeOrders.filter((order) => order.status === "failed").length;
+    const skipped = trade.autoTradeOrders.filter((order) => order.status === "skipped").length;
     const accountLabel = trade.autoTradeOrders
       .map((order) => order.accountName ?? String(order.accountId))
       .slice(0, 3)
       .join(", ");
     const suffix = trade.autoTradeOrders.length > 3 ? ` +${trade.autoTradeOrders.length - 3}` : "";
-    const status = dryRuns ? `${dryRuns} dry run` : placed ? `${placed} placed${failed ? ` / ${failed} failed` : ""}` : `${failed} failed`;
+    const status = dryRuns
+      ? `${dryRuns} dry run`
+      : placed
+        ? `${placed} placed${failed ? ` / ${failed} failed` : ""}${skipped ? ` / ${skipped} skipped` : ""}`
+        : skipped && !failed
+          ? `${skipped} skipped`
+          : `${failed} failed${skipped ? ` / ${skipped} skipped` : ""}`;
     return `${provider}: ${status} on ${accountLabel}${suffix} (${trade.autoTradeContractName ?? trade.autoTradeContractId ?? trade.symbol})`;
   }
   if (trade.autoTradeStatus === "placed") {

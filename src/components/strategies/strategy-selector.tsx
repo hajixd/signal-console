@@ -242,7 +242,7 @@ function displayRiskLabel(strategy: StrategyOption, value: number): string {
 }
 
 function displaySizeLabel(strategy: StrategyOption, contracts: number, sizeName: string): string {
-  return strategy.sizeMode === "custom" ? "Custom Unit" : formatSizeLabel(contracts, sizeName);
+  return formatSizeLabel(contracts, sizeName);
 }
 
 function riskRewardRatio(targetDollars: number, riskDollars: number): number | undefined {

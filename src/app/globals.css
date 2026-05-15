@@ -2980,8 +2980,8 @@ html[data-theme="light"] .themeDarkLabel {
 }
 
 .live-alert-table {
-  --cron-grid-columns: 46px 76px 220px 132px 92px 106px 106px 106px 106px 112px 112px 74px 90px 90px 160px;
-  min-width: 1628px;
+  --cron-grid-columns: 46px 76px 220px 132px 92px 106px 112px 106px 106px 106px 112px 112px 74px 90px 90px 160px;
+  min-width: 1740px;
 }
 
 .history-table {
@@ -3018,6 +3018,10 @@ html[data-theme="light"] .themeDarkLabel {
 .live-col-price,
 .history-col-price {
   width: 106px;
+}
+
+.live-col-size {
+  width: 112px;
 }
 
 .live-col-money,
@@ -3207,7 +3211,7 @@ html[data-theme="light"] .themeDarkLabel {
 }
 
 .cronTradeDetails {
-  min-width: 1628px;
+  min-width: 1740px;
 }
 
 .cronTradeSummary,

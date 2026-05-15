@@ -17,7 +17,7 @@ export type AutoTradeOrderSummary = {
   providerId?: string;
   providerName?: string;
   size?: number;
-  status: "dry_run" | "failed" | "placed";
+  status: "dry_run" | "failed" | "placed" | "skipped";
 };
 
 export type StopLossPolicy = {
@@ -134,6 +134,8 @@ export type TradeAlert = {
   autoTradeStatus?: "disabled" | "dry_run" | "failed" | "placed" | "skipped";
   entryOrderSizeMultiplier?: number;
   id: string;
+  orderLeg?: "entry" | "limit";
+  splitOrderTotalSizeMultiplier?: number;
   createdAt: string;
   signalTime: string;
   strategyKey?: string;

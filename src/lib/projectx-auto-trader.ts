@@ -119,9 +119,27 @@ function wholeNumber(value: number | undefined, label: string): number {
   return rounded;
 }
 
+function positiveNumber(value: number | undefined, label: string): number {
+  if (typeof value !== "number" || !Number.isFinite(value) || value <= 0) {
+    throw new Error(`${label} must be a positive number.`);
+  }
+  return value;
+}
+
 function customTagForTrade(trade: TradeAlert, accountId: number): string {
   const hash = createHash("sha256").update(`${trade.id}:${accountId}`).digest("hex").slice(0, 24);
   return `tb_${hash}`;
+}
+
+function projectXOrderSizeForAccount(trade: TradeAlert, account: ProjectXAccount, fallbackBaseSize: number): number {
+  if ((trade.orderLeg === "entry" || trade.orderLeg === "limit") && typeof trade.splitOrderTotalSizeMultiplier === "number") {
+    const totalSize = scaledAutoTradeSize(trade.splitOrderTotalSizeMultiplier, account, { minSize: 0, wholeNumber: true });
+    if (totalSize <= 0) return 0;
+    const entrySize = Math.ceil(totalSize * 0.5);
+    return trade.orderLeg === "entry" ? entrySize : Math.max(0, totalSize - entrySize);
+  }
+
+  return scaledAutoTradeSize(fallbackBaseSize, account, { minSize: 0, wholeNumber: true });
 }
 
 function contractSearchTextForTrade(trade: TradeAlert): string {
@@ -171,13 +189,18 @@ function summarizeOrders(
 ): Omit<ProjectXAutoTradeResult, "checkedAt" | "status"> {
   const first = orders[0];
   const failed = orders.filter((order) => order.status === "failed");
+  const skipped = orders.filter((order) => order.status === "skipped");
   return {
     accountId: orders.length === 1 ? first?.accountId : undefined,
     accountName: orders.length > 1 ? `${orders.length} accounts` : first?.accountName,
     contractId: first?.contractId ?? fields.contractId,
     contractName: first?.contractName ?? fields.contractName,
     customTag: orders.length === 1 ? first?.customTag : undefined,
-    error: failed.length ? `${failed.length} account(s) failed: ${failed.map((order) => order.accountName ?? order.accountId).join(", ")}` : undefined,
+    error: failed.length
+      ? `${failed.length} account(s) failed: ${failed.map((order) => order.accountName ?? order.accountId).join(", ")}`
+      : skipped.length
+        ? `${skipped.length} account(s) skipped: ${skipped.map((order) => order.accountName ?? order.accountId).join(", ")}`
+        : undefined,
     orderId: orders.length === 1 ? first?.orderId : undefined,
     orders
   };
@@ -228,7 +251,10 @@ export async function executeProjectXAutoTrade(trade: TradeAlert): Promise<Proje
     const contract = bestContract(await searchProjectXContracts(connection.token, searchText, projectXContractLiveFlag()), searchText);
     if (!contract) return result("failed", { error: `No ProjectX contract found for ${searchText}.` });
 
-    const baseSize = wholeNumber(trade.sizeMultiplier ?? 1, "Order size");
+    const baseSize =
+      trade.orderLeg === "entry" || trade.orderLeg === "limit"
+        ? positiveNumber(trade.sizeMultiplier ?? 1, "Order size")
+        : wholeNumber(trade.sizeMultiplier ?? 1, "Order size");
     const stopLossTicks = wholeNumber(Math.abs(trade.slUnits), "Stop-loss ticks");
     const takeProfitTicks = wholeNumber(Math.abs(trade.tpUnits), "Take-profit ticks");
     const entryType: ProjectXOrderType = trade.entryType === "limit" ? 1 : 2;
@@ -236,8 +262,24 @@ export async function executeProjectXAutoTrade(trade: TradeAlert): Promise<Proje
     const orders: AutoTradeOrderSummary[] = [];
 
     for (const account of accounts) {
-      const size = scaledAutoTradeSize(baseSize, account, { wholeNumber: true });
+      const size = projectXOrderSizeForAccount(trade, account, baseSize);
       const customTag = customTagForTrade(trade, account.id);
+      if (size <= 0) {
+        orders.push({
+          accountId: account.id,
+          accountName: account.name,
+          contractId: contract.id,
+          contractName: contract.name,
+          customTag,
+          error:
+            trade.orderLeg === "limit"
+              ? "Limit leg skipped because the account-scaled total size leaves no remaining contract after the entry leg."
+              : "Order skipped because the account-scaled size is below 1 contract.",
+          size,
+          status: "skipped"
+        });
+        continue;
+      }
       const request: ProjectXPlaceOrderRequest = {
         accountId: account.id,
         contractId: contract.id,
@@ -298,7 +340,9 @@ export async function executeProjectXAutoTrade(trade: TradeAlert): Promise<Proje
     }
 
     const placedOrders = orders.filter((order) => order.status === "placed");
+    const actionableOrders = orders.filter((order) => order.status !== "skipped");
     const contractFields = { contractId: contract.id, contractName: contract.name };
+    if (!actionableOrders.length) return result("skipped", summarizeOrders(orders, contractFields));
     if (dryRunEnabled()) return result("dry_run", summarizeOrders(orders, contractFields));
     if (placedOrders.length) return result("placed", summarizeOrders(orders, contractFields));
     return result("failed", summarizeOrders(orders, contractFields));

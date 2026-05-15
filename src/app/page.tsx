@@ -40,7 +40,12 @@ import { projectAssetMode } from "@/lib/project-assets";
 import { getTrades, storageMode } from "@/lib/storage";
 import { telegramGroupInviteLink } from "@/lib/telegram";
 import { topstepSessionKey } from "@/lib/topstep";
-import { hasSupplementalLimitOrder, supplementalLimitOrderPrice } from "@/lib/trade-limit-orders";
+import {
+  hasSupplementalLimitOrder,
+  primaryOrderSizeMultiplier,
+  supplementalLimitOrderPrice,
+  supplementalLimitOrderSizeMultiplier
+} from "@/lib/trade-limit-orders";
 import type { TradeAlert } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -569,6 +574,40 @@ function liveTradeEventTelegramStatus(trade: TradeAlert, event: LiveTradeEvent):
 function liveTradeEventEntryPrice(trade: TradeAlert, event: LiveTradeEvent): number {
   if (event.kind !== "limit") return trade.entryPrice;
   return finiteNumberOr(trade.limitOrderPrice, supplementalLimitOrderPrice(trade) ?? trade.entryPrice);
+}
+
+function liveTradeEventSizeMultiplier(trade: TradeAlert, event: LiveTradeEvent): number {
+  if (event.kind === "limit") return finiteNumberOr(trade.limitOrderSizeMultiplier, supplementalLimitOrderSizeMultiplier(trade));
+  if (event.kind === "entry") return finiteNumberOr(trade.entryOrderSizeMultiplier, primaryOrderSizeMultiplier(trade));
+  return trade.sizeMultiplier ?? 1;
+}
+
+function liveTradeEventSizeLabel(trade: TradeAlert, event: LiveTradeEvent): string {
+  return instrumentSizeLabel(trade.symbol, liveTradeEventSizeMultiplier(trade, event));
+}
+
+function liveTradeEventPriceUnit(trade: TradeAlert, event: LiveTradeEvent): number {
+  return inferredAlertPriceUnit(trade);
+}
+
+function liveTradeEventTpUnits(trade: TradeAlert, event: LiveTradeEvent): number {
+  if (event.kind !== "limit") return trade.tpUnits;
+  const priceUnit = liveTradeEventPriceUnit(trade, event);
+  return priceUnit > 0 ? Math.abs(trade.takeProfitPrice - liveTradeEventEntryPrice(trade, event)) / priceUnit : trade.tpUnits;
+}
+
+function liveTradeEventSlUnits(trade: TradeAlert, event: LiveTradeEvent): number {
+  if (event.kind !== "limit") return trade.slUnits;
+  const priceUnit = liveTradeEventPriceUnit(trade, event);
+  return priceUnit > 0 ? Math.abs(liveTradeEventEntryPrice(trade, event) - trade.stopLossPrice) / priceUnit : trade.slUnits;
+}
+
+function liveTradeEventTargetDollars(trade: TradeAlert, event: LiveTradeEvent): number {
+  return Math.abs(liveTradeEventTpUnits(trade, event) * dollarPerUnit(trade.symbol, liveTradeEventEntryPrice(trade, event)) * liveTradeEventSizeMultiplier(trade, event));
+}
+
+function liveTradeEventRiskDollars(trade: TradeAlert, event: LiveTradeEvent): number {
+  return Math.abs(liveTradeEventSlUnits(trade, event) * dollarPerUnit(trade.symbol, liveTradeEventEntryPrice(trade, event)) * liveTradeEventSizeMultiplier(trade, event));
 }
 
 function autoTradeStatusClass(trade: TradeAlert): string {
@@ -1413,6 +1452,7 @@ export default async function Home({ searchParams }: HomeProps) {
                   <col className="live-col-event" />
                   <col className="live-col-direction" />
                   <col className="live-col-price" />
+                  <col className="live-col-size" />
                   <col className="live-col-price" />
                   <col className="live-col-price" />
                   <col className="live-col-price" />
@@ -1431,6 +1471,7 @@ export default async function Home({ searchParams }: HomeProps) {
                     <th>Event</th>
                     <th>Direction</th>
                     <th>Entry</th>
+                    <th>Size</th>
                     <th>Exit</th>
                     <th>Take Profit</th>
                     <th>Stop Loss</th>
@@ -1447,7 +1488,7 @@ export default async function Home({ searchParams }: HomeProps) {
                     const events = liveTradeEvents(trade);
                     return (
                       <tr className={liveRowClass(trade)} key={trade.id}>
-                        <td className="cronTradeCell" colSpan={15}>
+                        <td className="cronTradeCell" colSpan={16}>
                           <details className="cronTradeDetails">
                             <summary className="cronTradeSummary" aria-label={`Expand ${trade.symbol} cron events for ${fmtDate(trade.signalTime)}`}>
                               <span data-label="#">{fmtNumber(index + 1)}</span>
@@ -1463,6 +1504,7 @@ export default async function Home({ searchParams }: HomeProps) {
                                 <span className={sideClass(trade.side)}>{sideLabel(trade.side)}</span>
                               </span>
                               <span data-label="Entry">{fmtDollarPrice(trade.entryPrice)}</span>
+                              <span data-label="Size">{instrumentSizeLabel(trade.symbol, trade.sizeMultiplier ?? 1)}</span>
                               <span className="exit-cell" data-label="Exit">
                                 {liveTradeClosed(trade) ? (
                                   <>
@@ -1504,6 +1546,7 @@ export default async function Home({ searchParams }: HomeProps) {
                                     <span className={sideClass(trade.side)}>{sideLabel(trade.side)}</span>
                                   </span>
                                   <span data-label="Entry">{fmtDollarPrice(liveTradeEventEntryPrice(trade, event))}</span>
+                                  <span data-label="Size">{liveTradeEventSizeLabel(trade, event)}</span>
                                   <span className="exit-cell" data-label="Exit">
                                     {event.kind === "exit" && liveTradeClosed(trade) ? (
                                       <>
@@ -1516,8 +1559,8 @@ export default async function Home({ searchParams }: HomeProps) {
                                   </span>
                                   <span data-label="Take Profit">{fmtPrice(trade.takeProfitPrice)}</span>
                                   <span data-label="Stop Loss">{fmtPrice(trade.stopLossPrice)}</span>
-                                  <span data-label="Target $">{fmtMoney(alertTargetDollars(trade))}</span>
-                                  <span data-label="Risk $">{fmtMoney(alertRiskDollars(trade))}</span>
+                                  <span data-label="Target $">{fmtMoney(liveTradeEventTargetDollars(trade, event))}</span>
+                                  <span data-label="Risk $">{fmtMoney(liveTradeEventRiskDollars(trade, event))}</span>
                                   <span data-label="Odds">{fmtPct(trade.estimatedWinRatePct)}</span>
                                   <span
                                     data-label="Auto Trade"

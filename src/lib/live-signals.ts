@@ -175,7 +175,8 @@ function statToRule(stat: BacktestStat, strategyEdits: Record<string, SavedStrat
 
 export async function allRules(): Promise<StrategyRule[]> {
   try {
-    return uniqueRules((await getBacktestStats()).map((stat) => statToRule(stat)).filter((rule): rule is StrategyRule => Boolean(rule)));
+    const [stats, config] = await Promise.all([getBacktestStats(), getLiveConfig()]);
+    return uniqueRules(stats.map((stat) => statToRule(stat, config.strategyEdits)).filter((rule): rule is StrategyRule => Boolean(rule)));
   } catch {
     return [];
   }

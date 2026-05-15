@@ -422,6 +422,8 @@ async function runSignalCheck(): Promise<CronResult> {
       entryOrderSizeMultiplier: primarySizeMultiplier,
       limitOrderPrice: supplementalLimitOrderPrice(candidate.signal) ?? undefined,
       limitOrderSizeMultiplier: limitTrade?.sizeMultiplier,
+      orderLeg: limitTrade ? "entry" : undefined,
+      splitOrderTotalSizeMultiplier: limitTrade ? candidate.signal.sizeMultiplier : undefined,
       sizeMultiplier: primarySizeMultiplier
     };
     const autoTrade = await executeAutoTrade(primaryExecutionSignal);
@@ -430,7 +432,9 @@ async function runSignalCheck(): Promise<CronResult> {
         ...candidate.signal,
         entryOrderSizeMultiplier: primarySizeMultiplier,
         limitOrderPrice: supplementalLimitOrderPrice(candidate.signal) ?? undefined,
-        limitOrderSizeMultiplier: limitTrade?.sizeMultiplier
+        limitOrderSizeMultiplier: limitTrade?.sizeMultiplier,
+        orderLeg: limitTrade ? "entry" : undefined,
+        splitOrderTotalSizeMultiplier: limitTrade ? candidate.signal.sizeMultiplier : undefined
       },
       autoTrade
     );
