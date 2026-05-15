@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { executeAutoTrade } from "@/lib/auto-trader";
+import { executeAutoTrade, type AutoTradeExecutionResult } from "@/lib/auto-trader";
 import { autoTradeMarketForSignal } from "@/lib/auto-trade-platforms";
 import { dollarPerUnit } from "@/lib/instruments";
 import { fetchStoredAssetBars, fetchStoredMarketBars } from "@/lib/market-data-store";
@@ -7,6 +7,11 @@ import { saveCronRun, updateDatasetSyncRunStatus } from "@/lib/live-config";
 import { activeRules, evaluateLatestSignal } from "@/lib/live-signals";
 import { claimTrade, getTrades, hasTrade, saveTrade } from "@/lib/storage";
 import { sendTelegram, sendTelegramOutcome } from "@/lib/telegram";
+import {
+  buildSupplementalLimitOrderTrade,
+  primaryOrderSizeMultiplier,
+  supplementalLimitOrderPrice
+} from "@/lib/trade-limit-orders";
 import { TOPSTEP_100K_ACCOUNT, reviewTopstepSignal, withTopstepGuardNote } from "@/lib/topstep";
 import type { Bar, CronResult, TradeAlert } from "@/lib/types";
 
@@ -221,6 +226,49 @@ function recordAssetTiming(
   timings.set(rule.assetKey, current);
 }
 
+function tradeWithAutoTradeResult(trade: TradeAlert, autoTrade: AutoTradeExecutionResult): TradeAlert {
+  return {
+    ...trade,
+    autoTradeAccountId: autoTrade.accountId,
+    autoTradeAccountName: autoTrade.accountName,
+    autoTradeCheckedAt: autoTrade.checkedAt,
+    autoTradeContractId: autoTrade.contractId,
+    autoTradeContractName: autoTrade.contractName,
+    autoTradeCustomTag: autoTrade.customTag,
+    autoTradeError: autoTrade.error,
+    autoTradeOrderId: autoTrade.orderId,
+    autoTradeOrders: autoTrade.orders,
+    autoTradeProviderId: autoTrade.providerId,
+    autoTradeProviderName: autoTrade.providerName,
+    autoTradeStatus: autoTrade.status
+  };
+}
+
+function tradeWithLimitOrderResult(
+  trade: TradeAlert,
+  limitTrade: TradeAlert,
+  autoTrade: AutoTradeExecutionResult,
+  notification: Awaited<ReturnType<typeof sendTelegram>>
+): TradeAlert {
+  return {
+    ...trade,
+    limitOrderAutoTradeCheckedAt: autoTrade.checkedAt,
+    limitOrderAutoTradeContractId: autoTrade.contractId,
+    limitOrderAutoTradeContractName: autoTrade.contractName,
+    limitOrderAutoTradeCustomTag: autoTrade.customTag,
+    limitOrderAutoTradeError: autoTrade.error,
+    limitOrderAutoTradeOrderId: autoTrade.orderId,
+    limitOrderAutoTradeOrders: autoTrade.orders,
+    limitOrderAutoTradeProviderId: autoTrade.providerId,
+    limitOrderAutoTradeProviderName: autoTrade.providerName,
+    limitOrderAutoTradeStatus: autoTrade.status,
+    limitOrderPrice: limitTrade.entryPrice,
+    limitOrderSizeMultiplier: limitTrade.sizeMultiplier,
+    limitOrderTelegramError: notification.error,
+    limitOrderTelegramStatus: notification.status
+  };
+}
+
 async function runSignalCheck(): Promise<CronResult> {
   const result: CronResult = {
     checkedAt: new Date().toISOString(),
@@ -367,29 +415,40 @@ async function runSignalCheck(): Promise<CronResult> {
       result.skippedDuplicates.push(candidate.signal.id);
       continue;
     }
-    const autoTrade = await executeAutoTrade(candidate.signal);
-    const executableSignal = {
+    const primarySizeMultiplier = primaryOrderSizeMultiplier(candidate.signal);
+    const limitTrade = buildSupplementalLimitOrderTrade(candidate.signal);
+    const primaryExecutionSignal: TradeAlert = {
       ...candidate.signal,
-      autoTradeAccountId: autoTrade.accountId,
-      autoTradeAccountName: autoTrade.accountName,
-      autoTradeCheckedAt: autoTrade.checkedAt,
-      autoTradeContractId: autoTrade.contractId,
-      autoTradeContractName: autoTrade.contractName,
-      autoTradeCustomTag: autoTrade.customTag,
-      autoTradeError: autoTrade.error,
-      autoTradeOrderId: autoTrade.orderId,
-      autoTradeOrders: autoTrade.orders,
-      autoTradeProviderId: autoTrade.providerId,
-      autoTradeProviderName: autoTrade.providerName,
-      autoTradeStatus: autoTrade.status
+      entryOrderSizeMultiplier: primarySizeMultiplier,
+      limitOrderPrice: supplementalLimitOrderPrice(candidate.signal) ?? undefined,
+      limitOrderSizeMultiplier: limitTrade?.sizeMultiplier,
+      sizeMultiplier: primarySizeMultiplier
     };
+    const autoTrade = await executeAutoTrade(primaryExecutionSignal);
+    const executableSignal = tradeWithAutoTradeResult(
+      {
+        ...candidate.signal,
+        entryOrderSizeMultiplier: primarySizeMultiplier,
+        limitOrderPrice: supplementalLimitOrderPrice(candidate.signal) ?? undefined,
+        limitOrderSizeMultiplier: limitTrade?.sizeMultiplier
+      },
+      autoTrade
+    );
     await saveTrade(executableSignal);
-    const notification = await sendTelegram(executableSignal);
-    const trade = {
+    const notification = await sendTelegram(tradeWithAutoTradeResult(primaryExecutionSignal, autoTrade));
+    let trade: TradeAlert = {
       ...executableSignal,
       telegramStatus: notification.status,
       telegramError: notification.error
     };
+
+    if (limitTrade) {
+      const limitAutoTrade = await executeAutoTrade(limitTrade);
+      const limitExecutableSignal = tradeWithAutoTradeResult(limitTrade, limitAutoTrade);
+      const limitNotification = await sendTelegram(limitExecutableSignal);
+      trade = tradeWithLimitOrderResult(trade, limitTrade, limitAutoTrade, limitNotification);
+    }
+
     await saveTrade(trade);
     result.generated.push(trade);
   }

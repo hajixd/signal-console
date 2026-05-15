@@ -115,9 +115,10 @@ export function formatTelegramMessage(trade: TradeAlert): string {
   const rewardRisk = riskDollars > 0 ? targetDollars / riskDollars : 0;
   const side = trade.side === "long" ? "BUY" : "SELL";
   const autoTrade = autoTradeLine(trade);
+  const title = trade.entryType === "limit" ? "LIMIT ORDER" : "ENTRY SIGNAL";
   const lines = [
     `<b>${escapeHtml(telegramGroupTitle())}</b>`,
-    `<b><u>ENTRY SIGNAL</u></b>`,
+    `<b><u>${title}</u></b>`,
     `<b>${escapeHtml(trade.symbol)}</b> <u>${side}</u>`,
     "",
     `<b>Levels</b>`,

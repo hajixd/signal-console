@@ -2980,7 +2980,8 @@ html[data-theme="light"] .themeDarkLabel {
 }
 
 .live-alert-table {
-  min-width: 1500px;
+  --cron-grid-columns: 46px 76px 220px 132px 92px 106px 106px 106px 106px 112px 112px 74px 90px 90px 160px;
+  min-width: 1628px;
 }
 
 .history-table {
@@ -3198,6 +3199,69 @@ html[data-theme="light"] .themeDarkLabel {
   white-space: normal;
 }
 
+.cronTradeCell {
+  padding: 0 !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+  white-space: normal !important;
+}
+
+.cronTradeDetails {
+  min-width: 1628px;
+}
+
+.cronTradeSummary,
+.cronTradeEventRow {
+  display: grid;
+  grid-template-columns: var(--cron-grid-columns);
+  align-items: center;
+}
+
+.cronTradeSummary {
+  cursor: pointer;
+  list-style: none;
+  padding: 0.58rem 0.5rem;
+}
+
+.cronTradeSummary::-webkit-details-marker {
+  display: none;
+}
+
+.cronTradeSummary::marker {
+  content: "";
+}
+
+.cronTradeDetails[open] .cronTradeSummary {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.cronTradeSummary > span,
+.cronTradeEventRow > span {
+  min-width: 0;
+  overflow: hidden;
+  padding-right: 0.5rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cronTradeSummary:hover {
+  background: rgba(255, 255, 255, 0.045);
+}
+
+.cronTradeEventPanel {
+  background: rgba(0, 0, 0, 0.16);
+}
+
+.cronTradeEventRow {
+  padding: 0.54rem 0.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.055);
+}
+
+.cronTradeEventRow:last-child {
+  border-bottom: 0;
+}
+
 .eventStack {
   display: flex;
   flex-wrap: wrap;
@@ -3244,6 +3308,12 @@ html[data-theme="light"] .themeDarkLabel {
 }
 
 .eventPill.exit.neutral {
+  border-color: rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.eventPill.neutral {
   border-color: rgba(255, 255, 255, 0.16);
   background: rgba(255, 255, 255, 0.06);
   color: rgba(255, 255, 255, 0.72);

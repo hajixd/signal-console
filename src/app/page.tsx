@@ -1,5 +1,4 @@
 import ChallengeReplay from "@/components/challenge/challenge-replay";
-import AdminOnlyText from "@/components/auto-trading/admin-only-text";
 import AutoTradeAccountGate from "@/components/auto-trading/auto-trade-account-gate";
 import AutoTradeAccountModeSwitch from "@/components/auto-trading/auto-trade-account-mode-switch";
 import AutoTradingConnectionDrawer from "@/components/auto-trading/auto-trading-connection-drawer";
@@ -41,6 +40,7 @@ import { projectAssetMode } from "@/lib/project-assets";
 import { getTrades, storageMode } from "@/lib/storage";
 import { telegramGroupInviteLink } from "@/lib/telegram";
 import { topstepSessionKey } from "@/lib/topstep";
+import { hasSupplementalLimitOrder, supplementalLimitOrderPrice } from "@/lib/trade-limit-orders";
 import type { TradeAlert } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -186,6 +186,14 @@ function fmtTime(value: string): string {
     hour: "numeric",
     minute: "2-digit",
     timeZoneName: "short"
+  }).format(new Date(value));
+}
+
+function fmtDate(value: string): string {
+  return new Intl.DateTimeFormat(undefined, {
+    month: "short",
+    day: "numeric",
+    year: "numeric"
   }).format(new Date(value));
 }
 
@@ -493,8 +501,7 @@ function liveTradeClosed(trade: TradeAlert): trade is TradeAlert & { lifecycleSt
 }
 
 function liveTradeHasLimitOrder(trade: TradeAlert): boolean {
-  const fingerprint = `${trade.entryType ?? ""} ${trade.entryMode} ${trade.strategy}`.toLowerCase();
-  return trade.entryType === "limit" || fingerprint.includes("limit order") || fingerprint.includes("retrace limit") || fingerprint.includes("ote limit");
+  return trade.entryType === "limit" || Number.isFinite(trade.limitOrderPrice) || hasSupplementalLimitOrder(trade);
 }
 
 function liveTradeExitReasonLabel(trade: TradeAlert): string {
@@ -554,7 +561,14 @@ function liveTradeEventTime(trade: TradeAlert, event: LiveTradeEvent): string {
 }
 
 function liveTradeEventTelegramStatus(trade: TradeAlert, event: LiveTradeEvent): TradeAlert["telegramStatus"] {
-  return event.kind === "exit" ? trade.telegramLifecycleStatus ?? trade.telegramStatus : trade.telegramStatus;
+  if (event.kind === "exit") return trade.telegramLifecycleStatus ?? trade.telegramStatus;
+  if (event.kind === "limit") return trade.limitOrderTelegramStatus ?? trade.telegramStatus;
+  return trade.telegramStatus;
+}
+
+function liveTradeEventEntryPrice(trade: TradeAlert, event: LiveTradeEvent): number {
+  if (event.kind !== "limit") return trade.entryPrice;
+  return finiteNumberOr(trade.limitOrderPrice, supplementalLimitOrderPrice(trade) ?? trade.entryPrice);
 }
 
 function autoTradeStatusClass(trade: TradeAlert): string {
@@ -568,6 +582,29 @@ function autoTradeStatusLabel(trade: TradeAlert): string {
   if (trade.autoTradeStatus === "placed") return "placed";
   if (trade.autoTradeStatus === "dry_run") return "dry run";
   return trade.autoTradeStatus;
+}
+
+function liveTradeEventAutoTradeStatus(trade: TradeAlert, event: LiveTradeEvent): TradeAlert["autoTradeStatus"] | undefined {
+  return event.kind === "limit" ? trade.limitOrderAutoTradeStatus ?? trade.autoTradeStatus : trade.autoTradeStatus;
+}
+
+function liveTradeEventAutoTradeError(trade: TradeAlert, event: LiveTradeEvent): string | undefined {
+  return event.kind === "limit" ? trade.limitOrderAutoTradeError ?? trade.autoTradeError : trade.autoTradeError;
+}
+
+function liveTradeEventAutoTradeStatusClass(trade: TradeAlert, event: LiveTradeEvent): string {
+  const status = liveTradeEventAutoTradeStatus(trade, event);
+  if (status === "placed") return "sent";
+  if (status === "failed") return "failed";
+  return "skipped";
+}
+
+function liveTradeEventAutoTradeStatusLabel(trade: TradeAlert, event: LiveTradeEvent): string {
+  const status = liveTradeEventAutoTradeStatus(trade, event);
+  if (!status) return "off";
+  if (status === "placed") return "placed";
+  if (status === "dry_run") return "dry run";
+  return status;
 }
 
 function tradeDollarPnl(trade: BacktestTrade, sizeMultiplier = 1): number {
@@ -1361,7 +1398,7 @@ export default async function Home({ searchParams }: HomeProps) {
             </span>
           </div>
 
-          {selectedLiveEventRows.length === 0 ? (
+          {selectedLiveTrades.length === 0 ? (
             <div className="empty-state">
               <strong>No live alerts yet</strong>
               <span>The next selected-strategy cron signal will show up here.</span>
@@ -1406,47 +1443,102 @@ export default async function Home({ searchParams }: HomeProps) {
                   </tr>
                 </thead>
                 <tbody>
-                  {selectedLiveEventRows.map(({ event, eventIndex, trade }, index) => (
-                    <tr className={liveRowClass(trade)} key={`${trade.id}-${event.kind}-${eventIndex}`}>
-                      <td data-label="#">{fmtNumber(index + 1)}</td>
-                      <td className="ticker-cell" data-label="Ticker">{trade.symbol}</td>
-                      <td className="main-cell" data-label="Model">
-                        <AdminOnlyText value={trade.strategy} />
-                        <small><AdminOnlyText value={trade.entryMode} fallback="Strategy details locked" /></small>
-                      </td>
-                      <td className="event-cell" data-label="Event">
-                        <span className={`eventPill ${event.className}`} title={event.title}>
-                          {event.label}
-                        </span>
-                      </td>
-                      <td data-label="Direction">
-                        <span className={sideClass(trade.side)}>{sideLabel(trade.side)}</span>
-                      </td>
-                      <td data-label="Entry">{fmtDollarPrice(trade.entryPrice)}</td>
-                      <td className="exit-cell" data-label="Exit">
-                        {event.kind === "exit" && liveTradeClosed(trade) ? (
-                          <>
-                            <span className={`status ${liveTradeExitStatusClass(trade)}`}>{liveTradeExitReasonLabel(trade)}</span>
-                            <small>{fmtDollarPrice(finiteNumberOr(trade.lifecyclePrice, trade.entryPrice))}</small>
-                          </>
-                        ) : (
-                          <span className="mono-cell">--</span>
-                        )}
-                      </td>
-                      <td data-label="Take Profit">{fmtPrice(trade.takeProfitPrice)}</td>
-                      <td data-label="Stop Loss">{fmtPrice(trade.stopLossPrice)}</td>
-                      <td data-label="Target $">{fmtMoney(alertTargetDollars(trade))}</td>
-                      <td data-label="Risk $">{fmtMoney(alertRiskDollars(trade))}</td>
-                      <td data-label="Odds">{fmtPct(trade.estimatedWinRatePct)}</td>
-                      <td data-label="Auto Trade" title={trade.autoTradeError ?? trade.autoTradeProviderName ?? trade.autoTradeContractName ?? trade.autoTradeContractId ?? undefined}>
-                        <span className={`status ${autoTradeStatusClass(trade)}`}>{autoTradeStatusLabel(trade)}</span>
-                      </td>
-                      <td data-label="Telegram">
-                        <span className={`status ${liveTradeEventTelegramStatus(trade, event)}`}>{liveTradeEventTelegramStatus(trade, event)}</span>
-                      </td>
-                      <td data-label="Event time"><LocalDateTime value={liveTradeEventTime(trade, event)} /></td>
-                    </tr>
-                  ))}
+                  {selectedLiveTrades.map((trade, index) => {
+                    const events = liveTradeEvents(trade);
+                    return (
+                      <tr className={liveRowClass(trade)} key={trade.id}>
+                        <td className="cronTradeCell" colSpan={15}>
+                          <details className="cronTradeDetails">
+                            <summary className="cronTradeSummary" aria-label={`Expand ${trade.symbol} cron events for ${fmtDate(trade.signalTime)}`}>
+                              <span data-label="#">{fmtNumber(index + 1)}</span>
+                              <span className="ticker-cell" data-label="Ticker">{trade.symbol}</span>
+                              <span className="main-cell" data-label="Model">
+                                <span>{fmtDate(trade.signalTime)}</span>
+                                <small><LocalDateTime value={trade.signalTime} /></small>
+                              </span>
+                              <span className="event-cell" data-label="Event">
+                                <span className="eventPill neutral">{fmtNumber(events.length)} events</span>
+                              </span>
+                              <span data-label="Direction">
+                                <span className={sideClass(trade.side)}>{sideLabel(trade.side)}</span>
+                              </span>
+                              <span data-label="Entry">{fmtDollarPrice(trade.entryPrice)}</span>
+                              <span className="exit-cell" data-label="Exit">
+                                {liveTradeClosed(trade) ? (
+                                  <>
+                                    <span className={`status ${liveTradeExitStatusClass(trade)}`}>{liveTradeExitReasonLabel(trade)}</span>
+                                    <small>{fmtDollarPrice(finiteNumberOr(trade.lifecyclePrice, trade.entryPrice))}</small>
+                                  </>
+                                ) : (
+                                  <span className="status skipped">Pending</span>
+                                )}
+                              </span>
+                              <span data-label="Take Profit">{fmtPrice(trade.takeProfitPrice)}</span>
+                              <span data-label="Stop Loss">{fmtPrice(trade.stopLossPrice)}</span>
+                              <span data-label="Target $">{fmtMoney(alertTargetDollars(trade))}</span>
+                              <span data-label="Risk $">{fmtMoney(alertRiskDollars(trade))}</span>
+                              <span data-label="Odds">{fmtPct(trade.estimatedWinRatePct)}</span>
+                              <span data-label="Auto Trade" title={trade.autoTradeError ?? trade.autoTradeProviderName ?? trade.autoTradeContractName ?? trade.autoTradeContractId ?? undefined}>
+                                <span className={`status ${autoTradeStatusClass(trade)}`}>{autoTradeStatusLabel(trade)}</span>
+                              </span>
+                              <span data-label="Telegram">
+                                <span className={`status ${trade.telegramStatus}`}>{trade.telegramStatus}</span>
+                              </span>
+                              <span data-label="Event time"><LocalDateTime value={trade.signalTime} /></span>
+                            </summary>
+                            <div className="cronTradeEventPanel" aria-label={`${trade.symbol} cron event details`}>
+                              {events.map((event, eventIndex) => (
+                                <div className="cronTradeEventRow" key={`${trade.id}-${event.kind}-${eventIndex}`}>
+                                  <span data-label="#">{`${fmtNumber(index + 1)}.${fmtNumber(eventIndex + 1)}`}</span>
+                                  <span className="ticker-cell" data-label="Ticker">{trade.symbol}</span>
+                                  <span className="main-cell" data-label="Model">
+                                    <span>{fmtDate(liveTradeEventTime(trade, event))}</span>
+                                    <small><LocalDateTime value={liveTradeEventTime(trade, event)} /></small>
+                                  </span>
+                                  <span className="event-cell" data-label="Event">
+                                    <span className={`eventPill ${event.className}`} title={event.title}>
+                                      {event.label}
+                                    </span>
+                                  </span>
+                                  <span data-label="Direction">
+                                    <span className={sideClass(trade.side)}>{sideLabel(trade.side)}</span>
+                                  </span>
+                                  <span data-label="Entry">{fmtDollarPrice(liveTradeEventEntryPrice(trade, event))}</span>
+                                  <span className="exit-cell" data-label="Exit">
+                                    {event.kind === "exit" && liveTradeClosed(trade) ? (
+                                      <>
+                                        <span className={`status ${liveTradeExitStatusClass(trade)}`}>{liveTradeExitReasonLabel(trade)}</span>
+                                        <small>{fmtDollarPrice(finiteNumberOr(trade.lifecyclePrice, trade.entryPrice))}</small>
+                                      </>
+                                    ) : (
+                                      <span className="status skipped">Pending</span>
+                                    )}
+                                  </span>
+                                  <span data-label="Take Profit">{fmtPrice(trade.takeProfitPrice)}</span>
+                                  <span data-label="Stop Loss">{fmtPrice(trade.stopLossPrice)}</span>
+                                  <span data-label="Target $">{fmtMoney(alertTargetDollars(trade))}</span>
+                                  <span data-label="Risk $">{fmtMoney(alertRiskDollars(trade))}</span>
+                                  <span data-label="Odds">{fmtPct(trade.estimatedWinRatePct)}</span>
+                                  <span
+                                    data-label="Auto Trade"
+                                    title={liveTradeEventAutoTradeError(trade, event) ?? trade.autoTradeProviderName ?? trade.autoTradeContractName ?? trade.autoTradeContractId ?? undefined}
+                                  >
+                                    <span className={`status ${liveTradeEventAutoTradeStatusClass(trade, event)}`}>
+                                      {liveTradeEventAutoTradeStatusLabel(trade, event)}
+                                    </span>
+                                  </span>
+                                  <span data-label="Telegram">
+                                    <span className={`status ${liveTradeEventTelegramStatus(trade, event)}`}>{liveTradeEventTelegramStatus(trade, event)}</span>
+                                  </span>
+                                  <span data-label="Event time"><LocalDateTime value={liveTradeEventTime(trade, event)} /></span>
+                                </div>
+                              ))}
+                            </div>
+                          </details>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>

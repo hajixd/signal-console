@@ -40,9 +40,9 @@ async function hasStoredProjectXConnection(): Promise<boolean> {
 }
 
 function unsafeLimitOrderGuard(trade: TradeAlert): AutoTradeExecutionResult | null {
-  if (trade.entryType !== "limit" || envFlag("AUTO_TRADE_ALLOW_LIVE_LIMIT_ORDERS", false)) return null;
+  if (trade.entryType !== "limit" || envFlag("AUTO_TRADE_ALLOW_LIVE_LIMIT_ORDERS", true)) return null;
   return result("skipped", {
-    error: "Live limit-order execution is disabled until broker-side expiry/cancel management is configured. Set AUTO_TRADE_ALLOW_LIVE_LIMIT_ORDERS=1 to opt in."
+    error: "Live limit-order execution is disabled by AUTO_TRADE_ALLOW_LIVE_LIMIT_ORDERS=0."
   });
 }
 
