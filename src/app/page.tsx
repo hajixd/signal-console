@@ -1,5 +1,4 @@
 import ChallengeReplay from "@/components/challenge/challenge-replay";
-import AdminOnlyText from "@/components/auto-trading/admin-only-text";
 import AutoTradeAccountGate from "@/components/auto-trading/auto-trade-account-gate";
 import AutoTradeAccountModeSwitch from "@/components/auto-trading/auto-trade-account-mode-switch";
 import AutoTradingConnectionDrawer from "@/components/auto-trading/auto-trading-connection-drawer";
@@ -1155,8 +1154,8 @@ export default async function Home({ searchParams }: HomeProps) {
                       <td data-label="#">{fmtNumber(index + 1)}</td>
                       <td className="ticker-cell" data-label="Ticker">{trade.symbol}</td>
                       <td className="main-cell" data-label="Model">
-                        <AdminOnlyText value={trade.strategy} />
-                        <small><AdminOnlyText value={trade.entryMode} fallback="Strategy details locked" /></small>
+                        {trade.strategy}
+                        <small>{trade.entryMode}</small>
                       </td>
                       <td data-label="Direction">
                         <span className={sideClass(trade.side)}>{sideLabel(trade.side)}</span>

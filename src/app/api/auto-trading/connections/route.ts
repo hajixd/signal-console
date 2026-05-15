@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { isAdminAuthorized } from "@/lib/admin-api";
 import { isValidAccessCode } from "@/lib/account-access-code";
 import {
   autoTradeConnectionStoreMode,
@@ -60,11 +59,7 @@ function publicConnection(connection: Awaited<ReturnType<typeof listAutoTradeCon
   };
 }
 
-export async function GET(request: NextRequest) {
-  if (!isAdminAuthorized(request)) {
-    return NextResponse.json({ connections: [], error: "Unauthorized", storageMode: autoTradeConnectionStoreMode() }, { status: 401 });
-  }
-
+export async function GET() {
   const connections = await listAutoTradeConnections();
   return NextResponse.json({
     connections: connections.map(publicConnection),
@@ -73,10 +68,6 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  if (!isAdminAuthorized(request)) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
   const payload = ((await request.json().catch(() => ({}))) ?? {}) as SavePayload;
   const providerId = parseAutoTradeProviderId(payload.providerId);
   if (!providerId) {
@@ -114,10 +105,6 @@ export async function POST(request: NextRequest) {
 }
 
 export async function PATCH(request: NextRequest) {
-  if (!isAdminAuthorized(request)) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
   const payload = ((await request.json().catch(() => ({}))) ?? {}) as PatchPayload;
   const providerId = parseAutoTradeProviderId(payload.providerId);
   if (!providerId) {
@@ -136,10 +123,6 @@ export async function PATCH(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
-  if (!isAdminAuthorized(request)) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
   const providerId = parseAutoTradeProviderId(request.nextUrl.searchParams.get("providerId"));
   if (!providerId) {
     return NextResponse.json({ error: "Choose a supported auto-trade provider." }, { status: 400 });

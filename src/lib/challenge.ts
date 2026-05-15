@@ -78,7 +78,7 @@ type ReplayOutcome = {
   finalPnl: number;
 };
 
-const MONTE_CARLO_SIMS = 2_000;
+const MONTE_CARLO_SIMS = 100_000;
 const MINUTES_PER_DAY = 1_440;
 const PASS_RATE_HORIZONS = [
   { key: "7d", label: "7 Day Pass Rate", days: 7, minutes: 7 * MINUTES_PER_DAY },

@@ -3,7 +3,6 @@
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { createPortal } from "react-dom";
-import { useAutoTradeAdminMode } from "@/components/auto-trading/use-auto-trade-account-mode";
 import {
   emitStrategyEditsChanged,
   loadClientStrategyEdits,
@@ -569,8 +568,7 @@ export default function StrategySelector({
   const [, startSavingSelection] = useTransition();
   const [isSavingEdits, startSavingEdits] = useTransition();
   const [, startSavingCustomScaleRange] = useTransition();
-  const isAdminMode = useAutoTradeAdminMode();
-  const isRestricted = !isAdminMode;
+  const isRestricted = false;
   const [isLoaded, setIsLoaded] = useState(false);
   const [isCustomScaleLoaded, setIsCustomScaleLoaded] = useState(false);
   const [savingSelectionKeys, setSavingSelectionKeys] = useState<string[]>([]);

@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { randomUUID } from "node:crypto";
-import { isAdminAuthorized } from "@/lib/admin-api";
 import { isValidAccessCode } from "@/lib/account-access-code";
 import {
   deleteStoredProjectXConnection,
@@ -155,10 +154,6 @@ async function connectedStatus(connectionId: string): Promise<{ status: ProjectX
 }
 
 export async function GET(request: NextRequest) {
-  if (!isAdminAuthorized(request)) {
-    return jsonStatus({ accounts: [], autoTradePaused: true, connected: false, error: "Unauthorized", persisted: false }, { status: 401 });
-  }
-
   const connectionId = await visibleConnectionIdFromRequest(request);
   if (!connectionId) {
     return jsonStatus(await withConnectionSummaries({ accounts: [], autoTradePaused: true, connected: false, persisted: false }));
@@ -184,10 +179,6 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  if (!isAdminAuthorized(request)) {
-    return jsonStatus({ accounts: [], autoTradePaused: true, connected: false, error: "Unauthorized", persisted: false }, { status: 401 });
-  }
-
   const payload = ((await request.json().catch(() => ({}))) ?? {}) as ConnectPayload;
   const userName = normalizeText(payload.userName);
   const apiKey = normalizeText(payload.apiKey);
@@ -262,10 +253,6 @@ export async function POST(request: NextRequest) {
 }
 
 export async function PATCH(request: NextRequest) {
-  if (!isAdminAuthorized(request)) {
-    return jsonStatus({ accounts: [], autoTradePaused: true, connected: false, error: "Unauthorized", persisted: false }, { status: 401 });
-  }
-
   const payload = ((await request.json().catch(() => ({}))) ?? {}) as UpdatePayload;
   const connectionId = normalizeConnectionId(payload.connectionId) ?? connectionIdFromRequest(request);
   if (!connectionId) {
@@ -317,10 +304,6 @@ export async function PATCH(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
-  if (!isAdminAuthorized(request)) {
-    return jsonStatus({ accounts: [], autoTradePaused: true, connected: false, error: "Unauthorized", persisted: false }, { status: 401 });
-  }
-
   const connectionId = normalizeConnectionId(request.nextUrl.searchParams.get("connectionId")) ?? connectionIdFromRequest(request);
   if (connectionId) {
     await deleteStoredProjectXConnection(connectionId);

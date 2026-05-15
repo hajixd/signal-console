@@ -18,6 +18,20 @@ export type AutoTradeRequest = {
   takeProfitPrice: number;
 };
 
+type AutoTradeAccountSizeSource = {
+  accountName?: unknown;
+  accountSize?: unknown;
+  accountSpec?: unknown;
+  balance?: unknown;
+  challengeSize?: unknown;
+  displayName?: unknown;
+  firmLabel?: unknown;
+  initialBalance?: unknown;
+  label?: unknown;
+  name?: unknown;
+  startingBalance?: unknown;
+};
+
 export function envText(name: string): string | undefined {
   const value = process.env[name]?.trim();
   return value ? value : undefined;
@@ -88,6 +102,63 @@ export function parseMap(raw: string | undefined): Record<string, string> {
   }
 }
 
+function cleanNumber(value: unknown): number | null {
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  if (typeof value !== "string") return null;
+  const parsed = Number(value.replace(/[$,\s]/g, ""));
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function textValue(value: unknown): string {
+  if (typeof value === "string") return value;
+  if (typeof value === "number" && Number.isFinite(value)) return String(value);
+  return "";
+}
+
+export function autoTradeAccountSizeScale(...sources: Array<AutoTradeAccountSizeSource | undefined>): number {
+  for (const source of sources) {
+    if (!source) continue;
+    const numericSize = [
+      source.accountSize,
+      source.startingBalance,
+      source.initialBalance,
+      source.challengeSize,
+      source.balance
+    ]
+      .map(cleanNumber)
+      .find((value): value is number => value !== null && value > 0);
+    if (numericSize && numericSize <= 50_000) return 0.5;
+
+    const text = [
+      source.accountName,
+      source.accountSpec,
+      source.displayName,
+      source.firmLabel,
+      source.label,
+      source.name
+    ]
+      .map(textValue)
+      .filter(Boolean)
+      .join(" ")
+      .toLowerCase();
+    if (/(^|[^0-9])50\s*(?:k|,?000)([^0-9]|$)/.test(text)) return 0.5;
+  }
+
+  return 1;
+}
+
+export function scaledAutoTradeSize(
+  baseSize: number,
+  sources: AutoTradeAccountSizeSource | Array<AutoTradeAccountSizeSource | undefined> | undefined,
+  options: { minSize?: number; wholeNumber?: boolean } = {}
+): number {
+  const normalizedBase = Number.isFinite(baseSize) && baseSize > 0 ? baseSize : 1;
+  const sourceList = Array.isArray(sources) ? sources : [sources];
+  const scaled = normalizedBase * autoTradeAccountSizeScale(...sourceList);
+  if (options.wholeNumber) return Math.max(options.minSize ?? 1, Math.floor(scaled));
+  return Math.max(options.minSize ?? 0.0001, Number(scaled.toFixed(4)));
+}
+
 export function mappedSymbol(prefix: ProviderPrefix, trade: TradeAlert): string {
   const symbol = trade.symbol.trim().toUpperCase();
   return parseEnvMap(`${prefix}_SYMBOL_MAP`)[symbol] ?? symbol;
@@ -104,7 +175,7 @@ export function mappedSize(prefix: ProviderPrefix, trade: TradeAlert, fallback =
     parseMap(fields?.sizeMap)[symbol] ?? parseMap(fields?.lotMap)[symbol] ?? parseEnvMap(`${prefix}_SIZE_MAP`)[symbol] ?? parseEnvMap(`${prefix}_LOT_MAP`)[symbol]
   );
   const size = Number.isFinite(mapped) && mapped > 0 ? mapped : fallback;
-  return Number.isFinite(size) && size > 0 ? Number(size.toFixed(4)) : 1;
+  return scaledAutoTradeSize(Number.isFinite(size) && size > 0 ? size : 1, fields);
 }
 
 export function tradeLevels(trade: TradeAlert): Pick<AutoTradeRequest, "stopLossPrice" | "takeProfitPrice"> {

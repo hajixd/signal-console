@@ -123,7 +123,10 @@ export async function executeTradovateAutoTrade(trade: TradeAlert): Promise<Proj
     const token = await tradovateToken(fields);
     const account = await discoverTradovateAccount(token, fields);
     if (!account) return result("skipped", { error: "Tradovate could not discover an account. Add Account ID in Advanced Settings." });
-    const request = autoTradeRequest("TRADOVATE", trade, account.accountId, fields);
+    const request = autoTradeRequest("TRADOVATE", trade, account.accountId, {
+      ...fields,
+      accountSpec: fields?.accountSpec ?? account.accountSpec
+    });
 
     if (dryRunEnabled()) {
       const order = dryRunOrder(request, PROVIDER_NAME);
@@ -143,7 +146,7 @@ export async function executeTradovateAutoTrade(trade: TradeAlert): Promise<Proj
         action: request.action === "buy" ? "Buy" : "Sell",
         clOrdId: request.customTag,
         isAutomated: true,
-        orderQty: Math.max(1, Math.round(request.size)),
+        orderQty: Math.max(1, Math.floor(request.size)),
         orderType: request.entryType === "limit" ? "Limit" : "Market",
         price: request.entryType === "limit" ? request.entryPrice : undefined,
         symbol: request.symbol,

@@ -89,6 +89,7 @@ const CONNECTION_FIELDS: Record<AutoTradeProviderId, ConnectionField[]> = {
     { key: "password", label: "TradeLocker password", required: true, secret: true },
     { key: "server", label: "TradeLocker server", defaultValue: "demo", placeholder: "demo / E8 / FPR", required: true },
     { advanced: true, key: "accountId", label: "Account ID" },
+    { advanced: true, key: "accountSize", label: "Account size", placeholder: "50000" },
     { advanced: true, key: "accNum", label: "Account number" },
     { advanced: true, key: "tradableInstrumentId", label: "Instrument ID", placeholder: "auto-discovered when possible" },
     { advanced: true, defaultValue: "TRADE", key: "routeId", label: "Route ID", placeholder: "TRADE" },
@@ -103,6 +104,7 @@ const CONNECTION_FIELDS: Record<AutoTradeProviderId, ConnectionField[]> = {
     { advanced: true, key: "bridgeUrl", label: "Bridge URL", placeholder: "https://your-vps/place-order" },
     { advanced: true, key: "bridgeSecret", label: "Bridge secret", secret: true },
     { advanced: true, key: "accountId", label: "Account ID" },
+    { advanced: true, key: "accountSize", label: "Account size", placeholder: "50000" },
     { advanced: true, key: "symbolMap", label: "Symbol map", placeholder: "EURUSD:EURUSD.,XAUUSD:XAUUSDm" },
     { advanced: true, key: "lotMap", label: "Lot map", placeholder: "EURUSD:0.1,XAUUSD:0.05" }
   ],
@@ -110,6 +112,7 @@ const CONNECTION_FIELDS: Record<AutoTradeProviderId, ConnectionField[]> = {
     { key: "accountId", label: "cTrader account ID", required: true },
     { key: "accessToken", label: "Access token", required: true, secret: true },
     { advanced: true, key: "refreshToken", label: "Refresh token", secret: true },
+    { advanced: true, key: "accountSize", label: "Account size", placeholder: "50000" },
     { advanced: true, key: "bridgeUrl", label: "Bridge URL", placeholder: "https://your-ctrader-bridge/place-order" },
     { advanced: true, key: "bridgeSecret", label: "Bridge secret", secret: true },
     { advanced: true, key: "symbolMap", label: "Symbol map", placeholder: "EURUSD:1,XAUUSD:2" },
@@ -121,6 +124,7 @@ const CONNECTION_FIELDS: Record<AutoTradeProviderId, ConnectionField[]> = {
     { advanced: true, key: "systemUuid", label: "System UUID" },
     { advanced: true, key: "coAuthCookie", label: "co-auth cookie", secret: true },
     { advanced: true, key: "accountId", label: "Account ID" },
+    { advanced: true, key: "accountSize", label: "Account size", placeholder: "50000" },
     { advanced: true, key: "symbolMap", label: "Symbol map", placeholder: "EURUSD:EURUSD,XAUUSD:GOLD" },
     { advanced: true, key: "sizeMap", label: "Size map", placeholder: "EURUSD:0.1,XAUUSD:0.05" }
   ],
@@ -129,6 +133,7 @@ const CONNECTION_FIELDS: Record<AutoTradeProviderId, ConnectionField[]> = {
     { key: "password", label: "Tradovate password", required: true, secret: true },
     { advanced: true, key: "accountId", label: "Account ID" },
     { advanced: true, key: "accountSpec", label: "Account spec" },
+    { advanced: true, key: "accountSize", label: "Account size", placeholder: "50000" },
     { advanced: true, defaultValue: "TradingBot", key: "appId", label: "App ID", placeholder: "TradingBot" },
     { advanced: true, defaultValue: "1.0", key: "appVersion", label: "App version", placeholder: "1.0" },
     { advanced: true, key: "cid", label: "CID" },
@@ -143,6 +148,7 @@ const CONNECTION_FIELDS: Record<AutoTradeProviderId, ConnectionField[]> = {
     { key: "accountId", label: "Rithmic account number", placeholder: "LL000907-003", required: true },
     { defaultValue: "Rithmic Paper Trading", key: "server", label: "System", placeholder: "Rithmic Paper Trading", required: true },
     { defaultValue: "Chicago", key: "gateway", label: "Gateway", placeholder: "Chicago", required: true },
+    { advanced: true, key: "accountSize", label: "Account size", placeholder: "50000" },
     { advanced: true, key: "bridgeUrl", label: "Bridge URL", placeholder: "https://your-rithmic-bridge/place-order" },
     { advanced: true, key: "bridgeSecret", label: "Bridge secret", secret: true },
     { advanced: true, key: "symbolMap", label: "Symbol map", placeholder: "ES:MESM6,NQ:MNQM6" },
@@ -305,7 +311,7 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
   const selectedProviderFields = CONNECTION_FIELDS[selectedProvider.id] ?? [];
   const primaryProviderFields = selectedProviderFields.filter((field) => !field.advanced);
   const advancedProviderFields = selectedProviderFields.filter((field) => field.advanced);
-  const isAdminMode = accountMode === "Admin";
+  const canManageAutoTrade = Boolean(accountMode);
 
   useEffect(() => {
     function syncAccountMode() {
@@ -716,7 +722,7 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
           </button>
         ) : (
           <>
-            {isAdminMode ? (
+            {canManageAutoTrade ? (
               <button type="button" onClick={() => setIsAddingAccount(true)}>
                 Add Account
               </button>
@@ -862,9 +868,9 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
             <div className="topstepAccountEmpty">
               <strong>No {marketLabel.toLowerCase()} auto-trade accounts connected</strong>
               <span>
-                {isAdminMode
+                {canManageAutoTrade
                   ? `Use Add Account to pick a ${marketLabel.toLowerCase()} connector. Accounts from the other market stay hidden here.`
-                  : "Switch to Admin to add accounts. Accounts from the other market stay hidden here."}
+                  : "Choose account mode to add accounts. Accounts from the other market stay hidden here."}
               </span>
             </div>
           ) : pendingProjectXFolder ? (
@@ -968,7 +974,7 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
                           </strong>
                         </div>
                       </div>
-                      {isAdminMode ? (
+                      {canManageAutoTrade ? (
                         <div className="topstepAccountControls">
                           <button
                             className={accountPaused ? "playButton" : "pauseButton"}
@@ -1052,7 +1058,7 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
                         </strong>
                       </div>
                     </div>
-                    {isAdminMode ? (
+                    {canManageAutoTrade ? (
                       <div className="topstepAccountControls">
                         <button
                           className={connection.paused ? "playButton" : "pauseButton"}

@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import { assetForKey, assetForSymbol } from "@/lib/assets";
+import { scaledAutoTradeSize } from "@/lib/auto-trade-utils";
 import {
   getLatestStoredProjectXConnection,
   saveStoredProjectXConnection,
@@ -164,21 +165,6 @@ function tradeableAccounts(connection: StoredProjectXConnection): ProjectXAccoun
   return accounts;
 }
 
-function isFiftyKAccount(account: ProjectXAccount): boolean {
-  const name = account.name.toLowerCase();
-  return (
-    (typeof account.balance === "number" && Number.isFinite(account.balance) && account.balance <= 50000) ||
-    /\b50\s*k\b/.test(name) ||
-    name.includes("50,000") ||
-    name.includes("50000")
-  );
-}
-
-function projectXOrderSize(baseSize: number, account: ProjectXAccount): number {
-  if (!isFiftyKAccount(account)) return baseSize;
-  return Math.max(1, Math.floor(baseSize / 2));
-}
-
 function summarizeOrders(
   orders: AutoTradeOrderSummary[],
   fields: Pick<ProjectXAutoTradeResult, "contractId" | "contractName"> = {}
@@ -250,7 +236,7 @@ export async function executeProjectXAutoTrade(trade: TradeAlert): Promise<Proje
     const orders: AutoTradeOrderSummary[] = [];
 
     for (const account of accounts) {
-      const size = projectXOrderSize(baseSize, account);
+      const size = scaledAutoTradeSize(baseSize, account, { wholeNumber: true });
       const customTag = customTagForTrade(trade, account.id);
       const request: ProjectXPlaceOrderRequest = {
         accountId: account.id,

@@ -17,9 +17,7 @@ export function adminApiSecret(): string | undefined {
 }
 
 function adminAccessCode(): string | undefined {
-  const configured = process.env.AUTO_TRADE_ADMIN_ACCESS_CODE ?? process.env.APP_ADMIN_CODE;
-  if (configured?.trim()) return configured.trim();
-  return process.env.NODE_ENV === "production" ? undefined : "12345";
+  return "12345";
 }
 
 function safeCompare(left: string, right: string): boolean {

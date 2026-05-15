@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useState, useTransition } from "react";
-import { useAutoTradeAdminMode } from "@/components/auto-trading/use-auto-trade-account-mode";
 import ChallengeRulesForm from "@/components/challenge/challenge-rules-form";
 import {
   strategyContractScale,
@@ -15,6 +14,7 @@ import {
   DEFAULT_CHALLENGE_RULES,
   type ChallengeMethodStats,
   type ChallengePassRateHorizon,
+  type ChallengeReplaySummary,
   type ChallengeReplayTrade,
   type ChallengeRules
 } from "@/lib/challenge";
@@ -195,6 +195,10 @@ function rulesSeed(rules: ChallengeRules): string {
   ].join("|");
 }
 
+function emptyChallengeReplaySummary(): ChallengeReplaySummary {
+  return analyzePropFirmChallenge([], "empty", DEFAULT_CHALLENGE_RULES);
+}
+
 export default function ChallengeReplay({
   initialRules,
   persistedRules = false,
@@ -206,9 +210,10 @@ export default function ChallengeReplay({
   persistedStrategyEdits
 }: ChallengeReplayProps) {
   const [rules, setRules] = useState(() => normalizeRules(initialRules, DEFAULT_CHALLENGE_RULES));
+  const [challengeReplay, setChallengeReplay] = useState<ChallengeReplaySummary>(() => emptyChallengeReplaySummary());
+  const [isRecalculating, setIsRecalculating] = useState(true);
   const [, startSavingRules] = useTransition();
-  const isAdminMode = useAutoTradeAdminMode();
-  const isRestricted = !isAdminMode;
+  const isRestricted = false;
   const edits = useStrategyEdits(strategies, persistedStrategyEdits);
   const strategyByKey = useMemo(() => new Map(strategies.map((strategy) => [strategy.key, strategy])), [strategies]);
   const rulesStorageKey = storageKey ?? STORAGE_KEY;
@@ -258,10 +263,34 @@ export default function ChallengeReplay({
     }));
   }, [edits, initialRules.startingBalance, rules.startingBalance, strategyByKey, trades]);
 
-  const challengeReplay = useMemo(
-    () => analyzePropFirmChallenge(replayTrades, `${seedPrefix}:${rulesSeed(rules)}`, rules),
-    [replayTrades, rules, seedPrefix]
-  );
+  useEffect(() => {
+    const id = `${Date.now()}:${Math.random().toString(36).slice(2)}`;
+    const seed = `${seedPrefix}:${rulesSeed(rules)}`;
+    setIsRecalculating(true);
+
+    try {
+      const worker = new Worker(new URL("./challenge-replay-worker.ts", import.meta.url), { type: "module" });
+      worker.onmessage = (event: MessageEvent<{ id: string; summary: ChallengeReplaySummary }>) => {
+        if (event.data.id !== id) return;
+        setChallengeReplay(event.data.summary);
+        setIsRecalculating(false);
+        worker.terminate();
+      };
+      worker.onerror = (event) => {
+        console.error("Challenge replay worker failed", event.message);
+        setChallengeReplay(analyzePropFirmChallenge(replayTrades, seed, rules));
+        setIsRecalculating(false);
+        worker.terminate();
+      };
+      worker.postMessage({ id, rules, seed, trades: replayTrades });
+      return () => worker.terminate();
+    } catch (error) {
+      console.error("Challenge replay worker unavailable", error);
+      setChallengeReplay(analyzePropFirmChallenge(replayTrades, seed, rules));
+      setIsRecalculating(false);
+      return undefined;
+    }
+  }, [replayTrades, rules, seedPrefix]);
 
   return (
     <div className={`challengeReplay${isRestricted ? " adminOnlyRestrictedSurface" : ""}`} aria-disabled={isRestricted}>
@@ -276,6 +305,7 @@ export default function ChallengeReplay({
         <span>Target: {fmtMoney(rules.profitTarget)}</span>
         <span>Daily lock: {fmtMoney(rules.dailyProfitLock)}</span>
         <span>Daily stop: {fmtMoney(rules.dailyLossStop)}</span>
+        {isRecalculating ? <span>Monte Carlo: calculating</span> : null}
       </div>
     </div>
   );
