@@ -5,7 +5,7 @@ import { dollarPerUnit } from "@/lib/instruments";
 import { fetchStoredAssetBars, fetchStoredMarketBars } from "@/lib/market-data-store";
 import { saveCronRun, updateDatasetSyncRunStatus } from "@/lib/live-config";
 import { activeRules, evaluateLatestSignal } from "@/lib/live-signals";
-import { getTrades, hasTrade, saveTrade } from "@/lib/storage";
+import { claimTrade, getTrades, hasTrade, saveTrade } from "@/lib/storage";
 import { sendTelegram, sendTelegramOutcome } from "@/lib/telegram";
 import { TOPSTEP_100K_ACCOUNT, reviewTopstepSignal, withTopstepGuardNote } from "@/lib/topstep";
 import type { Bar, CronResult, TradeAlert } from "@/lib/types";
@@ -37,9 +37,16 @@ type TradeLifecycleHit = {
   pnlDollars: number;
   price: number;
   rMultiple: number;
-  status: "take_profit" | "stop_loss";
+  status: "take_profit" | "stop_loss" | "max_bars";
   time: string;
 };
+
+const NEW_YORK_DAY_FORMATTER = new Intl.DateTimeFormat("en-CA", {
+  day: "2-digit",
+  month: "2-digit",
+  timeZone: "America/New_York",
+  year: "numeric"
+});
 
 function lifecycleLookbackMs(): number {
   const hours = Number(process.env.TELEGRAM_TRADE_UPDATE_LOOKBACK_HOURS ?? 72);
@@ -55,6 +62,32 @@ function repeatSignalKey(trade: Pick<TradeAlert, "logicalStrategyKey" | "side" |
   const strategyKey = trade.logicalStrategyKey ?? trade.strategyKey ?? trade.strategyId ?? trade.strategy;
   if (!strategyKey || !trade.symbol || !trade.side) return null;
   return [trade.symbol, strategyKey, trade.side].join("\t");
+}
+
+function newYorkDate(value: string): string | null {
+  const timestamp = Date.parse(value);
+  return Number.isFinite(timestamp) ? NEW_YORK_DAY_FORMATTER.format(new Date(timestamp)) : null;
+}
+
+function recentSameStrategyDay(signal: TradeAlert, trades: TradeAlert[]): TradeAlert | null {
+  const signalDay = newYorkDate(signal.signalTime);
+  const signalStrategy = signal.logicalStrategyKey ?? signal.strategyKey ?? signal.strategyId ?? signal.strategy;
+  if (!signalDay || !signalStrategy) return null;
+
+  for (const trade of trades) {
+    if (trade.status !== "alerted") continue;
+    const tradeStrategy = trade.logicalStrategyKey ?? trade.strategyKey ?? trade.strategyId ?? trade.strategy;
+    if (trade.id === signal.id || trade.symbol !== signal.symbol || tradeStrategy !== signalStrategy) continue;
+    if (newYorkDate(trade.signalTime) === signalDay) return trade;
+  }
+
+  return null;
+}
+
+function dailyStrategyKey(signal: TradeAlert): string | null {
+  const signalDay = newYorkDate(signal.signalTime);
+  const signalStrategy = signal.logicalStrategyKey ?? signal.strategyKey ?? signal.strategyId ?? signal.strategy;
+  return signalDay && signalStrategy && signal.symbol ? [signal.symbol, signalStrategy, signalDay].join("\t") : null;
 }
 
 function recentRepeatTrade(signal: TradeAlert, trades: TradeAlert[], lookbackMs: number): TradeAlert | null {
@@ -81,22 +114,37 @@ function tradeLifecycleHit(trade: TradeAlert, bars: Bar[]): TradeLifecycleHit | 
   const dollars = signalDollars(trade);
   const rewardRisk = dollars.riskDollars > 0 ? dollars.targetDollars / dollars.riskDollars : 0;
 
-  for (const bar of trackedBars) {
+  const maxBars = typeof trade.maxBars === "number" && Number.isFinite(trade.maxBars) && trade.maxBars > 0 ? Math.round(trade.maxBars) : null;
+  const priceRisk = Math.abs(trade.entryPrice - trade.stopLossPrice);
+  const sideMultiplier = trade.side === "long" ? 1 : -1;
+
+  for (const [index, bar] of trackedBars.entries()) {
     const hitTakeProfit =
       trade.side === "long" ? bar.high >= trade.takeProfitPrice : bar.low <= trade.takeProfitPrice;
     const hitStopLoss =
       trade.side === "long" ? bar.low <= trade.stopLossPrice : bar.high >= trade.stopLossPrice;
 
-    if (!hitTakeProfit && !hitStopLoss) continue;
+    if (hitTakeProfit || hitStopLoss) {
+      const status = hitStopLoss ? "stop_loss" : "take_profit";
+      return {
+        pnlDollars: status === "take_profit" ? dollars.targetDollars : -dollars.riskDollars,
+        price: status === "take_profit" ? trade.takeProfitPrice : trade.stopLossPrice,
+        rMultiple: status === "take_profit" ? rewardRisk : -1,
+        status,
+        time: bar.time
+      };
+    }
 
-    const status = hitStopLoss ? "stop_loss" : "take_profit";
-    return {
-      pnlDollars: status === "take_profit" ? dollars.targetDollars : -dollars.riskDollars,
-      price: status === "take_profit" ? trade.takeProfitPrice : trade.stopLossPrice,
-      rMultiple: status === "take_profit" ? rewardRisk : -1,
-      status,
-      time: bar.time
-    };
+    if (maxBars && index + 1 >= maxBars && priceRisk > 0) {
+      const rMultiple = ((bar.close - trade.entryPrice) * sideMultiplier) / priceRisk;
+      return {
+        pnlDollars: rMultiple * dollars.riskDollars,
+        price: bar.close,
+        rMultiple,
+        status: "max_bars",
+        time: bar.time
+      };
+    }
   }
 
   return null;
@@ -110,6 +158,7 @@ async function notifyTradeLifecycles(result: CronResult, barsByAssetKey: Map<str
       !trade.lifecycleNotifiedAt &&
       trade.lifecycleStatus !== "take_profit" &&
       trade.lifecycleStatus !== "stop_loss" &&
+      trade.lifecycleStatus !== "max_bars" &&
       (Date.parse(trade.signalTime) || 0) >= oldestSignalTime &&
       Boolean(trade.assetKey)
   );
@@ -184,6 +233,7 @@ async function runSignalCheck(): Promise<CronResult> {
   const recentTrades = await getTrades();
   const repeatLookbackMs = repeatSuppressionLookbackMs();
   const candidateRepeatKeys = new Set<string>();
+  const candidateDailyKeys = new Set<string>();
   const rules = await activeRules();
   if (!rules.length) {
     throw new Error("No active live strategies are enabled for signal checks.");
@@ -206,6 +256,20 @@ async function runSignalCheck(): Promise<CronResult> {
       if (await hasTrade(signal.id)) {
         result.skippedDuplicates.push(signal.id);
         continue;
+      }
+
+      if (rule.oneTradePerDay) {
+        const sameDayTrade = recentSameStrategyDay(signal, recentTrades);
+        if (sameDayTrade) {
+          result.skippedDuplicates.push(`${signal.id} repeats ${sameDayTrade.id} on the same New York session`);
+          continue;
+        }
+        const dayKey = dailyStrategyKey(signal);
+        if (dayKey && candidateDailyKeys.has(dayKey)) {
+          result.skippedDuplicates.push(`${signal.id} repeats another same-session signal in this check`);
+          continue;
+        }
+        if (dayKey) candidateDailyKeys.add(dayKey);
       }
 
       const repeat = recentRepeatTrade(signal, recentTrades, repeatLookbackMs);
@@ -293,12 +357,16 @@ async function runSignalCheck(): Promise<CronResult> {
     });
 
   for (const candidate of selected) {
-    await saveTrade({
+    const claimed = await claimTrade({
       ...candidate.signal,
       autoTradeCheckedAt: new Date().toISOString(),
       autoTradeError: "Auto-trade execution queued; awaiting connector dispatch.",
       autoTradeStatus: "skipped"
     });
+    if (!claimed) {
+      result.skippedDuplicates.push(candidate.signal.id);
+      continue;
+    }
     const autoTrade = await executeAutoTrade(candidate.signal);
     const executableSignal = {
       ...candidate.signal,

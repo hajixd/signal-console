@@ -142,7 +142,7 @@ export async function fetchMarketBars(rule: StrategyRule, options: MarketBarsOpt
   const asset = assetForKey(rule.assetKey);
   if (asset.market === "futures") return fetchDatabentoBars(asset.databentoSymbol, asset.symbol, options);
   if (asset.market !== "crypto" && process.env.OANDA_API_TOKEN) return fetchOandaBars(asset.oandaSymbol ?? asset.symbol, options);
-  return fetchTwelveDataBars(asset.twelveDataSymbol ?? asset.symbol);
+  return fetchTwelveDataBars(asset.twelveDataSymbol ?? asset.symbol, options);
 }
 
 async function requestDatabentoBars(apiKey: string, params: URLSearchParams): Promise<Response> {
@@ -201,7 +201,7 @@ async function fetchDatabentoBars(databentoSymbol: string | undefined, symbol: s
   return parseDatabentoJson(await response.text());
 }
 
-async function fetchTwelveDataBars(symbol: string): Promise<Bar[]> {
+async function fetchTwelveDataBars(symbol: string, options: MarketBarsOptions): Promise<Bar[]> {
   const keys = (process.env.TWELVEDATA_API_KEYS ?? "").split(",").map((item) => item.trim()).filter(Boolean);
   if (!keys.length) throw new Error("Missing TWELVEDATA_API_KEYS");
   const startIndex = Math.floor(Date.now() / 60_000) % keys.length;
@@ -212,10 +212,14 @@ async function fetchTwelveDataBars(symbol: string): Promise<Bar[]> {
     const params = new URLSearchParams({
       symbol,
       interval: "15min",
-      outputsize: "500",
+      outputsize: options.afterSeconds ? "5000" : "500",
       order: "ASC",
       apikey: apiKey
     });
+    if (options.afterSeconds) {
+      params.set("start_date", providerStartDate(options, 0, 15 * 60).toISOString().replace("T", " ").replace(/\.\d{3}Z$/, ""));
+      params.set("end_date", endIsoMinute().replace("T", " ").replace(/\.\d{3}Z$/, ""));
+    }
     const response = await fetch(`https://api.twelvedata.com/time_series?${params.toString()}`, { cache: "no-store" });
     const raw = await response.text();
 

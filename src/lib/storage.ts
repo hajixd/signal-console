@@ -59,13 +59,40 @@ export async function hasTrade(id: string): Promise<boolean> {
   return trades.some((trade) => trade.id === id);
 }
 
-export async function saveTrade(trade: TradeAlert): Promise<void> {
-  const payload = omitUndefinedDeep({
+function tradePayload(trade: TradeAlert): TradeAlert & { createdAtMillis: number; signalTimeMillis: number; updatedAt: string } {
+  return omitUndefinedDeep({
     ...trade,
     createdAtMillis: Date.parse(trade.createdAt) || Date.now(),
     signalTimeMillis: Date.parse(trade.signalTime) || Date.now(),
     updatedAt: new Date().toISOString()
   });
+}
+
+export async function claimTrade(trade: TradeAlert): Promise<boolean> {
+  const payload = tradePayload(trade);
+
+  if (hasFirebaseAdmin()) {
+    try {
+      await firebaseDb()
+        .collection(TRADE_COLLECTION)
+        .doc(trade.id)
+        .create(payload);
+      return true;
+    } catch (error) {
+      const code = typeof error === "object" && error !== null && "code" in error ? (error as { code?: unknown }).code : undefined;
+      if (code === 6 || code === "already-exists" || code === "ALREADY_EXISTS") return false;
+      throw error;
+    }
+  }
+
+  const trades = await readLocal();
+  if (trades.some((item) => item.id === trade.id)) return false;
+  await writeLocal([payload, ...trades].slice(0, 500));
+  return true;
+}
+
+export async function saveTrade(trade: TradeAlert): Promise<void> {
+  const payload = tradePayload(trade);
 
   if (hasFirebaseAdmin()) {
     await firebaseDb()

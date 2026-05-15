@@ -141,7 +141,7 @@ export function formatTelegramMessage(trade: TradeAlert): string {
 export function formatTelegramOutcomeMessage(trade: TradeAlert): string {
   const outcome = trade.lifecycleStatus;
   const isTarget = outcome === "take_profit";
-  const title = isTarget ? "Take Profit Hit" : outcome === "stop_loss" ? "Stop Loss Hit" : "Trade Update";
+  const title = isTarget ? "Take Profit Hit" : outcome === "stop_loss" ? "Stop Loss Hit" : outcome === "max_bars" ? "Max Bars Exit" : "Trade Update";
   const pnl = trade.lifecyclePnlDollars;
   const rMultiple = trade.lifecycleRMultiple;
   const price = trade.lifecyclePrice;

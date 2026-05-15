@@ -163,8 +163,9 @@ export type TradeAlert = {
   lifecyclePnlDollars?: number;
   lifecyclePrice?: number;
   lifecycleRMultiple?: number;
-  lifecycleStatus?: "open" | "take_profit" | "stop_loss";
+  lifecycleStatus?: "open" | "take_profit" | "stop_loss" | "max_bars";
   lifecycleTime?: string;
+  maxBars?: number;
   status: "alerted" | "skipped";
   telegramStatus: "sent" | "skipped" | "failed";
   telegramLifecycleError?: string;

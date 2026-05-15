@@ -9,16 +9,20 @@ type AssetReadMode = "auto" | "local" | "remote";
 function localPath(relativePath: string): string {
   const normalized = relativePath.replace(/\\/g, "/").replace(/^\/+/, "");
   const [root, ...rest] = normalized.split("/");
+  if (!root || !rest.length || rest.some((part) => part === ".." || part === "")) {
+    throw new Error(`Unsupported project asset path: ${relativePath}`);
+  }
+  const tail = rest.join("/");
 
   switch (root) {
     case "cache":
-      return path.join(/*turbopackIgnore: true*/ process.cwd(), "cache", ...rest);
+      return path.join(/*turbopackIgnore: true*/ process.cwd(), "cache", tail);
     case "config":
-      return path.join(/*turbopackIgnore: true*/ process.cwd(), "config", ...rest);
+      return path.join(/*turbopackIgnore: true*/ process.cwd(), "config", tail);
     case "data":
-      return path.join(/*turbopackIgnore: true*/ process.cwd(), "data", ...rest);
+      return path.join(/*turbopackIgnore: true*/ process.cwd(), "data", tail);
     case "strategy":
-      return path.join(/*turbopackIgnore: true*/ process.cwd(), "strategy", ...rest);
+      return path.join(/*turbopackIgnore: true*/ process.cwd(), "strategy", tail);
     default:
       throw new Error(`Unsupported project asset root: ${root ?? "(empty)"}`);
   }

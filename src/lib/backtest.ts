@@ -454,11 +454,14 @@ export async function buildLocalStrategyCatalog(strategyIds?: Iterable<string>):
   for (const strategy of strategies) {
     const csvPath = path.posix.join(STRATEGY_ROOT, strategy.folder, strategy.backtestFileName);
     const rows = await readCsvRows(csvPath, "local");
-    trades.push(
-      ...rows
-        .map((row) => backtestTradeFromRow(row, strategy))
-        .filter((trade): trade is BacktestTrade => Boolean(trade))
-    );
+    for (const row of rows) {
+      try {
+        const trade = backtestTradeFromRow(row, strategy);
+        if (trade) trades.push(trade);
+      } catch (error) {
+        console.warn(`Skipping malformed backtest row in ${csvPath}: ${error instanceof Error ? error.message : "Unknown error"}`);
+      }
+    }
   }
 
   trades.sort((left, right) => Date.parse(right.entryTime) - Date.parse(left.entryTime));
@@ -499,12 +502,13 @@ async function buildStrategyCatalog(): Promise<StrategyCatalog> {
   const manifestFreshnessTime = Number.isFinite(manifestComputedThroughTime)
     ? manifestComputedThroughTime
     : manifestLatestTradeTime;
+  const local = await buildLocalStrategyCatalog().catch(() => null);
   if (manifestFreshnessTime && Date.now() - manifestFreshnessTime <= MANIFEST_STALE_AFTER_MS) {
+    if (local && latestTradeTime(local) > manifestLatestTradeTime) return local;
     return manifest;
   }
 
-  const local = await buildLocalStrategyCatalog();
-  return latestTradeTime(local) > manifestLatestTradeTime ? local : manifest;
+  return local && latestTradeTime(local) > manifestLatestTradeTime ? local : manifest;
 }
 
 async function loadStrategyCatalog(): Promise<StrategyCatalog> {

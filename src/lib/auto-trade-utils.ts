@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { defaultTickSize } from "@/lib/assets";
 import type { ProjectXAutoTradeResult, ProjectXAutoTradeStatus } from "@/lib/projectx-auto-trader";
 import type { AutoTradeOrderSummary, TradeAlert } from "@/lib/types";
@@ -119,11 +120,12 @@ export function tradeLevels(trade: TradeAlert): Pick<AutoTradeRequest, "stopLoss
 }
 
 export function autoTradeRequest(prefix: ProviderPrefix, trade: TradeAlert, accountId?: number | string, fields?: Record<string, string>): AutoTradeRequest {
+  const customTag = createHash("sha256").update(`${prefix}:${trade.id}:${accountId ?? ""}`).digest("hex").slice(0, 24);
   return {
     ...tradeLevels(trade),
     accountId,
     action: trade.side === "long" ? "buy" : "sell",
-    customTag: `tb_${trade.id}`.replace(/[^0-9A-Za-z_-]/g, "").slice(0, 48),
+    customTag: `tb_${customTag}`,
     entryPrice: trade.entryPrice,
     entryType: trade.entryType === "limit" ? "limit" : "market",
     rawTrade: trade,

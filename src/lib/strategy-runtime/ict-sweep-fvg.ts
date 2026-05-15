@@ -2,11 +2,15 @@ import type { EnrichedBar } from "@/lib/indicators";
 import type { StrategySignal } from "@/lib/strategy-definition";
 import type { StrategyRule } from "@/lib/types";
 import { LONG, SHORT } from "./constants";
-import { priorDayRange, roundToTick } from "./helpers";
+import { priorDayRange, roundToTick, sessionMinutes } from "./helpers";
+import { strategyRuntimeConfig } from "./runtime-config";
 
 export function evaluateIctSweepFvg(rule: StrategyRule, bars: EnrichedBar[], signalIndex: number): StrategySignal | null {
   const displacement = bars[signalIndex];
   if (!displacement) return null;
+  const config = strategyRuntimeConfig(rule.variantId);
+  const session = sessionMinutes(config);
+  if (displacement.nyMinutes < session.start || displacement.nyMinutes > session.end) return null;
 
   for (let sweepIndex = Math.max(100, signalIndex - 4); sweepIndex <= signalIndex - 1; sweepIndex += 1) {
     const sweepBar = bars[sweepIndex]!;
@@ -54,7 +58,7 @@ export function evaluateIctSweepFvg(rule: StrategyRule, bars: EnrichedBar[], sig
     if ((side === SHORT && entryPrice >= stopLossPrice) || (side === LONG && entryPrice <= stopLossPrice)) continue;
 
     const slUnits = Math.abs(entryPrice - stopLossPrice) / rule.tickSize;
-    const tpUnits = slUnits * (rule.ictRiskReward ?? 1);
+    const tpUnits = slUnits * (rule.ictRiskReward ?? config.rr);
     const takeProfitPrice =
       side === SHORT
         ? roundToTick(entryPrice - tpUnits * rule.tickSize, rule.tickSize)

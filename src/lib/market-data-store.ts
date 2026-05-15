@@ -1,9 +1,8 @@
-import { open } from "node:fs/promises";
+import { open, readFile } from "node:fs/promises";
 import path from "node:path";
 import { assetForKey } from "@/lib/assets";
 import { firebaseBucket, hasFirebaseAdmin, storageObjectPath } from "@/lib/firebase-admin";
 import { fetchMarketBars } from "@/lib/market-data";
-import { readProjectTextIfExists } from "@/lib/project-assets";
 import type { Bar, StrategyRule } from "@/lib/types";
 
 const DEFAULT_BAR_LIMIT = 1500;
@@ -94,6 +93,10 @@ function parseTailBars(text: string, limit: number): Bar[] {
     .slice(-limit);
 }
 
+function localCachePath(): string {
+  return path.join(/*turbopackIgnore: true*/ process.cwd(), "cache", "live-data-tails.json");
+}
+
 function signalStaleMs(): number {
   const minutes = Number(process.env.LIVE_SIGNAL_STALE_MINUTES ?? process.env.MARKET_DATA_STALE_MINUTES);
   return Number.isFinite(minutes) && minutes > 0 ? minutes * 60_000 : DEFAULT_SIGNAL_STALE_MS;
@@ -133,7 +136,19 @@ function mergeBars(storedBars: Bar[], liveBars: Bar[], limit: number): Bar[] {
 
 async function readLiveDataTailCache(): Promise<LiveDataTailCache | null> {
   if (!liveDataTailCache) {
-    liveDataTailCache = readProjectTextIfExists(LIVE_DATA_TAILS_PATH).then((raw) => {
+    liveDataTailCache = (async () => {
+      let raw: string | null = null;
+      if (hasFirebaseAdmin()) {
+        try {
+          const [buffer] = await firebaseBucket().file(storageObjectPath(LIVE_DATA_TAILS_PATH)).download();
+          raw = buffer.toString("utf8");
+        } catch {
+          raw = null;
+        }
+      }
+      if (!raw) {
+        raw = await readFile(localCachePath(), "utf8").catch(() => null);
+      }
       if (!raw) return null;
       try {
         const parsed = JSON.parse(raw) as LiveDataTailCache;
@@ -141,7 +156,7 @@ async function readLiveDataTailCache(): Promise<LiveDataTailCache | null> {
       } catch {
         return null;
       }
-    });
+    })();
   }
 
   return liveDataTailCache;

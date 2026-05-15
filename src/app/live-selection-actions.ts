@@ -1,6 +1,7 @@
 "use server";
 
 import { getLiveConfig, saveLiveConfig } from "@/lib/live-config";
+import { assertServerActionAdminAuthorized } from "@/lib/admin-api";
 import type { ChallengeRulesMarket, LiveMarket, SavedChallengeRules, SavedCustomScaleRange, SavedTheme } from "@/lib/live-config";
 import { STRATEGY_DEFINITIONS } from "@/lib/strategy-loader";
 
@@ -158,6 +159,7 @@ function challengeRulesSignature(rules: SavedChallengeRules | undefined): string
 }
 
 export async function syncLiveSelection(selectedKeys: string[], scopeKeys?: string[]): Promise<void> {
+  await assertServerActionAdminAuthorized();
   const normalized = normalizeSelectedKeys(selectedKeys);
   const normalizedScope = scopeKeys ? new Set(normalizeSelectedKeys(scopeKeys)) : null;
   const existing = await getLiveConfig();
@@ -183,6 +185,7 @@ export async function syncLiveSelection(selectedKeys: string[], scopeKeys?: stri
 }
 
 export async function syncStrategyEdits(edits: Record<string, PersistedStrategyEdit>, scopeKeys?: string[]): Promise<void> {
+  await assertServerActionAdminAuthorized();
   const normalized = normalizeStrategyEdits(edits);
   const normalizedScope = normalizeStrategyScopeKeys(scopeKeys);
   const existing = await getLiveConfig();
@@ -204,6 +207,7 @@ export async function syncStrategyEdits(edits: Record<string, PersistedStrategyE
 }
 
 export async function syncCustomScaleRange(market: string, range: PersistedCustomScaleRange): Promise<void> {
+  await assertServerActionAdminAuthorized();
   const normalizedMarket = normalizeMarket(market);
   if (!normalizedMarket) return;
 
@@ -228,6 +232,7 @@ export async function syncCustomScaleRange(market: string, range: PersistedCusto
 }
 
 export async function syncActiveMarket(market: string): Promise<void> {
+  await assertServerActionAdminAuthorized();
   const normalizedMarket = normalizeChallengeMarket(market);
   if (!normalizedMarket) return;
 
@@ -246,6 +251,7 @@ export async function syncActiveMarket(market: string): Promise<void> {
 }
 
 export async function syncChallengeRules(rules: PersistedChallengeRules): Promise<void> {
+  await assertServerActionAdminAuthorized();
   const normalized = normalizeChallengeRules(rules);
   if (!Object.keys(normalized).length) return;
 
@@ -264,6 +270,7 @@ export async function syncChallengeRules(rules: PersistedChallengeRules): Promis
 }
 
 export async function syncChallengeRulesForMarket(market: string, rules: PersistedChallengeRules): Promise<void> {
+  await assertServerActionAdminAuthorized();
   const normalizedMarket = normalizeChallengeMarket(market);
   if (!normalizedMarket) return;
 
@@ -288,6 +295,7 @@ export async function syncChallengeRulesForMarket(market: string, rules: Persist
 }
 
 export async function syncTheme(theme: string): Promise<void> {
+  await assertServerActionAdminAuthorized();
   const normalizedTheme = normalizeTheme(theme);
   if (!normalizedTheme) return;
 

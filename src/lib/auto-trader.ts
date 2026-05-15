@@ -8,6 +8,8 @@ import {
   rithmicBridgeConfigured
 } from "@/lib/bridge-auto-trader";
 import { executeMatchTraderAutoTrade, matchTraderConfigured } from "@/lib/matchtrader-auto-trader";
+import { getAutoTradeConnection } from "@/lib/auto-trade-connections";
+import { getLatestStoredProjectXConnection } from "@/lib/projectx-connections";
 import { executeProjectXAutoTrade, type ProjectXAutoTradeResult } from "@/lib/projectx-auto-trader";
 import { executeTradeLockerAutoTrade, tradeLockerConfigured } from "@/lib/tradelocker-auto-trader";
 import { executeTradovateAutoTrade, tradovateConfigured } from "@/lib/tradovate-auto-trader";
@@ -20,14 +22,35 @@ export type AutoTradeExecutionResult = ProjectXAutoTradeResult & {
 
 type AutoTradeConnector = {
   execute: (trade: TradeAlert) => Promise<ProjectXAutoTradeResult>;
+  hasConnection?: () => Promise<boolean>;
   isConfigured: () => boolean;
   providerId: AutoTradeProviderId;
 };
 
+function envFlag(name: string, fallback: boolean): boolean {
+  const value = process.env[name]?.trim().toLowerCase();
+  if (!value) return fallback;
+  if (["1", "true", "yes", "on"].includes(value)) return true;
+  if (["0", "false", "no", "off"].includes(value)) return false;
+  return fallback;
+}
+
+async function hasStoredProjectXConnection(): Promise<boolean> {
+  return Boolean(await getLatestStoredProjectXConnection(process.env.PROJECTX_AUTO_TRADE_CONNECTION_ID?.trim()).catch(() => null));
+}
+
+function unsafeLimitOrderGuard(trade: TradeAlert): AutoTradeExecutionResult | null {
+  if (trade.entryType !== "limit" || envFlag("AUTO_TRADE_ALLOW_LIVE_LIMIT_ORDERS", false)) return null;
+  return result("skipped", {
+    error: "Live limit-order execution is disabled until broker-side expiry/cancel management is configured. Set AUTO_TRADE_ALLOW_LIVE_LIMIT_ORDERS=1 to opt in."
+  });
+}
+
 const AUTO_TRADE_CONNECTORS: AutoTradeConnector[] = [
   {
     execute: executeProjectXAutoTrade,
-    isConfigured: () => true,
+    hasConnection: hasStoredProjectXConnection,
+    isConfigured: () => Boolean(process.env.PROJECTX_AUTO_TRADE_CONNECTION_ID?.trim()),
     providerId: "projectx"
   },
   {
@@ -86,6 +109,9 @@ function result(
 }
 
 export async function executeAutoTrade(trade: TradeAlert): Promise<AutoTradeExecutionResult> {
+  const limitGuard = unsafeLimitOrderGuard(trade);
+  if (limitGuard) return limitGuard;
+
   const market = autoTradeMarketForSignal(trade.market);
   if (!market) {
     return result("skipped", { error: `No auto-trade market route exists for ${trade.market}.` });
@@ -96,15 +122,16 @@ export async function executeAutoTrade(trade: TradeAlert): Promise<AutoTradeExec
   )?.trim() as AutoTradeProviderId | undefined;
   const marketConnectors = AUTO_TRADE_CONNECTORS.filter((connector) => autoTradeProviderById(connector.providerId)?.markets.includes(market));
   const preferredConnector = preferredProviderId ? marketConnectors.find((connector) => connector.providerId === preferredProviderId) : undefined;
-  let connector = preferredConnector ?? marketConnectors.find((candidate) => candidate.isConfigured());
+  let connector = preferredConnector;
   if (!connector) {
     for (const candidate of marketConnectors) {
-      if (await getAutoTradeConnection(candidate.providerId)) {
+      if (candidate.hasConnection ? await candidate.hasConnection() : await getAutoTradeConnection(candidate.providerId)) {
         connector = candidate;
         break;
       }
     }
   }
+  connector ??= marketConnectors.find((candidate) => candidate.isConfigured());
   connector ??= marketConnectors[0];
 
   if (connector) {
@@ -124,4 +151,3 @@ export async function executeAutoTrade(trade: TradeAlert): Promise<AutoTradeExec
     providerName: `${market === "futures" ? "Futures" : "Forex"} execution router`
   });
 }
-import { getAutoTradeConnection } from "@/lib/auto-trade-connections";

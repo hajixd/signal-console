@@ -2,6 +2,7 @@ import { recommendedSizeMultiplier } from "@/lib/instruments";
 import type { EnrichedBar } from "@/lib/indicators";
 import type { StrategySignal } from "@/lib/strategy-definition";
 import { priorDayRange, roundToTick } from "@/lib/strategy-runtime/helpers";
+import { strategyRuntimeConfig } from "@/lib/strategy-runtime/runtime-config";
 import type { BacktestPriceMode, BacktestSizeMode, Side, StrategyRule, TradeAlert } from "@/lib/types";
 
 const PRICE_MODE_FIXED: BacktestPriceMode = "fixed";
@@ -193,6 +194,7 @@ export function planTradeAlert(
     sizeMultiplier: sizeMultiplier ?? 1,
     estimatedWinRatePct: rule.estimatedWinRatePct,
     liveProfitFactor: rule.liveProfitFactor,
+    maxBars: Math.max(1, Math.round(strategyRuntimeConfig(rule.variantId).maxBars)),
     status: "alerted",
     telegramStatus: "skipped",
     notes: signal.notes

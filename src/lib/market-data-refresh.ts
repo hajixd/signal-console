@@ -447,6 +447,7 @@ type StoredCsvState = {
   endsWithNewline: boolean;
   exists: boolean;
   firstBarTime?: number;
+  generation?: number;
   lastBarTime?: number;
   rows?: number;
 };
@@ -527,6 +528,7 @@ async function remoteCsvState(relativePath: string, coverage: DatasetAssetCovera
       endsWithNewline: tailText.endsWith("\n"),
       exists: true,
       firstBarTime: secondsFromIso(coverage?.firstBarAt ?? "") ?? undefined,
+      generation: Number.isFinite(Number(metadata.generation)) ? Number(metadata.generation) : undefined,
       lastBarTime: lastDataTimestamp(tailText),
       rows: coverage?.rows
     };
@@ -581,7 +583,8 @@ async function appendRemoteText(relativePath: string, text: string, existing: St
     await bucket.combine([bucket.file(destinationPath), appendObject], combinedObject);
     await combinedObject.copy(bucket.file(destinationPath), {
       cacheControl: "private, max-age=0, no-transform",
-      contentType: "text/csv; charset=utf-8"
+      contentType: "text/csv; charset=utf-8",
+      ...(existing.generation ? { preconditionOpts: { ifGenerationMatch: existing.generation } } : {})
     });
   } finally {
     await Promise.allSettled([appendObject.delete(), combinedObject.delete()]);

@@ -1,6 +1,5 @@
 import { createHash, timingSafeEqual } from "node:crypto";
 
-export const DEFAULT_ACCOUNT_ACCESS_CODE = "12345";
 export const ACCESS_CODE_PATTERN = /^\d{4,12}$/;
 
 function accessCodeSecret(): string {
@@ -28,11 +27,7 @@ export function hashAccessCode(value: string): string {
 
 export function verifyAccessCode(input: unknown, storedHash?: string): boolean {
   const normalized = normalizeAccessCode(input);
-  if (!normalized) return false;
-
-  if (!storedHash) {
-    return normalized === DEFAULT_ACCOUNT_ACCESS_CODE;
-  }
+  if (!normalized || !storedHash) return false;
 
   const actualHash = hashAccessCode(normalized);
   const expected = Buffer.from(storedHash, "hex");

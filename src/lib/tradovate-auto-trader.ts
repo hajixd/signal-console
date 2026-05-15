@@ -130,6 +130,12 @@ export async function executeTradovateAutoTrade(trade: TradeAlert): Promise<Proj
       return result("dry_run", { accountId: order.accountId, contractId: request.symbol, contractName: request.symbol, orders: [order] });
     }
 
+    if (!envFlag("TRADOVATE_ALLOW_UNBRACKETED_ORDERS", false)) {
+      return result("skipped", {
+        error: "Tradovate live execution is disabled until bracket/OCO stop-loss and take-profit support is configured. Set TRADOVATE_ALLOW_UNBRACKETED_ORDERS=1 to opt in explicitly."
+      });
+    }
+
     const response = await fetch(`${baseUrl(fields)}/order/placeorder`, {
       body: JSON.stringify({
         accountId: account.accountId,

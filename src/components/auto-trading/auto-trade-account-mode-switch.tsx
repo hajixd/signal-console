@@ -25,6 +25,7 @@ export default function AutoTradeAccountModeSwitch() {
 
   function handleSwitchAccountMode() {
     clearSavedAccountMode();
+    void fetch("/api/auto-trading/access-code", { method: "DELETE" }).catch(() => undefined);
   }
 
   if (!isReady || !accountMode) return null;

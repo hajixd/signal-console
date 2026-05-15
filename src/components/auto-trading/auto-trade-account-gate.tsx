@@ -4,7 +4,6 @@ import { FormEvent, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import {
   AUTO_TRADE_ACCOUNT_MODE_CHANGE_EVENT,
-  AUTO_TRADE_ADMIN_ACCESS_CODE,
   cleanAccessCode,
   type AutoTradeAccountMode,
   savedAccountMode,
@@ -17,6 +16,7 @@ export default function AutoTradeAccountGate() {
   const [accountEntryMode, setAccountEntryMode] = useState<AutoTradeAccountMode | null>(null);
   const [adminCodeInput, setAdminCodeInput] = useState("");
   const [accountAccessError, setAccountAccessError] = useState("");
+  const [isUnlockingAdmin, setIsUnlockingAdmin] = useState(false);
   const adminCodeInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
@@ -68,21 +68,37 @@ export default function AutoTradeAccountGate() {
     saveAccountMode(mode);
   }
 
-  function handleAdminUnlock(code = adminCodeInput) {
-    if (code.length < 5) return;
-    if (code === AUTO_TRADE_ADMIN_ACCESS_CODE) {
+  async function handleAdminUnlock(code = adminCodeInput) {
+    if (code.length < 5 || isUnlockingAdmin) return;
+
+    setIsUnlockingAdmin(true);
+    try {
+      const response = await fetch("/api/auto-trading/access-code", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          accessCode: code,
+          type: "admin"
+        })
+      });
+      const payload = (await response.json().catch(() => ({}))) as { error?: string };
+      if (!response.ok) {
+        throw new Error(payload.error ?? "Incorrect code.");
+      }
       grantAccountMode("Admin");
       return;
+    } catch (error) {
+      setAdminCodeInput("");
+      setAccountAccessError(error instanceof Error ? error.message : "Incorrect code");
+      window.requestAnimationFrame(() => adminCodeInputRef.current?.focus());
+    } finally {
+      setIsUnlockingAdmin(false);
     }
-
-    setAdminCodeInput("");
-    setAccountAccessError("Incorrect code");
-    window.requestAnimationFrame(() => adminCodeInputRef.current?.focus());
   }
 
   function handleAdminSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    handleAdminUnlock();
+    void handleAdminUnlock();
   }
 
   if (!isReady || accountMode) return null;
@@ -104,7 +120,7 @@ export default function AutoTradeAccountGate() {
                   const nextValue = cleanAccessCode(event.target.value, 5);
                   setAdminCodeInput(nextValue);
                   setAccountAccessError("");
-                  if (nextValue.length === 5) handleAdminUnlock(nextValue);
+                  if (nextValue.length === 5) void handleAdminUnlock(nextValue);
                 }}
                 onKeyDown={(event) => {
                   if (event.key === "Escape") {
@@ -129,7 +145,7 @@ export default function AutoTradeAccountGate() {
                   return (
                     <button
                       aria-label={`Digit ${index + 1}`}
-                      className={`autoTradePinBox${digit ? " filled" : ""}${isActiveSlot ? " active" : ""}`}
+                      className={`autoTradePinBox${digit ? " filled" : ""}${isActiveSlot ? " active" : ""}${isUnlockingAdmin ? " busy" : ""}`}
                       key={`startup-auto-trade-pin-${index + 1}`}
                       onClick={() => adminCodeInputRef.current?.focus()}
                       tabIndex={-1}

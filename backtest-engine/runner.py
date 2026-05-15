@@ -2767,7 +2767,7 @@ def evaluate_ict_turtle_soup(
 def evaluate_ict_sweep_fvg(
     strategy: BacktestStrategy, data: EnrichedData, index: int, asset: AssetConfig, config: RuntimeConfig
 ) -> dict[str, Any] | None:
-    if index < 2:
+    if index < 2 or not strategy_entry_window(data, index, config):
         return None
     for sweep_index in range(max(100, index - 4), index):
         prior_high = data.prior_day_high[sweep_index]

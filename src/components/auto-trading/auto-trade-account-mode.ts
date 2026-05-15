@@ -1,6 +1,5 @@
 export const AUTO_TRADE_ACCOUNT_MODE_STORAGE_KEY = "tradingbot-auto-trade-account-mode";
 export const AUTO_TRADE_ACCOUNT_MODE_CHANGE_EVENT = "tradingbot:auto-trade-account-mode-change";
-export const AUTO_TRADE_ADMIN_ACCESS_CODE = "12345";
 export const AUTO_TRADE_ACCESS_CODE_MAX_LENGTH = 12;
 
 export type AutoTradeAccountMode = "Admin" | "User";

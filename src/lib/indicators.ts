@@ -239,22 +239,23 @@ export function enrichBars(bars: Bar[]): EnrichedBar[] {
   const sessionVwap: Array<number | null> = [];
   const sessionStd: Array<number | null> = [];
   let currentDate = "";
-  let cumulativeCount = 0;
+  let cumulativeVolume = 0;
   let cumulativeTypical = 0;
   let cumulativeTypicalSq = 0;
   for (let index = 0; index < bars.length; index += 1) {
     if (nyMeta[index]!.date !== currentDate) {
       currentDate = nyMeta[index]!.date;
-      cumulativeCount = 0;
+      cumulativeVolume = 0;
       cumulativeTypical = 0;
       cumulativeTypicalSq = 0;
     }
     const typical = typicals[index]!;
-    cumulativeCount += 1;
-    cumulativeTypical += typical;
-    cumulativeTypicalSq += typical * typical;
-    const vwap = cumulativeTypical / cumulativeCount;
-    const variance = Math.max(0, cumulativeTypicalSq / cumulativeCount - vwap * vwap);
+    const volume = typeof bars[index]!.volume === "number" && Number.isFinite(bars[index]!.volume) && bars[index]!.volume! > 0 ? bars[index]!.volume! : 1;
+    cumulativeVolume += volume;
+    cumulativeTypical += typical * volume;
+    cumulativeTypicalSq += typical * typical * volume;
+    const vwap = cumulativeTypical / cumulativeVolume;
+    const variance = Math.max(0, cumulativeTypicalSq / cumulativeVolume - vwap * vwap);
     sessionVwap.push(vwap);
     sessionStd.push(variance > 0 ? Math.sqrt(variance) : null);
   }
