@@ -1,0 +1,24 @@
+{
+  "assetKeys": [
+    "aud_usd"
+  ],
+  "createdAt": "2026-05-16T04:42:54.473Z",
+  "engine": "intraday_momentum",
+  "engines": [
+    "intraday_momentum"
+  ],
+  "hypothesis": "heikin ashi",
+  "ideaId": "heikin_ashi_mp7v1ll4",
+  "markets": [
+    "futures",
+    "forex"
+  ],
+  "notes": "",
+  "provenance": "manual",
+  "sourceUrls": [],
+  "status": "inbox",
+  "timeframes": [
+    "15m"
+  ],
+  "title": "heikin ashi"
+}
