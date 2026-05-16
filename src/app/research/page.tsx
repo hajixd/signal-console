@@ -20,11 +20,20 @@ const RESEARCH_STAGE_ORDER = ["research", "idea", "coding", "backtest"] as const
 const RESEARCH_FINISHED_MIN_PF = 2;
 const RESEARCH_FINISHED_MIN_TRADES = 21;
 const RESEARCH_STAGE_SCHEDULE_UTC = {
-  backtest: { hour: 2, minute: 0 },
-  coding: { hour: 22, minute: 0 },
-  idea: { hour: 18, minute: 0 },
-  research: { hour: 14, minute: 0 }
-} satisfies Record<ResearchStage, { hour: number; minute: number }>;
+  backtest: [
+    { hour: 22, minute: 0 },
+    { hour: 6, minute: 0 }
+  ],
+  coding: [
+    { hour: 19, minute: 0 },
+    { hour: 3, minute: 0 }
+  ],
+  idea: [
+    { hour: 16, minute: 0 },
+    { hour: 0, minute: 0 }
+  ],
+  research: [{ hour: 13, minute: 0 }]
+} satisfies Record<ResearchStage, Array<{ hour: number; minute: number }>>;
 const RESEARCH_STAGE_TITLES = {
   backtest: "Backtesting",
   coding: "Coding Ideas",
@@ -374,12 +383,14 @@ function formatDuration(ms: number | undefined) {
 
 function nextResearchStageRunIso(stage: ResearchStage, now = new Date()) {
   const candidates: Date[] = [];
-  const schedule = RESEARCH_STAGE_SCHEDULE_UTC[stage];
+  const schedules = RESEARCH_STAGE_SCHEDULE_UTC[stage];
   for (let dayOffset = 0; dayOffset <= 1; dayOffset += 1) {
-    const candidate = new Date(now);
-    candidate.setUTCDate(now.getUTCDate() + dayOffset);
-    candidate.setUTCHours(schedule.hour, schedule.minute, 0, 0);
-    if (candidate > now) candidates.push(candidate);
+    for (const schedule of schedules) {
+      const candidate = new Date(now);
+      candidate.setUTCDate(now.getUTCDate() + dayOffset);
+      candidate.setUTCHours(schedule.hour, schedule.minute, 0, 0);
+      if (candidate > now) candidates.push(candidate);
+    }
   }
   return candidates.sort((left, right) => left.getTime() - right.getTime())[0]?.toISOString() ?? now.toISOString();
 }

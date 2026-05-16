@@ -38,6 +38,7 @@ on:
 
 concurrency:
   group: research-cycle
+  queue: max
   cancel-in-progress: false
 
 permissions:
