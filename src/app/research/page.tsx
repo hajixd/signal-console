@@ -47,10 +47,14 @@ const RESEARCH_STAGE_JOB_LABELS = {
 type ResearchStage = (typeof RESEARCH_STAGE_ORDER)[number];
 
 type ResearchIdea = {
+  assetKeys?: string[];
   createdAt?: string;
   engines?: string[];
   hypothesis?: string;
   ideaId?: string;
+  ideaReport?: {
+    timeframes?: string[];
+  };
   markets?: string[];
   provenance?: string;
   sourceUrls?: string[];
@@ -111,9 +115,9 @@ type ResearchStageStatusMap = Partial<Record<ResearchStage, ResearchStageStatus>
 type ResearchSnapshot = {
   approvedIdeas: ResearchIdea[];
   approvedIdeaCount: number;
+  backtestReviewRows: BacktestRow[];
   backtestedCount: number;
   belowRequirementRows: BacktestRow[];
-  candidateRows: BacktestRow[];
   finishedRows: BacktestRow[];
   fetchedPagesCount: number;
   inboxIdeaCount: number;
@@ -193,8 +197,8 @@ function ideaTime(value: ResearchIdea) {
   return Number.isFinite(timestamp) ? timestamp : 0;
 }
 
-async function readStrategySpecs(relativePath: string, limit: number) {
-  const folders = await listDirectoryNames(relativePath);
+async function readStrategySpecs(relativePath: string, limit: number, excludedFolders = new Set<string>()) {
+  const folders = (await listDirectoryNames(relativePath)).filter((folder) => !excludedFolders.has(folder));
   const values = await Promise.all(
     folders.slice(0, limit).map((folder) => readJsonFile<StrategySpec>(path.join(RESEARCH_ROOT, relativePath, folder, "strategy.json")))
   );
@@ -320,9 +324,11 @@ async function getResearchSnapshot(): Promise<ResearchSnapshot> {
   const readyFolders = await listDirectoryNames("strategies/ready_to_backtest");
   const backtestedFolders = await listDirectoryNames("strategies/backtested");
   const backtestedIds = new Set(backtestedFolders);
+  const pendingReadyFolders = readyFolders.filter((folder) => !backtestedIds.has(folder));
   const candidateRows = (await readBacktestSummary()).sort((left, right) => Number(right.profit_factor) - Number(left.profit_factor));
   const finishedRows = candidateRows.filter(isFinishedBacktestRow);
   const belowRequirementRows = candidateRows.filter((row) => !isFinishedBacktestRow(row));
+  const backtestReviewRows = candidateRows.filter((row) => !isFinishedBacktestRow(row) && row.status !== "cached");
   const inboxIdeas = (await readJsonFiles<ResearchIdea>("ideas/inbox", 8)).sort((left, right) => ideaTime(right) - ideaTime(left));
   const approvedIdeas = (await readJsonFiles<ResearchIdea>("ideas/approved", 10)).sort((left, right) => ideaTime(right) - ideaTime(left));
   const researchStatuses = await readResearchCycleStatuses();
@@ -330,18 +336,18 @@ async function getResearchSnapshot(): Promise<ResearchSnapshot> {
   return {
     approvedIdeas,
     approvedIdeaCount: await countFiles("ideas/approved", ".json"),
+    backtestReviewRows,
     backtestedCount: backtestedFolders.length,
     belowRequirementRows,
-    candidateRows,
     finishedRows,
     fetchedPagesCount: await countFiles("sources/pages", ".json"),
     inboxIdeaCount: await countFiles("ideas/inbox", ".json"),
     inboxIdeas,
     latestReport: await readLatestReport(),
-    pendingReadyCount: readyFolders.filter((folder) => !backtestedIds.has(folder)).length,
+    pendingReadyCount: pendingReadyFolders.length,
     qualifiedCount: finishedRows.length,
-    readyCount: readyFolders.length,
-    readySpecs: await readStrategySpecs("strategies/ready_to_backtest", 10),
+    readyCount: pendingReadyFolders.length,
+    readySpecs: await readStrategySpecs("strategies/ready_to_backtest", 10, backtestedIds),
     researchStatus: researchStatuses.cycle,
     researchStageStatuses: researchStatuses.stages,
     reportCount: await countFiles("reports", ".md"),
@@ -356,19 +362,6 @@ function formatNumber(value: number) {
 function formatMetric(value: string, digits = 2) {
   const numericValue = Number(value);
   return Number.isFinite(numericValue) ? numericValue.toFixed(digits) : value || "n/a";
-}
-
-function formatDate(value: Date | string | undefined) {
-  if (!value) return "n/a";
-  const date = value instanceof Date ? value : new Date(value);
-  if (Number.isNaN(date.getTime())) return "n/a";
-  return new Intl.DateTimeFormat("en-US", {
-    day: "2-digit",
-    hour: "numeric",
-    minute: "2-digit",
-    month: "short",
-    timeZone: "America/Los_Angeles"
-  }).format(date);
 }
 
 function formatDuration(ms: number | undefined) {
@@ -433,7 +426,7 @@ function stageOutputCount(snapshot: ResearchSnapshot, stage: ResearchStage) {
   if (stage === "research") return snapshot.inboxIdeaCount;
   if (stage === "idea") return snapshot.approvedIdeaCount;
   if (stage === "coding") return snapshot.readyCount;
-  return snapshot.backtestedCount;
+  return snapshot.backtestReviewRows.length;
 }
 
 function syncTileStateFromStage(status: ResearchStageStatus | undefined, outputCount: number): SyncTileState {
@@ -471,7 +464,13 @@ function stageDurationMs(status: ResearchStageStatus | undefined) {
   return status?.durationMs;
 }
 
-function IdeaList({ empty, ideas }: { empty: string; ideas: ResearchIdea[] }) {
+function ideaTags(idea: ResearchIdea, assetLabelByKey: Map<string, string>) {
+  const timeframes = (idea.timeframes?.length ? idea.timeframes : idea.ideaReport?.timeframes ?? []).filter(Boolean);
+  const assets = (idea.assetKeys ?? []).filter(Boolean).map((assetKey) => assetLabelByKey.get(assetKey) ?? assetKey);
+  return [...timeframes, ...assets];
+}
+
+function IdeaList({ assetLabelByKey, empty, ideas }: { assetLabelByKey: Map<string, string>; empty: string; ideas: ResearchIdea[] }) {
   if (!ideas.length) {
     return (
       <div className="researchEmptyMini">
@@ -490,9 +489,9 @@ function IdeaList({ empty, ideas }: { empty: string; ideas: ResearchIdea[] }) {
           </div>
           <p>{idea.hypothesis ?? "No hypothesis text recorded."}</p>
           <div className="researchIdeaMeta">
-            <span>{(idea.timeframes ?? []).join(" / ") || "timeframe pending"}</span>
-            <span>{(idea.engines ?? []).join(" / ") || "engine pending"}</span>
-            <span>{formatDate(idea.createdAt)}</span>
+            {(ideaTags(idea, assetLabelByKey).length ? ideaTags(idea, assetLabelByKey) : ["timeframe pending"]).map((tag) => (
+              <span key={tag}>{tag}</span>
+            ))}
           </div>
         </article>
       ))}
@@ -655,9 +654,10 @@ function ResearchWorkSync({ snapshot }: { snapshot: ResearchSnapshot }) {
 
 export default async function ResearchPage() {
   const [snapshot, assetOptions] = await Promise.all([getResearchSnapshot(), readResearchAssetOptions()]);
+  const assetLabelByKey = new Map(assetOptions.map((asset) => [asset.key, asset.symbol]));
   const ideaBoardIdeas = [...snapshot.inboxIdeas, ...snapshot.approvedIdeas].sort((left, right) => ideaTime(right) - ideaTime(left)).slice(0, 12);
   const ideaToCodeInputs = snapshot.approvedIdeas.length ? snapshot.approvedIdeas : snapshot.inboxIdeas;
-  const backtestInputRows = snapshot.belowRequirementRows;
+  const backtestInputRows = snapshot.backtestReviewRows;
 
   return (
     <main className="terminal">
@@ -707,7 +707,7 @@ export default async function ResearchPage() {
                 <span>Finished</span>
                 <strong>Idea Board output</strong>
               </div>
-              <IdeaList empty="No ideas on the board yet." ideas={ideaBoardIdeas} />
+              <IdeaList assetLabelByKey={assetLabelByKey} empty="No ideas on the board yet." ideas={ideaBoardIdeas} />
             </div>
           </div>
         </section>
@@ -726,14 +726,14 @@ export default async function ResearchPage() {
                 <span>Collecting from previous output</span>
                 <strong>Ideas ready to code</strong>
               </div>
-              <IdeaList empty="No approved or inbox ideas are waiting." ideas={ideaToCodeInputs} />
+              <IdeaList assetLabelByKey={assetLabelByKey} empty="No approved or inbox ideas are waiting." ideas={ideaToCodeInputs} />
             </div>
-            <div className={`researchLane finished ${laneState(snapshot.readySpecs.length)}`}>
+            <div className="researchLane finished inactive">
               <div className="researchLaneHead">
                 <span>Finished by this stage</span>
                 <strong>Coded strategies</strong>
               </div>
-              <StrategyList empty="No coded strategies finished yet." specs={snapshot.readySpecs} />
+              <StrategyList empty="Coded output moves into the backtest queue." specs={[]} />
             </div>
           </div>
         </section>
@@ -756,12 +756,12 @@ export default async function ResearchPage() {
               </div>
               <StrategyList empty="No coded strategies waiting for stats." specs={snapshot.readySpecs} />
             </div>
-            <div className={`researchLane finished ${laneState(snapshot.candidateRows.length)}`}>
+            <div className="researchLane finished inactive">
               <div className="researchLaneHead">
                 <span>Finished by this stage</span>
                 <strong>Backtested stats</strong>
               </div>
-              <BacktestTable empty="No backtested stats finished yet." rows={snapshot.candidateRows} showGate />
+              <BacktestTable empty="Backtest results move into finished review." rows={[]} showGate />
             </div>
           </div>
         </section>
@@ -777,12 +777,12 @@ export default async function ResearchPage() {
             </span>
           </div>
           <div className="researchConversionGrid">
-            <div className={`researchLane collecting ${laneState(backtestInputRows.length || snapshot.candidateRows.length)}`}>
+            <div className={`researchLane collecting ${laneState(backtestInputRows.length)}`}>
               <div className="researchLaneHead">
                 <span>Collecting from previous output</span>
                 <strong>Backtested stats</strong>
               </div>
-              <BacktestTable empty="No backtested stats are ready for final review." rows={backtestInputRows.length ? backtestInputRows : snapshot.candidateRows} showGate />
+              <BacktestTable empty="No backtested stats are waiting for final review." rows={backtestInputRows} showGate />
             </div>
             <div className={`researchLane finished ${laneState(snapshot.finishedRows.length)}`}>
               <div className="researchLaneHead">

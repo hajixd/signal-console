@@ -4,9 +4,9 @@ on:
   workflow_dispatch:
     inputs:
       limit:
-        description: "Maximum ready specs to backtest"
+        description: "Maximum item count for this stage"
         required: false
-        default: "25"
+        default: "1"
       markets:
         description: "Comma-separated markets"
         required: false
@@ -14,7 +14,7 @@ on:
       maxPerIdea:
         description: "Maximum coded specs per idea"
         required: false
-        default: "3"
+        default: "1"
       minPf:
         description: "Minimum profit factor gate"
         required: false

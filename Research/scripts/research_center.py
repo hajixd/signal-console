@@ -56,21 +56,21 @@ def parse_args() -> argparse.Namespace:
     stage.add_argument("--stage", choices=["research", "idea", "coding", "backtest", "pipeline"], default="pipeline")
     stage.add_argument("--markets", default="futures,forex")
     stage.add_argument("--asset", action="append")
-    stage.add_argument("--max-per-idea", type=int, default=3)
+    stage.add_argument("--max-per-idea", type=int, default=1)
     stage.add_argument("--min-pf", type=float, default=2.0)
     stage.add_argument("--min-trades", type=int, default=21)
     stage.add_argument("--workers", type=int, default=1)
-    stage.add_argument("--limit", type=int, default=25)
+    stage.add_argument("--limit", type=int, default=1)
     stage.add_argument("--offline-llm", action="store_true")
 
     llm_cycle = subparsers.add_parser("llm-cycle")
     llm_cycle.add_argument("--markets", default="futures,forex")
     llm_cycle.add_argument("--asset", action="append")
-    llm_cycle.add_argument("--max-per-idea", type=int, default=3)
+    llm_cycle.add_argument("--max-per-idea", type=int, default=1)
     llm_cycle.add_argument("--min-pf", type=float, default=2.0)
     llm_cycle.add_argument("--min-trades", type=int, default=21)
     llm_cycle.add_argument("--workers", type=int, default=1)
-    llm_cycle.add_argument("--limit", type=int, default=25)
+    llm_cycle.add_argument("--limit", type=int, default=1)
     llm_cycle.add_argument("--offline-llm", action="store_true")
 
     return parser.parse_args()
@@ -219,7 +219,7 @@ def run_llm_stage(stage: str, args: argparse.Namespace) -> None:
 
     if stage in {"idea", "pipeline"}:
         run_script("ideas_from_research.py", ["--from-pages"])
-        run_script("llm_strategy_factory.py", ["ideas", "--approve", *llm_flag])
+        run_script("llm_strategy_factory.py", ["ideas", "--approve", "--limit", str(args.limit), *llm_flag])
         run_script("llm_strategy_factory.py", ["summarize", "--stage", "idea", *llm_flag])
 
     if stage in {"coding", "pipeline"}:

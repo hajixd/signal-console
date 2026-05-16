@@ -88,12 +88,6 @@ export default function ResearchIdeaForm({ assets, isEmpty = false }: ResearchId
       <button className="researchAddIdeaButton" onClick={() => setIsOpen(true)} type="button">
         Add Idea
       </button>
-      <div className="researchIdeaComposerSteps" aria-label="Idea pipeline">
-        <span>Draft</span>
-        <span>Summarize</span>
-        <span>Code</span>
-        <span>Backtest</span>
-      </div>
       {message ? <span className="researchIdeaComposerMessage">{message}</span> : null}
 
       {isOpen ? (

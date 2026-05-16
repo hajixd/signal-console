@@ -32,6 +32,10 @@ function routeForStage(stage: ResearchStage) {
   return `/api/cron/research-${stage}`;
 }
 
+function defaultResearchRunLimit() {
+  return 1;
+}
+
 async function writeLocalResearchStatus(payload: Record<string, unknown>) {
   const updatedAt = new Date().toISOString();
   const normalizedPayload = { ...payload, updatedAt };
@@ -77,8 +81,8 @@ export async function handleResearchCron(request: NextRequest, defaultStage: Res
 
   const startedAt = Date.now();
   const startedAtIso = new Date(startedAt).toISOString();
-  const limit = boundedInteger(request.nextUrl.searchParams.get("limit"), stage === "backtest" ? 50 : 25, 1, 250);
-  const maxPerIdea = boundedInteger(request.nextUrl.searchParams.get("maxPerIdea"), 3, 1, 50);
+  const limit = boundedInteger(request.nextUrl.searchParams.get("limit"), defaultResearchRunLimit(), 1, 250);
+  const maxPerIdea = boundedInteger(request.nextUrl.searchParams.get("maxPerIdea"), 1, 1, 50);
   const minTrades = boundedInteger(request.nextUrl.searchParams.get("minTrades"), 21, 1, 5000);
   const minPf = request.nextUrl.searchParams.get("minPf") ?? "2";
   const markets = request.nextUrl.searchParams.get("markets") || "futures,forex";
