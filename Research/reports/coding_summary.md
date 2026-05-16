@@ -1,7 +1,18 @@
 # Coding Summary
 
-Wrote 1 LLM-coded ready-to-backtest strategy spec(s).
+# Research Candidate Report
 
-- Prepared 1 LLM-rule strategy spec(s).
-- The generated engine is flexible rule-code evaluated by the research backtester.
-- `rs_llm_short_horizon_tsmom_sp_500_futures_llm_rule_code_9c89703e`
+Generated: 2026-05-16T02:59:54.880890+00:00
+
+Backtested strategies: 1
+Qualified strategies: 0
+
+## Top Backtests
+
+| Strategy | Asset | Market | Engine | PF | Trades | Total R | Qualified |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| rs_asia_range_london_break_australian_dollar_futures_range_break_fe62c419 | australian_dollar_futures | futures | range_break | 0.927663 | 745 | -16.127465 | False |
+
+## Qualified
+
+No qualified strategies yet.
