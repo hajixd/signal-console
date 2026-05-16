@@ -2,7 +2,7 @@ const ADD_IDEA_WORKFLOW_FILE = "add-research-idea.yml";
 const WORKFLOW_FILE = "research-cycle.yml";
 const DEFAULT_OWNER = "hajixd";
 const DEFAULT_REPO = "signal-console";
-const DEFAULT_REF = "publish-main";
+const DEFAULT_REF = "main";
 
 type GithubConfig = {
   owner: string;
@@ -39,7 +39,7 @@ function envValue(...keys: string[]): string {
 function githubResearchConfig(): GithubConfig {
   return {
     owner: envValue("GITHUB_RESEARCH_OWNER", "GITHUB_REFRESH_OWNER", "VERCEL_GIT_REPO_OWNER") || DEFAULT_OWNER,
-    ref: envValue("GITHUB_RESEARCH_REF", "GITHUB_REFRESH_REF", "VERCEL_GIT_COMMIT_REF") || DEFAULT_REF,
+    ref: envValue("VERCEL_GIT_COMMIT_REF", "GITHUB_RESEARCH_REF", "GITHUB_REFRESH_REF") || DEFAULT_REF,
     repo: envValue("GITHUB_RESEARCH_REPO", "GITHUB_REFRESH_REPO", "VERCEL_GIT_REPO_SLUG") || DEFAULT_REPO,
     token: envValue("GITHUB_RESEARCH_TOKEN", "GITHUB_BACKTEST_REFRESH_TOKEN", "GITHUB_REFRESH_TOKEN")
   };

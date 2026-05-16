@@ -13,9 +13,10 @@ export type ResearchAssetOption = {
 
 type ResearchIdeaFormProps = {
   assets: ResearchAssetOption[];
+  isEmpty?: boolean;
 };
 
-export default function ResearchIdeaForm({ assets }: ResearchIdeaFormProps) {
+export default function ResearchIdeaForm({ assets, isEmpty = false }: ResearchIdeaFormProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [title, setTitle] = useState("");
@@ -77,12 +78,22 @@ export default function ResearchIdeaForm({ assets }: ResearchIdeaFormProps) {
   return (
     <div className="researchIdeaComposer">
       <div className="researchIdeaComposerText">
-        <strong>Idea intake</strong>
-        <span>Open the detail form, add the hypothesis, then let the LLM pipeline summarize, code, and backtest it.</span>
+        <strong>{isEmpty ? "No ideas queued" : "Manual idea intake"}</strong>
+        <span>
+          {isEmpty
+            ? "Add a title and hypothesis when a new setup is ready for the research pipeline."
+            : "Add another setup with a title, hypothesis, and market scope."}
+        </span>
       </div>
       <button className="researchAddIdeaButton" onClick={() => setIsOpen(true)} type="button">
         Add Idea
       </button>
+      <div className="researchIdeaComposerSteps" aria-label="Idea pipeline">
+        <span>Draft</span>
+        <span>Summarize</span>
+        <span>Code</span>
+        <span>Backtest</span>
+      </div>
       {message ? <span className="researchIdeaComposerMessage">{message}</span> : null}
 
       {isOpen ? (

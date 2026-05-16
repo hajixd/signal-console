@@ -10,19 +10,19 @@
     },
     {
       "path": "/api/cron/research-research",
-      "schedule": "0 */6 * * *"
+      "schedule": "0 14 * * *"
     },
     {
       "path": "/api/cron/research-ideas",
-      "schedule": "10 */6 * * *"
+      "schedule": "0 18 * * *"
     },
     {
       "path": "/api/cron/research-coding",
-      "schedule": "20 */6 * * *"
+      "schedule": "0 22 * * *"
     },
     {
       "path": "/api/cron/research-backtest",
-      "schedule": "30 */6 * * *"
+      "schedule": "0 2 * * *"
     }
   ]
 }

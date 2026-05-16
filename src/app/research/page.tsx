@@ -16,14 +16,15 @@ const ASSETS_PATH = path.join(process.cwd(), "config", "assets.json");
 const RESEARCH_STATUS_PATH = path.join(RESEARCH_ROOT, "runtime", "research-cycle-status.json");
 const RESEARCH_STAGE_STATUS_PATH = path.join(RESEARCH_ROOT, "runtime", "research-stage-status.json");
 const HIDDEN_ENTRY_NAMES = new Set([".gitkeep"]);
-const RESEARCH_CRON_STAGE_HOURS_UTC = [0, 6, 12, 18];
 const RESEARCH_STAGE_ORDER = ["research", "idea", "coding", "backtest"] as const;
-const RESEARCH_STAGE_MINUTES_UTC = {
-  backtest: 30,
-  coding: 20,
-  idea: 10,
-  research: 0
-} satisfies Record<ResearchStage, number>;
+const RESEARCH_FINISHED_MIN_PF = 2;
+const RESEARCH_FINISHED_MIN_TRADES = 21;
+const RESEARCH_STAGE_SCHEDULE_UTC = {
+  backtest: { hour: 2, minute: 0 },
+  coding: { hour: 22, minute: 0 },
+  idea: { hour: 18, minute: 0 },
+  research: { hour: 14, minute: 0 }
+} satisfies Record<ResearchStage, { hour: number; minute: number }>;
 const RESEARCH_STAGE_TITLES = {
   backtest: "Backtesting",
   coding: "Coding Ideas",
@@ -111,6 +112,7 @@ type ResearchSnapshot = {
   approvedIdeas: ResearchIdea[];
   approvedIdeaCount: number;
   backtestedCount: number;
+  belowRequirementRows: BacktestRow[];
   candidateRows: BacktestRow[];
   finishedRows: BacktestRow[];
   fetchedPagesCount: number;
@@ -242,6 +244,20 @@ async function readBacktestSummary() {
   }
 }
 
+function backtestProfitFactor(row: BacktestRow) {
+  const value = Number(row.profit_factor);
+  return Number.isFinite(value) ? value : 0;
+}
+
+function backtestTradeCount(row: BacktestRow) {
+  const value = Number(row.trades);
+  return Number.isFinite(value) ? value : 0;
+}
+
+function isFinishedBacktestRow(row: BacktestRow) {
+  return row.qualified === "True" || (backtestProfitFactor(row) >= RESEARCH_FINISHED_MIN_PF && backtestTradeCount(row) >= RESEARCH_FINISHED_MIN_TRADES);
+}
+
 async function readLatestReport(): Promise<LatestReport> {
   const entries = await safeReadDir("reports");
   const files = await Promise.all(
@@ -303,9 +319,10 @@ async function readResearchCycleStatuses(): Promise<{ cycle: ResearchCycleStatus
 async function getResearchSnapshot(): Promise<ResearchSnapshot> {
   const readyFolders = await listDirectoryNames("strategies/ready_to_backtest");
   const backtestedFolders = await listDirectoryNames("strategies/backtested");
-  const qualifiedFolders = await listDirectoryNames("strategies/qualified");
   const backtestedIds = new Set(backtestedFolders);
   const candidateRows = (await readBacktestSummary()).sort((left, right) => Number(right.profit_factor) - Number(left.profit_factor));
+  const finishedRows = candidateRows.filter(isFinishedBacktestRow);
+  const belowRequirementRows = candidateRows.filter((row) => !isFinishedBacktestRow(row));
   const inboxIdeas = (await readJsonFiles<ResearchIdea>("ideas/inbox", 8)).sort((left, right) => ideaTime(right) - ideaTime(left));
   const approvedIdeas = (await readJsonFiles<ResearchIdea>("ideas/approved", 10)).sort((left, right) => ideaTime(right) - ideaTime(left));
   const researchStatuses = await readResearchCycleStatuses();
@@ -314,14 +331,15 @@ async function getResearchSnapshot(): Promise<ResearchSnapshot> {
     approvedIdeas,
     approvedIdeaCount: await countFiles("ideas/approved", ".json"),
     backtestedCount: backtestedFolders.length,
-    candidateRows: candidateRows.slice(0, 10),
-    finishedRows: candidateRows.filter((row) => row.qualified === "True").slice(0, 10),
+    belowRequirementRows,
+    candidateRows,
+    finishedRows,
     fetchedPagesCount: await countFiles("sources/pages", ".json"),
     inboxIdeaCount: await countFiles("ideas/inbox", ".json"),
     inboxIdeas,
     latestReport: await readLatestReport(),
     pendingReadyCount: readyFolders.filter((folder) => !backtestedIds.has(folder)).length,
-    qualifiedCount: qualifiedFolders.length,
+    qualifiedCount: finishedRows.length,
     readyCount: readyFolders.length,
     readySpecs: await readStrategySpecs("strategies/ready_to_backtest", 10),
     researchStatus: researchStatuses.cycle,
@@ -363,14 +381,12 @@ function formatDuration(ms: number | undefined) {
 
 function nextResearchStageRunIso(stage: ResearchStage, now = new Date()) {
   const candidates: Date[] = [];
-  const minute = RESEARCH_STAGE_MINUTES_UTC[stage];
+  const schedule = RESEARCH_STAGE_SCHEDULE_UTC[stage];
   for (let dayOffset = 0; dayOffset <= 1; dayOffset += 1) {
-    for (const hour of RESEARCH_CRON_STAGE_HOURS_UTC) {
-      const candidate = new Date(now);
-      candidate.setUTCDate(now.getUTCDate() + dayOffset);
-      candidate.setUTCHours(hour, minute, 0, 0);
-      if (candidate > now) candidates.push(candidate);
-    }
+    const candidate = new Date(now);
+    candidate.setUTCDate(now.getUTCDate() + dayOffset);
+    candidate.setUTCHours(schedule.hour, schedule.minute, 0, 0);
+    if (candidate > now) candidates.push(candidate);
   }
   return candidates.sort((left, right) => left.getTime() - right.getTime())[0]?.toISOString() ?? now.toISOString();
 }
@@ -443,6 +459,18 @@ function stageJobsLastRun(status: ResearchStageStatus | undefined) {
   return typeof status?.jobsLastRun === "number" ? formatNumber(status.jobsLastRun) : "n/a";
 }
 
+function stageDurationLabel(status: ResearchStageStatus | undefined) {
+  return status?.state === "running" ? "Running for" : "Last duration";
+}
+
+function stageDurationMs(status: ResearchStageStatus | undefined) {
+  if (status?.state === "running" && status.startedAt) {
+    const startedAt = Date.parse(status.startedAt);
+    if (Number.isFinite(startedAt)) return Math.max(0, Date.now() - startedAt);
+  }
+  return status?.durationMs;
+}
+
 function IdeaList({ empty, ideas }: { empty: string; ideas: ResearchIdea[] }) {
   if (!ideas.length) {
     return (
@@ -494,7 +522,17 @@ function StrategyList({ empty, specs }: { empty: string; specs: StrategySpec[] }
   );
 }
 
-function BacktestTable({ empty, rows, showGate = false }: { empty: string; rows: BacktestRow[]; showGate?: boolean }) {
+function BacktestTable({
+  density = "default",
+  empty,
+  rows,
+  showGate = false
+}: {
+  density?: "default" | "split";
+  empty: string;
+  rows: BacktestRow[];
+  showGate?: boolean;
+}) {
   if (!rows.length) {
     return (
       <div className="researchEmptyMini">
@@ -504,8 +542,8 @@ function BacktestTable({ empty, rows, showGate = false }: { empty: string; rows:
   }
 
   return (
-    <div className="terminal-table-wrap compact researchLaneTable">
-      <table className="terminal-table researchTable">
+    <div className={`terminal-table-wrap compact researchLaneTable${density === "split" ? " researchLaneTableSplit" : ""}`}>
+      <table className={`terminal-table researchTable${showGate ? " withGate" : ""}`}>
         <thead>
           <tr>
             <th>Strategy</th>
@@ -540,6 +578,27 @@ function BacktestTable({ empty, rows, showGate = false }: { empty: string; rows:
   );
 }
 
+function FinishedStrategySplit({ belowRows, finishedRows }: { belowRows: BacktestRow[]; finishedRows: BacktestRow[] }) {
+  return (
+    <div className="researchFinishedSplit">
+      <section className="researchSplitSection qualified">
+        <div className="researchSplitHead">
+          <span>Top half</span>
+          <strong>{`PF >= ${RESEARCH_FINISHED_MIN_PF}`}</strong>
+        </div>
+        <BacktestTable density="split" empty="No PF >= 2 strategy yet." rows={finishedRows} />
+      </section>
+      <section className="researchSplitSection below">
+        <div className="researchSplitHead">
+          <span>Bottom half</span>
+          <strong>Below requirement</strong>
+        </div>
+        <BacktestTable density="split" empty="No below-requirement stats yet." rows={belowRows} showGate />
+      </section>
+    </div>
+  );
+}
+
 function ResearchStageTile({ snapshot, stage }: { snapshot: ResearchSnapshot; stage: ResearchStage }) {
   const status = snapshot.researchStageStatuses[stage];
   const outputCount = stageOutputCount(snapshot, stage);
@@ -564,8 +623,8 @@ function ResearchStageTile({ snapshot, stage }: { snapshot: ResearchSnapshot; st
         <dd>{stageJobsLastRun(status)}</dd>
         <dt>{RESEARCH_STAGE_JOB_LABELS[stage]} now</dt>
         <dd>{formatNumber(outputCount)}</dd>
-        <dt>Duration</dt>
-        <dd>{formatDuration(status?.durationMs)}</dd>
+        <dt>{stageDurationLabel(status)}</dt>
+        <dd>{formatDuration(stageDurationMs(status))}</dd>
       </dl>
     </div>
   );
@@ -579,7 +638,7 @@ function ResearchWorkSync({ snapshot }: { snapshot: ResearchSnapshot }) {
       <div className="backtest-card-head">
         <div>
           <h2>Research Work</h2>
-          <p>Each research stage runs once every 6 hours and records its own schedule, last run, and completed jobs.</p>
+          <p>Research stages now run once a day in separated windows and record last run, completed jobs, and duration.</p>
         </div>
         <span className={`status ${cycleState === "failed" ? "failed" : cycleState === "success" ? "sent" : "skipped"}`}>
           {cycleState === "failed" ? "error" : cycleState === "success" ? "success" : cycleState === "running" ? "active" : "idle"}
@@ -598,7 +657,7 @@ export default async function ResearchPage() {
   const [snapshot, assetOptions] = await Promise.all([getResearchSnapshot(), readResearchAssetOptions()]);
   const ideaBoardIdeas = [...snapshot.inboxIdeas, ...snapshot.approvedIdeas].sort((left, right) => ideaTime(right) - ideaTime(left)).slice(0, 12);
   const ideaToCodeInputs = snapshot.approvedIdeas.length ? snapshot.approvedIdeas : snapshot.inboxIdeas;
-  const backtestInputRows = snapshot.candidateRows.filter((row) => row.qualified !== "True");
+  const backtestInputRows = snapshot.belowRequirementRows;
 
   return (
     <main className="terminal">
@@ -606,7 +665,12 @@ export default async function ResearchPage() {
       <AutoTradeAccountGate />
       <section className="terminal-workspace marketView researchWorkspace" id="research">
         <div className="marketTopShell researchTopShell">
-          <AutoTradeAccountModeSwitch />
+          <div className="marketTopRow">
+            <AutoTradeAccountModeSwitch />
+            <Link className="autoTradeResearchLink marketTopNavLink" href="/">
+              Main Page
+            </Link>
+          </div>
         </div>
 
         <header className="terminal-head researchTerminalHead">
@@ -636,7 +700,7 @@ export default async function ResearchPage() {
                 <span>Collecting</span>
                 <strong>New ideas</strong>
               </div>
-              <ResearchIdeaForm assets={assetOptions} />
+              <ResearchIdeaForm assets={assetOptions} isEmpty={snapshot.inboxIdeaCount + snapshot.approvedIdeaCount === 0} />
             </div>
             <div className={`researchLane finished ${laneState(ideaBoardIdeas.length)}`}>
               <div className="researchLaneHead">
@@ -725,25 +789,12 @@ export default async function ResearchPage() {
                 <span>Finished by this stage</span>
                 <strong>Finished strategies</strong>
               </div>
-              <BacktestTable empty="No finished PF > 2 result yet." rows={snapshot.finishedRows} />
-              {snapshot.latestReport ? (
-                <div className="researchReportExcerpt">
-                  {snapshot.latestReport.lines.map((line) => (
-                    <span key={line}>{line.replaceAll("|", " / ")}</span>
-                  ))}
-                </div>
-              ) : null}
+              <FinishedStrategySplit belowRows={snapshot.belowRequirementRows} finishedRows={snapshot.finishedRows} />
             </div>
           </div>
         </section>
 
         <ResearchWorkSync snapshot={snapshot} />
-
-        <nav className="researchBottomNav" aria-label="Research footer navigation">
-          <Link className="terminal-action" href="/">
-            Back to Main Page
-          </Link>
-        </nav>
       </section>
     </main>
   );

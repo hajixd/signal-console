@@ -1408,7 +1408,12 @@ export default async function Home({ searchParams }: HomeProps) {
       <AutoTradeAccountGate />
       <section className="terminal-workspace marketView" id="signals" key={activeMarket}>
         <div className="marketTopShell">
-          <AutoTradeAccountModeSwitch />
+          <div className="marketTopRow">
+            <AutoTradeAccountModeSwitch />
+            <Link className="autoTradeResearchLink marketTopNavLink" href="/research">
+              Research
+            </Link>
+          </div>
           <MarketSwitchTabs activeMarket={activeMarket} tabs={MARKET_TABS} persistActiveMarket={syncActiveMarket} />
         </div>
         <header className="terminal-head">
@@ -1788,11 +1793,6 @@ export default async function Home({ searchParams }: HomeProps) {
             <DataValidityBox dataValidity={dataValidity} />
           </div>
         </section>
-        <nav className="researchBottomNav" aria-label="Research navigation">
-          <Link className="terminal-action" href="/research">
-            Research
-          </Link>
-        </nav>
       </section>
     </main>
   );

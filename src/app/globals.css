@@ -163,6 +163,23 @@ button {
   backdrop-filter: blur(12px);
 }
 
+.marketTopRow {
+  min-width: 0;
+  display: flex;
+  align-items: stretch;
+  gap: 0.34rem;
+}
+
+.marketTopRow .autoTradeTopModeBar {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.marketTopNavLink {
+  flex: 0 0 clamp(140px, 18vw, 220px);
+  margin-left: auto;
+}
+
 .marketTopShell .autoTradeTopModeBar {
   width: 100%;
   display: grid;
@@ -2861,6 +2878,7 @@ html[data-theme="light"] .themeDarkLabel {
   display: grid;
   align-content: start;
   gap: 0.6rem;
+  overflow: hidden;
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 12px;
   background: rgba(255, 255, 255, 0.03);
@@ -2929,6 +2947,14 @@ html[data-theme="light"] .themeDarkLabel {
 
 .researchLaneTable {
   max-height: 430px;
+}
+
+.terminal-table-wrap.compact.researchLaneTable {
+  max-height: min(430px, 52vh);
+}
+
+.terminal-table-wrap.compact.researchLaneTable.researchLaneTableSplit {
+  max-height: clamp(132px, 22vh, 240px);
 }
 
 .researchEmptyMini {
@@ -3043,14 +3069,18 @@ html[data-theme="light"] .themeDarkLabel {
 }
 
 .researchIdeaComposer {
-  min-height: 180px;
+  min-height: 132px;
   display: grid;
-  align-content: center;
-  justify-items: start;
-  gap: 0.7rem;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-content: start;
+  align-items: start;
+  justify-items: stretch;
+  gap: 0.7rem 0.85rem;
+  padding-top: 0.1rem;
 }
 
 .researchIdeaComposerText {
+  min-width: 0;
   display: grid;
   gap: 0.34rem;
 }
@@ -3072,8 +3102,47 @@ html[data-theme="light"] .themeDarkLabel {
   line-height: 1.45;
 }
 
+.researchIdeaComposerSteps {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.4rem;
+  margin-top: 0.08rem;
+}
+
+.researchIdeaComposerSteps span {
+  min-width: 0;
+  min-height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.025);
+  color: rgba(232, 236, 243, 0.56);
+  padding: 0 0.42rem;
+  font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+  font-size: 0.54rem;
+  font-weight: 950;
+  letter-spacing: 0;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.researchIdeaComposerSteps span:first-child {
+  border-color: rgba(52, 211, 153, 0.24);
+  background: rgba(52, 211, 153, 0.075);
+  color: rgba(110, 231, 183, 0.88);
+}
+
 .researchAddIdeaButton {
   min-height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  align-self: start;
   border: 1px solid rgba(52, 211, 153, 0.36);
   border-radius: 8px;
   background: rgba(52, 211, 153, 0.1);
@@ -3083,6 +3152,7 @@ html[data-theme="light"] .themeDarkLabel {
   font-size: 0.6rem;
   font-weight: 950;
   text-transform: uppercase;
+  white-space: nowrap;
   cursor: pointer;
 }
 
@@ -3379,8 +3449,116 @@ html[data-theme="light"] .themeDarkLabel {
   white-space: nowrap;
 }
 
-.researchTable {
-  min-width: 940px;
+.researchFinishedSplit {
+  min-width: 0;
+  min-height: 430px;
+  display: grid;
+  grid-template-rows: repeat(2, minmax(0, 1fr));
+  gap: 0.64rem;
+}
+
+.researchSplitSection {
+  min-width: 0;
+  min-height: 0;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 0.42rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding-top: 0.55rem;
+}
+
+.researchSplitSection:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.researchSplitHead {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.researchSplitHead span,
+.researchSplitHead strong {
+  min-width: 0;
+  overflow: hidden;
+  font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+  font-weight: 950;
+  letter-spacing: 0;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.researchSplitHead span {
+  color: rgba(255, 255, 255, 0.42);
+  font-size: 0.54rem;
+}
+
+.researchSplitHead strong {
+  color: rgba(255, 255, 255, 0.86);
+  font-size: 0.62rem;
+  text-align: right;
+}
+
+.researchSplitSection.qualified .researchSplitHead strong {
+  color: rgba(110, 231, 183, 0.9);
+}
+
+.researchSplitSection.below .researchSplitHead strong {
+  color: rgba(252, 211, 77, 0.88);
+}
+
+.researchSplitSection .researchEmptyMini {
+  min-height: 96px;
+}
+
+.terminal-table.researchTable {
+  min-width: 100%;
+  table-layout: fixed;
+}
+
+.researchTable th:nth-child(1),
+.researchTable td:nth-child(1) {
+  width: 50%;
+}
+
+.researchTable th:nth-child(2),
+.researchTable td:nth-child(2) {
+  width: 26%;
+}
+
+.researchTable th:nth-child(3),
+.researchTable td:nth-child(3),
+.researchTable th:nth-child(4),
+.researchTable td:nth-child(4) {
+  width: 12%;
+  text-align: right;
+}
+
+.researchTable.withGate th:nth-child(1),
+.researchTable.withGate td:nth-child(1) {
+  width: 42%;
+}
+
+.researchTable.withGate th:nth-child(2),
+.researchTable.withGate td:nth-child(2) {
+  width: 22%;
+}
+
+.researchTable.withGate th:nth-child(3),
+.researchTable.withGate td:nth-child(3),
+.researchTable.withGate th:nth-child(4),
+.researchTable.withGate td:nth-child(4) {
+  width: 10%;
+}
+
+.researchTable.withGate th:nth-child(5),
+.researchTable.withGate td:nth-child(5) {
+  width: 16%;
+  text-align: right;
 }
 
 .researchTable .status.neutral-row {
@@ -4835,6 +5013,26 @@ html[data-theme="light"] .researchLaneHead {
   border-bottom-color: rgba(15, 23, 42, 0.08);
 }
 
+html[data-theme="light"] .researchSplitSection {
+  border-top-color: rgba(15, 23, 42, 0.08);
+}
+
+html[data-theme="light"] .researchSplitHead span {
+  color: rgba(15, 23, 42, 0.42);
+}
+
+html[data-theme="light"] .researchSplitHead strong {
+  color: rgba(15, 23, 42, 0.78);
+}
+
+html[data-theme="light"] .researchSplitSection.qualified .researchSplitHead strong {
+  color: #047857;
+}
+
+html[data-theme="light"] .researchSplitSection.below .researchSplitHead strong {
+  color: #a16207;
+}
+
 html[data-theme="light"] .researchEmptyMini,
 html[data-theme="light"] .researchMiniRow {
   border-color: rgba(15, 23, 42, 0.09);
@@ -4888,6 +5086,18 @@ html[data-theme="light"] .researchIdeaComposerText span,
 html[data-theme="light"] .researchIdeaModalHead span,
 html[data-theme="light"] .researchIdeaComposerMessage {
   color: rgba(15, 23, 42, 0.64);
+}
+
+html[data-theme="light"] .researchIdeaComposerSteps span {
+  border-color: rgba(15, 23, 42, 0.08);
+  background: rgba(15, 23, 42, 0.025);
+  color: rgba(15, 23, 42, 0.52);
+}
+
+html[data-theme="light"] .researchIdeaComposerSteps span:first-child {
+  border-color: rgba(5, 150, 105, 0.2);
+  background: rgba(16, 185, 129, 0.075);
+  color: #047857;
 }
 
 html[data-theme="light"] .researchIdeaModalHead {
@@ -5357,6 +5567,19 @@ html[data-theme="light"] .strategyToggle input {
     min-height: 0;
   }
 
+  .terminal-table-wrap.compact.researchLaneTable {
+    max-height: 360px;
+  }
+
+  .terminal-table-wrap.compact.researchLaneTable.researchLaneTableSplit {
+    max-height: 220px;
+  }
+
+  .researchFinishedSplit {
+    min-height: 0;
+    grid-template-rows: auto;
+  }
+
   .researchLaneHead {
     flex-direction: column;
     gap: 0.32rem;
@@ -5372,6 +5595,14 @@ html[data-theme="light"] .strategyToggle input {
 
   .researchIdeaForm {
     grid-template-columns: 1fr;
+  }
+
+  .researchIdeaComposer {
+    grid-template-columns: 1fr;
+  }
+
+  .researchIdeaComposerSteps {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .researchIdeaModal {
@@ -7048,6 +7279,14 @@ html[data-theme="light"] .tradeReplaySlider input {
     padding: 0 0 4px;
     background: rgba(7, 9, 13, 0.96);
     backdrop-filter: blur(14px);
+  }
+
+  .marketTopRow {
+    gap: 5px;
+  }
+
+  .marketTopNavLink {
+    flex-basis: min(118px, 38vw);
   }
 
   .market-tabs {
