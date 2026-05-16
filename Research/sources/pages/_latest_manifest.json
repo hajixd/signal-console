@@ -1,3 +1,14 @@
 {
-  "fetched": []
+  "fetched": [
+    {
+      "characters": 174,
+      "file": "adhoc_1_i_backtested_1_178_668_opening_range_breakout_trades_here_s_th.json",
+      "url": "https://www.youtube.com/watch?v=MOG-DbgmzzI"
+    },
+    {
+      "characters": 174,
+      "file": "adhoc_1_backtest_opening_range_breakout_strategy_success_rate_on_spy_v.json",
+      "url": "https://www.youtube.com/watch?v=ZzIr6-A4oMU"
+    }
+  ]
 }

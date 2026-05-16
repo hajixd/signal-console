@@ -1,0 +1,28 @@
+{
+  "assetKeys": [],
+  "createdAt": "2026-05-16T02:58:20.003104+00:00",
+  "engines": [],
+  "hypothesis": "Research source suggests a strategy worth structuring and testing: Is the ORB strategy working in any market consistently, during this volatility? We'll utilize the Opening Range Breakout Backtester to compare and contrast 3...",
+  "ideaId": "backtest_opening_range_breakout_strategy_success_rate_on_spy_vs",
+  "llm": {
+    "model": "deepseek-ai/DeepSeek-R1-0528",
+    "stage": "research"
+  },
+  "markets": [
+    "futures",
+    "forex"
+  ],
+  "provenance": "youtube_research",
+  "sourceUrls": [
+    "https://www.youtube.com/watch?v=ZzIr6-A4oMU"
+  ],
+  "status": "inbox",
+  "structure": {
+    "researchNote": "Is the ORB strategy working in any market consistently, during this volatility? We'll utilize the Opening Range Breakout Backtester to compare and contrast 3...",
+    "sourceTitle": "Backtest: Opening Range Breakout Strategy Success Rate on SPY vs."
+  },
+  "timeframes": [
+    "15m"
+  ],
+  "title": "Backtest: Opening Range Breakout Strategy Success Rate on SPY vs."
+}
