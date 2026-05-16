@@ -9,6 +9,7 @@ export const runtime = "nodejs";
 const RESEARCH_ROOT = path.join(process.cwd(), "Research");
 const IDEA_STATUSES = ["inbox", "approved"] as const;
 const SUPPORTED_TIMEFRAMES = new Set(["1m", "5m", "15m", "30m", "45m", "1h", "4h", "1d", "overnight"]);
+const URL_PATTERN = /https?:\/\/[^\s<>"')\]]+/g;
 
 type IdeaStatus = (typeof IDEA_STATUSES)[number];
 
@@ -30,6 +31,7 @@ type ResearchIdea = {
 type ResearchIdeaUpdatePayload = {
   assetKeys?: unknown;
   hypothesis?: unknown;
+  sourceUrls?: unknown;
   timeframes?: unknown;
   title?: unknown;
 };
@@ -52,6 +54,12 @@ function splitList(value: unknown, maxItems = 12) {
     .map((item) => item.trim())
     .filter(Boolean)
     .slice(0, maxItems);
+}
+
+function cleanUrls(value: unknown, fallbackText = "") {
+  const direct = splitList(value, 16);
+  const fromText = [...fallbackText.matchAll(URL_PATTERN)].map((match) => match[0]);
+  return [...new Set([...direct, ...fromText].map((url) => url.replace(/[.,;:!?]+$/, "")))].slice(0, 16);
 }
 
 function ideaDirectory(status: IdeaStatus) {
@@ -98,6 +106,9 @@ export async function PUT(request: NextRequest, context: RouteContext) {
   if (!match) {
     return NextResponse.json({ error: "Idea not found." }, { status: 404 });
   }
+  if (match.status !== "inbox") {
+    return NextResponse.json({ error: "Only new inbox ideas can be edited." }, { status: 403 });
+  }
 
   let payload: ResearchIdeaUpdatePayload;
   try {
@@ -110,6 +121,7 @@ export async function PUT(request: NextRequest, context: RouteContext) {
   const hypothesis = cleanString(payload.hypothesis, 1200);
   const timeframes = splitList(payload.timeframes).filter((timeframe) => SUPPORTED_TIMEFRAMES.has(timeframe));
   const assetKeys = splitList(payload.assetKeys, 32);
+  const sourceUrls = cleanUrls(payload.sourceUrls, `${title}\n${hypothesis}`);
 
   if (!title) {
     return NextResponse.json({ error: "Title is required." }, { status: 400 });
@@ -122,6 +134,7 @@ export async function PUT(request: NextRequest, context: RouteContext) {
     ...match.idea,
     assetKeys,
     hypothesis,
+    sourceUrls,
     status: match.status,
     timeframes: timeframes.length ? timeframes : ["15m"],
     title,

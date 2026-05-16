@@ -34,6 +34,7 @@ import {
   type BacktestTrade
 } from "@/lib/backtest";
 import { DEFAULT_CHALLENGE_RULES, type ChallengeRules } from "@/lib/challenge";
+import { analyzeBacktestDataValidity, dataValidityClass, type DataValidityResult } from "@/lib/data-validity";
 import { dollarPerUnit, instrumentSizeLabel, instrumentUnitLabel, recommendedSizeMultiplier } from "@/lib/instruments";
 import { defaultDatasetStatus, getDatasetStatus, getLiveConfig, type DatasetStatus, type LiveConfig } from "@/lib/live-config";
 import { allRules } from "@/lib/live-signals";
@@ -110,22 +111,6 @@ type StrategyOption = {
   stat?: BacktestStat;
 };
 
-type DataValidityTone = "good" | "warning" | "bad";
-
-type DataValidityIssue = {
-  count: number;
-  label: string;
-  tone: Exclude<DataValidityTone, "good">;
-};
-
-type DataValidityResult = {
-  detailTitle: string;
-  issues: DataValidityIssue[];
-  label: string;
-  summary: string;
-  tone: DataValidityTone;
-};
-
 function fmtPrice(value: number): string {
   return new Intl.NumberFormat("en-US", {
     maximumFractionDigits: 5
@@ -163,22 +148,6 @@ function latestLiveTradeAt(trades: TradeAlert[]): string | undefined {
 
 function latestDatasetCoverageAt(datasetStatus: DatasetStatus | null | undefined): string | undefined {
   return latestIsoTime(Object.values(datasetStatus?.assetCoverage ?? {}).map((coverage) => coverage.lastBarAt));
-}
-
-function dataValidityRank(tone: DataValidityTone): number {
-  if (tone === "bad") return 2;
-  if (tone === "warning") return 1;
-  return 0;
-}
-
-function dataValidityIssueRank(issue: DataValidityIssue): number {
-  return dataValidityRank(issue.tone);
-}
-
-function dataValidityClass(tone: DataValidityTone): string {
-  if (tone === "bad") return "bad";
-  if (tone === "warning") return "warning";
-  return "good";
 }
 
 function fmtPct(value: number): string {
@@ -465,12 +434,20 @@ function SyncTileStatus({
 
 function DataValidityBox({
   className = "",
-  dataValidity
+  dataValidity,
+  lastSuccessfulAt,
+  nextScheduledAt,
+  run,
+  state
 }: {
   className?: string;
   dataValidity: DataValidityResult;
+  lastSuccessfulAt?: string;
+  nextScheduledAt: string;
+  run?: SyncTileRun;
+  state: SyncTileState;
 }) {
-  const syncStateClass = dataValidity.tone === "good" ? "success" : dataValidity.tone === "bad" ? "failed" : "running";
+  const syncStateClass = state === "running" ? "running" : dataValidity.tone === "good" ? "success" : dataValidity.tone === "bad" ? "failed" : "running";
   return (
     <div
       className={`dataset-sync-tile dataValidityBox sync-state-${syncStateClass} ${className} ${dataValidityClass(dataValidity.tone)}`.trim()}
@@ -481,11 +458,47 @@ function DataValidityBox({
       <dl className="sync-tile-times">
         <dt>Status</dt>
         <dd>
+          <SyncTileStatus lastSuccessfulAt={lastSuccessfulAt} run={run} state={state} />
+        </dd>
+        <dt>Result</dt>
+        <dd>
           <strong>{dataValidity.label}</strong>
         </dd>
-        <dt>Checks</dt>
+        <dt>Next scheduled</dt>
+        <dd>
+          <LocalDateTime value={nextScheduledAt} />
+        </dd>
+        <dt>Trades checked</dt>
+        <dd>{fmtNumber(dataValidity.stats.tradesChecked)}</dd>
+        <dt>Coverage</dt>
+        <dd>
+          {fmtNumber(dataValidity.stats.strategyCount)} strategies / {fmtNumber(dataValidity.stats.symbolCount)} symbols
+        </dd>
+        <dt>Review window</dt>
+        <dd>
+          <LocalDateTime value={dataValidity.stats.earliestEntryAt} fallback="Unknown" /> to{" "}
+          <LocalDateTime value={dataValidity.stats.latestExitAt} fallback="Unknown" />
+        </dd>
+        <dt>Issues</dt>
         <dd>{dataValidity.summary}</dd>
       </dl>
+      <div className="dataValidityChecks" aria-label="Review validity check details">
+        {dataValidity.checks.map((check) => (
+          <div className={`dataValidityCheck ${dataValidityClass(check.tone)}`} key={check.label} title={check.detail}>
+            <span>{check.label}</span>
+            <strong>{check.value}</strong>
+          </div>
+        ))}
+      </div>
+      {dataValidity.issues.length ? (
+        <div className="dataValidityIssueList" aria-label="Review validity issues">
+          {dataValidity.issues.slice(0, 5).map((issue) => (
+            <span className={`dataValidityIssue ${dataValidityClass(issue.tone)}`} key={issue.label} title={issue.details?.join("\n")}>
+              {fmtNumber(issue.count)} {issue.label}
+            </span>
+          ))}
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -752,119 +765,6 @@ function tradeRiskDollars(trade: BacktestTrade, sizeMultiplier = 1): number {
   return Math.abs(netRiskUnits * dollarPerUnit(trade.symbol, trade.entryPrice) * tradeSizeMultiplier(trade, sizeMultiplier));
 }
 
-function analyzeBacktestDataValidity({
-  backtestBehindMarketData,
-  now = Date.now(),
-  optionByKey,
-  trades
-}: {
-  backtestBehindMarketData: boolean;
-  now?: number;
-  optionByKey: Map<string, StrategyOption>;
-  trades: BacktestTrade[];
-}): DataValidityResult {
-  const issues: DataValidityIssue[] = [];
-
-  if (!trades.length) {
-    return {
-      detailTitle: "No stored backtest trades are available for this market.",
-      issues: [{ count: 1, label: "No trades", tone: "bad" }],
-      label: "No data",
-      summary: "Nothing to validate",
-      tone: "bad"
-    };
-  }
-
-  const duplicateFingerprints = new Map<string, number>();
-  let futureDated = 0;
-  let impossibleDurations = 0;
-  let invalidMath = 0;
-  let invalidPrices = 0;
-  let invalidTimes = 0;
-  let missingStrategies = 0;
-
-  for (const trade of trades) {
-    const signalTime = Date.parse(trade.signalTime);
-    const entryTime = Date.parse(trade.entryTime);
-    const exitTime = Date.parse(trade.exitTime);
-    const hasInvalidTime = !Number.isFinite(signalTime) || !Number.isFinite(entryTime) || !Number.isFinite(exitTime);
-
-    if (hasInvalidTime) {
-      invalidTimes += 1;
-    } else {
-      if (exitTime < entryTime || trade.exitIndex < trade.entryIndex || trade.barsHeld < 0) impossibleDurations += 1;
-      if (signalTime > now + 86_400_000 || entryTime > now + 86_400_000 || exitTime > now + 86_400_000) futureDated += 1;
-    }
-
-    if (!Number.isFinite(trade.entryPrice) || !Number.isFinite(trade.exitPrice) || trade.entryPrice <= 0 || trade.exitPrice <= 0) {
-      invalidPrices += 1;
-    }
-
-    const dollarPnl = tradeDollarPnl(trade, optionByKey.get(trade.datasetId)?.sizeMultiplier ?? 1);
-    if (
-      !Number.isFinite(trade.barsHeld) ||
-      !Number.isFinite(trade.netUnits) ||
-      !Number.isFinite(trade.rMultiple) ||
-      !Number.isFinite(trade.slUnits) ||
-      !Number.isFinite(trade.tpUnits) ||
-      !Number.isFinite(dollarPnl)
-    ) {
-      invalidMath += 1;
-    }
-
-    if (!optionByKey.has(trade.datasetId)) missingStrategies += 1;
-
-    const fingerprint = [
-      trade.datasetId,
-      trade.symbol,
-      trade.side,
-      trade.entryTime,
-      trade.exitTime,
-      trade.entryPrice,
-      trade.exitPrice
-    ].join("|");
-    duplicateFingerprints.set(fingerprint, (duplicateFingerprints.get(fingerprint) ?? 0) + 1);
-  }
-
-  const duplicateTrades = [...duplicateFingerprints.values()].reduce((sum, count) => sum + Math.max(0, count - 1), 0);
-  const duplicatePct = (duplicateTrades / trades.length) * 100;
-
-  if (invalidTimes) issues.push({ count: invalidTimes, label: "Invalid timestamps", tone: "bad" });
-  if (impossibleDurations) issues.push({ count: impossibleDurations, label: "Impossible durations", tone: "bad" });
-  if (invalidPrices) issues.push({ count: invalidPrices, label: "Invalid prices", tone: "bad" });
-  if (invalidMath) issues.push({ count: invalidMath, label: "Invalid math", tone: "bad" });
-  if (futureDated) issues.push({ count: futureDated, label: "Future-dated trades", tone: "bad" });
-  if (missingStrategies) issues.push({ count: missingStrategies, label: "Missing strategy rows", tone: "warning" });
-  if (duplicateTrades) {
-    issues.push({
-      count: duplicateTrades,
-      label: `Potential duplicates (${fmtNumber(duplicatePct)}%)`,
-      tone: duplicatePct >= 5 ? "bad" : "warning"
-    });
-  }
-  if (backtestBehindMarketData) issues.push({ count: 1, label: "Backtest behind market data", tone: "warning" });
-
-  const tone = issues.reduce<DataValidityTone>(
-    (current, issue) => (dataValidityIssueRank(issue) > dataValidityRank(current) ? issue.tone : current),
-    "good"
-  );
-  const sortedIssues = [...issues].sort((left, right) => dataValidityIssueRank(right) - dataValidityIssueRank(left) || right.count - left.count);
-  const issueSummary = sortedIssues
-    .slice(0, 2)
-    .map((issue) => `${fmtNumber(issue.count)} ${issue.label.toLowerCase()}`)
-    .join(" / ");
-
-  return {
-    detailTitle: sortedIssues.length
-      ? sortedIssues.map((issue) => `${issue.label}: ${fmtNumber(issue.count)}`).join("\n")
-      : `Checked ${fmtNumber(trades.length)} trades with no anomalies found.`,
-    issues: sortedIssues,
-    label: tone === "bad" ? "Sus" : tone === "warning" ? "Review" : "Clean",
-    summary: issueSummary || `${fmtNumber(trades.length)} trades checked`,
-    tone
-  };
-}
-
 function recentStrategyTrades(trades: BacktestTrade[]): BacktestTrade[] {
   return [...trades]
     .sort((left, right) => Date.parse(right.entryTime) - Date.parse(left.entryTime))
@@ -1051,14 +951,16 @@ export default async function Home({ searchParams }: HomeProps) {
   const legacyDatasetSyncAt = datasetStatus?.sync ? undefined : datasetStatus?.lastSyncAt;
   const marketDataSyncState = syncTileState(syncStatus.marketDataSync, syncStatus.lastMarketDataSyncAt ?? legacyDatasetSyncAt);
   const signalTradeCheckState = signalTradeCheckTileState(syncStatus.signalTradeCheck, syncStatus.lastSignalTradeCheckAt);
+  const dataValidityRefreshState = syncTileState(syncStatus.dataValidityRefresh, syncStatus.lastDataValidityRefreshAt);
   const latestBacktestTradeAt = backtestFreshness.latestTradeAt;
   const latestTradeAt = latestIsoTime([latestLiveTradeAt(liveTrades), latestBacktestTradeAt]);
-  const backtestManifestAt = syncStatus.lastDataValidityRefreshAt ?? backtestFreshness.generatedAt;
+  const backtestManifestAt = backtestFreshness.generatedAt;
   const dataEndsAt = backtestFreshness.computedThroughAt ?? latestDatasetCoverageAt(datasetStatus);
   const backtestBehindMarketData = false;
   const now = new Date();
   const nextMarketDataSyncAt = nextCronRunIso((date) => date.getUTCMinutes() % 5 === 0, now);
   const nextSignalTradeCheckAt = nextCronRunIso((date) => [2, 17, 32, 47].includes(date.getUTCMinutes()), now);
+  const nextDataValidityRefreshAt = nextCronRunIso((date) => [4, 19, 34, 49].includes(date.getUTCMinutes()), now);
   const liveRuleByKey = new Map(liveRules.map((rule) => [rule.key, rule]));
   const statByKey = new Map(backtestStats.map((stat) => [stat.key, stat]));
 
@@ -1395,7 +1297,7 @@ export default async function Home({ searchParams }: HomeProps) {
   const latestHistoryTradeAt = tradeHistoryRows[0]?.entryTime ?? latestBacktestTradeAt;
   const dataValidity = analyzeBacktestDataValidity({
     backtestBehindMarketData,
-    optionByKey,
+    strategyRefs: strategyOptions,
     trades: activeMarketBacktestTrades
   });
   const challengeReplayTrades = selectedBacktestTrades.map((trade) => ({
@@ -1803,7 +1705,13 @@ export default async function Home({ searchParams }: HomeProps) {
                 <dd>{fmtNumber(backtestFreshness.trades)}</dd>
               </dl>
             </div>
-            <DataValidityBox dataValidity={dataValidity} />
+            <DataValidityBox
+              dataValidity={dataValidity}
+              lastSuccessfulAt={syncStatus.lastDataValidityRefreshAt}
+              nextScheduledAt={nextDataValidityRefreshAt}
+              run={syncStatus.dataValidityRefresh}
+              state={dataValidityRefreshState}
+            />
           </div>
         </section>
       </section>

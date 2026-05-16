@@ -15,6 +15,7 @@ export type ResearchIdeaListItem = {
     timeframes?: string[];
   };
   provenance?: string;
+  sourceUrls?: string[];
   status?: string;
   timeframes?: string[];
   title?: string;
@@ -22,6 +23,7 @@ export type ResearchIdeaListItem = {
 
 type ResearchIdeaListProps = {
   assets: ResearchAssetOption[];
+  editable?: boolean;
   empty: string;
   ideas: ResearchIdeaListItem[];
 };
@@ -32,13 +34,14 @@ function ideaTags(idea: ResearchIdeaListItem, assetLabelByKey: Map<string, strin
   return [...timeframes, ...assets];
 }
 
-export default function ResearchIdeaList({ assets, empty, ideas }: ResearchIdeaListProps) {
+export default function ResearchIdeaList({ assets, editable = false, empty, ideas }: ResearchIdeaListProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const assetLabelByKey = useMemo(() => new Map(assets.map((asset) => [asset.key, asset.symbol])), [assets]);
   const [editingIdea, setEditingIdea] = useState<ResearchIdeaListItem | null>(null);
   const [title, setTitle] = useState("");
   const [hypothesis, setHypothesis] = useState("");
+  const [sourceUrls, setSourceUrls] = useState("");
   const [timeframes, setTimeframes] = useState(["15m"]);
   const [assetKeys, setAssetKeys] = useState<string[]>([]);
   const [message, setMessage] = useState("");
@@ -56,6 +59,7 @@ export default function ResearchIdeaList({ assets, empty, ideas }: ResearchIdeaL
     setEditingIdea(idea);
     setTitle(idea.title ?? idea.ideaId ?? "Untitled idea");
     setHypothesis(idea.hypothesis ?? "");
+    setSourceUrls((idea.sourceUrls ?? []).join("\n"));
     setTimeframes(idea.timeframes?.length ? idea.timeframes : idea.ideaReport?.timeframes?.length ? idea.ideaReport.timeframes : ["15m"]);
     setAssetKeys(idea.assetKeys ?? []);
     setMessage("");
@@ -87,6 +91,7 @@ export default function ResearchIdeaList({ assets, empty, ideas }: ResearchIdeaL
       body: JSON.stringify({
         assetKeys,
         hypothesis,
+        sourceUrls,
         timeframes,
         title
       }),
@@ -122,9 +127,11 @@ export default function ResearchIdeaList({ assets, empty, ideas }: ResearchIdeaL
                 <span>{idea.status === "approved" ? "Approved" : "Inbox"} / {idea.provenance ?? "research"}</span>
                 <strong>{idea.title ?? idea.ideaId ?? "Untitled idea"}</strong>
               </div>
-              <button className="researchIdeaEditButton" onClick={() => openEditor(idea)} type="button">
-                Edit
-              </button>
+              {editable ? (
+                <button className="researchIdeaEditButton" onClick={() => openEditor(idea)} type="button">
+                  Edit
+                </button>
+              ) : null}
             </div>
             <p>{idea.hypothesis ?? "No hypothesis text recorded."}</p>
             <div className="researchIdeaMeta">
@@ -136,7 +143,7 @@ export default function ResearchIdeaList({ assets, empty, ideas }: ResearchIdeaL
         ))}
       </div>
 
-      {editingIdea ? (
+      {editable && editingIdea ? (
         <div className="researchModalBackdrop" onMouseDown={closeFromBackdrop}>
           <section aria-modal="true" className="researchIdeaModal" role="dialog">
             <div className="researchIdeaModalHead">
@@ -156,6 +163,10 @@ export default function ResearchIdeaList({ assets, empty, ideas }: ResearchIdeaL
               <label className="researchField wide">
                 <span>Hypothesis</span>
                 <textarea onChange={(event) => setHypothesis(event.target.value)} rows={4} value={hypothesis} />
+              </label>
+              <label className="researchField wide">
+                <span>Sources</span>
+                <textarea onChange={(event) => setSourceUrls(event.target.value)} rows={3} value={sourceUrls} />
               </label>
               <fieldset className="researchTimeframeChecks">
                 <legend>Timeframes</legend>

@@ -1,12 +1,19 @@
 from __future__ import annotations
 
 import argparse
+import html
 import json
+import re
 import textwrap
+import urllib.parse
+import urllib.request
+import xml.etree.ElementTree as ET
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from fetch_sources import fetch_text
+from search_internet import you_search
 from common import (
     IDEAS_APPROVED,
     IDEAS_INBOX,
@@ -30,6 +37,8 @@ RULE_ENGINE = "llm_rule_code"
 DEFAULT_MARKETS = ["futures", "forex"]
 ALLOWED_SERIES = ["open", "high", "low", "close", "ema50", "ema200", "atr"]
 ALLOWED_FUNCTIONS = ["highest", "lowest", "change", "abs", "min", "max"]
+SUPPORTED_TIMEFRAMES = ["1m", "5m", "15m", "30m", "45m", "1h", "4h", "1d", "overnight"]
+URL_PATTERN = re.compile(r"https?://[^\s<>\"')\]]+")
 
 
 def parse_args() -> argparse.Namespace:
@@ -88,6 +97,314 @@ def selected_ideas(filters: list[str] | None, include_inbox: bool = False, limit
 
 def public_idea(idea: dict[str, Any]) -> dict[str, Any]:
     return {key: value for key, value in idea.items() if not key.startswith("__")}
+
+
+def clean_url(value: str) -> str:
+    return value.strip().rstrip(".,;:!?")
+
+
+def urls_from_text(value: Any) -> list[str]:
+    return [clean_url(match.group(0)) for match in URL_PATTERN.finditer(str(value or ""))]
+
+
+def idea_source_urls(idea: dict[str, Any]) -> list[str]:
+    urls: list[str] = []
+    if isinstance(idea.get("sourceUrls"), list):
+        urls.extend(str(item) for item in idea.get("sourceUrls", []) if str(item).strip())
+    for key in ["title", "hypothesis", "notes"]:
+        urls.extend(urls_from_text(idea.get(key)))
+    return list(dict.fromkeys(clean_url(url) for url in urls if clean_url(url)))[:12]
+
+
+def youtube_video_id(url: str) -> str | None:
+    parsed = urllib.parse.urlparse(url)
+    host = parsed.netloc.lower().replace("www.", "")
+    if host == "youtu.be":
+        return parsed.path.strip("/").split("/")[0] or None
+    if host.endswith("youtube.com"):
+        query_id = urllib.parse.parse_qs(parsed.query).get("v", [""])[0]
+        if query_id:
+            return query_id
+        parts = [part for part in parsed.path.split("/") if part]
+        for marker in ["embed", "shorts", "live"]:
+            if marker in parts:
+                index = parts.index(marker)
+                if len(parts) > index + 1:
+                    return parts[index + 1]
+    return None
+
+
+def request_text(url: str, timeout: int = 30) -> str:
+    request = urllib.request.Request(url, headers={"User-Agent": "tradingbot-research-center/1.0"})
+    with urllib.request.urlopen(request, timeout=timeout) as response:
+        return response.read(1_500_000).decode("utf-8", errors="replace")
+
+
+def caption_base_urls(page_text: str) -> list[str]:
+    urls: list[str] = []
+    patterns = [
+        r'"baseUrl":"(https://www\.youtube\.com/api/timedtext[^"]+)"',
+        r'"baseUrl":"(https:\\/\\/www\.youtube\.com\\/api\\/timedtext[^"]+)"',
+    ]
+    for raw in [match for pattern in patterns for match in re.findall(pattern, page_text)]:
+        decoded = raw.encode("utf-8").decode("unicode_escape").replace("\\/", "/")
+        if decoded not in urls:
+            urls.append(decoded)
+    return urls
+
+
+def transcript_from_caption_url(url: str) -> str:
+    xml_text = request_text(url, timeout=30)
+    root = ET.fromstring(xml_text)
+    lines: list[str] = []
+    for node in root.iter():
+        if node.tag.endswith("text") and node.text:
+            lines.append(html.unescape(node.text).strip())
+    return " ".join(line for line in lines if line)[:120_000]
+
+
+def fetch_youtube_transcript(url: str) -> str:
+    video_id = youtube_video_id(url)
+    if not video_id:
+        return ""
+    page_text = request_text(f"https://www.youtube.com/watch?v={urllib.parse.quote(video_id)}", timeout=30)
+    for caption_url in caption_base_urls(page_text):
+        try:
+            transcript = transcript_from_caption_url(caption_url)
+            if transcript:
+                return transcript
+        except Exception:
+            continue
+    return ""
+
+
+def fetched_source_for_url(url: str) -> dict[str, Any]:
+    is_youtube = youtube_video_id(url) is not None
+    try:
+        text = fetch_youtube_transcript(url) if is_youtube else ""
+        kind = "youtube_transcript" if text else "web_page"
+        if not text:
+            text = fetch_text(url)
+        return {
+            "kind": kind,
+            "title": "YouTube transcript" if kind == "youtube_transcript" else url,
+            "url": url,
+            "text": text[:120_000],
+        }
+    except Exception as exc:
+        return {
+            "kind": "fetch_error",
+            "title": url,
+            "url": url,
+            "text": f"[fetch_error] {exc}",
+        }
+
+
+def persist_enrichment_source(idea_id: str, source: dict[str, Any]) -> None:
+    url = str(source.get("url") or "")
+    if not url:
+        return
+    page_id = slug(f"idea_{idea_id}_{source.get('kind', 'source')}_{url}", 88)
+    write_json(
+        PAGES_ROOT / f"{page_id}.json",
+        {
+            "fetchedAt": datetime.now(timezone.utc).isoformat(),
+            "ideaId": idea_id,
+            "query": f"direct source for {idea_id}",
+            "snippet": str(source.get("text", ""))[:1000],
+            "text": str(source.get("text", "")),
+            "title": source.get("title"),
+            "topic": "idea_enrichment",
+            "url": url,
+        },
+    )
+
+
+def source_items_for_idea(idea: dict[str, Any], limit: int = 6) -> list[dict[str, Any]]:
+    idea_id = str(idea.get("ideaId") or slug(str(idea.get("title", "idea")), 80))
+    sources: list[dict[str, Any]] = []
+    for url in idea_source_urls(idea)[:limit]:
+        source = fetched_source_for_url(url)
+        persist_enrichment_source(idea_id, source)
+        sources.append(source)
+    return sources
+
+
+def asset_rows_for_prompt() -> list[dict[str, Any]]:
+    return [
+        {
+            "key": asset.key,
+            "symbol": asset.symbol,
+            "name": asset.name,
+            "market": asset.market,
+            "tickSize": asset.tick_size,
+        }
+        for asset in load_assets(DEFAULT_MARKETS, [])
+    ]
+
+
+def infer_timeframes_from_text(value: str) -> list[str]:
+    text = value.lower()
+    frames: list[str] = []
+    for timeframe in SUPPORTED_TIMEFRAMES:
+        if timeframe in text:
+            frames.append(timeframe)
+    if "scalp" in text or "opening range" in text or "orb" in text:
+        frames.extend(["1m", "5m", "15m"])
+    if "overnight" in text or "close to open" in text:
+        frames.append("overnight")
+    if "daily" in text or "swing" in text:
+        frames.append("1d")
+    return list(dict.fromkeys(frames)) or ["5m", "15m"]
+
+
+def infer_engines_from_text(value: str, timeframes: list[str]) -> list[str]:
+    text = value.lower()
+    engines: list[str] = []
+    if "overnight" in text or "close to open" in text:
+        engines.append("overnight_bias")
+    if "gap" in text:
+        engines.append("open_gap")
+    if "range" in text or "orb" in text or "breakout" in text:
+        engines.append("range_break")
+    if "daily" in text or "time-series" in text or "tsmom" in text or "1d" in timeframes:
+        engines.append("daily_tsmom")
+    if not engines:
+        engines.append("intraday_momentum")
+    return list(dict.fromkeys(engines))
+
+
+def infer_asset_keys_from_text(value: str, assets: list[dict[str, Any]]) -> list[str]:
+    text = value.lower()
+    matches: list[str] = []
+    aliases = {
+        "sp_500_futures": ["s&p", "sp500", "spy", "es ", "mes", "equity index"],
+        "nasdaq_100_futures": ["nasdaq", "qqq", "nq ", "mnq"],
+        "dow_jones_futures": ["dow", "ym ", "mym"],
+        "russell_2000_futures": ["russell", "rt y", "rty", "m2k"],
+        "crude_oil_futures": ["crude", "oil", "cl ", "mcl", "wti"],
+        "gold_futures": ["gold", "gc ", "mgc", "xau"],
+        "euro_futures": ["euro futures", "6e"],
+        "australian_dollar_futures": ["aussie", "aud", "6a"],
+        "british_pound_futures": ["pound", "gbp", "6b"],
+        "japanese_yen_futures": ["yen", "jpy", "6j"],
+        "eur_usd": ["eurusd", "eur/usd", "euro dollar"],
+        "gbp_usd": ["gbpusd", "gbp/usd", "cable"],
+        "usd_jpy": ["usdjpy", "usd/jpy"],
+        "aud_usd": ["audusd", "aud/usd"],
+    }
+    available = {asset["key"] for asset in assets}
+    for key, needles in aliases.items():
+        if key in available and any(needle in text for needle in needles):
+            matches.append(key)
+    for asset in assets:
+        haystacks = [asset["key"], asset["symbol"], asset["name"]]
+        if any(str(item).lower() in text for item in haystacks if str(item).strip()):
+            matches.append(str(asset["key"]))
+    return list(dict.fromkeys(matches))[:8]
+
+
+def research_query_fallback(idea: dict[str, Any]) -> list[str]:
+    title = str(idea.get("title") or "")
+    hypothesis = str(idea.get("hypothesis") or "")
+    base = " ".join(part for part in [title, hypothesis] if part).strip() or "trading strategy"
+    base = re.sub(URL_PATTERN, "", base).strip()
+    return [
+        f"{base} trading strategy rules timeframe entry exit",
+        f"{base} backtest trading strategy",
+        f"{base} YouTube trading strategy transcript entry stop target",
+    ][:3]
+
+
+def prompt_for_idea_research_enrichment(idea: dict[str, Any], sources: list[dict[str, Any]], assets: list[dict[str, Any]]) -> str:
+    compact_sources = [
+        {
+            "kind": source.get("kind"),
+            "title": source.get("title"),
+            "url": source.get("url"),
+            "text": str(source.get("text", ""))[:9000],
+        }
+        for source in sources
+    ]
+    return textwrap.dedent(
+        f"""
+        Investigate this raw trading idea before formalization.
+
+        Return JSON only:
+        {{
+          "searchQueries": ["3 to 6 precise You.com search queries"],
+          "sourceFindings": ["specific extracted facts from source text or transcript"],
+          "strategyClues": {{
+            "assets": ["candidate asset keys from the asset catalog"],
+            "timeframes": ["candidate timeframes"],
+            "setup": "what the setup appears to be",
+            "entry": "likely entry trigger",
+            "exit": "likely exit, stop, target, or invalidation",
+            "missingPieces": ["what still needs inference"]
+          }}
+        }}
+
+        Prefer exact strategy mechanics over vague trading advice. If a YouTube transcript is present,
+        infer the actionable rules from it. Use only asset keys available in the provided catalog.
+
+        Raw idea:
+        {json.dumps(public_idea(idea), indent=2)}
+
+        Direct sources:
+        {json.dumps(compact_sources, indent=2)}
+
+        Asset catalog:
+        {json.dumps(assets[:48], indent=2)}
+        """
+    ).strip()
+
+
+def enrich_idea_with_research(idea: dict[str, Any], model: Any | None, offline: bool) -> dict[str, Any]:
+    assets = asset_rows_for_prompt()
+    direct_sources = source_items_for_idea(idea)
+    text_blob = " ".join([json.dumps(public_idea(idea)), *(str(source.get("text", ""))[:3000] for source in direct_sources)])
+    enrichment: dict[str, Any] = {
+        "directSources": direct_sources,
+        "searchQueries": research_query_fallback(idea),
+        "sourceFindings": [],
+        "strategyClues": {
+            "assets": infer_asset_keys_from_text(text_blob, assets),
+            "timeframes": infer_timeframes_from_text(text_blob),
+        },
+        "youComResults": [],
+    }
+
+    if not offline and model is not None:
+        try:
+            payload = chat_json(
+                model,
+                "You are a trading research investigator. Return JSON only.",
+                prompt_for_idea_research_enrichment(idea, direct_sources, assets),
+                "idea_research_enrichment",
+            )
+            if isinstance(payload, dict):
+                enrichment.update({key: value for key, value in payload.items() if key in {"searchQueries", "sourceFindings", "strategyClues"}})
+        except NebiusError as exc:
+            print(f"[nebius] idea research enrichment failed for {idea.get('ideaId')}: {exc}")
+
+    queries = [str(item).strip() for item in enrichment.get("searchQueries", []) if str(item).strip()]
+    if not queries:
+        queries = research_query_fallback(idea)
+    seen_urls: set[str] = set()
+    you_results: list[dict[str, Any]] = []
+    for query in queries[:6]:
+        try:
+            for result in you_search(query, 5):
+                url = str(result.get("url", "")).strip()
+                if url and url in seen_urls:
+                    continue
+                if url:
+                    seen_urls.add(url)
+                you_results.append({"query": query, **result})
+        except Exception as exc:
+            you_results.append({"query": query, "provider": "you", "error": str(exc)})
+    enrichment["youComResults"] = you_results[:20]
+    return enrichment
 
 
 def source_items(limit: int) -> list[dict[str, Any]]:
@@ -375,6 +692,7 @@ def prompt_for_strategy_code(ideas: list[dict[str, Any]], assets: list[Any], max
             "timeframes": idea.get("timeframes", []),
             "sourceUrls": idea.get("sourceUrls", []),
             "structure": idea.get("structure", {}),
+            "ideaReport": idea.get("ideaReport", {}),
         }
         for idea in [public_idea(item) for item in ideas]
     ]
@@ -552,23 +870,33 @@ def command_ideas(args: argparse.Namespace) -> None:
 
 
 def offline_structured_ideas(ideas: list[dict[str, Any]], model_id: str) -> list[dict[str, Any]]:
+    assets = asset_rows_for_prompt()
     structured: list[dict[str, Any]] = []
     for idea in ideas:
         clean = public_idea(idea)
         structure = clean.get("structure", {}) if isinstance(clean.get("structure"), dict) else {}
-        timeframes = clean.get("timeframes") if isinstance(clean.get("timeframes"), list) and clean.get("timeframes") else ["15m"]
+        text_blob = json.dumps(clean, default=str)
+        timeframes = clean.get("timeframes") if isinstance(clean.get("timeframes"), list) and clean.get("timeframes") else infer_timeframes_from_text(text_blob)
+        asset_keys = clean.get("assetKeys") if isinstance(clean.get("assetKeys"), list) and clean.get("assetKeys") else infer_asset_keys_from_text(text_blob, assets)
+        engines = clean.get("engines") if isinstance(clean.get("engines"), list) and clean.get("engines") else infer_engines_from_text(text_blob, timeframes)
         payload = {
             **clean,
-            "engines": [],
+            "assetKeys": asset_keys,
+            "engines": engines,
             "ideaReport": {
                 "summary": clean.get("hypothesis", "Structured LLM idea."),
                 "timeframes": timeframes,
+                "sourceInterpretation": "Offline fallback inferred the formal idea from the raw inbox text and any saved source URLs.",
+                "assetSelection": "Offline fallback inferred assets from title, symbol mentions, source URLs, and local asset catalog aliases.",
                 "setup": structure.get("setup", "Test the described source behavior with explicit rule-code."),
                 "entry": structure.get("entry", "Enter when the coded condition confirms the setup."),
+                "exit": structure.get("exit", "Exit on target, stop, invalidation, or session close."),
                 "stop": structure.get("stop", "Use ATR or structure invalidation."),
                 "target": structure.get("target", "Use fixed R target and session/time exit."),
                 "filters": structure.get("filters", []),
-                "invalidations": ["Reject if PF <= 2 or trades <= 20."],
+                "parameterNotes": ["Coding stage should convert the setup into explicit rule-code and parameter ranges."],
+                "invalidations": ["Reject if PF <= 2 or trades <= 20.", "Reject if the coded conditions cannot be expressed without lookahead."],
+                "implementationNotes": ["Prefer simple session, price-action, trend, range, ATR, and time filters available to the research backtester."],
             },
             "llm": {
                 **(clean.get("llm", {}) if isinstance(clean.get("llm"), dict) else {}),
@@ -576,84 +904,244 @@ def offline_structured_ideas(ideas: list[dict[str, Any]], model_id: str) -> list
                 "stage": "idea",
             },
             "status": "approved",
+            "timeframes": timeframes,
         }
         structured.append(payload)
     return structured
 
 
-def prompt_for_idea_structuring(ideas: list[dict[str, Any]]) -> str:
-    compact = [public_idea(idea) for idea in ideas]
+def normalize_list(value: Any, allowed: set[str] | None = None, limit: int = 16) -> list[str]:
+    if not isinstance(value, list):
+        return []
+    items = [str(item).strip() for item in value if str(item).strip()]
+    if allowed is not None:
+        items = [item for item in items if item in allowed]
+    return list(dict.fromkeys(items))[:limit]
+
+
+def normalize_asset_keys(value: Any, assets: list[dict[str, Any]], fallback_text: str) -> list[str]:
+    allowed = {str(asset["key"]) for asset in assets}
+    requested = normalize_list(value, allowed, limit=12)
+    if requested:
+        return requested
+    return infer_asset_keys_from_text(fallback_text, assets)
+
+
+def prompt_for_single_idea_structuring(idea: dict[str, Any], enrichment: dict[str, Any], assets: list[dict[str, Any]]) -> str:
+    compact_sources = [
+        {
+            "kind": source.get("kind"),
+            "title": source.get("title"),
+            "url": source.get("url"),
+            "text": str(source.get("text", ""))[:9000],
+        }
+        for source in enrichment.get("directSources", [])
+        if isinstance(source, dict)
+    ]
     return textwrap.dedent(
         f"""
-        Turn these raw new trading ideas into clean idea-board outputs.
+        Turn this raw trading idea into an excellent formal idea-board output.
         Return JSON only:
         {{
-          "ideas": [
-            {{
-              "ideaId": "stable id",
-              "title": "clear title",
-              "hypothesis": "testable hypothesis",
-              "provenance": "youtube_research or web_research or manual",
-              "sourceUrls": [],
-              "markets": ["futures", "forex"],
-              "assetKeys": [],
-              "timeframes": ["1m", "5m", "15m", "30m", "1h", "1d", "overnight"],
-              "engines": [],
-              "ideaReport": {{
-                "summary": "organized research summary",
-                "timeframes": ["exact timeframes to test"],
-                "setup": "complete setup structure",
-                "entry": "entry rule concept",
-                "stop": "stop-loss/invalidation concept",
-                "target": "take-profit concept",
-                "filters": ["filters"],
-                "invalidations": ["what would disprove it"]
-              }}
+          "idea": {{
+            "ideaId": "stable id",
+            "title": "clear title",
+            "hypothesis": "testable hypothesis",
+            "provenance": "youtube_research or web_research or manual",
+            "sourceUrls": [],
+            "markets": ["futures", "forex"],
+            "assetKeys": ["asset keys from catalog"],
+            "timeframes": ["1m", "5m", "15m", "30m", "45m", "1h", "4h", "1d", "overnight"],
+            "engines": ["intraday_momentum", "overnight_bias", "open_gap", "range_break", "daily_tsmom"],
+            "ideaReport": {{
+              "summary": "detailed but concise research synthesis",
+              "sourceInterpretation": "what the source/transcript actually implies",
+              "timeframes": ["exact timeframes to test and why"],
+              "assetSelection": "why these assets are appropriate",
+              "setup": "complete setup structure",
+              "entry": "entry rule concept with trigger, confirmation, and timing",
+              "exit": "time exit or condition exit",
+              "stop": "stop-loss/invalidation concept",
+              "target": "take-profit concept",
+              "filters": ["filters"],
+              "parameterNotes": ["candidate parameter ranges for coding/backtest"],
+              "invalidations": ["what would disprove it"],
+              "implementationNotes": ["how the coding stage should express it without lookahead"]
             }}
-          ]
+          }}
         }}
 
-        Keep each idea single-strategy and backtestable. Do not code yet.
+        Requirements:
+        - Infer the real strategy even if the raw idea is lazy, short, messy, or only a YouTube URL.
+        - If a transcript or page text is available, extract entry, exit, timeframe, stop, target, filters, and assets from it.
+        - If the source is vague, make a coherent testable version and state what you inferred.
+        - Use only asset keys from the asset catalog.
+        - Prefer single-strategy, backtestable ideas. Do not write code yet.
+        - Be detailed enough that the coding stage can produce rule-code without guessing.
 
-        Raw ideas:
-        {json.dumps(compact, indent=2)}
+        Raw idea:
+        {json.dumps(public_idea(idea), indent=2)}
+
+        Direct source text and transcripts:
+        {json.dumps(compact_sources, indent=2)}
+
+        You.com search results:
+        {json.dumps(enrichment.get("youComResults", []), indent=2)}
+
+        Research model findings:
+        {json.dumps({key: enrichment.get(key) for key in ["sourceFindings", "strategyClues", "searchQueries"]}, indent=2)}
+
+        Asset catalog:
+        {json.dumps(assets[:64], indent=2)}
         """
     ).strip()
+
+
+def prompt_for_idea_review(idea: dict[str, Any], original: dict[str, Any], enrichment: dict[str, Any], assets: list[dict[str, Any]]) -> str:
+    return textwrap.dedent(
+        f"""
+        Review this formalized trading idea for completeness and coherence.
+        Return JSON only with a single "idea" object. Preserve the same ideaId.
+
+        Strengthen weak parts, fill missing details from the evidence, and make sure:
+        - assetKeys are valid catalog keys,
+        - timeframes are explicit,
+        - setup, entry, exit, stop, target, filters, parameters, and invalidations are detailed,
+        - the idea remains backtestable without lookahead or discretionary chart-reading.
+
+        Original raw idea:
+        {json.dumps(public_idea(original), indent=2)}
+
+        Draft formal idea:
+        {json.dumps(idea, indent=2)}
+
+        Evidence:
+        {json.dumps({key: enrichment.get(key) for key in ["sourceFindings", "strategyClues", "youComResults"]}, indent=2)}
+
+        Asset catalog:
+        {json.dumps(assets[:64], indent=2)}
+        """
+    ).strip()
+
+
+def normalized_structured_idea(
+    raw: dict[str, Any],
+    original: dict[str, Any],
+    enrichment: dict[str, Any],
+    model_ids: dict[str, str],
+) -> dict[str, Any]:
+    assets = asset_rows_for_prompt()
+    original_public = public_idea(original)
+    source_urls = list(dict.fromkeys([*idea_source_urls(original_public), *normalize_list(raw.get("sourceUrls"), None, 16)]))
+    text_blob = json.dumps({"original": original_public, "raw": raw, "enrichment": enrichment}, default=str)
+    timeframes = normalize_list(raw.get("timeframes"), set(SUPPORTED_TIMEFRAMES), 10)
+    report = raw.get("ideaReport", {}) if isinstance(raw.get("ideaReport"), dict) else {}
+    report_timeframes = normalize_list(report.get("timeframes"), set(SUPPORTED_TIMEFRAMES), 10)
+    timeframes = timeframes or report_timeframes or infer_timeframes_from_text(text_blob)
+    asset_keys = normalize_asset_keys(raw.get("assetKeys"), assets, text_blob)
+    engines = normalize_list(raw.get("engines"), {"intraday_momentum", "overnight_bias", "open_gap", "range_break", "daily_tsmom"}, 6)
+    engines = engines or infer_engines_from_text(text_blob, timeframes)
+    markets = normalize_list(raw.get("markets"), {"futures", "forex"}, 4)
+    if not markets and isinstance(original_public.get("markets"), list):
+        markets = [str(item) for item in original_public.get("markets", []) if str(item) in {"futures", "forex"}]
+    markets = markets or ["futures", "forex"]
+    idea_id = str(raw.get("ideaId") or original_public.get("ideaId") or stable_id(str(raw.get("title") or original_public.get("title")), raw, prefix="idea_"))
+    merged_report = {
+        "summary": str(report.get("summary") or raw.get("hypothesis") or original_public.get("hypothesis") or "Formalized strategy idea.")[:2200],
+        "sourceInterpretation": str(report.get("sourceInterpretation") or "Formalization inferred from raw idea text, direct sources, and You.com search results.")[:1800],
+        "timeframes": timeframes,
+        "assetSelection": str(report.get("assetSelection") or "Assets were selected from the local research catalog based on source symbols, market family, and testability.")[:1600],
+        "setup": str(report.get("setup") or "Trade only when the described market behavior is present and measurable.")[:1800],
+        "entry": str(report.get("entry") or "Enter when the setup condition confirms in the selected session and timeframe.")[:1800],
+        "exit": str(report.get("exit") or "Exit on target, stop, invalidation, or session close.")[:1400],
+        "stop": str(report.get("stop") or "Use ATR or structure invalidation.")[:1400],
+        "target": str(report.get("target") or "Use fixed R target and session/time exit.")[:1400],
+        "filters": normalize_list(report.get("filters"), None, 12),
+        "parameterNotes": normalize_list(report.get("parameterNotes"), None, 12),
+        "invalidations": normalize_list(report.get("invalidations"), None, 12) or ["Reject if PF <= 2 or trades <= 20."],
+        "implementationNotes": normalize_list(report.get("implementationNotes"), None, 12),
+        "evidence": [
+            {
+                "kind": source.get("kind"),
+                "url": source.get("url"),
+                "title": source.get("title"),
+            }
+            for source in enrichment.get("directSources", [])
+            if isinstance(source, dict)
+        ][:8],
+        "youComQueries": normalize_list(enrichment.get("searchQueries"), None, 8),
+    }
+    return {
+        **original_public,
+        **raw,
+        "assetKeys": asset_keys,
+        "createdAt": datetime.now(timezone.utc).isoformat(),
+        "engines": engines,
+        "hypothesis": str(raw.get("hypothesis") or original_public.get("hypothesis") or merged_report["summary"])[:1600],
+        "ideaId": idea_id,
+        "ideaReport": merged_report,
+        "llm": {
+            **(original_public.get("llm", {}) if isinstance(original_public.get("llm"), dict) else {}),
+            "ideaModel": model_ids.get("idea"),
+            "internetEnriched": True,
+            "researchModel": model_ids.get("research"),
+            "reviewModel": model_ids.get("pipeline"),
+            "stage": "idea",
+            "youComResultCount": len(enrichment.get("youComResults", [])),
+        },
+        "markets": markets,
+        "provenance": str(raw.get("provenance") or original_public.get("provenance") or ("youtube_research" if any("youtu" in url for url in source_urls) else "web_research")),
+        "sourceUrls": source_urls,
+        "status": "approved",
+        "timeframes": timeframes,
+        "title": str(raw.get("title") or original_public.get("title") or "Formalized trading idea")[:160],
+    }
 
 
 def structure_ideas_with_llm(ideas: list[dict[str, Any]], args: argparse.Namespace) -> list[dict[str, Any]]:
     model_id = "offline-idea-fallback"
     if args.offline:
         return offline_structured_ideas(ideas, model_id)
+    assets = asset_rows_for_prompt()
     try:
-        model = resolve_task_models(["idea"])["idea"]
-        model_id = model.id
-        payload = chat_json(
-            model,
-            "You are a trading research editor. Structure raw ideas into backtestable reports. Return JSON only.",
-            prompt_for_idea_structuring(ideas),
-        )
-        raw_ideas = payload.get("ideas", [])
-        structured = []
-        for raw, original in zip(raw_ideas, ideas, strict=False):
-            if not isinstance(raw, dict):
-                continue
-            merged = {
-                **public_idea(original),
-                **raw,
-                "createdAt": datetime.now(timezone.utc).isoformat(),
-                "llm": {
-                    **(public_idea(original).get("llm", {}) if isinstance(public_idea(original).get("llm"), dict) else {}),
-                    "ideaModel": model_id,
-                    "stage": "idea",
-                },
-                "status": "approved",
-            }
-            structured.append(merged)
-        return structured or offline_structured_ideas(ideas, model_id)
+        models = resolve_task_models(["research", "idea", "pipeline"])
     except NebiusError as exc:
-        print(f"[nebius] idea structuring failed; using offline fallback: {exc}")
+        print(f"[nebius] model resolution failed; using offline fallback: {exc}")
         return offline_structured_ideas(ideas, model_id)
+    model_ids = {task: model.id for task, model in models.items()}
+    model_id = model_ids.get("idea", model_id)
+    structured: list[dict[str, Any]] = []
+    for original in ideas:
+        try:
+            clean = public_idea(original)
+            enrichment = enrich_idea_with_research(clean, models.get("research"), args.offline)
+            payload = chat_json(
+                models["idea"],
+                "You are a trading research editor. Formalize raw ideas into excellent backtestable reports. Return JSON only.",
+                prompt_for_single_idea_structuring(clean, enrichment, assets),
+                "idea_formalization",
+            )
+            raw = payload.get("idea", payload) if isinstance(payload, dict) else {}
+            if not isinstance(raw, dict):
+                raise NebiusError("Idea model returned no idea object.")
+            formal = normalized_structured_idea(raw, original, enrichment, model_ids)
+            try:
+                review_payload = chat_json(
+                    models["pipeline"],
+                    "You are a senior trading strategy reviewer. Return JSON only.",
+                    prompt_for_idea_review(formal, original, enrichment, assets),
+                    "idea_formalization_review",
+                )
+                reviewed_raw = review_payload.get("idea", review_payload) if isinstance(review_payload, dict) else {}
+                if isinstance(reviewed_raw, dict) and reviewed_raw:
+                    formal = normalized_structured_idea(reviewed_raw, formal, enrichment, model_ids)
+            except NebiusError as exc:
+                print(f"[nebius] idea review failed for {original.get('ideaId')}: {exc}")
+            structured.append(formal)
+        except NebiusError as exc:
+            print(f"[nebius] idea structuring failed for {original.get('ideaId')}; using offline fallback: {exc}")
+            structured.extend(offline_structured_ideas([original], model_id))
+    return structured or offline_structured_ideas(ideas, model_id)
 
 
 def write_idea_board_report(ideas: list[dict[str, Any]]) -> None:
@@ -668,10 +1156,16 @@ def write_idea_board_report(ideas: list[dict[str, Any]]) -> None:
                 "",
                 f"- Idea ID: `{idea.get('ideaId', 'n/a')}`",
                 f"- Timeframes: {', '.join(str(item) for item in report.get('timeframes', idea.get('timeframes', [])))}",
+                f"- Assets: {', '.join(str(item) for item in idea.get('assetKeys', [])) or 'n/a'}",
+                f"- Engines: {', '.join(str(item) for item in idea.get('engines', [])) or 'n/a'}",
                 f"- Setup: {report.get('setup', 'n/a')}",
                 f"- Entry: {report.get('entry', 'n/a')}",
+                f"- Exit: {report.get('exit', 'n/a')}",
                 f"- Stop: {report.get('stop', 'n/a')}",
                 f"- Target: {report.get('target', 'n/a')}",
+                f"- Filters: {', '.join(str(item) for item in report.get('filters', [])) or 'n/a'}",
+                f"- Parameters: {', '.join(str(item) for item in report.get('parameterNotes', [])) or 'n/a'}",
+                f"- Invalidations: {', '.join(str(item) for item in report.get('invalidations', [])) or 'n/a'}",
                 "",
                 str(report.get("summary", idea.get("hypothesis", ""))),
                 "",

@@ -21,6 +21,7 @@ export default function ResearchIdeaForm({ assets, isEmpty = false }: ResearchId
   const [isPending, startTransition] = useTransition();
   const [title, setTitle] = useState("");
   const [hypothesis, setHypothesis] = useState("");
+  const [sourceUrls, setSourceUrls] = useState("");
   const [timeframes, setTimeframes] = useState(["15m"]);
   const [assetKeys, setAssetKeys] = useState<string[]>([]);
   const [isOpen, setIsOpen] = useState(false);
@@ -50,6 +51,7 @@ export default function ResearchIdeaForm({ assets, isEmpty = false }: ResearchId
       body: JSON.stringify({
         assetKeys,
         hypothesis,
+        sourceUrls,
         timeframes,
         title
       }),
@@ -64,6 +66,7 @@ export default function ResearchIdeaForm({ assets, isEmpty = false }: ResearchId
 
     setTitle("");
     setHypothesis("");
+    setSourceUrls("");
     setAssetKeys([]);
     setTimeframes(["15m"]);
     setMessage(payload.path ? `Added ${payload.path}` : "Idea added.");
@@ -114,6 +117,15 @@ export default function ResearchIdeaForm({ assets, isEmpty = false }: ResearchId
                   placeholder="Describe the market behavior, session, source, and what should be tested."
                   rows={4}
                   value={hypothesis}
+                />
+              </label>
+              <label className="researchField wide">
+                <span>Sources</span>
+                <textarea
+                  onChange={(event) => setSourceUrls(event.target.value)}
+                  placeholder="Paste YouTube, article, paper, or notes URLs. One per line is easiest."
+                  rows={3}
+                  value={sourceUrls}
                 />
               </label>
               <fieldset className="researchTimeframeChecks">

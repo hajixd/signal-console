@@ -10,6 +10,7 @@ const RESEARCH_ROOT = path.join(process.cwd(), "Research");
 const SUPPORTED_ENGINES = new Set(["overnight_bias", "open_gap", "intraday_momentum", "range_break", "daily_tsmom"]);
 const SUPPORTED_MARKETS = new Set(["futures", "forex"]);
 const SUPPORTED_TIMEFRAMES = new Set(["1m", "5m", "15m", "30m", "45m", "1h", "4h", "1d", "overnight"]);
+const URL_PATTERN = /https?:\/\/[^\s<>"')\]]+/g;
 
 type ResearchIdeaPayload = {
   assetKeys?: unknown;
@@ -38,6 +39,12 @@ function splitList(value: unknown, maxItems = 12) {
     .map((item) => item.trim())
     .filter(Boolean)
     .slice(0, maxItems);
+}
+
+function cleanUrls(value: unknown, fallbackText = "") {
+  const direct = splitList(value, 16);
+  const fromText = [...fallbackText.matchAll(URL_PATTERN)].map((match) => match[0]);
+  return [...new Set([...direct, ...fromText].map((url) => url.replace(/[.,;:!?]+$/, "")))].slice(0, 16);
 }
 
 function slug(value: string) {
@@ -136,9 +143,9 @@ export async function POST(request: NextRequest) {
   const requestedMarkets = splitList(payload.markets).filter((market) => SUPPORTED_MARKETS.has(market));
   const markets = requestedMarkets.length ? requestedMarkets : ["futures", "forex"];
   const assetKeys = splitList(payload.assetKeys);
-  const sourceUrls: string[] = [];
-  const provenance = "manual";
   const notes = cleanString(payload.notes, 1200);
+  const sourceUrls = cleanUrls(payload.sourceUrls, `${title}\n${hypothesis}\n${notes}`);
+  const provenance = "manual";
 
   if (!title) {
     return NextResponse.json({ error: "Title is required." }, { status: 400 });

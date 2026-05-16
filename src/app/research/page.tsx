@@ -668,7 +668,7 @@ export default async function ResearchPage() {
                 <strong>New ideas</strong>
               </div>
               <ResearchIdeaForm assets={assetOptions} isEmpty={snapshot.inboxIdeaCount + snapshot.approvedIdeaCount === 0} />
-              <ResearchIdeaList assets={assetOptions} empty="No new ideas queued." ideas={newIdeas} />
+              <ResearchIdeaList assets={assetOptions} editable empty="No new ideas queued." ideas={newIdeas} />
             </div>
             <div className={`researchLane finished ${laneState(ideaBoardIdeas.length)}`}>
               <div className="researchLaneHead">
