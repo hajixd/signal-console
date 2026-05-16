@@ -4,6 +4,7 @@ import Link from "next/link";
 import AutoTradeAccountGate from "@/components/auto-trading/auto-trade-account-gate";
 import AutoTradeAccountModeSwitch from "@/components/auto-trading/auto-trade-account-mode-switch";
 import ResearchIdeaForm, { type ResearchAssetOption } from "@/components/research/research-idea-form";
+import ResearchIdeaList from "@/components/research/research-idea-list";
 import AutoRefresh from "@/components/ui/auto-refresh";
 import LocalDateTime from "@/components/ui/local-date-time";
 import ThemeToggle from "@/components/ui/theme-toggle";
@@ -59,6 +60,7 @@ type ResearchIdea = {
   assetKeys?: string[];
   createdAt?: string;
   engines?: string[];
+  fileId?: string;
   hypothesis?: string;
   ideaId?: string;
   ideaReport?: {
@@ -125,6 +127,7 @@ type ResearchSnapshot = {
   approvedIdeas: ResearchIdea[];
   approvedIdeaCount: number;
   backtestReviewRows: BacktestRow[];
+  backtestedRows: BacktestRow[];
   backtestedCount: number;
   belowRequirementRows: BacktestRow[];
   finishedRows: BacktestRow[];
@@ -195,8 +198,16 @@ async function readJsonFiles<T>(relativePath: string, limit: number) {
 
   const values = await Promise.all(files.map((name) => readJsonFile<T>(path.join(RESEARCH_ROOT, relativePath, name))));
   const parsedValues: T[] = [];
-  values.forEach((value) => {
-    if (value) parsedValues.push(value);
+  values.forEach((value, index) => {
+    if (!value) return;
+    if (typeof value === "object") {
+      parsedValues.push({
+        ...value,
+        fileId: path.basename(files[index] ?? "", ".json")
+      });
+      return;
+    }
+    parsedValues.push(value);
   });
   return parsedValues;
 }
@@ -346,6 +357,7 @@ async function getResearchSnapshot(): Promise<ResearchSnapshot> {
     approvedIdeas,
     approvedIdeaCount: await countFiles("ideas/approved", ".json"),
     backtestReviewRows,
+    backtestedRows: candidateRows,
     backtestedCount: backtestedFolders.length,
     belowRequirementRows,
     finishedRows,
@@ -475,41 +487,6 @@ function stageDurationMs(status: ResearchStageStatus | undefined) {
   return status?.durationMs;
 }
 
-function ideaTags(idea: ResearchIdea, assetLabelByKey: Map<string, string>) {
-  const timeframes = (idea.timeframes?.length ? idea.timeframes : idea.ideaReport?.timeframes ?? []).filter(Boolean);
-  const assets = (idea.assetKeys ?? []).filter(Boolean).map((assetKey) => assetLabelByKey.get(assetKey) ?? assetKey);
-  return [...timeframes, ...assets];
-}
-
-function IdeaList({ assetLabelByKey, empty, ideas }: { assetLabelByKey: Map<string, string>; empty: string; ideas: ResearchIdea[] }) {
-  if (!ideas.length) {
-    return (
-      <div className="researchEmptyMini">
-        <strong>{empty}</strong>
-      </div>
-    );
-  }
-
-  return (
-    <div className="researchIdeaGrid compact">
-      {ideas.map((idea) => (
-        <article className={`researchIdea ${idea.status === "approved" ? "approved" : "inbox"}`} key={`${idea.status}-${idea.ideaId ?? idea.title}`}>
-          <div>
-            <span>{idea.status === "approved" ? "Approved" : "Inbox"} / {idea.provenance ?? "research"}</span>
-            <strong>{idea.title ?? idea.ideaId ?? "Untitled idea"}</strong>
-          </div>
-          <p>{idea.hypothesis ?? "No hypothesis text recorded."}</p>
-          <div className="researchIdeaMeta">
-            {(ideaTags(idea, assetLabelByKey).length ? ideaTags(idea, assetLabelByKey) : ["timeframe pending"]).map((tag) => (
-              <span key={tag}>{tag}</span>
-            ))}
-          </div>
-        </article>
-      ))}
-    </div>
-  );
-}
-
 function StrategyList({ empty, specs }: { empty: string; specs: StrategySpec[] }) {
   if (!specs.length) {
     return (
@@ -588,27 +565,6 @@ function BacktestTable({
   );
 }
 
-function FinishedStrategySplit({ belowRows, finishedRows }: { belowRows: BacktestRow[]; finishedRows: BacktestRow[] }) {
-  return (
-    <div className="researchFinishedSplit">
-      <section className="researchSplitSection qualified">
-        <div className="researchSplitHead">
-          <span>Top half</span>
-          <strong>{`PF >= ${RESEARCH_FINISHED_MIN_PF}`}</strong>
-        </div>
-        <BacktestTable density="split" empty="No PF >= 2 strategy yet." rows={finishedRows} />
-      </section>
-      <section className="researchSplitSection below">
-        <div className="researchSplitHead">
-          <span>Bottom half</span>
-          <strong>Below requirement</strong>
-        </div>
-        <BacktestTable density="split" empty="No below-requirement stats yet." rows={belowRows} showGate />
-      </section>
-    </div>
-  );
-}
-
 function ResearchStageTile({ snapshot, stage }: { snapshot: ResearchSnapshot; stage: ResearchStage }) {
   const status = snapshot.researchStageStatuses[stage];
   const outputCount = stageOutputCount(snapshot, stage);
@@ -665,10 +621,10 @@ function ResearchWorkSync({ snapshot }: { snapshot: ResearchSnapshot }) {
 
 export default async function ResearchPage() {
   const [snapshot, assetOptions] = await Promise.all([getResearchSnapshot(), readResearchAssetOptions()]);
-  const assetLabelByKey = new Map(assetOptions.map((asset) => [asset.key, asset.symbol]));
-  const ideaBoardIdeas = [...snapshot.inboxIdeas, ...snapshot.approvedIdeas].sort((left, right) => ideaTime(right) - ideaTime(left)).slice(0, 12);
-  const ideaToCodeInputs = snapshot.approvedIdeas.length ? snapshot.approvedIdeas : snapshot.inboxIdeas;
-  const backtestInputRows = snapshot.backtestReviewRows;
+  const newIdeas = [...snapshot.inboxIdeas].sort((left, right) => ideaTime(right) - ideaTime(left)).slice(0, 12);
+  const ideaBoardIdeas = [...snapshot.approvedIdeas].sort((left, right) => ideaTime(right) - ideaTime(left)).slice(0, 12);
+  const ideaToCodeInputs = snapshot.approvedIdeas;
+  const backtestInputRows = snapshot.belowRequirementRows;
 
   return (
     <main className="terminal">
@@ -706,19 +662,20 @@ export default async function ResearchPage() {
             </span>
           </div>
           <div className="researchConversionGrid">
-            <div className={`researchLane collecting ${laneState(snapshot.inboxIdeaCount + snapshot.approvedIdeaCount)}`}>
+            <div className={`researchLane collecting ${laneState(snapshot.inboxIdeaCount)}`}>
               <div className="researchLaneHead">
                 <span>Collecting</span>
                 <strong>New ideas</strong>
               </div>
               <ResearchIdeaForm assets={assetOptions} isEmpty={snapshot.inboxIdeaCount + snapshot.approvedIdeaCount === 0} />
+              <ResearchIdeaList assets={assetOptions} empty="No new ideas queued." ideas={newIdeas} />
             </div>
             <div className={`researchLane finished ${laneState(ideaBoardIdeas.length)}`}>
               <div className="researchLaneHead">
                 <span>Finished</span>
                 <strong>Idea Board output</strong>
               </div>
-              <IdeaList assetLabelByKey={assetLabelByKey} empty="No ideas on the board yet." ideas={ideaBoardIdeas} />
+              <ResearchIdeaList assets={assetOptions} empty="No formalized ideas yet." ideas={ideaBoardIdeas} />
             </div>
           </div>
         </section>
@@ -737,14 +694,14 @@ export default async function ResearchPage() {
                 <span>Collecting from previous output</span>
                 <strong>Ideas ready to code</strong>
               </div>
-              <IdeaList assetLabelByKey={assetLabelByKey} empty="No approved or inbox ideas are waiting." ideas={ideaToCodeInputs} />
+              <ResearchIdeaList assets={assetOptions} empty="No formalized ideas are ready to code." ideas={ideaToCodeInputs} />
             </div>
-            <div className="researchLane finished inactive">
+            <div className={`researchLane finished ${laneState(snapshot.readySpecs.length)}`}>
               <div className="researchLaneHead">
                 <span>Finished by this stage</span>
                 <strong>Coded strategies</strong>
               </div>
-              <StrategyList empty="Coded output moves into the backtest queue." specs={[]} />
+              <StrategyList empty="No coded strategies have been produced yet." specs={snapshot.readySpecs} />
             </div>
           </div>
         </section>
@@ -767,12 +724,12 @@ export default async function ResearchPage() {
               </div>
               <StrategyList empty="No coded strategies waiting for stats." specs={snapshot.readySpecs} />
             </div>
-            <div className="researchLane finished inactive">
+            <div className={`researchLane finished ${laneState(snapshot.backtestedRows.length)}`}>
               <div className="researchLaneHead">
                 <span>Finished by this stage</span>
                 <strong>Backtested stats</strong>
               </div>
-              <BacktestTable empty="Backtest results move into finished review." rows={[]} showGate />
+              <BacktestTable empty="No backtested stats have been produced yet." rows={snapshot.backtestedRows} showGate />
             </div>
           </div>
         </section>
@@ -800,7 +757,7 @@ export default async function ResearchPage() {
                 <span>Finished by this stage</span>
                 <strong>Finished strategies</strong>
               </div>
-              <FinishedStrategySplit belowRows={snapshot.belowRequirementRows} finishedRows={snapshot.finishedRows} />
+              <BacktestTable empty={`No strategy has cleared PF >= ${RESEARCH_FINISHED_MIN_PF} with enough trades yet.`} rows={snapshot.finishedRows} />
             </div>
           </div>
         </section>

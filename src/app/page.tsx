@@ -385,6 +385,19 @@ function syncTileState(
   return "idle";
 }
 
+function isSignalDataPauseError(error: string | undefined): boolean {
+  return Boolean(
+    error &&
+      (/Stored data for .+ is stale at /.test(error) || /Live data for .+ is stale; latest 15m bar is /.test(error))
+  );
+}
+
+function signalTradeCheckTileState(run: SyncTileRun | undefined, lastSuccessfulAt?: string): SyncTileState {
+  const state = syncTileState(run, lastSuccessfulAt);
+  if (state === "failed" && isSignalDataPauseError(run?.error)) return lastSuccessfulAt ? "success" : "idle";
+  return state;
+}
+
 function syncTileLabel(state: SyncTileState): string {
   if (state === "running") return "Running";
   if (state === "success") return "Success";
@@ -406,7 +419,7 @@ function syncTileStatusTimestamp(
 ): { label: string; value: string } | undefined {
   if (state === "running" && run?.startedAt) return { label: "started", value: run.startedAt };
   if (state === "success") {
-    const value = run?.finishedAt ?? lastSuccessfulAt;
+    const value = run?.state === "failed" ? lastSuccessfulAt : run?.finishedAt ?? lastSuccessfulAt;
     return value ? { label: "at", value } : undefined;
   }
   if (state === "failed") {
@@ -1037,7 +1050,7 @@ export default async function Home({ searchParams }: HomeProps) {
   const syncStatus = datasetStatus?.sync ?? {};
   const legacyDatasetSyncAt = datasetStatus?.sync ? undefined : datasetStatus?.lastSyncAt;
   const marketDataSyncState = syncTileState(syncStatus.marketDataSync, syncStatus.lastMarketDataSyncAt ?? legacyDatasetSyncAt);
-  const signalTradeCheckState = syncTileState(syncStatus.signalTradeCheck, syncStatus.lastSignalTradeCheckAt);
+  const signalTradeCheckState = signalTradeCheckTileState(syncStatus.signalTradeCheck, syncStatus.lastSignalTradeCheckAt);
   const latestBacktestTradeAt = backtestFreshness.latestTradeAt;
   const latestTradeAt = latestIsoTime([latestLiveTradeAt(liveTrades), latestBacktestTradeAt]);
   const backtestManifestAt = syncStatus.lastDataValidityRefreshAt ?? backtestFreshness.generatedAt;

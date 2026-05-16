@@ -3076,7 +3076,10 @@ html[data-theme="light"] .themeDarkLabel {
   align-items: start;
   justify-items: stretch;
   gap: 0.7rem 0.85rem;
-  padding-top: 0.1rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  padding: 0.72rem;
 }
 
 .researchIdeaComposerText {
@@ -3100,6 +3103,18 @@ html[data-theme="light"] .themeDarkLabel {
   font-size: 0.66rem;
   font-weight: 800;
   line-height: 1.45;
+}
+
+.researchIdeaComposerMessage {
+  grid-column: 1 / -1;
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.026);
+  padding: 0.46rem 0.52rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .researchAddIdeaButton {
@@ -3563,10 +3578,43 @@ html[data-theme="light"] .themeDarkLabel {
   background: linear-gradient(135deg, rgba(52, 211, 153, 0.085), rgba(52, 211, 153, 0.02));
 }
 
-.researchIdea div:first-child {
+.researchIdeaTitle {
   min-width: 0;
   display: grid;
   gap: 0.24rem;
+}
+
+.researchIdeaHead {
+  min-width: 0;
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 0.65rem;
+}
+
+.researchIdeaEditButton {
+  flex: 0 0 auto;
+  min-height: 26px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(96, 165, 250, 0.26);
+  border-radius: 8px;
+  background: rgba(96, 165, 250, 0.08);
+  color: #93bbfc;
+  padding: 0 0.58rem;
+  font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+  font-size: 0.52rem;
+  font-weight: 950;
+  text-transform: uppercase;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.researchIdeaEditButton:hover {
+  border-color: rgba(96, 165, 250, 0.44);
+  background: rgba(96, 165, 250, 0.14);
+  color: #bfdbfe;
 }
 
 .researchIdea span {
@@ -4918,6 +4966,7 @@ html[data-theme="light"] .researchStage,
 html[data-theme="light"] .researchLane,
 html[data-theme="light"] .researchStatusList div,
 html[data-theme="light"] .researchReportExcerpt,
+html[data-theme="light"] .researchIdeaComposer,
 html[data-theme="light"] .researchIdea {
   border-color: rgba(15, 23, 42, 0.09);
   background: rgba(15, 23, 42, 0.022);
@@ -5024,6 +5073,18 @@ html[data-theme="light"] .researchIdeaMeta span {
   color: rgba(15, 23, 42, 0.58);
 }
 
+html[data-theme="light"] .researchIdeaEditButton {
+  border-color: rgba(37, 99, 235, 0.18);
+  background: rgba(37, 99, 235, 0.055);
+  color: #1d4ed8;
+}
+
+html[data-theme="light"] .researchIdeaEditButton:hover {
+  border-color: rgba(37, 99, 235, 0.3);
+  background: rgba(37, 99, 235, 0.09);
+  color: #1e40af;
+}
+
 html[data-theme="light"] .researchField input,
 html[data-theme="light"] .researchField select,
 html[data-theme="light"] .researchField textarea {
@@ -5051,6 +5112,11 @@ html[data-theme="light"] .researchIdeaComposerText span,
 html[data-theme="light"] .researchIdeaModalHead span,
 html[data-theme="light"] .researchIdeaComposerMessage {
   color: rgba(15, 23, 42, 0.64);
+}
+
+html[data-theme="light"] .researchIdeaComposerMessage {
+  border-color: rgba(15, 23, 42, 0.08);
+  background: rgba(15, 23, 42, 0.025);
 }
 
 html[data-theme="light"] .researchIdeaModalHead {

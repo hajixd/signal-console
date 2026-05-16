@@ -236,6 +236,7 @@ export type CronResult = {
     uploadedFiles: number;
   };
   generated: TradeAlert[];
+  skippedData?: Array<{ assetKey: string; reason: string; symbol: string }>;
   skippedDuplicates: string[];
   skippedRisk: Array<{ id: string; symbol: string; reason: string }>;
   errors: Array<{ symbol: string; message: string }>;

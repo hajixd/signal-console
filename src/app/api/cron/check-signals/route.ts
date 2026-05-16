@@ -24,6 +24,14 @@ function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : "Unknown signal check error";
 }
 
+function isMarketDataStaleError(error: unknown): boolean {
+  const message = errorMessage(error);
+  return (
+    /Stored data for .+ is stale at /.test(message) ||
+    /Live data for .+ is stale; latest 15m bar is /.test(message)
+  );
+}
+
 function signalDollars(trade: TradeAlert): { targetDollars: number; riskDollars: number } {
   const unitValue = dollarPerUnit(trade.symbol, trade.entryPrice);
   const sizeMultiplier = trade.sizeMultiplier ?? 1;
@@ -587,6 +595,7 @@ async function runSignalCheck(): Promise<CronResult> {
   const result: CronResult = {
     checkedAt: new Date().toISOString(),
     generated: [],
+    skippedData: [],
     skippedDuplicates: [],
     skippedRisk: [],
     errors: []
@@ -603,6 +612,7 @@ async function runSignalCheck(): Promise<CronResult> {
 
   const barsByAssetKey = new Map<string, Bar[]>();
   const assetTimings = new Map<string, { assetKey: string; durationMs: number; rules: number; symbol: string }>();
+  const skippedDataKeys = new Set<string>();
 
   for (const rule of rules) {
     const ruleStartedAt = Date.now();
@@ -676,6 +686,17 @@ async function runSignalCheck(): Promise<CronResult> {
         riskDollars: dollars.riskDollars
       });
     } catch (error) {
+      if (isMarketDataStaleError(error)) {
+        if (!skippedDataKeys.has(rule.assetKey)) {
+          skippedDataKeys.add(rule.assetKey);
+          result.skippedData?.push({
+            assetKey: rule.assetKey,
+            reason: errorMessage(error),
+            symbol: rule.symbol
+          });
+        }
+        continue;
+      }
       result.errors.push({
         symbol: rule.symbol,
         message: error instanceof Error ? error.message : "Unknown error"
@@ -792,6 +813,7 @@ export async function GET(request: NextRequest) {
       durationMs,
       errors: result.errors.length,
       generated: result.generated.length,
+      skippedData: result.skippedData?.length ?? 0,
       skippedDuplicates: result.skippedDuplicates.length,
       skippedRisk: result.skippedRisk.length
     });

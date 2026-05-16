@@ -150,7 +150,52 @@ export async function dispatchResearchCycleWorkflow(inputs: DispatchInputs): Pro
   };
 }
 
-export async function commitResearchIdeaFile(relativePath: string, content: string, title: string): Promise<ResearchGithubResult> {
+function githubContentUrl(config: GithubConfig, normalizedPath: string) {
+  return `https://api.github.com/repos/${config.owner}/${config.repo}/contents/${encodeURIComponent(normalizedPath).replaceAll("%2F", "/")}`;
+}
+
+async function existingGithubFileSha(config: GithubConfig, normalizedPath: string): Promise<ResearchGithubResult & { sha?: string }> {
+  const response = await fetch(`${githubContentUrl(config, normalizedPath)}?ref=${encodeURIComponent(config.ref)}`, {
+    method: "GET",
+    headers: githubHeaders(config.token),
+    cache: "no-store"
+  });
+
+  if (response.status === 404) {
+    return {
+      body: {},
+      ok: true,
+      status: 404
+    };
+  }
+
+  if (!response.ok) {
+    return {
+      ok: false,
+      status: response.status,
+      body: {
+        error: "GitHub research idea lookup failed",
+        ...(await readResponseBody(response))
+      }
+    };
+  }
+
+  const body = await readResponseBody(response);
+  const sha = typeof body.sha === "string" ? body.sha : undefined;
+  return {
+    body,
+    ok: true,
+    sha,
+    status: response.status
+  };
+}
+
+export async function commitResearchIdeaFile(
+  relativePath: string,
+  content: string,
+  title: string,
+  messagePrefix = "save research idea"
+): Promise<ResearchGithubResult> {
   const config = githubResearchConfig();
   const missing = missingGithubConfig(config);
   if (missing.length) {
@@ -165,19 +210,20 @@ export async function commitResearchIdeaFile(relativePath: string, content: stri
   }
 
   const normalizedPath = relativePath.replace(/\\/g, "/").replace(/^\/+/, "");
-  const response = await fetch(
-    `https://api.github.com/repos/${config.owner}/${config.repo}/contents/${encodeURIComponent(normalizedPath).replaceAll("%2F", "/")}`,
-    {
-      method: "PUT",
-      headers: githubHeaders(config.token),
-      body: JSON.stringify({
-        branch: config.ref,
-        content: Buffer.from(content, "utf8").toString("base64"),
-        message: `add research idea: ${title.slice(0, 72) || "untitled"}`
-      }),
-      cache: "no-store"
-    }
-  );
+  const existing = await existingGithubFileSha(config, normalizedPath);
+  if (!existing.ok) return existing;
+
+  const response = await fetch(githubContentUrl(config, normalizedPath), {
+    method: "PUT",
+    headers: githubHeaders(config.token),
+    body: JSON.stringify({
+      branch: config.ref,
+      content: Buffer.from(content, "utf8").toString("base64"),
+      message: `${messagePrefix}: ${title.slice(0, 72) || "untitled"}`,
+      sha: existing.sha
+    }),
+    cache: "no-store"
+  });
 
   if (!response.ok) {
     return {
