@@ -3508,6 +3508,11 @@ html[data-theme="light"] .themeDarkLabel {
   border-color: rgba(96, 165, 250, 0.14);
 }
 
+.researchSyncCard.sync-state-idle {
+  border-color: rgba(148, 163, 184, 0.16);
+  background: linear-gradient(135deg, rgba(148, 163, 184, 0.055), rgba(255, 255, 255, 0.02));
+}
+
 .challenge-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -4943,6 +4948,11 @@ html[data-theme="light"] .researchSyncCard.sync-state-running {
   background: linear-gradient(135deg, rgba(245, 158, 11, 0.1), rgba(245, 158, 11, 0.02));
 }
 
+html[data-theme="light"] .researchSyncCard.sync-state-idle {
+  border-color: rgba(100, 116, 139, 0.18);
+  background: linear-gradient(135deg, rgba(241, 245, 249, 0.84), rgba(248, 250, 252, 0.62));
+}
+
 html[data-theme="light"] .researchSyncCard.sync-state-success {
   border-color: rgba(5, 150, 105, 0.2);
   background: linear-gradient(135deg, rgba(16, 185, 129, 0.08), rgba(16, 185, 129, 0.018));
@@ -6088,6 +6098,11 @@ html[data-theme="light"] .tradeCandlestickPanel {
   background: linear-gradient(135deg, rgba(234, 179, 8, 0.16), rgba(250, 204, 21, 0.045));
 }
 
+.dataset-sync-tile.sync-state-idle {
+  border-color: rgba(148, 163, 184, 0.18);
+  background: linear-gradient(135deg, rgba(148, 163, 184, 0.08), rgba(15, 23, 42, 0.14));
+}
+
 .dataset-sync-tile.sync-state-success {
   border-color: rgba(52, 211, 153, 0.3);
   background: linear-gradient(135deg, rgba(52, 211, 153, 0.12), rgba(96, 165, 250, 0.035));
@@ -6106,8 +6121,20 @@ html[data-theme="light"] .tradeCandlestickPanel {
   text-transform: uppercase;
 }
 
+.sync-tile-description {
+  max-width: 58ch;
+  margin: -0.1rem 0 0.08rem;
+  color: rgba(203, 213, 225, 0.58);
+  font-size: 0.62rem;
+  line-height: 1.4;
+}
+
 .dataset-sync-tile.sync-state-running .sync-tile-name {
   color: rgba(253, 224, 71, 0.9);
+}
+
+.dataset-sync-tile.sync-state-idle .sync-tile-name {
+  color: rgba(203, 213, 225, 0.76);
 }
 
 .dataset-sync-tile.sync-state-success .sync-tile-name {
@@ -6550,6 +6577,11 @@ html[data-theme="light"] .dataset-sync-tile.sync-state-running {
   background: linear-gradient(135deg, #fef9c3, rgba(254, 252, 232, 0.7));
 }
 
+html[data-theme="light"] .dataset-sync-tile.sync-state-idle {
+  border-color: rgba(100, 116, 139, 0.2);
+  background: linear-gradient(135deg, #f8fafc, rgba(241, 245, 249, 0.74));
+}
+
 html[data-theme="light"] .dataset-sync-tile.sync-state-success {
   border-color: rgba(5, 150, 105, 0.28);
   background: linear-gradient(135deg, #ecfdf5, rgba(239, 246, 255, 0.74));
@@ -6568,6 +6600,10 @@ html[data-theme="light"] .dataset-sync-tile.sync-state-running .sync-tile-name {
   color: #a16207;
 }
 
+html[data-theme="light"] .dataset-sync-tile.sync-state-idle .sync-tile-name {
+  color: #64748b;
+}
+
 html[data-theme="light"] .dataset-sync-tile.sync-state-success .sync-tile-name {
   color: #16a34a;
 }
@@ -6577,6 +6613,10 @@ html[data-theme="light"] .dataset-sync-tile.sync-state-failed .sync-tile-name {
 }
 
 html[data-theme="light"] .sync-tile-times dt {
+  color: #64748b;
+}
+
+html[data-theme="light"] .sync-tile-description {
   color: #64748b;
 }
 

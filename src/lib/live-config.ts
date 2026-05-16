@@ -89,17 +89,20 @@ export type SyncStatus = {
   lastSignalTradeCheckAt?: string;
   marketDataSync?: SyncRunStatus;
   researchCycle?: SyncRunStatus;
+  researchStages?: Partial<Record<ResearchStageKey, SyncRunStatus>>;
   signalTradeCheck?: SyncRunStatus;
 };
 
 export type SyncRunKey = "dataValidityRefresh" | "marketDataSync" | "researchCycle" | "signalTradeCheck";
 export type SyncRunState = "idle" | "running" | "success" | "failed";
 export type SyncTimestampField = "lastDataValidityRefreshAt" | "lastMarketDataSyncAt" | "lastResearchCycleAt" | "lastSignalTradeCheckAt";
+export type ResearchStageKey = "research" | "idea" | "coding" | "backtest";
 
 export type SyncRunStatus = {
   durationMs?: number;
   error?: string;
   finishedAt?: string;
+  jobsLastRun?: number;
   startedAt?: string;
   stage?: string;
   state: SyncRunState;
@@ -278,6 +281,7 @@ function normalizeSyncStatus(value: unknown): SyncStatus {
   const dataValidityRefresh = normalizeSyncRunStatus(source.dataValidityRefresh);
   const marketDataSync = normalizeSyncRunStatus(source.marketDataSync);
   const researchCycle = normalizeSyncRunStatus(source.researchCycle);
+  const researchStages = normalizeResearchStages(source.researchStages);
   const signalTradeCheck = normalizeSyncRunStatus(source.signalTradeCheck);
 
   if (dataValidityRefresh) {
@@ -290,6 +294,10 @@ function normalizeSyncStatus(value: unknown): SyncStatus {
 
   if (researchCycle) {
     status.researchCycle = researchCycle;
+  }
+
+  if (researchStages) {
+    status.researchStages = researchStages;
   }
 
   if (signalTradeCheck) {
@@ -315,6 +323,28 @@ function normalizeSyncStatus(value: unknown): SyncStatus {
   return status;
 }
 
+function isResearchStageKey(value: unknown): value is ResearchStageKey {
+  return value === "research" || value === "idea" || value === "coding" || value === "backtest";
+}
+
+function normalizeResearchStages(value: unknown): Partial<Record<ResearchStageKey, SyncRunStatus>> | undefined {
+  if (!value || typeof value !== "object") return undefined;
+  const source = value as Partial<Record<ResearchStageKey, unknown>>;
+  const stages: Partial<Record<ResearchStageKey, SyncRunStatus>> = {};
+
+  for (const stage of ["research", "idea", "coding", "backtest"] as const) {
+    const normalized = normalizeSyncRunStatus(source[stage]);
+    if (normalized) {
+      stages[stage] = {
+        ...normalized,
+        stage
+      };
+    }
+  }
+
+  return Object.keys(stages).length ? stages : undefined;
+}
+
 function normalizeSyncRunStatus(value: unknown): SyncRunStatus | undefined {
   if (!value || typeof value !== "object") return undefined;
   const source = value as Partial<SyncRunStatus>;
@@ -327,9 +357,13 @@ function normalizeSyncRunStatus(value: unknown): SyncRunStatus | undefined {
   const durationMs = typeof source.durationMs === "number" && Number.isFinite(source.durationMs) && source.durationMs >= 0
     ? Math.round(source.durationMs)
     : undefined;
+  const jobsLastRun = typeof source.jobsLastRun === "number" && Number.isFinite(source.jobsLastRun) && source.jobsLastRun >= 0
+    ? Math.round(source.jobsLastRun)
+    : undefined;
+  const stage = typeof source.stage === "string" ? source.stage : undefined;
   const state: SyncRunState = explicitState ?? (error ? "failed" : finishedAt ? "success" : startedAt ? "running" : "idle");
 
-  if (state === "idle" && !startedAt && !finishedAt && !error && durationMs === undefined) {
+  if (state === "idle" && !startedAt && !finishedAt && !error && durationMs === undefined && jobsLastRun === undefined) {
     return undefined;
   }
 
@@ -337,7 +371,9 @@ function normalizeSyncRunStatus(value: unknown): SyncRunStatus | undefined {
     durationMs,
     error,
     finishedAt,
+    jobsLastRun,
     startedAt,
+    stage,
     state
   };
 }
@@ -504,6 +540,22 @@ export async function updateDatasetSyncRunStatus(
 
   if (normalizedRun) {
     sync[runKey] = normalizedRun;
+  }
+
+  if (runKey === "researchCycle" && isResearchStageKey(runStatus.stage)) {
+    const previousStageRun = runStatus.state === "running" ? undefined : existing.sync?.researchStages?.[runStatus.stage];
+    const normalizedStageRun = normalizeSyncRunStatus({
+      ...(previousStageRun ?? {}),
+      ...runStatus,
+      stage: runStatus.stage
+    });
+
+    if (normalizedStageRun) {
+      sync.researchStages = {
+        ...(existing.sync?.researchStages ?? {}),
+        [runStatus.stage]: normalizedStageRun
+      };
+    }
   }
 
   if (runStatus.state === "success" && runStatus.finishedAt) {

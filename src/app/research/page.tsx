@@ -14,9 +14,36 @@ export const dynamic = "force-dynamic";
 const RESEARCH_ROOT = path.join(process.cwd(), "Research");
 const ASSETS_PATH = path.join(process.cwd(), "config", "assets.json");
 const RESEARCH_STATUS_PATH = path.join(RESEARCH_ROOT, "runtime", "research-cycle-status.json");
+const RESEARCH_STAGE_STATUS_PATH = path.join(RESEARCH_ROOT, "runtime", "research-stage-status.json");
 const HIDDEN_ENTRY_NAMES = new Set([".gitkeep"]);
-const RESEARCH_CRON_STAGE_MINUTES_UTC = [0, 10, 20, 30];
 const RESEARCH_CRON_STAGE_HOURS_UTC = [0, 6, 12, 18];
+const RESEARCH_STAGE_ORDER = ["research", "idea", "coding", "backtest"] as const;
+const RESEARCH_STAGE_MINUTES_UTC = {
+  backtest: 30,
+  coding: 20,
+  idea: 10,
+  research: 0
+} satisfies Record<ResearchStage, number>;
+const RESEARCH_STAGE_TITLES = {
+  backtest: "Backtesting",
+  coding: "Coding Ideas",
+  idea: "Formalization of Ideas",
+  research: "New Idea Generation"
+} satisfies Record<ResearchStage, string>;
+const RESEARCH_STAGE_DESCRIPTIONS = {
+  backtest: "Runs coded strategies through the deterministic backtest engine.",
+  coding: "Uses the coding LLM to turn formal ideas into executable strategy specs.",
+  idea: "Uses the idea LLM to organize raw research into clear testable reports.",
+  research: "Uses You.com and LLM research to find new trading ideas online."
+} satisfies Record<ResearchStage, string>;
+const RESEARCH_STAGE_JOB_LABELS = {
+  backtest: "Backtests",
+  coding: "Coded",
+  idea: "Formalized",
+  research: "Ideas"
+} satisfies Record<ResearchStage, string>;
+
+type ResearchStage = (typeof RESEARCH_STAGE_ORDER)[number];
 
 type ResearchIdea = {
   createdAt?: string;
@@ -66,6 +93,7 @@ type ResearchCycleStatus = {
   durationMs?: number;
   error?: string;
   finishedAt?: string;
+  jobsLastRun?: number;
   lastSuccessAt?: string;
   limit?: number;
   maxPerIdea?: number;
@@ -76,6 +104,8 @@ type ResearchCycleStatus = {
   state?: "idle" | "running" | "success" | "failed";
   updatedAt?: string;
 } | null;
+type ResearchStageStatus = NonNullable<ResearchCycleStatus>;
+type ResearchStageStatusMap = Partial<Record<ResearchStage, ResearchStageStatus>>;
 
 type ResearchSnapshot = {
   approvedIdeas: ResearchIdea[];
@@ -92,6 +122,7 @@ type ResearchSnapshot = {
   readyCount: number;
   readySpecs: StrategySpec[];
   researchStatus: ResearchCycleStatus;
+  researchStageStatuses: ResearchStageStatusMap;
   reportCount: number;
   searchResultCount: number;
 };
@@ -229,16 +260,44 @@ async function readLatestReport(): Promise<LatestReport> {
   return { lines, name: latest.name, updatedAt: latest.updatedAt };
 }
 
-async function readResearchCycleStatus(): Promise<ResearchCycleStatus> {
+function isResearchStage(value: unknown): value is ResearchStage {
+  return value === "research" || value === "idea" || value === "coding" || value === "backtest";
+}
+
+async function readResearchCycleStatuses(): Promise<{ cycle: ResearchCycleStatus; stages: ResearchStageStatusMap }> {
+  const localCycle = await readJsonFile<NonNullable<ResearchCycleStatus>>(RESEARCH_STATUS_PATH);
+  const localStages = (await readJsonFile<ResearchStageStatusMap>(RESEARCH_STAGE_STATUS_PATH)) ?? {};
   const datasetStatus = await getDatasetStatus().catch(() => null);
   const researchCycle = datasetStatus?.sync?.researchCycle;
+  const datasetStages = datasetStatus?.sync?.researchStages ?? {};
+  const cycle = researchCycle
+    ? {
+        ...researchCycle,
+        lastSuccessAt: datasetStatus?.sync?.lastResearchCycleAt
+      }
+    : localCycle;
+  const stages: ResearchStageStatusMap = {
+    ...localStages,
+    ...datasetStages
+  };
+
   if (researchCycle) {
-    return {
-      ...researchCycle,
-      lastSuccessAt: datasetStatus?.sync?.lastResearchCycleAt
-    };
+    const stage = researchCycle.stage;
+    if (isResearchStage(stage)) {
+      stages[stage] = {
+        ...(stages[stage] ?? {}),
+        ...researchCycle,
+        lastSuccessAt: datasetStatus?.sync?.lastResearchCycleAt,
+        stage
+      };
+    }
   }
-  return readJsonFile<NonNullable<ResearchCycleStatus>>(RESEARCH_STATUS_PATH);
+
+  if (localCycle && isResearchStage(localCycle.stage) && !stages[localCycle.stage]) {
+    stages[localCycle.stage] = localCycle;
+  }
+
+  return { cycle, stages };
 }
 
 async function getResearchSnapshot(): Promise<ResearchSnapshot> {
@@ -249,6 +308,7 @@ async function getResearchSnapshot(): Promise<ResearchSnapshot> {
   const candidateRows = (await readBacktestSummary()).sort((left, right) => Number(right.profit_factor) - Number(left.profit_factor));
   const inboxIdeas = (await readJsonFiles<ResearchIdea>("ideas/inbox", 8)).sort((left, right) => ideaTime(right) - ideaTime(left));
   const approvedIdeas = (await readJsonFiles<ResearchIdea>("ideas/approved", 10)).sort((left, right) => ideaTime(right) - ideaTime(left));
+  const researchStatuses = await readResearchCycleStatuses();
 
   return {
     approvedIdeas,
@@ -264,7 +324,8 @@ async function getResearchSnapshot(): Promise<ResearchSnapshot> {
     qualifiedCount: qualifiedFolders.length,
     readyCount: readyFolders.length,
     readySpecs: await readStrategySpecs("strategies/ready_to_backtest", 10),
-    researchStatus: await readResearchCycleStatus(),
+    researchStatus: researchStatuses.cycle,
+    researchStageStatuses: researchStatuses.stages,
     reportCount: await countFiles("reports", ".md"),
     searchResultCount: await countFiles("sources/search_results", ".json")
   };
@@ -300,16 +361,15 @@ function formatDuration(ms: number | undefined) {
   return `${Math.floor(seconds / 60)}m ${seconds % 60}s`;
 }
 
-function nextResearchCronRunIso(now = new Date()) {
+function nextResearchStageRunIso(stage: ResearchStage, now = new Date()) {
   const candidates: Date[] = [];
+  const minute = RESEARCH_STAGE_MINUTES_UTC[stage];
   for (let dayOffset = 0; dayOffset <= 1; dayOffset += 1) {
     for (const hour of RESEARCH_CRON_STAGE_HOURS_UTC) {
-      for (const minute of RESEARCH_CRON_STAGE_MINUTES_UTC) {
-        const candidate = new Date(now);
-        candidate.setUTCDate(now.getUTCDate() + dayOffset);
-        candidate.setUTCHours(hour, minute, 0, 0);
-        if (candidate > now) candidates.push(candidate);
-      }
+      const candidate = new Date(now);
+      candidate.setUTCDate(now.getUTCDate() + dayOffset);
+      candidate.setUTCHours(hour, minute, 0, 0);
+      if (candidate > now) candidates.push(candidate);
     }
   }
   return candidates.sort((left, right) => left.getTime() - right.getTime())[0]?.toISOString() ?? now.toISOString();
@@ -335,11 +395,52 @@ function laneState(count: number) {
   return count > 0 ? "active" : "inactive";
 }
 
-function syncTileStateFromResearch(status: ResearchCycleStatus, snapshot: ResearchSnapshot): "failed" | "running" | "success" {
+type SyncTileState = "failed" | "idle" | "running" | "success";
+
+function syncTileStateFromResearch(status: ResearchCycleStatus, snapshot: ResearchSnapshot): SyncTileState {
   if (status?.state === "failed") return "failed";
   if (status?.state === "running") return "running";
-  if (status?.state === "success" || snapshot.reportCount > 0 || snapshot.readyCount > 0 || snapshot.backtestedCount > 0) return "success";
-  return "running";
+  if (
+    status?.state === "success" ||
+    snapshot.inboxIdeaCount > 0 ||
+    snapshot.approvedIdeaCount > 0 ||
+    snapshot.reportCount > 0 ||
+    snapshot.readyCount > 0 ||
+    snapshot.backtestedCount > 0
+  ) {
+    return "success";
+  }
+  return "idle";
+}
+
+function stageOutputCount(snapshot: ResearchSnapshot, stage: ResearchStage) {
+  if (stage === "research") return snapshot.inboxIdeaCount;
+  if (stage === "idea") return snapshot.approvedIdeaCount;
+  if (stage === "coding") return snapshot.readyCount;
+  return snapshot.backtestedCount;
+}
+
+function syncTileStateFromStage(status: ResearchStageStatus | undefined, outputCount: number): SyncTileState {
+  if (status?.state === "failed") return "failed";
+  if (status?.state === "running") return "running";
+  if (status?.state === "success" || status?.finishedAt || outputCount > 0) return "success";
+  return "idle";
+}
+
+function stageStatusText(status: ResearchStageStatus | undefined, outputCount: number) {
+  if (status?.state === "failed") return status.error ?? "Error";
+  if (status?.state === "running") return "Active";
+  if (status?.state === "success" || status?.finishedAt) return "Recent success";
+  if (outputCount > 0) return "Output available";
+  return "No run yet";
+}
+
+function stageLastRunAt(status: ResearchStageStatus | undefined) {
+  return status?.finishedAt ?? status?.lastSuccessAt ?? status?.startedAt;
+}
+
+function stageJobsLastRun(status: ResearchStageStatus | undefined) {
+  return typeof status?.jobsLastRun === "number" ? formatNumber(status.jobsLastRun) : "n/a";
 }
 
 function IdeaList({ empty, ideas }: { empty: string; ideas: ResearchIdea[] }) {
@@ -439,87 +540,55 @@ function BacktestTable({ empty, rows, showGate = false }: { empty: string; rows:
   );
 }
 
+function ResearchStageTile({ snapshot, stage }: { snapshot: ResearchSnapshot; stage: ResearchStage }) {
+  const status = snapshot.researchStageStatuses[stage];
+  const outputCount = stageOutputCount(snapshot, stage);
+  const state = syncTileStateFromStage(status, outputCount);
+
+  return (
+    <div className={`dataset-sync-tile sync-state-${state}`}>
+      <span className="sync-tile-name">{RESEARCH_STAGE_TITLES[stage]}</span>
+      <p className="sync-tile-description">{RESEARCH_STAGE_DESCRIPTIONS[stage]}</p>
+      <dl className="sync-tile-times">
+        <dt>Status</dt>
+        <dd>{stageStatusText(status, outputCount)}</dd>
+        <dt>Last ran</dt>
+        <dd>
+          <LocalDateTime value={stageLastRunAt(status)} fallback="Not run yet" />
+        </dd>
+        <dt>Next run</dt>
+        <dd>
+          <LocalDateTime value={nextResearchStageRunIso(stage)} />
+        </dd>
+        <dt>Jobs last run</dt>
+        <dd>{stageJobsLastRun(status)}</dd>
+        <dt>{RESEARCH_STAGE_JOB_LABELS[stage]} now</dt>
+        <dd>{formatNumber(outputCount)}</dd>
+        <dt>Duration</dt>
+        <dd>{formatDuration(status?.durationMs)}</dd>
+      </dl>
+    </div>
+  );
+}
+
 function ResearchWorkSync({ snapshot }: { snapshot: ResearchSnapshot }) {
-  const status = snapshot.researchStatus;
-  const cycleState = syncTileStateFromResearch(status, snapshot);
-  const nextRunAt = nextResearchCronRunIso();
-  const pipelineState = snapshot.pendingReadyCount > 0 ? "running" : snapshot.qualifiedCount > 0 || snapshot.backtestedCount > 0 ? "success" : "running";
-  const reportState = snapshot.latestReport ? "success" : snapshot.backtestedCount > 0 ? "running" : "failed";
+  const cycleState = syncTileStateFromResearch(snapshot.researchStatus, snapshot);
 
   return (
     <section className={`backtest-card sync-card researchSyncCard sync-state-${cycleState}`}>
       <div className="backtest-card-head">
         <div>
           <h2>Research Work</h2>
-          <p>LLM research and idea/coding stages run every 6 hours; backtest and finished gates stay deterministic.</p>
+          <p>Each research stage runs once every 6 hours and records its own schedule, last run, and completed jobs.</p>
         </div>
         <span className={`status ${cycleState === "failed" ? "failed" : cycleState === "success" ? "sent" : "skipped"}`}>
-          {cycleState === "failed" ? "error" : cycleState === "success" ? "success" : "active"}
+          {cycleState === "failed" ? "error" : cycleState === "success" ? "success" : cycleState === "running" ? "active" : "idle"}
         </span>
       </div>
       <div className="sync-grid" aria-label="Research work sync status">
-        <div className={`dataset-sync-tile sync-state-${cycleState}`}>
-          <span className="sync-tile-name">Research cycle</span>
-          <dl className="sync-tile-times">
-            <dt>Status</dt>
-            <dd>{status?.state === "failed" ? status.error ?? "Failed" : status?.state ?? "No run yet"}</dd>
-            <dt>Stage</dt>
-            <dd>{status?.stage ?? "pipeline"}</dd>
-            <dt>Last start</dt>
-            <dd>
-              <LocalDateTime value={status?.startedAt} fallback="Not started yet" />
-            </dd>
-            <dt>Last finish</dt>
-            <dd>
-              <LocalDateTime value={status?.finishedAt ?? status?.lastSuccessAt} fallback="Not finished yet" />
-            </dd>
-            <dt>Duration</dt>
-            <dd>{formatDuration(status?.durationMs)}</dd>
-          </dl>
-        </div>
-        <div className={`dataset-sync-tile sync-state-${snapshot.inboxIdeaCount || snapshot.approvedIdeaCount ? "success" : "running"}`}>
-          <span className="sync-tile-name">Idea intake</span>
-          <dl className="sync-tile-times">
-            <dt>Status</dt>
-            <dd>{snapshot.inboxIdeaCount ? "Collecting" : snapshot.approvedIdeaCount ? "Approved" : "Waiting"}</dd>
-            <dt>Inbox</dt>
-            <dd>{formatNumber(snapshot.inboxIdeaCount)}</dd>
-            <dt>Approved</dt>
-            <dd>{formatNumber(snapshot.approvedIdeaCount)}</dd>
-            <dt>Search files</dt>
-            <dd>{formatNumber(snapshot.searchResultCount)}</dd>
-          </dl>
-        </div>
-        <div className={`dataset-sync-tile sync-state-${pipelineState}`}>
-          <span className="sync-tile-name">Pipeline</span>
-          <dl className="sync-tile-times">
-            <dt>Status</dt>
-            <dd>{snapshot.pendingReadyCount > 0 ? "Backtest queue open" : snapshot.backtestedCount > 0 ? "Backtested" : "Building"}</dd>
-            <dt>Coded</dt>
-            <dd>{formatNumber(snapshot.readyCount)}</dd>
-            <dt>Queued</dt>
-            <dd>{formatNumber(snapshot.pendingReadyCount)}</dd>
-            <dt>Backtested</dt>
-            <dd>{formatNumber(snapshot.backtestedCount)}</dd>
-          </dl>
-        </div>
-        <div className={`dataset-sync-tile sync-state-${reportState}`}>
-          <span className="sync-tile-name">Finished results</span>
-          <dl className="sync-tile-times">
-            <dt>Status</dt>
-            <dd>{snapshot.qualifiedCount > 0 ? "Qualified" : snapshot.reportCount > 0 ? "Report ready" : "No report"}</dd>
-            <dt>Qualified</dt>
-            <dd>{formatNumber(snapshot.qualifiedCount)}</dd>
-            <dt>Latest report</dt>
-            <dd>
-              <LocalDateTime value={snapshot.latestReport?.updatedAt.toISOString()} fallback="No report yet" />
-            </dd>
-            <dt>Next scheduled</dt>
-            <dd>
-              <LocalDateTime value={nextRunAt} />
-            </dd>
-          </dl>
-        </div>
+        {RESEARCH_STAGE_ORDER.map((stage) => (
+          <ResearchStageTile key={stage} snapshot={snapshot} stage={stage} />
+        ))}
       </div>
     </section>
   );

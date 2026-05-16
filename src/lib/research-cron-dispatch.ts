@@ -7,7 +7,9 @@ import { dispatchResearchCycleWorkflow, getResearchGithubConfigStatus } from "@/
 export type ResearchStage = "research" | "idea" | "coding" | "backtest" | "pipeline";
 
 const RESEARCH_STATUS_PATH = path.join(process.cwd(), "Research", "runtime", "research-cycle-status.json");
+const RESEARCH_STAGE_STATUS_PATH = path.join(process.cwd(), "Research", "runtime", "research-stage-status.json");
 const STAGES = new Set<ResearchStage>(["research", "idea", "coding", "backtest", "pipeline"]);
+const TRACKED_STAGES = new Set<ResearchStage>(["research", "idea", "coding", "backtest"]);
 
 function isAuthorized(request: NextRequest): "ok" | "missing-secret" | "bad-secret" {
   const secret = process.env.CRON_SECRET;
@@ -31,8 +33,26 @@ function routeForStage(stage: ResearchStage) {
 }
 
 async function writeLocalResearchStatus(payload: Record<string, unknown>) {
+  const updatedAt = new Date().toISOString();
+  const normalizedPayload = { ...payload, updatedAt };
   await fs.mkdir(path.dirname(RESEARCH_STATUS_PATH), { recursive: true });
-  await fs.writeFile(RESEARCH_STATUS_PATH, `${JSON.stringify({ ...payload, updatedAt: new Date().toISOString() }, null, 2)}\n`, "utf8");
+  await fs.writeFile(RESEARCH_STATUS_PATH, `${JSON.stringify(normalizedPayload, null, 2)}\n`, "utf8");
+
+  const stage = typeof payload.stage === "string" && TRACKED_STAGES.has(payload.stage as ResearchStage) ? payload.stage : undefined;
+  if (!stage) return;
+
+  let existing: Record<string, unknown> = {};
+  try {
+    existing = JSON.parse(await fs.readFile(RESEARCH_STAGE_STATUS_PATH, "utf8")) as Record<string, unknown>;
+  } catch {
+    existing = {};
+  }
+
+  await fs.writeFile(
+    RESEARCH_STAGE_STATUS_PATH,
+    `${JSON.stringify({ ...existing, [stage]: normalizedPayload }, null, 2)}\n`,
+    "utf8"
+  );
 }
 
 export async function handleResearchCron(request: NextRequest, defaultStage: ResearchStage) {
