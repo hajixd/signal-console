@@ -1,0 +1,28 @@
+{
+  "assetKeys": [
+    "sp_500_futures",
+    "nasdaq_100_futures",
+    "eur_usd"
+  ],
+  "createdAt": "2026-05-16T01:05:40.117Z",
+  "engine": "overnight_bias",
+  "engines": [
+    "overnight_bias"
+  ],
+  "hypothesis": "Test whether ES and NQ preserve the documented equity close-to-open drift when EUR/USD confirms risk-on conditions, then exit near the US cash open and require more than 20 trades with PF above 2.",
+  "ideaId": "overnight_equity_futures_drift_with_fx_risk_filter_mp7na87p",
+  "markets": [
+    "futures",
+    "forex"
+  ],
+  "notes": "",
+  "provenance": "manual",
+  "sourceUrls": [],
+  "status": "inbox",
+  "timeframes": [
+    "overnight",
+    "15m",
+    "1h"
+  ],
+  "title": "Overnight equity futures drift with FX risk filter"
+}
