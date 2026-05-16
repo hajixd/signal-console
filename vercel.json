@@ -9,8 +9,20 @@
       "schedule": "2,17,32,47 * * * *"
     },
     {
-      "path": "/api/cron/research-cycle",
-      "schedule": "20 8 * * *"
+      "path": "/api/cron/research-research",
+      "schedule": "0 */6 * * *"
+    },
+    {
+      "path": "/api/cron/research-ideas",
+      "schedule": "10 */6 * * *"
+    },
+    {
+      "path": "/api/cron/research-coding",
+      "schedule": "20 */6 * * *"
+    },
+    {
+      "path": "/api/cron/research-backtest",
+      "schedule": "30 */6 * * *"
     }
   ]
 }

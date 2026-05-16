@@ -1,0 +1,38 @@
+{
+  "assetKey": "sp_500_futures",
+  "createdAt": "2026-05-16T01:35:41.502338+00:00",
+  "engine": "llm_rule_code",
+  "hypothesis": "An asset's own recent return can predict the next session. Test short lookbacks across futures and forex.",
+  "ideaId": "short_horizon_tsmom",
+  "llm": {
+    "model": "offline-rule-fallback",
+    "rationale": "Used when NEBIUS_API_KEY is absent or the LLM call fails.",
+    "summary": "Offline rule-code fallback generated from idea text."
+  },
+  "market": "futures",
+  "params": {
+    "ruleCode": {
+      "exitMinute": 945,
+      "longWhen": "minute >= 570 and minute <= 945 and change('close', 20) > 0 and close > ema50",
+      "maxBars": 24,
+      "oneTradePerDay": true,
+      "riskAtrMult": 1.0,
+      "riskReward": 1.5,
+      "sessionEndMinute": 1439,
+      "sessionStartMinute": 0,
+      "shortWhen": "minute >= 570 and minute <= 945 and change('close', 20) < 0 and close < ema50"
+    }
+  },
+  "provenance": "academic",
+  "sourceUrls": [
+    "https://pages.stern.nyu.edu/~lpederse/papers/TimeSeriesMomentum.pdf"
+  ],
+  "status": "ready_to_backtest",
+  "strategyId": "rs_llm_short_horizon_tsmom_sp_500_futures_llm_rule_code_9c89703e",
+  "symbol": "ES",
+  "thresholds": {
+    "minProfitFactor": 2.0,
+    "minTrades": 21
+  },
+  "title": "Short-horizon time-series momentum"
+}

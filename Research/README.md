@@ -17,13 +17,33 @@ The goal is fast, repeatable discovery of futures and forex strategies with:
 internet / papers / notes
   -> sources/search_results
   -> sources/pages
+  -> LLM research, including YouTube/web source synthesis
   -> ideas/inbox
+  -> LLM idea-board structuring reports
   -> ideas/approved
+  -> LLM-coded rule specs
   -> strategies/ready_to_backtest
+  -> deterministic backtest engine
   -> strategies/backtested
+  -> deterministic PF/trade-count gate
   -> strategies/qualified
   -> reports
 ```
+
+The intended stage ownership is:
+
+1. **Research:** an LLM reads online and YouTube-sourced search results and
+   adds rough discoveries to `ideas/inbox/`.
+2. **Idea:** an LLM turns new inbox ideas into organized idea-board reports with
+   timeframes, setup structure, entry, stop, target, filters, and invalidation
+   notes, then moves them to `ideas/approved/`.
+3. **Coding:** an LLM turns approved ideas into constrained `llm_rule_code`
+   strategy specs with explicit entry conditions, stop-loss, take-profit,
+   risk/reward, session, and exit controls.
+4. **Backtest:** no LLM is used. The Python backtest engine runs the coded spec
+   against historical candles and writes stats.
+5. **Finished:** no LLM is used. A strategy is finished only when PF is greater
+   than `2.0`, trades are greater than `20`, and total R is positive.
 
 ## Fast Commands
 
@@ -71,6 +91,27 @@ Convert approved ideas into many ready-to-backtest specs:
 python Research\scripts\build_ready_to_backtest.py --markets futures,forex
 ```
 
+Convert approved ideas into Nebius Token Factory LLM-coded rule specs:
+
+```powershell
+python Research\scripts\llm_strategy_factory.py code --markets futures,forex --max-per-idea 3 --limit 25
+```
+
+Run the LLM-driven staged pipeline locally:
+
+```powershell
+python Research\scripts\research_center.py stage --stage research
+python Research\scripts\research_center.py stage --stage idea
+python Research\scripts\research_center.py stage --stage coding --max-per-idea 3 --limit 25
+python Research\scripts\research_center.py stage --stage backtest --min-pf 2 --min-trades 21
+```
+
+Run the whole LLM local flow:
+
+```powershell
+python Research\scripts\research_center.py llm-cycle --min-pf 2 --min-trades 21 --limit 25
+```
+
 Backtest everything waiting in the ready queue:
 
 ```powershell
@@ -94,7 +135,10 @@ python Research\scripts\research_center.py local-cycle --min-pf 2 --min-trades 2
 - `sources/` stores raw research artifacts and search manifests.
 - `ideas/inbox/` stores ideas that have not been approved for testing.
 - `ideas/approved/` stores executable ideas.
-- `strategies/ready_to_backtest/` stores expanded single-asset strategy specs.
+- `reports/*_summary.md` stores LLM summaries for research, idea, coding,
+  backtest, and pipeline stages.
+- `strategies/ready_to_backtest/` stores expanded single-asset strategy specs,
+  including LLM-coded `llm_rule_code` specs.
 - `strategies/backtested/` stores all completed backtests.
 - `strategies/qualified/` stores only strategies meeting the configured PF and
   trade-count threshold.
@@ -113,3 +157,11 @@ python Research\scripts\research_center.py local-cycle --min-pf 2 --min-trades 2
 The promotion script writes only to `Research/promotions/` by default. It does
 not touch the live `strategy/` folder unless you intentionally adapt and run a
 manual promotion workflow.
+
+Stage 1 online discovery uses the You.com/YDC Search API via `YOU_API_KEY` or
+`YDC_API_KEY`, which lets the research step discover web and YouTube sources.
+Nebius Token Factory integration reads `NEBIUS_API_KEY` from the environment for
+idea structuring, coding, and summaries. Do not commit API keys. The LLM code
+stage writes constrained rule expressions that the research backtester evaluates
+against historical candles; it does not execute arbitrary generated Python or
+TypeScript.

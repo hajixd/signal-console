@@ -1,0 +1,38 @@
+{
+  "assetKey": "sp_500_futures",
+  "backtestedAt": "2026-05-16T01:37:00.493323+00:00",
+  "createdAt": "2026-05-15T23:27:30.239554+00:00",
+  "engine": "intraday_momentum",
+  "hypothesis": "Return continuation can recur at repeated intraday half-hour intervals. Test the second-to-last interval into the close.",
+  "ideaId": "intraday_repeat_half_hour",
+  "market": "futures",
+  "metrics": {
+    "losses": 484,
+    "max_drawdown_r": 53.931598,
+    "profit_factor": 0.994691,
+    "total_r": -2.3975,
+    "trades": 976,
+    "win_rate_pct": 49.385246,
+    "wins": 482
+  },
+  "params": {
+    "direction": "same",
+    "entryMinute": 930,
+    "exitMinute": 945,
+    "minSignalAtr": 0.1,
+    "signalEndMinute": 915,
+    "signalStartMinute": 900
+  },
+  "provenance": "academic",
+  "sourceUrls": [
+    "https://ideas.repec.org/a/bla/jfinan/v65y2010i4p1369-1407.html"
+  ],
+  "status": "backtested",
+  "strategyId": "rs_intraday_repeat_half_hour_sp_500_futures_intraday_momentum_5e646ec2",
+  "symbol": "ES",
+  "thresholds": {
+    "minProfitFactor": 2.0,
+    "minTrades": 21
+  },
+  "title": "Repeated half-hour continuation"
+}

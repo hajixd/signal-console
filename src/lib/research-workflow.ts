@@ -18,6 +18,7 @@ type DispatchInputs = {
   minPf: string;
   minTrades: number;
   reason: string;
+  stage?: string;
   startedAt: string;
 };
 
@@ -110,6 +111,7 @@ export async function dispatchResearchCycleWorkflow(inputs: DispatchInputs): Pro
           minPf: inputs.minPf,
           minTrades: String(inputs.minTrades),
           reason: inputs.reason,
+          stage: inputs.stage ?? "pipeline",
           startedAt: inputs.startedAt
         },
         ref: config.ref

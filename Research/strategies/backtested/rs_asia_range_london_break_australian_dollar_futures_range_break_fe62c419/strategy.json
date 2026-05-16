@@ -1,19 +1,19 @@
 {
   "assetKey": "australian_dollar_futures",
-  "backtestedAt": "2026-05-16T01:00:50.850626+00:00",
+  "backtestedAt": "2026-05-16T01:36:54.364458+00:00",
   "createdAt": "2026-05-16T01:00:50.409457+00:00",
   "engine": "range_break",
   "hypothesis": "The London open often tests or breaks the Asia range. Test continuation and failed-break variants on FX and currency futures.",
   "ideaId": "asia_range_london_break",
   "market": "futures",
   "metrics": {
-    "losses": 218,
-    "max_drawdown_r": 25.853902,
-    "profit_factor": 0.930622,
-    "total_r": -8.682427,
-    "trades": 420,
-    "win_rate_pct": 47.619048,
-    "wins": 200
+    "losses": 391,
+    "max_drawdown_r": 28.384722,
+    "profit_factor": 0.927663,
+    "total_r": -16.127465,
+    "trades": 745,
+    "win_rate_pct": 47.248322,
+    "wins": 352
   },
   "params": {
     "breakEndMinute": 360,

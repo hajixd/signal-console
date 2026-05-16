@@ -52,6 +52,27 @@ def parse_args() -> argparse.Namespace:
     cycle.add_argument("--clear-ready", action="store_true")
     cycle.add_argument("--clear-results", action="store_true")
 
+    stage = subparsers.add_parser("stage")
+    stage.add_argument("--stage", choices=["research", "idea", "coding", "backtest", "pipeline"], default="pipeline")
+    stage.add_argument("--markets", default="futures,forex")
+    stage.add_argument("--asset", action="append")
+    stage.add_argument("--max-per-idea", type=int, default=3)
+    stage.add_argument("--min-pf", type=float, default=2.0)
+    stage.add_argument("--min-trades", type=int, default=21)
+    stage.add_argument("--workers", type=int, default=1)
+    stage.add_argument("--limit", type=int, default=25)
+    stage.add_argument("--offline-llm", action="store_true")
+
+    llm_cycle = subparsers.add_parser("llm-cycle")
+    llm_cycle.add_argument("--markets", default="futures,forex")
+    llm_cycle.add_argument("--asset", action="append")
+    llm_cycle.add_argument("--max-per-idea", type=int, default=3)
+    llm_cycle.add_argument("--min-pf", type=float, default=2.0)
+    llm_cycle.add_argument("--min-trades", type=int, default=21)
+    llm_cycle.add_argument("--workers", type=int, default=1)
+    llm_cycle.add_argument("--limit", type=int, default=25)
+    llm_cycle.add_argument("--offline-llm", action="store_true")
+
     return parser.parse_args()
 
 
@@ -154,6 +175,60 @@ def main() -> None:
         if args.clear_results:
             backtest_args.append("--clear-results")
         run_script("backtest_ready.py", backtest_args)
+        status()
+        return
+    if args.command == "llm-cycle":
+        run_llm_stage("pipeline", args)
+        return
+    if args.command == "stage":
+        run_llm_stage(args.stage, args)
+        return
+
+
+def run_llm_stage(stage: str, args: argparse.Namespace) -> None:
+    llm_flag = ["--offline"] if getattr(args, "offline_llm", False) else []
+    asset_args: list[str] = []
+    for asset in args.asset or []:
+        asset_args.extend(["--asset", asset])
+    code_args = [
+        "--markets",
+        args.markets,
+        "--max-per-idea",
+        str(args.max_per_idea),
+        "--limit",
+        str(args.limit),
+        *asset_args,
+        *llm_flag,
+    ]
+    backtest_args = [
+        "--min-pf",
+        str(args.min_pf),
+        "--min-trades",
+        str(args.min_trades),
+        "--workers",
+        str(args.workers),
+        "--limit",
+        str(args.limit),
+    ]
+
+    if stage in {"research", "pipeline"}:
+        run_script("search_internet.py", ["--limit", "4"])
+        run_script("fetch_sources.py", ["--limit", "24"])
+        run_script("llm_strategy_factory.py", ["research", "--limit", str(args.limit), *llm_flag])
+        run_script("llm_strategy_factory.py", ["summarize", "--stage", "research", *llm_flag])
+
+    if stage in {"idea", "pipeline"}:
+        run_script("ideas_from_research.py", ["--from-pages"])
+        run_script("llm_strategy_factory.py", ["ideas", "--approve", *llm_flag])
+        run_script("llm_strategy_factory.py", ["summarize", "--stage", "idea", *llm_flag])
+
+    if stage in {"coding", "pipeline"}:
+        run_script("llm_strategy_factory.py", ["code", *code_args])
+        run_script("llm_strategy_factory.py", ["summarize", "--stage", "coding", *llm_flag])
+
+    if stage in {"backtest", "pipeline"}:
+        run_script("backtest_ready.py", backtest_args)
+        run_script("generate_report.py", ["--top", "20"])
         status()
 
 

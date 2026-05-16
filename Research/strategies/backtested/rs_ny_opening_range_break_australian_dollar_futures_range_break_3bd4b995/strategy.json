@@ -1,0 +1,39 @@
+{
+  "assetKey": "australian_dollar_futures",
+  "backtestedAt": "2026-05-16T01:37:07.582181+00:00",
+  "createdAt": "2026-05-16T01:00:50.414210+00:00",
+  "engine": "range_break",
+  "hypothesis": "The NY opening range can define intraday continuation or failed-break behavior; test both directions with fixed risk multiples.",
+  "ideaId": "ny_opening_range_break",
+  "market": "futures",
+  "metrics": {
+    "losses": 547,
+    "max_drawdown_r": 33.068069,
+    "profit_factor": 0.979096,
+    "total_r": -9.710619,
+    "trades": 1093,
+    "win_rate_pct": 49.130833,
+    "wins": 537
+  },
+  "params": {
+    "breakEndMinute": 720,
+    "breakStartMinute": 600,
+    "direction": "breakout",
+    "forcedExitMinute": 945,
+    "rangeEndMinute": 585,
+    "rangeStartMinute": 570,
+    "riskReward": 1.0
+  },
+  "provenance": "institutional",
+  "sourceUrls": [
+    "https://www.cmegroup.com/education.html"
+  ],
+  "status": "backtested",
+  "strategyId": "rs_ny_opening_range_break_australian_dollar_futures_range_break_3bd4b995",
+  "symbol": "6A",
+  "thresholds": {
+    "minProfitFactor": 2.0,
+    "minTrades": 21
+  },
+  "title": "NY opening range breakout/fade"
+}

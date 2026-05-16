@@ -1,0 +1,36 @@
+{
+  "assetKey": "sp_500_futures",
+  "backtestedAt": "2026-05-16T01:37:02.657784+00:00",
+  "createdAt": "2026-05-15T23:27:30.242793+00:00",
+  "engine": "open_gap",
+  "hypothesis": "Overnight gaps may either mean-revert or continue during the regular session depending on asset and gap size.",
+  "ideaId": "night_day_open_gap_fade",
+  "market": "futures",
+  "metrics": {
+    "losses": 413,
+    "max_drawdown_r": 95.082814,
+    "profit_factor": 0.975356,
+    "total_r": -24.049592,
+    "trades": 829,
+    "win_rate_pct": 49.457177,
+    "wins": 410
+  },
+  "params": {
+    "direction": "fade",
+    "entryMinute": 570,
+    "exitMinute": 615,
+    "minGapAtr": 0.1
+  },
+  "provenance": "academic",
+  "sourceUrls": [
+    "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=1004081"
+  ],
+  "status": "backtested",
+  "strategyId": "rs_night_day_open_gap_fade_sp_500_futures_open_gap_9995402b",
+  "symbol": "ES",
+  "thresholds": {
+    "minProfitFactor": 2.0,
+    "minTrades": 21
+  },
+  "title": "NY open gap fade or continuation"
+}

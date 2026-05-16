@@ -1,0 +1,38 @@
+{
+  "assetKey": "australian_dollar_futures",
+  "backtestedAt": "2026-05-16T01:36:56.364485+00:00",
+  "createdAt": "2026-05-16T01:00:50.410979+00:00",
+  "engine": "intraday_momentum",
+  "hypothesis": "FX intraday momentum may appear around major trading-hour transitions. Test London first-30-minute move into pre-NY/NY handoff.",
+  "ideaId": "fx_london_open_momentum",
+  "market": "futures",
+  "metrics": {
+    "losses": 526,
+    "max_drawdown_r": 112.12383,
+    "profit_factor": 1.008983,
+    "total_r": 11.651068,
+    "trades": 1096,
+    "win_rate_pct": 51.094891,
+    "wins": 560
+  },
+  "params": {
+    "direction": "same",
+    "entryMinute": 480,
+    "exitMinute": 570,
+    "minSignalAtr": 0,
+    "signalEndMinute": 195,
+    "signalStartMinute": 180
+  },
+  "provenance": "academic",
+  "sourceUrls": [
+    "https://biblio.ugent.be/publication/8060014"
+  ],
+  "status": "backtested",
+  "strategyId": "rs_fx_london_open_momentum_australian_dollar_futures_intraday_momentum_a4c1a31d",
+  "symbol": "6A",
+  "thresholds": {
+    "minProfitFactor": 2.0,
+    "minTrades": 21
+  },
+  "title": "London first 30 minutes into NY handoff"
+}

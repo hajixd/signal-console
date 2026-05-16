@@ -101,6 +101,7 @@ export type SyncRunStatus = {
   error?: string;
   finishedAt?: string;
   startedAt?: string;
+  stage?: string;
   state: SyncRunState;
 };
 

@@ -1,0 +1,41 @@
+{
+  "assetKeys": [],
+  "createdAt": "2026-05-16T02:02:59.928849+00:00",
+  "engines": [],
+  "hypothesis": "Research source suggests a strategy worth structuring and testing: No fetched result text was available; use the query as the research lead.",
+  "ideaId": "market_intraday_momentum_first_half_hour_last_half_hour_paper",
+  "ideaReport": {
+    "entry": "Enter when the coded condition confirms the setup.",
+    "filters": [],
+    "invalidations": [
+      "Reject if PF <= 2 or trades <= 20."
+    ],
+    "setup": "Test the described source behavior with explicit rule-code.",
+    "stop": "Use ATR or structure invalidation.",
+    "summary": "Research source suggests a strategy worth structuring and testing: No fetched result text was available; use the query as the research lead.",
+    "target": "Use fixed R target and session/time exit.",
+    "timeframes": [
+      "15m"
+    ]
+  },
+  "llm": {
+    "ideaModel": "offline-idea-fallback",
+    "model": "offline-research-fallback",
+    "stage": "idea"
+  },
+  "markets": [
+    "futures",
+    "forex"
+  ],
+  "provenance": "web_research",
+  "sourceUrls": [],
+  "status": "approved",
+  "structure": {
+    "researchNote": "No fetched result text was available; use the query as the research lead.",
+    "sourceTitle": "market intraday momentum first half hour last half hour paper"
+  },
+  "timeframes": [
+    "15m"
+  ],
+  "title": "market intraday momentum first half hour last half hour paper"
+}

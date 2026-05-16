@@ -1,6 +1,6 @@
 {
   "assetKey": "sp_500_futures",
-  "backtestedAt": "2026-05-15T23:27:42.046917+00:00",
+  "backtestedAt": "2026-05-16T01:36:56.404482+00:00",
   "createdAt": "2026-05-15T23:27:30.228031+00:00",
   "engine": "intraday_momentum",
   "hypothesis": "FX intraday momentum may appear around major trading-hour transitions. Test London first-30-minute move into pre-NY/NY handoff.",

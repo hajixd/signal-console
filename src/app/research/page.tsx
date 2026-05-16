@@ -15,8 +15,8 @@ const RESEARCH_ROOT = path.join(process.cwd(), "Research");
 const ASSETS_PATH = path.join(process.cwd(), "config", "assets.json");
 const RESEARCH_STATUS_PATH = path.join(RESEARCH_ROOT, "runtime", "research-cycle-status.json");
 const HIDDEN_ENTRY_NAMES = new Set([".gitkeep"]);
-const RESEARCH_CRON_HOUR_UTC = 8;
-const RESEARCH_CRON_MINUTE_UTC = 20;
+const RESEARCH_CRON_STAGE_MINUTES_UTC = [0, 10, 20, 30];
+const RESEARCH_CRON_STAGE_HOURS_UTC = [0, 6, 12, 18];
 
 type ResearchIdea = {
   createdAt?: string;
@@ -72,6 +72,7 @@ type ResearchCycleStatus = {
   minPf?: string;
   minTrades?: number;
   startedAt?: string;
+  stage?: string;
   state?: "idle" | "running" | "success" | "failed";
   updatedAt?: string;
 } | null;
@@ -300,13 +301,18 @@ function formatDuration(ms: number | undefined) {
 }
 
 function nextResearchCronRunIso(now = new Date()) {
-  const next = new Date(now);
-  next.setUTCSeconds(0, 0);
-  next.setUTCHours(RESEARCH_CRON_HOUR_UTC, RESEARCH_CRON_MINUTE_UTC, 0, 0);
-  if (next <= now) {
-    next.setUTCDate(next.getUTCDate() + 1);
+  const candidates: Date[] = [];
+  for (let dayOffset = 0; dayOffset <= 1; dayOffset += 1) {
+    for (const hour of RESEARCH_CRON_STAGE_HOURS_UTC) {
+      for (const minute of RESEARCH_CRON_STAGE_MINUTES_UTC) {
+        const candidate = new Date(now);
+        candidate.setUTCDate(now.getUTCDate() + dayOffset);
+        candidate.setUTCHours(hour, minute, 0, 0);
+        if (candidate > now) candidates.push(candidate);
+      }
+    }
   }
-  return next.toISOString();
+  return candidates.sort((left, right) => left.getTime() - right.getTime())[0]?.toISOString() ?? now.toISOString();
 }
 
 function compactId(value: string | undefined) {
@@ -441,14 +447,14 @@ function ResearchWorkSync({ snapshot }: { snapshot: ResearchSnapshot }) {
   const reportState = snapshot.latestReport ? "success" : snapshot.backtestedCount > 0 ? "running" : "failed";
 
   return (
-    <section className="backtest-card sync-card researchSyncCard">
+    <section className={`backtest-card sync-card researchSyncCard sync-state-${cycleState}`}>
       <div className="backtest-card-head">
         <div>
           <h2>Research Work</h2>
-          <p>Daily bounded research cycle, idea intake, pipeline output, and finished report state.</p>
+          <p>LLM research and idea/coding stages run every 6 hours; backtest and finished gates stay deterministic.</p>
         </div>
         <span className={`status ${cycleState === "failed" ? "failed" : cycleState === "success" ? "sent" : "skipped"}`}>
-          {cycleState === "failed" ? "review" : cycleState === "success" ? "active" : "queued"}
+          {cycleState === "failed" ? "error" : cycleState === "success" ? "success" : "active"}
         </span>
       </div>
       <div className="sync-grid" aria-label="Research work sync status">
@@ -457,6 +463,8 @@ function ResearchWorkSync({ snapshot }: { snapshot: ResearchSnapshot }) {
           <dl className="sync-tile-times">
             <dt>Status</dt>
             <dd>{status?.state === "failed" ? status.error ?? "Failed" : status?.state ?? "No run yet"}</dd>
+            <dt>Stage</dt>
+            <dd>{status?.stage ?? "pipeline"}</dd>
             <dt>Last start</dt>
             <dd>
               <LocalDateTime value={status?.startedAt} fallback="Not started yet" />

@@ -17,5 +17,12 @@
     "CME Group treasury futures trading sessions volatility",
     "forex London open range breakout strategy research",
     "equity index futures overnight session returns regular trading hours"
+  ],
+  "youtube_strategy_research": [
+    "site:youtube.com/watch futures opening range breakout backtest strategy",
+    "site:youtube.com/watch forex London session trading strategy backtest",
+    "site:youtube.com/watch ICT turtle soup sweep FVG trading strategy",
+    "site:youtube.com/watch VWAP pullback futures trading strategy",
+    "site:youtube.com/watch prop firm futures scalping strategy backtest"
   ]
 }

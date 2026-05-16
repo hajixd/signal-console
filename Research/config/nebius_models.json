@@ -1,0 +1,106 @@
+{
+  "provider": "nebius-token-factory",
+  "baseUrl": "https://api.tokenfactory.nebius.com/v1/",
+  "notes": [
+    "Nebius Token Factory exposes an OpenAI-compatible API.",
+    "Use NEBIUS_API_KEY in the process environment; never commit keys.",
+    "The router checks /v1/models when a key is available and picks the first available model for each task."
+  ],
+  "tasks": {
+    "research": {
+      "purpose": "Read sources, form trading hypotheses, and decide what is worth testing.",
+      "temperature": 0.35,
+      "maxTokens": 2200,
+      "models": [
+        {
+          "id": "deepseek-ai/DeepSeek-R1-0528",
+          "why": "Reasoning-heavy default for source synthesis and hypothesis formation."
+        },
+        {
+          "id": "Qwen/Qwen3-235B-A22B-Thinking-2507",
+          "why": "Large thinking model for broad research synthesis when available."
+        },
+        {
+          "id": "Qwen/Qwen3-235B-A22B-Instruct-2507",
+          "why": "Large instruct fallback with long context."
+        }
+      ]
+    },
+    "idea": {
+      "purpose": "Turn rough notes into concrete strategy ideas.",
+      "temperature": 0.45,
+      "maxTokens": 2600,
+      "models": [
+        {
+          "id": "Qwen/Qwen3-235B-A22B-Instruct-2507",
+          "why": "Large instruct model for structured idea generation."
+        },
+        {
+          "id": "deepseek-ai/DeepSeek-V3.1",
+          "why": "High-capacity general model fallback."
+        },
+        {
+          "id": "openai/gpt-oss-120b",
+          "why": "Strong general JSON-following fallback."
+        }
+      ]
+    },
+    "coding": {
+      "purpose": "Write backtestable strategy rule-code from approved ideas.",
+      "temperature": 0.18,
+      "maxTokens": 3600,
+      "models": [
+        {
+          "id": "Qwen/Qwen3-Coder-480B-A35B-Instruct",
+          "why": "Nebius recommends this for coding-agent workflows."
+        },
+        {
+          "id": "Qwen/Qwen3-Coder-30B-A3B-Instruct",
+          "why": "Smaller coding fallback for faster runs."
+        },
+        {
+          "id": "zai-org/GLM-4.5",
+          "why": "Nebius recommended coding fallback."
+        }
+      ]
+    },
+    "summary": {
+      "purpose": "Summarize stage inputs, outputs, and next actions.",
+      "temperature": 0.2,
+      "maxTokens": 1400,
+      "models": [
+        {
+          "id": "Qwen/Qwen3-30B-A3B-Instruct-2507-fast",
+          "why": "Fast summary default; fast flavor is preferred for low-latency status updates."
+        },
+        {
+          "id": "Qwen/Qwen3-30B-A3B-Instruct-2507",
+          "why": "Base fallback for the same summary model."
+        },
+        {
+          "id": "meta-llama/Llama-3.3-70B-Instruct-fast",
+          "why": "Fast general summary fallback."
+        }
+      ]
+    },
+    "pipeline": {
+      "purpose": "Review generated code specs and backtest outcomes.",
+      "temperature": 0.2,
+      "maxTokens": 2000,
+      "models": [
+        {
+          "id": "openai/gpt-oss-120b",
+          "why": "Strong JSON and report-writing model for pipeline review."
+        },
+        {
+          "id": "Qwen/Qwen3-235B-A22B-Instruct-2507",
+          "why": "Large fallback for reviewing generated strategies."
+        },
+        {
+          "id": "deepseek-ai/DeepSeek-R1-0528",
+          "why": "Reasoning fallback for failure analysis."
+        }
+      ]
+    }
+  }
+}

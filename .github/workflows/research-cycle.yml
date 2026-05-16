@@ -27,6 +27,10 @@ on:
         description: "Dispatch reason"
         required: false
         default: "manual"
+      stage:
+        description: "Research stage to run: research, idea, coding, backtest, or pipeline"
+        required: false
+        default: "pipeline"
       startedAt:
         description: "ISO timestamp from the Vercel cron dispatcher"
         required: false
@@ -58,8 +62,12 @@ jobs:
       RESEARCH_FETCH_LIMIT: ${{ vars.RESEARCH_FETCH_LIMIT || '24' }}
       RESEARCH_MARKETS: ${{ inputs.markets }}
       RESEARCH_SEARCH_LIMIT: ${{ vars.RESEARCH_SEARCH_LIMIT || '4' }}
+      RESEARCH_STAGE: ${{ inputs.stage }}
       SIGNAL_CONSOLE_STORAGE_PREFIX: ${{ vars.SIGNAL_CONSOLE_STORAGE_PREFIX || 'signal-console' }}
       TWELVEDATA_API_KEYS: ${{ secrets.TWELVEDATA_API_KEYS }}
+      NEBIUS_API_KEY: ${{ secrets.NEBIUS_API_KEY }}
+      YOU_API_KEY: ${{ secrets.YOU_API_KEY }}
+      YDC_API_KEY: ${{ secrets.YOU_API_KEY }}
 
     steps:
       - name: Check out workflow ref
@@ -87,7 +95,7 @@ jobs:
 
       - name: Mark research cycle running
         if: inputs.startedAt != ''
-        run: node --import tsx scripts/update-research-cycle-status.ts --state=running --started-at="${{ inputs.startedAt }}"
+        run: node --import tsx scripts/update-research-cycle-status.ts --state=running --stage="${{ inputs.stage }}" --started-at="${{ inputs.startedAt }}"
 
       - name: Select research data paths
         run: |
@@ -106,29 +114,15 @@ jobs:
       - name: Pull bounded candle data from Firebase
         run: node --import tsx scripts/firebase-pull.ts --paths="$RESEARCH_DATA_PATHS" --tail-rows="$RESEARCH_DATA_TAIL_ROWS" --ignore-missing
 
-      - name: Search public research sources
-        continue-on-error: true
-        run: python Research/scripts/research_center.py search --limit "$RESEARCH_SEARCH_LIMIT"
-
-      - name: Fetch research source pages
-        continue-on-error: true
-        run: python Research/scripts/research_center.py fetch --limit "$RESEARCH_FETCH_LIMIT"
-
-      - name: Convert fetched research into approved ideas
-        continue-on-error: true
-        run: python Research/scripts/ideas_from_research.py --from-pages --approve-drafts
-
-      - name: Code ideas and backtest candidates
+      - name: Run requested research stage
         run: |
-          python Research/scripts/research_center.py local-cycle \
+          python Research/scripts/research_center.py stage \
+            --stage "${{ inputs.stage }}" \
             --markets "${{ inputs.markets }}" \
             --max-per-idea "${{ inputs.maxPerIdea }}" \
             --min-pf "${{ inputs.minPf }}" \
             --min-trades "${{ inputs.minTrades }}" \
             --limit "${{ inputs.limit }}"
-
-      - name: Generate candidate report
-        run: python Research/scripts/generate_report.py --top 20
 
       - name: Commit Research outputs
         run: |
@@ -144,8 +138,8 @@ jobs:
 
       - name: Mark research cycle successful
         if: success() && inputs.startedAt != ''
-        run: node --import tsx scripts/update-research-cycle-status.ts --state=success --started-at="${{ inputs.startedAt }}"
+        run: node --import tsx scripts/update-research-cycle-status.ts --state=success --stage="${{ inputs.stage }}" --started-at="${{ inputs.startedAt }}"
 
       - name: Mark research cycle failed
         if: failure() && inputs.startedAt != ''
-        run: node --import tsx scripts/update-research-cycle-status.ts --state=failed --started-at="${{ inputs.startedAt }}" --error="GitHub research workflow failed."
+        run: node --import tsx scripts/update-research-cycle-status.ts --state=failed --stage="${{ inputs.stage }}" --started-at="${{ inputs.startedAt }}" --error="GitHub research workflow failed."

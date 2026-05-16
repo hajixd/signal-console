@@ -1,0 +1,36 @@
+{
+  "assetKey": "australian_dollar_futures",
+  "backtestedAt": "2026-05-16T01:37:02.555573+00:00",
+  "createdAt": "2026-05-16T01:00:50.412950+00:00",
+  "engine": "open_gap",
+  "hypothesis": "Overnight gaps may either mean-revert or continue during the regular session depending on asset and gap size.",
+  "ideaId": "night_day_open_gap_fade",
+  "market": "futures",
+  "metrics": {
+    "losses": 425,
+    "max_drawdown_r": 59.367476,
+    "profit_factor": 1.05461,
+    "total_r": 38.170002,
+    "trades": 890,
+    "win_rate_pct": 50.898876,
+    "wins": 453
+  },
+  "params": {
+    "direction": "fade",
+    "entryMinute": 570,
+    "exitMinute": 615,
+    "minGapAtr": 0
+  },
+  "provenance": "academic",
+  "sourceUrls": [
+    "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=1004081"
+  ],
+  "status": "backtested",
+  "strategyId": "rs_night_day_open_gap_fade_australian_dollar_futures_open_gap_6d55ea9e",
+  "symbol": "6A",
+  "thresholds": {
+    "minProfitFactor": 2.0,
+    "minTrades": 21
+  },
+  "title": "NY open gap fade or continuation"
+}

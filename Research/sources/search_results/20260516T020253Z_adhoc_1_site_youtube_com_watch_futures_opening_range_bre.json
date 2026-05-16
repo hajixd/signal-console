@@ -1,0 +1,20 @@
+{
+  "limit": 2,
+  "query": "site:youtube.com/watch futures opening range breakout backtest strategy",
+  "results": [
+    {
+      "provider": "you",
+      "snippet": "Most traders pick a timeframe for their opening range breakout strategy and never question it. The 30-minute is \"safer.\" The 5-minute is \"too noisy.\" The 15-...",
+      "title": "I Backtested 1,178,668 Opening Range Breakout Trades. Here's the Data.",
+      "url": "https://www.youtube.com/watch?v=MOG-DbgmzzI"
+    },
+    {
+      "provider": "you",
+      "snippet": "Is the ORB strategy working in any market consistently, during this volatility? We'll utilize the Opening Range Breakout Backtester to compare and contrast 3...",
+      "title": "Backtest: Opening Range Breakout Strategy Success Rate on SPY vs.",
+      "url": "https://www.youtube.com/watch?v=ZzIr6-A4oMU"
+    }
+  ],
+  "searchedAt": "2026-05-16T02:02:53.605153+00:00",
+  "topic": "adhoc_1"
+}

@@ -1,6 +1,6 @@
 {
   "assetKey": "sp_500_futures",
-  "backtestedAt": "2026-05-15T23:27:44.789068+00:00",
+  "backtestedAt": "2026-05-16T01:36:58.450711+00:00",
   "createdAt": "2026-05-15T23:27:30.235050+00:00",
   "engine": "intraday_momentum",
   "hypothesis": "The first half-hour return predicts the last half-hour return; test both continuation and reversal by asset.",

@@ -22,11 +22,13 @@ async function main() {
   const finishedAt = state === "running" ? undefined : new Date().toISOString();
   const durationMs = finishedAt ? Math.max(0, Date.parse(finishedAt) - Date.parse(startedAt)) : undefined;
   const error = state === "failed" ? argValue("error") || "Research workflow failed." : undefined;
+  const stage = argValue("stage");
 
   await updateDatasetSyncRunStatus("researchCycle", {
     durationMs,
     error,
     finishedAt,
+    stage,
     startedAt,
     state
   });

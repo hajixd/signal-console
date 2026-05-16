@@ -23,7 +23,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--topic", action="append", help="Topic key from config/query_sets.json. Repeatable.")
     parser.add_argument("--query", action="append", help="Ad hoc query. Repeatable.")
     parser.add_argument("--limit", type=int, default=8, help="Max results per query.")
-    parser.add_argument("--provider", choices=["auto", "brave", "serpapi", "tavily", "duckduckgo"], default="auto")
+    parser.add_argument("--provider", choices=["auto", "you", "brave", "serpapi", "tavily", "duckduckgo"], default="auto")
     return parser.parse_args()
 
 
@@ -56,6 +56,35 @@ def brave_search(query: str, limit: int) -> list[dict[str, str]]:
                 "url": str(item.get("url", "")),
                 "snippet": str(item.get("description", "")),
                 "provider": "brave",
+            }
+        )
+    return results
+
+
+def you_search(query: str, limit: int) -> list[dict[str, str]]:
+    api_key = os.environ.get("YOU_API_KEY") or os.environ.get("YDC_API_KEY")
+    if not api_key:
+        raise RuntimeError("YOU_API_KEY/YDC_API_KEY is not set")
+    params = urllib.parse.urlencode({"query": query, "count": min(limit, 10)})
+    payload = request_json(
+        f"https://ydc-index.io/v1/search?{params}",
+        headers={"Accept": "application/json", "X-API-Key": api_key},
+    )
+    raw_results = payload.get("results", [])
+    if isinstance(raw_results, dict):
+        raw_results = raw_results.get("web", [])
+    results = []
+    for item in raw_results[:limit]:
+        snippets = item.get("snippets", [])
+        snippet = " ".join(str(value) for value in snippets if str(value).strip()) if isinstance(snippets, list) else str(item.get("snippet", ""))
+        if not snippet:
+            snippet = str(item.get("description", ""))
+        results.append(
+            {
+                "title": str(item.get("title", "")),
+                "url": str(item.get("url", "")),
+                "snippet": snippet[:4000],
+                "provider": "you",
             }
         )
     return results
@@ -123,11 +152,13 @@ def duckduckgo_search(query: str, limit: int) -> list[dict[str, str]]:
 
 
 def search(query: str, limit: int, provider: str) -> list[dict[str, str]]:
-    providers = [provider] if provider != "auto" else ["brave", "serpapi", "tavily", "duckduckgo"]
+    providers = [provider] if provider != "auto" else ["you", "brave", "serpapi", "tavily", "duckduckgo"]
     errors: list[str] = []
     for candidate in providers:
         try:
-            if candidate == "brave":
+            if candidate == "you":
+                results = you_search(query, limit)
+            elif candidate == "brave":
                 results = brave_search(query, limit)
             elif candidate == "serpapi":
                 results = serpapi_search(query, limit)

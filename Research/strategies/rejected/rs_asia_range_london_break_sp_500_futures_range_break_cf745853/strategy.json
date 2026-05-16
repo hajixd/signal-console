@@ -1,6 +1,6 @@
 {
   "assetKey": "sp_500_futures",
-  "backtestedAt": "2026-05-15T23:27:39.306135+00:00",
+  "backtestedAt": "2026-05-16T01:36:54.381210+00:00",
   "createdAt": "2026-05-15T23:27:30.224508+00:00",
   "engine": "range_break",
   "hypothesis": "The London open often tests or breaks the Asia range. Test continuation and failed-break variants on FX and currency futures.",

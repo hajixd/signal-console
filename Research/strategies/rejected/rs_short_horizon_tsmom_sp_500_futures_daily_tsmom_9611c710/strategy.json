@@ -1,0 +1,36 @@
+{
+  "assetKey": "sp_500_futures",
+  "backtestedAt": "2026-05-16T01:37:13.191244+00:00",
+  "createdAt": "2026-05-15T23:27:30.260925+00:00",
+  "engine": "daily_tsmom",
+  "hypothesis": "An asset's own recent return can predict the next session. Test short lookbacks across futures and forex.",
+  "ideaId": "short_horizon_tsmom",
+  "market": "futures",
+  "metrics": {
+    "losses": 530,
+    "max_drawdown_r": 112.393316,
+    "profit_factor": 1.081484,
+    "total_r": 140.394774,
+    "trades": 1082,
+    "win_rate_pct": 50.554529,
+    "wins": 547
+  },
+  "params": {
+    "direction": "momentum",
+    "entryMinute": 570,
+    "exitMinute": 945,
+    "lookbackDays": 10
+  },
+  "provenance": "academic",
+  "sourceUrls": [
+    "https://pages.stern.nyu.edu/~lpederse/papers/TimeSeriesMomentum.pdf"
+  ],
+  "status": "backtested",
+  "strategyId": "rs_short_horizon_tsmom_sp_500_futures_daily_tsmom_9611c710",
+  "symbol": "ES",
+  "thresholds": {
+    "minProfitFactor": 2.0,
+    "minTrades": 21
+  },
+  "title": "Short-horizon time-series momentum"
+}

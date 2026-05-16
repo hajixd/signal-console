@@ -1,0 +1,36 @@
+{
+  "baseUrl": "https://api.tokenfactory.nebius.com/v1/",
+  "hasApiKey": false,
+  "tasks": {
+    "coding": {
+      "maxTokens": 3600,
+      "model": "Qwen/Qwen3-Coder-480B-A35B-Instruct",
+      "reason": "Nebius recommends this for coding-agent workflows.",
+      "temperature": 0.18
+    },
+    "idea": {
+      "maxTokens": 2600,
+      "model": "Qwen/Qwen3-235B-A22B-Instruct-2507",
+      "reason": "Large instruct model for structured idea generation.",
+      "temperature": 0.45
+    },
+    "pipeline": {
+      "maxTokens": 2000,
+      "model": "openai/gpt-oss-120b",
+      "reason": "Strong JSON and report-writing model for pipeline review.",
+      "temperature": 0.2
+    },
+    "research": {
+      "maxTokens": 2200,
+      "model": "deepseek-ai/DeepSeek-R1-0528",
+      "reason": "Reasoning-heavy default for source synthesis and hypothesis formation.",
+      "temperature": 0.35
+    },
+    "summary": {
+      "maxTokens": 1400,
+      "model": "Qwen/Qwen3-30B-A3B-Instruct-2507-fast",
+      "reason": "Fast summary default; fast flavor is preferred for low-latency status updates.",
+      "temperature": 0.2
+    }
+  }
+}

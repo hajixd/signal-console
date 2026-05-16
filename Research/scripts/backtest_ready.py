@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import ast
 import concurrent.futures
 import csv
 import json
@@ -34,6 +35,8 @@ class AssetData:
     low: np.ndarray
     close: np.ndarray
     atr14: np.ndarray
+    ema50: np.ndarray
+    ema200: np.ndarray
     by_day_minute: dict[tuple[str, int], int]
     days: list[str]
 
@@ -112,6 +115,8 @@ def load_data_for_spec(spec: dict[str, Any]) -> AssetData:
         low=lows,
         close=closes,
         atr14=atr(highs, lows, closes),
+        ema50=ema(closes, 50),
+        ema200=ema(closes, 200),
         by_day_minute=by_day_minute,
         days=list(days_seen.keys()),
     )
@@ -414,12 +419,226 @@ def backtest_daily_tsmom(spec: dict[str, Any], data: AssetData) -> list[dict[str
     return trades
 
 
+SERIES_NAMES = {
+    "open": "open",
+    "high": "high",
+    "low": "low",
+    "close": "close",
+    "ema50": "ema50",
+    "ema200": "ema200",
+    "atr": "atr14",
+}
+
+
+def llm_context(data: AssetData, index: int) -> dict[str, Any]:
+    timestamp = int(data.time[index])
+    dt = datetime.fromtimestamp(timestamp, tz=timezone.utc).astimezone(NEW_YORK)
+    previous = max(index - 1, 0)
+    return {
+        "open": float(data.open[index]),
+        "high": float(data.high[index]),
+        "low": float(data.low[index]),
+        "close": float(data.close[index]),
+        "close_1": float(data.close[previous]),
+        "atr": safe_atr(data, index),
+        "ema50": float(data.ema50[index]),
+        "ema200": float(data.ema200[index]),
+        "minute": dt.hour * 60 + dt.minute,
+        "weekday": dt.weekday(),
+        "day": dt.date().isoformat(),
+        "bar_index": index,
+    }
+
+
+def series_array(data: AssetData, name: str) -> np.ndarray:
+    attr = SERIES_NAMES.get(name)
+    if attr is None:
+        raise ValueError(f"Unsupported LLM rule series: {name}")
+    return getattr(data, attr)
+
+
+def llm_rule_function(name: str, args: list[Any], data: AssetData, index: int) -> float:
+    if name == "abs" and len(args) == 1:
+        return abs(float(args[0]))
+    if name == "min" and len(args) >= 1:
+        return min(float(item) for item in args)
+    if name == "max" and len(args) >= 1:
+        return max(float(item) for item in args)
+    if name in {"highest", "lowest", "change"}:
+        if len(args) != 2:
+            raise ValueError(f"{name} expects series name and lookback")
+        series_name = str(args[0])
+        lookback = max(1, int(float(args[1])))
+        values = series_array(data, series_name)
+        if name == "change":
+            previous = max(0, index - lookback)
+            return float(values[index] - values[previous])
+        start = max(0, index - lookback)
+        window = values[start:index]
+        if window.size == 0:
+            window = values[max(0, index - 1) : index + 1]
+        return float(np.max(window) if name == "highest" else np.min(window))
+    raise ValueError(f"Unsupported LLM rule function: {name}")
+
+
+def eval_llm_node(node: ast.AST, context: dict[str, Any], data: AssetData, index: int) -> Any:
+    if isinstance(node, ast.Expression):
+        return eval_llm_node(node.body, context, data, index)
+    if isinstance(node, ast.Constant):
+        return node.value
+    if isinstance(node, ast.Name):
+        if node.id in context:
+            return context[node.id]
+        raise ValueError(f"Unsupported LLM rule name: {node.id}")
+    if isinstance(node, ast.UnaryOp):
+        value = eval_llm_node(node.operand, context, data, index)
+        if isinstance(node.op, ast.Not):
+            return not bool(value)
+        if isinstance(node.op, ast.USub):
+            return -float(value)
+        if isinstance(node.op, ast.UAdd):
+            return float(value)
+    if isinstance(node, ast.BoolOp):
+        values = [bool(eval_llm_node(value, context, data, index)) for value in node.values]
+        if isinstance(node.op, ast.And):
+            return all(values)
+        if isinstance(node.op, ast.Or):
+            return any(values)
+    if isinstance(node, ast.BinOp):
+        left = float(eval_llm_node(node.left, context, data, index))
+        right = float(eval_llm_node(node.right, context, data, index))
+        if isinstance(node.op, ast.Add):
+            return left + right
+        if isinstance(node.op, ast.Sub):
+            return left - right
+        if isinstance(node.op, ast.Mult):
+            return left * right
+        if isinstance(node.op, ast.Div):
+            return left / right if right else math.inf
+        if isinstance(node.op, ast.Mod):
+            return left % right if right else math.inf
+    if isinstance(node, ast.Compare):
+        left = eval_llm_node(node.left, context, data, index)
+        for operator, comparator in zip(node.ops, node.comparators, strict=True):
+            right = eval_llm_node(comparator, context, data, index)
+            if isinstance(operator, ast.Eq):
+                ok = left == right
+            elif isinstance(operator, ast.NotEq):
+                ok = left != right
+            else:
+                left_number = float(left)
+                right_number = float(right)
+                if isinstance(operator, ast.Lt):
+                    ok = left_number < right_number
+                elif isinstance(operator, ast.LtE):
+                    ok = left_number <= right_number
+                elif isinstance(operator, ast.Gt):
+                    ok = left_number > right_number
+                elif isinstance(operator, ast.GtE):
+                    ok = left_number >= right_number
+                else:
+                    raise ValueError("Unsupported comparison operator")
+            if not ok:
+                return False
+            left = right
+        return True
+    if isinstance(node, ast.Call) and isinstance(node.func, ast.Name):
+        args = [eval_llm_node(arg, context, data, index) for arg in node.args]
+        return llm_rule_function(node.func.id, args, data, index)
+    raise ValueError(f"Unsupported LLM rule syntax: {type(node).__name__}")
+
+
+def eval_llm_condition(expression: str, data: AssetData, index: int) -> bool:
+    try:
+        tree = ast.parse(expression, mode="eval")
+        return bool(eval_llm_node(tree, llm_context(data, index), data, index))
+    except Exception:
+        return False
+
+
+def minute_in_window(minute: int, start: int, end: int) -> bool:
+    if start <= end:
+        return start <= minute <= end
+    return minute >= start or minute <= end
+
+
+def backtest_llm_rule_code(spec: dict[str, Any], data: AssetData) -> list[dict[str, Any]]:
+    raw = spec.get("params", {}).get("ruleCode", spec.get("params", {}))
+    if not isinstance(raw, dict):
+        return []
+    long_when = str(raw.get("longWhen", "")).strip()
+    short_when = str(raw.get("shortWhen", "")).strip()
+    risk_atr_mult = max(0.1, float(raw.get("riskAtrMult", 1.0) or 1.0))
+    risk_reward = max(0.1, float(raw.get("riskReward", 1.5) or 1.5))
+    max_bars = max(1, int(raw.get("maxBars", 24) or 24))
+    one_trade_per_day = bool(raw.get("oneTradePerDay", True))
+    session_start = int(raw.get("sessionStartMinute", 0) or 0)
+    session_end = int(raw.get("sessionEndMinute", 1439) or 1439)
+    exit_minute = int(raw.get("exitMinute", session_end) or session_end)
+    used_days: set[str] = set()
+    trades: list[dict[str, Any]] = []
+
+    for signal_index in range(220, len(data.time) - 2):
+        context = llm_context(data, signal_index)
+        day = str(context["day"])
+        minute = int(context["minute"])
+        if one_trade_per_day and day in used_days:
+            continue
+        if not minute_in_window(minute, session_start, session_end):
+            continue
+
+        side = 0
+        if long_when and eval_llm_condition(long_when, data, signal_index):
+            side = 1
+        elif short_when and eval_llm_condition(short_when, data, signal_index):
+            side = -1
+        if side == 0:
+            continue
+
+        entry_index = signal_index + 1
+        if entry_index >= len(data.time):
+            continue
+        entry = float(data.open[entry_index])
+        risk = max(safe_atr(data, signal_index) * risk_atr_mult, data.tick_size * 2.0)
+        stop = entry - side * risk
+        target = entry + side * risk * risk_reward
+
+        forced_exit = min(entry_index + max_bars - 1, len(data.time) - 1)
+        session_exit = index_at(data, day, exit_minute)
+        if session_exit is not None and session_exit >= entry_index:
+            forced_exit = min(forced_exit, session_exit)
+
+        exit_index = forced_exit
+        exit_price = float(data.close[forced_exit])
+        exit_reason = "time_exit"
+        for cursor in range(entry_index, forced_exit + 1):
+            stopped = data.low[cursor] <= stop if side == 1 else data.high[cursor] >= stop
+            targeted = data.high[cursor] >= target if side == 1 else data.low[cursor] <= target
+            if stopped:
+                exit_index = cursor
+                exit_price = stop
+                exit_reason = "sl"
+                break
+            if targeted:
+                exit_index = cursor
+                exit_price = target
+                exit_reason = "tp"
+                break
+
+        row = trade_row(spec, data, signal_index, entry_index, exit_index, side, entry, exit_price, risk, exit_reason)
+        if row:
+            trades.append(row)
+            used_days.add(day)
+    return trades
+
+
 ENGINE_HANDLERS = {
     "intraday_momentum": backtest_intraday_momentum,
     "overnight_bias": backtest_overnight_bias,
     "open_gap": backtest_open_gap,
     "range_break": backtest_range_break,
     "daily_tsmom": backtest_daily_tsmom,
+    "llm_rule_code": backtest_llm_rule_code,
 }
 
 
