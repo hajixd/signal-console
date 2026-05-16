@@ -1,10 +1,82 @@
 {
   "runs": [
     {
-      "file": "20260515T232651Z_adhoc_1_market_intraday_momentum_first_half_hour_last_ha.json",
-      "query": "market intraday momentum first half hour last half hour paper",
+      "file": "20260516T010045Z_session_effects_overnight_returns_trading_hours_non_trading_hour.json",
+      "query": "overnight returns trading hours non-trading hours equity index futures study",
       "resultCount": 0,
-      "topic": "adhoc_1"
+      "topic": "session_effects"
+    },
+    {
+      "file": "20260516T010045Z_session_effects_market_intraday_momentum_first_half_hour_last_ha.json",
+      "query": "market intraday momentum first half hour last half hour futures currencies study",
+      "resultCount": 0,
+      "topic": "session_effects"
+    },
+    {
+      "file": "20260516T010045Z_session_effects_foreign_exchange_intraday_momentum_london_sessio.json",
+      "query": "foreign exchange intraday momentum London session study",
+      "resultCount": 0,
+      "topic": "session_effects"
+    },
+    {
+      "file": "20260516T010046Z_session_effects_opening_range_breakout_futures_academic_study_in.json",
+      "query": "opening range breakout futures academic study intraday",
+      "resultCount": 0,
+      "topic": "session_effects"
+    },
+    {
+      "file": "20260516T010046Z_session_effects_overnight_gap_fade_continuation_futures_forex_st.json",
+      "query": "overnight gap fade continuation futures forex study",
+      "resultCount": 0,
+      "topic": "session_effects"
+    },
+    {
+      "file": "20260516T010047Z_academic_futures_time_series_momentum_futures_moskowitz_ooi_peder.json",
+      "query": "time series momentum futures Moskowitz Ooi Pedersen paper",
+      "resultCount": 0,
+      "topic": "academic_futures"
+    },
+    {
+      "file": "20260516T010047Z_academic_futures_commodity_futures_intraday_momentum_crude_oil_fi.json",
+      "query": "commodity futures intraday momentum crude oil first half hour last half hour",
+      "resultCount": 0,
+      "topic": "academic_futures"
+    },
+    {
+      "file": "20260516T010047Z_academic_futures_treasury_futures_intraday_momentum_last_half_hou.json",
+      "query": "Treasury futures intraday momentum last half hour study",
+      "resultCount": 0,
+      "topic": "academic_futures"
+    },
+    {
+      "file": "20260516T010048Z_academic_futures_currency_futures_momentum_seasonality_overnight.json",
+      "query": "currency futures momentum seasonality overnight intraday study",
+      "resultCount": 0,
+      "topic": "academic_futures"
+    },
+    {
+      "file": "20260516T010048Z_institutional_playbooks_cme_group_opening_range_breakout_futures_educati.json",
+      "query": "CME Group opening range breakout futures education",
+      "resultCount": 0,
+      "topic": "institutional_playbooks"
+    },
+    {
+      "file": "20260516T010048Z_institutional_playbooks_cme_group_treasury_futures_trading_sessions_vola.json",
+      "query": "CME Group treasury futures trading sessions volatility",
+      "resultCount": 0,
+      "topic": "institutional_playbooks"
+    },
+    {
+      "file": "20260516T010049Z_institutional_playbooks_forex_london_open_range_breakout_strategy_resear.json",
+      "query": "forex London open range breakout strategy research",
+      "resultCount": 0,
+      "topic": "institutional_playbooks"
+    },
+    {
+      "file": "20260516T010049Z_institutional_playbooks_equity_index_futures_overnight_session_returns_r.json",
+      "query": "equity index futures overnight session returns regular trading hours",
+      "resultCount": 0,
+      "topic": "institutional_playbooks"
     }
   ]
 }

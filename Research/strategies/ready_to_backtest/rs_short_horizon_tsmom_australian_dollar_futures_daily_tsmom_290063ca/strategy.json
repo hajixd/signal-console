@@ -1,0 +1,26 @@
+{
+  "assetKey": "australian_dollar_futures",
+  "createdAt": "2026-05-16T01:00:50.414856+00:00",
+  "engine": "daily_tsmom",
+  "hypothesis": "An asset's own recent return can predict the next session. Test short lookbacks across futures and forex.",
+  "ideaId": "short_horizon_tsmom",
+  "market": "futures",
+  "params": {
+    "direction": "momentum",
+    "entryMinute": 570,
+    "exitMinute": 945,
+    "lookbackDays": 3
+  },
+  "provenance": "academic",
+  "sourceUrls": [
+    "https://pages.stern.nyu.edu/~lpederse/papers/TimeSeriesMomentum.pdf"
+  ],
+  "status": "ready_to_backtest",
+  "strategyId": "rs_short_horizon_tsmom_australian_dollar_futures_daily_tsmom_290063ca",
+  "symbol": "6A",
+  "thresholds": {
+    "minProfitFactor": 2.0,
+    "minTrades": 21
+  },
+  "title": "Short-horizon time-series momentum"
+}
