@@ -437,7 +437,12 @@ async function readManifestCatalog(): Promise<StrategyCatalog | null> {
 
 function latestTradeTime(catalog: StrategyCatalog | null): number {
   if (!catalog?.trades.length) return 0;
-  return Math.max(...catalog.trades.map((trade) => Date.parse(trade.entryTime)).filter(Number.isFinite));
+  return Math.max(
+    ...catalog.trades
+      .flatMap((trade) => [trade.signalTime, trade.entryTime, trade.exitTime])
+      .map((value) => Date.parse(value))
+      .filter(Number.isFinite)
+  );
 }
 
 function isoFromMillis(value: number): string | undefined {

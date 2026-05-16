@@ -7,11 +7,6 @@ import { saveCronRun, updateDatasetSyncRunStatus } from "@/lib/live-config";
 import { activeRules, evaluateLatestSignal } from "@/lib/live-signals";
 import { claimTrade, getTrades, hasTrade, saveTrade } from "@/lib/storage";
 import { sendTelegram, sendTelegramManagement, sendTelegramOutcome } from "@/lib/telegram";
-import {
-  buildSupplementalLimitOrderTrade,
-  primaryOrderSizeMultiplier,
-  supplementalLimitOrderPrice
-} from "@/lib/trade-limit-orders";
 import { TOPSTEP_100K_ACCOUNT, reviewTopstepSignal, withTopstepGuardNote } from "@/lib/topstep";
 import type { Bar, CronResult, StrategyRule, TradeAlert, TradeManagementEvent } from "@/lib/types";
 
@@ -336,30 +331,6 @@ function takeProfitManagementCandidate(
   return improvingCandidates.sort((left, right) => direction * (right.price - left.price))[0] ?? null;
 }
 
-function limitOrderManagementCandidate(
-  trade: TradeAlert,
-  currentLimitOrderPrice: number | undefined,
-  currentStop: number,
-  currentTakeProfit: number,
-  priceUnit: number
-): { price: number; reason: string } | null {
-  if (!finiteNumber(currentLimitOrderPrice)) return null;
-
-  const candidate = supplementalLimitOrderPrice({
-    ...trade,
-    stopLossPrice: currentStop,
-    takeProfitPrice: currentTakeProfit
-  });
-  if (!finiteNumber(candidate)) return null;
-  const price = roundToPriceUnit(candidate, priceUnit);
-  if (!priceChanged(price, currentLimitOrderPrice, priceUnit)) return null;
-
-  return {
-    price,
-    reason: "Edit the resting supplemental limit order to match the managed risk plan."
-  };
-}
-
 function lifecycleHitAt(
   trade: TradeAlert,
   dollars: { riskDollars: number; targetDollars: number },
@@ -402,9 +373,6 @@ function evaluateTradeLifecycleAndManagement(
 
   let currentStop = trade.stopLossPrice;
   let currentTakeProfit = trade.takeProfitPrice;
-  let currentLimitOrderPrice = finiteNumber(trade.limitOrderPrice)
-    ? trade.limitOrderPrice
-    : supplementalLimitOrderPrice(trade) ?? undefined;
   let knownEventIndex = 0;
 
   const applyKnownEventsBefore = (timestamp: number) => {
@@ -414,7 +382,6 @@ function evaluateTradeLifecycleAndManagement(
       if (!Number.isFinite(eventTime) || eventTime >= timestamp) break;
       if (event.type === "edit_sl") currentStop = event.price;
       if (event.type === "edit_tp") currentTakeProfit = event.price;
-      if (event.type === "edit_limit") currentLimitOrderPrice = event.price;
       knownEventIndex += 1;
     }
   };
@@ -502,22 +469,6 @@ function evaluateTradeLifecycleAndManagement(
       });
     }
 
-    const limitCandidate = limitOrderManagementCandidate(
-      trade,
-      currentLimitOrderPrice,
-      currentStop,
-      currentTakeProfit,
-      priceUnit
-    );
-    if (limitCandidate) {
-      const previousPrice = currentLimitOrderPrice;
-      currentLimitOrderPrice = limitCandidate.price;
-      addManagementEvent("edit_limit", bar.time, limitCandidate.price, previousPrice, limitCandidate.reason, undefined, {
-        entryPrice: currentLimitOrderPrice,
-        stopLossPrice: currentStop,
-        takeProfitPrice: currentTakeProfit
-      });
-    }
   }
 
   return { hit: null, managementEvents: newManagementEvents };
@@ -629,31 +580,6 @@ function tradeWithAutoTradeResult(trade: TradeAlert, autoTrade: AutoTradeExecuti
     autoTradeProviderId: autoTrade.providerId,
     autoTradeProviderName: autoTrade.providerName,
     autoTradeStatus: autoTrade.status
-  };
-}
-
-function tradeWithLimitOrderResult(
-  trade: TradeAlert,
-  limitTrade: TradeAlert,
-  autoTrade: AutoTradeExecutionResult,
-  notification: Awaited<ReturnType<typeof sendTelegram>>
-): TradeAlert {
-  return {
-    ...trade,
-    limitOrderAutoTradeCheckedAt: autoTrade.checkedAt,
-    limitOrderAutoTradeContractId: autoTrade.contractId,
-    limitOrderAutoTradeContractName: autoTrade.contractName,
-    limitOrderAutoTradeCustomTag: autoTrade.customTag,
-    limitOrderAutoTradeError: autoTrade.error,
-    limitOrderAutoTradeOrderId: autoTrade.orderId,
-    limitOrderAutoTradeOrders: autoTrade.orders,
-    limitOrderAutoTradeProviderId: autoTrade.providerId,
-    limitOrderAutoTradeProviderName: autoTrade.providerName,
-    limitOrderAutoTradeStatus: autoTrade.status,
-    limitOrderPrice: limitTrade.entryPrice,
-    limitOrderSizeMultiplier: limitTrade.sizeMultiplier,
-    limitOrderTelegramError: notification.error,
-    limitOrderTelegramStatus: notification.status
   };
 }
 
@@ -803,43 +729,15 @@ async function runSignalCheck(): Promise<CronResult> {
       result.skippedDuplicates.push(candidate.signal.id);
       continue;
     }
-    const primarySizeMultiplier = primaryOrderSizeMultiplier(candidate.signal);
-    const limitTrade = buildSupplementalLimitOrderTrade(candidate.signal);
-    const primaryExecutionSignal: TradeAlert = {
-      ...candidate.signal,
-      entryOrderSizeMultiplier: primarySizeMultiplier,
-      limitOrderPrice: supplementalLimitOrderPrice(candidate.signal) ?? undefined,
-      limitOrderSizeMultiplier: limitTrade?.sizeMultiplier,
-      orderLeg: limitTrade ? "entry" : undefined,
-      splitOrderTotalSizeMultiplier: limitTrade ? candidate.signal.sizeMultiplier : undefined,
-      sizeMultiplier: primarySizeMultiplier
-    };
-    const autoTrade = await executeAutoTrade(primaryExecutionSignal);
-    const executableSignal = tradeWithAutoTradeResult(
-      {
-        ...candidate.signal,
-        entryOrderSizeMultiplier: primarySizeMultiplier,
-        limitOrderPrice: supplementalLimitOrderPrice(candidate.signal) ?? undefined,
-        limitOrderSizeMultiplier: limitTrade?.sizeMultiplier,
-        orderLeg: limitTrade ? "entry" : undefined,
-        splitOrderTotalSizeMultiplier: limitTrade ? candidate.signal.sizeMultiplier : undefined
-      },
-      autoTrade
-    );
+    const autoTrade = await executeAutoTrade(candidate.signal);
+    const executableSignal = tradeWithAutoTradeResult(candidate.signal, autoTrade);
     await saveTrade(executableSignal);
-    const notification = await sendTelegram(tradeWithAutoTradeResult(primaryExecutionSignal, autoTrade));
-    let trade: TradeAlert = {
+    const notification = await sendTelegram(executableSignal);
+    const trade: TradeAlert = {
       ...executableSignal,
       telegramStatus: notification.status,
       telegramError: notification.error
     };
-
-    if (limitTrade) {
-      const limitAutoTrade = await executeAutoTrade(limitTrade);
-      const limitExecutableSignal = tradeWithAutoTradeResult(limitTrade, limitAutoTrade);
-      const limitNotification = await sendTelegram(limitExecutableSignal);
-      trade = tradeWithLimitOrderResult(trade, limitTrade, limitAutoTrade, limitNotification);
-    }
 
     await saveTrade(trade);
     result.generated.push(trade);

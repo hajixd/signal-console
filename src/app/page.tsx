@@ -35,18 +35,12 @@ import {
 } from "@/lib/backtest";
 import { DEFAULT_CHALLENGE_RULES, type ChallengeRules } from "@/lib/challenge";
 import { dollarPerUnit, instrumentSizeLabel, instrumentUnitLabel, recommendedSizeMultiplier } from "@/lib/instruments";
-import { defaultDatasetStatus, getDatasetStatus, getLiveConfig, type LiveConfig } from "@/lib/live-config";
+import { defaultDatasetStatus, getDatasetStatus, getLiveConfig, type DatasetStatus, type LiveConfig } from "@/lib/live-config";
 import { allRules } from "@/lib/live-signals";
 import { projectAssetMode } from "@/lib/project-assets";
 import { getTrades, storageMode } from "@/lib/storage";
 import { telegramGroupInviteLink } from "@/lib/telegram";
 import { topstepSessionKey } from "@/lib/topstep";
-import {
-  hasSupplementalLimitOrder,
-  primaryOrderSizeMultiplier,
-  supplementalLimitOrderPrice,
-  supplementalLimitOrderSizeMultiplier
-} from "@/lib/trade-limit-orders";
 import type { TradeAlert, TradeManagementEvent } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -148,6 +142,27 @@ function fmtNumber(value: number): string {
     minimumFractionDigits: Number.isInteger(value) ? 0 : 2,
     maximumFractionDigits: 2
   }).format(value);
+}
+
+function latestIsoTime(values: Array<number | string | null | undefined>): string | undefined {
+  const latest = Math.max(
+    ...values
+      .map((value) => {
+        if (value === undefined || value === null || value === "") return Number.NaN;
+        return typeof value === "number" ? value : Date.parse(value);
+      })
+      .filter(Number.isFinite)
+  );
+
+  return Number.isFinite(latest) ? new Date(latest).toISOString() : undefined;
+}
+
+function latestLiveTradeAt(trades: TradeAlert[]): string | undefined {
+  return latestIsoTime(trades.flatMap((trade) => [trade.lifecycleTime, trade.signalTime]));
+}
+
+function latestDatasetCoverageAt(datasetStatus: DatasetStatus | null | undefined): string | undefined {
+  return latestIsoTime(Object.values(datasetStatus?.assetCoverage ?? {}).map((coverage) => coverage.lastBarAt));
 }
 
 function dataValidityRank(tone: DataValidityTone): number {
@@ -513,7 +528,7 @@ function liveTradeClosed(trade: TradeAlert): trade is TradeAlert & { lifecycleSt
 }
 
 function liveTradeHasLimitOrder(trade: TradeAlert): boolean {
-  return trade.entryType === "limit" || Number.isFinite(trade.limitOrderPrice) || hasSupplementalLimitOrder(trade);
+  return trade.entryType === "limit";
 }
 
 function liveTradeExitReasonLabel(trade: TradeAlert): string {
@@ -578,7 +593,7 @@ function liveTradeEvents(trade: TradeAlert): LiveTradeEvent[] {
   }
 
   for (const managementEvent of [...(trade.managementEvents ?? [])]
-    .filter((event) => Number.isFinite(event.price))
+    .filter((event) => Number.isFinite(event.price) && (event.type !== "edit_limit" || hasLimitOrder))
     .sort((left, right) => Date.parse(left.time) - Date.parse(right.time))) {
     events.push({
       className: managementEventClass(managementEvent),
@@ -618,14 +633,14 @@ function liveTradeEventEntryPrice(trade: TradeAlert, event: LiveTradeEvent): num
   if (isManagementLiveTradeEvent(event) && event.managementEvent.entryPrice !== undefined) return event.managementEvent.entryPrice;
   if (event.kind === "edit_limit" && isManagementLiveTradeEvent(event)) return event.managementEvent.price;
   if (event.kind !== "limit") return trade.entryPrice;
-  return finiteNumberOr(trade.limitOrderPrice, supplementalLimitOrderPrice(trade) ?? trade.entryPrice);
+  return trade.entryPrice;
 }
 
 function liveTradeEventSizeMultiplier(trade: TradeAlert, event: LiveTradeEvent): number {
   if (event.kind === "limit" || event.kind === "edit_limit") {
-    return finiteNumberOr(trade.limitOrderSizeMultiplier, supplementalLimitOrderSizeMultiplier(trade));
+    return trade.sizeMultiplier ?? 1;
   }
-  if (event.kind === "entry") return finiteNumberOr(trade.entryOrderSizeMultiplier, primaryOrderSizeMultiplier(trade));
+  if (event.kind === "entry") return trade.sizeMultiplier ?? 1;
   return trade.sizeMultiplier ?? 1;
 }
 
@@ -1024,6 +1039,9 @@ export default async function Home({ searchParams }: HomeProps) {
   const marketDataSyncState = syncTileState(syncStatus.marketDataSync, syncStatus.lastMarketDataSyncAt ?? legacyDatasetSyncAt);
   const signalTradeCheckState = syncTileState(syncStatus.signalTradeCheck, syncStatus.lastSignalTradeCheckAt);
   const latestBacktestTradeAt = backtestFreshness.latestTradeAt;
+  const latestTradeAt = latestIsoTime([latestLiveTradeAt(liveTrades), latestBacktestTradeAt]);
+  const backtestManifestAt = syncStatus.lastDataValidityRefreshAt ?? backtestFreshness.generatedAt;
+  const dataEndsAt = backtestFreshness.computedThroughAt ?? latestDatasetCoverageAt(datasetStatus);
   const backtestBehindMarketData = false;
   const now = new Date();
   const nextMarketDataSyncAt = nextCronRunIso((date) => date.getUTCMinutes() % 5 === 0, now);
@@ -1746,18 +1764,22 @@ export default async function Home({ searchParams }: HomeProps) {
                 <dd>Every 15 minutes</dd>
               </dl>
             </div>
-            <div className={`dataset-sync-tile sync-state-${backtestBehindMarketData ? "failed" : latestBacktestTradeAt ? "success" : "idle"}`}>
+            <div className={`dataset-sync-tile sync-state-${backtestBehindMarketData ? "failed" : latestTradeAt ? "success" : "idle"}`}>
               <span className="sync-tile-name">Backtest history</span>
               <dl className="sync-tile-times">
                 <dt>Status</dt>
-                <dd>{backtestBehindMarketData ? "Behind market data" : latestBacktestTradeAt ? "Current snapshot" : "No snapshot"}</dd>
+                <dd>{backtestBehindMarketData ? "Behind market data" : latestTradeAt ? "Current snapshot" : "No snapshot"}</dd>
                 <dt>Latest trade</dt>
                 <dd>
-                  <LocalDateTime value={latestBacktestTradeAt} fallback="Unknown" />
+                  <LocalDateTime value={latestTradeAt} fallback="Unknown" />
                 </dd>
                 <dt>Manifest</dt>
                 <dd>
-                  <LocalDateTime value={backtestFreshness.generatedAt} fallback="Unknown" />
+                  <LocalDateTime value={backtestManifestAt} fallback="Unknown" />
+                </dd>
+                <dt>Data ends</dt>
+                <dd>
+                  <LocalDateTime value={dataEndsAt} fallback="Unknown" />
                 </dd>
                 <dt>Stored trades</dt>
                 <dd>{fmtNumber(backtestFreshness.trades)}</dd>
