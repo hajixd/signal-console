@@ -1,0 +1,60 @@
+{
+  "namespace": "isolated_competition_2026",
+  "rank": 8,
+  "strategyId": "usd_jpy_london_first30_ny_open_momentum_signalmonth_direction_same_entryminute_480_exitbar_3d256058",
+  "label": "USDJPY London First30 Ny Open Momentum Signalmonth",
+  "assetKey": "usd_jpy",
+  "symbol": "USDJPY",
+  "market": "forex",
+  "family": "london_first30_ny_open_momentum_signalmonth",
+  "provenance": "research_derived/session_specific/filter_scan",
+  "status": "competition_isolated_not_live",
+  "hypothesis": "Session-window return predicts a later same-day session return. Filtered by signalMonth=10.",
+  "sourceUrls": [
+    "https://biblio.ugent.be/publication/8060014"
+  ],
+  "params": {
+    "signalStartMinute": 180,
+    "signalEndBarMinute": 195,
+    "entryMinute": 480,
+    "exitBarMinute": 570,
+    "direction": "same",
+    "minSignalAtr": 0.1,
+    "signalMonth": 10
+  },
+  "trainingWindow": {
+    "start": "asset_start",
+    "end": "2021-12-31"
+  },
+  "forwardWindow": {
+    "start": "2022-01-01",
+    "end": "asset_latest"
+  },
+  "selectionMethod": "Candidate parameters are ranked by pre-2022 training score only. Post-2022 forward results are used only for competition qualification against the requested PF/trade thresholds.",
+  "trainScore": 7.936002,
+  "trainMetrics": {
+    "profitFactor": 2.035734,
+    "trades": 39,
+    "wins": 21,
+    "losses": 18,
+    "totalR": 23.144644,
+    "winRatePct": 53.846154,
+    "maxDrawdownR": 5.35832
+  },
+  "forwardMetrics": {
+    "profitFactor": 2.207472,
+    "trades": 81,
+    "wins": 50,
+    "losses": 29,
+    "totalR": 54.502365,
+    "winRatePct": 61.728395,
+    "maxDrawdownR": 11.237772
+  },
+  "isolationNote": "Stored under competition/strategies only. Not imported into src/lib/strategy-loader.ts and not part of the live strategy catalog.",
+  "files": {
+    "metadata": "competition/strategies/usd_jpy_london_first30_ny_open_momentum_signalmonth_direction_same_entryminute_480_exitbar_3d256058/strategy.json",
+    "forwardTrades": "competition/strategies/usd_jpy_london_first30_ny_open_momentum_signalmonth_direction_same_entryminute_480_exitbar_3d256058/backtest_trades.csv",
+    "trainingTrades": "competition/strategies/usd_jpy_london_first30_ny_open_momentum_signalmonth_direction_same_entryminute_480_exitbar_3d256058/train_trades.csv",
+    "research": "competition/strategies/usd_jpy_london_first30_ny_open_momentum_signalmonth_direction_same_entryminute_480_exitbar_3d256058/research.md"
+  }
+}

@@ -1,0 +1,58 @@
+{
+  "namespace": "isolated_competition_2026",
+  "rank": 20,
+  "strategyId": "nzd_usd_daily_tsmom_next_rth_signalmonth_direction_contrarian_entryminute_570_exitminute_9_bf61d37c",
+  "label": "NZDUSD Daily Tsmom Next Rth Signalmonth",
+  "assetKey": "nzd_usd",
+  "symbol": "NZDUSD",
+  "market": "forex",
+  "family": "daily_tsmom_next_rth_signalmonth",
+  "provenance": "research_derived/filter_scan",
+  "status": "competition_isolated_not_live",
+  "hypothesis": "Tests short-horizon own-return continuation/reversal inspired by time-series momentum literature. Filtered by signalMonth=2.",
+  "sourceUrls": [
+    "https://pages.stern.nyu.edu/~lpederse/papers/TimeSeriesMomentum.pdf"
+  ],
+  "params": {
+    "lookbackDays": 3,
+    "direction": "contrarian",
+    "entryMinute": 570,
+    "exitMinute": 945,
+    "signalMonth": 2
+  },
+  "trainingWindow": {
+    "start": "asset_start",
+    "end": "2021-12-31"
+  },
+  "forwardWindow": {
+    "start": "2022-01-01",
+    "end": "asset_latest"
+  },
+  "selectionMethod": "Candidate parameters are ranked by pre-2022 training score only. Post-2022 forward results are used only for competition qualification against the requested PF/trade thresholds.",
+  "trainScore": 5.610036,
+  "trainMetrics": {
+    "profitFactor": 1.560908,
+    "trades": 37,
+    "wins": 21,
+    "losses": 16,
+    "totalR": 20.42336,
+    "winRatePct": 56.756757,
+    "maxDrawdownR": 13.612043
+  },
+  "forwardMetrics": {
+    "profitFactor": 3.611331,
+    "trades": 102,
+    "wins": 64,
+    "losses": 36,
+    "totalR": 229.001486,
+    "winRatePct": 62.745098,
+    "maxDrawdownR": 19.711278
+  },
+  "isolationNote": "Stored under competition/strategies only. Not imported into src/lib/strategy-loader.ts and not part of the live strategy catalog.",
+  "files": {
+    "metadata": "competition/strategies/nzd_usd_daily_tsmom_next_rth_signalmonth_direction_contrarian_entryminute_570_exitminute_9_bf61d37c/strategy.json",
+    "forwardTrades": "competition/strategies/nzd_usd_daily_tsmom_next_rth_signalmonth_direction_contrarian_entryminute_570_exitminute_9_bf61d37c/backtest_trades.csv",
+    "trainingTrades": "competition/strategies/nzd_usd_daily_tsmom_next_rth_signalmonth_direction_contrarian_entryminute_570_exitminute_9_bf61d37c/train_trades.csv",
+    "research": "competition/strategies/nzd_usd_daily_tsmom_next_rth_signalmonth_direction_contrarian_entryminute_570_exitminute_9_bf61d37c/research.md"
+  }
+}

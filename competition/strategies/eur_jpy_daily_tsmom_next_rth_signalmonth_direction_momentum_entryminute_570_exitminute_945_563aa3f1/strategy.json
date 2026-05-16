@@ -1,0 +1,58 @@
+{
+  "namespace": "isolated_competition_2026",
+  "rank": 16,
+  "strategyId": "eur_jpy_daily_tsmom_next_rth_signalmonth_direction_momentum_entryminute_570_exitminute_945_563aa3f1",
+  "label": "EURJPY Daily Tsmom Next Rth Signalmonth",
+  "assetKey": "eur_jpy",
+  "symbol": "EURJPY",
+  "market": "forex",
+  "family": "daily_tsmom_next_rth_signalmonth",
+  "provenance": "research_derived/filter_scan",
+  "status": "competition_isolated_not_live",
+  "hypothesis": "Tests short-horizon own-return continuation/reversal inspired by time-series momentum literature. Filtered by signalMonth=6.",
+  "sourceUrls": [
+    "https://pages.stern.nyu.edu/~lpederse/papers/TimeSeriesMomentum.pdf"
+  ],
+  "params": {
+    "lookbackDays": 5,
+    "direction": "momentum",
+    "entryMinute": 570,
+    "exitMinute": 945,
+    "signalMonth": 6
+  },
+  "trainingWindow": {
+    "start": "asset_start",
+    "end": "2021-12-31"
+  },
+  "forwardWindow": {
+    "start": "2022-01-01",
+    "end": "asset_latest"
+  },
+  "selectionMethod": "Candidate parameters are ranked by pre-2022 training score only. Post-2022 forward results are used only for competition qualification against the requested PF/trade thresholds.",
+  "trainScore": 6.777789,
+  "trainMetrics": {
+    "profitFactor": 1.707921,
+    "trades": 44,
+    "wins": 27,
+    "losses": 17,
+    "totalR": 28.032056,
+    "winRatePct": 61.363636,
+    "maxDrawdownR": 11.293055
+  },
+  "forwardMetrics": {
+    "profitFactor": 2.943471,
+    "trades": 85,
+    "wins": 54,
+    "losses": 30,
+    "totalR": 94.550237,
+    "winRatePct": 63.529412,
+    "maxDrawdownR": 12.336783
+  },
+  "isolationNote": "Stored under competition/strategies only. Not imported into src/lib/strategy-loader.ts and not part of the live strategy catalog.",
+  "files": {
+    "metadata": "competition/strategies/eur_jpy_daily_tsmom_next_rth_signalmonth_direction_momentum_entryminute_570_exitminute_945_563aa3f1/strategy.json",
+    "forwardTrades": "competition/strategies/eur_jpy_daily_tsmom_next_rth_signalmonth_direction_momentum_entryminute_570_exitminute_945_563aa3f1/backtest_trades.csv",
+    "trainingTrades": "competition/strategies/eur_jpy_daily_tsmom_next_rth_signalmonth_direction_momentum_entryminute_570_exitminute_945_563aa3f1/train_trades.csv",
+    "research": "competition/strategies/eur_jpy_daily_tsmom_next_rth_signalmonth_direction_momentum_entryminute_570_exitminute_945_563aa3f1/research.md"
+  }
+}

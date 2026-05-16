@@ -1,0 +1,57 @@
+{
+  "namespace": "isolated_competition_2026",
+  "rank": 15,
+  "strategyId": "crude_oil_futures_overnight_close_to_open_bias_signalmonth_entry_prior_rth_close_exit_ny_o_315d7644",
+  "label": "CL Overnight Close To Open Bias Signalmonth",
+  "assetKey": "crude_oil_futures",
+  "symbol": "CL",
+  "market": "futures",
+  "family": "overnight_close_to_open_bias_signalmonth",
+  "provenance": "research_derived/session_specific/filter_scan",
+  "status": "competition_isolated_not_live",
+  "hypothesis": "Tests the close-to-open leg emphasized by overnight return research. Filtered by signalMonth=1.",
+  "sourceUrls": [
+    "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=1004081"
+  ],
+  "params": {
+    "side": "long",
+    "entry": "prior_rth_close",
+    "exit": "ny_open",
+    "signalMonth": 1
+  },
+  "trainingWindow": {
+    "start": "asset_start",
+    "end": "2021-12-31"
+  },
+  "forwardWindow": {
+    "start": "2022-01-01",
+    "end": "asset_latest"
+  },
+  "selectionMethod": "Candidate parameters are ranked by pre-2022 training score only. Post-2022 forward results are used only for competition qualification against the requested PF/trade thresholds.",
+  "trainScore": 6.817314,
+  "trainMetrics": {
+    "profitFactor": 1.311803,
+    "trades": 176,
+    "wins": 98,
+    "losses": 77,
+    "totalR": 69.198753,
+    "winRatePct": 55.681818,
+    "maxDrawdownR": 40.974744
+  },
+  "forwardMetrics": {
+    "profitFactor": 4.043623,
+    "trades": 80,
+    "wins": 54,
+    "losses": 25,
+    "totalR": 157.014575,
+    "winRatePct": 67.5,
+    "maxDrawdownR": 12.663993
+  },
+  "isolationNote": "Stored under competition/strategies only. Not imported into src/lib/strategy-loader.ts and not part of the live strategy catalog.",
+  "files": {
+    "metadata": "competition/strategies/crude_oil_futures_overnight_close_to_open_bias_signalmonth_entry_prior_rth_close_exit_ny_o_315d7644/strategy.json",
+    "forwardTrades": "competition/strategies/crude_oil_futures_overnight_close_to_open_bias_signalmonth_entry_prior_rth_close_exit_ny_o_315d7644/backtest_trades.csv",
+    "trainingTrades": "competition/strategies/crude_oil_futures_overnight_close_to_open_bias_signalmonth_entry_prior_rth_close_exit_ny_o_315d7644/train_trades.csv",
+    "research": "competition/strategies/crude_oil_futures_overnight_close_to_open_bias_signalmonth_entry_prior_rth_close_exit_ny_o_315d7644/research.md"
+  }
+}

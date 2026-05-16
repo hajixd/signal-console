@@ -1,0 +1,60 @@
+{
+  "namespace": "isolated_competition_2026",
+  "rank": 9,
+  "strategyId": "dow_jones_futures_us_secondlast_last30_momentum_signalweekdayside_direction_same_entryminu_e49c2e15",
+  "label": "YM Us Secondlast Last30 Momentum Signalweekdayside",
+  "assetKey": "dow_jones_futures",
+  "symbol": "YM",
+  "market": "futures",
+  "family": "us_secondlast_last30_momentum_signalweekdayside",
+  "provenance": "research_derived/session_specific/filter_scan",
+  "status": "competition_isolated_not_live",
+  "hypothesis": "Session-window return predicts a later same-day session return. Filtered by signalWeekdaySide=0_long.",
+  "sourceUrls": [
+    "https://ideas.repec.org/a/bla/jfinan/v65y2010i4p1369-1407.html"
+  ],
+  "params": {
+    "signalStartMinute": 900,
+    "signalEndBarMinute": 915,
+    "entryMinute": 930,
+    "exitBarMinute": 945,
+    "direction": "same",
+    "minSignalAtr": 0.35,
+    "signalWeekdaySide": "0_long"
+  },
+  "trainingWindow": {
+    "start": "asset_start",
+    "end": "2021-12-31"
+  },
+  "forwardWindow": {
+    "start": "2022-01-01",
+    "end": "asset_latest"
+  },
+  "selectionMethod": "Candidate parameters are ranked by pre-2022 training score only. Post-2022 forward results are used only for competition qualification against the requested PF/trade thresholds.",
+  "trainScore": 7.517104,
+  "trainMetrics": {
+    "profitFactor": 1.393826,
+    "trades": 175,
+    "wins": 92,
+    "losses": 81,
+    "totalR": 27.409135,
+    "winRatePct": 52.571429,
+    "maxDrawdownR": 10.238558
+  },
+  "forwardMetrics": {
+    "profitFactor": 2.290596,
+    "trades": 56,
+    "wins": 40,
+    "losses": 16,
+    "totalR": 19.842553,
+    "winRatePct": 71.428571,
+    "maxDrawdownR": 8.276326
+  },
+  "isolationNote": "Stored under competition/strategies only. Not imported into src/lib/strategy-loader.ts and not part of the live strategy catalog.",
+  "files": {
+    "metadata": "competition/strategies/dow_jones_futures_us_secondlast_last30_momentum_signalweekdayside_direction_same_entryminu_e49c2e15/strategy.json",
+    "forwardTrades": "competition/strategies/dow_jones_futures_us_secondlast_last30_momentum_signalweekdayside_direction_same_entryminu_e49c2e15/backtest_trades.csv",
+    "trainingTrades": "competition/strategies/dow_jones_futures_us_secondlast_last30_momentum_signalweekdayside_direction_same_entryminu_e49c2e15/train_trades.csv",
+    "research": "competition/strategies/dow_jones_futures_us_secondlast_last30_momentum_signalweekdayside_direction_same_entryminu_e49c2e15/research.md"
+  }
+}

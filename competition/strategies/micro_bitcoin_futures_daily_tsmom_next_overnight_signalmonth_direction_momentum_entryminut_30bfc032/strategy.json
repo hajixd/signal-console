@@ -1,0 +1,58 @@
+{
+  "namespace": "isolated_competition_2026",
+  "rank": 6,
+  "strategyId": "micro_bitcoin_futures_daily_tsmom_next_overnight_signalmonth_direction_momentum_entryminut_30bfc032",
+  "label": "MBT Daily Tsmom Next Overnight Signalmonth",
+  "assetKey": "micro_bitcoin_futures",
+  "symbol": "MBT",
+  "market": "futures",
+  "family": "daily_tsmom_next_overnight_signalmonth",
+  "provenance": "research_derived/filter_scan",
+  "status": "competition_isolated_not_live",
+  "hypothesis": "Tests short-horizon own-return continuation/reversal inspired by time-series momentum literature. Filtered by signalMonth=10.",
+  "sourceUrls": [
+    "https://pages.stern.nyu.edu/~lpederse/papers/TimeSeriesMomentum.pdf"
+  ],
+  "params": {
+    "lookbackDays": 20,
+    "direction": "momentum",
+    "entryMinute": 945,
+    "exitMinute": 570,
+    "signalMonth": 10
+  },
+  "trainingWindow": {
+    "start": "asset_start",
+    "end": "2021-12-31"
+  },
+  "forwardWindow": {
+    "start": "2022-01-01",
+    "end": "asset_latest"
+  },
+  "selectionMethod": "Candidate parameters are ranked by pre-2022 training score only. Post-2022 forward results are used only for competition qualification against the requested PF/trade thresholds.",
+  "trainScore": 8.049281,
+  "trainMetrics": {
+    "profitFactor": 2.529028,
+    "trades": 20,
+    "wins": 12,
+    "losses": 8,
+    "totalR": 33.604607,
+    "winRatePct": 60,
+    "maxDrawdownR": 13.170826
+  },
+  "forwardMetrics": {
+    "profitFactor": 2.012696,
+    "trades": 85,
+    "wins": 43,
+    "losses": 42,
+    "totalR": 118.45362,
+    "winRatePct": 50.588235,
+    "maxDrawdownR": 20.367201
+  },
+  "isolationNote": "Stored under competition/strategies only. Not imported into src/lib/strategy-loader.ts and not part of the live strategy catalog.",
+  "files": {
+    "metadata": "competition/strategies/micro_bitcoin_futures_daily_tsmom_next_overnight_signalmonth_direction_momentum_entryminut_30bfc032/strategy.json",
+    "forwardTrades": "competition/strategies/micro_bitcoin_futures_daily_tsmom_next_overnight_signalmonth_direction_momentum_entryminut_30bfc032/backtest_trades.csv",
+    "trainingTrades": "competition/strategies/micro_bitcoin_futures_daily_tsmom_next_overnight_signalmonth_direction_momentum_entryminut_30bfc032/train_trades.csv",
+    "research": "competition/strategies/micro_bitcoin_futures_daily_tsmom_next_overnight_signalmonth_direction_momentum_entryminut_30bfc032/research.md"
+  }
+}

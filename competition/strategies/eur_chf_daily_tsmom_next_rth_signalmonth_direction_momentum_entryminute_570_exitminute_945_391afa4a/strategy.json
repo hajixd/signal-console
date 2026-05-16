@@ -1,0 +1,58 @@
+{
+  "namespace": "isolated_competition_2026",
+  "rank": 7,
+  "strategyId": "eur_chf_daily_tsmom_next_rth_signalmonth_direction_momentum_entryminute_570_exitminute_945_391afa4a",
+  "label": "EURCHF Daily Tsmom Next Rth Signalmonth",
+  "assetKey": "eur_chf",
+  "symbol": "EURCHF",
+  "market": "forex",
+  "family": "daily_tsmom_next_rth_signalmonth",
+  "provenance": "research_derived/filter_scan",
+  "status": "competition_isolated_not_live",
+  "hypothesis": "Tests short-horizon own-return continuation/reversal inspired by time-series momentum literature. Filtered by signalMonth=2.",
+  "sourceUrls": [
+    "https://pages.stern.nyu.edu/~lpederse/papers/TimeSeriesMomentum.pdf"
+  ],
+  "params": {
+    "lookbackDays": 5,
+    "direction": "momentum",
+    "entryMinute": 570,
+    "exitMinute": 945,
+    "signalMonth": 2
+  },
+  "trainingWindow": {
+    "start": "asset_start",
+    "end": "2021-12-31"
+  },
+  "forwardWindow": {
+    "start": "2022-01-01",
+    "end": "asset_latest"
+  },
+  "selectionMethod": "Candidate parameters are ranked by pre-2022 training score only. Post-2022 forward results are used only for competition qualification against the requested PF/trade thresholds.",
+  "trainScore": 8.032138,
+  "trainMetrics": {
+    "profitFactor": 2.12423,
+    "trades": 37,
+    "wins": 25,
+    "losses": 12,
+    "totalR": 24.004856,
+    "winRatePct": 67.567568,
+    "maxDrawdownR": 8.301511
+  },
+  "forwardMetrics": {
+    "profitFactor": 3.225213,
+    "trades": 101,
+    "wins": 71,
+    "losses": 29,
+    "totalR": 133.810262,
+    "winRatePct": 70.29703,
+    "maxDrawdownR": 11.270657
+  },
+  "isolationNote": "Stored under competition/strategies only. Not imported into src/lib/strategy-loader.ts and not part of the live strategy catalog.",
+  "files": {
+    "metadata": "competition/strategies/eur_chf_daily_tsmom_next_rth_signalmonth_direction_momentum_entryminute_570_exitminute_945_391afa4a/strategy.json",
+    "forwardTrades": "competition/strategies/eur_chf_daily_tsmom_next_rth_signalmonth_direction_momentum_entryminute_570_exitminute_945_391afa4a/backtest_trades.csv",
+    "trainingTrades": "competition/strategies/eur_chf_daily_tsmom_next_rth_signalmonth_direction_momentum_entryminute_570_exitminute_945_391afa4a/train_trades.csv",
+    "research": "competition/strategies/eur_chf_daily_tsmom_next_rth_signalmonth_direction_momentum_entryminute_570_exitminute_945_391afa4a/research.md"
+  }
+}

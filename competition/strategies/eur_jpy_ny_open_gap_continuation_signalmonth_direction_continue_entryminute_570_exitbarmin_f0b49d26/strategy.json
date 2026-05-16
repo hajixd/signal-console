@@ -1,0 +1,58 @@
+{
+  "namespace": "isolated_competition_2026",
+  "rank": 19,
+  "strategyId": "eur_jpy_ny_open_gap_continuation_signalmonth_direction_continue_entryminute_570_exitbarmin_f0b49d26",
+  "label": "EURJPY Ny Open Gap Continuation Signalmonth",
+  "assetKey": "eur_jpy",
+  "symbol": "EURJPY",
+  "market": "forex",
+  "family": "ny_open_gap_continuation_signalmonth",
+  "provenance": "research_derived/session_specific/filter_scan",
+  "status": "competition_isolated_not_live",
+  "hypothesis": "Tests whether the overnight gap fades or continues during a specific NY cash-session window. Filtered by signalMonth=11.",
+  "sourceUrls": [
+    "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=1004081"
+  ],
+  "params": {
+    "minGapAtr": 0.35,
+    "entryMinute": 570,
+    "exitBarMinute": 615,
+    "direction": "continue",
+    "signalMonth": 11
+  },
+  "trainingWindow": {
+    "start": "asset_start",
+    "end": "2021-12-31"
+  },
+  "forwardWindow": {
+    "start": "2022-01-01",
+    "end": "asset_latest"
+  },
+  "selectionMethod": "Candidate parameters are ranked by pre-2022 training score only. Post-2022 forward results are used only for competition qualification against the requested PF/trade thresholds.",
+  "trainScore": 6.407048,
+  "trainMetrics": {
+    "profitFactor": 1.688901,
+    "trades": 41,
+    "wins": 22,
+    "losses": 19,
+    "totalR": 11.725406,
+    "winRatePct": 53.658537,
+    "maxDrawdownR": 5.14533
+  },
+  "forwardMetrics": {
+    "profitFactor": 2.298454,
+    "trades": 66,
+    "wins": 38,
+    "losses": 27,
+    "totalR": 32.695473,
+    "winRatePct": 57.575758,
+    "maxDrawdownR": 5.43259
+  },
+  "isolationNote": "Stored under competition/strategies only. Not imported into src/lib/strategy-loader.ts and not part of the live strategy catalog.",
+  "files": {
+    "metadata": "competition/strategies/eur_jpy_ny_open_gap_continuation_signalmonth_direction_continue_entryminute_570_exitbarmin_f0b49d26/strategy.json",
+    "forwardTrades": "competition/strategies/eur_jpy_ny_open_gap_continuation_signalmonth_direction_continue_entryminute_570_exitbarmin_f0b49d26/backtest_trades.csv",
+    "trainingTrades": "competition/strategies/eur_jpy_ny_open_gap_continuation_signalmonth_direction_continue_entryminute_570_exitbarmin_f0b49d26/train_trades.csv",
+    "research": "competition/strategies/eur_jpy_ny_open_gap_continuation_signalmonth_direction_continue_entryminute_570_exitbarmin_f0b49d26/research.md"
+  }
+}

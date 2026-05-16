@@ -1,0 +1,60 @@
+{
+  "namespace": "isolated_competition_2026",
+  "rank": 14,
+  "strategyId": "gbp_jpy_london_first30_ny_open_reversal_signalweekdayside_direction_opposite_entryminute_4_5322bb1f",
+  "label": "GBPJPY London First30 Ny Open Reversal Signalweekdayside",
+  "assetKey": "gbp_jpy",
+  "symbol": "GBPJPY",
+  "market": "forex",
+  "family": "london_first30_ny_open_reversal_signalweekdayside",
+  "provenance": "research_derived/session_specific/filter_scan",
+  "status": "competition_isolated_not_live",
+  "hypothesis": "Session-window return predicts a later same-day session return. Filtered by signalWeekdaySide=2_short.",
+  "sourceUrls": [
+    "https://biblio.ugent.be/publication/8060014"
+  ],
+  "params": {
+    "signalStartMinute": 180,
+    "signalEndBarMinute": 195,
+    "entryMinute": 480,
+    "exitBarMinute": 570,
+    "direction": "opposite",
+    "minSignalAtr": 0.05,
+    "signalWeekdaySide": "2_short"
+  },
+  "trainingWindow": {
+    "start": "asset_start",
+    "end": "2021-12-31"
+  },
+  "forwardWindow": {
+    "start": "2022-01-01",
+    "end": "asset_latest"
+  },
+  "selectionMethod": "Candidate parameters are ranked by pre-2022 training score only. Post-2022 forward results are used only for competition qualification against the requested PF/trade thresholds.",
+  "trainScore": 6.821727,
+  "trainMetrics": {
+    "profitFactor": 1.69904,
+    "trades": 47,
+    "wins": 26,
+    "losses": 21,
+    "totalR": 22.881397,
+    "winRatePct": 55.319149,
+    "maxDrawdownR": 8.840829
+  },
+  "forwardMetrics": {
+    "profitFactor": 2.062018,
+    "trades": 115,
+    "wins": 65,
+    "losses": 49,
+    "totalR": 71.853004,
+    "winRatePct": 56.521739,
+    "maxDrawdownR": 10.514024
+  },
+  "isolationNote": "Stored under competition/strategies only. Not imported into src/lib/strategy-loader.ts and not part of the live strategy catalog.",
+  "files": {
+    "metadata": "competition/strategies/gbp_jpy_london_first30_ny_open_reversal_signalweekdayside_direction_opposite_entryminute_4_5322bb1f/strategy.json",
+    "forwardTrades": "competition/strategies/gbp_jpy_london_first30_ny_open_reversal_signalweekdayside_direction_opposite_entryminute_4_5322bb1f/backtest_trades.csv",
+    "trainingTrades": "competition/strategies/gbp_jpy_london_first30_ny_open_reversal_signalweekdayside_direction_opposite_entryminute_4_5322bb1f/train_trades.csv",
+    "research": "competition/strategies/gbp_jpy_london_first30_ny_open_reversal_signalweekdayside_direction_opposite_entryminute_4_5322bb1f/research.md"
+  }
+}

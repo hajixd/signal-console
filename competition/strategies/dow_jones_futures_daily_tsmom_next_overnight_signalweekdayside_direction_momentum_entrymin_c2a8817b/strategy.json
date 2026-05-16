@@ -1,0 +1,58 @@
+{
+  "namespace": "isolated_competition_2026",
+  "rank": 3,
+  "strategyId": "dow_jones_futures_daily_tsmom_next_overnight_signalweekdayside_direction_momentum_entrymin_c2a8817b",
+  "label": "YM Daily Tsmom Next Overnight Signalweekdayside",
+  "assetKey": "dow_jones_futures",
+  "symbol": "YM",
+  "market": "futures",
+  "family": "daily_tsmom_next_overnight_signalweekdayside",
+  "provenance": "research_derived/filter_scan",
+  "status": "competition_isolated_not_live",
+  "hypothesis": "Tests short-horizon own-return continuation/reversal inspired by time-series momentum literature. Filtered by signalWeekdaySide=1_long.",
+  "sourceUrls": [
+    "https://pages.stern.nyu.edu/~lpederse/papers/TimeSeriesMomentum.pdf"
+  ],
+  "params": {
+    "lookbackDays": 10,
+    "direction": "momentum",
+    "entryMinute": 945,
+    "exitMinute": 570,
+    "signalWeekdaySide": "1_long"
+  },
+  "trainingWindow": {
+    "start": "asset_start",
+    "end": "2021-12-31"
+  },
+  "forwardWindow": {
+    "start": "2022-01-01",
+    "end": "asset_latest"
+  },
+  "selectionMethod": "Candidate parameters are ranked by pre-2022 training score only. Post-2022 forward results are used only for competition qualification against the requested PF/trade thresholds.",
+  "trainScore": 10.09882,
+  "trainMetrics": {
+    "profitFactor": 1.41407,
+    "trades": 376,
+    "wins": 202,
+    "losses": 171,
+    "totalR": 149.434763,
+    "winRatePct": 53.723404,
+    "maxDrawdownR": 55.45662
+  },
+  "forwardMetrics": {
+    "profitFactor": 2.282341,
+    "trades": 132,
+    "wins": 76,
+    "losses": 56,
+    "totalR": 143.400814,
+    "winRatePct": 57.575758,
+    "maxDrawdownR": 8.623951
+  },
+  "isolationNote": "Stored under competition/strategies only. Not imported into src/lib/strategy-loader.ts and not part of the live strategy catalog.",
+  "files": {
+    "metadata": "competition/strategies/dow_jones_futures_daily_tsmom_next_overnight_signalweekdayside_direction_momentum_entrymin_c2a8817b/strategy.json",
+    "forwardTrades": "competition/strategies/dow_jones_futures_daily_tsmom_next_overnight_signalweekdayside_direction_momentum_entrymin_c2a8817b/backtest_trades.csv",
+    "trainingTrades": "competition/strategies/dow_jones_futures_daily_tsmom_next_overnight_signalweekdayside_direction_momentum_entrymin_c2a8817b/train_trades.csv",
+    "research": "competition/strategies/dow_jones_futures_daily_tsmom_next_overnight_signalweekdayside_direction_momentum_entrymin_c2a8817b/research.md"
+  }
+}
