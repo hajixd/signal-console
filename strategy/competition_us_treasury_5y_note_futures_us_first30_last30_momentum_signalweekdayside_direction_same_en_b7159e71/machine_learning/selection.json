@@ -1,0 +1,34 @@
+{
+  "strategyId": "competition_us_treasury_5y_note_futures_us_first30_last30_momentum_signalweekdayside_direction_same_en_b7159e71",
+  "label": "Competition ZF Us First30 Last30 Momentum Signalweekdayside",
+  "folder": "competition_us_treasury_5y_note_futures_us_first30_last30_momentum_signalweekdayside_direction_same_en_b7159e71",
+  "assetKey": "us_treasury_5y_note_futures",
+  "phase": "competition_session_edge",
+  "variantId": "competition_session_edge|family=us_first30_last30_momentum_signalweekdayside|direction=same|entry=930|exit=945|min_signal_atr=0.05|signal_end=585|signal_start=570|signal_weekday_side=4_long",
+  "source": "competition_session_edge_train_forward_2026",
+  "sourceUrls": [
+    "https://www.sciencedirect.com/science/article/abs/pii/S0304405X18301351"
+  ],
+  "researchSummary": "Session-window return predicts a later same-day session return. Filtered by signalWeekdaySide=4_long.",
+  "selectionMethod": "Pre-2022 train-score rank, then post-2022 forward qualification. No parameters were fit on post-2022 data.",
+  "trainingWindow": {
+    "start": "asset_start",
+    "end": "2021-12-31"
+  },
+  "forwardWindow": {
+    "start": "2022-01-01",
+    "end": "asset_latest"
+  },
+  "selectedTrainingProfitFactor": 1.382926,
+  "selectedTrainingTrades": 55,
+  "selectedForwardProfitFactor": 2.12446,
+  "selectedForwardTrades": 101,
+  "forwardWins": 55,
+  "forwardLosses": 36,
+  "forwardTotalR": 17.794548,
+  "forwardAverageR": 0.176184,
+  "forwardMaxDrawdownR": 2.290355,
+  "verificationSummary": "Verified by backtest-engine runner output: PF 2.12, 101 trades, 17.79R total.",
+  "costUnits": 0,
+  "oneTradePerDay": false
+}

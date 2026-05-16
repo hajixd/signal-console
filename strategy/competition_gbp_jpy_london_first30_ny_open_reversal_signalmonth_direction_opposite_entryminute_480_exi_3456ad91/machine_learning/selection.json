@@ -1,0 +1,34 @@
+{
+  "strategyId": "competition_gbp_jpy_london_first30_ny_open_reversal_signalmonth_direction_opposite_entryminute_480_exi_3456ad91",
+  "label": "Competition GBPJPY London First30 Ny Open Reversal Signalmonth",
+  "folder": "competition_gbp_jpy_london_first30_ny_open_reversal_signalmonth_direction_opposite_entryminute_480_exi_3456ad91",
+  "assetKey": "gbp_jpy",
+  "phase": "competition_session_edge",
+  "variantId": "competition_session_edge|family=london_first30_ny_open_reversal_signalmonth|direction=opposite|entry=480|exit=570|min_signal_atr=0.35|signal_end=195|signal_month=6|signal_start=180",
+  "source": "competition_session_edge_train_forward_2026",
+  "sourceUrls": [
+    "https://biblio.ugent.be/publication/8060014"
+  ],
+  "researchSummary": "Session-window return predicts a later same-day session return. Filtered by signalMonth=6.",
+  "selectionMethod": "Pre-2022 train-score rank, then post-2022 forward qualification. No parameters were fit on post-2022 data.",
+  "trainingWindow": {
+    "start": "asset_start",
+    "end": "2021-12-31"
+  },
+  "forwardWindow": {
+    "start": "2022-01-01",
+    "end": "asset_latest"
+  },
+  "selectedTrainingProfitFactor": 1.502874,
+  "selectedTrainingTrades": 31,
+  "selectedForwardProfitFactor": 2.125095,
+  "selectedForwardTrades": 66,
+  "forwardWins": 38,
+  "forwardLosses": 28,
+  "forwardTotalR": 42.499941,
+  "forwardAverageR": 0.643939,
+  "forwardMaxDrawdownR": 7.971145,
+  "verificationSummary": "Verified by backtest-engine runner output: PF 2.13, 66 trades, 42.50R total.",
+  "costUnits": 0,
+  "oneTradePerDay": false
+}

@@ -1,0 +1,34 @@
+{
+  "strategyId": "competition_usd_chf_daily_tsmom_next_rth_signalweekday_direction_momentum_entryminute_570_exitminute_9_f3f4b076",
+  "label": "Competition USDCHF Daily Tsmom Next Rth Signalweekday",
+  "folder": "competition_usd_chf_daily_tsmom_next_rth_signalweekday_direction_momentum_entryminute_570_exitminute_9_f3f4b076",
+  "assetKey": "usd_chf",
+  "phase": "competition_session_edge",
+  "variantId": "competition_session_edge|family=daily_tsmom_next_rth_signalweekday|direction=momentum|entry=570|exit=945|lookback=40|signal_weekday=0",
+  "source": "competition_session_edge_train_forward_2026",
+  "sourceUrls": [
+    "https://pages.stern.nyu.edu/~lpederse/papers/TimeSeriesMomentum.pdf"
+  ],
+  "researchSummary": "Tests short-horizon own-return continuation/reversal inspired by time-series momentum literature. Filtered by signalWeekday=0.",
+  "selectionMethod": "Pre-2022 train-score rank, then post-2022 forward qualification. No parameters were fit on post-2022 data.",
+  "trainingWindow": {
+    "start": "asset_start",
+    "end": "2021-12-31"
+  },
+  "forwardWindow": {
+    "start": "2022-01-01",
+    "end": "asset_latest"
+  },
+  "selectedTrainingProfitFactor": 1.159062,
+  "selectedTrainingTrades": 93,
+  "selectedForwardProfitFactor": 2.759591,
+  "selectedForwardTrades": 26,
+  "forwardWins": 17,
+  "forwardLosses": 9,
+  "forwardTotalR": 46.194823,
+  "forwardAverageR": 1.776724,
+  "forwardMaxDrawdownR": 13.167432,
+  "verificationSummary": "Verified by backtest-engine runner output: PF 2.76, 26 trades, 46.19R total.",
+  "costUnits": 0,
+  "oneTradePerDay": false
+}

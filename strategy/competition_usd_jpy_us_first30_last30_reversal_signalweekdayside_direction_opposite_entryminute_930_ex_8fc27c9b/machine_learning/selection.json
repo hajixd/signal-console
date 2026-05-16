@@ -1,0 +1,34 @@
+{
+  "strategyId": "competition_usd_jpy_us_first30_last30_reversal_signalweekdayside_direction_opposite_entryminute_930_ex_8fc27c9b",
+  "label": "Competition USDJPY Us First30 Last30 Reversal Signalweekdayside",
+  "folder": "competition_usd_jpy_us_first30_last30_reversal_signalweekdayside_direction_opposite_entryminute_930_ex_8fc27c9b",
+  "assetKey": "usd_jpy",
+  "phase": "competition_session_edge",
+  "variantId": "competition_session_edge|family=us_first30_last30_reversal_signalweekdayside|direction=opposite|entry=930|exit=945|min_signal_atr=0.5|signal_end=585|signal_start=570|signal_weekday_side=2_long",
+  "source": "competition_session_edge_train_forward_2026",
+  "sourceUrls": [
+    "https://www.sciencedirect.com/science/article/abs/pii/S0304405X18301351"
+  ],
+  "researchSummary": "Session-window return predicts a later same-day session return. Filtered by signalWeekdaySide=2_long.",
+  "selectionMethod": "Pre-2022 train-score rank, then post-2022 forward qualification. No parameters were fit on post-2022 data.",
+  "trainingWindow": {
+    "start": "asset_start",
+    "end": "2021-12-31"
+  },
+  "forwardWindow": {
+    "start": "2022-01-01",
+    "end": "asset_latest"
+  },
+  "selectedTrainingProfitFactor": 1.094202,
+  "selectedTrainingTrades": 40,
+  "selectedForwardProfitFactor": 4.039043,
+  "selectedForwardTrades": 65,
+  "forwardWins": 43,
+  "forwardLosses": 21,
+  "forwardTotalR": 15.752282,
+  "forwardAverageR": 0.242343,
+  "forwardMaxDrawdownR": 0.971683,
+  "verificationSummary": "Verified by backtest-engine runner output: PF 4.04, 65 trades, 15.75R total.",
+  "costUnits": 0,
+  "oneTradePerDay": false
+}

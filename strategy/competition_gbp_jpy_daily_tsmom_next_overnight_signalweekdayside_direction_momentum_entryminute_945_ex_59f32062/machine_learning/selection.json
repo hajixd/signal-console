@@ -1,0 +1,34 @@
+{
+  "strategyId": "competition_gbp_jpy_daily_tsmom_next_overnight_signalweekdayside_direction_momentum_entryminute_945_ex_59f32062",
+  "label": "Competition GBPJPY Daily Tsmom Next Overnight Signalweekdayside",
+  "folder": "competition_gbp_jpy_daily_tsmom_next_overnight_signalweekdayside_direction_momentum_entryminute_945_ex_59f32062",
+  "assetKey": "gbp_jpy",
+  "phase": "competition_session_edge",
+  "variantId": "competition_session_edge|family=daily_tsmom_next_overnight_signalweekdayside|direction=momentum|entry=945|exit=570|lookback=3|signal_weekday_side=2_short",
+  "source": "competition_session_edge_train_forward_2026",
+  "sourceUrls": [
+    "https://pages.stern.nyu.edu/~lpederse/papers/TimeSeriesMomentum.pdf"
+  ],
+  "researchSummary": "Tests short-horizon own-return continuation/reversal inspired by time-series momentum literature. Filtered by signalWeekdaySide=2_short.",
+  "selectionMethod": "Pre-2022 train-score rank, then post-2022 forward qualification. No parameters were fit on post-2022 data.",
+  "trainingWindow": {
+    "start": "asset_start",
+    "end": "2021-12-31"
+  },
+  "forwardWindow": {
+    "start": "2022-01-01",
+    "end": "asset_latest"
+  },
+  "selectedTrainingProfitFactor": 1.224583,
+  "selectedTrainingTrades": 40,
+  "selectedForwardProfitFactor": 2.386841,
+  "selectedForwardTrades": 80,
+  "forwardWins": 48,
+  "forwardLosses": 31,
+  "forwardTotalR": 178.247517,
+  "forwardAverageR": 2.228094,
+  "forwardMaxDrawdownR": 46.044243,
+  "verificationSummary": "Verified by backtest-engine runner output: PF 2.39, 80 trades, 178.25R total.",
+  "costUnits": 0,
+  "oneTradePerDay": false
+}

@@ -1,0 +1,34 @@
+{
+  "strategyId": "competition_aud_nzd_asia_range_london_breakout_signalmonth_breakendminute_360_breakstartminute_180_dir_c8638be4",
+  "label": "Competition AUDNZD Asia Range London Breakout Signalmonth",
+  "folder": "competition_aud_nzd_asia_range_london_breakout_signalmonth_breakendminute_360_breakstartminute_180_dir_c8638be4",
+  "assetKey": "aud_nzd",
+  "phase": "competition_session_edge",
+  "variantId": "competition_session_edge|family=asia_range_london_breakout_signalmonth|break_end=360|break_start=180|direction=breakout|forced_exit=600|range_end=165|range_start=1080|risk_reward=1|signal_month=12",
+  "source": "competition_session_edge_train_forward_2026",
+  "sourceUrls": [
+    "https://biblio.ugent.be/publication/8060014"
+  ],
+  "researchSummary": "Tests whether a defined session range break continues or should be faded. Filtered by signalMonth=12.",
+  "selectionMethod": "Pre-2022 train-score rank, then post-2022 forward qualification. No parameters were fit on post-2022 data.",
+  "trainingWindow": {
+    "start": "asset_start",
+    "end": "2021-12-31"
+  },
+  "forwardWindow": {
+    "start": "2022-01-01",
+    "end": "asset_latest"
+  },
+  "selectedTrainingProfitFactor": 1.147337,
+  "selectedTrainingTrades": 32,
+  "selectedForwardProfitFactor": 2.474103,
+  "selectedForwardTrades": 46,
+  "forwardWins": 28,
+  "forwardLosses": 18,
+  "forwardTotalR": 7.61325,
+  "forwardAverageR": 0.165505,
+  "forwardMaxDrawdownR": 2.008256,
+  "verificationSummary": "Verified by backtest-engine runner output: PF 2.47, 46 trades, 7.61R total.",
+  "costUnits": 0,
+  "oneTradePerDay": false
+}

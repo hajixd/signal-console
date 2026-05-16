@@ -625,6 +625,17 @@ export default function StrategySelector({
   const selectionControlsDisabled = isRestricted;
   const savingSelectionKeySet = useMemo(() => new Set(savingSelectionKeys), [savingSelectionKeys]);
 
+  function replaceRouteSelection(nextKeys: string[]) {
+    const params = new URLSearchParams(window.location.search);
+    if (nextKeys.length) {
+      params.set("strategies", nextKeys.join(","));
+    } else {
+      params.delete("strategies");
+    }
+    const query = params.toString();
+    router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
+  }
+
   useEffect(() => {
     if (!isRestricted) return;
     setActiveKey(null);
@@ -663,8 +674,12 @@ export default function StrategySelector({
       setSavingSelectionKeys([]);
     }
 
-    setOptimisticSelectedKeys(selectedKeys);
-  }, [persistedLiveSelectionSignature, selectionSignature, selectedKeys]);
+    setOptimisticSelectedKeys(
+      pendingSelectionSignature && persistedLiveSelectionSignature === pendingSelectionSignature
+        ? persistedLiveKeys
+        : selectedKeys
+    );
+  }, [persistedLiveKeys, persistedLiveSelectionSignature, selectionSignature, selectedKeys]);
 
   useEffect(() => {
     return () => {
@@ -805,6 +820,7 @@ export default function StrategySelector({
           await persistLiveSelection(selectedKeysToSync, strategyScopeKeys);
           if (selectionSyncRunRef.current === syncRun && latestSelectionSignatureRef.current === signatureToSync) {
             setSavingSelectionKeys([]);
+            replaceRouteSelection(selectedKeysToSync);
             router.refresh();
           }
         } catch (error) {

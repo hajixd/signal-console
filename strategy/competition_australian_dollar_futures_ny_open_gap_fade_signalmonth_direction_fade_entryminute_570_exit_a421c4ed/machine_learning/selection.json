@@ -1,0 +1,34 @@
+{
+  "strategyId": "competition_australian_dollar_futures_ny_open_gap_fade_signalmonth_direction_fade_entryminute_570_exit_a421c4ed",
+  "label": "Competition 6A Ny Open Gap Fade Signalmonth",
+  "folder": "competition_australian_dollar_futures_ny_open_gap_fade_signalmonth_direction_fade_entryminute_570_exit_a421c4ed",
+  "assetKey": "australian_dollar_futures",
+  "phase": "competition_session_edge",
+  "variantId": "competition_session_edge|family=ny_open_gap_fade_signalmonth|direction=fade|entry=570|exit=945|min_gap_atr=0.75|signal_month=10",
+  "source": "competition_session_edge_train_forward_2026",
+  "sourceUrls": [
+    "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=1004081"
+  ],
+  "researchSummary": "Tests whether the overnight gap fades or continues during a specific NY cash-session window. Filtered by signalMonth=10.",
+  "selectionMethod": "Pre-2022 train-score rank, then post-2022 forward qualification. No parameters were fit on post-2022 data.",
+  "trainingWindow": {
+    "start": "asset_start",
+    "end": "2021-12-31"
+  },
+  "forwardWindow": {
+    "start": "2022-01-01",
+    "end": "asset_latest"
+  },
+  "selectedTrainingProfitFactor": 1.491388,
+  "selectedTrainingTrades": 194,
+  "selectedForwardProfitFactor": 2.067262,
+  "selectedForwardTrades": 58,
+  "forwardWins": 33,
+  "forwardLosses": 25,
+  "forwardTotalR": 62.573549,
+  "forwardAverageR": 1.078854,
+  "forwardMaxDrawdownR": 14.027825,
+  "verificationSummary": "Verified by backtest-engine runner output: PF 2.07, 58 trades, 62.57R total.",
+  "costUnits": 0,
+  "oneTradePerDay": false
+}

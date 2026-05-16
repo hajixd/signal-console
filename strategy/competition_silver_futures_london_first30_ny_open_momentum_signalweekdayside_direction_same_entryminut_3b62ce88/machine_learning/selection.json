@@ -1,0 +1,34 @@
+{
+  "strategyId": "competition_silver_futures_london_first30_ny_open_momentum_signalweekdayside_direction_same_entryminut_3b62ce88",
+  "label": "Competition SI London First30 Ny Open Momentum Signalweekdayside",
+  "folder": "competition_silver_futures_london_first30_ny_open_momentum_signalweekdayside_direction_same_entryminut_3b62ce88",
+  "assetKey": "silver_futures",
+  "phase": "competition_session_edge",
+  "variantId": "competition_session_edge|family=london_first30_ny_open_momentum_signalweekdayside|direction=same|entry=480|exit=570|min_signal_atr=0.5|signal_end=195|signal_start=180|signal_weekday_side=4_long",
+  "source": "competition_session_edge_train_forward_2026",
+  "sourceUrls": [
+    "https://biblio.ugent.be/publication/8060014"
+  ],
+  "researchSummary": "Session-window return predicts a later same-day session return. Filtered by signalWeekdaySide=4_long.",
+  "selectionMethod": "Pre-2022 train-score rank, then post-2022 forward qualification. No parameters were fit on post-2022 data.",
+  "trainingWindow": {
+    "start": "asset_start",
+    "end": "2021-12-31"
+  },
+  "forwardWindow": {
+    "start": "2022-01-01",
+    "end": "asset_latest"
+  },
+  "selectedTrainingProfitFactor": 1.407661,
+  "selectedTrainingTrades": 194,
+  "selectedForwardProfitFactor": 2.139165,
+  "selectedForwardTrades": 69,
+  "forwardWins": 39,
+  "forwardLosses": 30,
+  "forwardTotalR": 71.619746,
+  "forwardAverageR": 1.037967,
+  "forwardMaxDrawdownR": 20.835509,
+  "verificationSummary": "Verified by backtest-engine runner output: PF 2.14, 69 trades, 71.62R total.",
+  "costUnits": 0,
+  "oneTradePerDay": false
+}

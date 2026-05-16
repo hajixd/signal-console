@@ -6,6 +6,7 @@ import json
 import math
 from dataclasses import dataclass
 from datetime import datetime, timezone
+from functools import lru_cache
 from pathlib import Path
 from time import perf_counter
 from typing import Any, Iterable
@@ -693,6 +694,9 @@ class OpenTrade:
     size_mode: str
     size_multiplier: float
     max_exit_index: int
+    forced_exit_minute: int | None = None
+    forced_exit_day_offset: int = 0
+    forced_exit_reason: str = "time_exit"
 
 
 @dataclass(frozen=True)
@@ -1154,10 +1158,19 @@ def runtime_config(variant_id: str) -> RuntimeConfig:
     return RuntimeConfig(**values)
 
 
-def variant_value(variant_id: str, key: str) -> str | None:
+@lru_cache(maxsize=8192)
+def variant_key_values(variant_id: str) -> tuple[tuple[str, str], ...]:
+    pairs: list[tuple[str, str]] = []
     for token in variant_id.split("|"):
         token_key, raw_value = (token.split("=", 1) + [""])[:2]
-        if token_key == key and raw_value:
+        if token_key and raw_value:
+            pairs.append((token_key, raw_value))
+    return tuple(pairs)
+
+
+def variant_value(variant_id: str, key: str) -> str | None:
+    for token_key, raw_value in variant_key_values(variant_id):
+        if token_key == key:
             return raw_value
     return None
 
@@ -1471,6 +1484,64 @@ def anti_cheat_window(data: EnrichedData, end_index: int) -> EnrichedData:
         close_ema200_atr=data.close_ema200_atr[:stop],
         hourly=slice_timeframe_data(data.hourly, stop_time),
         daily=slice_timeframe_data(data.daily, stop_time),
+    )
+
+
+def competition_anti_cheat_window(strategy: BacktestStrategy, data: EnrichedData, end_index: int) -> EnrichedData:
+    stop = end_index + 1
+    if stop <= 0 or stop > data.times.shape[0]:
+        raise IndexError(f"Signal window end {end_index} is outside the available candle history")
+
+    max_recent_days = max(30, competition_param_int(strategy, "lookback", 5) + 5)
+    recent_days: list[str] = []
+    seen: set[str] = set()
+    cursor = end_index
+    while cursor >= 0 and len(recent_days) < max_recent_days:
+        day = data.ny_dates[cursor]
+        if day not in seen:
+            recent_days.append(day)
+            seen.add(day)
+        cursor -= 1
+
+    day_bounds = {
+        day: (start, min(end, stop))
+        for day in reversed(recent_days)
+        if (bounds := data.day_bounds.get(day)) is not None
+        for start, end in (bounds,)
+        if start < stop
+    }
+
+    return EnrichedData(
+        times=data.times[:stop],
+        open=data.open[:stop],
+        high=data.high[:stop],
+        low=data.low[:stop],
+        close=data.close[:stop],
+        ny_dates=data.ny_dates,
+        ny_days=data.ny_days[:stop],
+        ny_minutes=data.ny_minutes[:stop],
+        ny_weekdays=data.ny_weekdays[:stop],
+        day_bounds=day_bounds,
+        prior_day_high=data.prior_day_high[:stop],
+        prior_day_low=data.prior_day_low[:stop],
+        ema9=data.ema9[:stop],
+        ema21=data.ema21[:stop],
+        ema30=data.ema30[:stop],
+        ema34=data.ema34[:stop],
+        ema50=data.ema50[:stop],
+        ema200=data.ema200[:stop],
+        atr14=data.atr14[:stop],
+        atr100=data.atr100[:stop],
+        session_vwap=data.session_vwap[:stop],
+        rsi2=data.rsi2[:stop],
+        rsi14_centered=data.rsi14_centered[:stop],
+        bb_z20=data.bb_z20[:stop],
+        close_location=data.close_location[:stop],
+        ret3_atr=data.ret3_atr[:stop],
+        body_atr=data.body_atr[:stop],
+        close_ema200_atr=data.close_ema200_atr[:stop],
+        hourly=None,
+        daily=None,
     )
 
 
@@ -3082,6 +3153,8 @@ def evaluate_strategy_signal(
         signal = evaluate_trendline_break(strategy, data, index, asset, config)
     elif strategy.phase == "tori_trendline_mtf":
         signal = evaluate_tori_trendline_mtf(strategy, data, index, asset)
+    elif strategy.phase == "competition_session_edge":
+        signal = evaluate_competition_session_edge(strategy, data, index, asset)
     if strategy.phase == "ict_sweep_fvg":
         signal = evaluate_ict_sweep_fvg(strategy, data, index, asset, config)
     elif strategy.phase == "ict_turtle_soup":
@@ -3109,6 +3182,7 @@ def evaluate_strategy_signal(
         "round_number_rejection",
         "trendline_break",
         "tori_trendline_mtf",
+        "competition_session_edge",
     }:
         raise ValueError(f"Unsupported strategy phase: {strategy.phase}")
 
@@ -3331,14 +3405,67 @@ def resolve_trade_plan(
     return stop_loss, take_profit, tp_units, sl_units, size_multiplier
 
 
+def shifted_ny_day(data: EnrichedData, start_index: int, day_offset: int) -> int | None:
+    if start_index < 0 or start_index >= data.ny_days.shape[0]:
+        return None
+    start_day = int(data.ny_days[start_index])
+    if day_offset <= 0:
+        return start_day
+
+    current_day = start_day
+    observed_offsets = 0
+    for cursor in range(start_index + 1, data.ny_days.shape[0]):
+        day = int(data.ny_days[cursor])
+        if day == current_day:
+            continue
+        observed_offsets += 1
+        current_day = day
+        if observed_offsets >= day_offset:
+            return current_day
+    return None
+
+
+def market_entry_index(signal: dict[str, Any], data: EnrichedData, signal_index: int) -> int | None:
+    raw_entry_minute = signal.get("entry_minute")
+    if raw_entry_minute is None:
+        entry_index = signal_index + 1
+        return entry_index if entry_index < data.times.shape[0] else None
+
+    try:
+        entry_minute = int(float(raw_entry_minute))
+        entry_day_offset = int(float(signal.get("entry_day_offset", 0)))
+    except (TypeError, ValueError):
+        return None
+
+    target_day = shifted_ny_day(data, signal_index, entry_day_offset)
+    if target_day is None:
+        return None
+    for cursor in range(signal_index + 1, data.times.shape[0]):
+        current_day = int(data.ny_days[cursor])
+        if current_day < target_day:
+            continue
+        if current_day > target_day:
+            return None
+        if int(data.ny_minutes[cursor]) == entry_minute:
+            return cursor
+    return None
+
+
 def build_market_trade(signal: dict[str, Any], data: EnrichedData, signal_index: int, asset: AssetConfig, max_bars: int) -> OpenTrade | None:
     side = int(signal["side"])
-    entry_index = signal_index + 1
+    entry_index = market_entry_index(signal, data, signal_index)
+    if entry_index is None:
+        return None
     entry_price = round_price(float(data.open[entry_index]), asset.tick_size)
     plan = resolve_trade_plan(signal, entry_price, side, asset)
     if plan is None:
         return None
     stop_loss, take_profit, tp_units, sl_units, size_multiplier = plan
+    initial_tp_units = float(signal.get("initial_tp_units", tp_units))
+    initial_sl_units = float(signal.get("initial_sl_units", sl_units))
+    if not maybe_number(initial_tp_units) or initial_tp_units <= 0 or not maybe_number(initial_sl_units) or initial_sl_units <= 0:
+        return None
+    max_exit_index = data.times.shape[0] - 1 if signal.get("forced_exit_minute") is not None else min(data.times.shape[0] - 1, entry_index + max_bars - 1)
     return OpenTrade(
         side=side,
         signal_time=int(data.times[signal_index]),
@@ -3346,8 +3473,8 @@ def build_market_trade(signal: dict[str, Any], data: EnrichedData, signal_index:
         entry_price=entry_price,
         initial_take_profit=take_profit,
         initial_stop_loss=stop_loss,
-        initial_tp_units=tp_units,
-        initial_sl_units=sl_units,
+        initial_tp_units=initial_tp_units,
+        initial_sl_units=initial_sl_units,
         take_profit=take_profit,
         stop_loss=stop_loss,
         tp_units=tp_units,
@@ -3356,7 +3483,10 @@ def build_market_trade(signal: dict[str, Any], data: EnrichedData, signal_index:
         sl_mode=str(signal.get("sl_mode", PRICE_MODE_FIXED)),
         size_mode=str(signal.get("size_mode", SIZE_MODE_AUTO)),
         size_multiplier=size_multiplier,
-        max_exit_index=min(data.times.shape[0] - 1, entry_index + max_bars - 1),
+        max_exit_index=max_exit_index,
+        forced_exit_minute=int(float(signal["forced_exit_minute"])) if signal.get("forced_exit_minute") is not None else None,
+        forced_exit_day_offset=int(float(signal.get("forced_exit_day_offset", 0))),
+        forced_exit_reason=str(signal.get("forced_exit_reason", "time_exit")),
     )
 
 
@@ -3562,6 +3692,15 @@ def trade_exit(open_trade: OpenTrade, data: EnrichedData, index: int, tick_size:
         elif tp_hit:
             exit_price = open_trade.take_profit
             exit_reason = "tp"
+        elif open_trade.forced_exit_minute is not None:
+            target_day = shifted_ny_day(data, open_trade.entry_index, open_trade.forced_exit_day_offset)
+            current_day = int(data.ny_days[index])
+            if target_day is not None and (
+                (current_day == target_day and int(data.ny_minutes[index]) >= open_trade.forced_exit_minute)
+                or current_day > target_day
+            ):
+                exit_price = float(data.close[index])
+                exit_reason = open_trade.forced_exit_reason
         elif index >= open_trade.max_exit_index:
             exit_price = float(data.close[index])
             exit_reason = "max_bars"
@@ -3673,6 +3812,418 @@ def competition_passes_filters(strategy: BacktestStrategy, data: EnrichedData, s
     return True
 
 
+COMPETITION_TIME_EXIT_UNITS = 1_000_000.0
+
+
+def competition_risk_units(data: EnrichedData, index: int, asset: AssetConfig) -> float:
+    if asset.tick_size <= 0:
+        return 1.0
+    risk = competition_safe_atr(data, index, asset)
+    return max(1.0, risk / asset.tick_size)
+
+
+def competition_time_exit_signal(
+    strategy: BacktestStrategy,
+    data: EnrichedData,
+    index: int,
+    asset: AssetConfig,
+    side: int,
+    forced_exit_minute: int,
+    forced_exit_day_offset: int = 0,
+    entry_minute: int | None = None,
+    entry_day_offset: int = 0,
+    risk_index: int | None = None,
+) -> dict[str, Any] | None:
+    if side not in {-1, 1}:
+        return None
+    reference_index = index if risk_index is None else max(0, min(risk_index, data.times.shape[0] - 1))
+    risk_units = competition_risk_units(data, reference_index, asset)
+    signal: dict[str, Any] = {
+        "entry_mode": "market",
+        "side": side,
+        "sl_units": COMPETITION_TIME_EXIT_UNITS,
+        "tp_units": COMPETITION_TIME_EXIT_UNITS,
+        "initial_sl_units": risk_units,
+        "initial_tp_units": risk_units,
+        "forced_exit_minute": int(forced_exit_minute),
+        "forced_exit_day_offset": int(forced_exit_day_offset),
+        "forced_exit_reason": "time_exit",
+        "tp_mode": PRICE_MODE_CUSTOM,
+        "sl_mode": PRICE_MODE_CUSTOM,
+        "size_mode": SIZE_MODE_AUTO,
+        "size_multiplier": 1.0,
+    }
+    if entry_minute is not None:
+        signal["entry_minute"] = int(entry_minute)
+        signal["entry_day_offset"] = int(entry_day_offset)
+    return signal
+
+
+def evaluate_competition_intraday_signal(
+    strategy: BacktestStrategy, data: EnrichedData, index: int, asset: AssetConfig
+) -> dict[str, Any] | None:
+    direction = 1 if competition_param_text(strategy, "direction", "same") in {"same", "momentum", "continue", "breakout"} else -1
+    signal_start_minute = competition_param_int(strategy, "signal_start", 570)
+    signal_end_minute = competition_param_int(strategy, "signal_end", 585)
+    entry_minute = competition_param_int(strategy, "entry", 930)
+    exit_minute = competition_param_int(strategy, "exit", 945)
+    min_signal_atr = competition_param_float(strategy, "min_signal_atr", 0.0)
+    if int(data.ny_minutes[index]) != signal_end_minute:
+        return None
+
+    day = data.ny_dates[index]
+    signal = competition_session_return(data, day, signal_start_minute, signal_end_minute)
+    if signal is None:
+        return None
+    _signal_start_index, signal_index, move = signal
+    if signal_index != index:
+        return None
+    atr_value = competition_safe_atr(data, index, asset)
+    if atr_value <= 0 or abs(move) / atr_value < min_signal_atr or move == 0:
+        return None
+    side = (1 if move > 0 else -1) * direction
+    if not competition_passes_filters(strategy, data, index, side):
+        return None
+    return competition_time_exit_signal(
+        strategy,
+        data,
+        index,
+        asset,
+        side,
+        forced_exit_minute=exit_minute,
+        forced_exit_day_offset=0,
+        entry_minute=entry_minute,
+        entry_day_offset=0,
+        risk_index=index,
+    )
+
+
+def evaluate_competition_overnight_signal(
+    strategy: BacktestStrategy, data: EnrichedData, index: int, asset: AssetConfig
+) -> dict[str, Any] | None:
+    if int(data.ny_minutes[index]) != 945:
+        return None
+    side = 1 if competition_param_text(strategy, "side", "long") == "long" else -1
+    if not competition_passes_filters(strategy, data, index, side):
+        return None
+    return competition_time_exit_signal(
+        strategy,
+        data,
+        index,
+        asset,
+        side,
+        forced_exit_minute=570,
+        forced_exit_day_offset=1,
+        risk_index=index,
+    )
+
+
+def evaluate_competition_gap_signal(
+    strategy: BacktestStrategy, data: EnrichedData, index: int, asset: AssetConfig
+) -> dict[str, Any] | None:
+    direction = -1 if competition_param_text(strategy, "direction", "fade") == "fade" else 1
+    entry_minute = competition_param_int(strategy, "entry", 570)
+    exit_minute = competition_param_int(strategy, "exit", 615)
+    min_gap_atr = competition_param_float(strategy, "min_gap_atr", 0.0)
+    if int(data.ny_minutes[index]) != entry_minute:
+        return None
+
+    day = data.ny_dates[index]
+    previous = competition_previous_day(data, day)
+    if previous is None:
+        return None
+    prior_close_index = competition_day_index(data, previous, 945)
+    if prior_close_index is None:
+        return None
+    gap = float(data.open[index] - data.close[prior_close_index])
+    atr_value = competition_safe_atr(data, prior_close_index, asset)
+    if atr_value <= 0 or abs(gap) / atr_value < min_gap_atr or gap == 0:
+        return None
+    side = (1 if gap > 0 else -1) * direction
+    if not competition_passes_filters(strategy, data, index, side):
+        return None
+    return competition_time_exit_signal(
+        strategy,
+        data,
+        index,
+        asset,
+        side,
+        forced_exit_minute=exit_minute,
+        forced_exit_day_offset=0,
+        risk_index=prior_close_index,
+    )
+
+
+def evaluate_competition_daily_tsmom_signal(
+    strategy: BacktestStrategy, data: EnrichedData, index: int, asset: AssetConfig
+) -> dict[str, Any] | None:
+    if int(data.ny_minutes[index]) != 945:
+        return None
+    lookback = competition_param_int(strategy, "lookback", 3)
+    entry_minute = competition_param_int(strategy, "entry", 570)
+    exit_minute = competition_param_int(strategy, "exit", 945)
+    direction = 1 if competition_param_text(strategy, "direction", "momentum") == "momentum" else -1
+    ordered_days: list[str] = []
+    close_by_day: dict[str, tuple[int, float]] = {}
+    for day in data.day_bounds.keys():
+        close_index = competition_day_index(data, day, 945)
+        if close_index is not None and close_index <= index:
+            ordered_days.append(day)
+            close_by_day[day] = (close_index, float(data.close[close_index]))
+    day = data.ny_dates[index]
+    if len(ordered_days) <= lookback or not ordered_days or ordered_days[-1] != day:
+        return None
+
+    previous_day = ordered_days[-1 - lookback]
+    signal_index, current_close = close_by_day[day]
+    _past_index, past_close = close_by_day[previous_day]
+    move = current_close - past_close
+    if signal_index != index or move == 0:
+        return None
+    side = (1 if move > 0 else -1) * direction
+    if not competition_passes_filters(strategy, data, index, side):
+        return None
+
+    overnight = competition_param_text(strategy, "family", "").startswith("daily_tsmom_next_overnight")
+    if overnight:
+        return competition_time_exit_signal(
+            strategy,
+            data,
+            index,
+            asset,
+            side,
+            forced_exit_minute=exit_minute,
+            forced_exit_day_offset=1,
+            risk_index=index,
+        )
+    return competition_time_exit_signal(
+        strategy,
+        data,
+        index,
+        asset,
+        side,
+        forced_exit_minute=exit_minute,
+        forced_exit_day_offset=0,
+        entry_minute=entry_minute,
+        entry_day_offset=1,
+        risk_index=index,
+    )
+
+
+def evaluate_competition_range_signal(
+    strategy: BacktestStrategy, data: EnrichedData, index: int, asset: AssetConfig
+) -> dict[str, Any] | None:
+    family = competition_param_text(strategy, "family", "")
+    range_start = competition_param_int(strategy, "range_start", 570)
+    range_end = competition_param_int(strategy, "range_end", 585)
+    break_start = competition_param_int(strategy, "break_start", 600)
+    break_end = competition_param_int(strategy, "break_end", 720)
+    forced_exit = competition_param_int(strategy, "forced_exit", 945)
+    risk_reward = competition_param_float(strategy, "risk_reward", 1.5)
+    direction = 1 if competition_param_text(strategy, "direction", "breakout") == "breakout" else -1
+    minute = int(data.ny_minutes[index])
+    if minute < break_start or minute > break_end or minute > forced_exit:
+        return None
+
+    day = data.ny_dates[index]
+    range_indices: list[int] = []
+    if family.startswith("asia_range"):
+        previous = competition_previous_day(data, day)
+        if previous is None:
+            return None
+        range_indices.extend(
+            candidate
+            for range_minute in range(range_start, 24 * 60, 15)
+            if (candidate := competition_day_index(data, previous, range_minute)) is not None and candidate < index
+        )
+        range_indices.extend(
+            candidate
+            for range_minute in range(0, range_end + 1, 15)
+            if (candidate := competition_day_index(data, day, range_minute)) is not None and candidate < index
+        )
+    else:
+        range_indices.extend(
+            candidate
+            for range_minute in range(range_start, range_end + 1, 15)
+            if (candidate := competition_day_index(data, day, range_minute)) is not None and candidate < index
+        )
+    if not range_indices:
+        return None
+
+    high = max(float(data.high[cursor]) for cursor in range_indices)
+    low = min(float(data.low[cursor]) for cursor in range_indices)
+    if high <= low:
+        return None
+    break_side = 1 if data.high[index] > high else -1 if data.low[index] < low else 0
+    if break_side == 0:
+        return None
+    side = break_side * direction
+    if not competition_passes_filters(strategy, data, index, side):
+        return None
+
+    stop = low if direction == 1 and side == 1 else high if direction == 1 else float(data.low[index]) if side == 1 else float(data.high[index])
+    return {
+        "entry_mode": "market",
+        "side": side,
+        "stop_loss": round_price(stop, asset.tick_size),
+        "risk_reward": risk_reward,
+        "forced_exit_minute": forced_exit,
+        "forced_exit_day_offset": 0,
+        "forced_exit_reason": "time_exit",
+        "tp_mode": PRICE_MODE_CUSTOM,
+        "sl_mode": PRICE_MODE_CUSTOM,
+        "size_mode": SIZE_MODE_AUTO,
+    }
+
+
+def evaluate_competition_session_edge(
+    strategy: BacktestStrategy, data: EnrichedData, index: int, asset: AssetConfig
+) -> dict[str, Any] | None:
+    family = competition_param_text(strategy, "family", "")
+    if family.startswith(("us_first30", "us_secondlast", "london_first30")):
+        return evaluate_competition_intraday_signal(strategy, data, index, asset)
+    if family.startswith("overnight_close_to_open_bias"):
+        return evaluate_competition_overnight_signal(strategy, data, index, asset)
+    if family.startswith("ny_open_gap"):
+        return evaluate_competition_gap_signal(strategy, data, index, asset)
+    if family.startswith("daily_tsmom"):
+        return evaluate_competition_daily_tsmom_signal(strategy, data, index, asset)
+    if family.startswith(("asia_range", "ny_opening_range")):
+        return evaluate_competition_range_signal(strategy, data, index, asset)
+    raise ValueError(f"Unsupported competition_session_edge family: {family}")
+
+
+def competition_may_signal(strategy: BacktestStrategy, data: EnrichedData, index: int) -> bool:
+    family = competition_param_text(strategy, "family", "")
+    minute = int(data.ny_minutes[index])
+    if family.startswith(("us_first30", "us_secondlast", "london_first30")):
+        return minute == competition_param_int(strategy, "signal_end", 585)
+    if family.startswith(("overnight_close_to_open_bias", "daily_tsmom")):
+        return minute == 945
+    if family.startswith("ny_open_gap"):
+        return minute == competition_param_int(strategy, "entry", 570)
+    if family.startswith(("asia_range", "ny_opening_range")):
+        break_start = competition_param_int(strategy, "break_start", 600)
+        break_end = competition_param_int(strategy, "break_end", 720)
+        forced_exit = competition_param_int(strategy, "forced_exit", 945)
+        if not (break_start <= minute <= break_end and minute <= forced_exit):
+            return False
+        range_start = competition_param_int(strategy, "range_start", 570)
+        range_end = competition_param_int(strategy, "range_end", 585)
+        day = data.ny_dates[index]
+        range_indices: list[int] = []
+        if family.startswith("asia_range"):
+            previous = competition_previous_day(data, day)
+            if previous is None:
+                return False
+            range_indices.extend(
+                candidate
+                for range_minute in range(range_start, 24 * 60, 15)
+                if (candidate := competition_day_index(data, previous, range_minute)) is not None and candidate < index
+            )
+            range_indices.extend(
+                candidate
+                for range_minute in range(0, range_end + 1, 15)
+                if (candidate := competition_day_index(data, day, range_minute)) is not None and candidate < index
+            )
+        else:
+            range_indices.extend(
+                candidate
+                for range_minute in range(range_start, range_end + 1, 15)
+                if (candidate := competition_day_index(data, day, range_minute)) is not None and candidate < index
+            )
+        if not range_indices:
+            return False
+        high = max(float(data.high[cursor]) for cursor in range_indices)
+        low = min(float(data.low[cursor]) for cursor in range_indices)
+        return bool(high > low and (data.high[index] > high or data.low[index] < low))
+    return True
+
+
+def competition_signal_candidate_indexes(strategy: BacktestStrategy, data: EnrichedData, start_index: int) -> set[int]:
+    family = competition_param_text(strategy, "family", "")
+    candidates: set[int] = set()
+    last_signal_index = data.times.shape[0] - 2
+    day_order = list(data.day_bounds.keys())
+    previous_by_day = {day: day_order[position - 1] if position > 0 else None for position, day in enumerate(day_order)}
+    minute_index_by_day = {
+        day: {int(data.ny_minutes[cursor]): cursor for cursor in range(start, end)}
+        for day, (start, end) in data.day_bounds.items()
+    }
+
+    def day_minute_index(day: str, minute: int) -> int | None:
+        return minute_index_by_day.get(day, {}).get(int(minute))
+
+    if family.startswith(("us_first30", "us_secondlast", "london_first30")):
+        signal_end = competition_param_int(strategy, "signal_end", 585)
+        for day in data.day_bounds.keys():
+            index = day_minute_index(day, signal_end)
+            if index is not None and start_index <= index <= last_signal_index:
+                candidates.add(index)
+        return candidates
+
+    if family.startswith(("overnight_close_to_open_bias", "daily_tsmom")):
+        for day in data.day_bounds.keys():
+            index = day_minute_index(day, 945)
+            if index is not None and start_index <= index <= last_signal_index:
+                candidates.add(index)
+        return candidates
+
+    if family.startswith("ny_open_gap"):
+        entry_minute = competition_param_int(strategy, "entry", 570)
+        for day in data.day_bounds.keys():
+            index = day_minute_index(day, entry_minute)
+            if index is not None and start_index <= index <= last_signal_index:
+                candidates.add(index)
+        return candidates
+
+    if family.startswith(("asia_range", "ny_opening_range")):
+        range_start = competition_param_int(strategy, "range_start", 570)
+        range_end = competition_param_int(strategy, "range_end", 585)
+        break_start = competition_param_int(strategy, "break_start", 600)
+        break_end = competition_param_int(strategy, "break_end", 720)
+        forced_exit = competition_param_int(strategy, "forced_exit", 945)
+        for day in data.day_bounds.keys():
+            range_indices: list[int] = []
+            if family.startswith("asia_range"):
+                previous = previous_by_day.get(day)
+                if previous is None:
+                    continue
+                range_indices.extend(
+                    candidate
+                    for range_minute in range(range_start, 24 * 60, 15)
+                    if (candidate := day_minute_index(previous, range_minute)) is not None
+                )
+                range_indices.extend(
+                    candidate
+                    for range_minute in range(0, range_end + 1, 15)
+                    if (candidate := day_minute_index(day, range_minute)) is not None
+                )
+            else:
+                range_indices.extend(
+                    candidate
+                    for range_minute in range(range_start, range_end + 1, 15)
+                    if (candidate := day_minute_index(day, range_minute)) is not None
+                )
+            for break_minute in range(break_start, min(break_end, forced_exit) + 1, 15):
+                index = day_minute_index(day, break_minute)
+                if index is None or index < start_index or index > last_signal_index:
+                    continue
+                visible_range_indices = [candidate for candidate in range_indices if candidate < index]
+                if not visible_range_indices:
+                    continue
+                high = max(float(data.high[cursor]) for cursor in visible_range_indices)
+                low = min(float(data.low[cursor]) for cursor in visible_range_indices)
+                if high <= low:
+                    continue
+                if data.high[index] > high or data.low[index] < low:
+                    candidates.add(index)
+                    break
+        return candidates
+
+    return set(range(start_index, max(start_index, last_signal_index + 1)))
+
+
 def competition_trade_row(
     strategy: BacktestStrategy,
     asset: AssetConfig,
@@ -3688,6 +4239,18 @@ def competition_trade_row(
 ) -> BacktestTradeRow | None:
     if risk <= 0 or entry_index < 0 or exit_index < entry_index or exit_index >= data.times.shape[0]:
         return None
+    if signal_index < 0 or signal_index >= data.times.shape[0]:
+        return None
+    if signal_index >= entry_index:
+        raise ValueError(
+            f"Competition strategy {strategy.id} has lookahead timing: "
+            f"signal_index={signal_index} entry_index={entry_index}"
+        )
+    if int(data.times[signal_index]) >= int(data.times[entry_index]):
+        raise ValueError(
+            f"Competition strategy {strategy.id} has non-causal signal time: "
+            f"signal_time={int(data.times[signal_index])} entry_time={int(data.times[entry_index])}"
+        )
     raw_units = price_units(entry_price, exit_price, side, asset.tick_size)
     net_units = raw_units - strategy.cost_units
     denominator = (risk / asset.tick_size if asset.tick_size else 0.0) + strategy.cost_units
@@ -4079,9 +4642,6 @@ def run_single_strategy(
     end_ts: int | None = None,
     strict_anti_cheat: bool = True,
 ) -> list[BacktestTradeRow]:
-    if strategy.phase == "competition_session_edge":
-        return run_competition_session_edge_strategy(strategy, asset, data, start_ts, end_ts)
-
     config = runtime_config(strategy.variant_id)
     max_bars = max(1, config.max_bars)
     one_trade_per_day = strategy.one_trade_per_day or config.one_trade_per_day
@@ -4093,6 +4653,11 @@ def run_single_strategy(
     loop_start_index = 0
     if start_ts > BACKTEST_START_TS:
         loop_start_index = max(0, int(np.searchsorted(data.times, start_ts, side="left")) - 1)
+    competition_candidate_indexes = (
+        competition_signal_candidate_indexes(strategy, data, loop_start_index)
+        if strategy.phase == "competition_session_edge"
+        else None
+    )
 
     for index in range(loop_start_index, data.times.shape[0]):
         if open_trade is not None:
@@ -4139,12 +4704,18 @@ def run_single_strategy(
         if open_trade is not None or pending_order is not None or index >= data.times.shape[0] - 1:
             continue
 
-        if data.times[index + 1] < start_ts:
-            continue
-        if end_ts is not None and data.times[index + 1] >= end_ts:
+        if strategy.phase != "competition_session_edge":
+            if data.times[index + 1] < start_ts:
+                continue
+            if end_ts is not None and data.times[index + 1] >= end_ts:
+                continue
+        elif competition_candidate_indexes is not None and index not in competition_candidate_indexes:
             continue
 
-        signal_data = anti_cheat_window(data, index) if strict_anti_cheat else data
+        if strict_anti_cheat and strategy.phase == "competition_session_edge":
+            signal_data = competition_anti_cheat_window(strategy, data, index)
+        else:
+            signal_data = anti_cheat_window(data, index) if strict_anti_cheat else data
         signal_index = signal_data.times.shape[0] - 1 if strict_anti_cheat else index
         signal = evaluate_strategy_signal(strategy, signal_data, signal_index, asset, config, strict_window=strict_anti_cheat)
         if signal is None:
@@ -4157,13 +4728,19 @@ def run_single_strategy(
             pending_order = build_pending_order(signal, data, index, asset, max_bars)
             continue
 
-        entry_index = index + 1
+        entry_index = market_entry_index(signal, data, index)
+        if entry_index is None:
+            continue
+        if data.times[entry_index] < start_ts:
+            continue
+        if end_ts is not None and data.times[entry_index] >= end_ts:
+            continue
         if one_trade_per_day and data.ny_days[entry_index] == last_entry_day:
             continue
         open_trade = build_market_trade(signal, data, index, asset, max_bars)
         if open_trade is None:
             continue
-        last_entry_day = int(data.ny_days[entry_index])
+        last_entry_day = int(data.ny_days[open_trade.entry_index])
 
     if open_trade is not None:
         final_index = data.times.shape[0] - 1

@@ -1,0 +1,34 @@
+{
+  "strategyId": "competition_gbp_jpy_ny_open_gap_fade_signalmonth_direction_fade_entryminute_570_exitbarminute_945_ming_297a7a1d",
+  "label": "Competition GBPJPY Ny Open Gap Fade Signalmonth",
+  "folder": "competition_gbp_jpy_ny_open_gap_fade_signalmonth_direction_fade_entryminute_570_exitbarminute_945_ming_297a7a1d",
+  "assetKey": "gbp_jpy",
+  "phase": "competition_session_edge",
+  "variantId": "competition_session_edge|family=ny_open_gap_fade_signalmonth|direction=fade|entry=570|exit=945|min_gap_atr=0.2|signal_month=1",
+  "source": "competition_session_edge_train_forward_2026",
+  "sourceUrls": [
+    "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=1004081"
+  ],
+  "researchSummary": "Tests whether the overnight gap fades or continues during a specific NY cash-session window. Filtered by signalMonth=1.",
+  "selectionMethod": "Pre-2022 train-score rank, then post-2022 forward qualification. No parameters were fit on post-2022 data.",
+  "trainingWindow": {
+    "start": "asset_start",
+    "end": "2021-12-31"
+  },
+  "forwardWindow": {
+    "start": "2022-01-01",
+    "end": "asset_latest"
+  },
+  "selectedTrainingProfitFactor": 2.109401,
+  "selectedTrainingTrades": 23,
+  "selectedForwardProfitFactor": 2.053985,
+  "selectedForwardTrades": 100,
+  "forwardWins": 60,
+  "forwardLosses": 40,
+  "forwardTotalR": 117.17501,
+  "forwardAverageR": 1.17175,
+  "forwardMaxDrawdownR": 22.317109,
+  "verificationSummary": "Verified by backtest-engine runner output: PF 2.05, 100 trades, 117.18R total.",
+  "costUnits": 0,
+  "oneTradePerDay": false
+}

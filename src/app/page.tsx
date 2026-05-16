@@ -1062,7 +1062,7 @@ export default async function Home({ searchParams }: HomeProps) {
     .sort((left, right) => latestStrategyTradeTime(tradesByStrategy.get(right.key) ?? []) - latestStrategyTradeTime(tradesByStrategy.get(left.key) ?? []))
     .slice(0, DEFAULT_SELECTED_STRATEGY_COUNT)
     .map((option) => option.key);
-  const defaultSelectedKeys = persistedSelectedKeys.length ? persistedSelectedKeys : recentDefaultKeys;
+  const defaultSelectedKeys = persistedSelectedKeys.length ? persistedSelectedKeys : persistedLiveEnabledKeys.length ? persistedLiveEnabledKeys : recentDefaultKeys;
   const selectedKeys = parseSelection(params?.strategies, allKeys, defaultSelectedKeys);
   const selectedKeySet = new Set(selectedKeys);
   const activeMarketKeySet = new Set(allKeys);

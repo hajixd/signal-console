@@ -1,0 +1,34 @@
+{
+  "strategyId": "competition_russell_2000_futures_ny_open_gap_fade_signalmonth_direction_fade_entryminute_570_exitbarmi_801e97d2",
+  "label": "Competition RTY Ny Open Gap Fade Signalmonth",
+  "folder": "competition_russell_2000_futures_ny_open_gap_fade_signalmonth_direction_fade_entryminute_570_exitbarmi_801e97d2",
+  "assetKey": "russell_2000_futures",
+  "phase": "competition_session_edge",
+  "variantId": "competition_session_edge|family=ny_open_gap_fade_signalmonth|direction=fade|entry=570|exit=615|min_gap_atr=0.75|signal_month=2",
+  "source": "competition_session_edge_train_forward_2026",
+  "sourceUrls": [
+    "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=1004081"
+  ],
+  "researchSummary": "Tests whether the overnight gap fades or continues during a specific NY cash-session window. Filtered by signalMonth=2.",
+  "selectionMethod": "Pre-2022 train-score rank, then post-2022 forward qualification. No parameters were fit on post-2022 data.",
+  "trainingWindow": {
+    "start": "asset_start",
+    "end": "2021-12-31"
+  },
+  "forwardWindow": {
+    "start": "2022-01-01",
+    "end": "asset_latest"
+  },
+  "selectedTrainingProfitFactor": 1.280768,
+  "selectedTrainingTrades": 49,
+  "selectedForwardProfitFactor": 2.853419,
+  "selectedForwardTrades": 59,
+  "forwardWins": 38,
+  "forwardLosses": 21,
+  "forwardTotalR": 49.068113,
+  "forwardAverageR": 0.831663,
+  "forwardMaxDrawdownR": 5.191116,
+  "verificationSummary": "Verified by backtest-engine runner output: PF 2.85, 59 trades, 49.07R total.",
+  "costUnits": 0,
+  "oneTradePerDay": false
+}
