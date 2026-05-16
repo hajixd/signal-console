@@ -591,6 +591,7 @@ export default function StrategySelector({
   const [isLoaded, setIsLoaded] = useState(false);
   const [isCustomScaleLoaded, setIsCustomScaleLoaded] = useState(false);
   const [savingSelectionKeys, setSavingSelectionKeys] = useState<string[]>([]);
+  const [selectionProgress, setSelectionProgress] = useState(0);
   const [edits, setEdits] = useState<StrategyEditMap>({});
   const [activeKey, setActiveKey] = useState<string | null>(null);
   const [draft, setDraft] = useState<StrategyEdit | null>(null);
@@ -645,6 +646,20 @@ export default function StrategySelector({
   const savingSelectionKeySet = useMemo(() => new Set(savingSelectionKeys), [savingSelectionKeys]);
   const isStrategyLoading =
     savingSelectionKeys.length > 0 || isSavingSelection || isSavingEdits || isSavingCustomScaleRange;
+  const strategyLoadingProgress =
+    savingSelectionKeys.length > 0 || isSavingSelection
+      ? Math.max(selectionProgress, isSavingSelection ? 0.36 : 0.14)
+      : isSavingEdits || isSavingCustomScaleRange
+        ? 0.58
+        : undefined;
+  const strategyLoadingLabel =
+    savingSelectionKeys.length > 0 || isSavingSelection
+      ? "Saving strategy selection"
+      : isSavingEdits
+        ? "Saving strategy edits"
+        : isSavingCustomScaleRange
+          ? "Saving custom unit range"
+          : "Updating strategies";
 
   function replaceRouteSelection(nextKeys: string[]) {
     const params = new URLSearchParams(window.location.search);
@@ -693,6 +708,7 @@ export default function StrategySelector({
     if (pendingSelectionSignature && (selectionSignature === pendingSelectionSignature || persistedLiveSelectionSignature === pendingSelectionSignature)) {
       pendingSelectionSignatureRef.current = "";
       setSavingSelectionKeys([]);
+      setSelectionProgress(0);
     }
 
     setOptimisticSelectedKeys(
@@ -711,9 +727,13 @@ export default function StrategySelector({
 
   useEffect(() => {
     const source = `strategy-selector:${market}`;
-    emitDashboardLoading(source, isStrategyLoading);
+    emitDashboardLoading(source, {
+      active: isStrategyLoading,
+      label: strategyLoadingLabel,
+      progress: strategyLoadingProgress
+    });
     return () => emitDashboardLoading(source, false);
-  }, [isStrategyLoading, market]);
+  }, [isStrategyLoading, market, strategyLoadingLabel, strategyLoadingProgress]);
 
   useEffect(() => {
     if (isLoaded) return;
@@ -829,6 +849,7 @@ export default function StrategySelector({
       lastSyncedSelectionRef.current = optimisticSelectionSignature;
       pendingSelectionSignatureRef.current = "";
       setSavingSelectionKeys([]);
+      setSelectionProgress(0);
       if (selectionSyncTimerRef.current) {
         clearTimeout(selectionSyncTimerRef.current);
         selectionSyncTimerRef.current = null;
@@ -845,15 +866,15 @@ export default function StrategySelector({
       const signatureToSync = optimisticSelectionSignature;
       lastSyncedSelectionRef.current = signatureToSync;
       pendingSelectionSignatureRef.current = signatureToSync;
+      setSelectionProgress(0.34);
       selectionSyncTimerRef.current = null;
 
       startSavingSelection(async () => {
         try {
           await persistLiveSelection(selectedKeysToSync, strategyScopeKeys);
           if (selectionSyncRunRef.current === syncRun && latestSelectionSignatureRef.current === signatureToSync) {
-            setSavingSelectionKeys([]);
+            setSelectionProgress(0.78);
             replaceRouteSelection(selectedKeysToSync);
-            router.refresh();
           }
         } catch (error) {
           console.error("Failed to sync live strategy selection", error);
@@ -861,6 +882,7 @@ export default function StrategySelector({
             lastSyncedSelectionRef.current = "";
             pendingSelectionSignatureRef.current = "";
             setSavingSelectionKeys([]);
+            setSelectionProgress(0);
           }
         }
       });
@@ -957,6 +979,7 @@ export default function StrategySelector({
 
     if (touchedKeys.length) {
       setSavingSelectionKeys((current) => [...new Set([...current, ...touchedKeys])]);
+      setSelectionProgress(0.14);
     }
 
     pendingSelectionSignatureRef.current = nextKeys.join("|");

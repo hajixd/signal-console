@@ -78,6 +78,22 @@ type ReplayOutcome = {
   finalPnl: number;
 };
 
+export type ChallengeReplayProgress = {
+  completedSimulations?: number;
+  progress: number;
+  stage: "preparing" | "historical" | "montecarlo" | "summarizing" | "complete";
+  totalSimulations?: number;
+};
+
+type ChallengeReplayProgressCallback = (progress: ChallengeReplayProgress) => void;
+
+type MonteCarloSource = {
+  firstMs: number;
+  pnls: number[];
+  startGapsMs: number[];
+  templates: SessionTemplate[];
+};
+
 const MONTE_CARLO_SIMS = 10_000;
 const MINUTES_PER_DAY = 1_440;
 const PASS_RATE_HORIZONS = [
@@ -206,6 +222,16 @@ function sessionStartGapsMs(templates: SessionTemplate[]): number[] {
   return gaps.length ? gaps : [86_400_000];
 }
 
+function prepareMonteCarloSource(sourceTrades: PreparedTrade[]): MonteCarloSource {
+  const templates = sessionTemplates(sourceTrades);
+  return {
+    firstMs: templates[0]?.startTimeMs ?? sourceTrades[0]?.entryTimeMs ?? Date.now(),
+    pnls: sourceTrades.map((trade) => trade.pnlDollars),
+    startGapsMs: sessionStartGapsMs(templates),
+    templates
+  };
+}
+
 function replayTrades(trades: PreparedTrade[], startMs: number, rules: ChallengeRules, horizonMinutes?: number): ReplayOutcome {
   let balance = rules.startingBalance;
   let lossFloor = rules.startingBalance - rules.maximumLossLimit;
@@ -329,31 +355,27 @@ function passRateFromOutcomes(
   };
 }
 
-function buildMonteCarloTrades(sourceTrades: PreparedTrade[], rng: () => number): PreparedTrade[] {
-  const pnls = sourceTrades.map((trade) => trade.pnlDollars);
-  const templates = sessionTemplates(sourceTrades);
-  const startGapsMs = sessionStartGapsMs(templates);
-  const firstMs = templates[0]?.startTimeMs ?? sourceTrades[0]?.entryTimeMs ?? Date.now();
+function buildMonteCarloTrades(source: MonteCarloSource, rng: () => number): PreparedTrade[] {
   const generated: PreparedTrade[] = [];
-  let sessionStartMs = firstMs;
+  let sessionStartMs = source.firstMs;
   let previousSessionSpanMs = 0;
 
-  for (let sessionIndex = 0; generated.length < sourceTrades.length; sessionIndex += 1) {
+  for (let sessionIndex = 0; generated.length < source.pnls.length; sessionIndex += 1) {
     // Keep Monte Carlo timing grounded in real behavior by resampling historical
     // session shapes and start-to-start gaps instead of inventing a flat daily cadence.
-    const template = templates[Math.floor(rng() * templates.length)] ?? templates[0];
+    const template = source.templates[Math.floor(rng() * source.templates.length)] ?? source.templates[0];
     if (!template) break;
     if (sessionIndex > 0) {
-      const sampledGapMs = startGapsMs[Math.floor(rng() * startGapsMs.length)] ?? 86_400_000;
+      const sampledGapMs = source.startGapsMs[Math.floor(rng() * source.startGapsMs.length)] ?? 86_400_000;
       sessionStartMs += Math.max(sampledGapMs, previousSessionSpanMs + 60_000);
     }
     previousSessionSpanMs = template.spanMs;
     for (const offsetMs of template.tradeOffsetsMs) {
-      if (generated.length >= sourceTrades.length) break;
+      if (generated.length >= source.pnls.length) break;
       generated.push({
         entryTimeMs: sessionStartMs + offsetMs,
         sessionKey: `mc-${sessionIndex}`,
-        pnlDollars: pnls[Math.floor(rng() * pnls.length)] ?? 0
+        pnlDollars: source.pnls[Math.floor(rng() * source.pnls.length)] ?? 0
       });
     }
   }
@@ -361,7 +383,13 @@ function buildMonteCarloTrades(sourceTrades: PreparedTrade[], rng: () => number)
   return generated;
 }
 
-export function analyzePropFirmChallenge(trades: ChallengeReplayTrade[], seed: string, rules: ChallengeRules): ChallengeReplaySummary {
+export function analyzePropFirmChallenge(
+  trades: ChallengeReplayTrade[],
+  seed: string,
+  rules: ChallengeRules,
+  onProgress?: ChallengeReplayProgressCallback
+): ChallengeReplaySummary {
+  onProgress?.({ progress: 0.03, stage: "preparing" });
   const prepared = prepareTrades(trades);
   const starts = sessionStarts(prepared);
   const tradeGapMinutes = avgTradeGapMinutes(prepared);
@@ -380,6 +408,7 @@ export function analyzePropFirmChallenge(trades: ChallengeReplayTrade[], seed: s
     };
   }
 
+  onProgress?.({ progress: 0.12, stage: "historical" });
   const historicalOutcomes = starts.map((startMs) => replayTrades(prepared, startMs, rules)).filter((outcome) => outcome.trades > 0);
   const historicalPassRates = PASS_RATE_HORIZONS.map((horizon) => {
     const outcomes =
@@ -390,7 +419,9 @@ export function analyzePropFirmChallenge(trades: ChallengeReplayTrade[], seed: s
             .filter((outcome) => outcome.trades > 0);
     return passRateFromOutcomes(horizon, outcomes);
   });
+  onProgress?.({ progress: 0.22, stage: "montecarlo", completedSimulations: 0, totalSimulations: MONTE_CARLO_SIMS });
   const rng = seededRandom(seed);
+  const monteCarloSource = prepareMonteCarloSource(prepared);
   const monteCarloOutcomesByHorizon: Record<ChallengePassRateHorizon["key"], ReplayOutcome[]> = {
     "7d": [],
     "14d": [],
@@ -399,15 +430,24 @@ export function analyzePropFirmChallenge(trades: ChallengeReplayTrade[], seed: s
   };
 
   for (let simulation = 0; simulation < MONTE_CARLO_SIMS; simulation += 1) {
-    const sampleTrades = buildMonteCarloTrades(prepared, rng);
+    const sampleTrades = buildMonteCarloTrades(monteCarloSource, rng);
     const startMs = sampleTrades[0]?.entryTimeMs ?? prepared[0].entryTimeMs;
     for (const horizon of PASS_RATE_HORIZONS) {
       monteCarloOutcomesByHorizon[horizon.key].push(replayTrades(sampleTrades, startMs, rules, horizon.minutes));
     }
+    if ((simulation + 1) % 250 === 0 || simulation + 1 === MONTE_CARLO_SIMS) {
+      onProgress?.({
+        completedSimulations: simulation + 1,
+        progress: 0.22 + ((simulation + 1) / MONTE_CARLO_SIMS) * 0.72,
+        stage: "montecarlo",
+        totalSimulations: MONTE_CARLO_SIMS
+      });
+    }
   }
+  onProgress?.({ progress: 0.96, stage: "summarizing", completedSimulations: MONTE_CARLO_SIMS, totalSimulations: MONTE_CARLO_SIMS });
   const monteCarloPassRates = PASS_RATE_HORIZONS.map((horizon) => passRateFromOutcomes(horizon, monteCarloOutcomesByHorizon[horizon.key]));
 
-  return {
+  const summary = {
     eligibleTrades: prepared.length,
     historicalSessions: starts.length,
     avgTradeGapMinutes: tradeGapMinutes,
@@ -416,4 +456,6 @@ export function analyzePropFirmChallenge(trades: ChallengeReplayTrade[], seed: s
     historical: statsFromOutcomes("historical", historicalOutcomes),
     monteCarlo: statsFromOutcomes("montecarlo", monteCarloOutcomesByHorizon.eventual)
   };
+  onProgress?.({ progress: 1, stage: "complete", completedSimulations: MONTE_CARLO_SIMS, totalSimulations: MONTE_CARLO_SIMS });
+  return summary;
 }

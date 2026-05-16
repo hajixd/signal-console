@@ -2,7 +2,7 @@
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState, useTransition } from "react";
-import { subscribeDashboardLoading } from "@/components/ui/dashboard-loading";
+import { subscribeDashboardLoading, type DashboardLoadingState } from "@/components/ui/dashboard-loading";
 
 type MarketSwitchTab = {
   key: "forex" | "futures";
@@ -21,13 +21,28 @@ export default function MarketSwitchTabs({ activeMarket, persistActiveMarket, ta
   const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
   const [pendingMarket, setPendingMarket] = useState<MarketSwitchTab["key"] | null>(null);
-  const [hasPageLoading, setHasPageLoading] = useState(false);
+  const [dashboardLoading, setDashboardLoading] = useState<DashboardLoadingState>({ active: false, activeCount: 0 });
+  const [routeProgress, setRouteProgress] = useState(0);
 
   useEffect(() => {
     setPendingMarket(null);
   }, [activeMarket]);
 
-  useEffect(() => subscribeDashboardLoading(setHasPageLoading), []);
+  useEffect(() => subscribeDashboardLoading(setDashboardLoading), []);
+
+  useEffect(() => {
+    if (!pendingMarket && !isPending) {
+      setRouteProgress(0);
+      return;
+    }
+
+    setRouteProgress((current) => Math.max(current, 0.18));
+    const timer = window.setInterval(() => {
+      setRouteProgress((current) => Math.min(0.88, current + (0.9 - current) * 0.14));
+    }, 180);
+
+    return () => window.clearInterval(timer);
+  }, [isPending, pendingMarket]);
 
   const hrefs = useMemo(() => {
     return Object.fromEntries(
@@ -40,7 +55,10 @@ export default function MarketSwitchTabs({ activeMarket, persistActiveMarket, ta
   }, [pathname, searchParams, tabs]);
 
   const switchingLabel = pendingMarket ? tabs.find((tab) => tab.key === pendingMarket)?.label : null;
-  const isLoading = Boolean(pendingMarket || isPending || hasPageLoading);
+  const isLoading = Boolean(pendingMarket || isPending || dashboardLoading.active);
+  const progressValue = dashboardLoading.active ? dashboardLoading.progress ?? 0.12 : pendingMarket || isPending ? routeProgress : 0;
+  const progressPct = Math.round(Math.max(0, Math.min(1, progressValue)) * 100);
+  const statusLabel = switchingLabel ? `Switching to ${switchingLabel}` : dashboardLoading.label ?? null;
 
   return (
     <div className={`market-tabs-shell${isLoading ? " isLoading" : ""}`}>
@@ -70,14 +88,22 @@ export default function MarketSwitchTabs({ activeMarket, persistActiveMarket, ta
             </a>
           );
         })}
-        {switchingLabel ? (
+        {statusLabel ? (
           <span className="marketSwitchStatus" aria-live="polite">
-            Switching to {switchingLabel}
+            {statusLabel}
           </span>
         ) : null}
       </nav>
-      <div className="marketLoadingBar" aria-hidden={!isLoading}>
-        <span />
+      <div
+        aria-hidden={!isLoading}
+        aria-label={statusLabel ?? "Dashboard loading"}
+        aria-valuemax={100}
+        aria-valuemin={0}
+        aria-valuenow={isLoading ? progressPct : undefined}
+        className="marketLoadingBar isDeterminate"
+        role={isLoading ? "progressbar" : undefined}
+      >
+        <span style={{ width: `${progressPct}%` }} />
       </div>
     </div>
   );

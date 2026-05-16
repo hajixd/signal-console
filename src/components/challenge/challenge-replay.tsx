@@ -16,6 +16,7 @@ import {
   DEFAULT_CHALLENGE_RULES,
   type ChallengeMethodStats,
   type ChallengePassRateHorizon,
+  type ChallengeReplayProgress,
   type ChallengeReplaySummary,
   type ChallengeReplayTrade,
   type ChallengeRules
@@ -297,6 +298,19 @@ function writeLocalReplayCache(cacheKey: string, summary: ChallengeReplaySummary
   }
 }
 
+function replayProgressLabel(progress: ChallengeReplayProgress | null): string {
+  if (!progress) return "Recalculating challenge replay";
+  if (progress.stage === "historical") return "Checking historical replay";
+  if (progress.stage === "montecarlo") {
+    const completed = progress.completedSimulations ?? 0;
+    const total = progress.totalSimulations ?? 0;
+    return total ? `Monte Carlo ${fmtNumber(completed)} / ${fmtNumber(total)}` : "Running Monte Carlo";
+  }
+  if (progress.stage === "summarizing") return "Summarizing challenge replay";
+  if (progress.stage === "complete") return "Challenge replay ready";
+  return "Preparing challenge replay";
+}
+
 export default function ChallengeReplay({
   initialRules,
   loadCachedReplay,
@@ -312,6 +326,7 @@ export default function ChallengeReplay({
   const [rules, setRules] = useState(() => normalizeRules(initialRules, DEFAULT_CHALLENGE_RULES));
   const [challengeReplay, setChallengeReplay] = useState<ChallengeReplaySummary>(() => emptyChallengeReplaySummary());
   const [isRecalculating, setIsRecalculating] = useState(true);
+  const [replayProgress, setReplayProgress] = useState<ChallengeReplayProgress | null>(null);
   const [, startSavingRules] = useTransition();
   const isRestricted = !useAutoTradeAdminMode();
   const edits = useStrategyEdits(strategies, persistedStrategyEdits);
@@ -365,9 +380,13 @@ export default function ChallengeReplay({
   const replayCacheKey = useMemo(() => challengeReplayCacheKey(seedPrefix, rules, replayTrades), [replayTrades, rules, seedPrefix]);
 
   useEffect(() => {
-    emitDashboardLoading("challenge-replay", isRecalculating);
+    emitDashboardLoading("challenge-replay", {
+      active: isRecalculating,
+      label: replayProgressLabel(replayProgress),
+      progress: replayProgress?.progress ?? 0.04
+    });
     return () => emitDashboardLoading("challenge-replay", false);
-  }, [isRecalculating]);
+  }, [isRecalculating, replayProgress]);
 
   useEffect(() => {
     let cancelled = false;
@@ -378,6 +397,7 @@ export default function ChallengeReplay({
 
     if (localCached) {
       setChallengeReplay(localCached);
+      setReplayProgress({ progress: 1, stage: "complete" });
       setIsRecalculating(false);
       return () => {
         cancelled = true;
@@ -385,10 +405,12 @@ export default function ChallengeReplay({
     }
 
     setIsRecalculating(true);
+    setReplayProgress({ progress: 0.04, stage: "preparing" });
 
     const finish = (summary: ChallengeReplaySummary, persist = true) => {
       if (cancelled) return;
       setChallengeReplay(summary);
+      setReplayProgress({ progress: 1, stage: "complete" });
       setIsRecalculating(false);
       writeLocalReplayCache(replayCacheKey, summary);
       if (!isRestricted && persistCachedReplay && persist) {
@@ -399,8 +421,12 @@ export default function ChallengeReplay({
     const calculate = () => {
       try {
         worker = new Worker(new URL("./challenge-replay-worker.ts", import.meta.url), { type: "module" });
-        worker.onmessage = (event: MessageEvent<{ id: string; summary: ChallengeReplaySummary }>) => {
+        worker.onmessage = (event: MessageEvent<{ id: string; progress?: ChallengeReplayProgress; summary?: ChallengeReplaySummary }>) => {
           if (event.data.id !== id) return;
+          if (event.data.progress && !cancelled) {
+            setReplayProgress(event.data.progress);
+          }
+          if (!event.data.summary) return;
           const summary = event.data.summary;
           worker?.terminate();
           worker = null;
@@ -410,18 +436,19 @@ export default function ChallengeReplay({
           console.error("Challenge replay worker failed", event.message);
           worker?.terminate();
           worker = null;
-          finish(analyzePropFirmChallenge(replayTrades, seed, rules));
+          finish(analyzePropFirmChallenge(replayTrades, seed, rules, setReplayProgress));
         };
         worker.postMessage({ id, rules, seed, trades: replayTrades });
       } catch (error) {
         console.error("Challenge replay worker unavailable", error);
-        finish(analyzePropFirmChallenge(replayTrades, seed, rules));
+        finish(analyzePropFirmChallenge(replayTrades, seed, rules, setReplayProgress));
       }
     };
 
     const loadOrCalculate = async () => {
       if (loadCachedReplay) {
         try {
+          setReplayProgress({ progress: 0.08, stage: "preparing" });
           const remoteCached = await loadCachedReplay(replayCacheKey);
           if (cancelled) return;
           if (remoteCached) {
