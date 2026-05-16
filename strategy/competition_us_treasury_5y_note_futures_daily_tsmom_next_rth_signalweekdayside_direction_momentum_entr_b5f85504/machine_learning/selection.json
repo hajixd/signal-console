@@ -1,0 +1,34 @@
+{
+  "strategyId": "competition_us_treasury_5y_note_futures_daily_tsmom_next_rth_signalweekdayside_direction_momentum_entr_b5f85504",
+  "label": "Competition ZF Daily Tsmom Next Rth Signalweekdayside",
+  "folder": "competition_us_treasury_5y_note_futures_daily_tsmom_next_rth_signalweekdayside_direction_momentum_entr_b5f85504",
+  "assetKey": "us_treasury_5y_note_futures",
+  "phase": "competition_session_edge",
+  "variantId": "competition_session_edge|family=daily_tsmom_next_rth_signalweekdayside|direction=momentum|entry=570|exit=945|lookback=40|signal_weekday_side=0_long",
+  "source": "competition_session_edge_train_forward_2026",
+  "sourceUrls": [
+    "https://pages.stern.nyu.edu/~lpederse/papers/TimeSeriesMomentum.pdf"
+  ],
+  "researchSummary": "Tests short-horizon own-return continuation/reversal inspired by time-series momentum literature. Filtered by signalWeekdaySide=0_long.",
+  "selectionMethod": "Pre-2022 train-score rank, then post-2022 forward qualification. No parameters were fit on post-2022 data.",
+  "trainingWindow": {
+    "start": "asset_start",
+    "end": "2021-12-31"
+  },
+  "forwardWindow": {
+    "start": "2022-01-01",
+    "end": "asset_latest"
+  },
+  "selectedTrainingProfitFactor": 1.504187,
+  "selectedTrainingTrades": 46,
+  "selectedForwardProfitFactor": 2.855734,
+  "selectedForwardTrades": 80,
+  "forwardWins": 52,
+  "forwardLosses": 25,
+  "forwardTotalR": 118.124508,
+  "forwardAverageR": 1.476556,
+  "forwardMaxDrawdownR": 14.285336,
+  "verificationSummary": "Verified by backtest-engine runner output: PF 2.86, 80 trades, 118.12R total.",
+  "costUnits": 0,
+  "oneTradePerDay": false
+}

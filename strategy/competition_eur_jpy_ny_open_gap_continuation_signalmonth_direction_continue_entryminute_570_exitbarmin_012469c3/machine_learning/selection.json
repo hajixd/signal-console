@@ -1,0 +1,34 @@
+{
+  "strategyId": "competition_eur_jpy_ny_open_gap_continuation_signalmonth_direction_continue_entryminute_570_exitbarmin_012469c3",
+  "label": "Competition EURJPY Ny Open Gap Continuation Signalmonth",
+  "folder": "competition_eur_jpy_ny_open_gap_continuation_signalmonth_direction_continue_entryminute_570_exitbarmin_012469c3",
+  "assetKey": "eur_jpy",
+  "phase": "competition_session_edge",
+  "variantId": "competition_session_edge|family=ny_open_gap_continuation_signalmonth|direction=continue|entry=570|exit=615|min_gap_atr=0.75|signal_month=11",
+  "source": "competition_session_edge_train_forward_2026",
+  "sourceUrls": [
+    "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=1004081"
+  ],
+  "researchSummary": "Tests whether the overnight gap fades or continues during a specific NY cash-session window. Filtered by signalMonth=11.",
+  "selectionMethod": "Pre-2022 train-score rank, then post-2022 forward qualification. No parameters were fit on post-2022 data.",
+  "trainingWindow": {
+    "start": "asset_start",
+    "end": "2021-12-31"
+  },
+  "forwardWindow": {
+    "start": "2022-01-01",
+    "end": "asset_latest"
+  },
+  "selectedTrainingProfitFactor": 1.63928,
+  "selectedTrainingTrades": 36,
+  "selectedForwardProfitFactor": 2.67379,
+  "selectedForwardTrades": 59,
+  "forwardWins": 34,
+  "forwardLosses": 24,
+  "forwardTotalR": 47.385245,
+  "forwardAverageR": 0.80314,
+  "forwardMaxDrawdownR": 5.937672,
+  "verificationSummary": "Verified by backtest-engine runner output: PF 2.67, 59 trades, 47.39R total.",
+  "costUnits": 0,
+  "oneTradePerDay": false
+}

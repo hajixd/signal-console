@@ -1,0 +1,34 @@
+{
+  "strategyId": "competition_canadian_dollar_futures_overnight_close_to_open_bias_signalmonth_entry_prior_rth_close_exi_31e5e01a",
+  "label": "Competition 6C Overnight Close To Open Bias Signalmonth",
+  "folder": "competition_canadian_dollar_futures_overnight_close_to_open_bias_signalmonth_entry_prior_rth_close_exi_31e5e01a",
+  "assetKey": "canadian_dollar_futures",
+  "phase": "competition_session_edge",
+  "variantId": "competition_session_edge|family=overnight_close_to_open_bias_signalmonth|side=short|signal_month=10",
+  "source": "competition_session_edge_train_forward_2026",
+  "sourceUrls": [
+    "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=1004081"
+  ],
+  "researchSummary": "Tests the close-to-open leg emphasized by overnight return research. Filtered by signalMonth=10.",
+  "selectionMethod": "Pre-2022 train-score rank, then post-2022 forward qualification. No parameters were fit on post-2022 data.",
+  "trainingWindow": {
+    "start": "asset_start",
+    "end": "2021-12-31"
+  },
+  "forwardWindow": {
+    "start": "2022-01-01",
+    "end": "asset_latest"
+  },
+  "selectedTrainingProfitFactor": 1.296121,
+  "selectedTrainingTrades": 212,
+  "selectedForwardProfitFactor": 2.874239,
+  "selectedForwardTrades": 72,
+  "forwardWins": 45,
+  "forwardLosses": 26,
+  "forwardTotalR": 103.641251,
+  "forwardAverageR": 1.439462,
+  "forwardMaxDrawdownR": 17.026832,
+  "verificationSummary": "Verified by backtest-engine runner output: PF 2.87, 72 trades, 103.64R total.",
+  "costUnits": 0,
+  "oneTradePerDay": false
+}

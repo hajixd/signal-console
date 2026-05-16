@@ -1,0 +1,34 @@
+{
+  "strategyId": "competition_usd_jpy_london_first30_ny_open_momentum_signalmonth_direction_same_entryminute_480_exitbar_79315567",
+  "label": "Competition USDJPY London First30 Ny Open Momentum Signalmonth",
+  "folder": "competition_usd_jpy_london_first30_ny_open_momentum_signalmonth_direction_same_entryminute_480_exitbar_79315567",
+  "assetKey": "usd_jpy",
+  "phase": "competition_session_edge",
+  "variantId": "competition_session_edge|family=london_first30_ny_open_momentum_signalmonth|direction=same|entry=480|exit=570|min_signal_atr=0|signal_end=195|signal_month=10|signal_start=180",
+  "source": "competition_session_edge_train_forward_2026",
+  "sourceUrls": [
+    "https://biblio.ugent.be/publication/8060014"
+  ],
+  "researchSummary": "Session-window return predicts a later same-day session return. Filtered by signalMonth=10.",
+  "selectionMethod": "Pre-2022 train-score rank, then post-2022 forward qualification. No parameters were fit on post-2022 data.",
+  "trainingWindow": {
+    "start": "asset_start",
+    "end": "2021-12-31"
+  },
+  "forwardWindow": {
+    "start": "2022-01-01",
+    "end": "asset_latest"
+  },
+  "selectedTrainingProfitFactor": 2.308212,
+  "selectedTrainingTrades": 42,
+  "selectedForwardProfitFactor": 2.189299,
+  "selectedForwardTrades": 87,
+  "forwardWins": 54,
+  "forwardLosses": 31,
+  "forwardTotalR": 56.949158,
+  "forwardAverageR": 0.654588,
+  "forwardMaxDrawdownR": 11.237772,
+  "verificationSummary": "Verified by backtest-engine runner output: PF 2.19, 87 trades, 56.95R total.",
+  "costUnits": 0,
+  "oneTradePerDay": false
+}

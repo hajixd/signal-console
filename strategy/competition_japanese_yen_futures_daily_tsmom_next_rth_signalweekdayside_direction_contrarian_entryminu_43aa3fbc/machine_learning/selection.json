@@ -1,0 +1,34 @@
+{
+  "strategyId": "competition_japanese_yen_futures_daily_tsmom_next_rth_signalweekdayside_direction_contrarian_entryminu_43aa3fbc",
+  "label": "Competition 6J Daily Tsmom Next Rth Signalweekdayside",
+  "folder": "competition_japanese_yen_futures_daily_tsmom_next_rth_signalweekdayside_direction_contrarian_entryminu_43aa3fbc",
+  "assetKey": "japanese_yen_futures",
+  "phase": "competition_session_edge",
+  "variantId": "competition_session_edge|family=daily_tsmom_next_rth_signalweekdayside|direction=contrarian|entry=570|exit=945|lookback=5|signal_weekday_side=4_short",
+  "source": "competition_session_edge_train_forward_2026",
+  "sourceUrls": [
+    "https://pages.stern.nyu.edu/~lpederse/papers/TimeSeriesMomentum.pdf"
+  ],
+  "researchSummary": "Tests short-horizon own-return continuation/reversal inspired by time-series momentum literature. Filtered by signalWeekdaySide=4_short.",
+  "selectionMethod": "Pre-2022 train-score rank, then post-2022 forward qualification. No parameters were fit on post-2022 data.",
+  "trainingWindow": {
+    "start": "asset_start",
+    "end": "2021-12-31"
+  },
+  "forwardWindow": {
+    "start": "2022-01-01",
+    "end": "asset_latest"
+  },
+  "selectedTrainingProfitFactor": 1.541183,
+  "selectedTrainingTrades": 256,
+  "selectedForwardProfitFactor": 2.086373,
+  "selectedForwardTrades": 84,
+  "forwardWins": 55,
+  "forwardLosses": 27,
+  "forwardTotalR": 60.378262,
+  "forwardAverageR": 0.718789,
+  "forwardMaxDrawdownR": 22.320873,
+  "verificationSummary": "Verified by backtest-engine runner output: PF 2.09, 84 trades, 60.38R total.",
+  "costUnits": 0,
+  "oneTradePerDay": false
+}

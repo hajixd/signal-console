@@ -1,0 +1,34 @@
+{
+  "strategyId": "competition_gold_futures_daily_tsmom_next_overnight_signalweekdayside_direction_momentum_entryminute_9_c8e1caae",
+  "label": "Competition GC Daily Tsmom Next Overnight Signalweekdayside",
+  "folder": "competition_gold_futures_daily_tsmom_next_overnight_signalweekdayside_direction_momentum_entryminute_9_c8e1caae",
+  "assetKey": "gold_futures",
+  "phase": "competition_session_edge",
+  "variantId": "competition_session_edge|family=daily_tsmom_next_overnight_signalweekdayside|direction=momentum|entry=945|exit=570|lookback=3|signal_weekday_side=1_long",
+  "source": "competition_session_edge_train_forward_2026",
+  "sourceUrls": [
+    "https://pages.stern.nyu.edu/~lpederse/papers/TimeSeriesMomentum.pdf"
+  ],
+  "researchSummary": "Tests short-horizon own-return continuation/reversal inspired by time-series momentum literature. Filtered by signalWeekdaySide=1_long.",
+  "selectionMethod": "Pre-2022 train-score rank, then post-2022 forward qualification. No parameters were fit on post-2022 data.",
+  "trainingWindow": {
+    "start": "asset_start",
+    "end": "2021-12-31"
+  },
+  "forwardWindow": {
+    "start": "2022-01-01",
+    "end": "asset_latest"
+  },
+  "selectedTrainingProfitFactor": 1.391797,
+  "selectedTrainingTrades": 311,
+  "selectedForwardProfitFactor": 2.232107,
+  "selectedForwardTrades": 116,
+  "forwardWins": 75,
+  "forwardLosses": 41,
+  "forwardTotalR": 179.587597,
+  "forwardAverageR": 1.548169,
+  "forwardMaxDrawdownR": 23.113758,
+  "verificationSummary": "Verified by backtest-engine runner output: PF 2.23, 116 trades, 179.59R total.",
+  "costUnits": 0,
+  "oneTradePerDay": false
+}

@@ -3593,6 +3593,440 @@ def recommended_size_multiplier(asset: AssetConfig, tp_units: float, sl_units: f
     return round(max(step, math.floor(maximum / step) * step), 2)
 
 
+def competition_safe_atr(data: EnrichedData, index: int, asset: AssetConfig) -> float:
+    value = float(data.atr14[index]) if 0 <= index < data.atr14.shape[0] else math.nan
+    if maybe_number(value) and value > 0:
+        return value
+    return max(float(data.high[index] - data.low[index]), asset.tick_size * 10.0)
+
+
+def competition_day_index(data: EnrichedData, day: str, minute: int) -> int | None:
+    bounds = data.day_bounds.get(day)
+    if bounds is None:
+        return None
+    start, end = bounds
+    for cursor in range(start, end):
+        if int(data.ny_minutes[cursor]) == int(minute):
+            return cursor
+    return None
+
+
+def competition_previous_day(data: EnrichedData, day: str) -> str | None:
+    previous: str | None = None
+    for current in data.day_bounds.keys():
+        if current == day:
+            return previous
+        previous = current
+    return None
+
+
+def competition_next_day(data: EnrichedData, day: str) -> str | None:
+    found = False
+    for current in data.day_bounds.keys():
+        if found:
+            return current
+        if current == day:
+            found = True
+    return None
+
+
+def competition_param_text(strategy: BacktestStrategy, key: str, fallback: str = "") -> str:
+    return variant_value(strategy.variant_id, key) or fallback
+
+
+def competition_param_int(strategy: BacktestStrategy, key: str, fallback: int) -> int:
+    return variant_int(strategy.variant_id, key, fallback)
+
+
+def competition_param_float(strategy: BacktestStrategy, key: str, fallback: float) -> float:
+    return variant_float(strategy.variant_id, key, fallback)
+
+
+def competition_passes_filters(strategy: BacktestStrategy, data: EnrichedData, signal_index: int, side: int) -> bool:
+    weekday = variant_value(strategy.variant_id, "signal_weekday")
+    if weekday is not None and int(data.ny_weekdays[signal_index]) != int(float(weekday)):
+        return False
+
+    side_filter = variant_value(strategy.variant_id, "side_filter")
+    if side_filter and side_filter in {"long", "short"}:
+        if side_filter == "long" and side != 1:
+            return False
+        if side_filter == "short" and side != -1:
+            return False
+
+    weekday_side = variant_value(strategy.variant_id, "signal_weekday_side")
+    if weekday_side:
+        raw_weekday, _, raw_side = weekday_side.partition("_")
+        if raw_weekday and int(data.ny_weekdays[signal_index]) != int(float(raw_weekday)):
+            return False
+        if raw_side == "long" and side != 1:
+            return False
+        if raw_side == "short" and side != -1:
+            return False
+
+    month = variant_value(strategy.variant_id, "signal_month")
+    if month is not None:
+        signal_dt = datetime.fromtimestamp(int(data.times[signal_index]), tz=timezone.utc).astimezone(NEW_YORK)
+        if signal_dt.month != int(float(month)):
+            return False
+
+    return True
+
+
+def competition_trade_row(
+    strategy: BacktestStrategy,
+    asset: AssetConfig,
+    data: EnrichedData,
+    signal_index: int,
+    entry_index: int,
+    exit_index: int,
+    side: int,
+    entry_price: float,
+    exit_price: float,
+    risk: float,
+    exit_reason: str,
+) -> BacktestTradeRow | None:
+    if risk <= 0 or entry_index < 0 or exit_index < entry_index or exit_index >= data.times.shape[0]:
+        return None
+    raw_units = price_units(entry_price, exit_price, side, asset.tick_size)
+    net_units = raw_units - strategy.cost_units
+    denominator = (risk / asset.tick_size if asset.tick_size else 0.0) + strategy.cost_units
+    if denominator <= 0:
+        return None
+    return BacktestTradeRow(
+        strategy_id=strategy.id,
+        asset_key=asset.key,
+        asset_name=asset.name,
+        market=asset.market,
+        symbol=asset.symbol,
+        phase=strategy.phase,
+        variant_id=strategy.variant_id,
+        side=side,
+        signal_time=int(data.times[signal_index]),
+        entry_index=entry_index,
+        exit_index=exit_index,
+        entry_time=int(data.times[entry_index]),
+        exit_time=int(data.times[exit_index]),
+        entry_price=round_price(entry_price, asset.tick_size),
+        exit_price=round_price(exit_price, asset.tick_size),
+        net_units=net_units,
+        r_multiple=net_units / denominator,
+        tp_units=abs(raw_units),
+        sl_units=risk / asset.tick_size if asset.tick_size else risk,
+        cost_units=strategy.cost_units,
+        exit_reason=exit_reason,
+        bars_held=max(1, exit_index - entry_index + 1),
+        source=strategy.source,
+        tp_mode=PRICE_MODE_CUSTOM,
+        sl_mode=PRICE_MODE_CUSTOM,
+        size_mode=SIZE_MODE_AUTO,
+        size_multiplier=1.0,
+    )
+
+
+def competition_signed_return_trade(
+    strategy: BacktestStrategy,
+    asset: AssetConfig,
+    data: EnrichedData,
+    signal_index: int,
+    entry_index: int,
+    exit_index: int,
+    side: int,
+    entry_price: float | None = None,
+    risk_index: int | None = None,
+    exit_reason: str = "time_exit",
+) -> BacktestTradeRow | None:
+    entry = float(data.open[entry_index]) if entry_price is None else float(entry_price)
+    exit_price = float(data.close[exit_index])
+    risk = competition_safe_atr(data, risk_index if risk_index is not None else entry_index, asset)
+    return competition_trade_row(strategy, asset, data, signal_index, entry_index, exit_index, side, entry, exit_price, risk, exit_reason)
+
+
+def competition_session_return(data: EnrichedData, day: str, open_minute: int, close_bar_minute: int) -> tuple[int, int, float] | None:
+    start = competition_day_index(data, day, open_minute)
+    end = competition_day_index(data, day, close_bar_minute)
+    if start is None or end is None:
+        return None
+    return start, end, float(data.close[end] - data.open[start])
+
+
+def run_competition_intraday_strategy(
+    strategy: BacktestStrategy,
+    asset: AssetConfig,
+    data: EnrichedData,
+    start_ts: int,
+    end_ts: int | None,
+) -> list[BacktestTradeRow]:
+    direction = 1 if competition_param_text(strategy, "direction", "same") in {"same", "momentum", "continue", "breakout"} else -1
+    signal_start_minute = competition_param_int(strategy, "signal_start", 570)
+    signal_end_minute = competition_param_int(strategy, "signal_end", 585)
+    entry_minute = competition_param_int(strategy, "entry", 930)
+    exit_minute = competition_param_int(strategy, "exit", 945)
+    min_signal_atr = competition_param_float(strategy, "min_signal_atr", 0.0)
+    trades: list[BacktestTradeRow] = []
+
+    for day in data.day_bounds.keys():
+        signal = competition_session_return(data, day, signal_start_minute, signal_end_minute)
+        entry_index = competition_day_index(data, day, entry_minute)
+        exit_index = competition_day_index(data, day, exit_minute)
+        if signal is None or entry_index is None or exit_index is None:
+            continue
+        _signal_start_index, signal_index, move = signal
+        if data.times[entry_index] < start_ts or (end_ts is not None and data.times[entry_index] >= end_ts):
+            continue
+        atr_value = competition_safe_atr(data, signal_index, asset)
+        if atr_value <= 0 or abs(move) / atr_value < min_signal_atr or move == 0:
+            continue
+        side = (1 if move > 0 else -1) * direction
+        if not competition_passes_filters(strategy, data, signal_index, side):
+            continue
+        trade = competition_signed_return_trade(strategy, asset, data, signal_index, entry_index, exit_index, side)
+        if trade is not None:
+            trades.append(trade)
+    return trades
+
+
+def run_competition_overnight_strategy(
+    strategy: BacktestStrategy,
+    asset: AssetConfig,
+    data: EnrichedData,
+    start_ts: int,
+    end_ts: int | None,
+) -> list[BacktestTradeRow]:
+    side = 1 if competition_param_text(strategy, "side", "long") == "long" else -1
+    trades: list[BacktestTradeRow] = []
+    for day in data.day_bounds.keys():
+        previous = competition_previous_day(data, day)
+        if previous is None:
+            continue
+        signal_index = competition_day_index(data, previous, 945)
+        entry_index = signal_index + 1 if signal_index is not None and signal_index + 1 < data.times.shape[0] else None
+        exit_index = competition_day_index(data, day, 570)
+        if signal_index is None or entry_index is None or exit_index is None:
+            continue
+        if data.times[entry_index] < start_ts or (end_ts is not None and data.times[entry_index] >= end_ts):
+            continue
+        if not competition_passes_filters(strategy, data, signal_index, side):
+            continue
+        trade = competition_signed_return_trade(
+            strategy,
+            asset,
+            data,
+            signal_index,
+            entry_index,
+            exit_index,
+            side,
+            entry_price=float(data.close[signal_index]),
+            risk_index=signal_index,
+        )
+        if trade is not None:
+            trades.append(trade)
+    return trades
+
+
+def run_competition_gap_strategy(
+    strategy: BacktestStrategy,
+    asset: AssetConfig,
+    data: EnrichedData,
+    start_ts: int,
+    end_ts: int | None,
+) -> list[BacktestTradeRow]:
+    direction = -1 if competition_param_text(strategy, "direction", "fade") == "fade" else 1
+    entry_minute = competition_param_int(strategy, "entry", 570)
+    exit_minute = competition_param_int(strategy, "exit", 615)
+    min_gap_atr = competition_param_float(strategy, "min_gap_atr", 0.0)
+    trades: list[BacktestTradeRow] = []
+    for day in data.day_bounds.keys():
+        previous = competition_previous_day(data, day)
+        if previous is None:
+            continue
+        signal_index = competition_day_index(data, previous, 945)
+        entry_index = competition_day_index(data, day, entry_minute)
+        exit_index = competition_day_index(data, day, exit_minute)
+        if signal_index is None or entry_index is None or exit_index is None:
+            continue
+        if data.times[entry_index] < start_ts or (end_ts is not None and data.times[entry_index] >= end_ts):
+            continue
+        gap = float(data.open[entry_index] - data.close[signal_index])
+        atr_value = competition_safe_atr(data, signal_index, asset)
+        if atr_value <= 0 or abs(gap) / atr_value < min_gap_atr or gap == 0:
+            continue
+        side = (1 if gap > 0 else -1) * direction
+        if not competition_passes_filters(strategy, data, signal_index, side):
+            continue
+        trade = competition_signed_return_trade(strategy, asset, data, signal_index, entry_index, exit_index, side, risk_index=signal_index)
+        if trade is not None:
+            trades.append(trade)
+    return trades
+
+
+def run_competition_daily_tsmom_strategy(
+    strategy: BacktestStrategy,
+    asset: AssetConfig,
+    data: EnrichedData,
+    start_ts: int,
+    end_ts: int | None,
+) -> list[BacktestTradeRow]:
+    lookback = competition_param_int(strategy, "lookback", 3)
+    entry_minute = competition_param_int(strategy, "entry", 570)
+    exit_minute = competition_param_int(strategy, "exit", 945)
+    direction = 1 if competition_param_text(strategy, "direction", "momentum") == "momentum" else -1
+    closes: list[tuple[str, int, float]] = []
+    for day in data.day_bounds.keys():
+        close_index = competition_day_index(data, day, 945)
+        if close_index is not None:
+            closes.append((day, close_index, float(data.close[close_index])))
+    close_by_day = {day: (index, value) for day, index, value in closes}
+    ordered_days = [day for day, _, _ in closes]
+    trades: list[BacktestTradeRow] = []
+    overnight = competition_param_text(strategy, "family", "").startswith("daily_tsmom_next_overnight")
+
+    for position in range(lookback, len(ordered_days) - 1):
+        day = ordered_days[position]
+        previous_day = ordered_days[position - lookback]
+        signal_index, current_close = close_by_day[day]
+        _past_index, past_close = close_by_day[previous_day]
+        signal = current_close - past_close
+        if signal == 0:
+            continue
+        side = (1 if signal > 0 else -1) * direction
+        next_day = ordered_days[position + 1]
+        if overnight:
+            entry_index = signal_index + 1 if signal_index + 1 < data.times.shape[0] else None
+            exit_index = competition_day_index(data, next_day, exit_minute)
+        else:
+            entry_index = competition_day_index(data, next_day, entry_minute)
+            exit_index = competition_day_index(data, next_day, exit_minute)
+        if entry_index is None or exit_index is None:
+            continue
+        if data.times[entry_index] < start_ts or (end_ts is not None and data.times[entry_index] >= end_ts):
+            continue
+        if not competition_passes_filters(strategy, data, signal_index, side):
+            continue
+        trade = competition_signed_return_trade(strategy, asset, data, signal_index, entry_index, exit_index, side)
+        if trade is not None:
+            trades.append(trade)
+    return trades
+
+
+def run_competition_range_strategy(
+    strategy: BacktestStrategy,
+    asset: AssetConfig,
+    data: EnrichedData,
+    start_ts: int,
+    end_ts: int | None,
+) -> list[BacktestTradeRow]:
+    family = competition_param_text(strategy, "family", "")
+    range_start = competition_param_int(strategy, "range_start", 570)
+    range_end = competition_param_int(strategy, "range_end", 585)
+    break_start = competition_param_int(strategy, "break_start", 600)
+    break_end = competition_param_int(strategy, "break_end", 720)
+    forced_exit = competition_param_int(strategy, "forced_exit", 945)
+    risk_reward = competition_param_float(strategy, "risk_reward", 1.5)
+    direction = 1 if competition_param_text(strategy, "direction", "breakout") == "breakout" else -1
+    trades: list[BacktestTradeRow] = []
+
+    for day in data.day_bounds.keys():
+        range_indices: list[int] = []
+        if family.startswith("asia_range"):
+            previous = competition_previous_day(data, day)
+            if previous is None:
+                continue
+            range_indices.extend(
+                index
+                for minute in range(range_start, 24 * 60, 15)
+                if (index := competition_day_index(data, previous, minute)) is not None
+            )
+            range_indices.extend(
+                index
+                for minute in range(0, range_end + 1, 15)
+                if (index := competition_day_index(data, day, minute)) is not None
+            )
+        else:
+            range_indices.extend(
+                index
+                for minute in range(range_start, range_end + 1, 15)
+                if (index := competition_day_index(data, day, minute)) is not None
+            )
+        if not range_indices:
+            continue
+        high = max(float(data.high[index]) for index in range_indices)
+        low = min(float(data.low[index]) for index in range_indices)
+        forced_exit_index = competition_day_index(data, day, forced_exit)
+        if high <= low or forced_exit_index is None:
+            continue
+        if data.times[forced_exit_index] < start_ts:
+            continue
+
+        for minute in range(break_start, break_end + 1, 15):
+            signal_index = competition_day_index(data, day, minute)
+            if signal_index is None or signal_index + 1 >= data.times.shape[0]:
+                continue
+            break_side = 1 if data.high[signal_index] > high else -1 if data.low[signal_index] < low else 0
+            if break_side == 0:
+                continue
+            side = break_side * direction
+            if not competition_passes_filters(strategy, data, signal_index, side):
+                continue
+            entry_index = signal_index + 1
+            if data.times[entry_index] < start_ts or (end_ts is not None and data.times[entry_index] >= end_ts):
+                continue
+            entry = float(data.open[entry_index])
+            if direction == 1:
+                stop = low if side == 1 else high
+            else:
+                stop = float(data.low[signal_index]) if side == 1 else float(data.high[signal_index])
+            risk = abs(entry - stop)
+            stop_is_valid = (side == 1 and stop < entry) or (side == -1 and stop > entry)
+            if not stop_is_valid or risk <= asset.tick_size:
+                continue
+            target = entry + side * risk * risk_reward
+            exit_price = float(data.close[forced_exit_index])
+            exit_index = forced_exit_index
+            exit_reason = "time_exit"
+            for cursor in range(entry_index, forced_exit_index + 1):
+                stopped = data.low[cursor] <= stop if side == 1 else data.high[cursor] >= stop
+                targeted = data.high[cursor] >= target if side == 1 else data.low[cursor] <= target
+                if stopped:
+                    exit_price = stop
+                    exit_index = cursor
+                    exit_reason = "sl"
+                    break
+                if targeted:
+                    exit_price = target
+                    exit_index = cursor
+                    exit_reason = "tp"
+                    break
+            trade = competition_trade_row(
+                strategy, asset, data, signal_index, entry_index, exit_index, side, entry, exit_price, risk, exit_reason
+            )
+            if trade is not None:
+                trades.append(trade)
+            break
+    return trades
+
+
+def run_competition_session_edge_strategy(
+    strategy: BacktestStrategy,
+    asset: AssetConfig,
+    data: EnrichedData,
+    start_ts: int,
+    end_ts: int | None,
+) -> list[BacktestTradeRow]:
+    family = competition_param_text(strategy, "family", "")
+    if family.startswith(("us_first30", "us_secondlast", "london_first30")):
+        return run_competition_intraday_strategy(strategy, asset, data, start_ts, end_ts)
+    if family.startswith("overnight_close_to_open_bias"):
+        return run_competition_overnight_strategy(strategy, asset, data, start_ts, end_ts)
+    if family.startswith("ny_open_gap"):
+        return run_competition_gap_strategy(strategy, asset, data, start_ts, end_ts)
+    if family.startswith("daily_tsmom"):
+        return run_competition_daily_tsmom_strategy(strategy, asset, data, start_ts, end_ts)
+    if family.startswith(("asia_range", "ny_opening_range")):
+        return run_competition_range_strategy(strategy, asset, data, start_ts, end_ts)
+    raise ValueError(f"Unsupported competition_session_edge family: {family}")
+
+
 def complete_trade(
     strategy: BacktestStrategy,
     asset: AssetConfig,
@@ -3645,6 +4079,9 @@ def run_single_strategy(
     end_ts: int | None = None,
     strict_anti_cheat: bool = True,
 ) -> list[BacktestTradeRow]:
+    if strategy.phase == "competition_session_edge":
+        return run_competition_session_edge_strategy(strategy, asset, data, start_ts, end_ts)
+
     config = runtime_config(strategy.variant_id)
     max_bars = max(1, config.max_bars)
     one_trade_per_day = strategy.one_trade_per_day or config.one_trade_per_day

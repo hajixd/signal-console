@@ -1,0 +1,34 @@
+{
+  "strategyId": "competition_dow_jones_futures_us_secondlast_last30_momentum_signalweekdayside_direction_same_entryminu_e49c2e15",
+  "label": "Competition YM Us Secondlast Last30 Momentum Signalweekdayside",
+  "folder": "competition_dow_jones_futures_us_secondlast_last30_momentum_signalweekdayside_direction_same_entryminu_e49c2e15",
+  "assetKey": "dow_jones_futures",
+  "phase": "competition_session_edge",
+  "variantId": "competition_session_edge|family=us_secondlast_last30_momentum_signalweekdayside|direction=same|entry=930|exit=945|min_signal_atr=0.35|signal_end=915|signal_start=900|signal_weekday_side=0_long",
+  "source": "competition_session_edge_train_forward_2026",
+  "sourceUrls": [
+    "https://ideas.repec.org/a/bla/jfinan/v65y2010i4p1369-1407.html"
+  ],
+  "researchSummary": "Session-window return predicts a later same-day session return. Filtered by signalWeekdaySide=0_long.",
+  "selectionMethod": "Pre-2022 train-score rank, then post-2022 forward qualification. No parameters were fit on post-2022 data.",
+  "trainingWindow": {
+    "start": "asset_start",
+    "end": "2021-12-31"
+  },
+  "forwardWindow": {
+    "start": "2022-01-01",
+    "end": "asset_latest"
+  },
+  "selectedTrainingProfitFactor": 1.393826,
+  "selectedTrainingTrades": 175,
+  "selectedForwardProfitFactor": 2.290596,
+  "selectedForwardTrades": 56,
+  "forwardWins": 40,
+  "forwardLosses": 16,
+  "forwardTotalR": 19.842553,
+  "forwardAverageR": 0.354331,
+  "forwardMaxDrawdownR": 8.276326,
+  "verificationSummary": "Verified by backtest-engine runner output: PF 2.29, 56 trades, 19.84R total.",
+  "costUnits": 0,
+  "oneTradePerDay": false
+}
