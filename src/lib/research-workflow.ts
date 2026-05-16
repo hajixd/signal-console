@@ -1,3 +1,4 @@
+const ADD_IDEA_WORKFLOW_FILE = "add-research-idea.yml";
 const WORKFLOW_FILE = "research-cycle.yml";
 const DEFAULT_OWNER = "hajixd";
 const DEFAULT_REPO = "signal-console";
@@ -190,6 +191,64 @@ export async function commitResearchIdeaFile(relativePath: string, content: stri
       path: normalizedPath,
       ref: config.ref,
       ...body
+    }
+  };
+}
+
+export async function dispatchResearchIdeaWorkflow(relativePath: string, content: string, title: string): Promise<ResearchGithubResult> {
+  const config = githubResearchConfig();
+  const missing = missingGithubConfig(config);
+  if (missing.length) {
+    return {
+      ok: false,
+      status: 503,
+      body: {
+        error: "Missing GitHub research idea workflow configuration",
+        missing
+      }
+    };
+  }
+
+  const normalizedPath = relativePath.replace(/\\/g, "/").replace(/^\/+/, "");
+  const response = await fetch(
+    `https://api.github.com/repos/${config.owner}/${config.repo}/actions/workflows/${ADD_IDEA_WORKFLOW_FILE}/dispatches`,
+    {
+      method: "POST",
+      headers: githubHeaders(config.token),
+      body: JSON.stringify({
+        inputs: {
+          contentBase64: Buffer.from(content, "utf8").toString("base64"),
+          path: normalizedPath,
+          title: title.slice(0, 120) || "Untitled research idea"
+        },
+        ref: config.ref
+      }),
+      cache: "no-store"
+    }
+  );
+
+  if (!response.ok) {
+    return {
+      ok: false,
+      status: response.status,
+      body: {
+        error: "GitHub research idea workflow dispatch failed",
+        ...(await readResponseBody(response))
+      }
+    };
+  }
+
+  return {
+    ok: true,
+    status: 202,
+    body: {
+      dispatched: true,
+      owner: config.owner,
+      path: normalizedPath,
+      ref: config.ref,
+      repo: config.repo,
+      requestedAt: new Date().toISOString(),
+      workflow: ADD_IDEA_WORKFLOW_FILE
     }
   };
 }

@@ -1,7 +1,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { NextRequest, NextResponse } from "next/server";
-import { commitResearchIdeaFile } from "@/lib/research-workflow";
+import { dispatchResearchIdeaWorkflow } from "@/lib/research-workflow";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -174,17 +174,20 @@ export async function POST(request: NextRequest) {
 
   if (useGithubStorage) {
     const relativePath = path.posix.join("Research", "ideas", status, `${finalIdeaId}.json`);
-    const result = await commitResearchIdeaFile(relativePath, content, title);
+    const result = await dispatchResearchIdeaWorkflow(relativePath, content, title);
     if (!result.ok) {
       return NextResponse.json(result.body, { status: result.status });
     }
-    return NextResponse.json({
-      commit: result.body.commit,
-      idea,
-      ok: true,
-      path: relativePath,
-      storage: "github"
-    });
+    return NextResponse.json(
+      {
+        dispatch: result.body,
+        idea,
+        ok: true,
+        path: relativePath,
+        storage: "github-workflow"
+      },
+      { status: 202 }
+    );
   }
 
   await fs.mkdir(directory, { recursive: true });

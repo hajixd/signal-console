@@ -1,0 +1,67 @@
+name: Add Research Idea
+
+on:
+  workflow_dispatch:
+    inputs:
+      contentBase64:
+        description: "Base64 encoded idea JSON"
+        required: true
+      path:
+        description: "Repo-relative Research idea path"
+        required: true
+      title:
+        description: "Idea title for the commit message"
+        required: false
+        default: "research idea"
+
+concurrency:
+  group: add-research-idea-${{ inputs.path }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  add-idea:
+    name: Commit idea to branch
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Check out workflow ref
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+
+      - name: Write idea file
+        env:
+          IDEA_CONTENT_BASE64: ${{ inputs.contentBase64 }}
+          IDEA_PATH: ${{ inputs.path }}
+        run: |
+          node <<'NODE'
+          const fs = require('node:fs');
+          const path = require('node:path');
+
+          const ideaPath = (process.env.IDEA_PATH || '').replace(/\\/g, '/').replace(/^\/+/, '');
+          if (!/^Research\/ideas\/inbox\/[a-z0-9_]+\.json$/.test(ideaPath)) {
+            throw new Error(`Unsupported idea path: ${ideaPath}`);
+          }
+
+          const content = Buffer.from(process.env.IDEA_CONTENT_BASE64 || '', 'base64').toString('utf8');
+          JSON.parse(content);
+          fs.mkdirSync(path.dirname(ideaPath), { recursive: true });
+          fs.writeFileSync(ideaPath, content.endsWith('\n') ? content : `${content}\n`, 'utf8');
+          console.log(`wrote ${ideaPath}`);
+          NODE
+
+      - name: Commit idea
+        run: |
+          git config user.name "signal-console-research"
+          git config user.email "signal-console-research@users.noreply.github.com"
+          git add "${{ inputs.path }}"
+          if git diff --cached --quiet; then
+            echo "Idea file did not change."
+          else
+            git commit -m "add research idea: ${{ inputs.title }}"
+            git push
+          fi
