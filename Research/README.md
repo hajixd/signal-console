@@ -19,7 +19,7 @@ internet / papers / notes
   -> sources/pages
   -> LLM research, including YouTube/web source synthesis
   -> ideas/inbox
-  -> LLM idea-board structuring reports
+  -> LLM idea formalization reports
   -> ideas/approved
   -> LLM-coded rule specs
   -> strategies/ready_to_backtest
@@ -32,18 +32,19 @@ internet / papers / notes
 
 The intended stage ownership is:
 
-1. **Research:** an LLM reads online and YouTube-sourced search results and
-   adds rough discoveries to `ideas/inbox/`.
-2. **Idea:** an LLM turns new inbox ideas into organized idea-board reports with
-   timeframes, setup structure, entry, stop, target, filters, and invalidation
-   notes, then moves them to `ideas/approved/`.
-3. **Coding:** an LLM turns approved ideas into constrained `llm_rule_code`
+1. **Idea Discovery:** an LLM reads online and YouTube-sourced search results
+   and adds rough discoveries to `ideas/inbox/`.
+2. **Idea Formalization:** an LLM turns new ideas into organized formal reports
+   with timeframe, assets, setup, entry conditions, exit conditions, TP, SL,
+   limit-order handling, filters, and notes, then moves them to
+   `ideas/approved/`.
+3. **Strategy Coding:** an LLM turns formalized ideas into constrained `llm_rule_code`
    strategy specs with explicit entry conditions, stop-loss, take-profit,
    risk/reward, session, and exit controls.
-4. **Backtest:** no LLM is used. The Python backtest engine runs the coded spec
-   against historical candles and writes stats.
-5. **Finished:** no LLM is used. A strategy is finished only when PF is greater
-   than `2.0`, trades are greater than `20`, and total R is positive.
+4. **Backtest Review:** no LLM is used. The Python backtest engine runs the
+   coded spec against historical candles and writes detailed stats.
+5. **Finished Strategies:** no LLM is used. A strategy is finished only when PF
+   is greater than `2.0`, trades are greater than `20`, and total R is positive.
 
 ## Fast Commands
 
@@ -85,13 +86,13 @@ Fetch saved search-result pages into local source text:
 python Research\scripts\fetch_sources.py
 ```
 
-Convert approved ideas into many ready-to-backtest specs:
+Convert formalized ideas into many ready-to-backtest specs:
 
 ```powershell
 python Research\scripts\build_ready_to_backtest.py --markets futures,forex
 ```
 
-Convert approved ideas into Nebius Token Factory LLM-coded rule specs:
+Convert formalized ideas into Nebius Token Factory LLM-coded rule specs:
 
 ```powershell
 python Research\scripts\llm_strategy_factory.py code --markets futures,forex --max-per-idea 3 --limit 25
@@ -133,14 +134,14 @@ python Research\scripts\research_center.py local-cycle --min-pf 2 --min-trades 2
 ## Stage Rules
 
 - `sources/` stores raw research artifacts and search manifests.
-- `ideas/inbox/` stores ideas that have not been approved for testing.
-- `ideas/approved/` stores executable ideas.
+- `ideas/inbox/` stores new ideas that have not been formalized for testing.
+- `ideas/approved/` stores formalized executable ideas.
 - `reports/*_summary.md` stores LLM summaries for research, idea, coding,
   backtest, and pipeline stages.
-- `strategies/ready_to_backtest/` stores expanded single-asset strategy specs,
+- `strategies/ready_to_backtest/` stores coded single-asset strategy specs,
   including LLM-coded `llm_rule_code` specs.
-- `strategies/backtested/` stores all completed backtests.
-- `strategies/qualified/` stores only strategies meeting the configured PF and
+- `strategies/backtested/` stores all completed backtest results.
+- `strategies/qualified/` stores finished strategies meeting the configured PF and
   trade-count threshold.
 - `reports/` stores aggregate summaries.
 

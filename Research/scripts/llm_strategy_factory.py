@@ -760,6 +760,7 @@ def write_ready_strategy(raw: dict[str, Any], idea_by_id: dict[str, dict[str, An
         "engine": RULE_ENGINE,
         "hypothesis": idea.get("hypothesis"),
         "ideaId": idea.get("ideaId") or idea_id,
+        "ideaReport": idea.get("ideaReport", {}),
         "llm": {
             "model": model_id,
             "rationale": str(raw.get("rationale") or ""),
@@ -884,19 +885,27 @@ def offline_structured_ideas(ideas: list[dict[str, Any]], model_id: str) -> list
             "assetKeys": asset_keys,
             "engines": engines,
             "ideaReport": {
+                "overallDescription": clean.get("hypothesis", "Structured LLM idea."),
                 "summary": clean.get("hypothesis", "Structured LLM idea."),
                 "timeframes": timeframes,
                 "sourceInterpretation": "Offline fallback inferred the formal idea from the raw inbox text and any saved source URLs.",
                 "assetSelection": "Offline fallback inferred assets from title, symbol mentions, source URLs, and local asset catalog aliases.",
                 "setup": structure.get("setup", "Test the described source behavior with explicit rule-code."),
                 "entry": structure.get("entry", "Enter when the coded condition confirms the setup."),
+                "entryConditions": structure.get("entry", "Enter when the coded condition confirms the setup in the selected session and timeframe."),
                 "exit": structure.get("exit", "Exit on target, stop, invalidation, or session close."),
+                "exitConditions": structure.get("exit", "Exit on target, stop, invalidation, or session close."),
                 "stop": structure.get("stop", "Use ATR or structure invalidation."),
+                "stopLossPlan": structure.get("stop", "Use ATR or structure invalidation with a small buffer."),
                 "target": structure.get("target", "Use fixed R target and session/time exit."),
+                "takeProfitPlan": structure.get("target", "Use fixed R target and session/time exit."),
+                "useLimitOrder": "No by default; add a limit-order variant only if the source gives a retest price.",
+                "limitOrderPlan": "First pass should use market entries so the deterministic backtester can measure the base idea.",
                 "filters": structure.get("filters", []),
                 "parameterNotes": ["Coding stage should convert the setup into explicit rule-code and parameter ranges."],
                 "invalidations": ["Reject if PF <= 2 or trades <= 20.", "Reject if the coded conditions cannot be expressed without lookahead."],
                 "implementationNotes": ["Prefer simple session, price-action, trend, range, ATR, and time filters available to the research backtester."],
+                "extraNotes": "Offline fallback should be reviewed once richer source text is available.",
             },
             "llm": {
                 **(clean.get("llm", {}) if isinstance(clean.get("llm"), dict) else {}),
@@ -954,30 +963,38 @@ def prompt_for_single_idea_structuring(idea: dict[str, Any], enrichment: dict[st
             "timeframes": ["1m", "5m", "15m", "30m", "45m", "1h", "4h", "1d", "overnight"],
             "engines": ["intraday_momentum", "overnight_bias", "open_gap", "range_break", "daily_tsmom"],
             "ideaReport": {{
+              "overallDescription": "complete natural-language overview of the strategy idea",
               "summary": "detailed but concise research synthesis",
               "sourceInterpretation": "what the source/transcript actually implies",
               "timeframes": ["exact timeframes to test and why"],
               "assetSelection": "why these assets are appropriate",
               "setup": "complete setup structure",
               "entry": "entry rule concept with trigger, confirmation, and timing",
+              "entryConditions": "detailed natural-language entry conditions with session, trigger, filters, confirmation, and side logic",
               "exit": "time exit or condition exit",
+              "exitConditions": "detailed natural-language exit conditions including target, stop, time exit, invalidation, and no-trade cases",
               "stop": "stop-loss/invalidation concept",
+              "stopLossPlan": "how SL is determined in practice",
               "target": "take-profit concept",
+              "takeProfitPlan": "how TP is determined in practice",
+              "useLimitOrder": "yes, no, or conditional, with a short reason",
+              "limitOrderPlan": "if limit orders are useful, describe where they sit and when they expire",
               "filters": ["filters"],
               "parameterNotes": ["candidate parameter ranges for coding/backtest"],
               "invalidations": ["what would disprove it"],
-              "implementationNotes": ["how the coding stage should express it without lookahead"]
+              "implementationNotes": ["how the coding stage should express it without lookahead"],
+              "extraNotes": "any research caveats, source uncertainties, or follow-up tests"
             }}
           }}
         }}
 
         Requirements:
         - Infer the real strategy even if the raw idea is lazy, short, messy, or only a YouTube URL.
-        - If a transcript or page text is available, extract entry, exit, timeframe, stop, target, filters, and assets from it.
+        - If a transcript or page text is available, extract entry, exit, timeframe, stop, target, limit-order suitability, filters, and assets from it.
         - If the source is vague, make a coherent testable version and state what you inferred.
         - Use only asset keys from the asset catalog.
         - Prefer single-strategy, backtestable ideas. Do not write code yet.
-        - Be detailed enough that the coding stage can produce rule-code without guessing.
+        - Be detailed enough that the coding stage can produce rule-code without guessing, especially entry conditions, exit conditions, TP, SL, and limit-order handling.
 
         Raw idea:
         {json.dumps(public_idea(idea), indent=2)}
@@ -1006,7 +1023,7 @@ def prompt_for_idea_review(idea: dict[str, Any], original: dict[str, Any], enric
         Strengthen weak parts, fill missing details from the evidence, and make sure:
         - assetKeys are valid catalog keys,
         - timeframes are explicit,
-        - setup, entry, exit, stop, target, filters, parameters, and invalidations are detailed,
+        - setup, entry conditions, exit conditions, stop/SL plan, target/TP plan, limit-order plan, filters, parameters, and invalidations are detailed,
         - the idea remains backtestable without lookahead or discretionary chart-reading.
 
         Original raw idea:
@@ -1047,19 +1064,27 @@ def normalized_structured_idea(
     markets = markets or ["futures", "forex"]
     idea_id = str(raw.get("ideaId") or original_public.get("ideaId") or stable_id(str(raw.get("title") or original_public.get("title")), raw, prefix="idea_"))
     merged_report = {
+        "overallDescription": str(report.get("overallDescription") or report.get("summary") or raw.get("hypothesis") or original_public.get("hypothesis") or "Formalized strategy idea.")[:2400],
         "summary": str(report.get("summary") or raw.get("hypothesis") or original_public.get("hypothesis") or "Formalized strategy idea.")[:2200],
         "sourceInterpretation": str(report.get("sourceInterpretation") or "Formalization inferred from raw idea text, direct sources, and You.com search results.")[:1800],
         "timeframes": timeframes,
         "assetSelection": str(report.get("assetSelection") or "Assets were selected from the local research catalog based on source symbols, market family, and testability.")[:1600],
         "setup": str(report.get("setup") or "Trade only when the described market behavior is present and measurable.")[:1800],
         "entry": str(report.get("entry") or "Enter when the setup condition confirms in the selected session and timeframe.")[:1800],
+        "entryConditions": str(report.get("entryConditions") or report.get("entry") or "Enter when the setup condition confirms in the selected session and timeframe.")[:2200],
         "exit": str(report.get("exit") or "Exit on target, stop, invalidation, or session close.")[:1400],
+        "exitConditions": str(report.get("exitConditions") or report.get("exit") or "Exit on target, stop, invalidation, or session close.")[:2200],
         "stop": str(report.get("stop") or "Use ATR or structure invalidation.")[:1400],
+        "stopLossPlan": str(report.get("stopLossPlan") or report.get("stop") or "Use ATR or structure invalidation with a small buffer beyond the signal structure.")[:1800],
         "target": str(report.get("target") or "Use fixed R target and session/time exit.")[:1400],
+        "takeProfitPlan": str(report.get("takeProfitPlan") or report.get("target") or "Use a fixed R target first, then fall back to session/time exit if the target is not reached.")[:1800],
+        "useLimitOrder": str(report.get("useLimitOrder") or "No, unless the source explicitly requires entry at a retest or midpoint.")[:320],
+        "limitOrderPlan": str(report.get("limitOrderPlan") or "Default to market entries for the first deterministic backtest; add limit-order variants only when the source defines a retest price.")[:1800],
         "filters": normalize_list(report.get("filters"), None, 12),
         "parameterNotes": normalize_list(report.get("parameterNotes"), None, 12),
         "invalidations": normalize_list(report.get("invalidations"), None, 12) or ["Reject if PF <= 2 or trades <= 20."],
         "implementationNotes": normalize_list(report.get("implementationNotes"), None, 12),
+        "extraNotes": str(report.get("extraNotes") or "Keep the first coded version simple and compare variants only after the base hypothesis is measurable.")[:2200],
         "evidence": [
             {
                 "kind": source.get("kind"),
@@ -1158,11 +1183,14 @@ def write_idea_board_report(ideas: list[dict[str, Any]]) -> None:
                 f"- Timeframes: {', '.join(str(item) for item in report.get('timeframes', idea.get('timeframes', [])))}",
                 f"- Assets: {', '.join(str(item) for item in idea.get('assetKeys', [])) or 'n/a'}",
                 f"- Engines: {', '.join(str(item) for item in idea.get('engines', [])) or 'n/a'}",
+                f"- Overall: {report.get('overallDescription', report.get('summary', 'n/a'))}",
                 f"- Setup: {report.get('setup', 'n/a')}",
-                f"- Entry: {report.get('entry', 'n/a')}",
-                f"- Exit: {report.get('exit', 'n/a')}",
-                f"- Stop: {report.get('stop', 'n/a')}",
-                f"- Target: {report.get('target', 'n/a')}",
+                f"- Entry Conditions: {report.get('entryConditions', report.get('entry', 'n/a'))}",
+                f"- Exit Conditions: {report.get('exitConditions', report.get('exit', 'n/a'))}",
+                f"- Stop Loss Plan: {report.get('stopLossPlan', report.get('stop', 'n/a'))}",
+                f"- Take Profit Plan: {report.get('takeProfitPlan', report.get('target', 'n/a'))}",
+                f"- Use Limit Order: {report.get('useLimitOrder', 'n/a')}",
+                f"- Limit Order Plan: {report.get('limitOrderPlan', 'n/a')}",
                 f"- Filters: {', '.join(str(item) for item in report.get('filters', [])) or 'n/a'}",
                 f"- Parameters: {', '.join(str(item) for item in report.get('parameterNotes', [])) or 'n/a'}",
                 f"- Invalidations: {', '.join(str(item) for item in report.get('invalidations', [])) or 'n/a'}",

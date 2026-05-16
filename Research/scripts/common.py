@@ -34,6 +34,20 @@ DATA_ROOT = PROJECT_ROOT / "data" / "15m"
 LIVE_STRATEGY_ROOT = PROJECT_ROOT / "strategy"
 BACKTEST_ENGINE_ROOT = PROJECT_ROOT / "backtest-engine"
 
+STAGE_LABELS = {
+    "research": "Idea Discovery",
+    "idea": "Idea Formalization",
+    "coding": "Strategy Coding",
+    "backtest": "Backtest Review",
+    "pipeline": "Research Pipeline",
+}
+
+STAGE_OUTPUT_LABELS = {
+    "research": "new ideas",
+    "idea": "formalized ideas",
+    "coding": "coded strategies",
+    "backtest": "backtest results",
+}
 
 STAGE_DIRS = [
     SEARCH_RESULTS_ROOT,

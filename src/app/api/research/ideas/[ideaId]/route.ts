@@ -17,6 +17,7 @@ type ResearchIdea = {
   assetKeys?: string[];
   createdAt?: string;
   hypothesis?: string;
+  ideaReport?: ResearchIdeaReport;
   ideaId?: string;
   markets?: string[];
   notes?: string;
@@ -28,9 +29,35 @@ type ResearchIdea = {
   updatedAt?: string;
 };
 
+type ResearchIdeaReport = {
+  assetSelection?: string;
+  entry?: string;
+  entryConditions?: string;
+  exit?: string;
+  exitConditions?: string;
+  extraNotes?: string;
+  filters?: string[];
+  implementationNotes?: string[];
+  invalidations?: string[];
+  limitOrderPlan?: string;
+  overallDescription?: string;
+  parameterNotes?: string[];
+  setup?: string;
+  sourceInterpretation?: string;
+  stop?: string;
+  stopLossPlan?: string;
+  summary?: string;
+  takeProfitPlan?: string;
+  target?: string;
+  timeframes?: string[];
+  useLimitOrder?: string;
+};
+
 type ResearchIdeaUpdatePayload = {
   assetKeys?: unknown;
   hypothesis?: unknown;
+  ideaReport?: unknown;
+  notes?: unknown;
   sourceUrls?: unknown;
   timeframes?: unknown;
   title?: unknown;
@@ -60,6 +87,51 @@ function cleanUrls(value: unknown, fallbackText = "") {
   const direct = splitList(value, 16);
   const fromText = [...fallbackText.matchAll(URL_PATTERN)].map((match) => match[0]);
   return [...new Set([...direct, ...fromText].map((url) => url.replace(/[.,;:!?]+$/, "")))].slice(0, 16);
+}
+
+function cleanList(value: unknown, maxItems = 16) {
+  return splitList(value, maxItems).map((item) => item.slice(0, 320));
+}
+
+function cleanReportText(source: Record<string, unknown>, existing: ResearchIdeaReport | undefined, key: keyof ResearchIdeaReport, maxLength: number) {
+  if (!(key in source)) {
+    const existingValue = existing?.[key];
+    return typeof existingValue === "string" ? existingValue : undefined;
+  }
+  return cleanString(source[key], maxLength) || undefined;
+}
+
+function cleanIdeaReport(value: unknown, existing: ResearchIdeaReport | undefined, timeframes: string[]): ResearchIdeaReport | undefined {
+  if (!value || typeof value !== "object") return existing;
+  const source = value as Record<string, unknown>;
+  const report: ResearchIdeaReport = {
+    ...(existing ?? {}),
+    assetSelection: cleanReportText(source, existing, "assetSelection", 1800),
+    entry: cleanReportText(source, existing, "entry", 2200),
+    entryConditions: cleanReportText(source, existing, "entryConditions", 2200),
+    exit: cleanReportText(source, existing, "exit", 2200),
+    exitConditions: cleanReportText(source, existing, "exitConditions", 2200),
+    extraNotes: cleanReportText(source, existing, "extraNotes", 2200),
+    filters: "filters" in source ? cleanList(source.filters, 16) : existing?.filters,
+    implementationNotes: "implementationNotes" in source ? cleanList(source.implementationNotes, 16) : existing?.implementationNotes,
+    invalidations: "invalidations" in source ? cleanList(source.invalidations, 16) : existing?.invalidations,
+    limitOrderPlan: cleanReportText(source, existing, "limitOrderPlan", 1800),
+    overallDescription: cleanReportText(source, existing, "overallDescription", 2400),
+    parameterNotes: "parameterNotes" in source ? cleanList(source.parameterNotes, 16) : existing?.parameterNotes,
+    setup: cleanReportText(source, existing, "setup", 2200),
+    sourceInterpretation: cleanReportText(source, existing, "sourceInterpretation", 2200),
+    stop: cleanReportText(source, existing, "stop", 1800),
+    stopLossPlan: cleanReportText(source, existing, "stopLossPlan", 1800),
+    summary: cleanReportText(source, existing, "summary", 2400),
+    takeProfitPlan: cleanReportText(source, existing, "takeProfitPlan", 1800),
+    target: cleanReportText(source, existing, "target", 1800),
+    timeframes,
+    useLimitOrder: cleanReportText(source, existing, "useLimitOrder", 320)
+  };
+
+  return Object.fromEntries(
+    Object.entries(report).filter(([, item]) => (Array.isArray(item) ? item.length > 0 : item !== undefined && item !== ""))
+  ) as ResearchIdeaReport;
 }
 
 function ideaDirectory(status: IdeaStatus) {
@@ -106,9 +178,6 @@ export async function PUT(request: NextRequest, context: RouteContext) {
   if (!match) {
     return NextResponse.json({ error: "Idea not found." }, { status: 404 });
   }
-  if (match.status !== "inbox") {
-    return NextResponse.json({ error: "Only new inbox ideas can be edited." }, { status: 403 });
-  }
 
   let payload: ResearchIdeaUpdatePayload;
   try {
@@ -118,10 +187,17 @@ export async function PUT(request: NextRequest, context: RouteContext) {
   }
 
   const title = cleanString(payload.title, 120);
-  const hypothesis = cleanString(payload.hypothesis, 1200);
+  const hypothesis = cleanString(payload.hypothesis, 2200);
   const timeframes = splitList(payload.timeframes).filter((timeframe) => SUPPORTED_TIMEFRAMES.has(timeframe));
   const assetKeys = splitList(payload.assetKeys, 32);
   const sourceUrls = cleanUrls(payload.sourceUrls, `${title}\n${hypothesis}`);
+  const notes = cleanString(payload.notes, 2200);
+  const normalizedTimeframes = timeframes.length ? timeframes : ["15m"];
+  const ideaReport = cleanIdeaReport(
+    payload.ideaReport,
+    match.idea.ideaReport,
+    normalizedTimeframes
+  );
 
   if (!title) {
     return NextResponse.json({ error: "Title is required." }, { status: 400 });
@@ -134,9 +210,11 @@ export async function PUT(request: NextRequest, context: RouteContext) {
     ...match.idea,
     assetKeys,
     hypothesis,
+    ideaReport,
+    notes,
     sourceUrls,
     status: match.status,
-    timeframes: timeframes.length ? timeframes : ["15m"],
+    timeframes: normalizedTimeframes,
     title,
     updatedAt: new Date().toISOString()
   };

@@ -3,8 +3,10 @@ import path from "node:path";
 import Link from "next/link";
 import AutoTradeAccountGate from "@/components/auto-trading/auto-trade-account-gate";
 import AutoTradeAccountModeSwitch from "@/components/auto-trading/auto-trade-account-mode-switch";
+import ResearchBacktestTable, { type ResearchBacktestMetrics } from "@/components/research/research-backtest-table";
 import ResearchIdeaForm, { type ResearchAssetOption } from "@/components/research/research-idea-form";
 import ResearchIdeaList from "@/components/research/research-idea-list";
+import ResearchStrategyList from "@/components/research/research-strategy-list";
 import AutoRefresh from "@/components/ui/auto-refresh";
 import LocalDateTime from "@/components/ui/local-date-time";
 import ThemeToggle from "@/components/ui/theme-toggle";
@@ -36,22 +38,22 @@ const RESEARCH_STAGE_SCHEDULE_UTC = {
   research: [{ hour: 13, minute: 0 }]
 } satisfies Record<ResearchStage, Array<{ hour: number; minute: number }>>;
 const RESEARCH_STAGE_TITLES = {
-  backtest: "Backtesting",
-  coding: "Coding Ideas",
-  idea: "Formalization of Ideas",
-  research: "New Idea Generation"
+  backtest: "Backtest Review",
+  coding: "Strategy Coding",
+  idea: "Idea Formalization",
+  research: "Idea Discovery"
 } satisfies Record<ResearchStage, string>;
 const RESEARCH_STAGE_DESCRIPTIONS = {
-  backtest: "Runs coded strategies through the deterministic backtest engine.",
-  coding: "Uses the coding LLM to turn formal ideas into executable strategy specs.",
-  idea: "Uses the idea LLM to organize raw research into clear testable reports.",
-  research: "Uses You.com and LLM research to find new trading ideas online."
+  backtest: "Runs coded strategies through the deterministic backtest engine and records detailed statistics.",
+  coding: "Uses the coding LLM to turn formalized ideas into executable strategy specs.",
+  idea: "Uses the idea LLM to organize raw research into formalized, testable strategy plans.",
+  research: "Uses You.com and LLM research to discover new trading ideas online."
 } satisfies Record<ResearchStage, string>;
 const RESEARCH_STAGE_JOB_LABELS = {
-  backtest: "Backtests",
-  coding: "Coded",
-  idea: "Formalized",
-  research: "Ideas"
+  backtest: "Backtest results",
+  coding: "Coded strategies",
+  idea: "Formalized ideas",
+  research: "New ideas"
 } satisfies Record<ResearchStage, string>;
 
 type ResearchStage = (typeof RESEARCH_STAGE_ORDER)[number];
@@ -62,11 +64,32 @@ type ResearchIdea = {
   engines?: string[];
   fileId?: string;
   hypothesis?: string;
-  ideaId?: string;
   ideaReport?: {
+    assetSelection?: string;
+    entry?: string;
+    entryConditions?: string;
+    exit?: string;
+    exitConditions?: string;
+    extraNotes?: string;
+    filters?: string[];
+    implementationNotes?: string[];
+    invalidations?: string[];
+    limitOrderPlan?: string;
+    overallDescription?: string;
+    parameterNotes?: string[];
+    setup?: string;
+    sourceInterpretation?: string;
+    stop?: string;
+    stopLossPlan?: string;
+    summary?: string;
+    takeProfitPlan?: string;
+    target?: string;
     timeframes?: string[];
+    useLimitOrder?: string;
   };
+  ideaId?: string;
   markets?: string[];
+  notes?: string;
   provenance?: string;
   sourceUrls?: string[];
   status?: string;
@@ -78,23 +101,46 @@ type StrategySpec = {
   assetKey?: string;
   createdAt?: string;
   engine?: string;
+  fileId?: string;
   ideaId?: string;
+  ideaReport?: ResearchIdea["ideaReport"];
+  llm?: Record<string, unknown>;
   market?: string;
+  params?: Record<string, unknown>;
   provenance?: string;
+  sourceUrls?: string[];
   status?: string;
   strategyId?: string;
   symbol?: string;
+  thresholds?: {
+    minProfitFactor?: number;
+    minTrades?: number;
+  };
   title?: string;
 };
 
 type BacktestRow = {
   asset_key: string;
+  backtestedAt?: string;
   engine: string;
+  exitReasons?: Record<string, number>;
+  hypothesis?: string;
+  ideaReport?: ResearchIdea["ideaReport"];
   market: string;
+  metrics?: ResearchBacktestMetrics;
+  params?: Record<string, unknown>;
   profit_factor: string;
   qualified: string;
+  sourceUrls?: string[];
   status: string;
+  strategyId?: string;
   strategy_id: string;
+  symbol?: string;
+  thresholds?: {
+    minProfitFactor?: number;
+    minTrades?: number;
+  };
+  title?: string;
   total_r: string;
   trades: string;
 };
@@ -220,9 +266,16 @@ function ideaTime(value: ResearchIdea) {
 async function readStrategySpecs(relativePath: string, limit: number, excludedFolders = new Set<string>()) {
   const folders = (await listDirectoryNames(relativePath)).filter((folder) => !excludedFolders.has(folder));
   const values = await Promise.all(
-    folders.slice(0, limit).map((folder) => readJsonFile<StrategySpec>(path.join(RESEARCH_ROOT, relativePath, folder, "strategy.json")))
+    folders.slice(0, limit).map(async (folder) => {
+      const spec = await readJsonFile<StrategySpec>(path.join(RESEARCH_ROOT, relativePath, folder, "strategy.json"));
+      return spec ? { ...spec, fileId: folder } : null;
+    })
   );
-  return values.filter((value): value is StrategySpec => Boolean(value));
+  const specs: StrategySpec[] = [];
+  for (const value of values) {
+    if (value) specs.push(value);
+  }
+  return specs;
 }
 
 function parseCsvLine(line: string) {
@@ -261,11 +314,131 @@ async function readBacktestSummary() {
       return headers.reduce<Record<string, string>>((row, header, index) => {
         row[header] = values[index] ?? "";
         return row;
-      }, {}) as BacktestRow;
+      }, {}) as unknown as BacktestRow;
     });
   } catch {
     return [];
   }
+}
+
+type ResearchBacktestTrade = {
+  exit_reason?: string;
+  r_multiple?: string;
+  side?: string;
+};
+
+function numericValues(values: number[]) {
+  return values.filter((value) => Number.isFinite(value));
+}
+
+function median(values: number[]) {
+  const sorted = numericValues(values).sort((left, right) => left - right);
+  if (!sorted.length) return undefined;
+  const middle = Math.floor(sorted.length / 2);
+  if (sorted.length % 2) return sorted[middle];
+  return ((sorted[middle - 1] ?? 0) + (sorted[middle] ?? 0)) / 2;
+}
+
+function average(values: number[]) {
+  const normalized = numericValues(values);
+  if (!normalized.length) return undefined;
+  return normalized.reduce((total, value) => total + value, 0) / normalized.length;
+}
+
+function maxDrawdown(values: number[]) {
+  let equity = 0;
+  let peak = 0;
+  let drawdown = 0;
+  for (const value of values) {
+    equity += value;
+    peak = Math.max(peak, equity);
+    drawdown = Math.max(drawdown, peak - equity);
+  }
+  return drawdown;
+}
+
+async function readBacktestTradeRows(strategyId: string): Promise<ResearchBacktestTrade[]> {
+  try {
+    const content = await fs.readFile(path.join(RESEARCH_ROOT, "strategies", "backtested", strategyId, "backtest_trades.csv"), "utf8");
+    const lines = content.split(/\r?\n/).filter(Boolean);
+    const headers = lines[0] ? parseCsvLine(lines[0]) : [];
+    return lines.slice(1).map((line) => {
+      const values = parseCsvLine(line);
+      return headers.reduce<Record<string, string>>((row, header, index) => {
+        row[header] = values[index] ?? "";
+        return row;
+      }, {}) as ResearchBacktestTrade;
+    });
+  } catch {
+    return [];
+  }
+}
+
+function metricsFromTrades(row: BacktestRow, trades: ResearchBacktestTrade[]): ResearchBacktestMetrics {
+  const rValues = trades.map((trade) => Number(trade.r_multiple)).filter((value) => Number.isFinite(value));
+  const wins = rValues.filter((value) => value > 0);
+  const losses = rValues.filter((value) => value < 0);
+  const grossWinR = wins.reduce((total, value) => total + value, 0);
+  const grossLossR = Math.abs(losses.reduce((total, value) => total + value, 0));
+  const totalR = rValues.reduce((total, value) => total + value, 0);
+  const tradesCount = rValues.length || backtestTradeCount(row);
+  const rowProfitFactor = Number(row.profit_factor);
+  const rowTotalR = Number(row.total_r);
+
+  return {
+    averageLossR: average(losses),
+    averageR: average(rValues),
+    averageWinR: average(wins),
+    bestWinR: wins.length ? Math.max(...wins) : undefined,
+    expectancyR: tradesCount ? totalR / tradesCount : undefined,
+    grossLossR,
+    grossWinR,
+    losses: losses.length,
+    maxDrawdownR: maxDrawdown(rValues),
+    medianR: median(rValues),
+    profitFactor: grossLossR > 0 ? grossWinR / grossLossR : Number.isFinite(rowProfitFactor) ? rowProfitFactor : undefined,
+    totalR: rValues.length ? totalR : Number.isFinite(rowTotalR) ? rowTotalR : undefined,
+    trades: tradesCount,
+    winRatePct: tradesCount ? (wins.length / tradesCount) * 100 : undefined,
+    wins: wins.length,
+    worstLossR: losses.length ? Math.min(...losses) : undefined
+  };
+}
+
+function exitReasonsFromTrades(trades: ResearchBacktestTrade[]) {
+  const reasons: Record<string, number> = {};
+  for (const trade of trades) {
+    const reason = trade.exit_reason?.trim() || "unknown";
+    reasons[reason] = (reasons[reason] ?? 0) + 1;
+  }
+  return reasons;
+}
+
+async function hydrateBacktestRows(rows: BacktestRow[]): Promise<BacktestRow[]> {
+  return Promise.all(
+    rows.map(async (row) => {
+      const strategyId = row.strategy_id;
+      const [spec, trades] = await Promise.all([
+        readJsonFile<StrategySpec>(path.join(RESEARCH_ROOT, "strategies", "backtested", strategyId, "strategy.json")),
+        readBacktestTradeRows(strategyId)
+      ]);
+      return {
+        ...row,
+        ...spec,
+        asset_key: row.asset_key,
+        engine: row.engine,
+        exitReasons: exitReasonsFromTrades(trades),
+        market: row.market,
+        metrics: metricsFromTrades(row, trades),
+        profit_factor: row.profit_factor,
+        qualified: row.qualified,
+        status: row.status,
+        strategy_id: row.strategy_id,
+        total_r: row.total_r,
+        trades: row.trades
+      };
+    })
+  );
 }
 
 function backtestProfitFactor(row: BacktestRow) {
@@ -345,12 +518,14 @@ async function getResearchSnapshot(): Promise<ResearchSnapshot> {
   const backtestedFolders = await listDirectoryNames("strategies/backtested");
   const backtestedIds = new Set(backtestedFolders);
   const pendingReadyFolders = readyFolders.filter((folder) => !backtestedIds.has(folder));
-  const candidateRows = (await readBacktestSummary()).sort((left, right) => Number(right.profit_factor) - Number(left.profit_factor));
+  const candidateRows = await hydrateBacktestRows(
+    (await readBacktestSummary()).sort((left, right) => Number(right.profit_factor) - Number(left.profit_factor))
+  );
   const finishedRows = candidateRows.filter(isFinishedBacktestRow);
   const belowRequirementRows = candidateRows.filter((row) => !isFinishedBacktestRow(row));
   const backtestReviewRows = candidateRows.filter((row) => !isFinishedBacktestRow(row) && row.status !== "cached");
-  const inboxIdeas = (await readJsonFiles<ResearchIdea>("ideas/inbox", 8)).sort((left, right) => ideaTime(right) - ideaTime(left));
-  const approvedIdeas = (await readJsonFiles<ResearchIdea>("ideas/approved", 10)).sort((left, right) => ideaTime(right) - ideaTime(left));
+  const inboxIdeas = (await readJsonFiles<ResearchIdea>("ideas/inbox", 60)).sort((left, right) => ideaTime(right) - ideaTime(left));
+  const approvedIdeas = (await readJsonFiles<ResearchIdea>("ideas/approved", 60)).sort((left, right) => ideaTime(right) - ideaTime(left));
   const researchStatuses = await readResearchCycleStatuses();
 
   return {
@@ -380,11 +555,6 @@ function formatNumber(value: number) {
   return new Intl.NumberFormat("en-US").format(value);
 }
 
-function formatMetric(value: string, digits = 2) {
-  const numericValue = Number(value);
-  return Number.isFinite(numericValue) ? numericValue.toFixed(digits) : value || "n/a";
-}
-
 function formatDuration(ms: number | undefined) {
   if (!ms || !Number.isFinite(ms)) return "n/a";
   if (ms < 1000) return `${Math.round(ms)} ms`;
@@ -407,20 +577,16 @@ function nextResearchStageRunIso(stage: ResearchStage, now = new Date()) {
   return candidates.sort((left, right) => left.getTime() - right.getTime())[0]?.toISOString() ?? now.toISOString();
 }
 
-function compactId(value: string | undefined) {
-  if (!value) return "n/a";
-  if (value.length <= 42) return value;
-  return `${value.slice(0, 26)}...${value.slice(-8)}`;
-}
-
 function currentActivity(snapshot: ResearchSnapshot) {
-  if (snapshot.inboxIdeaCount > 0) return `${formatNumber(snapshot.inboxIdeaCount)} idea${snapshot.inboxIdeaCount === 1 ? "" : "s"} waiting on the idea board`;
+  if (snapshot.inboxIdeaCount > 0 || snapshot.approvedIdeaCount > 0) {
+    return `${formatNumber(snapshot.inboxIdeaCount)} in Idea Discovery / ${formatNumber(snapshot.approvedIdeaCount)} in Idea Formalization`;
+  }
   if (snapshot.pendingReadyCount > 0) return `${formatNumber(snapshot.pendingReadyCount)} coded strateg${snapshot.pendingReadyCount === 1 ? "y" : "ies"} waiting for backtests`;
-  if (snapshot.qualifiedCount > 0) return `${formatNumber(snapshot.qualifiedCount)} finished strateg${snapshot.qualifiedCount === 1 ? "y" : "ies"} cleared the PF gate`;
-  if (snapshot.backtestedCount > 0) return "Backtested stats are waiting for a finished PF > 2 result";
+  if (snapshot.qualifiedCount > 0) return `${formatNumber(snapshot.qualifiedCount)} finished strateg${snapshot.qualifiedCount === 1 ? "y" : "ies"} cleared the requirements`;
+  if (snapshot.backtestedCount > 0) return "Backtest results are waiting for a finished PF > 2 result";
   if (snapshot.readyCount > 0) return "Coded strategies are staged for the next backtest pass";
-  if (snapshot.approvedIdeaCount > 0) return "Approved ideas are waiting to become coded strategies";
-  return "Research intake is ready for new ideas";
+  if (snapshot.approvedIdeaCount > 0) return "Formalized ideas are waiting to become coded strategies";
+  return "Idea discovery is ready for new inputs";
 }
 
 function laneState(count: number) {
@@ -487,84 +653,6 @@ function stageDurationMs(status: ResearchStageStatus | undefined) {
   return status?.durationMs;
 }
 
-function StrategyList({ empty, specs }: { empty: string; specs: StrategySpec[] }) {
-  if (!specs.length) {
-    return (
-      <div className="researchEmptyMini">
-        <strong>{empty}</strong>
-      </div>
-    );
-  }
-
-  return (
-    <div className="researchMiniList">
-      {specs.map((spec) => (
-        <div className="researchMiniRow" key={spec.strategyId ?? spec.title}>
-          <strong>{compactId(spec.strategyId)}</strong>
-          <span>{spec.title ?? "Untitled coded strategy"}</span>
-          <small>{spec.assetKey ?? spec.symbol ?? "asset pending"} / {spec.market ?? "market pending"} / {spec.engine ?? "engine pending"}</small>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function BacktestTable({
-  density = "default",
-  empty,
-  rows,
-  showGate = false
-}: {
-  density?: "default" | "split";
-  empty: string;
-  rows: BacktestRow[];
-  showGate?: boolean;
-}) {
-  if (!rows.length) {
-    return (
-      <div className="researchEmptyMini">
-        <strong>{empty}</strong>
-      </div>
-    );
-  }
-
-  return (
-    <div className={`terminal-table-wrap compact researchLaneTable${density === "split" ? " researchLaneTableSplit" : ""}`}>
-      <table className={`terminal-table researchTable${showGate ? " withGate" : ""}`}>
-        <thead>
-          <tr>
-            <th>Strategy</th>
-            <th>Asset</th>
-            <th>PF</th>
-            <th>Trades</th>
-            {showGate ? <th>Gate</th> : null}
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((row) => (
-            <tr className={row.qualified === "True" ? "up-row" : "neutral-row"} key={row.strategy_id}>
-              <td className="main-cell" data-label="Strategy">
-                <span>{compactId(row.strategy_id)}</span>
-                <small>{row.engine}</small>
-              </td>
-              <td data-label="Asset">{row.asset_key}</td>
-              <td data-label="PF">{formatMetric(row.profit_factor, 2)}</td>
-              <td data-label="Trades">{formatNumber(Number(row.trades) || 0)}</td>
-              {showGate ? (
-                <td data-label="Gate">
-                  <span className={`status ${row.qualified === "True" ? "sent" : "neutral-row"}`}>
-                    {row.qualified === "True" ? "Finished" : "Collecting"}
-                  </span>
-                </td>
-              ) : null}
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
-}
-
 function ResearchStageTile({ snapshot, stage }: { snapshot: ResearchSnapshot; stage: ResearchStage }) {
   const status = snapshot.researchStageStatuses[stage];
   const outputCount = stageOutputCount(snapshot, stage);
@@ -622,7 +710,7 @@ function ResearchWorkSync({ snapshot }: { snapshot: ResearchSnapshot }) {
 export default async function ResearchPage() {
   const [snapshot, assetOptions] = await Promise.all([getResearchSnapshot(), readResearchAssetOptions()]);
   const newIdeas = [...snapshot.inboxIdeas].sort((left, right) => ideaTime(right) - ideaTime(left)).slice(0, 12);
-  const ideaBoardIdeas = [...snapshot.approvedIdeas].sort((left, right) => ideaTime(right) - ideaTime(left)).slice(0, 12);
+  const formalizedIdeas = [...snapshot.approvedIdeas].sort((left, right) => ideaTime(right) - ideaTime(left)).slice(0, 12);
   const ideaToCodeInputs = snapshot.approvedIdeas;
   const backtestInputRows = snapshot.belowRequirementRows;
 
@@ -651,31 +739,58 @@ export default async function ResearchPage() {
           </div>
         </header>
 
-        <section className="backtest-card researchBoardCard" id="idea-board">
+        <section className="backtest-card researchBoardCard" id="idea-discovery">
           <div className="backtest-card-head">
             <div>
-              <h2>Idea Board</h2>
-              <p>Add or inspect strategy ideas before they enter the coded-strategy pipeline.</p>
+              <h2>Idea Discovery</h2>
+              <p>Drop raw strategy notes, links, or loose market observations here before formalization.</p>
             </div>
             <span className={`count-pill${snapshot.inboxIdeaCount > 0 ? " warning" : ""}`}>
-              {formatNumber(snapshot.inboxIdeaCount)} inbox / {formatNumber(snapshot.approvedIdeaCount)} approved
+              {formatNumber(snapshot.inboxIdeaCount)} new
             </span>
           </div>
           <div className="researchConversionGrid">
-            <div className={`researchLane collecting ${laneState(snapshot.inboxIdeaCount)}`}>
+            <div className={`researchLane collecting ${laneState(1)}`}>
               <div className="researchLaneHead">
-                <span>Collecting</span>
+                <span>Manual intake</span>
+                <strong>Raw idea input</strong>
+              </div>
+              <ResearchIdeaForm isEmpty={snapshot.inboxIdeaCount === 0} />
+            </div>
+            <div className={`researchLane finished ${laneState(newIdeas.length)}`}>
+              <div className="researchLaneHead">
+                <span>Output from this stage</span>
                 <strong>New ideas</strong>
               </div>
-              <ResearchIdeaForm assets={assetOptions} isEmpty={snapshot.inboxIdeaCount + snapshot.approvedIdeaCount === 0} />
-              <ResearchIdeaList assets={assetOptions} editable empty="No new ideas queued." ideas={newIdeas} />
+              <ResearchIdeaList assets={assetOptions} editable empty="No new ideas discovered yet." ideas={newIdeas} mode="discovery" />
             </div>
-            <div className={`researchLane finished ${laneState(ideaBoardIdeas.length)}`}>
+          </div>
+        </section>
+
+        <section className="backtest-card researchBoardCard" id="idea-formalization">
+          <div className="backtest-card-head">
+            <div>
+              <h2>Idea Formalization</h2>
+              <p>Left side keeps the raw discovery queue; right side shows structured, editable research plans.</p>
+            </div>
+            <span className={`count-pill${snapshot.approvedIdeaCount > 0 ? "" : " warning"}`}>
+              {formatNumber(snapshot.approvedIdeaCount)} formalized
+            </span>
+          </div>
+          <div className="researchConversionGrid">
+            <div className={`researchLane collecting ${laneState(newIdeas.length)}`}>
               <div className="researchLaneHead">
-                <span>Finished</span>
-                <strong>Idea Board output</strong>
+                <span>Input to this stage</span>
+                <strong>New ideas</strong>
               </div>
-              <ResearchIdeaList assets={assetOptions} empty="No formalized ideas yet." ideas={ideaBoardIdeas} />
+              <ResearchIdeaList assets={assetOptions} editable empty="No new ideas are waiting for formalization." ideas={newIdeas} mode="discovery" />
+            </div>
+            <div className={`researchLane finished ${laneState(formalizedIdeas.length)}`}>
+              <div className="researchLaneHead">
+                <span>Output from this stage</span>
+                <strong>Formalized ideas</strong>
+              </div>
+              <ResearchIdeaList assets={assetOptions} editable empty="No formalized ideas yet." ideas={formalizedIdeas} mode="formalization" />
             </div>
           </div>
         </section>
@@ -683,25 +798,25 @@ export default async function ResearchPage() {
         <section className="backtest-card researchConversion">
           <div className="backtest-card-head">
             <div>
-              <h2>From Idea To Coded Strategy</h2>
-              <p>Left side collects idea-board output; right side shows coded strategy specs that are ready to backtest.</p>
+              <h2>Formalized Ideas To Coded Strategies</h2>
+              <p>Left side collects formalized research plans; right side shows coded strategy specs that are ready to backtest.</p>
             </div>
             <span className="count-pill">{formatNumber(snapshot.readyCount)} coded</span>
           </div>
           <div className="researchConversionGrid">
             <div className={`researchLane collecting ${laneState(ideaToCodeInputs.length)}`}>
               <div className="researchLaneHead">
-                <span>Collecting from previous output</span>
-                <strong>Ideas ready to code</strong>
+                <span>Input to this stage</span>
+                <strong>Formalized ideas</strong>
               </div>
-              <ResearchIdeaList assets={assetOptions} empty="No formalized ideas are ready to code." ideas={ideaToCodeInputs} />
+              <ResearchIdeaList assets={assetOptions} editable empty="No formalized ideas are ready to code." ideas={ideaToCodeInputs} mode="formalization" />
             </div>
             <div className={`researchLane finished ${laneState(snapshot.readySpecs.length)}`}>
               <div className="researchLaneHead">
-                <span>Finished by this stage</span>
+                <span>Output from this stage</span>
                 <strong>Coded strategies</strong>
               </div>
-              <StrategyList empty="No coded strategies have been produced yet." specs={snapshot.readySpecs} />
+              <ResearchStrategyList empty="No coded strategies have been produced yet." specs={snapshot.readySpecs} />
             </div>
           </div>
         </section>
@@ -709,8 +824,8 @@ export default async function ResearchPage() {
         <section className="backtest-card researchConversion">
           <div className="backtest-card-head">
             <div>
-              <h2>From Coded Strategy To Backtested Stats</h2>
-              <p>Left side collects coded strategy folders; right side shows finished backtest stats.</p>
+              <h2>Coded Strategies To Backtest Results</h2>
+              <p>Left side collects coded strategy folders; right side shows detailed backtest results.</p>
             </div>
             <span className={`count-pill${snapshot.pendingReadyCount > 0 ? " warning" : ""}`}>
               {formatNumber(snapshot.pendingReadyCount)} queued / {formatNumber(snapshot.backtestedCount)} tested
@@ -719,17 +834,17 @@ export default async function ResearchPage() {
           <div className="researchConversionGrid">
             <div className={`researchLane collecting ${laneState(snapshot.readySpecs.length)}`}>
               <div className="researchLaneHead">
-                <span>Collecting from previous output</span>
+                <span>Input to this stage</span>
                 <strong>Coded strategies</strong>
               </div>
-              <StrategyList empty="No coded strategies waiting for stats." specs={snapshot.readySpecs} />
+              <ResearchStrategyList empty="No coded strategies waiting for stats." specs={snapshot.readySpecs} />
             </div>
             <div className={`researchLane finished ${laneState(snapshot.backtestedRows.length)}`}>
               <div className="researchLaneHead">
-                <span>Finished by this stage</span>
-                <strong>Backtested stats</strong>
+                <span>Output from this stage</span>
+                <strong>Backtest results</strong>
               </div>
-              <BacktestTable empty="No backtested stats have been produced yet." rows={snapshot.backtestedRows} showGate />
+              <ResearchBacktestTable empty="No backtest results have been produced yet." rows={snapshot.backtestedRows} />
             </div>
           </div>
         </section>
@@ -737,8 +852,8 @@ export default async function ResearchPage() {
         <section className="backtest-card researchConversion researchFinishedCard">
           <div className="backtest-card-head">
             <div>
-              <h2>From Backtested To Finished</h2>
-              <p>Left side collects backtested stats; right side shows finished strategies that cleared PF above 2 and more than 20 trades.</p>
+              <h2>Backtest Results To Finished Strategies</h2>
+              <p>Left side collects backtest results below requirements; right side shows strategies that cleared PF above 2 and more than 20 trades.</p>
             </div>
             <span className={`count-pill${snapshot.qualifiedCount > 0 ? "" : " warning"}`}>
               {formatNumber(snapshot.qualifiedCount)} finished
@@ -747,17 +862,17 @@ export default async function ResearchPage() {
           <div className="researchConversionGrid">
             <div className={`researchLane collecting ${laneState(backtestInputRows.length)}`}>
               <div className="researchLaneHead">
-                <span>Collecting from previous output</span>
-                <strong>Backtested stats</strong>
+                <span>Still under review</span>
+                <strong>Backtest results</strong>
               </div>
-              <BacktestTable empty="No backtested stats are waiting for final review." rows={backtestInputRows} showGate />
+              <ResearchBacktestTable empty="No backtest results are waiting for final review." rows={backtestInputRows} />
             </div>
             <div className={`researchLane finished ${laneState(snapshot.finishedRows.length)}`}>
               <div className="researchLaneHead">
-                <span>Finished by this stage</span>
+                <span>Cleared requirements</span>
                 <strong>Finished strategies</strong>
               </div>
-              <BacktestTable empty={`No strategy has cleared PF >= ${RESEARCH_FINISHED_MIN_PF} with enough trades yet.`} rows={snapshot.finishedRows} />
+              <ResearchBacktestTable empty={`No strategy has cleared PF >= ${RESEARCH_FINISHED_MIN_PF} with enough trades yet.`} rows={snapshot.finishedRows} />
             </div>
           </div>
         </section>

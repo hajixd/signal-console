@@ -26,12 +26,29 @@ jobs:
     name: Commit idea to branch
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    env:
+      FIREBASE_CLIENT_EMAIL: ${{ secrets.FIREBASE_CLIENT_EMAIL }}
+      FIREBASE_PRIVATE_KEY: ${{ secrets.FIREBASE_PRIVATE_KEY }}
+      FIREBASE_PRIVATE_KEY_ID: ${{ secrets.FIREBASE_PRIVATE_KEY_ID }}
+      FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
+      FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
+      FIREBASE_STORAGE_BUCKET: ${{ secrets.FIREBASE_STORAGE_BUCKET }}
+      SIGNAL_CONSOLE_STORAGE_PREFIX: ${{ vars.SIGNAL_CONSOLE_STORAGE_PREFIX || 'signal-console' }}
 
     steps:
       - name: Check out workflow ref
         uses: actions/checkout@v4
         with:
           ref: ${{ github.ref_name }}
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
 
       - name: Write idea file
         env:
@@ -65,3 +82,6 @@ jobs:
             git commit -m "add research idea: ${{ inputs.title }}"
             git push
           fi
+
+      - name: Upload idea to Firebase
+        run: node --import tsx scripts/firebase-sync.ts --paths="${{ inputs.path }}" --changed-only --files-only

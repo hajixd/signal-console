@@ -2,6 +2,8 @@
 
 import { getLiveConfig, saveLiveConfig } from "@/lib/live-config";
 import { assertServerActionAdminAuthorized } from "@/lib/admin-api";
+import { getCachedChallengeReplay, saveCachedChallengeReplay } from "@/lib/challenge-replay-cache";
+import type { ChallengeReplaySummary } from "@/lib/challenge";
 import type { ChallengeRulesMarket, LiveMarket, SavedChallengeRules, SavedCustomScaleRange, SavedTheme } from "@/lib/live-config";
 import { STRATEGY_DEFINITIONS } from "@/lib/strategy-loader";
 
@@ -291,6 +293,15 @@ export async function syncChallengeRulesForMarket(market: string, rules: Persist
       }
     }
   });
+}
+
+export async function loadChallengeReplayCache(cacheKey: string): Promise<ChallengeReplaySummary | null> {
+  return getCachedChallengeReplay(cacheKey);
+}
+
+export async function syncChallengeReplayCache(cacheKey: string, summary: ChallengeReplaySummary): Promise<void> {
+  await assertServerActionAdminAuthorized();
+  await saveCachedChallengeReplay(cacheKey, summary);
 }
 
 export async function syncTheme(theme: string): Promise<void> {

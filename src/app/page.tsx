@@ -14,7 +14,9 @@ import MarketSwitchTabs from "@/components/ui/market-switch-tabs";
 import TestAlertButton from "@/components/ui/test-alert-button";
 import ThemeToggle from "@/components/ui/theme-toggle";
 import {
+  loadChallengeReplayCache,
   syncActiveMarket,
+  syncChallengeReplayCache,
   syncChallengeRulesForMarket,
   syncCustomScaleRange,
   syncLiveSelection,
@@ -34,7 +36,7 @@ import {
   type BacktestTrade
 } from "@/lib/backtest";
 import { DEFAULT_CHALLENGE_RULES, type ChallengeRules } from "@/lib/challenge";
-import { analyzeBacktestDataValidity, dataValidityClass, type DataValidityResult } from "@/lib/data-validity";
+import { analyzeBacktestDataValidity, dataValidityClass, type DataValidityResult, type DataValidityTone } from "@/lib/data-validity";
 import { dollarPerUnit, instrumentSizeLabel, instrumentUnitLabel, recommendedSizeMultiplier } from "@/lib/instruments";
 import { defaultDatasetStatus, getDatasetStatus, getLiveConfig, type DatasetStatus, type LiveConfig } from "@/lib/live-config";
 import { allRules } from "@/lib/live-signals";
@@ -129,6 +131,30 @@ function fmtNumber(value: number): string {
   }).format(value);
 }
 
+function fmtShortDateTime(value: string | undefined): string {
+  const parsed = value ? Date.parse(value) : Number.NaN;
+  if (!Number.isFinite(parsed)) return "Unknown";
+  return new Intl.DateTimeFormat(undefined, {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit"
+  }).format(new Date(parsed));
+}
+
+function fmtCompactDurationMs(value: number | undefined): string {
+  if (!Number.isFinite(value)) return "--";
+  const milliseconds = Math.max(0, Math.round(value ?? 0));
+  if (milliseconds < 1000) return `${milliseconds}ms`;
+  if (milliseconds < 60_000) {
+    const seconds = milliseconds / 1000;
+    return `${seconds < 10 ? seconds.toFixed(1) : Math.round(seconds)}s`;
+  }
+  const minutes = Math.floor(milliseconds / 60_000);
+  const seconds = Math.round((milliseconds - minutes * 60_000) / 1000);
+  return seconds ? `${minutes}m ${seconds}s` : `${minutes}m`;
+}
+
 function latestIsoTime(values: Array<number | string | null | undefined>): string | undefined {
   const latest = Math.max(
     ...values
@@ -140,6 +166,19 @@ function latestIsoTime(values: Array<number | string | null | undefined>): strin
   );
 
   return Number.isFinite(latest) ? new Date(latest).toISOString() : undefined;
+}
+
+function earliestIsoTime(values: Array<number | string | null | undefined>): string | undefined {
+  const earliest = Math.min(
+    ...values
+      .map((value) => {
+        if (value === undefined || value === null || value === "") return Number.NaN;
+        return typeof value === "number" ? value : Date.parse(value);
+      })
+      .filter(Number.isFinite)
+  );
+
+  return Number.isFinite(earliest) ? new Date(earliest).toISOString() : undefined;
 }
 
 function latestLiveTradeAt(trades: TradeAlert[]): string | undefined {
@@ -375,11 +414,60 @@ function syncTileLabel(state: SyncTileState): string {
 }
 
 type SyncTileRun = {
+  durationMs?: number;
   error?: string;
   finishedAt?: string;
+  jobsLastRun?: number;
   startedAt?: string;
+  stage?: string;
   state?: string;
 };
+
+type SyncDetailCheck = {
+  detail?: string;
+  label: string;
+  tone?: DataValidityTone;
+  value: string;
+};
+
+type SyncDetailIssue = {
+  detail?: string;
+  label: string;
+  tone: Exclude<DataValidityTone, "good">;
+};
+
+function syncRunDurationMs(run: SyncTileRun | undefined): number | undefined {
+  if (typeof run?.durationMs === "number" && Number.isFinite(run.durationMs)) return run.durationMs;
+  const startedAt = run?.startedAt ? Date.parse(run.startedAt) : Number.NaN;
+  const finishedAt = run?.finishedAt ? Date.parse(run.finishedAt) : Number.NaN;
+  return Number.isFinite(startedAt) && Number.isFinite(finishedAt) && finishedAt >= startedAt ? finishedAt - startedAt : undefined;
+}
+
+function SyncTileChecks({ ariaLabel, checks }: { ariaLabel: string; checks: SyncDetailCheck[] }) {
+  return (
+    <div className="dataValidityChecks syncTileChecks" aria-label={ariaLabel}>
+      {checks.map((check) => (
+        <div className={`dataValidityCheck ${dataValidityClass(check.tone ?? "good")}`} key={check.label} title={check.detail}>
+          <span>{check.label}</span>
+          <strong>{check.value}</strong>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function SyncTileIssues({ ariaLabel, issues }: { ariaLabel: string; issues: SyncDetailIssue[] }) {
+  if (!issues.length) return null;
+  return (
+    <div className="dataValidityIssueList syncTileIssueList" aria-label={ariaLabel}>
+      {issues.map((issue) => (
+        <span className={`dataValidityIssue ${dataValidityClass(issue.tone)}`} key={issue.label} title={issue.detail}>
+          {issue.label}
+        </span>
+      ))}
+    </div>
+  );
+}
 
 function syncTileStatusTimestamp(
   state: SyncTileState,
@@ -468,13 +556,12 @@ function DataValidityBox({
         <dd>
           <LocalDateTime value={nextScheduledAt} />
         </dd>
-        <dt>Trades checked</dt>
-        <dd>{fmtNumber(dataValidity.stats.tradesChecked)}</dd>
-        <dt>Coverage</dt>
+        <dt>Scope</dt>
         <dd>
-          {fmtNumber(dataValidity.stats.strategyCount)} strategies / {fmtNumber(dataValidity.stats.symbolCount)} symbols
+          {fmtNumber(dataValidity.stats.tradesChecked)} trades / {fmtNumber(dataValidity.stats.strategyCount)} strategies /{" "}
+          {fmtNumber(dataValidity.stats.symbolCount)} symbols
         </dd>
-        <dt>Review window</dt>
+        <dt>Window</dt>
         <dd>
           <LocalDateTime value={dataValidity.stats.earliestEntryAt} fallback="Unknown" /> to{" "}
           <LocalDateTime value={dataValidity.stats.latestExitAt} fallback="Unknown" />
@@ -482,23 +569,15 @@ function DataValidityBox({
         <dt>Issues</dt>
         <dd>{dataValidity.summary}</dd>
       </dl>
-      <div className="dataValidityChecks" aria-label="Review validity check details">
-        {dataValidity.checks.map((check) => (
-          <div className={`dataValidityCheck ${dataValidityClass(check.tone)}`} key={check.label} title={check.detail}>
-            <span>{check.label}</span>
-            <strong>{check.value}</strong>
-          </div>
-        ))}
-      </div>
-      {dataValidity.issues.length ? (
-        <div className="dataValidityIssueList" aria-label="Review validity issues">
-          {dataValidity.issues.slice(0, 5).map((issue) => (
-            <span className={`dataValidityIssue ${dataValidityClass(issue.tone)}`} key={issue.label} title={issue.details?.join("\n")}>
-              {fmtNumber(issue.count)} {issue.label}
-            </span>
-          ))}
-        </div>
-      ) : null}
+      <SyncTileChecks ariaLabel="Review validity check details" checks={dataValidity.checks} />
+      <SyncTileIssues
+        ariaLabel="Review validity issues"
+        issues={dataValidity.issues.slice(0, 5).map((issue) => ({
+          detail: issue.details?.join("\n"),
+          label: `${fmtNumber(issue.count)} ${issue.label}`,
+          tone: issue.tone
+        }))}
+      />
     </div>
   );
 }
@@ -952,10 +1031,11 @@ export default async function Home({ searchParams }: HomeProps) {
   const marketDataSyncState = syncTileState(syncStatus.marketDataSync, syncStatus.lastMarketDataSyncAt ?? legacyDatasetSyncAt);
   const signalTradeCheckState = signalTradeCheckTileState(syncStatus.signalTradeCheck, syncStatus.lastSignalTradeCheckAt);
   const dataValidityRefreshState = syncTileState(syncStatus.dataValidityRefresh, syncStatus.lastDataValidityRefreshAt);
+  const latestMarketDataBarAt = latestDatasetCoverageAt(datasetStatus);
   const latestBacktestTradeAt = backtestFreshness.latestTradeAt;
   const latestTradeAt = latestIsoTime([latestLiveTradeAt(liveTrades), latestBacktestTradeAt]);
   const backtestManifestAt = backtestFreshness.generatedAt;
-  const dataEndsAt = backtestFreshness.computedThroughAt ?? latestDatasetCoverageAt(datasetStatus);
+  const dataEndsAt = backtestFreshness.computedThroughAt ?? latestMarketDataBarAt;
   const backtestBehindMarketData = false;
   const now = new Date();
   const nextMarketDataSyncAt = nextCronRunIso((date) => date.getUTCMinutes() % 5 === 0, now);
@@ -1300,6 +1380,220 @@ export default async function Home({ searchParams }: HomeProps) {
     strategyRefs: strategyOptions,
     trades: activeMarketBacktestTrades
   });
+  const coverageEntries = Object.values(datasetStatus?.assetCoverage ?? {});
+  const coverageRows = coverageEntries.reduce((sum, coverage) => sum + Math.max(0, coverage.rows), 0);
+  const coverageTimeframes = uniqueValues(coverageEntries.flatMap((coverage) => coverage.timeframes));
+  const firstMarketDataBarAt = earliestIsoTime(coverageEntries.map((coverage) => coverage.firstBarAt));
+  const latestCoverageUpdatedAt = latestIsoTime(coverageEntries.map((coverage) => coverage.updatedAt));
+  const selectedLiveStrategyCount = strategyOptions.filter((option) => selectedKeySet.has(option.key) && option.liveSupported).length;
+  const enabledLiveStrategyCount = persistedLiveEnabledKeys.length;
+  const openLiveAlertCount = activeMarketLiveTrades.filter((trade) => !liveTradeClosed(trade)).length;
+  const closedLiveAlertCount = Math.max(0, activeMarketLiveTrades.length - openLiveAlertCount);
+  const latestActiveMarketSignalAt = latestLiveTradeAt(activeMarketLiveTrades);
+  const signalPausedForStaleData = isSignalDataPauseError(syncStatus.signalTradeCheck?.error);
+  const activeBacktestStrategyCount = uniqueValues(activeMarketBacktestTrades.map((trade) => trade.datasetId).filter(Boolean)).length;
+  const activeBacktestSymbolCount = uniqueValues(activeMarketBacktestTrades.map((trade) => trade.symbol).filter(Boolean)).length;
+  const activeBacktestMarketCount = uniqueValues(activeMarketBacktestTrades.map((trade) => trade.market).filter(Boolean)).length;
+  const marketDataChecks: SyncDetailCheck[] = [
+    {
+      detail: "Total uploaded market data files tracked by the runtime status document.",
+      label: "Files tracked",
+      tone: datasetStatus.uploadedFilesCount || coverageRows ? "good" : "warning",
+      value: fmtNumber(datasetStatus.uploadedFilesCount)
+    },
+    {
+      detail: "Number of assets with cached coverage metadata.",
+      label: "Assets covered",
+      tone: coverageEntries.length ? "good" : "bad",
+      value: fmtNumber(coverageEntries.length)
+    },
+    {
+      detail: "Total cached bar rows across tracked assets.",
+      label: "Rows cached",
+      tone: coverageRows ? "good" : "bad",
+      value: fmtNumber(coverageRows)
+    },
+    {
+      detail: "Distinct bar timeframes represented in coverage metadata.",
+      label: "Timeframes",
+      tone: coverageTimeframes.length ? "good" : "warning",
+      value: fmtNumber(coverageTimeframes.length)
+    },
+    {
+      detail: "Earliest cached bar across tracked assets.",
+      label: "First bar",
+      tone: firstMarketDataBarAt ? "good" : "warning",
+      value: fmtShortDateTime(firstMarketDataBarAt)
+    },
+    {
+      detail: "Latest cached bar across tracked assets.",
+      label: "Latest bar",
+      tone: latestMarketDataBarAt ? "good" : "warning",
+      value: fmtShortDateTime(latestMarketDataBarAt)
+    },
+    {
+      detail: "Most recent coverage metadata update.",
+      label: "Coverage write",
+      tone: latestCoverageUpdatedAt || syncStatus.lastMarketDataSyncAt ? "good" : "warning",
+      value: fmtShortDateTime(latestCoverageUpdatedAt ?? syncStatus.lastMarketDataSyncAt ?? legacyDatasetSyncAt)
+    },
+    {
+      detail: "Most recent market data sync runtime.",
+      label: "Runtime",
+      tone: syncRunDurationMs(syncStatus.marketDataSync) !== undefined ? "good" : "warning",
+      value: fmtCompactDurationMs(syncRunDurationMs(syncStatus.marketDataSync))
+    }
+  ];
+  const marketDataIssues: SyncDetailIssue[] = [
+    ...(marketDataSyncState === "failed"
+      ? [
+          {
+            detail: syncStatus.marketDataSync?.error,
+            label: "Market data sync failed",
+            tone: "bad" as const
+          }
+        ]
+      : []),
+    ...(!coverageEntries.length
+      ? [
+          {
+            label: "No coverage metadata",
+            tone: "bad" as const
+          }
+        ]
+      : [])
+  ];
+  const signalTradeChecks: SyncDetailCheck[] = [
+    {
+      detail: "Selected strategies that can generate live signals.",
+      label: "Selected live",
+      tone: selectedLiveStrategyCount ? "good" : "warning",
+      value: fmtNumber(selectedLiveStrategyCount)
+    },
+    {
+      detail: "Strategies persisted as live-enabled for the current market.",
+      label: "Enabled live",
+      tone: enabledLiveStrategyCount ? "good" : "warning",
+      value: fmtNumber(enabledLiveStrategyCount)
+    },
+    {
+      detail: "Live alerts associated with the active market.",
+      label: "Market alerts",
+      value: fmtNumber(activeMarketLiveTrades.length)
+    },
+    {
+      detail: "Alerts that have not yet resolved to a closed lifecycle state.",
+      label: "Open alerts",
+      value: fmtNumber(openLiveAlertCount)
+    },
+    {
+      detail: "Alerts with closed lifecycle status for this market.",
+      label: "Closed alerts",
+      value: fmtNumber(closedLiveAlertCount)
+    },
+    {
+      detail: "Rendered signal lifecycle rows for the currently selected strategies.",
+      label: "Event rows",
+      value: fmtNumber(selectedLiveEventRows.length)
+    },
+    {
+      detail: "Most recent live alert or lifecycle update for the active market.",
+      label: "Last alert",
+      value: latestActiveMarketSignalAt ? fmtShortDateTime(latestActiveMarketSignalAt) : "No alerts"
+    },
+    {
+      detail: "Most recent signal trade check runtime.",
+      label: "Runtime",
+      tone: syncRunDurationMs(syncStatus.signalTradeCheck) !== undefined ? "good" : "warning",
+      value: fmtCompactDurationMs(syncRunDurationMs(syncStatus.signalTradeCheck))
+    }
+  ];
+  const signalTradeIssues: SyncDetailIssue[] = [
+    ...(signalTradeCheckState === "failed"
+      ? [
+          {
+            detail: syncStatus.signalTradeCheck?.error,
+            label: "Signal check failed",
+            tone: "bad" as const
+          }
+        ]
+      : []),
+    ...(signalPausedForStaleData
+      ? [
+          {
+            detail: syncStatus.signalTradeCheck?.error,
+            label: "Stale data pause",
+            tone: "warning" as const
+          }
+        ]
+      : [])
+  ];
+  const backtestHistoryChecks: SyncDetailCheck[] = [
+    {
+      detail: "All stored backtest rows in the loaded catalog.",
+      label: "Stored rows",
+      tone: backtestFreshness.trades ? "good" : "bad",
+      value: fmtNumber(backtestFreshness.trades)
+    },
+    {
+      detail: "Stored backtest rows belonging to the active market.",
+      label: "Active rows",
+      tone: activeMarketBacktestTrades.length ? "good" : "bad",
+      value: fmtNumber(activeMarketBacktestTrades.length)
+    },
+    {
+      detail: "Distinct active-market strategies represented in backtest history.",
+      label: "Strategies",
+      tone: activeBacktestStrategyCount ? "good" : "warning",
+      value: fmtNumber(activeBacktestStrategyCount)
+    },
+    {
+      detail: "Distinct symbols represented in active-market backtest history.",
+      label: "Symbols",
+      tone: activeBacktestSymbolCount ? "good" : "warning",
+      value: fmtNumber(activeBacktestSymbolCount)
+    },
+    {
+      detail: "Distinct market labels represented in active-market backtest history.",
+      label: "Markets",
+      tone: activeBacktestMarketCount ? "good" : "warning",
+      value: fmtNumber(activeBacktestMarketCount)
+    },
+    {
+      detail: "Closed live alerts merged into the history view.",
+      label: "Closed live",
+      value: fmtNumber(closedLiveHistoryRows.length)
+    },
+    {
+      detail: "Rows currently rendered in the history table.",
+      label: "Visible rows",
+      value: fmtNumber(visibleTradeHistoryRows.length)
+    },
+    {
+      detail: "Backtest manifest generation timestamp.",
+      label: "Manifest",
+      tone: backtestManifestAt ? "good" : "warning",
+      value: fmtShortDateTime(backtestManifestAt)
+    }
+  ];
+  const backtestHistoryIssues: SyncDetailIssue[] = [
+    ...(backtestBehindMarketData
+      ? [
+          {
+            label: "Behind market data",
+            tone: "warning" as const
+          }
+        ]
+      : []),
+    ...(!activeMarketBacktestTrades.length
+      ? [
+          {
+            label: "No active-market history",
+            tone: "bad" as const
+          }
+        ]
+      : [])
+  ];
   const challengeReplayTrades = selectedBacktestTrades.map((trade) => ({
       key: trade.datasetId,
       entryTime: trade.entryTime,
@@ -1384,7 +1678,9 @@ export default async function Home({ searchParams }: HomeProps) {
           </div>
           <ChallengeReplay
             initialRules={challengeRules}
+            loadCachedReplay={loadChallengeReplayCache}
             persistedRules={Boolean(persistedMarketChallengeRules)}
+            persistCachedReplay={syncChallengeReplayCache}
             persistRules={persistChallengeRules}
             seedPrefix={challengeReplaySeed}
             storageKey={`trading-bot:challenge-rules:v1:${activeMarket}`}
@@ -1657,9 +1953,19 @@ export default async function Home({ searchParams }: HomeProps) {
                 <dd>
                   <LocalDateTime value={nextMarketDataSyncAt} />
                 </dd>
+                <dt>Scope</dt>
+                <dd>
+                  {fmtNumber(coverageEntries.length)} assets / {fmtNumber(coverageRows)} rows
+                </dd>
+                <dt>Latest bar</dt>
+                <dd>
+                  <LocalDateTime value={latestMarketDataBarAt} fallback="Unknown" />
+                </dd>
                 <dt>Interval</dt>
                 <dd>Every 5 minutes</dd>
               </dl>
+              <SyncTileChecks ariaLabel="Market data sync details" checks={marketDataChecks} />
+              <SyncTileIssues ariaLabel="Market data sync issues" issues={marketDataIssues} />
             </div>
             <div className={`dataset-sync-tile sync-state-${signalTradeCheckState}`}>
               <span className="sync-tile-name">Signal trade check</span>
@@ -1680,9 +1986,19 @@ export default async function Home({ searchParams }: HomeProps) {
                 <dd>
                   <LocalDateTime value={nextSignalTradeCheckAt} />
                 </dd>
+                <dt>Scope</dt>
+                <dd>
+                  {fmtNumber(selectedLiveStrategyCount)} live strategies / {fmtNumber(activeMarketLiveTrades.length)} alerts
+                </dd>
+                <dt>Last alert</dt>
+                <dd>
+                  <LocalDateTime value={latestActiveMarketSignalAt} fallback="No alerts yet" />
+                </dd>
                 <dt>Interval</dt>
                 <dd>Every 15 minutes</dd>
               </dl>
+              <SyncTileChecks ariaLabel="Signal trade check details" checks={signalTradeChecks} />
+              <SyncTileIssues ariaLabel="Signal trade check issues" issues={signalTradeIssues} />
             </div>
             <div className={`dataset-sync-tile sync-state-${backtestBehindMarketData ? "failed" : latestTradeAt ? "success" : "idle"}`}>
               <span className="sync-tile-name">Backtest history</span>
@@ -1701,9 +2017,16 @@ export default async function Home({ searchParams }: HomeProps) {
                 <dd>
                   <LocalDateTime value={dataEndsAt} fallback="Unknown" />
                 </dd>
+                <dt>Scope</dt>
+                <dd>
+                  {fmtNumber(activeMarketBacktestTrades.length)} active / {fmtNumber(activeBacktestStrategyCount)} strategies /{" "}
+                  {fmtNumber(activeBacktestSymbolCount)} symbols
+                </dd>
                 <dt>Stored trades</dt>
                 <dd>{fmtNumber(backtestFreshness.trades)}</dd>
               </dl>
+              <SyncTileChecks ariaLabel="Backtest history details" checks={backtestHistoryChecks} />
+              <SyncTileIssues ariaLabel="Backtest history issues" issues={backtestHistoryIssues} />
             </div>
             <DataValidityBox
               dataValidity={dataValidity}

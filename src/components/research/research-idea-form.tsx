@@ -1,9 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { FormEvent, MouseEvent, useEffect, useState, useTransition } from "react";
-
-const TIMEFRAME_OPTIONS = ["1m", "5m", "15m", "30m", "45m", "1h", "4h", "1d", "overnight"];
+import { FormEvent, useState, useTransition } from "react";
 
 export type ResearchAssetOption = {
   key: string;
@@ -12,47 +10,40 @@ export type ResearchAssetOption = {
 };
 
 type ResearchIdeaFormProps = {
-  assets: ResearchAssetOption[];
   isEmpty?: boolean;
 };
 
-export default function ResearchIdeaForm({ assets, isEmpty = false }: ResearchIdeaFormProps) {
+function titleFromIdeaText(value: string) {
+  const firstLine = value
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .find((line) => line && !/^https?:\/\//i.test(line));
+  const fallback = value.trim().replace(/\s+/g, " ").slice(0, 92);
+  return (firstLine ?? fallback).replace(/^#+\s*/, "").slice(0, 120);
+}
+
+export default function ResearchIdeaForm({ isEmpty = false }: ResearchIdeaFormProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
-  const [title, setTitle] = useState("");
-  const [hypothesis, setHypothesis] = useState("");
-  const [sourceUrls, setSourceUrls] = useState("");
-  const [timeframes, setTimeframes] = useState(["15m"]);
-  const [assetKeys, setAssetKeys] = useState<string[]>([]);
-  const [isOpen, setIsOpen] = useState(false);
+  const [ideaText, setIdeaText] = useState("");
   const [message, setMessage] = useState("");
-
-  useEffect(() => {
-    if (!isOpen) return;
-    function handleKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape") setIsOpen(false);
-    }
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen]);
-
-  function toggleTimeframe(timeframe: string) {
-    setTimeframes((current) => (current.includes(timeframe) ? current.filter((item) => item !== timeframe) : [...current, timeframe]));
-  }
-
-  function toggleAsset(assetKey: string) {
-    setAssetKeys((current) => (current.includes(assetKey) ? current.filter((item) => item !== assetKey) : [...current, assetKey]));
-  }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setMessage("");
+    const hypothesis = ideaText.trim();
+    const title = titleFromIdeaText(hypothesis);
+    if (!title || !hypothesis) {
+      setMessage("Add a rough idea, link, or note first.");
+      return;
+    }
+
     const response = await fetch("/api/research/ideas", {
       body: JSON.stringify({
-        assetKeys,
+        assetKeys: [],
         hypothesis,
-        sourceUrls,
-        timeframes,
+        sourceUrls: "",
+        timeframes: ["15m"],
         title
       }),
       headers: { "content-type": "application/json" },
@@ -64,109 +55,28 @@ export default function ResearchIdeaForm({ assets, isEmpty = false }: ResearchId
       return;
     }
 
-    setTitle("");
-    setHypothesis("");
-    setSourceUrls("");
-    setAssetKeys([]);
-    setTimeframes(["15m"]);
+    setIdeaText("");
     setMessage(payload.path ? `Added ${payload.path}` : "Idea added.");
-    setIsOpen(false);
     startTransition(() => router.refresh());
   }
 
-  function closeFromBackdrop(event: MouseEvent<HTMLDivElement>) {
-    if (event.target === event.currentTarget) setIsOpen(false);
-  }
-
   return (
-    <div className="researchIdeaComposer">
-      <div className="researchIdeaComposerText">
-        <strong>{isEmpty ? "No ideas queued" : "Manual idea intake"}</strong>
-        <span>
-          {isEmpty
-            ? "Add a title and hypothesis when a new setup is ready for the research pipeline."
-            : "Add another setup with a title, hypothesis, and market scope."}
-        </span>
+    <form className="researchIdeaComposer researchDiscoveryComposer" onSubmit={handleSubmit}>
+      <label className="researchField wide researchDiscoveryInput">
+        <span>{isEmpty ? "Idea discovery input" : "New discovery"}</span>
+        <textarea
+          onChange={(event) => setIdeaText(event.target.value)}
+          placeholder="Paste a rough strategy idea, source link, video URL, note dump, or market behavior to investigate. Formalization will organize the details later."
+          rows={10}
+          value={ideaText}
+        />
+      </label>
+      <div className="researchFormActions">
+        <button disabled={isPending} type="submit">
+          {isPending ? "Adding" : "Add Idea"}
+        </button>
       </div>
-      <button className="researchAddIdeaButton" onClick={() => setIsOpen(true)} type="button">
-        Add Idea
-      </button>
       {message ? <span className="researchIdeaComposerMessage">{message}</span> : null}
-
-      {isOpen ? (
-        <div className="researchModalBackdrop" onMouseDown={closeFromBackdrop}>
-          <section aria-modal="true" className="researchIdeaModal" role="dialog">
-            <div className="researchIdeaModalHead">
-              <div>
-                <span>Idea details</span>
-                <strong>Add Idea</strong>
-              </div>
-              <button aria-label="Close idea form" onClick={() => setIsOpen(false)} type="button">
-                X
-              </button>
-            </div>
-            <form className="researchIdeaForm" onSubmit={handleSubmit}>
-              <label className="researchField wide">
-                <span>Idea title</span>
-                <input onChange={(event) => setTitle(event.target.value)} placeholder="SPY overnight drift recycled into ES and EUR/USD" value={title} />
-              </label>
-              <label className="researchField wide">
-                <span>Hypothesis</span>
-                <textarea
-                  onChange={(event) => setHypothesis(event.target.value)}
-                  placeholder="Describe the market behavior, session, source, and what should be tested."
-                  rows={4}
-                  value={hypothesis}
-                />
-              </label>
-              <label className="researchField wide">
-                <span>Sources</span>
-                <textarea
-                  onChange={(event) => setSourceUrls(event.target.value)}
-                  placeholder="Paste YouTube, article, paper, or notes URLs. One per line is easiest."
-                  rows={3}
-                  value={sourceUrls}
-                />
-              </label>
-              <fieldset className="researchTimeframeChecks">
-                <legend>Timeframes</legend>
-                {TIMEFRAME_OPTIONS.map((timeframe) => (
-                  <label key={timeframe}>
-                    <input checked={timeframes.includes(timeframe)} onChange={() => toggleTimeframe(timeframe)} type="checkbox" />
-                    <span>{timeframe}</span>
-                  </label>
-                ))}
-              </fieldset>
-              <fieldset className="researchAssetChecks">
-                <legend>Assets</legend>
-                <div className="researchAssetActions">
-                  <button onClick={() => setAssetKeys(assets.map((asset) => asset.key))} type="button">
-                    Select all
-                  </button>
-                  <button onClick={() => setAssetKeys([])} type="button">
-                    Clear
-                  </button>
-                </div>
-                <div className="researchAssetGrid">
-                  {assets.map((asset) => (
-                    <label key={asset.key}>
-                      <input checked={assetKeys.includes(asset.key)} onChange={() => toggleAsset(asset.key)} type="checkbox" />
-                      <span>{asset.symbol}</span>
-                      <small>{asset.label}</small>
-                    </label>
-                  ))}
-                </div>
-              </fieldset>
-              <div className="researchFormActions">
-                <button disabled={isPending} type="submit">
-                  {isPending ? "Adding" : "Add Idea"}
-                </button>
-                {message ? <span>{message}</span> : null}
-              </div>
-            </form>
-          </section>
-        </div>
-      ) : null}
-    </div>
+    </form>
   );
 }

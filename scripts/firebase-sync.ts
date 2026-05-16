@@ -42,6 +42,10 @@ const UPLOAD_ROOTS: UploadRoot[] = [
     include: (filePath) => path.extname(filePath).toLowerCase() === ".json"
   },
   {
+    root: "Research",
+    include: (filePath) => [".csv", ".json", ".md"].includes(path.extname(filePath).toLowerCase())
+  },
+  {
     root: "data",
     include: (filePath) => path.extname(filePath).toLowerCase() === ".csv"
   },
@@ -62,13 +66,13 @@ function selectedUploadRoots(): UploadRoot[] {
     .filter(Boolean);
 
   if (!selectedNames.length) {
-    throw new Error("The --roots argument must include at least one of: config, data, strategy.");
+    throw new Error("The --roots argument must include at least one of: config, Research, data, strategy.");
   }
 
   const roots = selectedNames.map((name) => {
     const match = UPLOAD_ROOTS.find((entry) => entry.root === name);
     if (!match) {
-      throw new Error(`Unknown upload root "${name}". Expected one of: config, data, strategy.`);
+      throw new Error(`Unknown upload root "${name}". Expected one of: config, Research, data, strategy.`);
     }
     return match;
   });
@@ -78,6 +82,10 @@ function selectedUploadRoots(): UploadRoot[] {
 
 function changedOnlyRequested(): boolean {
   return process.argv.includes("--changed-only");
+}
+
+function filesOnlyRequested(): boolean {
+  return process.argv.includes("--files-only");
 }
 
 function selectedPathPrefixes(): string[] {
@@ -318,6 +326,11 @@ async function main(): Promise<void> {
   const filesToUpload = await filterChangedFiles(matchingFiles, roots, exactPaths.length > 0);
 
   const uploadedFilesCount = await uploadFiles(filesToUpload);
+  if (filesOnlyRequested()) {
+    console.log(`uploaded files ${uploadedFilesCount}`);
+    return;
+  }
+
   const catalogStrategyIds = selectedCatalogStrategyIds();
   const localCatalog = await buildLocalStrategyCatalog(catalogStrategyIds.length ? catalogStrategyIds : undefined);
   const existingManifest = catalogStrategyIds.length ? await readExistingManifestCatalog() : null;

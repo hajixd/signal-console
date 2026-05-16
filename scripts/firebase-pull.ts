@@ -40,6 +40,10 @@ const PULL_ROOTS: PullRoot[] = [
     include: (filePath) => path.extname(filePath).toLowerCase() === ".json"
   },
   {
+    root: "Research",
+    include: (filePath) => [".csv", ".json", ".md"].includes(path.extname(filePath).toLowerCase())
+  },
+  {
     root: "data",
     include: (filePath) => path.extname(filePath).toLowerCase() === ".csv"
   },
@@ -64,14 +68,14 @@ function selectedPullRoots(): PullRoot[] {
     .filter(Boolean);
 
   if (!selectedNames.length) {
-    throw new Error("The --roots argument must include at least one of: config, data, strategy.");
+    throw new Error("The --roots argument must include at least one of: config, Research, data, strategy.");
   }
 
   return unique(
     selectedNames.map((name) => {
       const match = PULL_ROOTS.find((entry) => entry.root === name);
       if (!match) {
-        throw new Error(`Unknown pull root "${name}". Expected one of: config, data, strategy.`);
+        throw new Error(`Unknown pull root "${name}". Expected one of: config, Research, data, strategy.`);
       }
       return match;
     })

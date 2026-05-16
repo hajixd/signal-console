@@ -137,6 +137,9 @@ jobs:
             git push
           fi
 
+      - name: Upload Research outputs to Firebase
+        run: node --import tsx scripts/firebase-sync.ts --roots=Research --changed-only --files-only
+
       - name: Mark research cycle successful
         if: success() && inputs.startedAt != ''
         run: node --import tsx scripts/update-research-cycle-status.ts --state=success --stage="${{ inputs.stage }}" --started-at="${{ inputs.startedAt }}"

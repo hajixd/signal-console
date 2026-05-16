@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { useAutoTradeAdminMode } from "@/components/auto-trading/use-auto-trade-account-mode";
 import ChallengeRulesForm from "@/components/challenge/challenge-rules-form";
+import { emitDashboardLoading } from "@/components/ui/dashboard-loading";
 import {
   strategyContractScale,
   strategyHasContractEdit,
@@ -26,7 +27,9 @@ type ChallengeReplayInputTrade = ChallengeReplayTrade & {
 
 type ChallengeReplayProps = {
   initialRules: ChallengeRules;
+  loadCachedReplay?: (cacheKey: string) => Promise<ChallengeReplaySummary | null>;
   persistedRules?: boolean;
+  persistCachedReplay?: (cacheKey: string, summary: ChallengeReplaySummary) => Promise<void>;
   persistRules?: (rules: ChallengeRules) => Promise<void>;
   seedPrefix: string;
   storageKey?: string;
@@ -36,6 +39,10 @@ type ChallengeReplayProps = {
 };
 
 const STORAGE_KEY = "trading-bot:challenge-rules:v1";
+const REPLAY_CACHE_STORAGE_KEY_PREFIX = "trading-bot:challenge-replay-cache:v2";
+const REPLAY_CACHE_INDEX_KEY = "trading-bot:challenge-replay-cache:index:v2";
+const REPLAY_CACHE_LIMIT = 20;
+const REPLAY_CACHE_VERSION = "mc-10000-v1";
 
 function fmtNumber(value: number): string {
   if (!Number.isFinite(value)) return "inf";
@@ -200,9 +207,101 @@ function emptyChallengeReplaySummary(): ChallengeReplaySummary {
   return analyzePropFirmChallenge([], "empty", DEFAULT_CHALLENGE_RULES);
 }
 
+function hashString(value: string): string {
+  let first = 0xdeadbeef ^ value.length;
+  let second = 0x41c6ce57 ^ value.length;
+
+  for (let index = 0; index < value.length; index += 1) {
+    const code = value.charCodeAt(index);
+    first = Math.imul(first ^ code, 2654435761);
+    second = Math.imul(second ^ code, 1597334677);
+  }
+
+  first = Math.imul(first ^ (first >>> 16), 2246822507) ^ Math.imul(second ^ (second >>> 13), 3266489909);
+  second = Math.imul(second ^ (second >>> 16), 2246822507) ^ Math.imul(first ^ (first >>> 13), 3266489909);
+
+  return `${(second >>> 0).toString(36)}${(first >>> 0).toString(36)}`;
+}
+
+function challengeReplayCachePayload(seedPrefix: string, rules: ChallengeRules, trades: ChallengeReplayTrade[]): string {
+  return JSON.stringify({
+    rules,
+    seedPrefix,
+    trades: trades.map((trade) => [trade.entryTime, Math.round(trade.pnlDollars * 10_000) / 10_000]),
+    version: REPLAY_CACHE_VERSION
+  });
+}
+
+function challengeReplayCacheKey(seedPrefix: string, rules: ChallengeRules, trades: ChallengeReplayTrade[]): string {
+  const payload = challengeReplayCachePayload(seedPrefix, rules, trades);
+  return `cr-${hashString(payload)}-${payload.length.toString(36)}-${trades.length.toString(36)}`;
+}
+
+function isChallengeReplaySummary(value: unknown): value is ChallengeReplaySummary {
+  if (!value || typeof value !== "object") return false;
+  const summary = value as Partial<ChallengeReplaySummary>;
+  return (
+    typeof summary.eligibleTrades === "number" &&
+    typeof summary.historicalSessions === "number" &&
+    Boolean(summary.historical && typeof summary.historical === "object") &&
+    Boolean(summary.monteCarlo && typeof summary.monteCarlo === "object") &&
+    Array.isArray(summary.historicalPassRates) &&
+    Array.isArray(summary.monteCarloPassRates)
+  );
+}
+
+function readLocalReplayCache(cacheKey: string): ChallengeReplaySummary | null {
+  try {
+    const raw = window.localStorage.getItem(`${REPLAY_CACHE_STORAGE_KEY_PREFIX}:${cacheKey}`);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as { summary?: unknown; version?: unknown };
+    if (parsed.version !== REPLAY_CACHE_VERSION || !isChallengeReplaySummary(parsed.summary)) return null;
+    return parsed.summary;
+  } catch {
+    return null;
+  }
+}
+
+function writeLocalReplayCache(cacheKey: string, summary: ChallengeReplaySummary): void {
+  try {
+    const now = Date.now();
+    const rawIndex = window.localStorage.getItem(REPLAY_CACHE_INDEX_KEY);
+    const parsedIndex = rawIndex ? JSON.parse(rawIndex) : [];
+    const index: Array<{ key?: unknown; updatedAt?: unknown }> = Array.isArray(parsedIndex)
+      ? parsedIndex.filter((entry): entry is { key?: unknown; updatedAt?: unknown } => Boolean(entry && typeof entry === "object"))
+      : [];
+    const nextIndex = [
+      { key: cacheKey, updatedAt: now },
+      ...index.filter((entry) => entry.key !== cacheKey)
+    ].slice(0, REPLAY_CACHE_LIMIT);
+    const retainedKeys = new Set(nextIndex.map((entry) => entry.key).filter((key): key is string => typeof key === "string"));
+
+    window.localStorage.setItem(
+      `${REPLAY_CACHE_STORAGE_KEY_PREFIX}:${cacheKey}`,
+      JSON.stringify({
+        summary,
+        updatedAt: new Date(now).toISOString(),
+        version: REPLAY_CACHE_VERSION
+      })
+    );
+
+    for (const entry of index) {
+      if (typeof entry.key === "string" && !retainedKeys.has(entry.key)) {
+        window.localStorage.removeItem(`${REPLAY_CACHE_STORAGE_KEY_PREFIX}:${entry.key}`);
+      }
+    }
+
+    window.localStorage.setItem(REPLAY_CACHE_INDEX_KEY, JSON.stringify(nextIndex));
+  } catch {
+    // The replay cache is an optimization; calculation still works if storage is full or unavailable.
+  }
+}
+
 export default function ChallengeReplay({
   initialRules,
+  loadCachedReplay,
   persistedRules = false,
+  persistCachedReplay,
   persistRules,
   seedPrefix,
   storageKey,
@@ -263,35 +362,88 @@ export default function ChallengeReplay({
       })()
     }));
   }, [edits, initialRules.startingBalance, rules.startingBalance, strategyByKey, trades]);
+  const replayCacheKey = useMemo(() => challengeReplayCacheKey(seedPrefix, rules, replayTrades), [replayTrades, rules, seedPrefix]);
 
   useEffect(() => {
+    emitDashboardLoading("challenge-replay", isRecalculating);
+    return () => emitDashboardLoading("challenge-replay", false);
+  }, [isRecalculating]);
+
+  useEffect(() => {
+    let cancelled = false;
+    let worker: Worker | null = null;
     const id = `${Date.now()}:${Math.random().toString(36).slice(2)}`;
     const seed = `${seedPrefix}:${rulesSeed(rules)}`;
+    const localCached = readLocalReplayCache(replayCacheKey);
+
+    if (localCached) {
+      setChallengeReplay(localCached);
+      setIsRecalculating(false);
+      return () => {
+        cancelled = true;
+      };
+    }
+
     setIsRecalculating(true);
 
-    try {
-      const worker = new Worker(new URL("./challenge-replay-worker.ts", import.meta.url), { type: "module" });
-      worker.onmessage = (event: MessageEvent<{ id: string; summary: ChallengeReplaySummary }>) => {
-        if (event.data.id !== id) return;
-        setChallengeReplay(event.data.summary);
-        setIsRecalculating(false);
-        worker.terminate();
-      };
-      worker.onerror = (event) => {
-        console.error("Challenge replay worker failed", event.message);
-        setChallengeReplay(analyzePropFirmChallenge(replayTrades, seed, rules));
-        setIsRecalculating(false);
-        worker.terminate();
-      };
-      worker.postMessage({ id, rules, seed, trades: replayTrades });
-      return () => worker.terminate();
-    } catch (error) {
-      console.error("Challenge replay worker unavailable", error);
-      setChallengeReplay(analyzePropFirmChallenge(replayTrades, seed, rules));
+    const finish = (summary: ChallengeReplaySummary, persist = true) => {
+      if (cancelled) return;
+      setChallengeReplay(summary);
       setIsRecalculating(false);
-      return undefined;
-    }
-  }, [replayTrades, rules, seedPrefix]);
+      writeLocalReplayCache(replayCacheKey, summary);
+      if (!isRestricted && persistCachedReplay && persist) {
+        void persistCachedReplay(replayCacheKey, summary).catch((error) => console.error("Failed to save challenge replay cache", error));
+      }
+    };
+
+    const calculate = () => {
+      try {
+        worker = new Worker(new URL("./challenge-replay-worker.ts", import.meta.url), { type: "module" });
+        worker.onmessage = (event: MessageEvent<{ id: string; summary: ChallengeReplaySummary }>) => {
+          if (event.data.id !== id) return;
+          const summary = event.data.summary;
+          worker?.terminate();
+          worker = null;
+          finish(summary);
+        };
+        worker.onerror = (event) => {
+          console.error("Challenge replay worker failed", event.message);
+          worker?.terminate();
+          worker = null;
+          finish(analyzePropFirmChallenge(replayTrades, seed, rules));
+        };
+        worker.postMessage({ id, rules, seed, trades: replayTrades });
+      } catch (error) {
+        console.error("Challenge replay worker unavailable", error);
+        finish(analyzePropFirmChallenge(replayTrades, seed, rules));
+      }
+    };
+
+    const loadOrCalculate = async () => {
+      if (loadCachedReplay) {
+        try {
+          const remoteCached = await loadCachedReplay(replayCacheKey);
+          if (cancelled) return;
+          if (remoteCached) {
+            finish(remoteCached, false);
+            return;
+          }
+        } catch (error) {
+          console.error("Failed to load challenge replay cache", error);
+        }
+      }
+
+      if (!cancelled) calculate();
+    };
+
+    void loadOrCalculate();
+
+    return () => {
+      cancelled = true;
+      worker?.terminate();
+      worker = null;
+    };
+  }, [isRestricted, loadCachedReplay, persistCachedReplay, replayCacheKey, replayTrades, rules, seedPrefix]);
 
   return (
     <div className={`challengeReplay${isRestricted ? " adminOnlyRestrictedSurface" : ""}`} aria-disabled={isRestricted}>

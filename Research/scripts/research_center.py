@@ -5,7 +5,18 @@ import subprocess
 import sys
 from pathlib import Path
 
-from common import BACKTESTED_ROOT, IDEAS_APPROVED, IDEAS_INBOX, PAGES_ROOT, QUALIFIED_ROOT, READY_ROOT, REPORTS_ROOT, SEARCH_RESULTS_ROOT, ensure_research_dirs
+from common import (
+    BACKTESTED_ROOT,
+    IDEAS_APPROVED,
+    IDEAS_INBOX,
+    PAGES_ROOT,
+    QUALIFIED_ROOT,
+    READY_ROOT,
+    REPORTS_ROOT,
+    SEARCH_RESULTS_ROOT,
+    STAGE_LABELS,
+    ensure_research_dirs,
+)
 
 
 SCRIPT_ROOT = Path(__file__).resolve().parent
@@ -97,11 +108,11 @@ def status() -> None:
     rows = [
         ("search result files", count_stage(SEARCH_RESULTS_ROOT, "*.json")),
         ("fetched pages", count_stage(PAGES_ROOT, "*.json")),
-        ("ideas inbox", count_stage(IDEAS_INBOX, "*.json")),
-        ("ideas approved", count_stage(IDEAS_APPROVED, "*.json")),
-        ("ready folders", count_stage(READY_ROOT, dirs_only=True)),
-        ("backtested folders", count_stage(BACKTESTED_ROOT, dirs_only=True)),
-        ("qualified folders", count_stage(QUALIFIED_ROOT, dirs_only=True)),
+        ("new ideas", count_stage(IDEAS_INBOX, "*.json")),
+        ("formalized ideas", count_stage(IDEAS_APPROVED, "*.json")),
+        ("coded strategy folders", count_stage(READY_ROOT, dirs_only=True)),
+        ("backtest result folders", count_stage(BACKTESTED_ROOT, dirs_only=True)),
+        ("finished strategy folders", count_stage(QUALIFIED_ROOT, dirs_only=True)),
         ("reports", count_stage(REPORTS_ROOT)),
     ]
     for label, count in rows:
@@ -186,6 +197,7 @@ def main() -> None:
 
 
 def run_llm_stage(stage: str, args: argparse.Namespace) -> None:
+    print(f"Running {STAGE_LABELS.get(stage, stage)}")
     llm_flag = ["--offline"] if getattr(args, "offline_llm", False) else []
     asset_args: list[str] = []
     for asset in args.asset or []:

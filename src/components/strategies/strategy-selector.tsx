@@ -12,6 +12,7 @@ import {
   type StrategyEditMap,
   type StrategyEditSeedMap
 } from "@/components/strategies/strategy-edits-store";
+import { emitDashboardLoading } from "@/components/ui/dashboard-loading";
 
 type StrategyOption = {
   key: string;
@@ -95,6 +96,7 @@ type CustomSelectionResult = {
 
 const STORAGE_KEY = STRATEGY_EDITS_STORAGE_KEY;
 const CUSTOM_SCALE_RANGE_STORAGE_KEY_PREFIX = "trading-bot-custom-scale-range";
+const LIVE_SELECTION_STORAGE_KEY_PREFIX = "trading-bot:live-selection:v1";
 const STRATEGY_SIZES_PARAM = "strategySizes";
 const EDIT_RENDER_DELAY_MS = 650;
 const SELECTION_SYNC_DELAY_MS = 650;
@@ -115,6 +117,22 @@ function isCustomScaleRangeInput(value: unknown): value is Partial<CustomScaleRa
 
 function customScaleRangeStorageKey(market: MarketKey): string {
   return `${CUSTOM_SCALE_RANGE_STORAGE_KEY_PREFIX}:${market}`;
+}
+
+function liveSelectionStorageKey(market: MarketKey): string {
+  return `${LIVE_SELECTION_STORAGE_KEY_PREFIX}:${market}`;
+}
+
+function writeClientLiveSelection(storageKey: string, selectedKeys: string[]): void {
+  try {
+    if (selectedKeys.length) {
+      window.localStorage.setItem(storageKey, JSON.stringify(selectedKeys));
+    } else {
+      window.localStorage.removeItem(storageKey);
+    }
+  } catch {
+    // Local storage is best-effort; Firebase remains the durable copy.
+  }
 }
 
 function normalizeCustomScaleRangeInput(value: CustomScaleRangeSeed | null | undefined): CustomScaleRangeInput {
@@ -566,9 +584,9 @@ export default function StrategySelector({
 }: StrategySelectorProps) {
   const router = useRouter();
   const pathname = usePathname();
-  const [, startSavingSelection] = useTransition();
+  const [isSavingSelection, startSavingSelection] = useTransition();
   const [isSavingEdits, startSavingEdits] = useTransition();
-  const [, startSavingCustomScaleRange] = useTransition();
+  const [isSavingCustomScaleRange, startSavingCustomScaleRange] = useTransition();
   const isRestricted = !useAutoTradeAdminMode();
   const [isLoaded, setIsLoaded] = useState(false);
   const [isCustomScaleLoaded, setIsCustomScaleLoaded] = useState(false);
@@ -591,6 +609,7 @@ export default function StrategySelector({
   const [customSelection, setCustomSelection] = useState<CustomSelectionInput>(EMPTY_CUSTOM_SELECTION);
   const [customSelectionError, setCustomSelectionError] = useState("");
   const [customSelectionResult, setCustomSelectionResult] = useState<CustomSelectionResult | null>(null);
+  const liveSelectionKey = liveSelectionStorageKey(market);
   const selected = new Set(optimisticSelectedKeys);
   const activeStrategy = strategies.find((strategy) => strategy.key === activeKey);
   const hasEdits = Object.keys(edits).length > 0;
@@ -624,6 +643,8 @@ export default function StrategySelector({
   const editControlsDisabled = isSavingEdits || isRestricted;
   const selectionControlsDisabled = isRestricted;
   const savingSelectionKeySet = useMemo(() => new Set(savingSelectionKeys), [savingSelectionKeys]);
+  const isStrategyLoading =
+    savingSelectionKeys.length > 0 || isSavingSelection || isSavingEdits || isSavingCustomScaleRange;
 
   function replaceRouteSelection(nextKeys: string[]) {
     const params = new URLSearchParams(window.location.search);
@@ -689,6 +710,12 @@ export default function StrategySelector({
   }, []);
 
   useEffect(() => {
+    const source = `strategy-selector:${market}`;
+    emitDashboardLoading(source, isStrategyLoading);
+    return () => emitDashboardLoading(source, false);
+  }, [isStrategyLoading, market]);
+
+  useEffect(() => {
     if (isLoaded) return;
     const urlParams = new URLSearchParams(window.location.search);
     const stored = loadClientStrategyEdits(strategies, persistedStrategyEdits);
@@ -713,6 +740,11 @@ export default function StrategySelector({
     }
     emitStrategyEditsChanged(edits);
   }, [edits, isLoaded]);
+
+  useEffect(() => {
+    if (isRestricted) return;
+    writeClientLiveSelection(liveSelectionKey, optimisticSelectedKeys);
+  }, [isRestricted, liveSelectionKey, optimisticSelectedKeys]);
 
   useEffect(() => {
     const pendingCustomScaleRangeSignature = pendingCustomScaleRangeSignatureRef.current;
