@@ -1,0 +1,29 @@
+{
+  "assetKey": "sp_500_futures",
+  "createdAt": "2026-05-15T23:27:30.224508+00:00",
+  "engine": "range_break",
+  "hypothesis": "The London open often tests or breaks the Asia range. Test continuation and failed-break variants on FX and currency futures.",
+  "ideaId": "asia_range_london_break",
+  "market": "futures",
+  "params": {
+    "breakEndMinute": 360,
+    "breakStartMinute": 180,
+    "direction": "breakout",
+    "forcedExitMinute": 600,
+    "rangeEndMinute": 165,
+    "rangeStartMinute": 1080,
+    "riskReward": 1.5
+  },
+  "provenance": "institutional",
+  "sourceUrls": [
+    "https://www.cmegroup.com/education.html"
+  ],
+  "status": "ready_to_backtest",
+  "strategyId": "rs_asia_range_london_break_sp_500_futures_range_break_cf745853",
+  "symbol": "ES",
+  "thresholds": {
+    "minProfitFactor": 2.0,
+    "minTrades": 21
+  },
+  "title": "Asia range into London breakout/fade"
+}

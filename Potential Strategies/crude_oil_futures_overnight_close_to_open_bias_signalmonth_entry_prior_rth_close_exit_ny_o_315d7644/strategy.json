@@ -1,0 +1,28 @@
+{
+  "strategyId": "crude_oil_futures_overnight_close_to_open_bias_signalmonth_entry_prior_rth_close_exit_ny_o_315d7644",
+  "label": "CL Overnight Close To Open Bias Signalmonth",
+  "assetKey": "crude_oil_futures",
+  "symbol": "CL",
+  "market": "futures",
+  "family": "overnight_close_to_open_bias_signalmonth",
+  "provenance": "research_derived/session_specific/filter_scan",
+  "status": "potential_not_live",
+  "hypothesis": "Tests the close-to-open leg emphasized by overnight return research. Filtered by signalMonth=1.",
+  "sourceUrls": [
+    "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=1004081"
+  ],
+  "params": {
+    "side": "long",
+    "entry": "prior_rth_close",
+    "exit": "ny_open",
+    "signalMonth": 1
+  },
+  "metrics": {
+    "profitFactor": 4.043623,
+    "trades": 80,
+    "totalR": 157.014575,
+    "winRatePct": 67.5,
+    "maxDrawdownR": 12.663993
+  },
+  "isolationNote": "Stored under Potential Strategies only. Not imported into the live strategy catalog."
+}

@@ -1,0 +1,25 @@
+{
+  "assetKey": "eur_usd",
+  "createdAt": "2026-05-15T23:27:30.251832+00:00",
+  "engine": "overnight_bias",
+  "hypothesis": "The close-to-open leg can carry a different expected return than the open-to-close leg. Test overnight long and short bias by asset.",
+  "ideaId": "night_day_overnight_bias",
+  "market": "forex",
+  "params": {
+    "entryMinute": 945,
+    "exitMinute": 570,
+    "side": "long"
+  },
+  "provenance": "academic",
+  "sourceUrls": [
+    "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=1004081"
+  ],
+  "status": "ready_to_backtest",
+  "strategyId": "rs_night_day_overnight_bias_eur_usd_overnight_bias_6a9768c6",
+  "symbol": "EURUSD",
+  "thresholds": {
+    "minProfitFactor": 2.0,
+    "minTrades": 21
+  },
+  "title": "Close-to-open overnight bias"
+}

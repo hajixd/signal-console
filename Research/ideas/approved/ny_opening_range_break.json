@@ -1,0 +1,46 @@
+{
+  "assetKeys": [],
+  "createdAt": "2026-05-15T23:25:45.937179+00:00",
+  "engines": [
+    "range_break"
+  ],
+  "hypothesis": "The NY opening range can define intraday continuation or failed-break behavior; test both directions with fixed risk multiples.",
+  "ideaId": "ny_opening_range_break",
+  "markets": [
+    "futures",
+    "forex"
+  ],
+  "parameterGrid": {
+    "breakEndMinute": [
+      720
+    ],
+    "breakStartMinute": [
+      600
+    ],
+    "direction": [
+      "breakout",
+      "fade"
+    ],
+    "forcedExitMinute": [
+      945
+    ],
+    "rangeEndMinute": [
+      585
+    ],
+    "rangeStartMinute": [
+      570
+    ],
+    "riskReward": [
+      1.0,
+      1.5,
+      2.0,
+      2.5
+    ]
+  },
+  "provenance": "institutional",
+  "sourceUrls": [
+    "https://www.cmegroup.com/education.html"
+  ],
+  "status": "approved",
+  "title": "NY opening range breakout/fade"
+}

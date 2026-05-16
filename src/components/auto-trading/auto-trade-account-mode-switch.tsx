@@ -32,10 +32,10 @@ export default function AutoTradeAccountModeSwitch() {
 
   return (
     <div className="autoTradeModeBar autoTradeTopModeBar">
-      <span className={`autoTradeModeBadge ${accountMode.toLowerCase()}`}>{accountMode}</span>
       <button type="button" onClick={handleSwitchAccountMode}>
         Switch
       </button>
+      <span className={`autoTradeModeBadge ${accountMode.toLowerCase()}`}>{accountMode}</span>
     </div>
   );
 }

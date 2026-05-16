@@ -1,0 +1,29 @@
+{
+  "strategyId": "dow_jones_futures_daily_tsmom_next_overnight_signalmonth_direction_momentum_entryminute_94_b4c3cfd5",
+  "label": "YM Daily Tsmom Next Overnight Signalmonth",
+  "assetKey": "dow_jones_futures",
+  "symbol": "YM",
+  "market": "futures",
+  "family": "daily_tsmom_next_overnight_signalmonth",
+  "provenance": "research_derived/filter_scan",
+  "status": "potential_not_live",
+  "hypothesis": "Tests short-horizon own-return continuation/reversal inspired by time-series momentum literature. Filtered by signalMonth=11.",
+  "sourceUrls": [
+    "https://pages.stern.nyu.edu/~lpederse/papers/TimeSeriesMomentum.pdf"
+  ],
+  "params": {
+    "lookbackDays": 3,
+    "direction": "momentum",
+    "entryMinute": 945,
+    "exitMinute": 570,
+    "signalMonth": 11
+  },
+  "metrics": {
+    "profitFactor": 3.456422,
+    "trades": 77,
+    "totalR": 112.959634,
+    "winRatePct": 62.34,
+    "maxDrawdownR": 10.142627
+  },
+  "isolationNote": "Stored under Potential Strategies only. Not imported into the live strategy catalog."
+}

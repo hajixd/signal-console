@@ -1,0 +1,30 @@
+{
+  "builtAt": "2026-05-15T23:27:30.261920+00:00",
+  "folders": [
+    "rs_asia_range_london_break_sp_500_futures_range_break_01b41d49",
+    "rs_asia_range_london_break_sp_500_futures_range_break_cf745853",
+    "rs_asia_range_london_break_sp_500_futures_range_break_6c91a2b1",
+    "rs_fx_london_open_momentum_sp_500_futures_intraday_momentum_431667a7",
+    "rs_fx_london_open_momentum_sp_500_futures_intraday_momentum_43bff49c",
+    "rs_fx_london_open_momentum_sp_500_futures_intraday_momentum_2b1978e5",
+    "rs_gao_intraday_momentum_last30_sp_500_futures_intraday_momentum_eca9c239",
+    "rs_gao_intraday_momentum_last30_sp_500_futures_intraday_momentum_cc16a388",
+    "rs_gao_intraday_momentum_last30_sp_500_futures_intraday_momentum_3a01e97b",
+    "rs_intraday_repeat_half_hour_sp_500_futures_intraday_momentum_7d3cad67",
+    "rs_intraday_repeat_half_hour_sp_500_futures_intraday_momentum_6320b12e",
+    "rs_intraday_repeat_half_hour_sp_500_futures_intraday_momentum_5e646ec2",
+    "rs_night_day_open_gap_fade_sp_500_futures_open_gap_a589a859",
+    "rs_night_day_open_gap_fade_sp_500_futures_open_gap_9995402b",
+    "rs_night_day_open_gap_fade_sp_500_futures_open_gap_cb5e3b42",
+    "rs_night_day_overnight_bias_sp_500_futures_overnight_bias_6dfd43e0",
+    "rs_night_day_overnight_bias_sp_500_futures_overnight_bias_4013a865",
+    "rs_night_day_overnight_bias_eur_usd_overnight_bias_6a9768c6",
+    "rs_ny_opening_range_break_sp_500_futures_range_break_ed03178f",
+    "rs_ny_opening_range_break_sp_500_futures_range_break_ead0769b",
+    "rs_ny_opening_range_break_sp_500_futures_range_break_5ae1945e",
+    "rs_short_horizon_tsmom_sp_500_futures_daily_tsmom_eac98db4",
+    "rs_short_horizon_tsmom_sp_500_futures_daily_tsmom_2873002f",
+    "rs_short_horizon_tsmom_sp_500_futures_daily_tsmom_9611c710"
+  ],
+  "readyCount": 24
+}

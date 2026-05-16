@@ -41,6 +41,7 @@ yarn-error.log*
 /.local/
 /data/
 backtest-engine/__pycache__/
+Research/scripts/__pycache__/
 backtest-engine/research/
 strategy/**/backtest_trades.csv
 strategy/research_summary.csv

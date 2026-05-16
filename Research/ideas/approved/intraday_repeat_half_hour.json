@@ -1,0 +1,45 @@
+{
+  "assetKeys": [],
+  "createdAt": "2026-05-15T23:25:45.935326+00:00",
+  "engines": [
+    "intraday_momentum"
+  ],
+  "hypothesis": "Return continuation can recur at repeated intraday half-hour intervals. Test the second-to-last interval into the close.",
+  "ideaId": "intraday_repeat_half_hour",
+  "markets": [
+    "futures",
+    "forex"
+  ],
+  "parameterGrid": {
+    "direction": [
+      "same",
+      "opposite"
+    ],
+    "entryMinute": [
+      930
+    ],
+    "exitMinute": [
+      945
+    ],
+    "minSignalAtr": [
+      0,
+      0.05,
+      0.1,
+      0.2,
+      0.35,
+      0.5
+    ],
+    "signalEndMinute": [
+      915
+    ],
+    "signalStartMinute": [
+      900
+    ]
+  },
+  "provenance": "academic",
+  "sourceUrls": [
+    "https://ideas.repec.org/a/bla/jfinan/v65y2010i4p1369-1407.html"
+  ],
+  "status": "approved",
+  "title": "Repeated half-hour continuation"
+}

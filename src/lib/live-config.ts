@@ -85,14 +85,16 @@ export type SyncStatus = {
   dataValidityRefresh?: SyncRunStatus;
   lastDataValidityRefreshAt?: string;
   lastMarketDataSyncAt?: string;
+  lastResearchCycleAt?: string;
   lastSignalTradeCheckAt?: string;
   marketDataSync?: SyncRunStatus;
+  researchCycle?: SyncRunStatus;
   signalTradeCheck?: SyncRunStatus;
 };
 
-export type SyncRunKey = "dataValidityRefresh" | "marketDataSync" | "signalTradeCheck";
+export type SyncRunKey = "dataValidityRefresh" | "marketDataSync" | "researchCycle" | "signalTradeCheck";
 export type SyncRunState = "idle" | "running" | "success" | "failed";
-export type SyncTimestampField = "lastDataValidityRefreshAt" | "lastMarketDataSyncAt" | "lastSignalTradeCheckAt";
+export type SyncTimestampField = "lastDataValidityRefreshAt" | "lastMarketDataSyncAt" | "lastResearchCycleAt" | "lastSignalTradeCheckAt";
 
 export type SyncRunStatus = {
   durationMs?: number;
@@ -274,6 +276,7 @@ function normalizeSyncStatus(value: unknown): SyncStatus {
   const status: SyncStatus = {};
   const dataValidityRefresh = normalizeSyncRunStatus(source.dataValidityRefresh);
   const marketDataSync = normalizeSyncRunStatus(source.marketDataSync);
+  const researchCycle = normalizeSyncRunStatus(source.researchCycle);
   const signalTradeCheck = normalizeSyncRunStatus(source.signalTradeCheck);
 
   if (dataValidityRefresh) {
@@ -282,6 +285,10 @@ function normalizeSyncStatus(value: unknown): SyncStatus {
 
   if (marketDataSync) {
     status.marketDataSync = marketDataSync;
+  }
+
+  if (researchCycle) {
+    status.researchCycle = researchCycle;
   }
 
   if (signalTradeCheck) {
@@ -294,6 +301,10 @@ function normalizeSyncStatus(value: unknown): SyncStatus {
 
   if (typeof source.lastMarketDataSyncAt === "string") {
     status.lastMarketDataSyncAt = source.lastMarketDataSyncAt;
+  }
+
+  if (typeof source.lastResearchCycleAt === "string") {
+    status.lastResearchCycleAt = source.lastResearchCycleAt;
   }
 
   if (typeof source.lastSignalTradeCheckAt === "string") {
@@ -472,6 +483,7 @@ export async function updateDatasetSyncStatus(field: SyncTimestampField, timesta
 const SYNC_TIMESTAMP_FIELD_BY_RUN_KEY: Record<SyncRunKey, SyncTimestampField> = {
   dataValidityRefresh: "lastDataValidityRefreshAt",
   marketDataSync: "lastMarketDataSyncAt",
+  researchCycle: "lastResearchCycleAt",
   signalTradeCheck: "lastSignalTradeCheckAt"
 };
 

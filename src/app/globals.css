@@ -166,12 +166,13 @@ button {
 .marketTopShell .autoTradeTopModeBar {
   width: 100%;
   display: grid;
-  grid-template-columns: minmax(0, 3.2fr) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr) minmax(0, 3.2fr);
   gap: 0.34rem;
 }
 
 .marketTopShell .autoTradeModeBadge,
-.marketTopShell .autoTradeTopModeBar button {
+.marketTopShell .autoTradeTopModeBar button,
+.marketTopShell .autoTradeResearchLink {
   width: 100%;
   min-height: 26px;
   height: 26px;
@@ -1908,8 +1909,12 @@ html[data-theme="light"] .themeDarkLabel {
   color: #c8ddff;
 }
 
-.autoTradeModeBar button {
+.autoTradeModeBar button,
+.autoTradeResearchLink {
   height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   border: 1px solid #273247;
   border-radius: 7px;
   background: #101726;
@@ -1918,6 +1923,7 @@ html[data-theme="light"] .themeDarkLabel {
   font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
   font-size: 0.56rem;
   font-weight: 900;
+  text-decoration: none;
   text-transform: uppercase;
   cursor: pointer;
 }
@@ -1935,7 +1941,9 @@ html[data-theme="light"] .themeDarkLabel {
   cursor: pointer;
 }
 
-.autoTradeModeBar button:hover {
+.autoTradeModeBar button:hover,
+.autoTradeResearchLink:hover,
+.autoTradeResearchLink.active {
   background: #162137;
   color: #dce5f6;
 }
@@ -2706,6 +2714,679 @@ html[data-theme="light"] .themeDarkLabel {
 
 .backtest-stat-card.tone-neutral strong {
   color: #93bbfc;
+}
+
+.researchWorkspace {
+  padding-bottom: 3rem;
+}
+
+.researchTopShell .researchNavTabs {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.researchTerminalHead .asset-meta span {
+  max-width: 760px;
+}
+
+.researchOverviewCard {
+  gap: 0.85rem;
+}
+
+.researchFlow {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+
+.researchStage {
+  min-width: 0;
+  min-height: 128px;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-areas:
+    "number count"
+    "body body";
+  align-content: start;
+  gap: 0.52rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  padding: 0.68rem;
+}
+
+.researchStage.active {
+  border-color: rgba(96, 165, 250, 0.28);
+  background: linear-gradient(135deg, rgba(96, 165, 250, 0.1), rgba(96, 165, 250, 0.025));
+}
+
+.researchStage.done {
+  border-color: rgba(52, 211, 153, 0.24);
+  background: linear-gradient(135deg, rgba(52, 211, 153, 0.075), rgba(52, 211, 153, 0.018));
+}
+
+.researchStage.passed {
+  border-color: rgba(52, 211, 153, 0.3);
+  background: linear-gradient(135deg, rgba(52, 211, 153, 0.11), rgba(52, 211, 153, 0.025));
+}
+
+.researchStage.clear {
+  border-color: rgba(212, 175, 55, 0.3);
+  background: linear-gradient(135deg, rgba(212, 175, 55, 0.1), rgba(212, 175, 55, 0.025));
+}
+
+.researchStage.inactive,
+.researchStage.empty,
+.researchStage.waiting {
+  opacity: 0.52;
+  filter: grayscale(0.36);
+}
+
+.researchStageNumber,
+.researchStageCount,
+.researchStage strong,
+.researchStage p,
+.researchStatusList span,
+.researchStatusList strong,
+.researchReportExcerpt span,
+.researchIdea span,
+.researchIdeaMeta span {
+  font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+  letter-spacing: 0;
+}
+
+.researchStageNumber {
+  grid-area: number;
+  color: rgba(255, 255, 255, 0.38);
+  font-size: 0.58rem;
+  font-weight: 950;
+}
+
+.researchStageCount {
+  grid-area: count;
+  justify-self: end;
+  color: #93bbfc;
+  font-size: 0.82rem;
+  font-weight: 950;
+}
+
+.researchStage div {
+  grid-area: body;
+  min-width: 0;
+  display: grid;
+  gap: 0.32rem;
+}
+
+.researchStage strong {
+  min-width: 0;
+  overflow: hidden;
+  color: rgba(255, 255, 255, 0.94);
+  font-size: 0.72rem;
+  font-weight: 950;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.researchStage p {
+  margin: 0;
+  color: rgba(232, 236, 243, 0.62);
+  font-size: 0.58rem;
+  font-weight: 800;
+  line-height: 1.45;
+}
+
+.researchStatsGrid .backtest-stat-card {
+  min-height: 74px;
+}
+
+.researchGrid {
+  align-items: stretch;
+}
+
+.researchBoardCard,
+.researchConversion {
+  gap: 0.85rem;
+}
+
+.researchConversionGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.6rem;
+  align-items: stretch;
+}
+
+.researchLane {
+  min-width: 0;
+  min-height: 280px;
+  display: grid;
+  align-content: start;
+  gap: 0.6rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  padding: 0.72rem;
+  transition:
+    border-color 160ms ease,
+    background 160ms ease,
+    opacity 160ms ease,
+    filter 160ms ease;
+}
+
+.researchLane.collecting.active {
+  border-color: rgba(245, 158, 11, 0.34);
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.1), rgba(245, 158, 11, 0.025));
+}
+
+.researchLane.finished.active {
+  border-color: rgba(52, 211, 153, 0.28);
+  background: linear-gradient(135deg, rgba(52, 211, 153, 0.09), rgba(52, 211, 153, 0.025));
+}
+
+.researchLane.inactive {
+  opacity: 0.54;
+  filter: grayscale(0.36);
+}
+
+.researchLaneHead {
+  min-width: 0;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.7rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding-bottom: 0.55rem;
+}
+
+.researchLaneHead span,
+.researchLaneHead strong,
+.researchEmptyMini strong,
+.researchMiniRow strong,
+.researchMiniRow span,
+.researchMiniRow small {
+  font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+  letter-spacing: 0;
+}
+
+.researchLaneHead span {
+  flex: 0 0 auto;
+  color: rgba(255, 255, 255, 0.46);
+  font-size: 0.56rem;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.researchLaneHead strong {
+  min-width: 0;
+  overflow: hidden;
+  color: rgba(255, 255, 255, 0.92);
+  font-size: 0.78rem;
+  font-weight: 950;
+  text-align: right;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.researchLaneTable {
+  max-height: 430px;
+}
+
+.researchEmptyMini {
+  min-height: 150px;
+  display: grid;
+  place-items: center;
+  border: 1px dashed rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.02);
+  padding: 0.85rem;
+}
+
+.researchEmptyMini strong {
+  color: rgba(255, 255, 255, 0.52);
+  font-size: 0.62rem;
+  font-weight: 950;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.researchMiniList {
+  display: grid;
+  gap: 0.46rem;
+  max-height: 430px;
+  overflow: auto;
+  padding-right: 0.12rem;
+  scrollbar-color: rgba(255, 255, 255, 0.22) transparent;
+  scrollbar-width: thin;
+}
+
+.researchMiniRow {
+  min-width: 0;
+  display: grid;
+  gap: 0.2rem;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.028);
+  padding: 0.58rem 0.62rem;
+}
+
+.researchMiniRow strong,
+.researchMiniRow span,
+.researchMiniRow small {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.researchMiniRow strong {
+  color: rgba(255, 255, 255, 0.88);
+  font-size: 0.64rem;
+  font-weight: 950;
+}
+
+.researchMiniRow span {
+  color: rgba(232, 236, 243, 0.68);
+  font-size: 0.6rem;
+  font-weight: 900;
+}
+
+.researchMiniRow small {
+  color: rgba(232, 236, 243, 0.46);
+  font-size: 0.54rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.researchLane .researchReportExcerpt {
+  margin-top: 0.2rem;
+}
+
+.researchStatusList {
+  display: grid;
+  gap: 0.52rem;
+}
+
+.researchStatusList div,
+.researchReportExcerpt,
+.researchIdea {
+  min-width: 0;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.researchStatusList div {
+  display: grid;
+  gap: 0.28rem;
+  padding: 0.68rem;
+}
+
+.researchStatusList span {
+  color: rgba(255, 255, 255, 0.44);
+  font-size: 0.56rem;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.researchStatusList strong {
+  overflow-wrap: anywhere;
+  color: rgba(255, 255, 255, 0.88);
+  font-size: 0.7rem;
+  font-weight: 900;
+  line-height: 1.45;
+}
+
+.researchIdeaForm {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.55rem;
+}
+
+.researchField,
+.researchMarketChecks,
+.researchTimeframeChecks,
+.researchAssetChecks {
+  min-width: 0;
+  display: grid;
+  gap: 0.24rem;
+}
+
+.researchField.wide,
+.researchFormActions {
+  grid-column: 1 / -1;
+}
+
+.researchField span,
+.researchMarketChecks legend,
+.researchTimeframeChecks legend,
+.researchAssetChecks legend,
+.researchFormActions span {
+  color: var(--text-faint);
+  font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+  font-size: 0.56rem;
+  font-weight: 950;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.researchField input,
+.researchField select,
+.researchField textarea {
+  width: 100%;
+  min-width: 0;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.035);
+  color: rgba(255, 255, 255, 0.9);
+  padding: 0.54rem 0.62rem;
+  font-size: 0.7rem;
+  font-weight: 800;
+  outline: none;
+}
+
+.researchField input,
+.researchField select {
+  min-height: 34px;
+}
+
+.researchField textarea {
+  min-height: 104px;
+  resize: vertical;
+}
+
+.researchField input:focus,
+.researchField select:focus,
+.researchField textarea:focus {
+  border-color: rgba(96, 165, 250, 0.5);
+  box-shadow: inset 0 0 0 1px rgba(96, 165, 250, 0.28);
+}
+
+.researchField input::placeholder,
+.researchField textarea::placeholder {
+  color: rgba(255, 255, 255, 0.34);
+}
+
+.researchMarketChecks,
+.researchTimeframeChecks,
+.researchAssetChecks {
+  margin: 0;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.025);
+  padding: 0.52rem 0.6rem;
+}
+
+.researchTimeframeChecks {
+  grid-template-columns: repeat(auto-fit, minmax(76px, 1fr));
+  grid-column: 1 / -1;
+  gap: 0.46rem 0.55rem;
+}
+
+.researchMarketChecks legend,
+.researchTimeframeChecks legend,
+.researchAssetChecks legend {
+  grid-column: 1 / -1;
+  padding: 0 0.22rem;
+}
+
+.researchMarketChecks label,
+.researchTimeframeChecks label,
+.researchAssetGrid label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.42rem;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.68rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.researchMarketChecks input,
+.researchTimeframeChecks input,
+.researchAssetGrid input {
+  width: 14px;
+  height: 14px;
+  margin: 0;
+  accent-color: var(--accent);
+}
+
+.researchAssetChecks {
+  grid-column: 1 / -1;
+}
+
+.researchAssetActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.35rem;
+}
+
+.researchAssetActions button {
+  min-height: 24px;
+  border: 1px solid rgba(96, 165, 250, 0.22);
+  border-radius: 7px;
+  background: rgba(96, 165, 250, 0.07);
+  color: #bcd4ff;
+  padding: 0 0.52rem;
+  font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+  font-size: 0.52rem;
+  font-weight: 950;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.researchAssetActions button:hover {
+  border-color: rgba(96, 165, 250, 0.42);
+  background: rgba(96, 165, 250, 0.12);
+}
+
+.researchAssetGrid {
+  max-height: 250px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(168px, 1fr));
+  gap: 0.36rem;
+  overflow: auto;
+  padding-right: 0.12rem;
+  scrollbar-color: rgba(255, 255, 255, 0.22) transparent;
+  scrollbar-width: thin;
+}
+
+.researchAssetGrid label {
+  min-width: 0;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.025);
+  padding: 0.42rem 0.48rem;
+}
+
+.researchAssetGrid span,
+.researchAssetGrid small {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.researchAssetGrid span {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.researchAssetGrid small {
+  color: rgba(232, 236, 243, 0.46);
+  font-size: 0.52rem;
+  text-transform: none;
+}
+
+.researchFormActions {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+}
+
+.researchFormActions button {
+  min-height: 32px;
+  border: 1px solid rgba(52, 211, 153, 0.34);
+  border-radius: 8px;
+  background: rgba(52, 211, 153, 0.1);
+  color: var(--up);
+  padding: 0 0.78rem;
+  font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+  font-size: 0.6rem;
+  font-weight: 950;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.researchFormActions button:hover:not(:disabled) {
+  border-color: rgba(52, 211, 153, 0.52);
+  background: rgba(52, 211, 153, 0.16);
+}
+
+.researchFormActions button:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+
+.researchFormActions span {
+  min-width: 0;
+  overflow: hidden;
+  color: rgba(232, 236, 243, 0.62);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.researchReportExcerpt {
+  max-height: 280px;
+  display: grid;
+  gap: 0.24rem;
+  overflow: auto;
+  padding: 0.68rem;
+  scrollbar-color: rgba(255, 255, 255, 0.22) transparent;
+  scrollbar-width: thin;
+}
+
+.researchReportExcerpt span {
+  min-width: 0;
+  overflow: hidden;
+  color: rgba(232, 236, 243, 0.72);
+  font-size: 0.58rem;
+  font-weight: 800;
+  line-height: 1.45;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.researchTable {
+  min-width: 940px;
+}
+
+.researchTable .status.neutral-row {
+  border-color: rgba(96, 165, 250, 0.22);
+  background: rgba(96, 165, 250, 0.08);
+  color: #93bbfc;
+}
+
+.researchIdeaGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 0.55rem;
+}
+
+.researchIdeaGrid.compact {
+  grid-template-columns: 1fr;
+  max-height: 526px;
+  overflow: auto;
+  padding-right: 0.12rem;
+  scrollbar-color: rgba(255, 255, 255, 0.22) transparent;
+  scrollbar-width: thin;
+}
+
+.researchIdea {
+  display: grid;
+  gap: 0.58rem;
+  padding: 0.72rem;
+}
+
+.researchIdea.inbox {
+  border-color: rgba(245, 158, 11, 0.28);
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.1), rgba(245, 158, 11, 0.025));
+}
+
+.researchIdea.approved {
+  border-color: rgba(52, 211, 153, 0.22);
+  background: linear-gradient(135deg, rgba(52, 211, 153, 0.085), rgba(52, 211, 153, 0.02));
+}
+
+.researchIdea div:first-child {
+  min-width: 0;
+  display: grid;
+  gap: 0.24rem;
+}
+
+.researchIdea span {
+  min-width: 0;
+  overflow: hidden;
+  color: rgba(212, 175, 55, 0.8);
+  font-size: 0.56rem;
+  font-weight: 950;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.researchIdea strong {
+  min-width: 0;
+  overflow: hidden;
+  color: rgba(255, 255, 255, 0.94);
+  font-size: 0.86rem;
+  font-weight: 950;
+  line-height: 1.15;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.researchIdea p {
+  margin: 0;
+  color: rgba(232, 236, 243, 0.68);
+  font-size: 0.7rem;
+  font-weight: 700;
+  line-height: 1.48;
+}
+
+.researchIdeaMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.32rem;
+}
+
+.researchIdeaMeta span {
+  min-height: 22px;
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.03);
+  color: rgba(232, 236, 243, 0.62);
+  padding: 0 0.44rem;
+  font-size: 0.52rem;
+}
+
+.researchFinishedCard {
+  border-color: rgba(52, 211, 153, 0.18);
+}
+
+.researchBottomNav {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  padding: 0.2rem 0 0.4rem;
+}
+
+.researchBottomNav .terminal-action {
+  min-width: 168px;
+}
+
+.researchSyncCard {
+  border-color: rgba(96, 165, 250, 0.14);
 }
 
 .challenge-grid {
@@ -3804,6 +4485,7 @@ html[data-theme="light"] .topstepConnectionActions button,
 html[data-theme="light"] .topstepConnectForm button,
 html[data-theme="light"] .topstepAccountControls button,
 html[data-theme="light"] .autoTradeModeBar button,
+html[data-theme="light"] .autoTradeResearchLink,
 html[data-theme="light"] .autoTradeFolderGate button {
   border-color: rgba(37, 99, 235, 0.2);
   background: rgba(37, 99, 235, 0.06);
@@ -3814,6 +4496,8 @@ html[data-theme="light"] .topstepConnectionActions button:hover:not(:disabled),
 html[data-theme="light"] .topstepConnectForm button:hover:not(:disabled),
 html[data-theme="light"] .topstepAccountControls button:hover:not(:disabled),
 html[data-theme="light"] .autoTradeModeBar button:hover,
+html[data-theme="light"] .autoTradeResearchLink:hover,
+html[data-theme="light"] .autoTradeResearchLink.active,
 html[data-theme="light"] .autoTradeFolderGate button:hover:not(:disabled) {
   border-color: rgba(37, 99, 235, 0.34);
   background: rgba(37, 99, 235, 0.1);
@@ -3961,6 +4645,152 @@ html[data-theme="light"] .challenge-footnote span {
   border-color: rgba(15, 23, 42, 0.1);
   background: rgba(15, 23, 42, 0.035);
   color: rgba(15, 23, 42, 0.62);
+}
+
+html[data-theme="light"] .researchStage,
+html[data-theme="light"] .researchLane,
+html[data-theme="light"] .researchStatusList div,
+html[data-theme="light"] .researchReportExcerpt,
+html[data-theme="light"] .researchIdea {
+  border-color: rgba(15, 23, 42, 0.09);
+  background: rgba(15, 23, 42, 0.022);
+}
+
+html[data-theme="light"] .researchLane.collecting.active {
+  border-color: rgba(180, 83, 9, 0.24);
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.1), rgba(245, 158, 11, 0.025));
+}
+
+html[data-theme="light"] .researchLane.finished.active {
+  border-color: rgba(5, 150, 105, 0.2);
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.08), rgba(16, 185, 129, 0.018));
+}
+
+html[data-theme="light"] .researchStage.active {
+  border-color: rgba(37, 99, 235, 0.22);
+  background: linear-gradient(135deg, rgba(37, 99, 235, 0.08), rgba(37, 99, 235, 0.02));
+}
+
+html[data-theme="light"] .researchStage.done {
+  border-color: rgba(5, 150, 105, 0.18);
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.065), rgba(16, 185, 129, 0.018));
+}
+
+html[data-theme="light"] .researchStage.passed {
+  border-color: rgba(5, 150, 105, 0.22);
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.09), rgba(16, 185, 129, 0.02));
+}
+
+html[data-theme="light"] .researchStage.clear {
+  border-color: rgba(180, 83, 9, 0.22);
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.09), rgba(245, 158, 11, 0.02));
+}
+
+html[data-theme="light"] .researchStageNumber,
+html[data-theme="light"] .researchLaneHead span,
+html[data-theme="light"] .researchStatusList span {
+  color: rgba(15, 23, 42, 0.42);
+}
+
+html[data-theme="light"] .researchStage strong,
+html[data-theme="light"] .researchLaneHead strong,
+html[data-theme="light"] .researchMiniRow strong,
+html[data-theme="light"] .researchStatusList strong,
+html[data-theme="light"] .researchIdea strong {
+  color: rgba(15, 23, 42, 0.9);
+}
+
+html[data-theme="light"] .researchStage p,
+html[data-theme="light"] .researchMiniRow span,
+html[data-theme="light"] .researchReportExcerpt span,
+html[data-theme="light"] .researchIdea p {
+  color: rgba(15, 23, 42, 0.64);
+}
+
+html[data-theme="light"] .researchLaneHead {
+  border-bottom-color: rgba(15, 23, 42, 0.08);
+}
+
+html[data-theme="light"] .researchEmptyMini,
+html[data-theme="light"] .researchMiniRow {
+  border-color: rgba(15, 23, 42, 0.09);
+  background: rgba(15, 23, 42, 0.025);
+}
+
+html[data-theme="light"] .researchEmptyMini strong,
+html[data-theme="light"] .researchMiniRow small {
+  color: rgba(15, 23, 42, 0.46);
+}
+
+html[data-theme="light"] .researchStageCount,
+html[data-theme="light"] .researchTable .status.neutral-row {
+  color: #1d4ed8;
+}
+
+html[data-theme="light"] .researchIdea span {
+  color: #a16207;
+}
+
+html[data-theme="light"] .researchIdeaMeta span {
+  border-color: rgba(15, 23, 42, 0.08);
+  background: rgba(15, 23, 42, 0.035);
+  color: rgba(15, 23, 42, 0.58);
+}
+
+html[data-theme="light"] .researchField input,
+html[data-theme="light"] .researchField select,
+html[data-theme="light"] .researchField textarea {
+  border-color: rgba(15, 23, 42, 0.14);
+  background: #ffffff;
+  color: rgba(15, 23, 42, 0.88);
+}
+
+html[data-theme="light"] .researchField input::placeholder,
+html[data-theme="light"] .researchField textarea::placeholder {
+  color: rgba(15, 23, 42, 0.38);
+}
+
+html[data-theme="light"] .researchMarketChecks,
+html[data-theme="light"] .researchTimeframeChecks,
+html[data-theme="light"] .researchAssetChecks {
+  border-color: rgba(15, 23, 42, 0.1);
+  background: rgba(15, 23, 42, 0.022);
+}
+
+html[data-theme="light"] .researchMarketChecks label,
+html[data-theme="light"] .researchTimeframeChecks label,
+html[data-theme="light"] .researchAssetGrid label,
+html[data-theme="light"] .researchFormActions span {
+  color: rgba(15, 23, 42, 0.64);
+}
+
+html[data-theme="light"] .researchAssetActions button {
+  border-color: rgba(37, 99, 235, 0.2);
+  background: rgba(37, 99, 235, 0.06);
+  color: #1d4ed8;
+}
+
+html[data-theme="light"] .researchAssetGrid label {
+  border-color: rgba(15, 23, 42, 0.08);
+  background: rgba(15, 23, 42, 0.025);
+}
+
+html[data-theme="light"] .researchAssetGrid span {
+  color: rgba(15, 23, 42, 0.86);
+}
+
+html[data-theme="light"] .researchAssetGrid small {
+  color: rgba(15, 23, 42, 0.46);
+}
+
+html[data-theme="light"] .researchIdea.inbox {
+  border-color: rgba(180, 83, 9, 0.24);
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.1), rgba(245, 158, 11, 0.025));
+}
+
+html[data-theme="light"] .researchIdea.approved {
+  border-color: rgba(5, 150, 105, 0.18);
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.08), rgba(16, 185, 129, 0.018));
 }
 
 html[data-theme="light"] .basketListHeader,
@@ -4310,6 +5140,10 @@ html[data-theme="light"] .strategyToggle input {
     grid-template-columns: 1fr;
   }
 
+  .researchFlow {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
 }
 
 @media (max-width: 760px) {
@@ -4339,6 +5173,44 @@ html[data-theme="light"] .strategyToggle input {
   .backtest-card-head {
     flex-direction: column;
     align-items: stretch;
+  }
+
+  .researchFlow {
+    grid-template-columns: 1fr;
+  }
+
+  .researchConversionGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .researchLane {
+    min-height: 0;
+  }
+
+  .researchLaneHead {
+    flex-direction: column;
+    gap: 0.32rem;
+  }
+
+  .researchLaneHead strong {
+    text-align: left;
+  }
+
+  .researchStage {
+    min-height: 0;
+  }
+
+  .researchIdeaForm {
+    grid-template-columns: 1fr;
+  }
+
+  .researchFormActions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .researchFormActions button {
+    width: 100%;
   }
 
   .market-tabs {
@@ -5988,7 +6860,7 @@ html[data-theme="light"] .tradeReplaySlider input {
 
   .autoTradeTopModeBar {
     gap: 4px;
-    grid-template-columns: minmax(0, 3.2fr) minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr) minmax(0, 3.2fr);
   }
 
   .autoTradeTopModePanel {
@@ -6001,7 +6873,8 @@ html[data-theme="light"] .tradeReplaySlider input {
 
   .autoTradeTopChoiceGrid .autoTradeChoiceCard,
   .autoTradeTopModeBar .autoTradeModeBadge,
-  .autoTradeTopModeBar button {
+  .autoTradeTopModeBar button,
+  .autoTradeTopModeBar .autoTradeResearchLink {
     min-height: 24px;
     height: 24px;
   }
@@ -6083,7 +6956,8 @@ html[data-theme="light"] .tradeReplaySlider input {
     font-size: 8px;
   }
 
-  .terminal-actions .autoTradeModeBar button {
+  .terminal-actions .autoTradeModeBar button,
+  .terminal-actions .autoTradeResearchLink {
     flex: 0 0 auto;
     height: 28px;
     padding: 0 6px;
@@ -6683,6 +7557,7 @@ html[data-theme="light"] .tradeReplaySlider input {
   .topstepConnectForm button,
   .topstepAccountControls button,
   .autoTradeModeBar button,
+  .autoTradeResearchLink,
   .autoTradeFolderGate button {
     min-height: 26px;
     padding: 0 7px;

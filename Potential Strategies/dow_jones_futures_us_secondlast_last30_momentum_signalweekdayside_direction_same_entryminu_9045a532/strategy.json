@@ -1,0 +1,31 @@
+{
+  "strategyId": "dow_jones_futures_us_secondlast_last30_momentum_signalweekdayside_direction_same_entryminu_9045a532",
+  "label": "YM Us Secondlast Last30 Momentum Signalweekdayside",
+  "assetKey": "dow_jones_futures",
+  "symbol": "YM",
+  "market": "futures",
+  "family": "us_secondlast_last30_momentum_signalweekdayside",
+  "provenance": "research_derived/session_specific/filter_scan",
+  "status": "potential_not_live",
+  "hypothesis": "Session-window return predicts a later same-day session return. Filtered by signalWeekdaySide=0_long.",
+  "sourceUrls": [
+    "https://ideas.repec.org/a/bla/jfinan/v65y2010i4p1369-1407.html"
+  ],
+  "params": {
+    "signalStartMinute": 900,
+    "signalEndBarMinute": 915,
+    "entryMinute": 930,
+    "exitBarMinute": 945,
+    "direction": "same",
+    "minSignalAtr": 0.5,
+    "signalWeekdaySide": "0_long"
+  },
+  "metrics": {
+    "profitFactor": 3.460941,
+    "trades": 47,
+    "totalR": 22.962733,
+    "winRatePct": 76.6,
+    "maxDrawdownR": 5.425658
+  },
+  "isolationNote": "Stored under Potential Strategies only. Not imported into the live strategy catalog."
+}

@@ -1,0 +1,187 @@
+[
+  {
+    "ideaId": "night_day_overnight_bias",
+    "title": "Close-to-open overnight bias",
+    "provenance": "academic",
+    "status": "approved",
+    "hypothesis": "The close-to-open leg can carry a different expected return than the open-to-close leg. Test overnight long and short bias by asset.",
+    "sourceUrls": [
+      "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=1004081"
+    ],
+    "engines": ["overnight_bias"],
+    "markets": ["futures", "forex"],
+    "assetKeys": [],
+    "parameterGrid": {
+      "side": ["long", "short"],
+      "entryMinute": [945],
+      "exitMinute": [570]
+    }
+  },
+  {
+    "ideaId": "night_day_open_gap_fade",
+    "title": "NY open gap fade or continuation",
+    "provenance": "academic",
+    "status": "approved",
+    "hypothesis": "Overnight gaps may either mean-revert or continue during the regular session depending on asset and gap size.",
+    "sourceUrls": [
+      "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=1004081"
+    ],
+    "engines": ["open_gap"],
+    "markets": ["futures", "forex"],
+    "assetKeys": [],
+    "parameterGrid": {
+      "direction": ["fade", "continue"],
+      "minGapAtr": [0, 0.1, 0.2, 0.35, 0.5, 0.75],
+      "entryMinute": [570],
+      "exitMinute": [615, 660, 945]
+    }
+  },
+  {
+    "ideaId": "gao_intraday_momentum_last30",
+    "title": "First 30 minutes predict last 30 minutes",
+    "provenance": "academic",
+    "status": "approved",
+    "hypothesis": "The first half-hour return predicts the last half-hour return; test both continuation and reversal by asset.",
+    "sourceUrls": [
+      "https://www.sciencedirect.com/science/article/abs/pii/S0304405X18301351"
+    ],
+    "engines": ["intraday_momentum"],
+    "markets": ["futures", "forex"],
+    "assetKeys": [],
+    "parameterGrid": {
+      "signalStartMinute": [570],
+      "signalEndMinute": [585],
+      "entryMinute": [930],
+      "exitMinute": [945],
+      "direction": ["same", "opposite"],
+      "minSignalAtr": [0, 0.05, 0.1, 0.2, 0.35, 0.5]
+    }
+  },
+  {
+    "ideaId": "intraday_repeat_half_hour",
+    "title": "Repeated half-hour continuation",
+    "provenance": "academic",
+    "status": "approved",
+    "hypothesis": "Return continuation can recur at repeated intraday half-hour intervals. Test the second-to-last interval into the close.",
+    "sourceUrls": [
+      "https://ideas.repec.org/a/bla/jfinan/v65y2010i4p1369-1407.html"
+    ],
+    "engines": ["intraday_momentum"],
+    "markets": ["futures", "forex"],
+    "assetKeys": [],
+    "parameterGrid": {
+      "signalStartMinute": [900],
+      "signalEndMinute": [915],
+      "entryMinute": [930],
+      "exitMinute": [945],
+      "direction": ["same", "opposite"],
+      "minSignalAtr": [0, 0.05, 0.1, 0.2, 0.35, 0.5]
+    }
+  },
+  {
+    "ideaId": "fx_london_open_momentum",
+    "title": "London first 30 minutes into NY handoff",
+    "provenance": "academic",
+    "status": "approved",
+    "hypothesis": "FX intraday momentum may appear around major trading-hour transitions. Test London first-30-minute move into pre-NY/NY handoff.",
+    "sourceUrls": [
+      "https://biblio.ugent.be/publication/8060014"
+    ],
+    "engines": ["intraday_momentum"],
+    "markets": ["forex", "futures"],
+    "assetKeys": [],
+    "parameterGrid": {
+      "signalStartMinute": [180],
+      "signalEndMinute": [195],
+      "entryMinute": [480],
+      "exitMinute": [570],
+      "direction": ["same", "opposite"],
+      "minSignalAtr": [0, 0.05, 0.1, 0.2, 0.35, 0.5]
+    }
+  },
+  {
+    "ideaId": "asia_range_london_break",
+    "title": "Asia range into London breakout/fade",
+    "provenance": "institutional",
+    "status": "approved",
+    "hypothesis": "The London open often tests or breaks the Asia range. Test continuation and failed-break variants on FX and currency futures.",
+    "sourceUrls": [
+      "https://www.cmegroup.com/education.html"
+    ],
+    "engines": ["range_break"],
+    "markets": ["forex", "futures"],
+    "assetKeys": [],
+    "parameterGrid": {
+      "rangeStartMinute": [1080],
+      "rangeEndMinute": [165],
+      "breakStartMinute": [180],
+      "breakEndMinute": [360],
+      "forcedExitMinute": [600],
+      "direction": ["breakout", "fade"],
+      "riskReward": [1.0, 1.5, 2.0, 2.5]
+    }
+  },
+  {
+    "ideaId": "ny_opening_range_break",
+    "title": "NY opening range breakout/fade",
+    "provenance": "institutional",
+    "status": "approved",
+    "hypothesis": "The NY opening range can define intraday continuation or failed-break behavior; test both directions with fixed risk multiples.",
+    "sourceUrls": [
+      "https://www.cmegroup.com/education.html"
+    ],
+    "engines": ["range_break"],
+    "markets": ["futures", "forex"],
+    "assetKeys": [],
+    "parameterGrid": {
+      "rangeStartMinute": [570],
+      "rangeEndMinute": [585],
+      "breakStartMinute": [600],
+      "breakEndMinute": [720],
+      "forcedExitMinute": [945],
+      "direction": ["breakout", "fade"],
+      "riskReward": [1.0, 1.5, 2.0, 2.5]
+    }
+  },
+  {
+    "ideaId": "short_horizon_tsmom",
+    "title": "Short-horizon time-series momentum",
+    "provenance": "academic",
+    "status": "approved",
+    "hypothesis": "An asset's own recent return can predict the next session. Test short lookbacks across futures and forex.",
+    "sourceUrls": [
+      "https://pages.stern.nyu.edu/~lpederse/papers/TimeSeriesMomentum.pdf"
+    ],
+    "engines": ["daily_tsmom"],
+    "markets": ["futures", "forex"],
+    "assetKeys": [],
+    "parameterGrid": {
+      "lookbackDays": [3, 5, 10, 20, 40],
+      "entryMinute": [570, 945],
+      "exitMinute": [945, 570],
+      "direction": ["momentum", "contrarian"]
+    }
+  },
+  {
+    "ideaId": "crude_inventory_session",
+    "title": "Crude oil midweek announcement-session continuation",
+    "provenance": "academic",
+    "status": "approved",
+    "hypothesis": "Crude oil intraday returns can show announcement/session-specific predictability. Test Wednesday late-morning continuation and fade windows.",
+    "sourceUrls": [
+      "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=3822093"
+    ],
+    "engines": ["intraday_momentum"],
+    "markets": ["futures"],
+    "assetKeys": ["crude_oil_futures"],
+    "parameterGrid": {
+      "signalStartMinute": [615, 630],
+      "signalEndMinute": [645, 660],
+      "entryMinute": [660, 675],
+      "exitMinute": [930, 945],
+      "direction": ["same", "opposite"],
+      "minSignalAtr": [0, 0.1, 0.2, 0.35],
+      "weekday": [2]
+    }
+  }
+]

@@ -1,3 +1,4 @@
+import Link from "next/link";
 import ChallengeReplay from "@/components/challenge/challenge-replay";
 import AutoTradeAccountGate from "@/components/auto-trading/auto-trade-account-gate";
 import AutoTradeAccountModeSwitch from "@/components/auto-trading/auto-trade-account-mode-switch";
@@ -1023,10 +1024,7 @@ export default async function Home({ searchParams }: HomeProps) {
   const marketDataSyncState = syncTileState(syncStatus.marketDataSync, syncStatus.lastMarketDataSyncAt ?? legacyDatasetSyncAt);
   const signalTradeCheckState = syncTileState(syncStatus.signalTradeCheck, syncStatus.lastSignalTradeCheckAt);
   const latestBacktestTradeAt = backtestFreshness.latestTradeAt;
-  const latestMarketDataSyncAt = syncStatus.lastMarketDataSyncAt ?? legacyDatasetSyncAt;
-  const backtestBehindMarketData =
-    Boolean(latestBacktestTradeAt && latestMarketDataSyncAt) &&
-    Date.parse(latestBacktestTradeAt!) < Date.parse(latestMarketDataSyncAt!);
+  const backtestBehindMarketData = false;
   const now = new Date();
   const nextMarketDataSyncAt = nextCronRunIso((date) => date.getUTCMinutes() % 5 === 0, now);
   const nextSignalTradeCheckAt = nextCronRunIso((date) => [2, 17, 32, 47].includes(date.getUTCMinutes()), now);
@@ -1768,6 +1766,11 @@ export default async function Home({ searchParams }: HomeProps) {
             <DataValidityBox dataValidity={dataValidity} />
           </div>
         </section>
+        <nav className="researchBottomNav" aria-label="Research navigation">
+          <Link className="terminal-action" href="/research">
+            Research
+          </Link>
+        </nav>
       </section>
     </main>
   );

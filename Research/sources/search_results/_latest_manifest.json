@@ -1,0 +1,10 @@
+{
+  "runs": [
+    {
+      "file": "20260515T232651Z_adhoc_1_market_intraday_momentum_first_half_hour_last_ha.json",
+      "query": "market intraday momentum first half hour last half hour paper",
+      "resultCount": 0,
+      "topic": "adhoc_1"
+    }
+  ]
+}

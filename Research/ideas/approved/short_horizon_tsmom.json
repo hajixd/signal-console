@@ -1,0 +1,40 @@
+{
+  "assetKeys": [],
+  "createdAt": "2026-05-15T23:25:45.938229+00:00",
+  "engines": [
+    "daily_tsmom"
+  ],
+  "hypothesis": "An asset's own recent return can predict the next session. Test short lookbacks across futures and forex.",
+  "ideaId": "short_horizon_tsmom",
+  "markets": [
+    "futures",
+    "forex"
+  ],
+  "parameterGrid": {
+    "direction": [
+      "momentum",
+      "contrarian"
+    ],
+    "entryMinute": [
+      570,
+      945
+    ],
+    "exitMinute": [
+      945,
+      570
+    ],
+    "lookbackDays": [
+      3,
+      5,
+      10,
+      20,
+      40
+    ]
+  },
+  "provenance": "academic",
+  "sourceUrls": [
+    "https://pages.stern.nyu.edu/~lpederse/papers/TimeSeriesMomentum.pdf"
+  ],
+  "status": "approved",
+  "title": "Short-horizon time-series momentum"
+}

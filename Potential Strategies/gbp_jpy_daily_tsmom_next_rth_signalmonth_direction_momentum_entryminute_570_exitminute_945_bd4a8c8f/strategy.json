@@ -1,0 +1,29 @@
+{
+  "strategyId": "gbp_jpy_daily_tsmom_next_rth_signalmonth_direction_momentum_entryminute_570_exitminute_945_bd4a8c8f",
+  "label": "GBPJPY Daily Tsmom Next Rth Signalmonth",
+  "assetKey": "gbp_jpy",
+  "symbol": "GBPJPY",
+  "market": "forex",
+  "family": "daily_tsmom_next_rth_signalmonth",
+  "provenance": "research_derived/filter_scan",
+  "status": "potential_not_live",
+  "hypothesis": "Tests short-horizon own-return continuation/reversal inspired by time-series momentum literature. Filtered by signalMonth=6.",
+  "sourceUrls": [
+    "https://pages.stern.nyu.edu/~lpederse/papers/TimeSeriesMomentum.pdf"
+  ],
+  "params": {
+    "lookbackDays": 40,
+    "direction": "momentum",
+    "entryMinute": 570,
+    "exitMinute": 945,
+    "signalMonth": 6
+  },
+  "metrics": {
+    "profitFactor": 3.401583,
+    "trades": 85,
+    "totalR": 101.340455,
+    "winRatePct": 70.59,
+    "maxDrawdownR": 8.010462
+  },
+  "isolationNote": "Stored under Potential Strategies only. Not imported into the live strategy catalog."
+}

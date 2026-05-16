@@ -1,0 +1,41 @@
+{
+  "assetKeys": [],
+  "createdAt": "2026-05-15T23:25:45.930763+00:00",
+  "engines": [
+    "open_gap"
+  ],
+  "hypothesis": "Overnight gaps may either mean-revert or continue during the regular session depending on asset and gap size.",
+  "ideaId": "night_day_open_gap_fade",
+  "markets": [
+    "futures",
+    "forex"
+  ],
+  "parameterGrid": {
+    "direction": [
+      "fade",
+      "continue"
+    ],
+    "entryMinute": [
+      570
+    ],
+    "exitMinute": [
+      615,
+      660,
+      945
+    ],
+    "minGapAtr": [
+      0,
+      0.1,
+      0.2,
+      0.35,
+      0.5,
+      0.75
+    ]
+  },
+  "provenance": "academic",
+  "sourceUrls": [
+    "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=1004081"
+  ],
+  "status": "approved",
+  "title": "NY open gap fade or continuation"
+}

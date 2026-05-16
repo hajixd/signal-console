@@ -1,0 +1,46 @@
+{
+  "assetKeys": [],
+  "createdAt": "2026-05-15T23:25:45.937179+00:00",
+  "engines": [
+    "range_break"
+  ],
+  "hypothesis": "The London open often tests or breaks the Asia range. Test continuation and failed-break variants on FX and currency futures.",
+  "ideaId": "asia_range_london_break",
+  "markets": [
+    "forex",
+    "futures"
+  ],
+  "parameterGrid": {
+    "breakEndMinute": [
+      360
+    ],
+    "breakStartMinute": [
+      180
+    ],
+    "direction": [
+      "breakout",
+      "fade"
+    ],
+    "forcedExitMinute": [
+      600
+    ],
+    "rangeEndMinute": [
+      165
+    ],
+    "rangeStartMinute": [
+      1080
+    ],
+    "riskReward": [
+      1.0,
+      1.5,
+      2.0,
+      2.5
+    ]
+  },
+  "provenance": "institutional",
+  "sourceUrls": [
+    "https://www.cmegroup.com/education.html"
+  ],
+  "status": "approved",
+  "title": "Asia range into London breakout/fade"
+}

@@ -1,0 +1,29 @@
+{
+  "strategyId": "us_treasury_10y_note_futures_ny_open_gap_fade_signalmonth_direction_fade_entryminute_570_e_f09fe3c4",
+  "label": "ZN Ny Open Gap Fade Signalmonth",
+  "assetKey": "us_treasury_10y_note_futures",
+  "symbol": "ZN",
+  "market": "futures",
+  "family": "ny_open_gap_fade_signalmonth",
+  "provenance": "research_derived/session_specific/filter_scan",
+  "status": "potential_not_live",
+  "hypothesis": "Tests whether the overnight gap fades or continues during a specific NY cash-session window. Filtered by signalMonth=12.",
+  "sourceUrls": [
+    "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=1004081"
+  ],
+  "params": {
+    "minGapAtr": 0.75,
+    "entryMinute": 570,
+    "exitBarMinute": 615,
+    "direction": "fade",
+    "signalMonth": 12
+  },
+  "metrics": {
+    "profitFactor": 3.38517,
+    "trades": 56,
+    "totalR": 42.322438,
+    "winRatePct": 66.07,
+    "maxDrawdownR": 5.579422
+  },
+  "isolationNote": "Stored under Potential Strategies only. Not imported into the live strategy catalog."
+}

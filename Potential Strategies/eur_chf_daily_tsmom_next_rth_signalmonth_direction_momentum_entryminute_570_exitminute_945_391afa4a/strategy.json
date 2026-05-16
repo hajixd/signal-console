@@ -1,0 +1,29 @@
+{
+  "strategyId": "eur_chf_daily_tsmom_next_rth_signalmonth_direction_momentum_entryminute_570_exitminute_945_391afa4a",
+  "label": "EURCHF Daily Tsmom Next Rth Signalmonth",
+  "assetKey": "eur_chf",
+  "symbol": "EURCHF",
+  "market": "forex",
+  "family": "daily_tsmom_next_rth_signalmonth",
+  "provenance": "research_derived/filter_scan",
+  "status": "potential_not_live",
+  "hypothesis": "Tests short-horizon own-return continuation/reversal inspired by time-series momentum literature. Filtered by signalMonth=2.",
+  "sourceUrls": [
+    "https://pages.stern.nyu.edu/~lpederse/papers/TimeSeriesMomentum.pdf"
+  ],
+  "params": {
+    "lookbackDays": 5,
+    "direction": "momentum",
+    "entryMinute": 570,
+    "exitMinute": 945,
+    "signalMonth": 2
+  },
+  "metrics": {
+    "profitFactor": 3.225213,
+    "trades": 101,
+    "totalR": 133.810262,
+    "winRatePct": 70.3,
+    "maxDrawdownR": 11.270657
+  },
+  "isolationNote": "Stored under Potential Strategies only. Not imported into the live strategy catalog."
+}

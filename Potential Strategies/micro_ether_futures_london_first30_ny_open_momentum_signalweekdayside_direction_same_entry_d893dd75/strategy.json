@@ -1,0 +1,31 @@
+{
+  "strategyId": "micro_ether_futures_london_first30_ny_open_momentum_signalweekdayside_direction_same_entry_d893dd75",
+  "label": "MET London First30 Ny Open Momentum Signalweekdayside",
+  "assetKey": "micro_ether_futures",
+  "symbol": "MET",
+  "market": "futures",
+  "family": "london_first30_ny_open_momentum_signalweekdayside",
+  "provenance": "research_derived/session_specific/filter_scan",
+  "status": "potential_not_live",
+  "hypothesis": "Session-window return predicts a later same-day session return. Filtered by signalWeekdaySide=3_short.",
+  "sourceUrls": [
+    "https://biblio.ugent.be/publication/8060014"
+  ],
+  "params": {
+    "signalStartMinute": 180,
+    "signalEndBarMinute": 195,
+    "entryMinute": 480,
+    "exitBarMinute": 570,
+    "direction": "same",
+    "minSignalAtr": 0.05,
+    "signalWeekdaySide": "3_short"
+  },
+  "metrics": {
+    "profitFactor": 3.644827,
+    "trades": 81,
+    "totalR": 98.375956,
+    "winRatePct": 71.6,
+    "maxDrawdownR": 5.662854
+  },
+  "isolationNote": "Stored under Potential Strategies only. Not imported into the live strategy catalog."
+}

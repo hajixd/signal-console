@@ -1,0 +1,51 @@
+{
+  "assetKeys": [
+    "crude_oil_futures"
+  ],
+  "createdAt": "2026-05-15T23:25:45.939265+00:00",
+  "engines": [
+    "intraday_momentum"
+  ],
+  "hypothesis": "Crude oil intraday returns can show announcement/session-specific predictability. Test Wednesday late-morning continuation and fade windows.",
+  "ideaId": "crude_inventory_session",
+  "markets": [
+    "futures"
+  ],
+  "parameterGrid": {
+    "direction": [
+      "same",
+      "opposite"
+    ],
+    "entryMinute": [
+      660,
+      675
+    ],
+    "exitMinute": [
+      930,
+      945
+    ],
+    "minSignalAtr": [
+      0,
+      0.1,
+      0.2,
+      0.35
+    ],
+    "signalEndMinute": [
+      645,
+      660
+    ],
+    "signalStartMinute": [
+      615,
+      630
+    ],
+    "weekday": [
+      2
+    ]
+  },
+  "provenance": "academic",
+  "sourceUrls": [
+    "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=3822093"
+  ],
+  "status": "approved",
+  "title": "Crude oil midweek announcement-session continuation"
+}

@@ -1,0 +1,31 @@
+{
+  "strategyId": "usd_jpy_us_first30_last30_reversal_signalweekdayside_direction_opposite_entryminute_930_ex_8fc27c9b",
+  "label": "USDJPY Us First30 Last30 Reversal Signalweekdayside",
+  "assetKey": "usd_jpy",
+  "symbol": "USDJPY",
+  "market": "forex",
+  "family": "us_first30_last30_reversal_signalweekdayside",
+  "provenance": "research_derived/session_specific/filter_scan",
+  "status": "potential_not_live",
+  "hypothesis": "Session-window return predicts a later same-day session return. Filtered by signalWeekdaySide=2_long.",
+  "sourceUrls": [
+    "https://www.sciencedirect.com/science/article/abs/pii/S0304405X18301351"
+  ],
+  "params": {
+    "signalStartMinute": 570,
+    "signalEndBarMinute": 585,
+    "entryMinute": 930,
+    "exitBarMinute": 945,
+    "direction": "opposite",
+    "minSignalAtr": 0.5,
+    "signalWeekdaySide": "2_long"
+  },
+  "metrics": {
+    "profitFactor": 4.443099,
+    "trades": 65,
+    "totalR": 17.43848,
+    "winRatePct": 69.23,
+    "maxDrawdownR": 0.71227
+  },
+  "isolationNote": "Stored under Potential Strategies only. Not imported into the live strategy catalog."
+}

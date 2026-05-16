@@ -1,0 +1,28 @@
+{
+  "assetKey": "sp_500_futures",
+  "createdAt": "2026-05-15T23:27:30.230054+00:00",
+  "engine": "intraday_momentum",
+  "hypothesis": "FX intraday momentum may appear around major trading-hour transitions. Test London first-30-minute move into pre-NY/NY handoff.",
+  "ideaId": "fx_london_open_momentum",
+  "market": "futures",
+  "params": {
+    "direction": "same",
+    "entryMinute": 480,
+    "exitMinute": 570,
+    "minSignalAtr": 0.05,
+    "signalEndMinute": 195,
+    "signalStartMinute": 180
+  },
+  "provenance": "academic",
+  "sourceUrls": [
+    "https://biblio.ugent.be/publication/8060014"
+  ],
+  "status": "ready_to_backtest",
+  "strategyId": "rs_fx_london_open_momentum_sp_500_futures_intraday_momentum_43bff49c",
+  "symbol": "ES",
+  "thresholds": {
+    "minProfitFactor": 2.0,
+    "minTrades": 21
+  },
+  "title": "London first 30 minutes into NY handoff"
+}

@@ -1,0 +1,28 @@
+{
+  "assetKey": "sp_500_futures",
+  "createdAt": "2026-05-15T23:27:30.234048+00:00",
+  "engine": "intraday_momentum",
+  "hypothesis": "The first half-hour return predicts the last half-hour return; test both continuation and reversal by asset.",
+  "ideaId": "gao_intraday_momentum_last30",
+  "market": "futures",
+  "params": {
+    "direction": "same",
+    "entryMinute": 930,
+    "exitMinute": 945,
+    "minSignalAtr": 0.05,
+    "signalEndMinute": 585,
+    "signalStartMinute": 570
+  },
+  "provenance": "academic",
+  "sourceUrls": [
+    "https://www.sciencedirect.com/science/article/abs/pii/S0304405X18301351"
+  ],
+  "status": "ready_to_backtest",
+  "strategyId": "rs_gao_intraday_momentum_last30_sp_500_futures_intraday_momentum_cc16a388",
+  "symbol": "ES",
+  "thresholds": {
+    "minProfitFactor": 2.0,
+    "minTrades": 21
+  },
+  "title": "First 30 minutes predict last 30 minutes"
+}

@@ -1,0 +1,21 @@
+{
+  "session_effects": [
+    "overnight returns trading hours non-trading hours equity index futures study",
+    "market intraday momentum first half hour last half hour futures currencies study",
+    "foreign exchange intraday momentum London session study",
+    "opening range breakout futures academic study intraday",
+    "overnight gap fade continuation futures forex study"
+  ],
+  "academic_futures": [
+    "time series momentum futures Moskowitz Ooi Pedersen paper",
+    "commodity futures intraday momentum crude oil first half hour last half hour",
+    "Treasury futures intraday momentum last half hour study",
+    "currency futures momentum seasonality overnight intraday study"
+  ],
+  "institutional_playbooks": [
+    "CME Group opening range breakout futures education",
+    "CME Group treasury futures trading sessions volatility",
+    "forex London open range breakout strategy research",
+    "equity index futures overnight session returns regular trading hours"
+  ]
+}

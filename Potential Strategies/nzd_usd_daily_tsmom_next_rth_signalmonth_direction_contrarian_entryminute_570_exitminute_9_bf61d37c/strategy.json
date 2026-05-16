@@ -1,0 +1,29 @@
+{
+  "strategyId": "nzd_usd_daily_tsmom_next_rth_signalmonth_direction_contrarian_entryminute_570_exitminute_9_bf61d37c",
+  "label": "NZDUSD Daily Tsmom Next Rth Signalmonth",
+  "assetKey": "nzd_usd",
+  "symbol": "NZDUSD",
+  "market": "forex",
+  "family": "daily_tsmom_next_rth_signalmonth",
+  "provenance": "research_derived/filter_scan",
+  "status": "potential_not_live",
+  "hypothesis": "Tests short-horizon own-return continuation/reversal inspired by time-series momentum literature. Filtered by signalMonth=2.",
+  "sourceUrls": [
+    "https://pages.stern.nyu.edu/~lpederse/papers/TimeSeriesMomentum.pdf"
+  ],
+  "params": {
+    "lookbackDays": 3,
+    "direction": "contrarian",
+    "entryMinute": 570,
+    "exitMinute": 945,
+    "signalMonth": 2
+  },
+  "metrics": {
+    "profitFactor": 3.611331,
+    "trades": 102,
+    "totalR": 229.001486,
+    "winRatePct": 62.75,
+    "maxDrawdownR": 19.711278
+  },
+  "isolationNote": "Stored under Potential Strategies only. Not imported into the live strategy catalog."
+}

@@ -1,0 +1,31 @@
+{
+  "assetKeys": [],
+  "createdAt": "2026-05-15T23:25:45.929759+00:00",
+  "engines": [
+    "overnight_bias"
+  ],
+  "hypothesis": "The close-to-open leg can carry a different expected return than the open-to-close leg. Test overnight long and short bias by asset.",
+  "ideaId": "night_day_overnight_bias",
+  "markets": [
+    "futures",
+    "forex"
+  ],
+  "parameterGrid": {
+    "entryMinute": [
+      945
+    ],
+    "exitMinute": [
+      570
+    ],
+    "side": [
+      "long",
+      "short"
+    ]
+  },
+  "provenance": "academic",
+  "sourceUrls": [
+    "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=1004081"
+  ],
+  "status": "approved",
+  "title": "Close-to-open overnight bias"
+}

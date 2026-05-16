@@ -1,0 +1,29 @@
+{
+  "strategyId": "micro_bitcoin_futures_daily_tsmom_next_overnight_signalweekdayside_direction_contrarian_en_6003fc2d",
+  "label": "MBT Daily Tsmom Next Overnight Signalweekdayside",
+  "assetKey": "micro_bitcoin_futures",
+  "symbol": "MBT",
+  "market": "futures",
+  "family": "daily_tsmom_next_overnight_signalweekdayside",
+  "provenance": "research_derived/filter_scan",
+  "status": "potential_not_live",
+  "hypothesis": "Tests short-horizon own-return continuation/reversal inspired by time-series momentum literature. Filtered by signalWeekdaySide=1_long.",
+  "sourceUrls": [
+    "https://pages.stern.nyu.edu/~lpederse/papers/TimeSeriesMomentum.pdf"
+  ],
+  "params": {
+    "lookbackDays": 3,
+    "direction": "contrarian",
+    "entryMinute": 945,
+    "exitMinute": 570,
+    "signalWeekdaySide": "1_long"
+  },
+  "metrics": {
+    "profitFactor": 3.512964,
+    "trades": 104,
+    "totalR": 215.625666,
+    "winRatePct": 68.27,
+    "maxDrawdownR": 10.673724
+  },
+  "isolationNote": "Stored under Potential Strategies only. Not imported into the live strategy catalog."
+}

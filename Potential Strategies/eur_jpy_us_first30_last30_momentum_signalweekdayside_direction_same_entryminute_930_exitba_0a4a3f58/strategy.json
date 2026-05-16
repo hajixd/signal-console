@@ -1,0 +1,31 @@
+{
+  "strategyId": "eur_jpy_us_first30_last30_momentum_signalweekdayside_direction_same_entryminute_930_exitba_0a4a3f58",
+  "label": "EURJPY Us First30 Last30 Momentum Signalweekdayside",
+  "assetKey": "eur_jpy",
+  "symbol": "EURJPY",
+  "market": "forex",
+  "family": "us_first30_last30_momentum_signalweekdayside",
+  "provenance": "research_derived/session_specific/filter_scan",
+  "status": "potential_not_live",
+  "hypothesis": "Session-window return predicts a later same-day session return. Filtered by signalWeekdaySide=2_long.",
+  "sourceUrls": [
+    "https://www.sciencedirect.com/science/article/abs/pii/S0304405X18301351"
+  ],
+  "params": {
+    "signalStartMinute": 570,
+    "signalEndBarMinute": 585,
+    "entryMinute": 930,
+    "exitBarMinute": 945,
+    "direction": "same",
+    "minSignalAtr": 0.5,
+    "signalWeekdaySide": "2_long"
+  },
+  "metrics": {
+    "profitFactor": 3.362712,
+    "trades": 64,
+    "totalR": 15.233843,
+    "winRatePct": 65.62,
+    "maxDrawdownR": 1.199329
+  },
+  "isolationNote": "Stored under Potential Strategies only. Not imported into the live strategy catalog."
+}

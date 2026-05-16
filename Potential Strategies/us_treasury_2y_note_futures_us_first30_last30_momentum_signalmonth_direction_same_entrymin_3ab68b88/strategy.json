@@ -1,0 +1,31 @@
+{
+  "strategyId": "us_treasury_2y_note_futures_us_first30_last30_momentum_signalmonth_direction_same_entrymin_3ab68b88",
+  "label": "ZT Us First30 Last30 Momentum Signalmonth",
+  "assetKey": "us_treasury_2y_note_futures",
+  "symbol": "ZT",
+  "market": "futures",
+  "family": "us_first30_last30_momentum_signalmonth",
+  "provenance": "research_derived/session_specific/filter_scan",
+  "status": "potential_not_live",
+  "hypothesis": "Session-window return predicts a later same-day session return. Filtered by signalMonth=3.",
+  "sourceUrls": [
+    "https://www.sciencedirect.com/science/article/abs/pii/S0304405X18301351"
+  ],
+  "params": {
+    "signalStartMinute": 570,
+    "signalEndBarMinute": 585,
+    "entryMinute": 930,
+    "exitBarMinute": 945,
+    "direction": "same",
+    "minSignalAtr": 0.5,
+    "signalMonth": 3
+  },
+  "metrics": {
+    "profitFactor": 3.391423,
+    "trades": 71,
+    "totalR": 20.333067,
+    "winRatePct": 59.15,
+    "maxDrawdownR": 1.350007
+  },
+  "isolationNote": "Stored under Potential Strategies only. Not imported into the live strategy catalog."
+}

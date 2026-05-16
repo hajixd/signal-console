@@ -1,0 +1,28 @@
+{
+  "strategyId": "eur_chf_overnight_close_to_open_bias_signalmonth_entry_prior_rth_close_exit_ny_open_side_s_3a64bc49",
+  "label": "EURCHF Overnight Close To Open Bias Signalmonth",
+  "assetKey": "eur_chf",
+  "symbol": "EURCHF",
+  "market": "forex",
+  "family": "overnight_close_to_open_bias_signalmonth",
+  "provenance": "research_derived/session_specific/filter_scan",
+  "status": "potential_not_live",
+  "hypothesis": "Tests the close-to-open leg emphasized by overnight return research. Filtered by signalMonth=7.",
+  "sourceUrls": [
+    "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=1004081"
+  ],
+  "params": {
+    "side": "short",
+    "entry": "prior_rth_close",
+    "exit": "ny_open",
+    "signalMonth": 7
+  },
+  "metrics": {
+    "profitFactor": 3.0984,
+    "trades": 70,
+    "totalR": 125.393886,
+    "winRatePct": 64.29,
+    "maxDrawdownR": 14.18886
+  },
+  "isolationNote": "Stored under Potential Strategies only. Not imported into the live strategy catalog."
+}
