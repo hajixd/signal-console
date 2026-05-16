@@ -36,10 +36,15 @@ function envValue(...keys: string[]): string {
   return "";
 }
 
+function githubResearchRef() {
+  const configuredRef = envValue("GITHUB_RESEARCH_REF", "GITHUB_REFRESH_REF");
+  return configuredRef && configuredRef !== "publish-main" ? configuredRef : DEFAULT_REF;
+}
+
 function githubResearchConfig(): GithubConfig {
   return {
     owner: envValue("GITHUB_RESEARCH_OWNER", "GITHUB_REFRESH_OWNER", "VERCEL_GIT_REPO_OWNER") || DEFAULT_OWNER,
-    ref: envValue("VERCEL_GIT_COMMIT_REF", "GITHUB_RESEARCH_REF", "GITHUB_REFRESH_REF") || DEFAULT_REF,
+    ref: githubResearchRef(),
     repo: envValue("GITHUB_RESEARCH_REPO", "GITHUB_REFRESH_REPO", "VERCEL_GIT_REPO_SLUG") || DEFAULT_REPO,
     token: envValue("GITHUB_RESEARCH_TOKEN", "GITHUB_BACKTEST_REFRESH_TOKEN", "GITHUB_REFRESH_TOKEN")
   };
