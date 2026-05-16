@@ -1,0 +1,151 @@
+name: Research Cycle
+
+on:
+  workflow_dispatch:
+    inputs:
+      limit:
+        description: "Maximum ready specs to backtest"
+        required: false
+        default: "25"
+      markets:
+        description: "Comma-separated markets"
+        required: false
+        default: "futures,forex"
+      maxPerIdea:
+        description: "Maximum coded specs per idea"
+        required: false
+        default: "3"
+      minPf:
+        description: "Minimum profit factor gate"
+        required: false
+        default: "2"
+      minTrades:
+        description: "Minimum trade count gate"
+        required: false
+        default: "21"
+      reason:
+        description: "Dispatch reason"
+        required: false
+        default: "manual"
+      startedAt:
+        description: "ISO timestamp from the Vercel cron dispatcher"
+        required: false
+        default: ""
+
+concurrency:
+  group: research-cycle
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  research:
+    name: Research, code, backtest, and commit
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    env:
+      DATABENTO_API_KEY: ${{ secrets.DATABENTO_API_KEY }}
+      FIREBASE_CLIENT_EMAIL: ${{ secrets.FIREBASE_CLIENT_EMAIL }}
+      FIREBASE_PRIVATE_KEY: ${{ secrets.FIREBASE_PRIVATE_KEY }}
+      FIREBASE_PRIVATE_KEY_ID: ${{ secrets.FIREBASE_PRIVATE_KEY_ID }}
+      FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
+      FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
+      FIREBASE_STORAGE_BUCKET: ${{ secrets.FIREBASE_STORAGE_BUCKET }}
+      OANDA_API_BASE_URL: ${{ vars.OANDA_API_BASE_URL || 'https://api-fxpractice.oanda.com' }}
+      OANDA_API_TOKEN: ${{ secrets.OANDA_API_TOKEN }}
+      RESEARCH_DATA_TAIL_ROWS: ${{ vars.RESEARCH_DATA_TAIL_ROWS || '60000' }}
+      RESEARCH_FETCH_LIMIT: ${{ vars.RESEARCH_FETCH_LIMIT || '24' }}
+      RESEARCH_MARKETS: ${{ inputs.markets }}
+      RESEARCH_SEARCH_LIMIT: ${{ vars.RESEARCH_SEARCH_LIMIT || '4' }}
+      SIGNAL_CONSOLE_STORAGE_PREFIX: ${{ vars.SIGNAL_CONSOLE_STORAGE_PREFIX || 'signal-console' }}
+      TWELVEDATA_API_KEYS: ${{ secrets.TWELVEDATA_API_KEYS }}
+
+    steps:
+      - name: Check out workflow ref
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          npm ci
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
+
+      - name: Mark research cycle running
+        if: inputs.startedAt != ''
+        run: node --import tsx scripts/update-research-cycle-status.ts --state=running --started-at="${{ inputs.startedAt }}"
+
+      - name: Select research data paths
+        run: |
+          node <<'NODE'
+          const fs = require('node:fs');
+          const assets = JSON.parse(fs.readFileSync('config/assets.json', 'utf8'));
+          const markets = new Set((process.env.RESEARCH_MARKETS || 'futures,forex').split(',').map((value) => value.trim()).filter(Boolean));
+          const paths = Object.values(assets)
+            .filter((asset) => markets.has(asset.market))
+            .map((asset) => `data/15m/${asset.dataFile}`)
+            .sort();
+          fs.appendFileSync(process.env.GITHUB_ENV, `RESEARCH_DATA_PATHS=${paths.join(',')}\n`);
+          console.log(`selected ${paths.length} research data file(s)`);
+          NODE
+
+      - name: Pull bounded candle data from Firebase
+        run: node --import tsx scripts/firebase-pull.ts --paths="$RESEARCH_DATA_PATHS" --tail-rows="$RESEARCH_DATA_TAIL_ROWS" --ignore-missing
+
+      - name: Search public research sources
+        continue-on-error: true
+        run: python Research/scripts/research_center.py search --limit "$RESEARCH_SEARCH_LIMIT"
+
+      - name: Fetch research source pages
+        continue-on-error: true
+        run: python Research/scripts/research_center.py fetch --limit "$RESEARCH_FETCH_LIMIT"
+
+      - name: Convert fetched research into approved ideas
+        continue-on-error: true
+        run: python Research/scripts/ideas_from_research.py --from-pages --approve-drafts
+
+      - name: Code ideas and backtest candidates
+        run: |
+          python Research/scripts/research_center.py local-cycle \
+            --markets "${{ inputs.markets }}" \
+            --max-per-idea "${{ inputs.maxPerIdea }}" \
+            --min-pf "${{ inputs.minPf }}" \
+            --min-trades "${{ inputs.minTrades }}" \
+            --limit "${{ inputs.limit }}"
+
+      - name: Generate candidate report
+        run: python Research/scripts/generate_report.py --top 20
+
+      - name: Commit Research outputs
+        run: |
+          git config user.name "signal-console-research"
+          git config user.email "signal-console-research@users.noreply.github.com"
+          git add Research
+          if git diff --cached --quiet; then
+            echo "No Research output changes to commit."
+          else
+            git commit -m "refresh research strategy pipeline"
+            git push
+          fi
+
+      - name: Mark research cycle successful
+        if: success() && inputs.startedAt != ''
+        run: node --import tsx scripts/update-research-cycle-status.ts --state=success --started-at="${{ inputs.startedAt }}"
+
+      - name: Mark research cycle failed
+        if: failure() && inputs.startedAt != ''
+        run: node --import tsx scripts/update-research-cycle-status.ts --state=failed --started-at="${{ inputs.startedAt }}" --error="GitHub research workflow failed."

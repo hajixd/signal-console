@@ -1,6 +1,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { NextRequest, NextResponse } from "next/server";
+import { commitResearchIdeaFile } from "@/lib/research-workflow";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -45,6 +46,10 @@ function slug(value: string) {
     .replace(/[^a-z0-9]+/g, "_")
     .replace(/^_+|_+$/g, "")
     .slice(0, 82) || "research_idea";
+}
+
+function uniqueRuntimeIdeaId(baseId: string) {
+  return `${baseId}_${Date.now().toString(36)}`;
 }
 
 function defaultParameterGrid(engine: string) {
@@ -144,9 +149,9 @@ export async function POST(request: NextRequest) {
 
   const ideaId = slug(title);
   const directory = path.join(RESEARCH_ROOT, "ideas", status);
-  await fs.mkdir(directory, { recursive: true });
-  const filePath = await uniqueIdeaPath(directory, ideaId);
-  const finalIdeaId = path.basename(filePath, ".json");
+  const useGithubStorage = process.env.RESEARCH_IDEA_WRITE_MODE === "github" || process.env.NODE_ENV === "production";
+  const filePath = useGithubStorage ? "" : await uniqueIdeaPath(directory, ideaId);
+  const finalIdeaId = useGithubStorage ? uniqueRuntimeIdeaId(ideaId) : path.basename(filePath, ".json");
   const createdAt = new Date().toISOString();
   const idea = {
     assetKeys,
@@ -165,7 +170,25 @@ export async function POST(request: NextRequest) {
     title
   };
 
-  await fs.writeFile(filePath, `${JSON.stringify(idea, null, 2)}\n`, "utf8");
+  const content = `${JSON.stringify(idea, null, 2)}\n`;
+
+  if (useGithubStorage) {
+    const relativePath = path.posix.join("Research", "ideas", status, `${finalIdeaId}.json`);
+    const result = await commitResearchIdeaFile(relativePath, content, title);
+    if (!result.ok) {
+      return NextResponse.json(result.body, { status: result.status });
+    }
+    return NextResponse.json({
+      commit: result.body.commit,
+      idea,
+      ok: true,
+      path: relativePath,
+      storage: "github"
+    });
+  }
+
+  await fs.mkdir(directory, { recursive: true });
+  await fs.writeFile(filePath, content, "utf8");
 
   return NextResponse.json({
     idea,
