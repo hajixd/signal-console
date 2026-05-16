@@ -1,0 +1,24 @@
+{
+  "assetKeys": [
+    "nasdaq_100_futures"
+  ],
+  "createdAt": "2026-05-16T03:55:44.650Z",
+  "engine": "intraday_momentum",
+  "engines": [
+    "intraday_momentum"
+  ],
+  "hypothesis": "simply buy at daily lower, and sell at daily highs",
+  "ideaId": "simple_buy_sell_mp7tcy2y",
+  "markets": [
+    "futures",
+    "forex"
+  ],
+  "notes": "",
+  "provenance": "manual",
+  "sourceUrls": [],
+  "status": "inbox",
+  "timeframes": [
+    "15m"
+  ],
+  "title": "simple BUY SELL"
+}
