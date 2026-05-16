@@ -1,0 +1,37 @@
+{
+  "assetKeys": [],
+  "createdAt": "2026-05-16T03:04:18.447219+00:00",
+  "engines": [],
+  "hypothesis": "Draft idea extracted from source text matching engines: range_break.",
+  "ideaId": "draft_draft_backtest_opening_range_breakout_strategy_success_rate_on_spy_vs_https_www_17fb509a",
+  "ideaReport": {
+    "entry": "Enter when the coded condition confirms the setup.",
+    "filters": [],
+    "invalidations": [
+      "Reject if PF <= 2 or trades <= 20."
+    ],
+    "setup": "Test the described source behavior with explicit rule-code.",
+    "stop": "Use ATR or structure invalidation.",
+    "summary": "Draft idea extracted from source text matching engines: range_break.",
+    "target": "Use fixed R target and session/time exit.",
+    "timeframes": [
+      "15m"
+    ]
+  },
+  "llm": {
+    "ideaModel": "Qwen/Qwen3-235B-A22B-Instruct-2507",
+    "stage": "idea"
+  },
+  "markets": [
+    "futures",
+    "forex"
+  ],
+  "parameterGrid": {},
+  "provenance": "public_research",
+  "sourceFile": "adhoc_1_backtest_opening_range_breakout_strategy_success_rate_on_spy_v.json",
+  "sourceUrls": [
+    "https://www.youtube.com/watch?v=ZzIr6-A4oMU"
+  ],
+  "status": "approved",
+  "title": "Backtest: Opening Range Breakout Strategy Success Rate on SPY vs."
+}

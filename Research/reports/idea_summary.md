@@ -1,5 +1,18 @@
 # Idea Summary
 
-Structured 1 new idea(s) into approved idea-board output.
+# Research Candidate Report
 
-- `market_intraday_momentum_first_half_hour_last_half_hour_paper.json`
+Generated: 2026-05-16T02:59:54.880890+00:00
+
+Backtested strategies: 1
+Qualified strategies: 0
+
+## Top Backtests
+
+| Strategy | Asset | Market | Engine | PF | Trades | Total R | Qualified |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| rs_asia_range_london_break_australian_dollar_futures_range_break_fe62c419 | australian_dollar_futures | futures | range_break | 0.927663 | 745 | -16.127465 | False |
+
+## Qualified
+
+No qualified strategies yet.
