@@ -74,10 +74,7 @@ function readServiceAccountFromJson(): FirebaseServiceAccount | null {
   }
 }
 
-function readServiceAccount(): FirebaseServiceAccount | null {
-  const fromJson = readServiceAccountFromJson();
-  if (fromJson) return fromJson;
-
+function readServiceAccountFromEnvironment(): FirebaseServiceAccount | null {
   const projectId = trim(process.env.FIREBASE_PROJECT_ID);
   const clientEmail = trim(process.env.FIREBASE_CLIENT_EMAIL);
   const privateKey = normalizePrivateKey(process.env.FIREBASE_PRIVATE_KEY);
@@ -91,6 +88,10 @@ function readServiceAccount(): FirebaseServiceAccount | null {
     privateKeyId,
     projectId
   };
+}
+
+function readServiceAccount(): FirebaseServiceAccount | null {
+  return readServiceAccountFromEnvironment() ?? readServiceAccountFromJson();
 }
 
 function firebaseUnavailable(): boolean {
@@ -171,7 +172,14 @@ export function firebaseAdminApp() {
       projectId,
       storageBucket: firebaseStorageBucketName()
     });
-  } catch {
+  } catch (error) {
+    console.error("Firebase Admin initialization failed", {
+      hasClientEmail: Boolean(serviceAccount?.clientEmail),
+      hasPrivateKey: Boolean(serviceAccount?.privateKey),
+      hasProjectId: Boolean(projectId),
+      message: error instanceof Error ? error.message : "Unknown error",
+      usingServiceAccount: Boolean(serviceAccount)
+    });
     markFirebaseAdminUnavailable();
     return null;
   }
