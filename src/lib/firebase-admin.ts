@@ -1,5 +1,5 @@
 import { applicationDefault, cert, getApps, initializeApp } from "firebase-admin/app";
-import { getFirestore } from "firebase-admin/firestore";
+import { getFirestore, initializeFirestore } from "firebase-admin/firestore";
 import { getStorage } from "firebase-admin/storage";
 
 type FirebaseServiceAccount = {
@@ -20,6 +20,7 @@ export type FirebaseAdminRuntimeDiagnostics = {
   envPrivateKeyPresent: boolean;
   envProjectIdPresent: boolean;
   forcedLocal: boolean;
+  firestorePreferRest: boolean;
   googleApplicationCredentialsPresent: boolean;
   localFallbackEnabled: boolean;
   operationTimeoutMs: number;
@@ -37,6 +38,7 @@ const DEFAULT_FIREBASE_UNAVAILABLE_COOLDOWN_MS = 30_000;
 
 let cachedUnavailable = false;
 let cachedUnavailableUntil = 0;
+let cachedFirestore: ReturnType<typeof getFirestore> | null = null;
 
 function trim(value: string | undefined): string | undefined {
   const normalized = value?.trim();
@@ -169,6 +171,7 @@ export function firebaseAdminRuntimeDiagnostics(): FirebaseAdminRuntimeDiagnosti
     envPrivateKeyPresent: Boolean(trim(process.env.FIREBASE_PRIVATE_KEY)),
     envProjectIdPresent: Boolean(trim(process.env.FIREBASE_PROJECT_ID)),
     forcedLocal: firebaseForcedLocal(),
+    firestorePreferRest: true,
     googleApplicationCredentialsPresent: Boolean(trim(process.env.GOOGLE_APPLICATION_CREDENTIALS)),
     localFallbackEnabled: firebaseLocalFallbackEnabled(),
     operationTimeoutMs: firebaseOperationTimeoutMs(),
@@ -240,7 +243,13 @@ export function firebaseDb() {
   if (!app) {
     throw new Error("Firebase Admin is not configured");
   }
-  return getFirestore(app);
+  if (cachedFirestore) return cachedFirestore;
+  try {
+    cachedFirestore = initializeFirestore(app, { preferRest: true });
+  } catch {
+    cachedFirestore = getFirestore(app);
+  }
+  return cachedFirestore;
 }
 
 export function firebaseBucket() {
