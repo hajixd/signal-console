@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, MouseEvent, useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import {
   AUTO_TRADE_ACCOUNT_MODE_CHANGE_EVENT,
   AUTO_TRADE_ACCESS_CODE_MAX_LENGTH,
@@ -834,6 +835,30 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
     void unlockProjectXFolder();
   }
 
+  const folderContextMenuElement =
+    folderContextMenu && typeof document !== "undefined"
+      ? createPortal(
+          <div
+            className="autoTradeFolderContextMenu"
+            onClick={(event) => event.stopPropagation()}
+            onContextMenu={(event) => {
+              event.preventDefault();
+              event.stopPropagation();
+            }}
+            role="menu"
+            style={{ left: folderContextMenu.x, top: folderContextMenu.y }}
+          >
+            <button onClick={() => requestProjectXFolderAction("edit-password", folderContextMenu.folder)} role="menuitem" type="button">
+              Edit Password
+            </button>
+            <button className="dangerButton" onClick={() => requestProjectXFolderAction("delete", folderContextMenu.folder)} role="menuitem" type="button">
+              Delete Folder
+            </button>
+          </div>,
+          document.body
+        )
+      : null;
+
   if (!isAccountModeReady) {
     return (
       <div className="topstepConnection">
@@ -1315,25 +1340,7 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
         </div>
       )}
 
-      {folderContextMenu ? (
-        <div
-          className="autoTradeFolderContextMenu"
-          onClick={(event) => event.stopPropagation()}
-          onContextMenu={(event) => {
-            event.preventDefault();
-            event.stopPropagation();
-          }}
-          role="menu"
-          style={{ left: folderContextMenu.x, top: folderContextMenu.y }}
-        >
-          <button onClick={() => requestProjectXFolderAction("edit-password", folderContextMenu.folder)} role="menuitem" type="button">
-            Edit Password
-          </button>
-          <button className="dangerButton" onClick={() => requestProjectXFolderAction("delete", folderContextMenu.folder)} role="menuitem" type="button">
-            Delete Folder
-          </button>
-        </div>
-      ) : null}
+      {folderContextMenuElement}
 
       <div className="topstepConnectionFoot">
         <span>
