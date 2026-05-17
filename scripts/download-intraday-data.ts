@@ -489,6 +489,7 @@ async function fetchTwelveDataBars(
       end_date: formatTwelveDate(endSeconds),
       order: "ASC",
       outputsize: "5000",
+      timezone: "UTC",
       apikey: key
     });
 

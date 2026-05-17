@@ -399,7 +399,8 @@ async function fetchTwelveDataTimeframeBars(symbol: string, interval: "1min" | "
       interval,
       order: "ASC",
       outputsize: "5000",
-      symbol
+      symbol,
+      timezone: "UTC"
     });
     const response = await fetch(`https://api.twelvedata.com/time_series?${params.toString()}`, { cache: "no-store" });
     const raw = await response.text();

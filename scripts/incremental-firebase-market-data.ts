@@ -54,7 +54,7 @@ type AssetSyncSummary = {
 };
 
 const DATA_TIMEFRAMES = ["1m", "5m", "15m", "30m", "45m", "1h", "4h", "1d", "1w"] as const;
-const DERIVED_TIMEFRAMES = ["5m", "15m", "30m", "45m", "1h", "4h", "1d", "1w"] as const;
+const ONE_MINUTE_DERIVED_TIMEFRAMES = ["5m"] as const;
 const INTERVAL_SECONDS: Record<(typeof DATA_TIMEFRAMES)[number], number> = {
   "1m": 60,
   "5m": 5 * 60,
@@ -570,7 +570,8 @@ async function fetchTwelveChunk(
       order: "ASC",
       outputsize: "5000",
       start_date: formatTwelveDate(startSeconds),
-      symbol
+      symbol,
+      timezone: "UTC"
     });
     const { response, text } = await fetchTextWithRetries(`https://api.twelvedata.com/time_series?${params.toString()}`, {}, 45_000, 2);
     const raw = JSON.parse(text) as TwelveDataResponse;
@@ -639,7 +640,7 @@ function lowerBoundStart(
     candidates.push(missingStart);
   }
 
-  for (const timeframe of DERIVED_TIMEFRAMES) {
+  for (const timeframe of ONE_MINUTE_DERIVED_TIMEFRAMES) {
     const state = states[timeframe];
     if (!state.exists || state.lastBarTime == null) {
       candidates.push(missingStart);
@@ -711,7 +712,7 @@ async function syncAsset(
   }
 
   summary.uploads["1m"] = await writeCsvRows(`data/1m/${asset.dataFile}`, sourceBars, states["1m"], options);
-  for (const timeframe of DERIVED_TIMEFRAMES) {
+  for (const timeframe of ONE_MINUTE_DERIVED_TIMEFRAMES) {
     const rows = aggregateBars(sourceBars, INTERVAL_SECONDS[timeframe], states[timeframe].lastBarTime);
     summary.uploads[timeframe] = await writeCsvRows(`data/${timeframe}/${asset.dataFile}`, rows, states[timeframe], options);
   }
@@ -734,7 +735,7 @@ function mergeCoverage(
   const fifteenMinuteRows = summary.uploads["15m"]?.rows ?? 0;
   const lastBarAt = summary.uploads["15m"]?.lastBarAt ?? existing?.lastBarAt;
   const rows = (existing?.rows ?? 0) + fifteenMinuteRows;
-  const timeframes = new Set([...(existing?.timeframes ?? []), ...DATA_TIMEFRAMES]);
+  const timeframes = new Set([...(existing?.timeframes ?? []), "1m", "5m"]);
 
   return {
     dataFile: asset.dataFile,

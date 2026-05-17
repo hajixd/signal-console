@@ -214,6 +214,7 @@ async function fetchTwelveDataBars(symbol: string, options: MarketBarsOptions): 
       interval: "15min",
       outputsize: options.afterSeconds ? "5000" : "500",
       order: "ASC",
+      timezone: "UTC",
       apikey: apiKey
     });
     if (options.afterSeconds) {
