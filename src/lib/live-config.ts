@@ -1,4 +1,5 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
 import path from "node:path";
 import { FieldValue } from "firebase-admin/firestore";
 import { firebaseDb, firebaseLocalFallbackEnabled, hasFirebaseAdmin, storageObjectPath, withFirebaseTimeout } from "@/lib/firebase-admin";
@@ -7,8 +8,9 @@ import type { CronResult } from "@/lib/types";
 
 const LIVE_CONFIG_CACHE_TTL_MS = 30_000;
 const DATASET_STATUS_CACHE_TTL_MS = 30_000;
-const LIVE_CONFIG_LOCAL_PATH = path.join(process.cwd(), ".local", "signal-console-live-config.json");
-const DATASET_STATUS_LOCAL_PATH = path.join(process.cwd(), ".local", "signal-console-dataset-status.json");
+const LOCAL_RUNTIME_ROOT = process.env.VERCEL === "1" ? path.join(tmpdir(), "signal-console") : path.join(process.cwd(), ".local");
+const LIVE_CONFIG_LOCAL_PATH = path.join(LOCAL_RUNTIME_ROOT, "signal-console-live-config.json");
+const DATASET_STATUS_LOCAL_PATH = path.join(LOCAL_RUNTIME_ROOT, "signal-console-dataset-status.json");
 const LIVE_CONFIG_COLLECTION = "signalConsoleConfig";
 const DATASET_STATUS_COLLECTION = "signalConsoleDatasets";
 const CRON_RUN_COLLECTION = "signalConsoleCronRuns";
@@ -628,7 +630,7 @@ export async function saveCronRun(result: CronResult): Promise<void> {
     return;
   }
 
-  const localPath = path.join(process.cwd(), ".local", "signal-console-cron-runs.json");
+  const localPath = path.join(LOCAL_RUNTIME_ROOT, "signal-console-cron-runs.json");
   const existing = (await readJsonFile<typeof safePayload[]>(localPath)) ?? [];
   await writeJsonFile(localPath, [safePayload, ...existing].slice(0, 100));
 }

@@ -9,7 +9,7 @@ type FirebaseServiceAccount = {
   projectId?: string;
 };
 
-const DEFAULT_FIREBASE_OPERATION_TIMEOUT_MS = 2_500;
+const DEFAULT_FIREBASE_OPERATION_TIMEOUT_MS = 8_000;
 const DEFAULT_FIREBASE_UNAVAILABLE_COOLDOWN_MS = 30_000;
 
 let cachedUnavailable = false;
@@ -99,7 +99,6 @@ export function storageObjectPath(relativePath: string): string {
 export function hasFirebaseAdmin(): boolean {
   if (firebaseForcedLocal()) return false;
   if (cachedUnavailable) return false;
-  if (cachedUnavailableUntil > Date.now()) return false;
   return Boolean(readServiceAccount() || trim(process.env.GOOGLE_APPLICATION_CREDENTIALS));
 }
 
