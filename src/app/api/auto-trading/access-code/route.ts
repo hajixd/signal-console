@@ -4,6 +4,7 @@ import {
   adminSessionCookieOptions,
   createAdminSessionCookieValue,
   expiredAdminSessionCookieOptions,
+  isAdminAuthorized,
   verifyAdminAccessCode
 } from "@/lib/admin-api";
 import { normalizeAccessCode } from "@/lib/account-access-code";
@@ -23,6 +24,10 @@ type AccessCodePayload = {
 
 function normalizeConnectionId(value: unknown): string | undefined {
   return typeof value === "string" && /^[0-9A-Za-z_-]{16,80}$/.test(value.trim()) ? value.trim() : undefined;
+}
+
+export async function GET(request: NextRequest) {
+  return NextResponse.json({ admin: isAdminAuthorized(request) });
 }
 
 export async function POST(request: NextRequest) {

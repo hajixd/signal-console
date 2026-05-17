@@ -4,6 +4,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { createPortal } from "react-dom";
 import { useAutoTradeAdminMode } from "@/components/auto-trading/use-auto-trade-account-mode";
+import { clearSavedAccountMode } from "@/components/auto-trading/auto-trade-account-mode";
 import {
   emitStrategyEditsChanged,
   loadClientStrategyEdits,
@@ -13,6 +14,11 @@ import {
   type StrategyEditSeedMap
 } from "@/components/strategies/strategy-edits-store";
 import { emitDashboardLoading } from "@/components/ui/dashboard-loading";
+import {
+  ALL_STRATEGIES_SELECTION_PARAM,
+  NO_STRATEGIES_SELECTION_PARAM,
+  selectionIncludesEveryKey
+} from "@/lib/strategy-selection";
 
 type StrategyOption = {
   key: string;
@@ -610,6 +616,7 @@ export default function StrategySelector({
   const [customSelection, setCustomSelection] = useState<CustomSelectionInput>(EMPTY_CUSTOM_SELECTION);
   const [customSelectionError, setCustomSelectionError] = useState("");
   const [customSelectionResult, setCustomSelectionResult] = useState<CustomSelectionResult | null>(null);
+  const [selectionError, setSelectionError] = useState("");
   const liveSelectionKey = liveSelectionStorageKey(market);
   const selected = new Set(optimisticSelectedKeys);
   const activeStrategy = strategies.find((strategy) => strategy.key === activeKey);
@@ -631,6 +638,7 @@ export default function StrategySelector({
   const pendingSelectionSignatureRef = useRef<string>("");
   const latestSelectionSignatureRef = useRef<string>(optimisticSelectionSignature);
   const selectionSyncRunRef = useRef(0);
+  const lastServerSelectedKeysRef = useRef(selectedKeys);
   const lastSyncedCustomScaleRangeRef = useRef<string>("");
   const pendingCustomScaleRangeSignatureRef = useRef<string>("");
   const lastSyncedEditsRef = useRef<string>("");
@@ -663,13 +671,34 @@ export default function StrategySelector({
 
   function replaceRouteSelection(nextKeys: string[]) {
     const params = new URLSearchParams(window.location.search);
-    if (nextKeys.length) {
+    if (selectionIncludesEveryKey(nextKeys, strategyScopeKeys)) {
+      params.set("strategies", ALL_STRATEGIES_SELECTION_PARAM);
+    } else if (nextKeys.length) {
       params.set("strategies", nextKeys.join(","));
     } else {
-      params.set("strategies", "none");
+      params.set("strategies", NO_STRATEGIES_SELECTION_PARAM);
     }
     const query = params.toString();
     router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
+  }
+
+  function restoreServerSelectionAfterSyncFailure(error: unknown) {
+    const fallbackKeys = lastServerSelectedKeysRef.current;
+    const fallbackSignature = fallbackKeys.join("|");
+    const message = error instanceof Error ? error.message : "";
+
+    latestSelectionSignatureRef.current = fallbackSignature;
+    pendingSelectionSignatureRef.current = "";
+    setOptimisticSelectedKeys(fallbackKeys);
+    setSavingSelectionKeys([]);
+    setSelectionProgress(0);
+    setSelectionError(
+      message.includes("Unauthorized")
+        ? "Admin session expired. Re-enter the admin code before changing strategy selection."
+        : "Strategy selection could not be saved. The checkboxes were restored to the saved selection."
+    );
+
+    if (message.includes("Unauthorized")) clearSavedAccountMode();
   }
 
   useEffect(() => {
@@ -690,6 +719,10 @@ export default function StrategySelector({
   useEffect(() => {
     latestSelectionSignatureRef.current = optimisticSelectionSignature;
   }, [optimisticSelectionSignature]);
+
+  useEffect(() => {
+    lastServerSelectedKeysRef.current = selectedKeys;
+  }, [selectedKeys]);
 
   useEffect(() => {
     latestCustomScaleRangeSignatureRef.current = currentCustomScaleRangeSignature;
@@ -874,15 +907,14 @@ export default function StrategySelector({
           await persistLiveSelection(selectedKeysToSync, strategyScopeKeys);
           if (selectionSyncRunRef.current === syncRun && latestSelectionSignatureRef.current === signatureToSync) {
             setSelectionProgress(0.78);
+            setSelectionError("");
             replaceRouteSelection(selectedKeysToSync);
           }
         } catch (error) {
           console.error("Failed to sync live strategy selection", error);
           if (selectionSyncRunRef.current === syncRun) {
             lastSyncedSelectionRef.current = "";
-            pendingSelectionSignatureRef.current = "";
-            setSavingSelectionKeys([]);
-            setSelectionProgress(0);
+            restoreServerSelectionAfterSyncFailure(error);
           }
         }
       });
@@ -973,8 +1005,9 @@ export default function StrategySelector({
 
   function navigate(nextKeys: string[]) {
     if (selectionControlsDisabled) return;
+    const nextScopedKeys = strategyScopeKeys.filter((key) => nextKeys.includes(key));
     const currentKeySet = new Set(optimisticSelectedKeys);
-    const nextKeySet = new Set(nextKeys);
+    const nextKeySet = new Set(nextScopedKeys);
     const touchedKeys = strategyScopeKeys.filter((key) => currentKeySet.has(key) !== nextKeySet.has(key));
 
     if (touchedKeys.length) {
@@ -982,9 +1015,10 @@ export default function StrategySelector({
       setSelectionProgress(0.14);
     }
 
-    pendingSelectionSignatureRef.current = nextKeys.join("|");
-    latestSelectionSignatureRef.current = nextKeys.join("|");
-    setOptimisticSelectedKeys(nextKeys);
+    setSelectionError("");
+    pendingSelectionSignatureRef.current = nextScopedKeys.join("|");
+    latestSelectionSignatureRef.current = nextScopedKeys.join("|");
+    setOptimisticSelectedKeys(nextScopedKeys);
   }
 
   function toggleStrategy(key: string) {
@@ -1312,6 +1346,8 @@ export default function StrategySelector({
           {formatNumber(visibleStrategies.length)} / {formatNumber(strategies.length)}
         </span>
       </div>
+
+      {selectionError ? <div className="customScaleNotice isError strategySelectionNotice">{selectionError}</div> : null}
 
       <div className="basketList" role="list" aria-label="Strategy enable list">
         <div className="basketListHeader">

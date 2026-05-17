@@ -41,6 +41,7 @@ import { dollarPerUnit, instrumentSizeLabel, instrumentUnitLabel, recommendedSiz
 import { defaultDatasetStatus, getDatasetStatus, getLiveConfig, type DatasetStatus, type LiveConfig } from "@/lib/live-config";
 import { allRules } from "@/lib/live-signals";
 import { projectAssetMode } from "@/lib/project-assets";
+import { parseStrategySelection } from "@/lib/strategy-selection";
 import { getTrades, storageMode } from "@/lib/storage";
 import { telegramGroupInviteLink } from "@/lib/telegram";
 import { topstepSessionKey } from "@/lib/topstep";
@@ -265,13 +266,6 @@ function sideClass(side: "long" | "short"): string {
 
 function sideLabel(side: "long" | "short"): string {
   return side === "long" ? "Buy" : "Sell";
-}
-
-function parseSelection(value: string | undefined, allKeys: string[], defaultKeys: string[]): string[] {
-  if (value === "none") return [];
-  const allowed = new Set(allKeys);
-  if (!value) return defaultKeys.filter((key) => allowed.has(key));
-  return [...new Set(value.split(",").filter((key) => allowed.has(key)))];
 }
 
 function tradeSourceTimeframe(trade: BacktestTrade): TradeChartTimeframe {
@@ -1143,7 +1137,7 @@ export default async function Home({ searchParams }: HomeProps) {
     .slice(0, DEFAULT_SELECTED_STRATEGY_COUNT)
     .map((option) => option.key);
   const defaultSelectedKeys = persistedSelectedKeys.length ? persistedSelectedKeys : persistedLiveEnabledKeys.length ? persistedLiveEnabledKeys : recentDefaultKeys;
-  const selectedKeys = parseSelection(params?.strategies, allKeys, defaultSelectedKeys);
+  const selectedKeys = parseStrategySelection(params?.strategies, allKeys, defaultSelectedKeys);
   const selectedKeySet = new Set(selectedKeys);
   const activeMarketKeySet = new Set(allKeys);
   const optionByLiveKey = new Map<string, StrategyOption>();

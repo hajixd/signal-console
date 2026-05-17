@@ -1537,6 +1537,10 @@ html[data-theme="light"] .themeDarkLabel {
   color: #ffc2c2;
 }
 
+.strategySelectionNotice {
+  margin: 0.7rem 0 0;
+}
+
 .tradeModalBackdrop {
   position: fixed;
   inset: 0;

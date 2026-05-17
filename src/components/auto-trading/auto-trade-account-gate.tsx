@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import {
   AUTO_TRADE_ACCOUNT_MODE_CHANGE_EVENT,
   cleanAccessCode,
+  clearSavedAccountMode,
   type AutoTradeAccountMode,
   savedAccountMode,
   saveAccountMode
@@ -20,17 +21,59 @@ export default function AutoTradeAccountGate() {
   const adminCodeInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
-    function syncAccountMode() {
-      setAccountMode(savedAccountMode());
+    let cancelled = false;
+    let syncRun = 0;
+
+    async function adminSessionState(): Promise<"invalid" | "unknown" | "valid"> {
+      try {
+        const response = await fetch("/api/auto-trading/access-code", {
+          cache: "no-store",
+          credentials: "same-origin"
+        });
+        const payload = (await response.json().catch(() => ({}))) as { admin?: unknown };
+        if (response.ok && payload.admin === true) return "valid";
+        if (response.ok && payload.admin === false) return "invalid";
+      } catch {
+        return "unknown";
+      }
+      return "unknown";
+    }
+
+    async function syncAccountMode() {
+      const run = ++syncRun;
+      const savedMode = savedAccountMode();
       setAccountEntryMode(null);
       setAdminCodeInput("");
       setAccountAccessError("");
+
+      if (savedMode !== "Admin") {
+        if (!cancelled && run === syncRun) {
+          setAccountMode(savedMode);
+          setIsReady(true);
+        }
+        return;
+      }
+
+      setIsReady(false);
+      const sessionState = await adminSessionState();
+      if (cancelled || run !== syncRun) return;
+      if (sessionState === "valid" || sessionState === "unknown") {
+        setAccountMode("Admin");
+        setIsReady(true);
+        return;
+      }
+
+      setAccountMode(null);
+      setIsReady(true);
+      clearSavedAccountMode();
     }
 
     syncAccountMode();
-    setIsReady(true);
     window.addEventListener(AUTO_TRADE_ACCOUNT_MODE_CHANGE_EVENT, syncAccountMode);
-    return () => window.removeEventListener(AUTO_TRADE_ACCOUNT_MODE_CHANGE_EVENT, syncAccountMode);
+    return () => {
+      cancelled = true;
+      window.removeEventListener(AUTO_TRADE_ACCOUNT_MODE_CHANGE_EVENT, syncAccountMode);
+    };
   }, []);
 
   useEffect(() => {
@@ -75,6 +118,7 @@ export default function AutoTradeAccountGate() {
     try {
       const response = await fetch("/api/auto-trading/access-code", {
         method: "POST",
+        credentials: "same-origin",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
           accessCode: code,
