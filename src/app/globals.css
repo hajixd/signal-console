@@ -9505,6 +9505,7 @@ html[data-theme="light"] .tradeInfoBox > .tradeInfoValue {
   overflow: hidden;
   font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
   font-weight: 950 !important;
+  font-synthesis-weight: auto;
   letter-spacing: 0;
   line-height: 1.08;
   text-overflow: ellipsis;
@@ -9555,7 +9556,7 @@ html[data-theme="light"] .tradeCandlestickPanel {
   grid-template-columns: minmax(172px, auto) minmax(320px, 1fr) minmax(260px, auto);
   grid-template-areas:
     "status controls options"
-    "slider slider slider";
+    "metrics slider slider";
   gap: 7px 12px;
   align-items: center;
   border-top-color: rgba(255, 255, 255, 0.09);
@@ -9563,6 +9564,11 @@ html[data-theme="light"] .tradeCandlestickPanel {
     linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.015)),
     rgba(5, 6, 7, 0.98);
   padding: 8px 12px 9px;
+}
+
+.tradeReplayPanel.isSelecting {
+  border-top-color: rgba(56, 189, 248, 0.28);
+  box-shadow: inset 0 1px 0 rgba(56, 189, 248, 0.18);
 }
 
 .tradeReplayStatus {
@@ -9587,6 +9593,64 @@ html[data-theme="light"] .tradeCandlestickPanel {
 
 .tradeReplayStatus strong {
   color: rgba(255, 255, 255, 0.9);
+}
+
+.tradeReplayMetrics {
+  grid-area: metrics;
+  min-width: 0;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(58px, 1fr));
+  gap: 4px;
+}
+
+.tradeReplayMetrics span {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.035);
+  padding: 5px 7px;
+}
+
+.tradeReplayMetrics span.active {
+  border-color: rgba(56, 189, 248, 0.38);
+  background: rgba(56, 189, 248, 0.1);
+}
+
+.tradeReplayMetrics i,
+.tradeReplayMetrics strong {
+  min-width: 0;
+  overflow: hidden;
+  font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+  font-style: normal;
+  line-height: 1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tradeReplayMetrics i {
+  color: rgba(255, 255, 255, 0.48);
+  font-size: 8px;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
+.tradeReplayMetrics strong {
+  color: rgba(255, 255, 255, 0.88);
+  font-size: 9px;
+  font-weight: 950;
+}
+
+.tradeReplayMetrics strong.up {
+  color: #34d399;
+}
+
+.tradeReplayMetrics strong.down {
+  color: #fb7185;
+}
+
+.tradeReplayMetrics strong.neutral {
+  color: rgba(255, 255, 255, 0.72);
 }
 
 .tradeReplayCenter {
@@ -9740,6 +9804,37 @@ html[data-theme="light"] .tradeReplayStatus strong {
   color: #0f172a;
 }
 
+html[data-theme="light"] .tradeReplayPanel.isSelecting {
+  border-top-color: rgba(2, 132, 199, 0.24);
+  box-shadow: inset 0 1px 0 rgba(2, 132, 199, 0.16);
+}
+
+html[data-theme="light"] .tradeReplayMetrics span {
+  border-color: rgba(15, 23, 42, 0.08);
+  background: rgba(15, 23, 42, 0.025);
+}
+
+html[data-theme="light"] .tradeReplayMetrics span.active {
+  border-color: rgba(2, 132, 199, 0.28);
+  background: rgba(14, 165, 233, 0.09);
+}
+
+html[data-theme="light"] .tradeReplayMetrics i {
+  color: rgba(15, 23, 42, 0.5);
+}
+
+html[data-theme="light"] .tradeReplayMetrics strong {
+  color: #0f172a;
+}
+
+html[data-theme="light"] .tradeReplayMetrics strong.up {
+  color: #16a34a;
+}
+
+html[data-theme="light"] .tradeReplayMetrics strong.down {
+  color: #dc2626;
+}
+
 html[data-theme="light"] .tradeReplayJumps {
   border-left-color: rgba(15, 23, 42, 0.1);
 }
@@ -9778,6 +9873,7 @@ html[data-theme="light"] .tradeReplaySlider input::-webkit-slider-thumb {
     grid-template-areas:
       "controls"
       "status"
+      "metrics"
       "slider"
       "options";
     align-items: stretch;
@@ -9790,6 +9886,10 @@ html[data-theme="light"] .tradeReplaySlider input::-webkit-slider-thumb {
 
   .tradeReplayStatus {
     text-align: center;
+  }
+
+  .tradeReplayMetrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .tradeReplayOptions {

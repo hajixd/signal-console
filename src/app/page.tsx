@@ -825,6 +825,28 @@ function tradeDollarPnl(trade: BacktestTrade, sizeMultiplier = 1): number {
   return trade.netUnits * dollarPerUnit(trade.symbol, trade.entryPrice) * tradeSizeMultiplier(trade, sizeMultiplier);
 }
 
+function boundedTradeDollarPnl(
+  trade: BacktestTrade,
+  rawPnlDollars: number,
+  targetDollars: number,
+  riskDollars: number
+): number {
+  if (!Number.isFinite(rawPnlDollars)) return 0;
+  const normalizedExit = String(trade.exitReason ?? "").toLowerCase();
+  const target = Math.abs(targetDollars);
+  const risk = Math.abs(riskDollars);
+  const rMultiple = finiteNumberOr(trade.rMultiple, risk > 0 ? rawPnlDollars / risk : 0);
+
+  if (target > 0 && (normalizedExit.includes("take") || normalizedExit.includes("tp") || rMultiple >= 1 || rawPnlDollars >= target)) {
+    return target;
+  }
+  if (risk > 0 && (normalizedExit.includes("stop") || normalizedExit.includes("sl") || rMultiple <= -1 || rawPnlDollars <= -risk)) {
+    return -risk;
+  }
+
+  return rawPnlDollars;
+}
+
 function tradeCostUnits(trade: BacktestTrade): number {
   return Math.abs(finiteNumberOr(trade.costUnits, 0));
 }
@@ -1199,10 +1221,12 @@ export default async function Home({ searchParams }: HomeProps) {
   const storedBacktestHistoryRows: TradeHistoryRow[] = visibleStoredBacktestHistoryTrades.map((trade, index) => {
     const sizeMultiplier = optionByKey.get(trade.datasetId)?.sizeMultiplier ?? 1;
     const tradeMultiplier = tradeSizeMultiplier(trade, sizeMultiplier);
-    const dollarPnl = tradeDollarPnl(trade, sizeMultiplier);
+    const rawDollarPnl = tradeDollarPnl(trade, sizeMultiplier);
     const unitLabel = instrumentUnitLabel(trade.symbol);
     const targetDollars = tradeTargetDollars(trade, sizeMultiplier);
     const riskDollars = tradeRiskDollars(trade, sizeMultiplier);
+    const dollarPnl = boundedTradeDollarPnl(trade, rawDollarPnl, targetDollars, riskDollars);
+    const displayRMultiple = riskDollars > 0 ? dollarPnl / riskDollars : trade.rMultiple;
     const priceUnit = liveRuleByKey.get(trade.logicalKey)?.tickSize ?? statByKey.get(trade.key)?.pipOrTickSize ?? 1;
     const targetPrice = tradeTargetPrice(trade, priceUnit);
     const stopPrice = tradeStopPrice(trade, priceUnit);
@@ -1245,7 +1269,7 @@ export default async function Home({ searchParams }: HomeProps) {
       durationDetailLabel: fmtDuration(trade.entryTime, trade.exitTime),
       exitReasonLabel: fmtExitReason(trade.exitReason),
       pnlLabel: fmtMoney(dollarPnl, true),
-      rMultipleLabel: `${fmtNumber(trade.rMultiple)}R`,
+      rMultipleLabel: `${fmtNumber(displayRMultiple)}R`,
       netUnitsLabel: `${fmtNumber(trade.netUnits)} ${unitLabel}`,
       sizeLabel: instrumentSizeLabel(trade.symbol, tradeMultiplier),
       sizeMultiplier: tradeMultiplier,

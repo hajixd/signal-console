@@ -68,6 +68,9 @@ type TradeChartTrade = {
   exitPrice: number;
   targetPrice: number;
   stopPrice: number;
+  targetDollars?: number;
+  riskDollars?: number;
+  dollarsPerPricePoint?: number;
   pnlLabel?: string;
 };
 type TradeSide = TradeChartTrade["side"];
@@ -311,6 +314,48 @@ function aggregateIntrabarSource(candle: MappedCandle, intrabars: MappedCandle[]
   };
 }
 
+function aggregateCandlesForTimeframe(
+  candles: MappedCandle[],
+  dataTimeframe: TradeChartTimeframe,
+  sourceTimeframe: TradeChartTimeframe
+): MappedCandle[] {
+  const dataSeconds = timeframeSeconds(dataTimeframe);
+  const sourceSeconds = timeframeSeconds(sourceTimeframe);
+  if (!candles.length || sourceSeconds <= dataSeconds) return candles;
+
+  const buckets = new Map<number, MappedCandle[]>();
+  for (const candle of candles) {
+    const bucketTime = Math.floor(Number(candle.time) / sourceSeconds) * sourceSeconds;
+    const bucket = buckets.get(bucketTime) ?? [];
+    bucket.push(candle);
+    buckets.set(bucketTime, bucket);
+  }
+
+  return [...buckets.entries()]
+    .sort(([left], [right]) => left - right)
+    .map(([bucketTime, bucket]) => {
+      const sorted = [...bucket].sort((left, right) => Number(left.time) - Number(right.time));
+      const first = sorted[0]!;
+      const last = sorted[sorted.length - 1]!;
+      return {
+        time: bucketTime as UTCTimestamp,
+        open: first.open,
+        high: Math.max(...sorted.map((candle) => candle.high)),
+        low: Math.min(...sorted.map((candle) => candle.low)),
+        close: last.close,
+        source: {
+          ...first.source,
+          time: new Date(bucketTime * 1000).toISOString(),
+          open: first.open,
+          high: Math.max(...sorted.map((candle) => candle.high)),
+          low: Math.min(...sorted.map((candle) => candle.low)),
+          close: last.close,
+          volume: sorted.reduce((total, candle) => total + (candle.source.volume ?? 0), 0)
+        }
+      };
+    });
+}
+
 function formatChartPrice(value: number | null | undefined): string {
   if (value == null || !Number.isFinite(value)) return "--";
   return Number(value).toLocaleString(undefined, {
@@ -343,6 +388,54 @@ function formatVolume(value: number | null | undefined): string {
   return Number(value).toLocaleString(undefined, {
     maximumFractionDigits: 0
   });
+}
+
+function formatSignedMoney(value: number): string {
+  if (!Number.isFinite(value)) return "--";
+  return `${value >= 0 ? "+" : "-"}$${Math.abs(value).toLocaleString(undefined, {
+    maximumFractionDigits: Math.abs(value) < 100 ? 2 : 0
+  })}`;
+}
+
+function rawTradePnlAtPrice(trade: TradeChartTrade, price: number | null | undefined): number | null {
+  const dollarsPerPricePoint = Math.max(0, trade.dollarsPerPricePoint ?? 0);
+  if (price == null || !Number.isFinite(price) || !(dollarsPerPricePoint > 0)) return null;
+
+  const direction = trade.side === "long" ? 1 : -1;
+  return (price - trade.entryPrice) * direction * dollarsPerPricePoint;
+}
+
+function boundedTradePnl(trade: TradeChartTrade, pnlDollars: number): number {
+  const targetDollars = Math.abs(trade.targetDollars ?? Infinity);
+  const riskDollars = Math.abs(trade.riskDollars ?? Infinity);
+  return clamp(pnlDollars, -riskDollars, targetDollars);
+}
+
+function tradePnlAtPrice(trade: TradeChartTrade, price: number | null | undefined): number | null {
+  const rawPnlDollars = rawTradePnlAtPrice(trade, price);
+  return rawPnlDollars == null ? null : boundedTradePnl(trade, rawPnlDollars);
+}
+
+function boundedTradePathPrice(trade: TradeChartTrade, price: number | null | undefined): number | null {
+  const boundedPnlDollars = tradePnlAtPrice(trade, price);
+  const dollarsPerPricePoint = Math.max(0, trade.dollarsPerPricePoint ?? 0);
+  if (boundedPnlDollars == null || !(dollarsPerPricePoint > 0)) return price ?? null;
+
+  const direction = trade.side === "long" ? 1 : -1;
+  return trade.entryPrice + (boundedPnlDollars / dollarsPerPricePoint) * direction;
+}
+
+function replayPnlLabel(
+  trade: TradeChartTrade,
+  price: number | null | undefined,
+  entryRevealed: boolean,
+  exitRevealed: boolean
+): string {
+  if (!entryRevealed) return "Pre-entry";
+  if (exitRevealed && trade.pnlLabel) return trade.pnlLabel;
+
+  const pnlDollars = tradePnlAtPrice(trade, price);
+  return pnlDollars == null ? trade.pnlLabel ?? "Exit" : formatSignedMoney(pnlDollars);
 }
 
 function nearestMappedCandle(candles: MappedCandle[], indexValue: number, timeValue?: string): MappedCandle | null {
@@ -650,7 +743,8 @@ function applyTradeOverlay(series: TradeOverlaySeries, snapshot: TradeVisualSnap
 
   const exitRevealed = candleIsRevealed(snapshot.exitCandle, snapshot.currentReplayCandle);
   const pathEndCandle = exitRevealed ? snapshot.exitCandle : snapshot.currentReplayCandle;
-  const pathEndPrice = exitRevealed ? snapshot.trade.exitPrice : snapshot.currentPrice ?? snapshot.currentReplayCandle?.close;
+  const rawPathEndPrice = snapshot.currentPrice ?? snapshot.currentReplayCandle?.close;
+  const pathEndPrice = exitRevealed ? snapshot.trade.exitPrice : boundedTradePathPrice(snapshot.trade, rawPathEndPrice);
 
   if (!snapshot.entryCandle || !pathEndCandle || pathEndPrice == null || !Number.isFinite(pathEndPrice)) {
     emptyOverlayData(series);
@@ -792,7 +886,8 @@ function tradeDomOverlayGeometry(
 
   const exitRevealed = candleIsRevealed(snapshot.exitCandle, snapshot.currentReplayCandle);
   const pathEndCandle = exitRevealed ? snapshot.exitCandle : snapshot.currentReplayCandle;
-  const pathEndPrice = exitRevealed ? snapshot.trade.exitPrice : snapshot.currentPrice ?? snapshot.currentReplayCandle?.close;
+  const rawPathEndPrice = snapshot.currentPrice ?? snapshot.currentReplayCandle?.close;
+  const pathEndPrice = exitRevealed ? snapshot.trade.exitPrice : boundedTradePathPrice(snapshot.trade, rawPathEndPrice);
   if (!snapshot.entryCandle || !pathEndCandle || pathEndPrice == null || !Number.isFinite(pathEndPrice)) return null;
 
   const startTime = snapshot.entryCandle.time as Time;
@@ -803,7 +898,9 @@ function tradeDomOverlayGeometry(
   const yStop = series.priceToCoordinate(snapshot.trade.stopPrice);
   const yPathEnd = series.priceToCoordinate(pathEndPrice);
   const yExit = series.priceToCoordinate(snapshot.trade.exitPrice);
-  const exitIsFavorable = (snapshot.trade.exitPrice - snapshot.trade.entryPrice) * (snapshot.trade.side === "long" ? 1 : -1) >= 0;
+  const markerY = exitRevealed ? yExit : yPathEnd;
+  const markerPrice = exitRevealed ? snapshot.trade.exitPrice : pathEndPrice;
+  const exitIsFavorable = (markerPrice - snapshot.trade.entryPrice) * (snapshot.trade.side === "long" ? 1 : -1) >= 0;
 
   if (
     !coordinateIsVisible(x1) ||
@@ -811,7 +908,8 @@ function tradeDomOverlayGeometry(
     !coordinateIsVisible(yEntry) ||
     !coordinateIsVisible(yTarget) ||
     !coordinateIsVisible(yStop) ||
-    !coordinateIsVisible(yPathEnd)
+    !coordinateIsVisible(yPathEnd) ||
+    !coordinateIsVisible(markerY)
   ) {
     return null;
   }
@@ -821,14 +919,14 @@ function tradeDomOverlayGeometry(
 
   return {
     entryLine: yEntry,
-    exitMarker: coordinateIsVisible(yExit)
+    exitMarker: coordinateIsVisible(markerY)
       ? {
           color: exitIsFavorable ? "#35c971" : "#f0455a",
-          label: snapshot.trade.pnlLabel ?? "Exit",
+          label: replayPnlLabel(snapshot.trade, markerPrice, true, exitRevealed),
           side: snapshot.trade.side,
           tone: "exit",
           x: clampedX2,
-          y: yExit
+          y: markerY
         }
       : null,
     height: size.height,
@@ -1948,6 +2046,8 @@ function strategyVisualMarkers(_snapshot: TradeVisualSnapshot, _candles: MappedC
 type ChartPositionOverlayState = {
   candles: MappedCandle[];
   dataTimeframe: TradeChartTimeframe;
+  selectingReplayStart: boolean;
+  selectionCandle: MappedCandle | null;
   snapshot: TradeVisualSnapshot;
   structureVisuals: StrategyStructureVisuals;
 };
@@ -2277,6 +2377,51 @@ function drawTradeOverlayGeometry(ctx: CanvasRenderingContext2D, geometry: Trade
   ctx.restore();
 }
 
+function drawSelectionCursor(
+  ctx: CanvasRenderingContext2D,
+  chart: IChartApi,
+  size: { width: number; height: number },
+  state: ChartPositionOverlayState
+): void {
+  if (!state.selectingReplayStart || !state.selectionCandle) return;
+
+  const x = structureXForTime(chart, state.candles, state.selectionCandle.time, state.dataTimeframe, size.width);
+  if (!coordinateInPane(x, size.width, 20)) return;
+
+  const clampedX = clamp(x, 0, size.width);
+  const label = "Select replay start";
+  const timeLabel = formatChartTime(state.selectionCandle.source.time);
+
+  ctx.save();
+  ctx.beginPath();
+  ctx.strokeStyle = "rgba(56, 189, 248, 0.95)";
+  ctx.lineWidth = 1.5;
+  ctx.setLineDash([5, 5]);
+  ctx.moveTo(clampedX, 0);
+  ctx.lineTo(clampedX, size.height);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  ctx.font = '850 10px "Geist Mono", "SFMono-Regular", Consolas, monospace';
+  const labelWidth = Math.max(ctx.measureText(label).width, ctx.measureText(timeLabel).width) + 18;
+  const badgeWidth = Math.min(labelWidth, size.width - 12);
+  const badgeX = clamp(clampedX + 8, 6, size.width - badgeWidth - 6);
+  const badgeY = 8;
+  ctx.fillStyle = "rgba(2, 6, 23, 0.9)";
+  ctx.strokeStyle = "rgba(56, 189, 248, 0.72)";
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.roundRect(badgeX, badgeY, badgeWidth, 34, 5);
+  ctx.fill();
+  ctx.stroke();
+  ctx.fillStyle = "#7dd3fc";
+  ctx.textBaseline = "top";
+  ctx.fillText(label.toUpperCase(), badgeX + 8, badgeY + 5, badgeWidth - 16);
+  ctx.fillStyle = "rgba(255, 255, 255, 0.78)";
+  ctx.fillText(timeLabel.toUpperCase(), badgeX + 8, badgeY + 19, badgeWidth - 16);
+  ctx.restore();
+}
+
 class ChartPositionOverlayRenderer implements IPrimitivePaneRenderer {
   constructor(
     private readonly chart: IChartApi,
@@ -2296,6 +2441,7 @@ class ChartPositionOverlayRenderer implements IPrimitivePaneRenderer {
         this.state.dataTimeframe
       );
       if (geometry) drawTradeOverlayGeometry(context, geometry);
+      drawSelectionCursor(context, this.chart, mediaSize, this.state);
     });
   }
 }
@@ -2389,6 +2535,7 @@ export default function TradePriceChart({
   const [chartTheme, setChartTheme] = useState<ChartTheme>("dark");
   const [isPlaying, setIsPlaying] = useState(false);
   const [isSelectingReplayStart, setIsSelectingReplayStart] = useState(false);
+  const [selectPreviewTime, setSelectPreviewTime] = useState<Time | null>(null);
   const [replayMode, setReplayMode] = useState<ReplayMode>("bar");
   const [showStrategyVisuals, setShowStrategyVisuals] = useState(false);
   const [replayPosition, setReplayPosition] = useState(0);
@@ -2396,6 +2543,9 @@ export default function TradePriceChart({
   const mappedCandles = useMemo(() => mappedCandlesFromBars(bars), [bars]);
   const replayMappedCandles = useMemo(() => mappedCandlesFromBars(replayBars ?? []), [replayBars]);
   const effectiveDataTimeframe = dataTimeframe ?? timeframe;
+  const sourceTimeframe = trade.sourceTimeframe ?? effectiveDataTimeframe;
+  const strategyStructureTimeframe =
+    timeframeSeconds(sourceTimeframe) > timeframeSeconds(effectiveDataTimeframe) ? sourceTimeframe : effectiveDataTimeframe;
   const effectiveReplayTimeframe = replayTimeframe ?? effectiveDataTimeframe;
   const hasIntrabarReplay =
     replayMappedCandles.length > 0 && timeframeSeconds(effectiveReplayTimeframe) < timeframeSeconds(effectiveDataTimeframe);
@@ -2449,6 +2599,10 @@ export default function TradePriceChart({
     () => new Map(mappedCandles.map((candle) => [Number(candle.time), candle.source])),
     [mappedCandles]
   );
+  const selectionCandle = useMemo(
+    () => (selectPreviewTime == null ? null : replayCandleForTime(mappedCandles, selectPreviewTime)),
+    [mappedCandles, selectPreviewTime]
+  );
   const entryCandle = useMemo(
     () => nearestMappedCandle(mappedCandles, trade.entryIndex, trade.entryTime),
     [mappedCandles, trade.entryIndex, trade.entryTime]
@@ -2461,14 +2615,69 @@ export default function TradePriceChart({
     () => resolvedExitCandle(mappedCandles, trade, entryCandle, effectiveDataTimeframe),
     [effectiveDataTimeframe, entryCandle, mappedCandles, trade]
   );
+  const structureMappedCandles = useMemo(
+    () => aggregateCandlesForTimeframe(mappedCandles, effectiveDataTimeframe, strategyStructureTimeframe),
+    [effectiveDataTimeframe, mappedCandles, strategyStructureTimeframe]
+  );
+  const structureEntryCandle = useMemo(
+    () => nearestMappedCandle(structureMappedCandles, trade.entryIndex, trade.entryTime),
+    [structureMappedCandles, trade.entryIndex, trade.entryTime]
+  );
+  const structureSignalCandle = useMemo(
+    () => nearestMappedCandle(structureMappedCandles, trade.entryIndex, trade.signalTime),
+    [structureMappedCandles, trade.entryIndex, trade.signalTime]
+  );
+  const structureExitCandle = useMemo(
+    () => resolvedExitCandle(structureMappedCandles, trade, structureEntryCandle, strategyStructureTimeframe),
+    [structureEntryCandle, structureMappedCandles, strategyStructureTimeframe, trade]
+  );
   const visibleAnchor = entryCandle ?? mappedCandles[0] ?? null;
   const currentPartialSource = currentReplayCandle
     ? aggregateIntrabarSource(currentReplayCandle, replayMappedCandles, currentReplayTime, effectiveDataTimeframe)
     : null;
+  const currentStructureReplayCandle = useMemo(
+    () => replayCandleForTime(structureMappedCandles, currentReplayTime),
+    [currentReplayTime, structureMappedCandles]
+  );
+  const tradeSnapshot = useMemo<TradeVisualSnapshot>(
+    () => ({
+      currentPrice: currentPartialSource?.close ?? null,
+      currentReplayCandle,
+      currentReplayTime,
+      entryCandle,
+      exitCandle,
+      signalCandle,
+      trade
+    }),
+    [currentPartialSource?.close, currentReplayCandle, currentReplayTime, entryCandle, exitCandle, signalCandle, trade]
+  );
+  const structureSnapshot = useMemo<TradeVisualSnapshot>(
+    () => ({
+      ...tradeSnapshot,
+      currentReplayCandle: currentStructureReplayCandle,
+      entryCandle: structureEntryCandle,
+      exitCandle: structureExitCandle,
+      signalCandle: structureSignalCandle
+    }),
+    [currentStructureReplayCandle, structureEntryCandle, structureExitCandle, structureSignalCandle, tradeSnapshot]
+  );
+  const structureVisuals = useMemo(
+    () => strategyStructureVisuals(structureSnapshot, structureMappedCandles, showStrategyVisuals, strategyStructureTimeframe),
+    [showStrategyVisuals, strategyStructureTimeframe, structureMappedCandles, structureSnapshot]
+  );
   const displayBar = activeBar ?? currentPartialSource ?? currentReplayCandle?.source ?? visibleAnchor?.source ?? bars[0] ?? null;
   const change = displayBar ? displayBar.close - displayBar.open : 0;
   const changePct = displayBar && displayBar.open !== 0 ? (change / displayBar.open) * 100 : 0;
   const up = change >= 0;
+  const entryRevealedForReplay = candleIsRevealed(entryCandle, currentReplayCandle);
+  const exitRevealedForReplay = candleIsRevealed(exitCandle, currentReplayCandle);
+  const replayReferencePrice = exitRevealedForReplay ? trade.exitPrice : currentPartialSource?.close ?? currentReplayCandle?.close ?? null;
+  const currentReplayPnlLabel = replayPnlLabel(trade, replayReferencePrice, entryRevealedForReplay, exitRevealedForReplay);
+  const currentReplayPnlClass = currentReplayPnlLabel.startsWith("+") ? "up" : currentReplayPnlLabel.startsWith("-") ? "down" : "neutral";
+  const timeframeScopeLabel =
+    sourceTimeframe === effectiveDataTimeframe
+      ? `${sourceTimeframe} strategy`
+      : `${sourceTimeframe} strategy / ${effectiveDataTimeframe} view`;
   const replayProgressPercent = maxReplayPosition > 0 ? (clampedReplayPosition / maxReplayPosition) * 100 : 0;
   const replaySliderStyle = { "--trade-replay-progress": `${replayProgressPercent}%` } as CSSProperties;
   const timeframeControls = (
@@ -2516,6 +2725,7 @@ export default function TradePriceChart({
   useEffect(() => {
     setIsPlaying(false);
     setIsSelectingReplayStart(false);
+    setSelectPreviewTime(null);
     setReplayMode(hasIntrabarReplay ? "intrabar" : "bar");
     setReplayPosition(Math.max(0, (hasIntrabarReplay ? intrabarReplayTimeline.length : mappedCandles.length) - 1));
   }, [hasIntrabarReplay, intrabarReplayTimeline.length, mappedCandles.length, timeframe, trade.id]);
@@ -2728,10 +2938,12 @@ export default function TradePriceChart({
     positionOverlay.setState({
       candles: mappedCandles,
       dataTimeframe: effectiveDataTimeframe,
+      selectingReplayStart: false,
+      selectionCandle: null,
       snapshot: initialSnapshot,
-      structureVisuals: strategyStructureVisuals(initialSnapshot, mappedCandles, showStrategyVisuals, effectiveDataTimeframe)
+      structureVisuals: emptyStructureVisuals()
     });
-    markers.setMarkers([...tradeMarkerList(initialSnapshot), ...strategyVisualMarkers(initialSnapshot, mappedCandles, showStrategyVisuals)]);
+    markers.setMarkers(tradeMarkerList(initialSnapshot));
 
     const logicalRange = tradeLogicalRange(mappedCandles, entryCandle, exitCandle);
     const priceRange = tradePriceRange(
@@ -2758,16 +2970,23 @@ export default function TradePriceChart({
     }, 180);
 
     const handleCrosshairMove = (param: { time?: unknown }) => {
-      if (typeof param.time !== "number") return;
+      if (typeof param.time !== "number") {
+        if (selectingReplayStartRef.current) setSelectPreviewTime(null);
+        return;
+      }
       const source = sourceByTime.get(param.time);
       if (source) {
         setActiveBar((current) => (current?.time === source.time ? current : source));
+      }
+      if (selectingReplayStartRef.current) {
+        setSelectPreviewTime(param.time as Time);
       }
     };
     const handleChartClick = (param: { time?: unknown }) => {
       if (!selectingReplayStartRef.current || typeof param.time !== "number") return;
       replaySeekByTimeRef.current(param.time);
       setIsSelectingReplayStart(false);
+      setSelectPreviewTime(null);
     };
 
     chart.subscribeCrosshairMove(handleCrosshairMove);
@@ -2803,11 +3022,18 @@ export default function TradePriceChart({
     trade.entryType,
     trade.entryPrice,
     trade.exitPrice,
+    trade.id,
+    trade.modelName,
+    trade.pnlLabel,
     trade.phase,
     trade.side,
     trade.signalTime,
+    trade.sourceTimeframe,
     trade.stopPrice,
-    trade.targetPrice
+    trade.targetPrice,
+    trade.targetDollars,
+    trade.riskDollars,
+    trade.dollarsPerPricePoint
   ]);
 
   useEffect(() => {
@@ -2830,28 +3056,35 @@ export default function TradePriceChart({
       if (currentLogicalRange) chart.timeScale().setVisibleLogicalRange(currentLogicalRange);
     }
 
-    const snapshot: TradeVisualSnapshot = {
-      currentPrice: currentPartialSource?.close ?? null,
-      currentReplayCandle,
-      currentReplayTime,
-      entryCandle,
-      exitCandle,
-      signalCandle,
-      trade
-    };
     applyOverlayTheme(overlaySeries, tradeVisualTheme(chartTheme === "light"), trade);
     emptyOverlayData(overlaySeries);
     positionOverlay.setState({
       candles: mappedCandles,
       dataTimeframe: effectiveDataTimeframe,
-      snapshot,
-      structureVisuals: strategyStructureVisuals(snapshot, mappedCandles, showStrategyVisuals, effectiveDataTimeframe)
+      selectingReplayStart: isSelectingReplayStart,
+      selectionCandle,
+      snapshot: tradeSnapshot,
+      structureVisuals
     });
-    markers.setMarkers([...tradeMarkerList(snapshot), ...strategyVisualMarkers(snapshot, mappedCandles, showStrategyVisuals)]);
-  }, [candleData, chartTheme, currentPartialSource?.close, currentReplayCandle, currentReplayTime, effectiveDataTimeframe, entryCandle, exitCandle, mappedCandles, showStrategyVisuals, signalCandle, trade]);
+    markers.setMarkers([...tradeMarkerList(tradeSnapshot), ...strategyVisualMarkers(structureSnapshot, structureMappedCandles, showStrategyVisuals)]);
+  }, [
+    candleData,
+    chartTheme,
+    effectiveDataTimeframe,
+    isSelectingReplayStart,
+    mappedCandles,
+    selectionCandle,
+    showStrategyVisuals,
+    structureMappedCandles,
+    structureSnapshot,
+    structureVisuals,
+    trade,
+    tradeSnapshot
+  ]);
 
   function togglePlayback() {
     setIsSelectingReplayStart(false);
+    setSelectPreviewTime(null);
     if (isPlaying) {
       setIsPlaying(false);
       return;
@@ -2865,12 +3098,14 @@ export default function TradePriceChart({
 
   function stepReplay(delta: number) {
     setIsSelectingReplayStart(false);
+    setSelectPreviewTime(null);
     setIsPlaying(false);
     setReplayPosition((current) => clamp(current + delta, 0, maxReplayPosition));
   }
 
   function resetReplay() {
     setIsSelectingReplayStart(false);
+    setSelectPreviewTime(null);
     setIsPlaying(false);
     setReplayPosition(0);
   }
@@ -2894,6 +3129,7 @@ export default function TradePriceChart({
 
   function jumpReplay(value: string) {
     setIsSelectingReplayStart(false);
+    setSelectPreviewTime(null);
     setIsPlaying(false);
     setReplayPosition(replayIndexForTime(value));
   }
@@ -2902,6 +3138,7 @@ export default function TradePriceChart({
     if (nextMode === activeReplayMode) return;
     const anchorTime = currentReplayTime;
     setIsSelectingReplayStart(false);
+    setSelectPreviewTime(null);
     setIsPlaying(false);
     setReplayMode(nextMode);
     if (anchorTime == null) return;
@@ -2919,10 +3156,10 @@ export default function TradePriceChart({
   }
 
   const replayControls = mappedCandles.length ? (
-    <div className="tradeReplayPanel">
+    <div className={`tradeReplayPanel${isSelectingReplayStart ? " isSelecting" : ""}`}>
       <div className="tradeReplayStatus">
         <span>{formatChartTime(currentReplayStep?.source.time ?? currentReplayCandle?.source.time)}</span>
-        <strong>{clampedReplayPosition + 1} / {replayTimeline.length}</strong>
+        <strong>{timeframeScopeLabel}</strong>
       </div>
       <div className="tradeReplayCenter">
         <div className="tradeReplayButtons tradeReplayTransport" aria-label="Replay controls">
@@ -2946,7 +3183,10 @@ export default function TradePriceChart({
             title="Select replay point on chart"
             onClick={() => {
               setIsPlaying(false);
-              setIsSelectingReplayStart((current) => !current);
+              setIsSelectingReplayStart((current) => {
+                if (current) setSelectPreviewTime(null);
+                return !current;
+              });
             }}
           >
             <ReplayIcon name="select" />
@@ -2964,6 +3204,24 @@ export default function TradePriceChart({
           </button>
         </div>
       </div>
+      <div className="tradeReplayMetrics" aria-label="Replay readout">
+        <span>
+          <i>PnL</i>
+          <strong className={currentReplayPnlClass}>{currentReplayPnlLabel}</strong>
+        </span>
+        <span>
+          <i>Step</i>
+          <strong>{clampedReplayPosition + 1} / {replayTimeline.length}</strong>
+        </span>
+        <span>
+          <i>Mode</i>
+          <strong>{activeReplayMode === "intrabar" ? "1m precision" : `${effectiveDataTimeframe} bars`}</strong>
+        </span>
+        <span className={isSelectingReplayStart ? "active" : ""}>
+          <i>Select</i>
+          <strong>{isSelectingReplayStart ? "Selecting bar" : "Ready"}</strong>
+        </span>
+      </div>
       <label className="tradeReplaySlider" style={replaySliderStyle}>
         <input
           type="range"
@@ -2974,11 +3232,13 @@ export default function TradePriceChart({
           aria-label="Replay position"
           onInput={(event) => {
             setIsSelectingReplayStart(false);
+            setSelectPreviewTime(null);
             setIsPlaying(false);
             setReplayPosition(Number(event.currentTarget.value));
           }}
           onChange={(event) => {
             setIsSelectingReplayStart(false);
+            setSelectPreviewTime(null);
             setIsPlaying(false);
             setReplayPosition(Number(event.target.value));
           }}
@@ -3012,6 +3272,7 @@ export default function TradePriceChart({
               key={speed}
               onClick={() => {
                 setIsSelectingReplayStart(false);
+                setSelectPreviewTime(null);
                 setReplaySpeed(speed);
               }}
               type="button"

@@ -53,6 +53,7 @@ export default function EditableTradeHistory({ rows, strategies, persistedStrate
         const pnlDollars = row.pnlDollars * scale;
         const targetDollars = row.targetDollars * scale;
         const riskDollars = row.riskDollars * scale;
+        const rMultiple = riskDollars > 0 ? pnlDollars / riskDollars : 0;
 
         return {
           ...row,
@@ -60,6 +61,10 @@ export default function EditableTradeHistory({ rows, strategies, persistedStrate
           pnlClassName: resultClass(pnlDollars),
           pnlDollars,
           pnlLabel: fmtMoney(pnlDollars, true),
+          rMultipleLabel: `${rMultiple.toLocaleString(undefined, {
+            minimumFractionDigits: Number.isInteger(rMultiple) ? 0 : 2,
+            maximumFractionDigits: 2
+          })}R`,
           sizeLabel: instrumentSizeLabel(row.symbol, row.sizeMultiplier * scale),
           targetRiskLabel: `${fmtMoney(targetDollars)} / ${fmtMoney(-riskDollars)}`,
           targetLabel: fmtMoney(targetDollars),

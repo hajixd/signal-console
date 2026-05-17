@@ -77,8 +77,19 @@ type ChartState = {
   bars: ChartBar[];
   replayBars?: ChartBar[];
   replayTimeframe?: TradeChartTimeframe;
+  sourceBars?: ChartBar[];
   fallback?: boolean;
   message?: string;
+  requestedTimeframe?: TradeChartTimeframe;
+  timeframe?: TradeChartTimeframe;
+};
+
+type ChartPayload = {
+  bars?: ChartBar[];
+  replayBars?: ChartBar[];
+  replayTimeframe?: TradeChartTimeframe;
+  error?: string;
+  fallback?: boolean;
   requestedTimeframe?: TradeChartTimeframe;
   timeframe?: TradeChartTimeframe;
 };
@@ -871,9 +882,10 @@ export default function TradeHistory({ rows }: TradeHistoryProps) {
     () => (activeTradeId ? rows.find((row) => row.id === activeTradeId) ?? null : null),
     [activeTradeId, rows]
   );
+  const activeSourceBars = chartState.sourceBars?.length ? chartState.sourceBars : chartState.bars;
   const activeDisplayTrade = useMemo(
-    () => (activeTrade ? resolvedTradeForDisplay(activeTrade, chartState.bars) : null),
-    [activeTrade, chartState.bars]
+    () => (activeTrade ? resolvedTradeForDisplay(activeTrade, activeSourceBars) : null),
+    [activeTrade, activeSourceBars]
   );
   const activeChartTrade = useMemo(
     () =>
@@ -896,6 +908,9 @@ export default function TradeHistory({ rows }: TradeHistoryProps) {
             exitPrice: activeDisplayTrade.exitPrice,
             targetPrice: activeDisplayTrade.targetPrice,
             stopPrice: activeDisplayTrade.stopPrice,
+            targetDollars: activeDisplayTrade.targetDollars,
+            riskDollars: activeDisplayTrade.riskDollars,
+            dollarsPerPricePoint: activeDisplayTrade.dollarsPerPricePoint,
             pnlLabel: activeDisplayTrade.pnlLabel
           }
         : null,
@@ -916,12 +931,15 @@ export default function TradeHistory({ rows }: TradeHistoryProps) {
       activeDisplayTrade?.sourceTimeframe,
       activeDisplayTrade?.stopPrice,
       activeDisplayTrade?.symbol,
+      activeDisplayTrade?.targetDollars,
       activeDisplayTrade?.targetPrice,
+      activeDisplayTrade?.riskDollars,
+      activeDisplayTrade?.dollarsPerPricePoint,
       activeDisplayTrade?.variantId
     ]
   );
-  const activeStats = activeDisplayTrade ? tradePathStats(activeDisplayTrade, chartState.bars) : { mfe: null, mae: null };
-  const activeDurationLabel = activeDisplayTrade ? correctedDurationLabel(activeDisplayTrade, chartState.bars) : "";
+  const activeStats = activeDisplayTrade ? tradePathStats(activeDisplayTrade, activeSourceBars) : { mfe: null, mae: null };
+  const activeDurationLabel = activeDisplayTrade ? correctedDurationLabel(activeDisplayTrade, activeSourceBars) : "";
 
   function openTrade(trade: TradeHistoryRow) {
     if (isRestricted) return;
@@ -958,30 +976,35 @@ export default function TradeHistory({ rows }: TradeHistoryProps) {
     }
 
     const controller = new AbortController();
-    const params = new URLSearchParams({
-      symbol: activeTrade.symbol,
-      market: activeTrade.market ?? "",
-      entryIndex: String(activeTrade.entryIndex),
-      exitIndex: String(activeTrade.exitIndex),
-      entryTime: activeTrade.entryTime,
-      exitTime: activeTrade.exitTime,
-      timeframe: chartTimeframe,
-      context: String(TRADE_CHART_CONTEXT_CANDLES)
-    });
+    const sourceTimeframe = activeTrade.sourceTimeframe ?? "15m";
+    const chartParams = (timeframeValue: TradeChartTimeframe) =>
+      new URLSearchParams({
+        symbol: activeTrade.symbol,
+        market: activeTrade.market ?? "",
+        entryIndex: String(activeTrade.entryIndex),
+        exitIndex: String(activeTrade.exitIndex),
+        entryTime: activeTrade.entryTime,
+        exitTime: activeTrade.exitTime,
+        timeframe: timeframeValue,
+        context: String(TRADE_CHART_CONTEXT_CANDLES)
+      });
+    const fetchChartPayload = (timeframeValue: TradeChartTimeframe) =>
+      fetch(`/api/trade-chart?${chartParams(timeframeValue).toString()}`, { signal: controller.signal }).then((response) =>
+        response.ok ? (response.json() as Promise<ChartPayload>) : Promise.reject(new Error("Chart unavailable"))
+      );
 
     setChartState({ status: "loading", bars: [] });
-    fetch(`/api/trade-chart?${params.toString()}`, { signal: controller.signal })
-      .then((response) => (response.ok ? response.json() : Promise.reject(new Error("Chart unavailable"))))
+    Promise.all([
+      fetchChartPayload(chartTimeframe),
+      chartTimeframe === sourceTimeframe
+        ? Promise.resolve(null)
+        : fetchChartPayload(sourceTimeframe).catch((error: Error) => {
+            if (error.name !== "AbortError") console.warn(error);
+            return null;
+          })
+    ])
       .then(
-        (payload: {
-          bars?: ChartBar[];
-          replayBars?: ChartBar[];
-          replayTimeframe?: TradeChartTimeframe;
-          error?: string;
-          fallback?: boolean;
-          requestedTimeframe?: TradeChartTimeframe;
-          timeframe?: TradeChartTimeframe;
-        }) => {
+        ([payload, sourcePayload]) => {
           const resolvedTimeframe = payload.timeframe && TRADE_CHART_TIMEFRAMES.some((option) => option.value === payload.timeframe)
             ? payload.timeframe
             : chartTimeframe;
@@ -994,6 +1017,7 @@ export default function TradeHistory({ rows }: TradeHistoryProps) {
             bars: payload.bars ?? [],
             replayBars: payload.replayBars,
             replayTimeframe: payload.replayTimeframe,
+            sourceBars: sourcePayload?.bars ?? payload.bars ?? [],
             fallback: Boolean(payload.fallback),
             message: payload.error,
             requestedTimeframe,
@@ -1013,6 +1037,7 @@ export default function TradeHistory({ rows }: TradeHistoryProps) {
     activeTrade?.exitTime,
     activeTrade?.id,
     activeTrade?.market,
+    activeTrade?.sourceTimeframe,
     activeTrade?.symbol,
     chartTimeframe,
     isRestricted
