@@ -1,0 +1,74 @@
+{
+  "assetKey": "sp_500_futures",
+  "createdAt": "2026-05-17T19:00:53.483476+00:00",
+  "engine": "llm_rule_code",
+  "hypothesis": "Draft idea extracted from source text matching engines: range_break.",
+  "ideaId": "draft_draft_i_backtested_1_178_668_opening_range_breakout_trades_here_s_the_data_https_65dc0dae",
+  "ideaReport": {
+    "assetSelection": "Offline fallback inferred assets from title, symbol mentions, source URLs, and local asset catalog aliases.",
+    "entry": "Enter when the coded condition confirms the setup.",
+    "entryConditions": "Enter when the coded condition confirms the setup in the selected session and timeframe.",
+    "exit": "Exit on target, stop, invalidation, or session close.",
+    "exitConditions": "Exit on target, stop, invalidation, or session close.",
+    "extraNotes": "Offline fallback should be reviewed once richer source text is available.",
+    "filters": [],
+    "implementationNotes": [
+      "Prefer simple session, price-action, trend, range, ATR, and time filters available to the research backtester."
+    ],
+    "invalidations": [
+      "Reject if PF <= 2 or trades <= 20.",
+      "Reject if the coded conditions cannot be expressed without lookahead."
+    ],
+    "limitOrderPlan": "First pass should use market entries so the deterministic backtester can measure the base idea.",
+    "overallDescription": "Draft idea extracted from source text matching engines: range_break.",
+    "parameterNotes": [
+      "Coding stage should convert the setup into explicit rule-code and parameter ranges."
+    ],
+    "setup": "Test the described source behavior with explicit rule-code.",
+    "sourceInterpretation": "Offline fallback inferred the formal idea from the raw inbox text and any saved source URLs.",
+    "stop": "Use ATR or structure invalidation.",
+    "stopLossPlan": "Use ATR or structure invalidation with a small buffer.",
+    "summary": "Draft idea extracted from source text matching engines: range_break.",
+    "takeProfitPlan": "Use fixed R target and session/time exit.",
+    "target": "Use fixed R target and session/time exit.",
+    "timeframes": [
+      "1m",
+      "5m",
+      "15m"
+    ],
+    "useLimitOrder": "No by default; add a limit-order variant only if the source gives a retest price."
+  },
+  "llm": {
+    "model": "Qwen/Qwen3-Coder-480B-A35B-Instruct",
+    "rationale": "Used when NEBIUS_API_KEY is absent or the LLM call fails.",
+    "summary": "Offline rule-code fallback generated from idea text."
+  },
+  "market": "futures",
+  "params": {
+    "ruleCode": {
+      "exitMinute": 945,
+      "longWhen": "minute >= 570 and minute <= 720 and close > highest('high', 8) and close > ema50",
+      "maxBars": 24,
+      "oneTradePerDay": true,
+      "riskAtrMult": 1.0,
+      "riskReward": 1.5,
+      "sessionEndMinute": 1439,
+      "sessionStartMinute": 0,
+      "shortWhen": "minute >= 570 and minute <= 720 and close < lowest('low', 8) and close < ema50"
+    },
+    "stopLoss": "",
+    "takeProfit": ""
+  },
+  "provenance": "public_research",
+  "sourceUrls": [
+    "https://www.youtube.com/watch?v=MOG-DbgmzzI"
+  ],
+  "status": "ready_to_backtest",
+  "strategyId": "rs_llm_draft_draft_i_backtested_1_178_668_opening_range_breakout_trades_here_s_the_data_3e60c0ba",
+  "symbol": "ES",
+  "thresholds": {
+    "minProfitFactor": 2.0,
+    "minTrades": 21
+  },
+  "title": "I Backtested 1,178,668 Opening Range Breakout Trades. Here's the Data."
+}
