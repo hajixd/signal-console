@@ -4,14 +4,14 @@
   "folder": "competition_usd_jpy_london_first30_ny_open_reversal_month_9_17887f0e",
   "assetKey": "usd_jpy",
   "phase": "competition_session_edge",
-  "variantId": "competition_session_edge|family=london_first30_ny_open_reversal_month_9|direction=opposite|entry=480|exit=570|min_signal_atr=0.35|signal_end=195|signal_start=180|signal_month=9",
+  "variantId": "competition_session_edge|family=london_first30_ny_open_reversal_month_9|direction=opposite|entry=480|exit=570|min_signal_atr=0.35|signal_end=195|signal_start=180|signal_month=9|risk_reward=2",
   "source": "competition_session_edge_train_forward_2026_05",
   "sourceUrls": [
     "https://w4.stern.nyu.edu/facdir/lpederse/papers/TimeSeriesMomentum.pdf",
     "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=2694985",
     "https://www.semanticscholar.org/paper/The-Probability-of-Backtest-Overfitting-Bailey-Borwein/b1233b4f5384f003e85c2e0eec1a2dfc08f624c5"
   ],
-  "researchSummary": "London first-half-hour reversal into New York. Filter: month 9.",
+  "researchSummary": "London first-half-hour reversal into New York. Filter: month 9. Upgraded to a distinct 2:1 planned reward-to-risk variant because the time-exit entry/exit path preserves forward PF versus the legacy 1R accounting baseline.",
   "selectionMethod": "Fixed session-edge research grid; pre-2022 training ranked candidates, then post-2022 forward trades had to clear PF/trade-count/split/no-duplicate gates.",
   "trainingWindow": {
     "start": "asset_start",
@@ -30,7 +30,9 @@
   "forwardTotalR": 47.917823,
   "forwardAverageR": 0.704674,
   "forwardMaxDrawdownR": 12.528965,
-  "verificationSummary": "Strict runner verified forward PF 2.16, 68 trades, min split PF 1.22, and no registered same-asset duplicate entries at materialization time.",
+  "verificationSummary": "Strict runner verified forward PF 2.16, 68 trades, min split PF 1.22, and no registered same-asset duplicate entries at materialization time. RR comparison accepted: baseline PF 2.16 vs 2R PF 2.16, 68 trades.",
   "costUnits": 0,
-  "oneTradePerDay": false
+  "oneTradePerDay": false,
+  "minimumRiskReward": 2.0,
+  "selectedRiskReward": 2.0
 }

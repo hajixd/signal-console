@@ -160,7 +160,7 @@ def validation_row(selected: dict[str, str], trades: list[Trade]) -> dict[str, s
     return {
         "strategy_id": selected["strategy_id"],
         "folder": selected["folder"],
-        "market": selected["market"],
+        "market": selected.get("market", ""),
         "asset_key": selected["asset_key"],
         "overall_pf": fmt(profit_factor(values)),
         "trades": str(len(values)),

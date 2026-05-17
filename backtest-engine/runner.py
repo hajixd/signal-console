@@ -779,6 +779,8 @@ ALLOWED_METADATA_KEYS = {
     "selectedTrainingTrades",
     "selectedForwardProfitFactor",
     "selectedForwardTrades",
+    "minimumRiskReward",
+    "selectedRiskReward",
     "forwardWins",
     "forwardLosses",
     "forwardTotalR",
@@ -3781,6 +3783,24 @@ def competition_param_float(strategy: BacktestStrategy, key: str, fallback: floa
     return variant_float(strategy.variant_id, key, fallback)
 
 
+def competition_requested_risk_reward(strategy: BacktestStrategy) -> float | None:
+    for key in ("risk_reward", "rr"):
+        raw = variant_value(strategy.variant_id, key)
+        if raw is None:
+            continue
+        try:
+            parsed = float(raw)
+        except ValueError:
+            continue
+        if math.isfinite(parsed) and parsed > 0:
+            return parsed
+    return None
+
+
+def competition_uses_bracket_exit(strategy: BacktestStrategy) -> bool:
+    return competition_param_text(strategy, "managed_exit", "time") in {"bracket", "stop_target"}
+
+
 def competition_passes_filters(strategy: BacktestStrategy, data: EnrichedData, signal_index: int, side: int) -> bool:
     weekday = variant_value(strategy.variant_id, "signal_weekday")
     if weekday is not None and int(data.ny_weekdays[signal_index]) != int(float(weekday)):
@@ -3838,13 +3858,33 @@ def competition_time_exit_signal(
         return None
     reference_index = index if risk_index is None else max(0, min(risk_index, data.times.shape[0] - 1))
     risk_units = competition_risk_units(data, reference_index, asset)
+    risk_reward = competition_requested_risk_reward(strategy)
+    if risk_reward is not None and risk_reward >= 2.0 and competition_uses_bracket_exit(strategy):
+        signal: dict[str, Any] = {
+            "entry_mode": "market",
+            "side": side,
+            "sl_units": risk_units,
+            "risk_reward": risk_reward,
+            "forced_exit_minute": int(forced_exit_minute),
+            "forced_exit_day_offset": int(forced_exit_day_offset),
+            "forced_exit_reason": "time_exit",
+            "tp_mode": PRICE_MODE_CUSTOM,
+            "sl_mode": PRICE_MODE_CUSTOM,
+            "size_mode": SIZE_MODE_AUTO,
+            "size_multiplier": 1.0,
+        }
+        if entry_minute is not None:
+            signal["entry_minute"] = int(entry_minute)
+            signal["entry_day_offset"] = int(entry_day_offset)
+        return signal
+
     signal: dict[str, Any] = {
         "entry_mode": "market",
         "side": side,
         "sl_units": COMPETITION_TIME_EXIT_UNITS,
         "tp_units": COMPETITION_TIME_EXIT_UNITS,
         "initial_sl_units": risk_units,
-        "initial_tp_units": risk_units,
+        "initial_tp_units": risk_units * max(1.0, risk_reward or 1.0),
         "forced_exit_minute": int(forced_exit_minute),
         "forced_exit_day_offset": int(forced_exit_day_offset),
         "forced_exit_reason": "time_exit",
@@ -4300,8 +4340,54 @@ def competition_signed_return_trade(
     exit_reason: str = "time_exit",
 ) -> BacktestTradeRow | None:
     entry = float(data.open[entry_index]) if entry_price is None else float(entry_price)
-    exit_price = float(data.close[exit_index])
     risk = competition_safe_atr(data, risk_index if risk_index is not None else entry_index, asset)
+    risk_reward = competition_requested_risk_reward(strategy)
+    if risk_reward is not None and risk_reward >= 2.0 and competition_uses_bracket_exit(strategy):
+        stop = round_price(entry - side * risk, asset.tick_size)
+        target = round_price(entry + side * risk * risk_reward, asset.tick_size)
+        exit_price = float(data.close[exit_index])
+        resolved_exit_index = exit_index
+        resolved_exit_reason = exit_reason
+        for cursor in range(entry_index, exit_index + 1):
+            if cursor > entry_index:
+                if side == 1 and data.open[cursor] <= stop:
+                    exit_price = float(data.open[cursor])
+                    resolved_exit_index = cursor
+                    resolved_exit_reason = "sl_gap"
+                    break
+                if side == -1 and data.open[cursor] >= stop:
+                    exit_price = float(data.open[cursor])
+                    resolved_exit_index = cursor
+                    resolved_exit_reason = "sl_gap"
+                    break
+                if side == 1 and data.open[cursor] >= target:
+                    exit_price = float(data.open[cursor])
+                    resolved_exit_index = cursor
+                    resolved_exit_reason = "tp_gap"
+                    break
+                if side == -1 and data.open[cursor] <= target:
+                    exit_price = float(data.open[cursor])
+                    resolved_exit_index = cursor
+                    resolved_exit_reason = "tp_gap"
+                    break
+
+            stopped = data.low[cursor] <= stop if side == 1 else data.high[cursor] >= stop
+            targeted = data.high[cursor] >= target if side == 1 else data.low[cursor] <= target
+            if stopped:
+                exit_price = stop
+                resolved_exit_index = cursor
+                resolved_exit_reason = "sl"
+                break
+            if targeted:
+                exit_price = target
+                resolved_exit_index = cursor
+                resolved_exit_reason = "tp"
+                break
+        return competition_trade_row(
+            strategy, asset, data, signal_index, entry_index, resolved_exit_index, side, entry, exit_price, risk, resolved_exit_reason
+        )
+
+    exit_price = float(data.close[exit_index])
     return competition_trade_row(strategy, asset, data, signal_index, entry_index, exit_index, side, entry, exit_price, risk, exit_reason)
 
 

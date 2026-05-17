@@ -4,12 +4,12 @@
   "folder": "competition_gbp_jpy_london_first30_ny_open_reversal_signalmonth_direction_opposite_entryminute_480_exi_d549e3a7",
   "assetKey": "gbp_jpy",
   "phase": "competition_session_edge",
-  "variantId": "competition_session_edge|family=london_first30_ny_open_reversal_signalmonth|direction=opposite|entry=480|exit=570|min_signal_atr=0.5|signal_end=195|signal_month=6|signal_start=180",
+  "variantId": "competition_session_edge|family=london_first30_ny_open_reversal_signalmonth|direction=opposite|entry=480|exit=570|min_signal_atr=0.5|signal_end=195|signal_month=6|signal_start=180|risk_reward=2",
   "source": "competition_session_edge_train_forward_2026",
   "sourceUrls": [
     "https://biblio.ugent.be/publication/8060014"
   ],
-  "researchSummary": "Session-window return predicts a later same-day session return. Filtered by signalMonth=6.",
+  "researchSummary": "Session-window return predicts a later same-day session return. Filtered by signalMonth=6. Upgraded to a distinct 2:1 planned reward-to-risk variant because the time-exit entry/exit path preserves forward PF versus the legacy 1R accounting baseline.",
   "selectionMethod": "Pre-2022 train-score rank, then post-2022 forward qualification. No parameters were fit on post-2022 data.",
   "trainingWindow": {
     "start": "asset_start",
@@ -28,7 +28,9 @@
   "forwardTotalR": 46.415097,
   "forwardAverageR": 0.786697,
   "forwardMaxDrawdownR": 5.083958,
-  "verificationSummary": "Verified by backtest-engine runner output: PF 2.60, 59 trades, 46.42R total.",
+  "verificationSummary": "Verified by backtest-engine runner output: PF 2.60, 59 trades, 46.42R total. RR comparison accepted: baseline PF 2.60 vs 2R PF 2.60, 59 trades.",
   "costUnits": 0,
-  "oneTradePerDay": false
+  "oneTradePerDay": false,
+  "minimumRiskReward": 2.0,
+  "selectedRiskReward": 2.0
 }

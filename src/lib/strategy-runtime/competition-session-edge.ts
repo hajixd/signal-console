@@ -72,6 +72,7 @@ function safeAtr(bar: EnrichedBar, rule: StrategyRule): number {
 }
 
 function signalFromRisk(
+  params: Params,
   rule: StrategyRule,
   bar: EnrichedBar,
   side: number,
@@ -79,9 +80,10 @@ function signalFromRisk(
   notes: string,
   entryPriceOverride?: number
 ): StrategySignal {
+  const riskReward = Math.max(2, num(params, "risk_reward", num(params, "rr", 2)));
   const entryPrice = roundToTick(entryPriceOverride ?? bar.close, rule.tickSize);
   const stopLossPrice = roundToTick(entryPrice - side * risk, rule.tickSize);
-  const takeProfitPrice = roundToTick(entryPrice + side * risk * 3, rule.tickSize);
+  const takeProfitPrice = roundToTick(entryPrice + side * risk * riskReward, rule.tickSize);
   return {
     side: sideText(side),
     entryPrice,
@@ -89,6 +91,7 @@ function signalFromRisk(
     takeProfitPrice,
     tpUnits: Math.abs(takeProfitPrice - entryPrice) / rule.tickSize,
     slUnits: Math.abs(entryPrice - stopLossPrice) / rule.tickSize,
+    riskReward,
     signalTime: bar.time,
     notes
   };
@@ -99,7 +102,7 @@ function overnightSignal(rule: StrategyRule, bars: EnrichedBar[], signalIndex: n
   if (!bar || bar.nyMinutes !== 945) return null;
   const side = params.side === "short" ? -1 : 1;
   if (!passesFilters(params, bar, side)) return null;
-  return signalFromRisk(rule, bar, side, safeAtr(bar, rule), "Competition session edge: overnight close-to-open bias.");
+  return signalFromRisk(params, rule, bar, side, safeAtr(bar, rule), "Competition session edge: overnight close-to-open bias.");
 }
 
 function gapSignal(rule: StrategyRule, bars: EnrichedBar[], signalIndex: number, params: Params): StrategySignal | null {
@@ -116,7 +119,7 @@ function gapSignal(rule: StrategyRule, bars: EnrichedBar[], signalIndex: number,
   const direction = params.direction === "fade" ? -1 : 1;
   const side = (gap > 0 ? 1 : -1) * direction;
   if (!passesFilters(params, previousClose, side)) return null;
-  return signalFromRisk(rule, bar, side, safeAtr(bar, rule), "Competition session edge: NY open gap.", bar.open);
+  return signalFromRisk(params, rule, bar, side, safeAtr(bar, rule), "Competition session edge: NY open gap.", bar.open);
 }
 
 function intradaySignal(rule: StrategyRule, bars: EnrichedBar[], signalIndex: number, params: Params): StrategySignal | null {
@@ -136,7 +139,7 @@ function intradaySignal(rule: StrategyRule, bars: EnrichedBar[], signalIndex: nu
   const direction = params.direction === "opposite" || params.direction === "fade" || params.direction === "contrarian" ? -1 : 1;
   const side = (move > 0 ? 1 : -1) * direction;
   if (!passesFilters(params, end.bar, side)) return null;
-  return signalFromRisk(rule, bar, side, safeAtr(bar, rule), "Competition session edge: scheduled intraday entry.");
+  return signalFromRisk(params, rule, bar, side, safeAtr(bar, rule), "Competition session edge: scheduled intraday entry.");
 }
 
 function dailySignal(rule: StrategyRule, bars: EnrichedBar[], signalIndex: number, params: Params): StrategySignal | null {
@@ -158,7 +161,7 @@ function dailySignal(rule: StrategyRule, bars: EnrichedBar[], signalIndex: numbe
   const direction = params.direction === "contrarian" ? -1 : 1;
   const side = (move > 0 ? 1 : -1) * direction;
   if (!passesFilters(params, current, side)) return null;
-  return signalFromRisk(rule, bar, side, safeAtr(bar, rule), "Competition session edge: daily time-series momentum.");
+  return signalFromRisk(params, rule, bar, side, safeAtr(bar, rule), "Competition session edge: daily time-series momentum.");
 }
 
 export function evaluateCompetitionSessionEdge(

@@ -80,10 +80,21 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--max-add-per-asset", type=int, default=8)
     parser.add_argument("--max-total-additions", type=int, default=120)
     parser.add_argument("--near-overlap-minutes", type=int, default=15)
+    parser.add_argument(
+        "--allow-existing-entry-overlap",
+        action="store_true",
+        help="Only de-duplicate newly selected candidates against each other; do not reject candidates because older catalog entries share timestamps.",
+    )
     parser.add_argument("--filter-set", choices=["narrow", "broad"], default="narrow")
     parser.add_argument("--min-train-pf", type=float, default=MIN_TRAIN_PF)
     parser.add_argument("--min-forward-pf", type=float, default=MIN_FORWARD_PF)
     parser.add_argument("--min-forward-trades", type=int, default=MIN_FORWARD_TRADES)
+    parser.add_argument(
+        "--risk-reward",
+        action="append",
+        default=[],
+        help="Risk/reward values to scan for fixed session-edge trades. Repeat or comma-separate. Values below 2 are ignored.",
+    )
     parser.add_argument("--train-mode", choices=["required", "diagnostic"], default="required")
     parser.add_argument("--dry-run", action="store_true")
     return parser.parse_args()
@@ -153,15 +164,8 @@ def trade_signature(trade: runner.BacktestTradeRow) -> tuple[str, str, int]:
 def load_existing_signatures() -> tuple[set[tuple[str, str, int]], dict[str, list[tuple[str, int]]]]:
     exact: set[tuple[str, str, int]] = set()
     near: dict[str, list[tuple[str, int]]] = {}
-    selected_folders: set[str] | None = None
-    selected_report = REPORT_ROOT / "top_strategy_pf_split_report.csv"
-    if selected_report.exists():
-        with selected_report.open(newline="", encoding="utf-8") as handle:
-            selected_folders = {row.get("folder", "") for row in csv.DictReader(handle) if row.get("folder")}
 
     for csv_path in STRATEGY_ROOT.glob("*/backtest_trades.csv"):
-        if selected_folders is not None and csv_path.parent.name not in selected_folders:
-            continue
         with csv_path.open(newline="", encoding="utf-8") as handle:
             for row in csv.DictReader(handle):
                 entry_time = row.get("entry_time") or row.get("signal_time")
@@ -234,7 +238,26 @@ def filter_specs(filter_set: str) -> list[tuple[str, tuple[tuple[str, str], ...]
     return specs
 
 
-def variant_specs(filter_set: str = "narrow") -> list[VariantSpec]:
+def parse_risk_rewards(values: list[str]) -> tuple[str, ...]:
+    parsed: list[float] = []
+    raw_values = values or ["2", "3", "4", "5"]
+    for raw in raw_values:
+        for item in raw.split(","):
+            item = item.strip()
+            if not item:
+                continue
+            try:
+                value = float(item)
+            except ValueError:
+                continue
+            if math.isfinite(value) and value >= 2.0:
+                parsed.append(value)
+    if not parsed:
+        parsed = [2.0]
+    return tuple(str(int(value)) if value.is_integer() else str(value) for value in sorted(set(parsed)))
+
+
+def variant_specs(filter_set: str = "narrow", risk_rewards: tuple[str, ...] = ("2",)) -> list[VariantSpec]:
     filters = filter_specs(filter_set)
     output: list[VariantSpec] = []
 
@@ -255,44 +278,51 @@ def variant_specs(filter_set: str = "narrow") -> list[VariantSpec]:
         )
     for family, direction, signal_start, signal_end, entry, exit_minute, summary in intraday_templates:
         for min_signal_atr in ("0", "0.35", "0.5"):
-            for filter_name, filter_params, filter_label in filters:
-                params = (
-                    ("direction", direction),
-                    ("entry", str(entry)),
-                    ("exit", str(exit_minute)),
-                    ("min_signal_atr", min_signal_atr),
-                    ("signal_end", str(signal_end)),
-                    ("signal_start", str(signal_start)),
-                    *filter_params,
-                )
-                output.append(
-                    VariantSpec(
-                        family=f"{family}_{filter_name}",
-                        params=params,
-                        label=f"{family.replace('_', ' ').title()} {filter_label}",
-                        summary=summary + f" Filter: {filter_label}.",
-                    )
-                )
-
-    for direction in ("fade", "follow"):
-        for exit_minute in (660, 945):
-            for min_gap_atr in ("0", "0.25", "0.5"):
+            for risk_reward in risk_rewards:
                 for filter_name, filter_params, filter_label in filters:
                     params = (
                         ("direction", direction),
-                        ("entry", "570"),
+                        ("entry", str(entry)),
                         ("exit", str(exit_minute)),
-                        ("min_gap_atr", min_gap_atr),
+                        ("min_signal_atr", min_signal_atr),
+                        ("risk_reward", risk_reward),
+                        ("signal_end", str(signal_end)),
+                        ("signal_start", str(signal_start)),
                         *filter_params,
                     )
                     output.append(
                         VariantSpec(
-                            family=f"ny_open_gap_{direction}_{filter_name}",
+                            family=f"{family}_{filter_name}",
                             params=params,
-                            label=f"NY Open Gap {direction.title()} {filter_label}",
-                            summary=f"New York open gap {direction} with a fixed intraday exit. Filter: {filter_label}.",
+                            label=f"{family.replace('_', ' ').title()} {filter_label} {risk_reward}R",
+                            summary=summary + f" Filter: {filter_label}. Reward/risk: {risk_reward}:1.",
                         )
                     )
+
+    for direction in ("fade", "follow"):
+        for exit_minute in (660, 945):
+            for min_gap_atr in ("0", "0.25", "0.5"):
+                for risk_reward in risk_rewards:
+                    for filter_name, filter_params, filter_label in filters:
+                        params = (
+                            ("direction", direction),
+                            ("entry", "570"),
+                            ("exit", str(exit_minute)),
+                            ("min_gap_atr", min_gap_atr),
+                            ("risk_reward", risk_reward),
+                            *filter_params,
+                        )
+                        output.append(
+                            VariantSpec(
+                                family=f"ny_open_gap_{direction}_{filter_name}",
+                                params=params,
+                                label=f"NY Open Gap {direction.title()} {filter_label} {risk_reward}R",
+                                summary=(
+                                    f"New York open gap {direction} with stop/target management. "
+                                    f"Filter: {filter_label}. Reward/risk: {risk_reward}:1."
+                                ),
+                            )
+                        )
 
     for family in ("daily_tsmom_next_rth", "daily_tsmom_next_overnight"):
         for direction in ("momentum", "contrarian"):
@@ -300,37 +330,40 @@ def variant_specs(filter_set: str = "narrow") -> list[VariantSpec]:
                 exits = (570, 945) if family.endswith("overnight") else (945,)
                 for exit_minute in exits:
                     entry = "945" if family.endswith("overnight") else "570"
-                    for filter_name, filter_params, filter_label in filters:
-                        params = (
-                            ("direction", direction),
-                            ("entry", entry),
-                            ("exit", str(exit_minute)),
-                            ("lookback", str(lookback)),
-                            *filter_params,
-                        )
-                        output.append(
-                            VariantSpec(
-                                family=f"{family}_{filter_name}",
-                                params=params,
-                                label=f"{family.replace('_', ' ').title()} {direction.title()} {filter_label}",
-                                summary=(
-                                    f"Daily time-series {direction} using a {lookback}-day close-to-close lookback. "
-                                    f"Filter: {filter_label}."
-                                ),
+                    for risk_reward in risk_rewards:
+                        for filter_name, filter_params, filter_label in filters:
+                            params = (
+                                ("direction", direction),
+                                ("entry", entry),
+                                ("exit", str(exit_minute)),
+                                ("lookback", str(lookback)),
+                                ("risk_reward", risk_reward),
+                                *filter_params,
                             )
-                        )
+                            output.append(
+                                VariantSpec(
+                                    family=f"{family}_{filter_name}",
+                                    params=params,
+                                    label=f"{family.replace('_', ' ').title()} {direction.title()} {filter_label} {risk_reward}R",
+                                    summary=(
+                                        f"Daily time-series {direction} using a {lookback}-day close-to-close lookback. "
+                                        f"Filter: {filter_label}. Reward/risk: {risk_reward}:1."
+                                    ),
+                                )
+                            )
 
     for side in ("long", "short"):
-        for filter_name, filter_params, filter_label in filters:
-            params = (("side", side), *filter_params)
-            output.append(
-                VariantSpec(
-                    family=f"overnight_close_to_open_bias_{side}_{filter_name}",
-                    params=params,
-                    label=f"Overnight Close To Open {side.title()} {filter_label}",
-                    summary=f"Fixed {side} close-to-open overnight bias. Filter: {filter_label}.",
+        for risk_reward in risk_rewards:
+            for filter_name, filter_params, filter_label in filters:
+                params = (("risk_reward", risk_reward), ("side", side), *filter_params)
+                output.append(
+                    VariantSpec(
+                        family=f"overnight_close_to_open_bias_{side}_{filter_name}",
+                        params=params,
+                        label=f"Overnight Close To Open {side.title()} {filter_label} {risk_reward}R",
+                        summary=f"Fixed {side} close-to-open overnight bias. Filter: {filter_label}. Reward/risk: {risk_reward}:1.",
+                    )
                 )
-            )
 
     deduped: dict[str, VariantSpec] = {}
     for spec in output:
@@ -433,6 +466,7 @@ export default createStrategyDefinition({{
             return 0.0
         return round(value, 6)
 
+    selected_risk_reward = float(dict(candidate.spec.params).get("risk_reward", 2))
     payload = {
         "strategyId": candidate.strategy.id,
         "label": candidate.strategy.label,
@@ -453,6 +487,8 @@ export default createStrategyDefinition({{
         "selectedTrainingTrades": train.trades,
         "selectedForwardProfitFactor": json_metric(forward.profit_factor),
         "selectedForwardTrades": forward.trades,
+        "minimumRiskReward": 2,
+        "selectedRiskReward": selected_risk_reward,
         "forwardWins": forward.wins,
         "forwardLosses": forward.losses,
         "forwardTotalR": round(forward.total_r, 6),
@@ -577,8 +613,8 @@ def main() -> None:
         and (not requested_assets or asset.key.lower() in requested_assets or asset.symbol.lower() in requested_assets)
         and (runner.DATA_ROOT / "15m" / asset.data_file).exists()
     ]
-    specs = variant_specs(args.filter_set)
-    exact, near = load_existing_signatures()
+    specs = variant_specs(args.filter_set, parse_risk_rewards(args.risk_reward))
+    exact, near = (set(), {}) if args.allow_existing_entry_overlap else load_existing_signatures()
     selected: list[Candidate] = []
 
     print(f"Researching {len(assets)} asset(s) across {len(specs)} fixed session-edge variants")

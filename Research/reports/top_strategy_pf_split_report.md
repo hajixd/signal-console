@@ -1,142 +1,234 @@
-# High-Confidence Strategy Selection
+# Top Strategy PF Split Report
 
-Generated from completed strict backtest CSVs at the restored `publish-main`/`main` branch state.
+Generated at `2026-05-17T21:15:17Z`.
 
-## Result
+Scope: materialized catalog strategy folders under `strategy/` that have metadata and `backtest_trades.csv`.
+Excluded: `Potential Strategies/` and CSV-only `competition_*` folders without strategy metadata.
 
-- Selected: 110 strategies (54 forex, 56 futures).
-- Target: 50 forex and 50 futures.
-- Shortfall: 0 forex and 0 futures.
-- Qualified before exact-trade de-duplication: 110 (54 forex, 56 futures).
-- Rule rejections: 0.
-- Missing/unfinished trade CSVs: 0.
-- Exact-overlap duplicate rejections: 0.
+Split logic: true pre/post values come from metadata when `selectedTraining*` metrics exist; otherwise the report uses a chronological proxy split of the available trade log: first 70% vs last 30%.
 
-## Gates
+| # | Strategy | Asset | Phase | PF | Trades | Total R | ML | Model | Pre PF | Pre N | Post PF | Post N | Overfit |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 1 | competition_japanese_yen_futures_us_first30_last30_reversal_signalweekdayside_direction_opposite_entry_11a69e11 | japanese_yen_futures | competition_session_edge | 4.350 | 75 | 20.98 | yes | ML scorer | 1.192 | 207 | 4.350 | 75 | Low |
+| 2 | competition_usd_jpy_us_first30_last30_reversal_signalweekdayside_direction_opposite_entryminute_930_ex_40e6d9ae | usd_jpy | competition_session_edge | 3.984 | 74 | 17.15 | yes | ML scorer | 1.043 | 48 | 3.984 | 74 | Medium |
+| 3 | competition_micro_ether_futures_daily_tsmom_next_overnight_weekday_side_1_long_dc4c34f3 | micro_ether_futures | competition_session_edge | 3.950 | 105 | 253.93 | yes | ML scorer | 0.000 | 3 | 3.950 | 105 | High |
+| 4 | competition_micro_ether_futures_london_first30_ny_open_momentum_weekday_side_3_short_e779cb85 | micro_ether_futures | competition_session_edge | 3.567 | 53 | 69.58 | yes | ML scorer | 999.000 | 2 | 3.567 | 53 | High |
+| 5 | competition_micro_bitcoin_futures_daily_tsmom_next_overnight_signalweekdayside_direction_contrarian_en_6003fc2d | micro_bitcoin_futures | competition_session_edge | 3.553 | 104 | 218.77 | yes | ML scorer | 2.095 | 20 | 3.553 | 104 | Medium |
+| 6 | competition_new_zealand_dollar_futures_us_first30_last30_reversal_signalmonth_direction_opposite_entry_ce284576 | new_zealand_dollar_futures | competition_session_edge | 3.450 | 48 | 11.29 | yes | ML scorer | 1.575 | 26 | 3.450 | 48 | Medium |
+| 7 | competition_eur_jpy_us_first30_last30_momentum_signalweekdayside_direction_same_entryminute_930_exitba_0a4a3f58 | eur_jpy | competition_session_edge | 3.430 | 64 | 13.81 | yes | ML scorer | 1.058 | 23 | 3.430 | 64 | Medium |
+| 8 | competition_crude_oil_futures_overnight_close_to_open_bias_signalmonth_entry_prior_rth_close_exit_ny_o_315d7644 | crude_oil_futures | competition_session_edge | 3.232 | 102 | 161.74 | yes | ML scorer | 1.312 | 176 | 3.232 | 102 | Low |
+| 9 | competition_eur_chf_daily_tsmom_next_rth_signalmonth_direction_momentum_entryminute_570_exitminute_945_391afa4a | eur_chf | competition_session_edge | 3.221 | 94 | 162.70 | yes | ML scorer | 2.124 | 37 | 3.221 | 94 | Medium |
+| 10 | competition_corn_futures_us_first30_midday_momentum_weekday_side_3_long_cbe1149a | corn_futures | competition_session_edge | 3.220 | 81 | 62.72 | yes | ML scorer | 0.804 | 41 | 3.220 | 81 | Medium |
+| 11 | competition_usd_chf_daily_tsmom_next_overnight_month_12_4f2024c0 | usd_chf | competition_session_edge | 3.111 | 75 | 118.66 | yes | ML scorer | 1.389 | 50 | 3.111 | 75 | Low |
+| 12 | competition_natural_gas_futures_us_first30_last30_momentum_month_9_c678e3c1 | natural_gas_futures | competition_session_edge | 3.105 | 56 | 8.61 | yes | ML scorer | 0.874 | 161 | 3.105 | 56 | Low |
+| 13 | competition_us_treasury_2y_note_futures_daily_tsmom_next_overnight_weekday_side_4_short_e133c7a3 | us_treasury_2y_note_futures | competition_session_edge | 3.076 | 96 | 86.96 | yes | ML scorer | 0.641 | 46 | 3.076 | 96 | Medium |
+| 14 | competition_micro_ether_futures_london_first30_ny_open_reversal_weekday_side_0_long_d64af48a | micro_ether_futures | competition_session_edge | 3.059 | 44 | 41.16 | yes | ML scorer | 0.000 | 0 | 3.059 | 44 | High |
+| 15 | competition_usd_cad_daily_tsmom_next_overnight_signalmonth_direction_momentum_entryminute_945_exitminu_dca02dc1 | usd_cad | competition_session_edge | 3.022 | 74 | 129.25 | yes | ML scorer | 1.377 | 44 | 3.022 | 74 | Medium |
+| 16 | competition_us_treasury_5y_note_futures_daily_tsmom_next_overnight_weekday_side_4_short_6dc543f7 | us_treasury_5y_note_futures | competition_session_edge | 2.986 | 95 | 75.75 | yes | ML scorer | 1.221 | 42 | 2.986 | 95 | Medium |
+| 17 | competition_copper_futures_us_first30_last30_reversal_weekday_side_0_long_04d98061 | copper_futures | competition_session_edge | 2.926 | 75 | 9.79 | yes | ML scorer | 1.240 | 188 | 2.926 | 75 | Low |
+| 18 | competition_gbp_jpy_daily_tsmom_next_rth_month_6_4be2e72e | gbp_jpy | competition_session_edge | 2.911 | 68 | 107.23 | yes | ML scorer | 0.571 | 44 | 2.911 | 68 | Medium |
+| 19 | competition_us_treasury_5y_note_futures_us_first30_last30_momentum_signalweekdayside_direction_same_en_1942c62b | us_treasury_5y_note_futures | competition_session_edge | 2.884 | 74 | 22.74 | yes | ML scorer | 2.561 | 38 | 2.884 | 74 | Medium |
+| 20 | competition_japanese_yen_futures_overnight_close_to_open_bias_short_month_10_6bc43a25 | japanese_yen_futures | competition_session_edge | 2.869 | 89 | 196.50 | yes | ML scorer | 1.140 | 265 | 2.869 | 89 | Low |
+| 21 | competition_russell_2000_futures_ny_open_gap_fade_signalmonth_direction_fade_entryminute_570_exitbarmi_801e97d2 | russell_2000_futures | competition_session_edge | 2.853 | 59 | 49.07 | yes | ML scorer | 1.281 | 49 | 2.853 | 59 | Medium |
+| 22 | competition_canadian_dollar_futures_overnight_close_to_open_bias_signalmonth_entry_prior_rth_close_exi_31e5e01a | canadian_dollar_futures | competition_session_edge | 2.850 | 89 | 110.00 | yes | ML scorer | 1.296 | 212 | 2.850 | 89 | Low |
+| 23 | competition_gbp_jpy_london_first30_last30_momentum_weekday_side_4_long_6a554e5f | gbp_jpy | competition_session_edge | 2.801 | 81 | 19.08 | yes | ML scorer | 1.410 | 36 | 2.801 | 81 | Medium |
+| 24 | competition_gold_futures_us_first30_last30_reversal_weekday_side_0_long_c0163084 | gold_futures | competition_session_edge | 2.785 | 71 | 11.01 | yes | ML scorer | 0.794 | 189 | 2.785 | 71 | Low |
+| 25 | competition_usd_cad_london_first30_ny_open_momentum_month_12_f0df56f8 | usd_cad | competition_session_edge | 2.776 | 79 | 134.75 | yes | ML scorer | 0.986 | 43 | 2.776 | 79 | Medium |
+| 26 | competition_eur_cad_us_first30_midday_momentum_month_10_8e114485 | eur_cad | competition_session_edge | 2.775 | 63 | 28.54 | yes | ML scorer | 0.655 | 23 | 2.775 | 63 | Medium |
+| 27 | gbp_usd_ny_sweep_bayes | gbp_usd | ny_sweep_playbook | 2.750 | 38 | 28.00 | yes | Bayes scorer | 2.500 | 27 | 3.500 | 11 | Medium |
+| 28 | competition_aud_nzd_daily_tsmom_next_overnight_weekday_side_4_long_0aa8225f | aud_nzd | competition_session_edge | 2.747 | 87 | 73.26 | yes | ML scorer | 0.910 | 38 | 2.747 | 87 | Medium |
+| 29 | competition_gbp_jpy_london_first30_last30_reversal_weekday_side_4_long_ef0c2df3 | gbp_jpy | competition_session_edge | 2.731 | 64 | 12.72 | yes | ML scorer | 1.468 | 30 | 2.731 | 64 | Medium |
+| 30 | competition_sp_500_futures_daily_tsmom_next_overnight_weekday_side_1_long_c8bb041e | sp_500_futures | competition_session_edge | 2.729 | 82 | 91.89 | yes | ML scorer | 1.218 | 171 | 2.729 | 82 | Low |
+| 31 | competition_eur_cad_london_first30_last30_momentum_month_8_c5f12647 | eur_cad | competition_session_edge | 2.726 | 87 | 23.04 | yes | ML scorer | 1.290 | 39 | 2.726 | 87 | Medium |
+| 32 | competition_usd_jpy_overnight_close_to_open_bias_long_month_10_06e957d5 | usd_jpy | competition_session_edge | 2.669 | 89 | 177.85 | yes | ML scorer | 0.927 | 48 | 2.669 | 89 | Medium |
+| 33 | competition_silver_futures_daily_tsmom_next_overnight_weekday_side_1_long_f61a84dd | silver_futures | competition_session_edge | 2.668 | 87 | 170.52 | yes | ML scorer | 0.908 | 315 | 2.668 | 87 | Low |
+| 34 | competition_eur_jpy_daily_tsmom_next_rth_signalmonth_direction_momentum_entryminute_570_exitminute_945_563aa3f1 | eur_jpy | competition_session_edge | 2.667 | 68 | 105.44 | yes | ML scorer | 1.708 | 44 | 2.667 | 68 | Medium |
+| 35 | competition_sp_500_futures_us_first30_last30_reversal_weekday_side_0_long_2b2acc93 | sp_500_futures | competition_session_edge | 2.663 | 59 | 33.83 | yes | ML scorer | 1.269 | 209 | 2.663 | 59 | Low |
+| 36 | competition_dow_jones_futures_daily_tsmom_next_overnight_weekday_side_2_short_99ba7153 | dow_jones_futures | competition_session_edge | 2.640 | 83 | 102.63 | yes | ML scorer | 0.677 | 194 | 2.640 | 83 | Low |
+| 37 | competition_usd_cad_us_first30_last30_momentum_signalmonth_direction_same_entryminute_930_exitbarminut_c1317995 | usd_cad | competition_session_edge | 2.637 | 108 | 39.78 | yes | ML scorer | 1.021 | 43 | 2.637 | 108 | Medium |
+| 38 | competition_british_pound_futures_us_first30_last30_reversal_month_10_57755118 | british_pound_futures | competition_session_edge | 2.627 | 57 | 11.61 | yes | ML scorer | 0.997 | 151 | 2.627 | 57 | Low |
+| 39 | competition_gbp_jpy_london_first30_ny_open_reversal_signalmonth_direction_opposite_entryminute_480_exi_d549e3a7 | gbp_jpy | competition_session_edge | 2.599 | 59 | 46.42 | yes | ML scorer | 1.503 | 31 | 2.599 | 59 | Medium |
+| 40 | competition_australian_dollar_futures_ny_open_gap_fade_signalmonth_direction_fade_entryminute_570_exit_dcd12f25 | australian_dollar_futures | competition_session_edge | 2.596 | 75 | 82.37 | yes | ML scorer | 1.396 | 154 | 2.596 | 75 | Low |
+| 41 | competition_russell_2000_futures_daily_tsmom_next_overnight_month_7_d15e8a17 | russell_2000_futures | competition_session_edge | 2.555 | 81 | 85.32 | yes | ML scorer | 1.016 | 90 | 2.555 | 81 | Low |
+| 42 | competition_crude_oil_futures_us_first30_midday_momentum_month_4_32a2fef5 | crude_oil_futures | competition_session_edge | 2.538 | 102 | 50.54 | yes | ML scorer | 0.979 | 222 | 2.538 | 102 | Low |
+| 43 | competition_us_treasury_2y_note_futures_us_first30_last30_momentum_signalweekdayside_direction_same_en_339e7451 | us_treasury_2y_note_futures | competition_session_edge | 2.520 | 66 | 15.15 | yes | ML scorer | 1.282 | 42 | 2.520 | 66 | Medium |
+| 44 | competition_nasdaq_100_futures_daily_tsmom_next_overnight_weekday_side_1_long_8e593f24 | nasdaq_100_futures | competition_session_edge | 2.519 | 83 | 87.91 | yes | ML scorer | 1.117 | 185 | 2.519 | 83 | Low |
+| 45 | competition_gbp_usd_us_first30_last30_reversal_signalmonth_direction_opposite_entryminute_930_exitbarm_9b2547fb | gbp_usd | competition_session_edge | 2.515 | 57 | 11.31 | yes | ML scorer | 1.166 | 27 | 2.515 | 57 | Medium |
+| 46 | competition_usd_chf_us_first30_midday_reversal_month_1_074f7113 | usd_chf | competition_session_edge | 2.500 | 110 | 44.37 | yes | ML scorer | 0.499 | 23 | 2.500 | 110 | Medium |
+| 47 | competition_aud_usd_daily_tsmom_next_overnight_month_12_45e372f3 | aud_usd | competition_session_edge | 2.498 | 79 | 137.91 | yes | ML scorer | 1.726 | 53 | 2.498 | 79 | Low |
+| 48 | competition_eur_usd_daily_tsmom_next_overnight_month_1_33ed35ff | eur_usd | competition_session_edge | 2.456 | 100 | 172.39 | yes | ML scorer | 0.665 | 25 | 2.456 | 100 | Medium |
+| 49 | competition_silver_futures_london_first30_ny_open_momentum_weekday_side_0_short_7456f9c2 | silver_futures | competition_session_edge | 2.454 | 90 | 97.56 | yes | ML scorer | 0.761 | 300 | 2.454 | 90 | Low |
+| 50 | competition_swiss_franc_futures_overnight_close_to_open_bias_short_month_10_17716ea5 | swiss_franc_futures | competition_session_edge | 2.422 | 89 | 135.03 | yes | ML scorer | 0.607 | 43 | 2.422 | 89 | Medium |
+| 51 | competition_euro_futures_daily_tsmom_next_rth_signalmonth_direction_contrarian_entryminute_570_exitmin_0b54da46 | euro_futures | competition_session_edge | 2.398 | 62 | 80.96 | yes | ML scorer | 1.293 | 243 | 2.398 | 62 | Low |
+| 52 | competition_eur_jpy_us_first30_midday_momentum_month_8_95ae5d8c | eur_jpy | competition_session_edge | 2.397 | 57 | 17.41 | yes | ML scorer | 0.908 | 23 | 2.397 | 57 | Medium |
+| 53 | competition_gbp_jpy_us_first30_last30_momentum_weekday_side_2_long_461ef776 | gbp_jpy | competition_session_edge | 2.397 | 68 | 9.74 | yes | ML scorer | 0.652 | 33 | 2.397 | 68 | Medium |
+| 54 | competition_british_pound_futures_daily_tsmom_next_overnight_month_7_da1c691c | british_pound_futures | competition_session_edge | 2.395 | 87 | 186.69 | yes | ML scorer | 1.161 | 254 | 2.395 | 87 | Low |
+| 55 | competition_eur_usd_overnight_close_to_open_bias_long_month_12_8a49b98f | eur_usd | competition_session_edge | 2.391 | 73 | 84.44 | yes | ML scorer | 1.447 | 49 | 2.391 | 73 | Medium |
+| 56 | competition_british_pound_futures_london_first30_last30_reversal_month_1_c3526d80 | british_pound_futures | competition_session_edge | 2.389 | 78 | 18.06 | yes | ML scorer | 1.429 | 158 | 2.389 | 78 | Low |
+| 57 | competition_nzd_usd_daily_tsmom_next_rth_signalmonth_direction_contrarian_entryminute_570_exitminute_9_183b1d88 | nzd_usd | competition_session_edge | 2.382 | 100 | 138.98 | yes | ML scorer | 1.165 | 33 | 2.382 | 100 | Medium |
+| 58 | competition_australian_dollar_futures_us_first30_last30_reversal_signalmonth_direction_opposite_entrym_77aa2b55 | australian_dollar_futures | competition_session_edge | 2.361 | 61 | 10.98 | yes | ML scorer | 1.372 | 165 | 2.361 | 61 | Low |
+| 59 | competition_aud_usd_us_first30_last30_reversal_signalmonth_direction_opposite_entryminute_930_exitbarm_c8c5223e | aud_usd | competition_session_edge | 2.357 | 60 | 10.33 | yes | ML scorer | 1.556 | 34 | 2.357 | 60 | Medium |
+| 60 | competition_micro_bitcoin_futures_daily_tsmom_next_rth_weekday_side_2_short_4be5774f | micro_bitcoin_futures | competition_session_edge | 2.356 | 101 | 182.26 | yes | ML scorer | 1.185 | 19 | 2.356 | 101 | High |
+| 61 | competition_eur_chf_us_first30_midday_momentum_month_6_f4946f20 | eur_chf | competition_session_edge | 2.349 | 59 | 15.63 | yes | ML scorer | 0.923 | 30 | 2.349 | 59 | Medium |
+| 62 | competition_aud_usd_london_first30_ny_open_momentum_month_4_6674a830 | aud_usd | competition_session_edge | 2.341 | 103 | 91.07 | yes | ML scorer | 1.412 | 41 | 2.341 | 103 | Medium |
+| 63 | competition_swiss_franc_futures_us_first30_midday_momentum_month_5_a2abc7dd | swiss_franc_futures | competition_session_edge | 2.340 | 91 | 31.51 | yes | ML scorer | 3.038 | 38 | 2.340 | 91 | Medium |
+| 64 | competition_gbp_jpy_us_first30_last30_reversal_weekday_side_2_long_bfe5c772 | gbp_jpy | competition_session_edge | 2.337 | 118 | 21.43 | yes | ML scorer | 0.690 | 49 | 2.337 | 118 | Medium |
+| 65 | competition_canadian_dollar_futures_daily_tsmom_next_overnight_signalmonth_direction_momentum_entrymin_eee85315 | canadian_dollar_futures | competition_session_edge | 2.327 | 82 | 85.76 | yes | ML scorer | 1.461 | 243 | 2.327 | 82 | Low |
+| 66 | competition_gbp_jpy_daily_tsmom_next_overnight_month_10_74426304 | gbp_jpy | competition_session_edge | 2.316 | 89 | 212.62 | yes | ML scorer | 0.957 | 49 | 2.316 | 89 | Medium |
+| 67 | competition_gold_futures_daily_tsmom_next_overnight_weekday_side_3_long_648d544b | gold_futures | competition_session_edge | 2.247 | 79 | 177.80 | yes | ML scorer | 1.470 | 284 | 2.247 | 79 | Low |
+| 68 | competition_us_treasury_30y_bond_futures_daily_tsmom_next_overnight_weekday_side_4_short_72a8080e | us_treasury_30y_bond_futures | competition_session_edge | 2.240 | 96 | 57.04 | yes | ML scorer | 1.450 | 293 | 2.240 | 96 | Low |
+| 69 | competition_sp_500_futures_daily_tsmom_next_overnight_weekday_side_2_short_af21c53b | sp_500_futures | competition_session_edge | 2.237 | 81 | 81.00 | yes | ML scorer | 0.750 | 174 | 2.237 | 81 | Low |
+| 70 | competition_australian_dollar_futures_ny_open_gap_fade_signalmonth_direction_fade_entryminute_570_exit_1aa4fa28 | australian_dollar_futures | competition_session_edge | 2.236 | 65 | 75.91 | yes | ML scorer | 1.514 | 204 | 2.236 | 65 | Low |
+| 71 | competition_eur_jpy_us_first30_last30_reversal_weekday_side_4_long_6d672b02 | eur_jpy | competition_session_edge | 2.226 | 49 | 6.73 | yes | ML scorer | 1.806 | 30 | 2.226 | 49 | Medium |
+| 72 | competition_gbp_usd_daily_tsmom_next_overnight_month_7_1cefc684 | gbp_usd | competition_session_edge | 2.217 | 88 | 172.49 | yes | ML scorer | 1.262 | 48 | 2.217 | 88 | Medium |
+| 73 | competition_us_treasury_2y_note_futures_ny_open_gap_fade_signalmonth_direction_fade_entryminute_570_ex_d2289e05 | us_treasury_2y_note_futures | competition_session_edge | 2.216 | 62 | 36.33 | yes | ML scorer | 1.496 | 34 | 2.216 | 62 | Medium |
+| 74 | competition_us_treasury_5y_note_futures_us_first30_last30_momentum_signalweekdayside_direction_same_en_62e3b6d2 | us_treasury_5y_note_futures | competition_session_edge | 2.215 | 99 | 18.44 | yes | ML scorer | 1.383 | 55 | 2.215 | 99 | Low |
+| 75 | competition_us_treasury_10y_note_futures_daily_tsmom_next_overnight_weekday_side_4_short_7240deca | us_treasury_10y_note_futures | competition_session_edge | 2.214 | 96 | 53.28 | yes | ML scorer | 1.375 | 290 | 2.214 | 96 | Low |
+| 76 | competition_dow_jones_futures_daily_tsmom_next_overnight_signalweekdayside_direction_momentum_entrymin_c2a8817b | dow_jones_futures | competition_session_edge | 2.210 | 132 | 134.34 | yes | ML scorer | 1.414 | 376 | 2.210 | 132 | Low |
+| 77 | competition_silver_futures_london_first30_ny_open_momentum_signalweekdayside_direction_same_entryminut_5ce60b39 | silver_futures | competition_session_edge | 2.202 | 80 | 92.15 | yes | ML scorer | 1.368 | 215 | 2.202 | 80 | Low |
+| 78 | competition_aud_usd_daily_tsmom_next_overnight_month_6_c0c3d057 | aud_usd | competition_session_edge | 2.198 | 84 | 152.50 | yes | ML scorer | 0.498 | 51 | 2.198 | 84 | Low |
+| 79 | competition_usd_cad_us_first30_midday_reversal_month_12_1f6382c6 | usd_cad | competition_session_edge | 2.192 | 61 | 26.82 | yes | ML scorer | 1.949 | 27 | 2.192 | 61 | Medium |
+| 80 | competition_usd_jpy_asia_range_london_breakout_signalweekdayside_breakendminute_360_breakstartminute_1_83470b07 | usd_jpy | competition_session_edge | 2.188 | 87 | 20.16 | yes | ML scorer | 1.902 | 40 | 2.188 | 87 | Medium |
+| 81 | competition_eur_jpy_daily_tsmom_next_overnight_weekday_side_2_short_bad001bc | eur_jpy | competition_session_edge | 2.184 | 142 | 308.05 | yes | ML scorer | 0.860 | 57 | 2.184 | 142 | Low |
+| 82 | competition_nzd_usd_us_first30_midday_momentum_month_4_f022fff9 | nzd_usd | competition_session_edge | 2.162 | 73 | 25.01 | yes | ML scorer | 0.677 | 33 | 2.162 | 73 | Medium |
+| 83 | competition_eur_gbp_london_first30_ny_open_reversal_weekday_side_4_long_97b8e7c1 | eur_gbp | competition_session_edge | 2.161 | 70 | 43.42 | yes | ML scorer | 0.857 | 35 | 2.161 | 70 | Medium |
+| 84 | competition_usd_jpy_london_first30_ny_open_reversal_month_9_17887f0e | usd_jpy | competition_session_edge | 2.159 | 68 | 47.92 | yes | ML scorer | 0.992 | 37 | 2.159 | 68 | Medium |
+| 85 | competition_eur_jpy_daily_tsmom_next_overnight_weekday_side_4_long_f8ec3c41 | eur_jpy | competition_session_edge | 2.153 | 135 | 94.39 | yes | ML scorer | 0.421 | 50 | 2.153 | 135 | Low |
+| 86 | competition_gbp_jpy_ny_open_gap_follow_month_9_eea6b89e | gbp_jpy | competition_session_edge | 2.152 | 68 | 53.40 | yes | ML scorer | 1.178 | 40 | 2.152 | 68 | Medium |
+| 87 | competition_gold_futures_daily_tsmom_next_overnight_signalweekdayside_direction_momentum_entryminute_9_c8e1caae | gold_futures | competition_session_edge | 2.144 | 116 | 163.48 | yes | ML scorer | 1.392 | 311 | 2.144 | 116 | Low |
+| 88 | competition_aud_nzd_london_first30_last30_reversal_weekday_side_0_long_2e0ed4d2 | aud_nzd | competition_session_edge | 2.133 | 53 | 6.97 | yes | ML scorer | 0.591 | 28 | 2.133 | 53 | Medium |
+| 89 | nasdaq_100_futures_round_hundred_rejection_15m | nasdaq_100_futures | round_number_rejection | 2.123 | 54 | 31.73 | yes | Decision stump | 0.713 | 152 | 2.017 | 53 | Low |
+| 90 | competition_japanese_yen_futures_london_first30_ny_open_reversal_month_9_6d9e482f | japanese_yen_futures | competition_session_edge | 2.117 | 69 | 48.51 | yes | ML scorer | 1.069 | 189 | 2.117 | 69 | Low |
+| 91 | competition_nzd_usd_london_first30_ny_open_momentum_month_4_cfddb747 | nzd_usd | competition_session_edge | 2.112 | 102 | 91.46 | yes | ML scorer | 1.075 | 40 | 2.112 | 102 | Medium |
+| 92 | competition_usd_cad_daily_tsmom_next_overnight_month_10_941ee263 | usd_cad | competition_session_edge | 2.103 | 89 | 81.82 | yes | ML scorer | 0.664 | 47 | 2.103 | 89 | Medium |
+| 93 | competition_us_treasury_2y_note_futures_us_first30_last30_momentum_weekday_side_3_long_6989e3fd | us_treasury_2y_note_futures | competition_session_edge | 2.101 | 91 | 15.69 | yes | ML scorer | 0.617 | 36 | 2.101 | 91 | Medium |
+| 94 | competition_eur_gbp_us_first30_last30_reversal_weekday_side_1_short_2371b8e4 | eur_gbp | competition_session_edge | 2.086 | 73 | 8.65 | yes | ML scorer | 0.568 | 30 | 2.086 | 73 | Medium |
+| 95 | competition_aud_usd_ny_open_gap_fade_signalmonth_direction_fade_entryminute_570_exitbarminute_660_ming_5c432e4e | aud_usd | competition_session_edge | 2.082 | 65 | 56.62 | yes | ML scorer | 1.254 | 40 | 2.082 | 65 | Medium |
+| 96 | competition_us_treasury_10y_note_futures_us_first30_last30_momentum_weekday_side_2_long_014bd88f | us_treasury_10y_note_futures | competition_session_edge | 2.078 | 105 | 20.47 | yes | ML scorer | 1.385 | 274 | 2.078 | 105 | Low |
+| 97 | competition_new_zealand_dollar_futures_ny_open_gap_fade_signalmonth_direction_fade_entryminute_570_exi_7ad85d81 | new_zealand_dollar_futures | competition_session_edge | 2.070 | 79 | 62.42 | yes | ML scorer | 1.093 | 28 | 2.070 | 79 | Medium |
+| 98 | competition_eur_chf_daily_tsmom_next_overnight_weekday_side_2_short_15ab1798 | eur_chf | competition_session_edge | 2.067 | 97 | 150.81 | yes | ML scorer | 1.618 | 40 | 2.067 | 97 | Medium |
+| 99 | competition_gbp_jpy_ny_open_gap_fade_signalmonth_direction_fade_entryminute_570_exitbarminute_945_ming_297a7a1d | gbp_jpy | competition_session_edge | 2.054 | 100 | 117.18 | yes | ML scorer | 2.109 | 23 | 2.054 | 100 | Medium |
+| 100 | competition_eur_gbp_us_first30_midday_reversal_month_5_da8593e8 | eur_gbp | competition_session_edge | 2.046 | 70 | 16.57 | yes | ML scorer | 0.843 | 29 | 2.046 | 70 | Medium |
+| 101 | competition_eur_jpy_london_first30_ny_open_reversal_month_9_ef673bbe | eur_jpy | competition_session_edge | 2.044 | 84 | 44.99 | yes | ML scorer | 0.948 | 44 | 2.044 | 84 | Medium |
+| 102 | competition_gbp_jpy_london_first30_ny_open_momentum_weekday_side_3_short_d1634235 | gbp_jpy | competition_session_edge | 2.044 | 75 | 64.44 | yes | ML scorer | 1.352 | 30 | 2.044 | 75 | Medium |
+| 103 | competition_gbp_usd_london_first30_last30_reversal_month_1_dc2945a5 | gbp_usd | competition_session_edge | 2.039 | 80 | 16.20 | yes | ML scorer | 0.414 | 18 | 2.039 | 80 | High |
+| 104 | competition_eur_chf_ny_open_gap_fade_month_9_5044d21c | eur_chf | competition_session_edge | 2.035 | 64 | 32.27 | yes | ML scorer | 0.890 | 39 | 2.035 | 64 | Medium |
+| 105 | competition_gbp_jpy_daily_tsmom_next_overnight_signalmonth_direction_contrarian_entryminute_945_exitmi_ab520ea7 | gbp_jpy | competition_session_edge | 2.016 | 86 | 134.57 | yes | ML scorer | 3.219 | 39 | 2.016 | 86 | Medium |
+| 106 | competition_nasdaq_100_futures_london_first30_ny_open_momentum_weekday_side_3_short_726e6c71 | nasdaq_100_futures | competition_session_edge | 2.014 | 109 | 117.31 | yes | ML scorer | 0.946 | 294 | 2.014 | 109 | Low |
+| 107 | competition_us_treasury_30y_bond_futures_daily_tsmom_next_overnight_weekday_side_0_long_157ef9f4 | us_treasury_30y_bond_futures | competition_session_edge | 2.014 | 75 | 90.33 | yes | ML scorer | 1.067 | 288 | 2.014 | 75 | Low |
+| 108 | competition_copper_futures_daily_tsmom_next_overnight_weekday_side_1_long_28c520df | copper_futures | competition_session_edge | 2.014 | 101 | 245.01 | yes | ML scorer | 0.964 | 295 | 2.014 | 101 | Low |
+| 109 | competition_copper_futures_us_first30_last30_reversal_weekday_side_4_short_79163bfe | copper_futures | competition_session_edge | 2.010 | 69 | 6.23 | yes | ML scorer | 0.813 | 177 | 2.010 | 69 | Low |
+| 110 | competition_corn_futures_london_first30_ny_open_reversal_weekday_side_3_short_bd97e9a5 | corn_futures | competition_session_edge | 2.002 | 100 | 103.97 | yes | ML scorer | 0.939 | 38 | 2.002 | 100 | Medium |
 
-- Overall profit factor > 2.0.
-- At least 20 trades.
-- 4 chronological quarters, each with at least 5 trades.
-- Every chronological quarter must have PF > 1.0.
-- Bootstrap resampling 5th percentile PF must be > 1.0.
-- Odd/even trade-order PF must both be > 1.0.
-- At least 60% of calendar-year walk-forward windows with enough trades must have PF > 1.0.
-- Strategies on the same asset may not share exact entries or same-side entries within 15 minutes.
-- Per-asset selection maximizes count first, then robustness score.
+## Overfit Notes
 
-## Selected
-
-| Rank | Market | Symbol | Strategy | PF | Trades | Min Quarter PF | Bootstrap PF p05 |
-| ---: | --- | --- | --- | ---: | ---: | ---: | ---: |
-| 1 | forex | USDJPY | USDJPY US opening-range reversal into the close (Wednesday longs) | 3.984448 | 74 | 2.545385 | 2.361974 |
-| 2 | forex | EURCHF | EURCHF 5-day daily momentum into RTH (February filter) | 3.220641 | 94 | 2.986694 | 1.679923 |
-| 3 | forex | EURJPY | EURJPY US opening-range continuation into the close (Wednesday longs) | 3.430396 | 64 | 2.681117 | 1.957779 |
-| 4 | forex | AUDNZD | AUDNZD 5-day daily mean reversion overnight (Friday longs) | 2.747430 | 87 | 2.097478 | 1.742741 |
-| 5 | forex | EURCAD | EURCAD London opening-range continuation into the US close (August filter) | 2.725629 | 87 | 2.122056 | 1.685990 |
-| 6 | forex | USDCAD | USDCAD 5-day daily momentum overnight (December filter) | 3.022206 | 74 | 2.069056 | 1.654965 |
-| 7 | forex | USDCAD | USDCAD London opening-range continuation into New York (December filter) | 2.776294 | 79 | 2.032717 | 1.785044 |
-| 8 | forex | USDCAD | USDCAD US opening-range continuation into the close (March filter) | 2.637082 | 108 | 1.921319 | 1.506705 |
-| 9 | forex | USDJPY | USDJPY overnight long close-to-open bias (October filter) | 2.668913 | 89 | 2.112049 | 1.527483 |
-| 10 | forex | USDCHF | USDCHF 10-day daily momentum overnight (December filter) | 3.111397 | 75 | 1.215199 | 1.997824 |
-| 11 | forex | EURJPY | EURJPY 3-day daily mean reversion overnight (Wednesday shorts) | 2.183703 | 142 | 1.851670 | 1.456102 |
-| 12 | forex | AUDUSD | AUDUSD London opening-range continuation into New York (April filter) | 2.341394 | 103 | 1.998946 | 1.476914 |
-| 13 | forex | GBPJPY | GBPJPY London opening-range continuation into the US close (Friday longs) | 2.800876 | 81 | 1.646683 | 1.663631 |
-| 14 | forex | EURUSD | EURUSD 20-day daily mean reversion overnight (January filter) | 2.456138 | 100 | 1.834344 | 1.543344 |
-| 15 | forex | EURCAD | EURCAD US opening-range continuation into midday (October filter) | 2.774717 | 63 | 1.924581 | 1.648633 |
-| 16 | forex | USDJPY | USDJPY Asia range breakout into London (Wednesday longs) | 2.188032 | 87 | 2.022736 | 1.396223 |
-| 17 | forex | GBPJPY | GBPJPY 5-day daily mean reversion overnight (October filter) | 2.316028 | 89 | 1.682011 | 1.543671 |
-| 18 | forex | USDCHF | USDCHF US opening-range reversal into midday (January filter) | 2.500264 | 110 | 1.236387 | 1.552773 |
-| 19 | forex | GBPJPY | GBPJPY London opening-range reversal into the US close (Friday longs) | 2.730689 | 64 | 1.538021 | 1.680786 |
-| 20 | forex | GBPUSD | GBPUSD 3-day daily momentum overnight (July filter) | 2.217421 | 88 | 1.799164 | 1.481020 |
-| 21 | forex | AUDUSD | AUDUSD 20-day daily momentum overnight (December filter) | 2.498047 | 79 | 1.547798 | 1.544348 |
-| 22 | forex | EURJPY | EURJPY 5-day daily momentum into RTH (June filter) | 2.667123 | 68 | 1.496442 | 1.620477 |
-| 23 | forex | AUDUSD | AUDUSD 20-day daily mean reversion overnight (June filter) | 2.198377 | 84 | 1.858741 | 1.418520 |
-| 24 | forex | EURUSD | EURUSD overnight long close-to-open bias (December filter) | 2.391463 | 73 | 1.598496 | 1.463706 |
-| 25 | forex | GBPUSD | GBPUSD NY sweep playbook | 2.750000 | 38 | 2.000000 | 1.619048 |
-| 26 | forex | GBPJPY | GBPJPY London opening-range reversal into New York (June filter) | 2.598616 | 59 | 1.524627 | 1.573853 |
-| 27 | forex | EURJPY | EURJPY 20-day daily momentum overnight (Friday longs) | 2.152995 | 135 | 1.250261 | 1.312438 |
-| 28 | forex | GBPJPY | GBPJPY US opening-range reversal into the close (Wednesday longs) | 2.337304 | 118 | 1.019742 | 1.472326 |
-| 29 | forex | GBPJPY | GBPJPY 20-day daily momentum into RTH (June filter) | 2.910659 | 68 | 1.010576 | 1.483095 |
-| 30 | forex | EURGBP | EURGBP US opening-range reversal into the close (Tuesday shorts) | 2.085624 | 73 | 1.924717 | 1.256847 |
-| 31 | forex | EURJPY | EURJPY US opening-range continuation into midday (August filter) | 2.397194 | 57 | 1.900424 | 1.261149 |
-| 32 | forex | NZDUSD | NZDUSD 10-day daily mean reversion into RTH (February filter) | 2.382285 | 100 | 1.114924 | 1.376309 |
-| 33 | forex | GBPJPY | GBPJPY NY open gap follow-through (September filter) | 2.151636 | 68 | 1.806280 | 1.249290 |
-| 34 | forex | NZDUSD | NZDUSD London opening-range continuation into New York (April filter) | 2.112209 | 102 | 1.213980 | 1.422968 |
-| 35 | forex | EURJPY | EURJPY London opening-range reversal into New York (September filter) | 2.044452 | 84 | 1.674651 | 1.194116 |
-| 36 | forex | USDCAD | USDCAD 20-day daily momentum overnight (October filter) | 2.103122 | 89 | 1.483644 | 1.259504 |
-| 37 | forex | EURCHF | EURCHF US opening-range continuation into midday (June filter) | 2.349479 | 59 | 1.586180 | 1.374650 |
-| 38 | forex | EURCHF | EURCHF 20-day daily mean reversion overnight (Wednesday shorts) | 2.067461 | 97 | 1.229577 | 1.314654 |
-| 39 | forex | GBPJPY | GBPJPY 20-day daily mean reversion overnight (September filter) | 2.016196 | 86 | 1.510196 | 1.178731 |
-| 40 | forex | NZDUSD | NZDUSD US opening-range continuation into midday (April filter) | 2.161741 | 73 | 1.485132 | 1.224086 |
-| 41 | forex | GBPJPY | GBPJPY US opening-range continuation into the close (Wednesday longs) | 2.396708 | 68 | 1.042769 | 1.400793 |
-| 42 | forex | GBPJPY | GBPJPY NY open gap fade (January filter) | 2.053985 | 100 | 1.076423 | 1.277133 |
-| 43 | forex | EURGBP | EURGBP London opening-range reversal into New York (Friday longs) | 2.161411 | 70 | 1.243385 | 1.292056 |
-| 44 | forex | EURGBP | EURGBP US opening-range reversal into midday (May filter) | 2.046060 | 70 | 1.478836 | 1.166028 |
-| 45 | forex | AUDUSD | AUDUSD US opening-range reversal into the close (December filter) | 2.357436 | 60 | 1.237057 | 1.255583 |
-| 46 | forex | USDJPY | USDJPY London opening-range reversal into New York (September filter) | 2.158641 | 68 | 1.215988 | 1.303265 |
-| 47 | forex | GBPUSD | GBPUSD US opening-range reversal into the close (October filter) | 2.514715 | 57 | 1.100484 | 1.253855 |
-| 48 | forex | EURJPY | EURJPY US opening-range reversal into the close (Friday longs) | 2.226343 | 49 | 1.430443 | 1.172071 |
-| 49 | forex | USDCAD | USDCAD US opening-range reversal into midday (December filter) | 2.192216 | 61 | 1.196593 | 1.172112 |
-| 50 | forex | GBPUSD | GBPUSD London opening-range reversal into the US close (January filter) | 2.039310 | 80 | 1.172944 | 1.052485 |
-| 51 | forex | GBPJPY | GBPJPY London opening-range continuation into New York (Thursday shorts) | 2.044440 | 75 | 1.152851 | 1.043124 |
-| 52 | forex | AUDUSD | AUDUSD NY open gap fade (October filter) | 2.082419 | 65 | 1.093491 | 1.161481 |
-| 53 | forex | EURCHF | EURCHF NY open gap fade (September filter) | 2.034742 | 64 | 1.105421 | 1.205384 |
-| 54 | forex | AUDNZD | AUDNZD London opening-range reversal into the US close (Monday longs) | 2.133229 | 53 | 1.107159 | 1.199540 |
-| 55 | futures | 6J | 6J US opening-range reversal into the close (Wednesday shorts) | 4.349795 | 75 | 3.333813 | 2.533815 |
-| 56 | futures | MBT | MBT 3-day daily mean reversion overnight (Tuesday longs) | 3.553443 | 104 | 3.253263 | 2.366515 |
-| 57 | futures | MET | MET 3-day daily mean reversion overnight (Tuesday longs) | 3.949600 | 105 | 1.876390 | 2.587332 |
-| 58 | futures | CL | CL overnight long close-to-open bias (January filter) | 3.231682 | 102 | 2.603495 | 1.987660 |
-| 59 | futures | ZC | ZC US opening-range continuation into midday (Thursday longs) | 3.220191 | 81 | 2.127655 | 1.990645 |
-| 60 | futures | MET | MET London opening-range continuation into New York (Thursday shorts) | 3.566552 | 53 | 2.547305 | 1.972434 |
-| 61 | futures | 6J | 6J overnight short close-to-open bias (October filter) | 2.869072 | 89 | 2.059050 | 1.655715 |
-| 62 | futures | RTY | RTY NY open gap fade (February filter) | 2.853419 | 59 | 2.415245 | 1.771335 |
-| 63 | futures | ES | ES 20-day daily mean reversion overnight (Tuesday longs) | 2.728575 | 82 | 2.041491 | 1.629768 |
-| 64 | futures | 6A | 6A NY open gap fade (February filter) | 2.596410 | 75 | 2.203902 | 1.612131 |
-| 65 | futures | NQ | NQ 20-day daily mean reversion overnight (Tuesday longs) | 2.519324 | 83 | 2.062665 | 1.630989 |
-| 66 | futures | HG | HG US opening-range reversal into the close (Monday longs) | 2.925557 | 75 | 1.706024 | 1.699791 |
-| 67 | futures | MET | MET London opening-range reversal into New York (Monday longs) | 3.058952 | 44 | 2.446970 | 1.683094 |
-| 68 | futures | 6C | 6C overnight short close-to-open bias (October filter) | 2.850315 | 89 | 1.404705 | 1.789772 |
-| 69 | futures | NG | NG US opening-range continuation into the close (September filter) | 3.104639 | 56 | 1.955240 | 1.649262 |
-| 70 | futures | ZF | ZF 20-day daily mean reversion overnight (Friday shorts) | 2.985631 | 95 | 1.217212 | 1.727728 |
-| 71 | futures | ZT | ZT 20-day daily mean reversion overnight (Friday shorts) | 3.076242 | 96 | 1.167254 | 1.586042 |
-| 72 | futures | ZF | ZF US opening-range continuation into the close (Wednesday longs) | 2.883844 | 74 | 1.580397 | 1.630931 |
-| 73 | futures | YM | YM 10-day daily momentum overnight (Tuesday longs) | 2.210431 | 132 | 1.618157 | 1.515133 |
-| 74 | futures | GC | GC US opening-range reversal into the close (Monday longs) | 2.784599 | 71 | 1.596351 | 1.720451 |
-| 75 | futures | CL | CL US opening-range continuation into midday (April filter) | 2.538398 | 102 | 1.514534 | 1.572836 |
-| 76 | futures | 6B | 6B 3-day daily momentum overnight (July filter) | 2.394517 | 87 | 1.856988 | 1.508477 |
-| 77 | futures | SI | SI 20-day daily mean reversion overnight (Tuesday longs) | 2.667724 | 87 | 1.317197 | 1.573749 |
-| 78 | futures | RTY | RTY 10-day daily momentum overnight (July filter) | 2.555337 | 81 | 1.543350 | 1.507263 |
-| 79 | futures | 6N | 6N US opening-range reversal into the close (December filter) | 3.449856 | 48 | 1.017082 | 1.797018 |
-| 80 | futures | 6S | 6S US opening-range continuation into midday (May filter) | 2.339639 | 91 | 1.576022 | 1.466816 |
-| 81 | futures | 6S | 6S overnight short close-to-open bias (October filter) | 2.421766 | 89 | 1.423530 | 1.550559 |
-| 82 | futures | YM | YM 20-day daily momentum overnight (Wednesday shorts) | 2.639693 | 83 | 1.046220 | 1.730962 |
-| 83 | futures | ZB | ZB 20-day daily mean reversion overnight (Friday shorts) | 2.240353 | 96 | 1.551961 | 1.394549 |
-| 84 | futures | 6B | 6B US opening-range reversal into the close (October filter) | 2.626916 | 57 | 1.752922 | 1.436823 |
-| 85 | futures | MBT | MBT 10-day daily momentum into RTH (Wednesday shorts) | 2.355672 | 101 | 1.242443 | 1.468033 |
-| 86 | futures | SI | SI London opening-range continuation into New York (Monday shorts) | 2.454070 | 90 | 1.311296 | 1.419556 |
-| 87 | futures | ES | ES US opening-range reversal into the close (Monday longs) | 2.662900 | 59 | 1.436695 | 1.579726 |
-| 88 | futures | ZT | ZT US opening-range continuation into the close (Thursday longs) | 2.101062 | 91 | 1.690192 | 1.350448 |
-| 89 | futures | ZT | ZT US opening-range continuation into the close (Friday longs) | 2.519809 | 66 | 1.541739 | 1.443001 |
-| 90 | futures | GC | GC 3-day daily momentum overnight (Tuesday longs) | 2.143666 | 116 | 1.333561 | 1.359312 |
-| 91 | futures | ZN | ZN 20-day daily mean reversion overnight (Friday shorts) | 2.214323 | 96 | 1.365969 | 1.415186 |
-| 92 | futures | 6N | 6N NY open gap fade (February filter) | 2.069898 | 79 | 1.740724 | 1.304199 |
-| 93 | futures | ZN | ZN US opening-range continuation into the close (Wednesday longs) | 2.078009 | 105 | 1.380163 | 1.276743 |
-| 94 | futures | 6E | 6E 5-day daily mean reversion into RTH (December filter) | 2.398338 | 62 | 1.623853 | 1.271421 |
-| 95 | futures | NQ | NQ London opening-range continuation into New York (Thursday shorts) | 2.014500 | 109 | 1.296279 | 1.335908 |
-| 96 | futures | ZF | ZF US opening-range continuation into the close (Friday longs) | 2.214931 | 99 | 1.194064 | 1.320105 |
-| 97 | futures | 6B | 6B London opening-range reversal into the US close (January filter) | 2.388944 | 78 | 1.293733 | 1.261075 |
-| 98 | futures | 6C | 6C 5-day daily momentum overnight (December filter) | 2.327248 | 82 | 1.207398 | 1.325801 |
-| 99 | futures | GC | GC 20-day daily mean reversion overnight (Thursday longs) | 2.247497 | 79 | 1.303928 | 1.298484 |
-| 100 | futures | HG | HG 10-day daily mean reversion overnight (Tuesday longs) | 2.014037 | 101 | 1.250348 | 1.285951 |
-| 101 | futures | ES | ES 20-day daily momentum overnight (Wednesday shorts) | 2.237155 | 81 | 1.091164 | 1.383181 |
-| 102 | futures | ZC | ZC London opening-range reversal into New York (Thursday shorts) | 2.001805 | 100 | 1.190079 | 1.285348 |
-| 103 | futures | ZB | ZB 3-day daily momentum overnight (Monday longs) | 2.014209 | 75 | 1.477491 | 1.237830 |
-| 104 | futures | 6A | 6A NY open gap fade (October filter) | 2.235863 | 65 | 1.452598 | 1.168790 |
-| 105 | futures | SI | SI London opening-range continuation into New York (Friday longs) | 2.201532 | 80 | 1.106088 | 1.311121 |
-| 106 | futures | 6A | 6A US opening-range reversal into the close (December filter) | 2.361094 | 61 | 1.287567 | 1.237570 |
-| 107 | futures | ZT | ZT NY open gap fade (December filter) | 2.215788 | 62 | 1.316406 | 1.287599 |
-| 108 | futures | HG | HG US opening-range reversal into the close (Friday shorts) | 2.010287 | 69 | 1.399933 | 1.242271 |
-| 109 | futures | NQ | NQ Round Hundred Rejection 15m | 2.122670 | 54 | 1.333333 | 1.233695 |
-| 110 | futures | 6J | 6J London opening-range reversal into New York (September filter) | 2.116793 | 69 | 1.152270 | 1.128589 |
-
-The 100-strategy target is not reachable from the completed non-cheating backtests under these gates.
+- **#1 competition_japanese_yen_futures_us_first30_last30_reversal_signalweekdayside_direction_opposite_entry_11a69e11**: Low - forward stronger than fit sample
+- **#2 competition_usd_jpy_us_first30_last30_reversal_signalweekdayside_direction_opposite_entryminute_930_ex_40e6d9ae**: Medium - forward stronger than fit sample; ML fit sample under 50 trades
+- **#3 competition_micro_ether_futures_daily_tsmom_next_overnight_weekday_side_1_long_dc4c34f3**: High - thin pre-split sample; forward stronger than fit sample
+- **#4 competition_micro_ether_futures_london_first30_ny_open_momentum_weekday_side_3_short_e779cb85**: High - thin pre-split sample; large PF decay
+- **#5 competition_micro_bitcoin_futures_daily_tsmom_next_overnight_signalweekdayside_direction_contrarian_en_6003fc2d**: Medium - forward stronger than fit sample; ML fit sample under 50 trades
+- **#6 competition_new_zealand_dollar_futures_us_first30_last30_reversal_signalmonth_direction_opposite_entry_ce284576**: Medium - small total sample; forward stronger than fit sample
+- **#7 competition_eur_jpy_us_first30_last30_momentum_signalweekdayside_direction_same_entryminute_930_exitba_0a4a3f58**: Medium - forward stronger than fit sample; ML fit sample under 50 trades
+- **#8 competition_crude_oil_futures_overnight_close_to_open_bias_signalmonth_entry_prior_rth_close_exit_ny_o_315d7644**: Low - forward stronger than fit sample
+- **#9 competition_eur_chf_daily_tsmom_next_rth_signalmonth_direction_momentum_entryminute_570_exitminute_945_391afa4a**: Medium - forward stronger than fit sample; ML fit sample under 50 trades
+- **#10 competition_corn_futures_us_first30_midday_momentum_weekday_side_3_long_cbe1149a**: Medium - forward stronger than fit sample; ML fit sample under 50 trades
+- **#11 competition_usd_chf_daily_tsmom_next_overnight_month_12_4f2024c0**: Low - forward stronger than fit sample
+- **#12 competition_natural_gas_futures_us_first30_last30_momentum_month_9_c678e3c1**: Low - forward stronger than fit sample
+- **#13 competition_us_treasury_2y_note_futures_daily_tsmom_next_overnight_weekday_side_4_short_e133c7a3**: Medium - forward stronger than fit sample; ML fit sample under 50 trades
+- **#14 competition_micro_ether_futures_london_first30_ny_open_reversal_weekday_side_0_long_d64af48a**: High - small total sample; thin pre-split sample; forward stronger than fit sample
+- **#15 competition_usd_cad_daily_tsmom_next_overnight_signalmonth_direction_momentum_entryminute_945_exitminu_dca02dc1**: Medium - forward stronger than fit sample; ML fit sample under 50 trades
+- **#16 competition_us_treasury_5y_note_futures_daily_tsmom_next_overnight_weekday_side_4_short_6dc543f7**: Medium - forward stronger than fit sample; ML fit sample under 50 trades
+- **#17 competition_copper_futures_us_first30_last30_reversal_weekday_side_0_long_04d98061**: Low - forward stronger than fit sample
+- **#18 competition_gbp_jpy_daily_tsmom_next_rth_month_6_4be2e72e**: Medium - forward stronger than fit sample; ML fit sample under 50 trades
+- **#19 competition_us_treasury_5y_note_futures_us_first30_last30_momentum_signalweekdayside_direction_same_en_1942c62b**: Medium - ML fit sample under 50 trades
+- **#20 competition_japanese_yen_futures_overnight_close_to_open_bias_short_month_10_6bc43a25**: Low - forward stronger than fit sample
+- **#21 competition_russell_2000_futures_ny_open_gap_fade_signalmonth_direction_fade_entryminute_570_exitbarmi_801e97d2**: Medium - forward stronger than fit sample; ML fit sample under 50 trades
+- **#22 competition_canadian_dollar_futures_overnight_close_to_open_bias_signalmonth_entry_prior_rth_close_exi_31e5e01a**: Low - forward stronger than fit sample
+- **#23 competition_gbp_jpy_london_first30_last30_momentum_weekday_side_4_long_6a554e5f**: Medium - forward stronger than fit sample; ML fit sample under 50 trades
+- **#24 competition_gold_futures_us_first30_last30_reversal_weekday_side_0_long_c0163084**: Low - forward stronger than fit sample
+- **#25 competition_usd_cad_london_first30_ny_open_momentum_month_12_f0df56f8**: Medium - forward stronger than fit sample; ML fit sample under 50 trades
+- **#26 competition_eur_cad_us_first30_midday_momentum_month_10_8e114485**: Medium - forward stronger than fit sample; ML fit sample under 50 trades
+- **#27 gbp_usd_ny_sweep_bayes**: Medium - no true train/forward metadata; small total sample; thin post-split sample
+- **#28 competition_aud_nzd_daily_tsmom_next_overnight_weekday_side_4_long_0aa8225f**: Medium - forward stronger than fit sample; ML fit sample under 50 trades
+- **#29 competition_gbp_jpy_london_first30_last30_reversal_weekday_side_4_long_ef0c2df3**: Medium - forward stronger than fit sample; ML fit sample under 50 trades
+- **#30 competition_sp_500_futures_daily_tsmom_next_overnight_weekday_side_1_long_c8bb041e**: Low - forward stronger than fit sample
+- **#31 competition_eur_cad_london_first30_last30_momentum_month_8_c5f12647**: Medium - forward stronger than fit sample; ML fit sample under 50 trades
+- **#32 competition_usd_jpy_overnight_close_to_open_bias_long_month_10_06e957d5**: Medium - forward stronger than fit sample; ML fit sample under 50 trades
+- **#33 competition_silver_futures_daily_tsmom_next_overnight_weekday_side_1_long_f61a84dd**: Low - forward stronger than fit sample
+- **#34 competition_eur_jpy_daily_tsmom_next_rth_signalmonth_direction_momentum_entryminute_570_exitminute_945_563aa3f1**: Medium - forward stronger than fit sample; ML fit sample under 50 trades
+- **#35 competition_sp_500_futures_us_first30_last30_reversal_weekday_side_0_long_2b2acc93**: Low - forward stronger than fit sample
+- **#36 competition_dow_jones_futures_daily_tsmom_next_overnight_weekday_side_2_short_99ba7153**: Low - forward stronger than fit sample
+- **#37 competition_usd_cad_us_first30_last30_momentum_signalmonth_direction_same_entryminute_930_exitbarminut_c1317995**: Medium - forward stronger than fit sample; ML fit sample under 50 trades
+- **#38 competition_british_pound_futures_us_first30_last30_reversal_month_10_57755118**: Low - forward stronger than fit sample
+- **#39 competition_gbp_jpy_london_first30_ny_open_reversal_signalmonth_direction_opposite_entryminute_480_exi_d549e3a7**: Medium - forward stronger than fit sample; ML fit sample under 50 trades
+- **#40 competition_australian_dollar_futures_ny_open_gap_fade_signalmonth_direction_fade_entryminute_570_exit_dcd12f25**: Low - forward stronger than fit sample
+- **#41 competition_russell_2000_futures_daily_tsmom_next_overnight_month_7_d15e8a17**: Low - forward stronger than fit sample
+- **#42 competition_crude_oil_futures_us_first30_midday_momentum_month_4_32a2fef5**: Low - forward stronger than fit sample
+- **#43 competition_us_treasury_2y_note_futures_us_first30_last30_momentum_signalweekdayside_direction_same_en_339e7451**: Medium - forward stronger than fit sample; ML fit sample under 50 trades
+- **#44 competition_nasdaq_100_futures_daily_tsmom_next_overnight_weekday_side_1_long_8e593f24**: Low - forward stronger than fit sample
+- **#45 competition_gbp_usd_us_first30_last30_reversal_signalmonth_direction_opposite_entryminute_930_exitbarm_9b2547fb**: Medium - forward stronger than fit sample; ML fit sample under 50 trades
+- **#46 competition_usd_chf_us_first30_midday_reversal_month_1_074f7113**: Medium - forward stronger than fit sample; ML fit sample under 50 trades
+- **#47 competition_aud_usd_daily_tsmom_next_overnight_month_12_45e372f3**: Low - forward stronger than fit sample
+- **#48 competition_eur_usd_daily_tsmom_next_overnight_month_1_33ed35ff**: Medium - forward stronger than fit sample; ML fit sample under 50 trades
+- **#49 competition_silver_futures_london_first30_ny_open_momentum_weekday_side_0_short_7456f9c2**: Low - forward stronger than fit sample
+- **#50 competition_swiss_franc_futures_overnight_close_to_open_bias_short_month_10_17716ea5**: Medium - forward stronger than fit sample; ML fit sample under 50 trades
+- **#51 competition_euro_futures_daily_tsmom_next_rth_signalmonth_direction_contrarian_entryminute_570_exitmin_0b54da46**: Low - forward stronger than fit sample
+- **#52 competition_eur_jpy_us_first30_midday_momentum_month_8_95ae5d8c**: Medium - forward stronger than fit sample; ML fit sample under 50 trades
+- **#53 competition_gbp_jpy_us_first30_last30_momentum_weekday_side_2_long_461ef776**: Medium - forward stronger than fit sample; ML fit sample under 50 trades
+- **#54 competition_british_pound_futures_daily_tsmom_next_overnight_month_7_da1c691c**: Low - forward stronger than fit sample
+- **#55 competition_eur_usd_overnight_close_to_open_bias_long_month_12_8a49b98f**: Medium - forward stronger than fit sample; ML fit sample under 50 trades
+- **#56 competition_british_pound_futures_london_first30_last30_reversal_month_1_c3526d80**: Low - forward stronger than fit sample
+- **#57 competition_nzd_usd_daily_tsmom_next_rth_signalmonth_direction_contrarian_entryminute_570_exitminute_9_183b1d88**: Medium - forward stronger than fit sample; ML fit sample under 50 trades
+- **#58 competition_australian_dollar_futures_us_first30_last30_reversal_signalmonth_direction_opposite_entrym_77aa2b55**: Low - forward stronger than fit sample
+- **#59 competition_aud_usd_us_first30_last30_reversal_signalmonth_direction_opposite_entryminute_930_exitbarm_c8c5223e**: Medium - forward stronger than fit sample; ML fit sample under 50 trades
+- **#60 competition_micro_bitcoin_futures_daily_tsmom_next_rth_weekday_side_2_short_4be5774f**: High - thin pre-split sample; forward stronger than fit sample
+- **#61 competition_eur_chf_us_first30_midday_momentum_month_6_f4946f20**: Medium - forward stronger than fit sample; ML fit sample under 50 trades
+- **#62 competition_aud_usd_london_first30_ny_open_momentum_month_4_6674a830**: Medium - forward stronger than fit sample; ML fit sample under 50 trades
+- **#63 competition_swiss_franc_futures_us_first30_midday_momentum_month_5_a2abc7dd**: Medium - ML fit sample under 50 trades
+- **#64 competition_gbp_jpy_us_first30_last30_reversal_weekday_side_2_long_bfe5c772**: Medium - forward stronger than fit sample; ML fit sample under 50 trades
+- **#65 competition_canadian_dollar_futures_daily_tsmom_next_overnight_signalmonth_direction_momentum_entrymin_eee85315**: Low - forward stronger than fit sample
+- **#66 competition_gbp_jpy_daily_tsmom_next_overnight_month_10_74426304**: Medium - forward stronger than fit sample; ML fit sample under 50 trades
+- **#67 competition_gold_futures_daily_tsmom_next_overnight_weekday_side_3_long_648d544b**: Low - forward stronger than fit sample
+- **#68 competition_us_treasury_30y_bond_futures_daily_tsmom_next_overnight_weekday_side_4_short_72a8080e**: Low - forward stronger than fit sample
+- **#69 competition_sp_500_futures_daily_tsmom_next_overnight_weekday_side_2_short_af21c53b**: Low - forward stronger than fit sample
+- **#70 competition_australian_dollar_futures_ny_open_gap_fade_signalmonth_direction_fade_entryminute_570_exit_1aa4fa28**: Low - forward stronger than fit sample
+- **#71 competition_eur_jpy_us_first30_last30_reversal_weekday_side_4_long_6d672b02**: Medium - small total sample
+- **#72 competition_gbp_usd_daily_tsmom_next_overnight_month_7_1cefc684**: Medium - forward stronger than fit sample; ML fit sample under 50 trades
+- **#73 competition_us_treasury_2y_note_futures_ny_open_gap_fade_signalmonth_direction_fade_entryminute_570_ex_d2289e05**: Medium - forward stronger than fit sample; ML fit sample under 50 trades
+- **#74 competition_us_treasury_5y_note_futures_us_first30_last30_momentum_signalweekdayside_direction_same_en_62e3b6d2**: Low - forward stronger than fit sample
+- **#75 competition_us_treasury_10y_note_futures_daily_tsmom_next_overnight_weekday_side_4_short_7240deca**: Low - forward stronger than fit sample
+- **#76 competition_dow_jones_futures_daily_tsmom_next_overnight_signalweekdayside_direction_momentum_entrymin_c2a8817b**: Low - forward stronger than fit sample
+- **#77 competition_silver_futures_london_first30_ny_open_momentum_signalweekdayside_direction_same_entryminut_5ce60b39**: Low - forward stronger than fit sample
+- **#78 competition_aud_usd_daily_tsmom_next_overnight_month_6_c0c3d057**: Low - forward stronger than fit sample
+- **#79 competition_usd_cad_us_first30_midday_reversal_month_12_1f6382c6**: Medium - ML fit sample under 50 trades
+- **#80 competition_usd_jpy_asia_range_london_breakout_signalweekdayside_breakendminute_360_breakstartminute_1_83470b07**: Medium - ML fit sample under 50 trades
+- **#81 competition_eur_jpy_daily_tsmom_next_overnight_weekday_side_2_short_bad001bc**: Low - forward stronger than fit sample
+- **#82 competition_nzd_usd_us_first30_midday_momentum_month_4_f022fff9**: Medium - forward stronger than fit sample; ML fit sample under 50 trades
+- **#83 competition_eur_gbp_london_first30_ny_open_reversal_weekday_side_4_long_97b8e7c1**: Medium - forward stronger than fit sample; ML fit sample under 50 trades
+- **#84 competition_usd_jpy_london_first30_ny_open_reversal_month_9_17887f0e**: Medium - forward stronger than fit sample; ML fit sample under 50 trades
+- **#85 competition_eur_jpy_daily_tsmom_next_overnight_weekday_side_4_long_f8ec3c41**: Low - forward stronger than fit sample
+- **#86 competition_gbp_jpy_ny_open_gap_follow_month_9_eea6b89e**: Medium - forward stronger than fit sample; ML fit sample under 50 trades
+- **#87 competition_gold_futures_daily_tsmom_next_overnight_signalweekdayside_direction_momentum_entryminute_9_c8e1caae**: Low - forward stronger than fit sample
+- **#88 competition_aud_nzd_london_first30_last30_reversal_weekday_side_0_long_2e0ed4d2**: Medium - forward stronger than fit sample; ML fit sample under 50 trades
+- **#89 nasdaq_100_futures_round_hundred_rejection_15m**: Low - forward stronger than fit sample
+- **#90 competition_japanese_yen_futures_london_first30_ny_open_reversal_month_9_6d9e482f**: Low - forward stronger than fit sample
+- **#91 competition_nzd_usd_london_first30_ny_open_momentum_month_4_cfddb747**: Medium - forward stronger than fit sample; ML fit sample under 50 trades
+- **#92 competition_usd_cad_daily_tsmom_next_overnight_month_10_941ee263**: Medium - forward stronger than fit sample; ML fit sample under 50 trades
+- **#93 competition_us_treasury_2y_note_futures_us_first30_last30_momentum_weekday_side_3_long_6989e3fd**: Medium - forward stronger than fit sample; ML fit sample under 50 trades
+- **#94 competition_eur_gbp_us_first30_last30_reversal_weekday_side_1_short_2371b8e4**: Medium - forward stronger than fit sample; ML fit sample under 50 trades
+- **#95 competition_aud_usd_ny_open_gap_fade_signalmonth_direction_fade_entryminute_570_exitbarminute_660_ming_5c432e4e**: Medium - forward stronger than fit sample; ML fit sample under 50 trades
+- **#96 competition_us_treasury_10y_note_futures_us_first30_last30_momentum_weekday_side_2_long_014bd88f**: Low - forward stronger than fit sample
+- **#97 competition_new_zealand_dollar_futures_ny_open_gap_fade_signalmonth_direction_fade_entryminute_570_exi_7ad85d81**: Medium - forward stronger than fit sample; ML fit sample under 50 trades
+- **#98 competition_eur_chf_daily_tsmom_next_overnight_weekday_side_2_short_15ab1798**: Medium - forward stronger than fit sample; ML fit sample under 50 trades
+- **#99 competition_gbp_jpy_ny_open_gap_fade_signalmonth_direction_fade_entryminute_570_exitbarminute_945_ming_297a7a1d**: Medium - ML fit sample under 50 trades
+- **#100 competition_eur_gbp_us_first30_midday_reversal_month_5_da8593e8**: Medium - forward stronger than fit sample; ML fit sample under 50 trades
+- **#101 competition_eur_jpy_london_first30_ny_open_reversal_month_9_ef673bbe**: Medium - forward stronger than fit sample; ML fit sample under 50 trades
+- **#102 competition_gbp_jpy_london_first30_ny_open_momentum_weekday_side_3_short_d1634235**: Medium - forward stronger than fit sample; ML fit sample under 50 trades
+- **#103 competition_gbp_usd_london_first30_last30_reversal_month_1_dc2945a5**: High - thin pre-split sample; forward stronger than fit sample
+- **#104 competition_eur_chf_ny_open_gap_fade_month_9_5044d21c**: Medium - forward stronger than fit sample; ML fit sample under 50 trades
+- **#105 competition_gbp_jpy_daily_tsmom_next_overnight_signalmonth_direction_contrarian_entryminute_945_exitmi_ab520ea7**: Medium - moderate PF decay
+- **#106 competition_nasdaq_100_futures_london_first30_ny_open_momentum_weekday_side_3_short_726e6c71**: Low - forward stronger than fit sample
+- **#107 competition_us_treasury_30y_bond_futures_daily_tsmom_next_overnight_weekday_side_0_long_157ef9f4**: Low - forward stronger than fit sample
+- **#108 competition_copper_futures_daily_tsmom_next_overnight_weekday_side_1_long_28c520df**: Low - forward stronger than fit sample
+- **#109 competition_copper_futures_us_first30_last30_reversal_weekday_side_4_short_79163bfe**: Low - forward stronger than fit sample
+- **#110 competition_corn_futures_london_first30_ny_open_reversal_weekday_side_3_short_bd97e9a5**: Medium - forward stronger than fit sample; ML fit sample under 50 trades

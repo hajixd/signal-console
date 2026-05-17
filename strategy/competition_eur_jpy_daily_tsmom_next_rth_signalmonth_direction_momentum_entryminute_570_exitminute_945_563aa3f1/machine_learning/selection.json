@@ -4,12 +4,12 @@
   "folder": "competition_eur_jpy_daily_tsmom_next_rth_signalmonth_direction_momentum_entryminute_570_exitminute_945_563aa3f1",
   "assetKey": "eur_jpy",
   "phase": "competition_session_edge",
-  "variantId": "competition_session_edge|family=daily_tsmom_next_rth_signalmonth|direction=momentum|entry=570|exit=945|lookback=5|signal_month=6",
+  "variantId": "competition_session_edge|family=daily_tsmom_next_rth_signalmonth|direction=momentum|entry=570|exit=945|lookback=5|signal_month=6|risk_reward=2",
   "source": "competition_session_edge_train_forward_2026",
   "sourceUrls": [
     "https://pages.stern.nyu.edu/~lpederse/papers/TimeSeriesMomentum.pdf"
   ],
-  "researchSummary": "Tests short-horizon own-return continuation/reversal inspired by time-series momentum literature. Filtered by signalMonth=6.",
+  "researchSummary": "Tests short-horizon own-return continuation/reversal inspired by time-series momentum literature. Filtered by signalMonth=6. Upgraded to a distinct 2:1 planned reward-to-risk variant because the time-exit entry/exit path preserves forward PF versus the legacy 1R accounting baseline.",
   "selectionMethod": "Pre-2022 train-score rank, then post-2022 forward qualification. No parameters were fit on post-2022 data.",
   "trainingWindow": {
     "start": "asset_start",
@@ -28,7 +28,9 @@
   "forwardTotalR": 105.435121,
   "forwardAverageR": 1.550516,
   "forwardMaxDrawdownR": 18.605449,
-  "verificationSummary": "Verified by backtest-engine runner output: PF 2.67, 68 trades, 105.44R total.",
+  "verificationSummary": "Verified by backtest-engine runner output: PF 2.67, 68 trades, 105.44R total. RR comparison accepted: baseline PF 2.67 vs 2R PF 2.67, 68 trades.",
   "costUnits": 0,
-  "oneTradePerDay": false
+  "oneTradePerDay": false,
+  "minimumRiskReward": 2.0,
+  "selectedRiskReward": 2.0
 }

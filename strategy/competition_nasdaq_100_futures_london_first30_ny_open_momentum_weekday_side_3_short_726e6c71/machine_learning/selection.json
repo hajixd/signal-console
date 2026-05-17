@@ -4,14 +4,14 @@
   "folder": "competition_nasdaq_100_futures_london_first30_ny_open_momentum_weekday_side_3_short_726e6c71",
   "assetKey": "nasdaq_100_futures",
   "phase": "competition_session_edge",
-  "variantId": "competition_session_edge|family=london_first30_ny_open_momentum_weekday_side_3_short|direction=same|entry=480|exit=570|min_signal_atr=0|signal_end=195|signal_start=180|signal_weekday_side=3_short",
+  "variantId": "competition_session_edge|family=london_first30_ny_open_momentum_weekday_side_3_short|direction=same|entry=480|exit=570|min_signal_atr=0|signal_end=195|signal_start=180|signal_weekday_side=3_short|risk_reward=2",
   "source": "competition_session_edge_train_forward_2026_05",
   "sourceUrls": [
     "https://w4.stern.nyu.edu/facdir/lpederse/papers/TimeSeriesMomentum.pdf",
     "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=2694985",
     "https://www.semanticscholar.org/paper/The-Probability-of-Backtest-Overfitting-Bailey-Borwein/b1233b4f5384f003e85c2e0eec1a2dfc08f624c5"
   ],
-  "researchSummary": "London first-half-hour continuation into New York. Filter: short signals on weekday 3.",
+  "researchSummary": "London first-half-hour continuation into New York. Filter: short signals on weekday 3. Upgraded to a distinct 2:1 planned reward-to-risk variant because the time-exit entry/exit path preserves forward PF versus the legacy 1R accounting baseline.",
   "selectionMethod": "Fixed session-edge research grid; pre-2022 training ranked candidates, then post-2022 forward trades had to clear PF/trade-count/split/no-duplicate gates.",
   "trainingWindow": {
     "start": "asset_start",
@@ -30,7 +30,9 @@
   "forwardTotalR": 117.310887,
   "forwardAverageR": 1.076247,
   "forwardMaxDrawdownR": 20.951905,
-  "verificationSummary": "Strict runner verified forward PF 2.01, 109 trades, min split PF 1.30, and no registered same-asset duplicate entries at materialization time.",
+  "verificationSummary": "Strict runner verified forward PF 2.01, 109 trades, min split PF 1.30, and no registered same-asset duplicate entries at materialization time. RR comparison accepted: baseline PF 2.01 vs 2R PF 2.01, 109 trades.",
   "costUnits": 0,
-  "oneTradePerDay": false
+  "oneTradePerDay": false,
+  "minimumRiskReward": 2.0,
+  "selectedRiskReward": 2.0
 }

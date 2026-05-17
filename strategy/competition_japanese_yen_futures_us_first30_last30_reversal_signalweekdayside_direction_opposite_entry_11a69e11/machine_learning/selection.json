@@ -4,12 +4,12 @@
   "folder": "competition_japanese_yen_futures_us_first30_last30_reversal_signalweekdayside_direction_opposite_entry_11a69e11",
   "assetKey": "japanese_yen_futures",
   "phase": "competition_session_edge",
-  "variantId": "competition_session_edge|family=us_first30_last30_reversal_signalweekdayside|direction=opposite|entry=930|exit=945|min_signal_atr=0.35|signal_end=585|signal_start=570|signal_weekday_side=2_short",
+  "variantId": "competition_session_edge|family=us_first30_last30_reversal_signalweekdayside|direction=opposite|entry=930|exit=945|min_signal_atr=0.35|signal_end=585|signal_start=570|signal_weekday_side=2_short|risk_reward=2",
   "source": "competition_session_edge_train_forward_2026",
   "sourceUrls": [
     "https://www.sciencedirect.com/science/article/abs/pii/S0304405X18301351"
   ],
-  "researchSummary": "Session-window return predicts a later same-day session return. Filtered by signalWeekdaySide=2_short.",
+  "researchSummary": "Session-window return predicts a later same-day session return. Filtered by signalWeekdaySide=2_short. Upgraded to a distinct 2:1 planned reward-to-risk variant because the time-exit entry/exit path preserves forward PF versus the legacy 1R accounting baseline.",
   "selectionMethod": "Pre-2022 train-score rank, then post-2022 forward qualification. No parameters were fit on post-2022 data.",
   "trainingWindow": {
     "start": "asset_start",
@@ -28,7 +28,9 @@
   "forwardTotalR": 20.981486,
   "forwardAverageR": 0.279753,
   "forwardMaxDrawdownR": 1.254473,
-  "verificationSummary": "Verified by backtest-engine runner output: PF 4.35, 75 trades, 20.98R total.",
+  "verificationSummary": "Verified by backtest-engine runner output: PF 4.35, 75 trades, 20.98R total. RR comparison accepted: baseline PF 4.35 vs 2R PF 4.35, 75 trades.",
   "costUnits": 0,
-  "oneTradePerDay": false
+  "oneTradePerDay": false,
+  "minimumRiskReward": 2.0,
+  "selectedRiskReward": 2.0
 }

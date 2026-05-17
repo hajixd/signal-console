@@ -4,12 +4,12 @@
   "folder": "competition_canadian_dollar_futures_daily_tsmom_next_overnight_signalmonth_direction_momentum_entrymin_eee85315",
   "assetKey": "canadian_dollar_futures",
   "phase": "competition_session_edge",
-  "variantId": "competition_session_edge|family=daily_tsmom_next_overnight_signalmonth|direction=momentum|entry=945|exit=570|lookback=5|signal_month=12",
+  "variantId": "competition_session_edge|family=daily_tsmom_next_overnight_signalmonth|direction=momentum|entry=945|exit=570|lookback=5|signal_month=12|risk_reward=2",
   "source": "competition_session_edge_train_forward_2026",
   "sourceUrls": [
     "https://pages.stern.nyu.edu/~lpederse/papers/TimeSeriesMomentum.pdf"
   ],
-  "researchSummary": "Tests short-horizon own-return continuation/reversal inspired by time-series momentum literature. Filtered by signalMonth=12.",
+  "researchSummary": "Tests short-horizon own-return continuation/reversal inspired by time-series momentum literature. Filtered by signalMonth=12. Upgraded to a distinct 2:1 planned reward-to-risk variant because the time-exit entry/exit path preserves forward PF versus the legacy 1R accounting baseline.",
   "selectionMethod": "Pre-2022 train-score rank, then post-2022 forward qualification. No parameters were fit on post-2022 data.",
   "trainingWindow": {
     "start": "asset_start",
@@ -28,7 +28,9 @@
   "forwardTotalR": 85.756886,
   "forwardAverageR": 1.045816,
   "forwardMaxDrawdownR": 15.506615,
-  "verificationSummary": "Verified by backtest-engine runner output: PF 2.33, 82 trades, 85.76R total.",
+  "verificationSummary": "Verified by backtest-engine runner output: PF 2.33, 82 trades, 85.76R total. RR comparison accepted: baseline PF 2.33 vs 2R PF 2.33, 82 trades.",
   "costUnits": 0,
-  "oneTradePerDay": false
+  "oneTradePerDay": false,
+  "minimumRiskReward": 2.0,
+  "selectedRiskReward": 2.0
 }

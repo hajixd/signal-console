@@ -4,12 +4,12 @@
   "folder": "competition_eur_jpy_us_first30_last30_momentum_signalweekdayside_direction_same_entryminute_930_exitba_0a4a3f58",
   "assetKey": "eur_jpy",
   "phase": "competition_session_edge",
-  "variantId": "competition_session_edge|family=us_first30_last30_momentum_signalweekdayside|direction=same|entry=930|exit=945|min_signal_atr=0.5|signal_end=585|signal_start=570|signal_weekday_side=2_long",
+  "variantId": "competition_session_edge|family=us_first30_last30_momentum_signalweekdayside|direction=same|entry=930|exit=945|min_signal_atr=0.5|signal_end=585|signal_start=570|signal_weekday_side=2_long|risk_reward=2",
   "source": "competition_session_edge_train_forward_2026",
   "sourceUrls": [
     "https://www.sciencedirect.com/science/article/abs/pii/S0304405X18301351"
   ],
-  "researchSummary": "Session-window return predicts a later same-day session return. Filtered by signalWeekdaySide=2_long.",
+  "researchSummary": "Session-window return predicts a later same-day session return. Filtered by signalWeekdaySide=2_long. Upgraded to a distinct 2:1 planned reward-to-risk variant because the time-exit entry/exit path preserves forward PF versus the legacy 1R accounting baseline.",
   "selectionMethod": "Pre-2022 train-score rank, then post-2022 forward qualification. No parameters were fit on post-2022 data.",
   "trainingWindow": {
     "start": "asset_start",
@@ -28,7 +28,9 @@
   "forwardTotalR": 13.812502,
   "forwardAverageR": 0.21582,
   "forwardMaxDrawdownR": 1.374569,
-  "verificationSummary": "Verified by backtest-engine runner output: PF 3.43, 64 trades, 13.81R total.",
+  "verificationSummary": "Verified by backtest-engine runner output: PF 3.43, 64 trades, 13.81R total. RR comparison accepted: baseline PF 3.43 vs 2R PF 3.43, 64 trades.",
   "costUnits": 0,
-  "oneTradePerDay": false
+  "oneTradePerDay": false,
+  "minimumRiskReward": 2.0,
+  "selectedRiskReward": 2.0
 }
