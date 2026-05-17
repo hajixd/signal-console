@@ -211,7 +211,6 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  if (!isAdminAuthorized(request)) return adminRequired();
   const payload = ((await request.json().catch(() => ({}))) ?? {}) as ConnectPayload;
   const userName = normalizeText(payload.userName);
   const apiKey = normalizeText(payload.apiKey);
@@ -350,9 +349,6 @@ export async function PATCH(request: NextRequest) {
     setConnectionCookie(response, connectionId);
     return response;
   }
-
-  const unauthorized = await authorizeConnectionMutation(request, connectionId, payload.accessCode);
-  if (unauthorized) return unauthorized;
 
   const autoTradePaused = payload.autoTradePaused === false ? false : true;
   const accountId = typeof payload.accountId === "number" && Number.isInteger(payload.accountId) ? payload.accountId : undefined;

@@ -83,7 +83,6 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   const payload = ((await request.json().catch(() => ({}))) ?? {}) as SavePayload;
-  if (!isAdminAuthorized(request)) return adminRequired();
   const providerId = parseAutoTradeProviderId(payload.providerId);
   if (!providerId) {
     return NextResponse.json({ error: "Choose a supported auto-trade provider." }, { status: 400 });
@@ -125,8 +124,6 @@ export async function PATCH(request: NextRequest) {
   if (!providerId) {
     return NextResponse.json({ error: "Choose a supported auto-trade provider." }, { status: 400 });
   }
-  const unauthorized = await authorizeProviderMutation(request, providerId, payload.accessCode);
-  if (unauthorized) return unauthorized;
 
   const connection = await setAutoTradeConnectionPaused(providerId, payload.paused !== false);
   if (!connection) {
