@@ -4,7 +4,7 @@ import path from "node:path";
 import { FieldValue } from "firebase-admin/firestore";
 import { hashAccessCode, verifyAccessCode } from "@/lib/account-access-code";
 import { autoTradeProviderById, type AutoTradeProviderId } from "@/lib/auto-trade-platforms";
-import { firebaseDb, hasFirebaseAdmin } from "@/lib/firebase-admin";
+import { firebaseDb, firebaseLocalFallbackEnabled, hasFirebaseAdmin, withFirebaseTimeout } from "@/lib/firebase-admin";
 import { omitUndefinedDeep } from "@/lib/firestore-utils";
 
 const COLLECTION = "autoTradeConnections";
@@ -122,18 +122,28 @@ export function autoTradeConnectionStoreMode(): "firebase" | "local" {
 
 export async function getAutoTradeConnection(providerId: AutoTradeProviderId): Promise<AutoTradeConnection | null> {
   if (hasFirebaseAdmin()) {
-    const snapshot = await firebaseDb().collection(COLLECTION).doc(providerId).get();
-    return toConnection(snapshot.data() as StoredAutoTradeConnection | undefined);
+    try {
+      const snapshot = await withFirebaseTimeout(firebaseDb().collection(COLLECTION).doc(providerId).get(), "Firebase auto-trade connection read");
+      return toConnection(snapshot.data() as StoredAutoTradeConnection | undefined);
+    } catch {
+      return toConnection((await readLocal())[providerId]);
+    }
   }
   return toConnection((await readLocal())[providerId]);
 }
 
 export async function listAutoTradeConnections(): Promise<AutoTradeConnection[]> {
   if (hasFirebaseAdmin()) {
-    const snapshot = await firebaseDb().collection(COLLECTION).get();
-    return snapshot.docs
-      .map((doc) => safeToConnection(doc.data() as StoredAutoTradeConnection | undefined))
-      .filter((connection): connection is AutoTradeConnection => Boolean(connection));
+    try {
+      const snapshot = await withFirebaseTimeout(firebaseDb().collection(COLLECTION).get(), "Firebase auto-trade connections list");
+      return snapshot.docs
+        .map((doc) => safeToConnection(doc.data() as StoredAutoTradeConnection | undefined))
+        .filter((connection): connection is AutoTradeConnection => Boolean(connection));
+    } catch {
+      return Object.values(await readLocal())
+        .map((connection) => safeToConnection(connection))
+        .filter((connection): connection is AutoTradeConnection => Boolean(connection));
+    }
   }
   return Object.values(await readLocal())
     .map((connection) => safeToConnection(connection))
@@ -172,10 +182,20 @@ export async function saveAutoTradeConnection(input: {
   };
 
   if (hasFirebaseAdmin()) {
-    await firebaseDb()
-      .collection(COLLECTION)
-      .doc(input.providerId)
-      .set(omitUndefinedDeep({ ...payload, updatedAtServer: FieldValue.serverTimestamp() }), { merge: true });
+    try {
+      await withFirebaseTimeout(
+        firebaseDb()
+          .collection(COLLECTION)
+          .doc(input.providerId)
+          .set(omitUndefinedDeep({ ...payload, updatedAtServer: FieldValue.serverTimestamp() }), { merge: true }),
+        "Firebase auto-trade connection save"
+      );
+    } catch (error) {
+      if (!firebaseLocalFallbackEnabled()) throw error;
+      const connections = await readLocal();
+      connections[input.providerId] = payload;
+      await writeLocal(connections);
+    }
   } else {
     const connections = await readLocal();
     connections[input.providerId] = payload;
@@ -219,10 +239,20 @@ async function persistPaused(connection: AutoTradeConnection): Promise<AutoTrade
     updatedAt: new Date().toISOString()
   };
   if (hasFirebaseAdmin()) {
-    await firebaseDb()
-      .collection(COLLECTION)
-      .doc(connection.id)
-      .set(omitUndefinedDeep({ ...payload, updatedAtServer: FieldValue.serverTimestamp() }), { merge: true });
+    try {
+      await withFirebaseTimeout(
+        firebaseDb()
+          .collection(COLLECTION)
+          .doc(connection.id)
+          .set(omitUndefinedDeep({ ...payload, updatedAtServer: FieldValue.serverTimestamp() }), { merge: true }),
+        "Firebase auto-trade pause save"
+      );
+    } catch (error) {
+      if (!firebaseLocalFallbackEnabled()) throw error;
+      const connections = await readLocal();
+      connections[connection.id] = payload;
+      await writeLocal(connections);
+    }
   } else {
     const connections = await readLocal();
     connections[connection.id] = payload;
@@ -233,8 +263,12 @@ async function persistPaused(connection: AutoTradeConnection): Promise<AutoTrade
 
 export async function deleteAutoTradeConnection(providerId: AutoTradeProviderId): Promise<void> {
   if (hasFirebaseAdmin()) {
-    await firebaseDb().collection(COLLECTION).doc(providerId).delete();
-    return;
+    try {
+      await withFirebaseTimeout(firebaseDb().collection(COLLECTION).doc(providerId).delete(), "Firebase auto-trade connection delete");
+      return;
+    } catch (error) {
+      if (!firebaseLocalFallbackEnabled()) throw error;
+    }
   }
   const connections = await readLocal();
   delete connections[providerId];
@@ -243,7 +277,9 @@ export async function deleteAutoTradeConnection(providerId: AutoTradeProviderId)
 
 export async function verifyAutoTradeConnectionAccessCode(providerId: AutoTradeProviderId, accessCode: string): Promise<boolean> {
   const payload = hasFirebaseAdmin()
-    ? ((await firebaseDb().collection(COLLECTION).doc(providerId).get()).data() as StoredAutoTradeConnection | undefined)
+    ? await withFirebaseTimeout(firebaseDb().collection(COLLECTION).doc(providerId).get(), "Firebase auto-trade access-code read")
+        .then((snapshot) => snapshot.data() as StoredAutoTradeConnection | undefined)
+        .catch(async () => (await readLocal())[providerId])
     : (await readLocal())[providerId];
   if (!payload || payload.status !== "connected") return false;
   return verifyAccessCode(accessCode, typeof payload.accessCodeHash === "string" ? payload.accessCodeHash : undefined);

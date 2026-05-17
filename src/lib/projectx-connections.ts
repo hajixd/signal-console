@@ -3,7 +3,7 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { FieldValue } from "firebase-admin/firestore";
 import { hashAccessCode, verifyAccessCode } from "@/lib/account-access-code";
-import { firebaseDb, hasFirebaseAdmin } from "@/lib/firebase-admin";
+import { firebaseDb, firebaseLocalFallbackEnabled, hasFirebaseAdmin, withFirebaseTimeout } from "@/lib/firebase-admin";
 import { omitUndefinedDeep } from "@/lib/firestore-utils";
 import type { ProjectXAccount, ProjectXConnectionSummary } from "@/lib/projectx";
 
@@ -167,8 +167,13 @@ export function projectXConnectionStoreMode(): ProjectXConnectionStoreMode {
 
 export async function getStoredProjectXConnection(id: string): Promise<StoredProjectXConnection | null> {
   if (hasFirebaseAdmin()) {
-    const snapshot = await firebaseDb().collection(PROJECTX_CONNECTION_COLLECTION).doc(id).get();
-    return toStoredConnection(snapshot.data() as StoredProjectXConnectionPayload | undefined);
+    try {
+      const snapshot = await withFirebaseTimeout(firebaseDb().collection(PROJECTX_CONNECTION_COLLECTION).doc(id).get(), "Firebase ProjectX connection read");
+      return toStoredConnection(snapshot.data() as StoredProjectXConnectionPayload | undefined);
+    } catch {
+      const connections = await readLocalConnections();
+      return toStoredConnection(connections[id]);
+    }
   }
 
   const connections = await readLocalConnections();
@@ -177,11 +182,19 @@ export async function getStoredProjectXConnection(id: string): Promise<StoredPro
 
 export async function getStoredProjectXConnections(): Promise<StoredProjectXConnection[]> {
   if (hasFirebaseAdmin()) {
-    const snapshot = await firebaseDb().collection(PROJECTX_CONNECTION_COLLECTION).get();
-    return snapshot.docs
-      .map((doc) => safeToStoredConnection(doc.data() as StoredProjectXConnectionPayload | undefined))
-      .filter((connection): connection is StoredProjectXConnection => connection !== null && connection.status === "connected")
-      .sort(newestConnectionFirst);
+    try {
+      const snapshot = await withFirebaseTimeout(firebaseDb().collection(PROJECTX_CONNECTION_COLLECTION).get(), "Firebase ProjectX connections list");
+      return snapshot.docs
+        .map((doc) => safeToStoredConnection(doc.data() as StoredProjectXConnectionPayload | undefined))
+        .filter((connection): connection is StoredProjectXConnection => connection !== null && connection.status === "connected")
+        .sort(newestConnectionFirst);
+    } catch {
+      const connections = await readLocalConnections();
+      return Object.values(connections)
+        .map((connection) => safeToStoredConnection(connection))
+        .filter((connection): connection is StoredProjectXConnection => connection !== null && connection.status === "connected")
+        .sort(newestConnectionFirst);
+    }
   }
 
   const connections = await readLocalConnections();
@@ -193,11 +206,19 @@ export async function getStoredProjectXConnections(): Promise<StoredProjectXConn
 
 export async function getStoredProjectXConnectionSummaries(): Promise<ProjectXConnectionSummary[]> {
   if (hasFirebaseAdmin()) {
-    const snapshot = await firebaseDb().collection(PROJECTX_CONNECTION_COLLECTION).get();
-    return snapshot.docs
-      .map((doc) => toConnectionSummary(doc.data() as StoredProjectXConnectionPayload | undefined))
-      .filter((connection): connection is ProjectXConnectionSummary => connection !== null && connection.status === "connected")
-      .sort(newestSummaryFirst);
+    try {
+      const snapshot = await withFirebaseTimeout(firebaseDb().collection(PROJECTX_CONNECTION_COLLECTION).get(), "Firebase ProjectX summaries list");
+      return snapshot.docs
+        .map((doc) => toConnectionSummary(doc.data() as StoredProjectXConnectionPayload | undefined))
+        .filter((connection): connection is ProjectXConnectionSummary => connection !== null && connection.status === "connected")
+        .sort(newestSummaryFirst);
+    } catch {
+      const connections = await readLocalConnections();
+      return Object.values(connections)
+        .map((connection) => toConnectionSummary(connection))
+        .filter((connection): connection is ProjectXConnectionSummary => connection !== null && connection.status === "connected")
+        .sort(newestSummaryFirst);
+    }
   }
 
   const connections = await readLocalConnections();
@@ -247,16 +268,26 @@ export async function saveStoredProjectXConnection(input: {
   if (input.userName) payload.userName = input.userName;
 
   if (hasFirebaseAdmin()) {
-    await firebaseDb()
-      .collection(PROJECTX_CONNECTION_COLLECTION)
-      .doc(input.id)
-      .set(
-        omitUndefinedDeep({
-          ...payload,
-          updatedAtServer: FieldValue.serverTimestamp()
-        }),
-        { merge: true }
+    try {
+      await withFirebaseTimeout(
+        firebaseDb()
+          .collection(PROJECTX_CONNECTION_COLLECTION)
+          .doc(input.id)
+          .set(
+            omitUndefinedDeep({
+              ...payload,
+              updatedAtServer: FieldValue.serverTimestamp()
+            }),
+            { merge: true }
+          ),
+        "Firebase ProjectX connection save"
       );
+    } catch (error) {
+      if (!firebaseLocalFallbackEnabled()) throw error;
+      const connections = await readLocalConnections();
+      connections[input.id] = payload;
+      await writeLocalConnections(connections);
+    }
   } else {
     const connections = await readLocalConnections();
     connections[input.id] = payload;
@@ -298,7 +329,9 @@ export async function setStoredProjectXConnectionPaused(id: string, autoTradePau
 
 export async function verifyStoredProjectXConnectionAccessCode(id: string, accessCode: string): Promise<boolean> {
   const payload = hasFirebaseAdmin()
-    ? ((await firebaseDb().collection(PROJECTX_CONNECTION_COLLECTION).doc(id).get()).data() as StoredProjectXConnectionPayload | undefined)
+    ? await withFirebaseTimeout(firebaseDb().collection(PROJECTX_CONNECTION_COLLECTION).doc(id).get(), "Firebase ProjectX access-code read")
+        .then((snapshot) => snapshot.data() as StoredProjectXConnectionPayload | undefined)
+        .catch(async () => (await readLocalConnections())[id])
     : (await readLocalConnections())[id];
   if (!payload || payload.status !== "connected") return false;
   return verifyAccessCode(accessCode, typeof payload.accessCodeHash === "string" ? payload.accessCodeHash : undefined);
@@ -306,8 +339,12 @@ export async function verifyStoredProjectXConnectionAccessCode(id: string, acces
 
 export async function deleteStoredProjectXConnection(id: string): Promise<void> {
   if (hasFirebaseAdmin()) {
-    await firebaseDb().collection(PROJECTX_CONNECTION_COLLECTION).doc(id).delete();
-    return;
+    try {
+      await withFirebaseTimeout(firebaseDb().collection(PROJECTX_CONNECTION_COLLECTION).doc(id).delete(), "Firebase ProjectX connection delete");
+      return;
+    } catch (error) {
+      if (!firebaseLocalFallbackEnabled()) throw error;
+    }
   }
 
   const connections = await readLocalConnections();

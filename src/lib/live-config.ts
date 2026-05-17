@@ -1,7 +1,7 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { FieldValue } from "firebase-admin/firestore";
-import { firebaseDb, hasFirebaseAdmin, storageObjectPath } from "@/lib/firebase-admin";
+import { firebaseDb, firebaseLocalFallbackEnabled, hasFirebaseAdmin, storageObjectPath, withFirebaseTimeout } from "@/lib/firebase-admin";
 import { omitUndefinedDeep } from "@/lib/firestore-utils";
 import type { CronResult } from "@/lib/types";
 
@@ -420,6 +420,17 @@ async function readLiveConfigFromFirestore(): Promise<LiveConfig> {
   return normalizeLiveConfig(snapshot.data() as Partial<LiveConfig> | undefined);
 }
 
+async function readLiveConfigFromStorage(): Promise<LiveConfig> {
+  if (hasFirebaseAdmin()) {
+    try {
+      return await withFirebaseTimeout(readLiveConfigFromFirestore(), "Firebase live config read");
+    } catch {
+      return readLiveConfigFromLocal();
+    }
+  }
+  return readLiveConfigFromLocal();
+}
+
 async function readDatasetStatusFromLocal(): Promise<DatasetStatus | null> {
   return normalizeDatasetStatus(await readJsonFile<DatasetStatus>(DATASET_STATUS_LOCAL_PATH));
 }
@@ -429,12 +440,23 @@ async function readDatasetStatusFromFirestore(): Promise<DatasetStatus | null> {
   return normalizeDatasetStatus(snapshot.data() as Partial<DatasetStatus> | undefined);
 }
 
+async function readDatasetStatusFromStorage(): Promise<DatasetStatus | null> {
+  if (hasFirebaseAdmin()) {
+    try {
+      return await withFirebaseTimeout(readDatasetStatusFromFirestore(), "Firebase dataset status read");
+    } catch {
+      return readDatasetStatusFromLocal();
+    }
+  }
+  return readDatasetStatusFromLocal();
+}
+
 export async function getLiveConfig(): Promise<LiveConfig> {
   const now = Date.now();
   if (!liveConfigCache || now - liveConfigCache.loadedAt > LIVE_CONFIG_CACHE_TTL_MS) {
     liveConfigCache = {
       loadedAt: now,
-      value: hasFirebaseAdmin() ? readLiveConfigFromFirestore() : readLiveConfigFromLocal()
+      value: readLiveConfigFromStorage()
     };
   }
   return liveConfigCache.value;
@@ -448,13 +470,21 @@ export async function saveLiveConfig(config: LiveConfig): Promise<LiveConfig> {
   const firestorePayload = omitUndefinedDeep(normalized);
 
   if (hasFirebaseAdmin()) {
-    await firebaseDb()
-      .collection(LIVE_CONFIG_COLLECTION)
-      .doc("default")
-      .set({
-        ...firestorePayload,
-        updatedAtServer: FieldValue.serverTimestamp()
-      });
+    try {
+      await withFirebaseTimeout(
+        firebaseDb()
+          .collection(LIVE_CONFIG_COLLECTION)
+          .doc("default")
+          .set({
+            ...firestorePayload,
+            updatedAtServer: FieldValue.serverTimestamp()
+          }),
+        "Firebase live config write"
+      );
+    } catch (error) {
+      if (!firebaseLocalFallbackEnabled()) throw error;
+      await writeJsonFile(LIVE_CONFIG_LOCAL_PATH, normalized);
+    }
   } else {
     await writeJsonFile(LIVE_CONFIG_LOCAL_PATH, normalized);
   }
@@ -472,7 +502,7 @@ export async function getDatasetStatus(): Promise<DatasetStatus | null> {
   if (!datasetStatusCache || now - datasetStatusCache.loadedAt > DATASET_STATUS_CACHE_TTL_MS) {
     datasetStatusCache = {
       loadedAt: now,
-      value: hasFirebaseAdmin() ? readDatasetStatusFromFirestore() : readDatasetStatusFromLocal()
+      value: readDatasetStatusFromStorage()
     };
   }
   return datasetStatusCache.value;
@@ -487,13 +517,21 @@ export async function saveDatasetStatus(status: DatasetStatus): Promise<DatasetS
   const firestorePayload = omitUndefinedDeep(normalized);
 
   if (hasFirebaseAdmin()) {
-    await firebaseDb()
-      .collection(DATASET_STATUS_COLLECTION)
-      .doc("runtime")
-      .set({
-        ...firestorePayload,
-        updatedAtServer: FieldValue.serverTimestamp()
-      });
+    try {
+      await withFirebaseTimeout(
+        firebaseDb()
+          .collection(DATASET_STATUS_COLLECTION)
+          .doc("runtime")
+          .set({
+            ...firestorePayload,
+            updatedAtServer: FieldValue.serverTimestamp()
+          }),
+        "Firebase dataset status write"
+      );
+    } catch (error) {
+      if (!firebaseLocalFallbackEnabled()) throw error;
+      await writeJsonFile(DATASET_STATUS_LOCAL_PATH, normalized);
+    }
   } else {
     await writeJsonFile(DATASET_STATUS_LOCAL_PATH, normalized);
   }

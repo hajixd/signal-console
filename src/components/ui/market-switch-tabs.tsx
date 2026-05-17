@@ -2,6 +2,7 @@
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState, useTransition } from "react";
+import { useAutoTradeAdminMode } from "@/components/auto-trading/use-auto-trade-account-mode";
 import { subscribeDashboardLoading, type DashboardLoadingState } from "@/components/ui/dashboard-loading";
 
 type MarketSwitchTab = {
@@ -23,6 +24,7 @@ export default function MarketSwitchTabs({ activeMarket, persistActiveMarket, ta
   const [pendingMarket, setPendingMarket] = useState<MarketSwitchTab["key"] | null>(null);
   const [dashboardLoading, setDashboardLoading] = useState<DashboardLoadingState>({ active: false, activeCount: 0 });
   const [routeProgress, setRouteProgress] = useState(0);
+  const canPersistActiveMarket = useAutoTradeAdminMode();
 
   useEffect(() => {
     setPendingMarket(null);
@@ -77,7 +79,7 @@ export default function MarketSwitchTabs({ activeMarket, persistActiveMarket, ta
                 event.preventDefault();
                 setPendingMarket(tab.key);
                 startTransition(() => {
-                  if (persistActiveMarket) {
+                  if (canPersistActiveMarket && persistActiveMarket) {
                     void persistActiveMarket(tab.key).catch((error) => console.error("Failed to save active market", error));
                   }
                   router.push(hrefs[tab.key], { scroll: false });

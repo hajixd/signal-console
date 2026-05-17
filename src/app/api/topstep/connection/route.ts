@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { randomUUID } from "node:crypto";
 import { isValidAccessCode } from "@/lib/account-access-code";
+import { isAdminAuthorized } from "@/lib/admin-api";
 import {
   deleteStoredProjectXConnection,
   getLatestStoredProjectXConnection,
@@ -8,7 +9,8 @@ import {
   getStoredProjectXConnection,
   projectXConnectionStoreMode,
   saveStoredProjectXConnection,
-  setStoredProjectXConnectionPaused
+  setStoredProjectXConnectionPaused,
+  verifyStoredProjectXConnectionAccessCode
 } from "@/lib/projectx-connections";
 import {
   loginProjectXApiKey,
@@ -32,6 +34,7 @@ type ConnectPayload = {
 };
 
 type UpdatePayload = {
+  accessCode?: unknown;
   accountId?: unknown;
   autoTradePaused?: unknown;
   connectionId?: unknown;
@@ -41,6 +44,10 @@ function normalizeText(value: unknown): string {
   return typeof value === "string" ? value.trim() : "";
 }
 
+function adminRequired() {
+  return jsonStatus({ accounts: [], autoTradePaused: true, connected: false, error: "Admin access required.", persisted: false }, { status: 401 });
+}
+
 function connectionIdFromRequest(request: NextRequest): string | undefined {
   const value = request.cookies.get(TOPSTEP_PROJECTX_CONNECTION_COOKIE)?.value?.trim();
   return value && /^[0-9A-Za-z_-]{16,80}$/.test(value) ? value : undefined;
@@ -48,6 +55,13 @@ function connectionIdFromRequest(request: NextRequest): string | undefined {
 
 function normalizeConnectionId(value: unknown): string | undefined {
   return typeof value === "string" && /^[0-9A-Za-z_-]{16,80}$/.test(value.trim()) ? value.trim() : undefined;
+}
+
+async function authorizeConnectionMutation(request: NextRequest, connectionId: string, accessCode: unknown) {
+  if (isAdminAuthorized(request)) return null;
+  const suppliedCode = normalizeText(accessCode) || normalizeText(request.nextUrl.searchParams.get("accessCode"));
+  if (suppliedCode && await verifyStoredProjectXConnectionAccessCode(connectionId, suppliedCode)) return null;
+  return adminRequired();
 }
 
 function preferredConnectionId(): string | undefined {
@@ -179,6 +193,7 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  if (!isAdminAuthorized(request)) return adminRequired();
   const payload = ((await request.json().catch(() => ({}))) ?? {}) as ConnectPayload;
   const userName = normalizeText(payload.userName);
   const apiKey = normalizeText(payload.apiKey);
@@ -268,6 +283,8 @@ export async function PATCH(request: NextRequest) {
       { status: 400 }
     );
   }
+  const unauthorized = await authorizeConnectionMutation(request, connectionId, payload.accessCode);
+  if (unauthorized) return unauthorized;
 
   const autoTradePaused = payload.autoTradePaused === false ? false : true;
   const accountId = typeof payload.accountId === "number" && Number.isInteger(payload.accountId) ? payload.accountId : undefined;
@@ -306,6 +323,8 @@ export async function PATCH(request: NextRequest) {
 export async function DELETE(request: NextRequest) {
   const connectionId = normalizeConnectionId(request.nextUrl.searchParams.get("connectionId")) ?? connectionIdFromRequest(request);
   if (connectionId) {
+    const unauthorized = await authorizeConnectionMutation(request, connectionId, request.nextUrl.searchParams.get("accessCode"));
+    if (unauthorized) return unauthorized;
     await deleteStoredProjectXConnection(connectionId);
   }
 

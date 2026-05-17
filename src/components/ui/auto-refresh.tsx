@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 
 type AutoRefreshProps = {
   intervalMs?: number;
@@ -9,22 +9,28 @@ type AutoRefreshProps = {
 
 export default function AutoRefresh({ intervalMs = 180_000 }: AutoRefreshProps) {
   const router = useRouter();
+  const lastRefreshAtRef = useRef(Date.now());
 
   useEffect(() => {
-    function refreshWhenVisible() {
+    function refreshWhenVisible(force = false) {
       if (document.visibilityState === "visible") {
+        const now = Date.now();
+        if (!force && now - lastRefreshAtRef.current < intervalMs) return;
+        lastRefreshAtRef.current = now;
         router.refresh();
       }
     }
 
-    const timer = window.setInterval(refreshWhenVisible, intervalMs);
-    document.addEventListener("visibilitychange", refreshWhenVisible);
-    window.addEventListener("focus", refreshWhenVisible);
+    const intervalRefresh = () => refreshWhenVisible(true);
+    const opportunisticRefresh = () => refreshWhenVisible(false);
+    const timer = window.setInterval(intervalRefresh, intervalMs);
+    document.addEventListener("visibilitychange", opportunisticRefresh);
+    window.addEventListener("focus", opportunisticRefresh);
 
     return () => {
       window.clearInterval(timer);
-      document.removeEventListener("visibilitychange", refreshWhenVisible);
-      window.removeEventListener("focus", refreshWhenVisible);
+      document.removeEventListener("visibilitychange", opportunisticRefresh);
+      window.removeEventListener("focus", opportunisticRefresh);
     };
   }, [intervalMs, router]);
 

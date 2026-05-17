@@ -666,7 +666,7 @@ export default function StrategySelector({
     if (nextKeys.length) {
       params.set("strategies", nextKeys.join(","));
     } else {
-      params.delete("strategies");
+      params.set("strategies", "none");
     }
     const query = params.toString();
     router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });

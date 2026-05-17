@@ -9,6 +9,7 @@ import {
 import { normalizeAccessCode } from "@/lib/account-access-code";
 import { parseAutoTradeProviderId, verifyAutoTradeConnectionAccessCode } from "@/lib/auto-trade-connections";
 import { verifyStoredProjectXConnectionAccessCode } from "@/lib/projectx-connections";
+import { checkRateLimit, requestClientKey } from "@/lib/request-throttle";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -27,6 +28,13 @@ function normalizeConnectionId(value: unknown): string | undefined {
 export async function POST(request: NextRequest) {
   const payload = ((await request.json().catch(() => ({}))) ?? {}) as AccessCodePayload;
   const accessCode = normalizeAccessCode(payload.accessCode);
+  const rateLimit = checkRateLimit(requestClientKey(request, `access-code:${String(payload.type ?? "unknown")}`), { limit: 8, windowMs: 60_000 });
+  if (!rateLimit.allowed) {
+    return NextResponse.json(
+      { error: "Too many code attempts. Try again shortly." },
+      { status: 429, headers: { "Retry-After": String(rateLimit.retryAfterSeconds ?? 60) } }
+    );
+  }
 
   if (payload.type === "admin") {
     if (!verifyAdminAccessCode(accessCode)) {

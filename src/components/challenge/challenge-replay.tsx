@@ -433,14 +433,14 @@ export default function ChallengeReplay({
           finish(summary);
         };
         worker.onerror = (event) => {
-          console.error("Challenge replay worker failed", event.message);
+          console.warn("Challenge replay worker failed; using main-thread fallback.", event.message);
           worker?.terminate();
           worker = null;
           finish(analyzePropFirmChallenge(replayTrades, seed, rules, setReplayProgress));
         };
         worker.postMessage({ id, rules, seed, trades: replayTrades });
       } catch (error) {
-        console.error("Challenge replay worker unavailable", error);
+        console.warn("Challenge replay worker unavailable; using main-thread fallback.", error);
         finish(analyzePropFirmChallenge(replayTrades, seed, rules, setReplayProgress));
       }
     };

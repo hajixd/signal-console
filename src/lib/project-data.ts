@@ -1,6 +1,6 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
-import { firebaseBucket, hasFirebaseAdmin, storageObjectPath } from "@/lib/firebase-admin";
+import { firebaseBucket, hasFirebaseAdmin, storageObjectPath, withFirebaseTimeout } from "@/lib/firebase-admin";
 
 const REMOTE_TEXT_CACHE_TTL_MS = 60_000;
 const remoteTextCache = new Map<string, { loadedAt: number; text: string }>();
@@ -37,7 +37,7 @@ async function readRemoteText(relativeDataPath: string): Promise<string> {
     return cached.text;
   }
 
-  const [buffer] = await firebaseBucket().file(objectPath).download();
+  const [buffer] = await withFirebaseTimeout(firebaseBucket().file(objectPath).download(), `Firebase data read ${objectPath}`);
   const text = buffer.toString("utf8");
   remoteTextCache.set(objectPath, { loadedAt: now, text });
   return text;

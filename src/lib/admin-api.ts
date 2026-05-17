@@ -26,6 +26,12 @@ function safeCompare(left: string, right: string): boolean {
   return leftBuffer.length === rightBuffer.length && timingSafeEqual(leftBuffer, rightBuffer);
 }
 
+function adminCookieSecure(): boolean {
+  const explicit = process.env.APP_ADMIN_COOKIE_SECURE?.trim().toLowerCase();
+  if (explicit) return ["1", "true", "yes", "on"].includes(explicit);
+  return process.env.NODE_ENV === "production" && process.env.VERCEL === "1";
+}
+
 function sessionSignature(expiresAt: number): string | null {
   const secret = adminApiSecret() ?? (process.env.NODE_ENV === "production" ? undefined : "tradingbot-local-admin-session-secret");
   if (!secret) return null;
@@ -67,7 +73,7 @@ export function adminSessionCookieOptions(): CookieOptions {
     maxAge: Math.floor(ADMIN_SESSION_TTL_MS / 1000),
     path: "/",
     sameSite: "lax",
-    secure: process.env.NODE_ENV === "production"
+    secure: adminCookieSecure()
   };
 }
 

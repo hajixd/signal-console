@@ -1,12 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { isValidAccessCode } from "@/lib/account-access-code";
+import { isAdminAuthorized } from "@/lib/admin-api";
 import {
   autoTradeConnectionStoreMode,
   deleteAutoTradeConnection,
   listAutoTradeConnections,
   parseAutoTradeProviderId,
   saveAutoTradeConnection,
-  setAutoTradeConnectionPaused
+  setAutoTradeConnectionPaused,
+  verifyAutoTradeConnectionAccessCode
 } from "@/lib/auto-trade-connections";
 import { autoTradeProviderById } from "@/lib/auto-trade-platforms";
 
@@ -24,6 +26,7 @@ type SavePayload = {
 };
 
 type PatchPayload = {
+  accessCode?: unknown;
   paused?: unknown;
   providerId?: unknown;
 };
@@ -39,6 +42,17 @@ function cleanFields(value: unknown): Record<string, string> {
       .map(([key, fieldValue]) => [key, text(fieldValue)])
       .filter((entry): entry is [string, string] => Boolean(entry[0] && entry[1]))
   );
+}
+
+function adminRequired() {
+  return NextResponse.json({ error: "Admin access required." }, { status: 401 });
+}
+
+async function authorizeProviderMutation(request: NextRequest, providerId: NonNullable<ReturnType<typeof parseAutoTradeProviderId>>, accessCode: unknown) {
+  if (isAdminAuthorized(request)) return null;
+  const suppliedCode = text(accessCode) ?? text(request.nextUrl.searchParams.get("accessCode"));
+  if (suppliedCode && await verifyAutoTradeConnectionAccessCode(providerId, suppliedCode)) return null;
+  return adminRequired();
 }
 
 function publicConnection(connection: Awaited<ReturnType<typeof listAutoTradeConnections>>[number]) {
@@ -69,6 +83,7 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   const payload = ((await request.json().catch(() => ({}))) ?? {}) as SavePayload;
+  if (!isAdminAuthorized(request)) return adminRequired();
   const providerId = parseAutoTradeProviderId(payload.providerId);
   if (!providerId) {
     return NextResponse.json({ error: "Choose a supported auto-trade provider." }, { status: 400 });
@@ -110,6 +125,8 @@ export async function PATCH(request: NextRequest) {
   if (!providerId) {
     return NextResponse.json({ error: "Choose a supported auto-trade provider." }, { status: 400 });
   }
+  const unauthorized = await authorizeProviderMutation(request, providerId, payload.accessCode);
+  if (unauthorized) return unauthorized;
 
   const connection = await setAutoTradeConnectionPaused(providerId, payload.paused !== false);
   if (!connection) {
@@ -127,6 +144,8 @@ export async function DELETE(request: NextRequest) {
   if (!providerId) {
     return NextResponse.json({ error: "Choose a supported auto-trade provider." }, { status: 400 });
   }
+  const unauthorized = await authorizeProviderMutation(request, providerId, request.nextUrl.searchParams.get("accessCode"));
+  if (unauthorized) return unauthorized;
   await deleteAutoTradeConnection(providerId);
   return NextResponse.json({
     connections: (await listAutoTradeConnections()).map(publicConnection),

@@ -1,6 +1,6 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { firebaseDb, hasFirebaseAdmin } from "@/lib/firebase-admin";
+import { firebaseDb, firebaseLocalFallbackEnabled, hasFirebaseAdmin, withFirebaseTimeout } from "@/lib/firebase-admin";
 import { omitUndefinedDeep } from "@/lib/firestore-utils";
 import type { TradeAlert } from "./types";
 
@@ -38,22 +38,34 @@ function normalizeTrade(value: unknown): TradeAlert | null {
 
 export async function getTrades(): Promise<TradeAlert[]> {
   if (hasFirebaseAdmin()) {
-    const snapshot = await firebaseDb()
-      .collection(TRADE_COLLECTION)
-      .orderBy("signalTimeMillis", "desc")
-      .limit(500)
-      .get();
+    try {
+      const snapshot = await withFirebaseTimeout(
+        firebaseDb()
+          .collection(TRADE_COLLECTION)
+          .orderBy("signalTimeMillis", "desc")
+          .limit(500)
+          .get(),
+        "Firebase trade history read"
+      );
 
-    return snapshot.docs
-      .map((doc) => normalizeTrade(doc.data()))
-      .filter((trade): trade is TradeAlert => Boolean(trade));
+      return snapshot.docs
+        .map((doc) => normalizeTrade(doc.data()))
+        .filter((trade): trade is TradeAlert => Boolean(trade));
+    } catch {
+      return sortTrades(await readLocal());
+    }
   }
   return sortTrades(await readLocal());
 }
 
 export async function hasTrade(id: string): Promise<boolean> {
   if (hasFirebaseAdmin()) {
-    return (await firebaseDb().collection(TRADE_COLLECTION).doc(id).get()).exists;
+    try {
+      return (await withFirebaseTimeout(firebaseDb().collection(TRADE_COLLECTION).doc(id).get(), "Firebase trade lookup")).exists;
+    } catch {
+      const trades = await readLocal();
+      return trades.some((trade) => trade.id === id);
+    }
   }
   const trades = await getTrades();
   return trades.some((trade) => trade.id === id);
@@ -73,15 +85,18 @@ export async function claimTrade(trade: TradeAlert): Promise<boolean> {
 
   if (hasFirebaseAdmin()) {
     try {
-      await firebaseDb()
-        .collection(TRADE_COLLECTION)
-        .doc(trade.id)
-        .create(payload);
+      await withFirebaseTimeout(
+        firebaseDb()
+          .collection(TRADE_COLLECTION)
+          .doc(trade.id)
+          .create(payload),
+        "Firebase trade create"
+      );
       return true;
     } catch (error) {
       const code = typeof error === "object" && error !== null && "code" in error ? (error as { code?: unknown }).code : undefined;
       if (code === 6 || code === "already-exists" || code === "ALREADY_EXISTS") return false;
-      throw error;
+      if (!firebaseLocalFallbackEnabled()) throw error;
     }
   }
 
@@ -95,11 +110,18 @@ export async function saveTrade(trade: TradeAlert): Promise<void> {
   const payload = tradePayload(trade);
 
   if (hasFirebaseAdmin()) {
-    await firebaseDb()
-      .collection(TRADE_COLLECTION)
-      .doc(trade.id)
-      .set(payload);
-    return;
+    try {
+      await withFirebaseTimeout(
+        firebaseDb()
+          .collection(TRADE_COLLECTION)
+          .doc(trade.id)
+          .set(payload),
+        "Firebase trade save"
+      );
+      return;
+    } catch (error) {
+      if (!firebaseLocalFallbackEnabled()) throw error;
+    }
   }
   const trades = await readLocal();
   await writeLocal([payload, ...trades.filter((item) => item.id !== trade.id)].slice(0, 500));

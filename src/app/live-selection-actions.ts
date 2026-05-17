@@ -234,6 +234,7 @@ export async function syncCustomScaleRange(market: string, range: PersistedCusto
 }
 
 export async function syncActiveMarket(market: string): Promise<void> {
+  await assertServerActionAdminAuthorized();
   const normalizedMarket = normalizeChallengeMarket(market);
   if (!normalizedMarket) return;
 
@@ -305,6 +306,7 @@ export async function syncChallengeReplayCache(cacheKey: string, summary: Challe
 }
 
 export async function syncTheme(theme: string): Promise<void> {
+  await assertServerActionAdminAuthorized();
   const normalizedTheme = normalizeTheme(theme);
   if (!normalizedTheme) return;
 

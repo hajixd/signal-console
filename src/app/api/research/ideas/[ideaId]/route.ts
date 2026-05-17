@@ -1,6 +1,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { NextRequest, NextResponse } from "next/server";
+import { isAdminAuthorized } from "@/lib/admin-api";
 import { commitResearchIdeaFile } from "@/lib/research-workflow";
 
 export const dynamic = "force-dynamic";
@@ -173,6 +174,10 @@ async function findIdea(ideaId: string): Promise<{ filePath: string; idea: Resea
 }
 
 export async function PUT(request: NextRequest, context: RouteContext) {
+  if (!isAdminAuthorized(request)) {
+    return NextResponse.json({ error: "Admin access required." }, { status: 401 });
+  }
+
   const { ideaId } = await Promise.resolve(context.params);
   const match = await findIdea(ideaId);
   if (!match) {

@@ -271,7 +271,7 @@ function parseSelection(value: string | undefined, allKeys: string[], defaultKey
   if (value === "none") return [];
   const allowed = new Set(allKeys);
   if (!value) return defaultKeys.filter((key) => allowed.has(key));
-  return value.split(",").filter((key) => allowed.has(key));
+  return [...new Set(value.split(",").filter((key) => allowed.has(key)))];
 }
 
 function tradeSourceTimeframe(trade: BacktestTrade): TradeChartTimeframe {
@@ -832,7 +832,7 @@ function tradeDollarPnl(trade: BacktestTrade, sizeMultiplier = 1): number {
 }
 
 function tradeCostUnits(trade: BacktestTrade): number {
-  return 0;
+  return Math.abs(finiteNumberOr(trade.costUnits, 0));
 }
 
 function tradeTargetDollars(trade: BacktestTrade, sizeMultiplier = 1): number {
@@ -1188,6 +1188,7 @@ export default async function Home({ searchParams }: HomeProps) {
   );
   const selectedBacktestTrades = backtestTrades.filter((trade) => selectedKeySet.has(trade.datasetId));
   const activeMarketBacktestTrades = backtestTrades.filter((trade) => activeMarketKeySet.has(trade.datasetId));
+  const historyBacktestTrades = selectedBacktestTrades;
   const selectedDataEndAt =
     strategyOptions
       .filter((option) => selectedKeySet.has(option.key))
@@ -1200,7 +1201,7 @@ export default async function Home({ searchParams }: HomeProps) {
     basePnlDollars: tradeDollarPnl(trade, optionByKey.get(trade.datasetId)?.sizeMultiplier ?? 1),
     rMultiple: trade.rMultiple
   }));
-  const visibleStoredBacktestHistoryTrades = activeMarketBacktestTrades.slice(0, HISTORY_VISIBLE_TRADE_LIMIT);
+  const visibleStoredBacktestHistoryTrades = historyBacktestTrades.slice(0, HISTORY_VISIBLE_TRADE_LIMIT);
   const storedBacktestHistoryRows: TradeHistoryRow[] = visibleStoredBacktestHistoryTrades.map((trade, index) => {
     const sizeMultiplier = optionByKey.get(trade.datasetId)?.sizeMultiplier ?? 1;
     const tradeMultiplier = tradeSizeMultiplier(trade, sizeMultiplier);
@@ -1265,9 +1266,10 @@ export default async function Home({ searchParams }: HomeProps) {
     };
   });
   const storedBacktestFingerprints = new Set(
-    activeMarketBacktestTrades.map((trade) => liveTradeHistoryFingerprint(trade.datasetId, trade.symbol, trade.side, trade.signalTime))
+    historyBacktestTrades.map((trade) => liveTradeHistoryFingerprint(trade.datasetId, trade.symbol, trade.side, trade.signalTime))
   );
   const closedLiveHistoryRows: TradeHistoryRow[] = activeMarketLiveTrades
+    .filter((trade) => selectedLiveTrades.includes(trade))
     .filter(liveTradeClosed)
     .filter((trade) => {
       const option = optionForLiveTrade(trade);
@@ -1353,7 +1355,7 @@ export default async function Home({ searchParams }: HomeProps) {
         slUnitsLabel: `${fmtNumber(trade.slUnits)} ${unitLabel}`
       };
     });
-  const historyTotalTradeCount = activeMarketBacktestTrades.length + closedLiveHistoryRows.length;
+  const historyTotalTradeCount = historyBacktestTrades.length + closedLiveHistoryRows.length;
   const tradeHistoryRows = [...storedBacktestHistoryRows, ...closedLiveHistoryRows]
     .sort(
       (left, right) =>

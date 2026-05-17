@@ -9,11 +9,32 @@ type FirebaseServiceAccount = {
   projectId?: string;
 };
 
+const DEFAULT_FIREBASE_OPERATION_TIMEOUT_MS = 2_500;
+const DEFAULT_FIREBASE_UNAVAILABLE_COOLDOWN_MS = 30_000;
+
 let cachedUnavailable = false;
+let cachedUnavailableUntil = 0;
 
 function trim(value: string | undefined): string | undefined {
   const normalized = value?.trim();
   return normalized ? normalized : undefined;
+}
+
+function enabledFlag(value: string | undefined): boolean {
+  return ["1", "true", "yes", "on"].includes(value?.trim().toLowerCase() ?? "");
+}
+
+function disabledFlag(value: string | undefined): boolean {
+  return ["0", "false", "no", "off"].includes(value?.trim().toLowerCase() ?? "");
+}
+
+function firebaseForcedLocal(): boolean {
+  return enabledFlag(process.env.BACKTEST_FORCE_LOCAL) || enabledFlag(process.env.PROJECT_STORAGE_FORCE_LOCAL);
+}
+
+function firebaseOperationTimeoutMs(): number {
+  const configured = Number(process.env.FIREBASE_OPERATION_TIMEOUT_MS);
+  return Number.isFinite(configured) && configured >= 250 ? configured : DEFAULT_FIREBASE_OPERATION_TIMEOUT_MS;
 }
 
 function normalizePrivateKey(value: string | undefined): string | undefined {
@@ -76,8 +97,36 @@ export function storageObjectPath(relativePath: string): string {
 }
 
 export function hasFirebaseAdmin(): boolean {
+  if (firebaseForcedLocal()) return false;
   if (cachedUnavailable) return false;
+  if (cachedUnavailableUntil > Date.now()) return false;
   return Boolean(readServiceAccount() || trim(process.env.GOOGLE_APPLICATION_CREDENTIALS));
+}
+
+export function firebaseLocalFallbackEnabled(): boolean {
+  const explicit = trim(process.env.FIREBASE_LOCAL_FALLBACK);
+  if (explicit) return !disabledFlag(explicit);
+  return firebaseForcedLocal() || process.env.VERCEL !== "1";
+}
+
+export function markFirebaseAdminUnavailable(cooldownMs = DEFAULT_FIREBASE_UNAVAILABLE_COOLDOWN_MS): void {
+  cachedUnavailableUntil = Math.max(cachedUnavailableUntil, Date.now() + cooldownMs);
+}
+
+export async function withFirebaseTimeout<T>(operation: Promise<T>, label = "Firebase operation"): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => reject(new Error(`${label} timed out after ${firebaseOperationTimeoutMs()}ms`)), firebaseOperationTimeoutMs());
+  });
+
+  try {
+    return await Promise.race([operation, timeout]);
+  } catch (error) {
+    markFirebaseAdminUnavailable();
+    throw error;
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
 }
 
 export function firebaseAdminApp() {

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
+import { useAutoTradeAdminMode } from "@/components/auto-trading/use-auto-trade-account-mode";
 
 type Theme = "dark" | "light";
 type ThemeToggleProps = {
@@ -25,6 +26,7 @@ function readTheme(): Theme {
 export default function ThemeToggle({ initialTheme, persistTheme }: ThemeToggleProps) {
   const [theme, setTheme] = useState<Theme>("dark");
   const [, startSavingTheme] = useTransition();
+  const canPersistTheme = useAutoTradeAdminMode();
 
   useEffect(() => {
     const currentTheme = initialTheme ?? readTheme();
@@ -38,7 +40,7 @@ export default function ThemeToggle({ initialTheme, persistTheme }: ThemeToggleP
     applyTheme(nextTheme);
     window.localStorage.setItem(STORAGE_KEY, nextTheme);
     window.localStorage.removeItem(LEGACY_STORAGE_KEY);
-    if (persistTheme) {
+    if (canPersistTheme && persistTheme) {
       startSavingTheme(() => {
         void persistTheme(nextTheme).catch((error) => console.error("Failed to save theme", error));
       });

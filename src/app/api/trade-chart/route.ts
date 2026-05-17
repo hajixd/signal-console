@@ -17,8 +17,13 @@ type MarketBar = {
   volume?: number;
 };
 
-const lineCache = new Map<string, string[]>();
-const boundaryCache = new Map<string, { first: number; last: number } | null>();
+const LINE_CACHE_TTL_MS = 5 * 60_000;
+const BOUNDARY_CACHE_TTL_MS = 15 * 60_000;
+const MAX_LINE_CACHE_ENTRIES = 12;
+const MAX_BOUNDARY_CACHE_ENTRIES = 48;
+
+const lineCache = new Map<string, { loadedAt: number; lines: string[] }>();
+const boundaryCache = new Map<string, { loadedAt: number; boundary: { first: number; last: number } | null }>();
 const TIMEFRAME_ORDER = ["1m", "5m", "15m", "30m", "45m", "1h", "4h", "1d", "1w"] as const;
 const SUPPORTED_TIMEFRAMES = new Set<string>(TIMEFRAME_ORDER);
 const TIMEFRAME_SECONDS: Record<(typeof TIMEFRAME_ORDER)[number], number> = {
@@ -46,10 +51,16 @@ function contextCandles(value: string | null): number {
 
 async function marketLines(relativePath: string): Promise<string[]> {
   const cached = lineCache.get(relativePath);
-  if (cached) return cached;
+  if (cached && Date.now() - cached.loadedAt < LINE_CACHE_TTL_MS) return cached.lines;
+  if (cached) lineCache.delete(relativePath);
   const text = await readChartDataText(relativePath);
   const lines = text.trim().split(/\r?\n/);
-  lineCache.set(relativePath, lines);
+  lineCache.set(relativePath, { loadedAt: Date.now(), lines });
+  while (lineCache.size > MAX_LINE_CACHE_ENTRIES) {
+    const oldestKey = lineCache.keys().next().value;
+    if (!oldestKey) break;
+    lineCache.delete(oldestKey);
+  }
   return lines;
 }
 
@@ -104,7 +115,9 @@ function nextLineBreak(text: string, start: number): number {
 }
 
 async function localFileBoundary(relativePath: string): Promise<{ first: number; last: number } | null> {
-  if (boundaryCache.has(relativePath)) return boundaryCache.get(relativePath) ?? null;
+  const cached = boundaryCache.get(relativePath);
+  if (cached && Date.now() - cached.loadedAt < BOUNDARY_CACHE_TTL_MS) return cached.boundary;
+  if (cached) boundaryCache.delete(relativePath);
 
   let handle: Awaited<ReturnType<typeof open>> | null = null;
   try {
@@ -131,10 +144,15 @@ async function localFileBoundary(relativePath: string): Promise<{ first: number;
       .map(parsedTimestamp)
       .find((timestamp): timestamp is number => timestamp !== null);
     const boundary = first != null && last != null ? { first, last } : null;
-    boundaryCache.set(relativePath, boundary);
+    boundaryCache.set(relativePath, { loadedAt: Date.now(), boundary });
+    while (boundaryCache.size > MAX_BOUNDARY_CACHE_ENTRIES) {
+      const oldestKey = boundaryCache.keys().next().value;
+      if (!oldestKey) break;
+      boundaryCache.delete(oldestKey);
+    }
     return boundary;
   } catch {
-    boundaryCache.set(relativePath, null);
+    boundaryCache.set(relativePath, { loadedAt: Date.now(), boundary: null });
     return null;
   } finally {
     await handle?.close();

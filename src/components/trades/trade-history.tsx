@@ -935,6 +935,7 @@ export default function TradeHistory({ rows }: TradeHistoryProps) {
     chartState.fallback && chartState.requestedTimeframe && chartState.timeframe
       ? `This timeframe is unavailable. Showing ${chartState.timeframe}.`
       : undefined;
+  const displayedChartTimeframe = chartState.fallback && chartState.timeframe ? chartState.timeframe : chartTimeframe;
 
   const activeTradeModal = !isRestricted && activeTrade ? (
     <div
@@ -992,7 +993,7 @@ export default function TradeHistory({ rows }: TradeHistoryProps) {
             replayBars={chartState.replayBars}
             replayTimeframe={chartState.replayTimeframe}
             status={chartState.status}
-            timeframe={chartTimeframe}
+            timeframe={displayedChartTimeframe}
             timeframes={TRADE_CHART_TIMEFRAMES}
             trade={activeChartTrade ?? activeTrade}
           />

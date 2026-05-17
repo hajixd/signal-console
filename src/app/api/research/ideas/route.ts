@@ -1,6 +1,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { NextRequest, NextResponse } from "next/server";
+import { isAdminAuthorized } from "@/lib/admin-api";
 import { dispatchResearchIdeaWorkflow } from "@/lib/research-workflow";
 
 export const dynamic = "force-dynamic";
@@ -125,6 +126,10 @@ async function uniqueIdeaPath(directory: string, baseId: string) {
 }
 
 export async function POST(request: NextRequest) {
+  if (!isAdminAuthorized(request)) {
+    return NextResponse.json({ error: "Admin access required." }, { status: 401 });
+  }
+
   let payload: ResearchIdeaPayload;
   try {
     payload = (await request.json()) as ResearchIdeaPayload;

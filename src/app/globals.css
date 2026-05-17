@@ -9310,3 +9310,42 @@ html[data-theme="light"] .tradeReplaySlider {
     height: 276px;
   }
 }
+
+.history-table .main-cell span,
+.history-table .main-cell small,
+.tradeModalTitle,
+.tradeModalTitle strong,
+.tradeModalTitle span,
+.tradeInfoBox,
+.tradeInfoBox strong {
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.tradeModalTitle {
+  overflow: hidden;
+}
+
+.tradeModalTitle strong,
+html[data-theme="light"] .tradeModalTitle strong,
+.tradeInfoBox strong,
+html[data-theme="light"] .tradeInfoBox strong {
+  white-space: normal;
+  line-height: 1.14;
+}
+
+.tradeModalHeadActions {
+  flex: 0 0 auto;
+}
+
+@media (max-width: 520px) {
+  .tradeModalHead {
+    align-items: flex-start;
+  }
+
+  .tradeModalHeadActions {
+    gap: 4px;
+  }
+}

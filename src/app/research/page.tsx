@@ -49,12 +49,6 @@ const RESEARCH_STAGE_DESCRIPTIONS = {
   idea: "Uses the idea LLM to organize raw research into formalized, testable strategy plans.",
   research: "Uses You.com and LLM research to discover new trading ideas online."
 } satisfies Record<ResearchStage, string>;
-const RESEARCH_STAGE_JOB_LABELS = {
-  backtest: "Backtest results",
-  coding: "Coded strategies",
-  idea: "Formalized ideas",
-  research: "New ideas"
-} satisfies Record<ResearchStage, string>;
 
 type ResearchStage = (typeof RESEARCH_STAGE_ORDER)[number];
 
@@ -577,23 +571,18 @@ function nextResearchStageRunIso(stage: ResearchStage, now = new Date()) {
   return candidates.sort((left, right) => left.getTime() - right.getTime())[0]?.toISOString() ?? now.toISOString();
 }
 
-function currentActivity(snapshot: ResearchSnapshot) {
-  if (snapshot.inboxIdeaCount > 0 || snapshot.approvedIdeaCount > 0) {
-    return `${formatNumber(snapshot.inboxIdeaCount)} in Idea Discovery / ${formatNumber(snapshot.approvedIdeaCount)} in Idea Formalization`;
-  }
-  if (snapshot.pendingReadyCount > 0) return `${formatNumber(snapshot.pendingReadyCount)} coded strateg${snapshot.pendingReadyCount === 1 ? "y" : "ies"} waiting for backtests`;
-  if (snapshot.qualifiedCount > 0) return `${formatNumber(snapshot.qualifiedCount)} finished strateg${snapshot.qualifiedCount === 1 ? "y" : "ies"} cleared the requirements`;
-  if (snapshot.backtestedCount > 0) return "Backtest results are waiting for a finished PF > 2 result";
-  if (snapshot.readyCount > 0) return "Coded strategies are staged for the next backtest pass";
-  if (snapshot.approvedIdeaCount > 0) return "Formalized ideas are waiting to become coded strategies";
-  return "Idea discovery is ready for new inputs";
-}
-
 function laneState(count: number) {
   return count > 0 ? "active" : "inactive";
 }
 
 type SyncTileState = "failed" | "idle" | "running" | "success";
+type ResearchDetailTone = "bad" | "good" | "warning";
+type ResearchDetailCheck = {
+  detail?: string;
+  label: string;
+  tone?: ResearchDetailTone;
+  value: string;
+};
 
 function syncTileStateFromResearch(status: ResearchCycleStatus, snapshot: ResearchSnapshot): SyncTileState {
   if (status?.state === "failed") return "failed";
@@ -625,12 +614,16 @@ function syncTileStateFromStage(status: ResearchStageStatus | undefined, outputC
   return "idle";
 }
 
-function stageStatusText(status: ResearchStageStatus | undefined, outputCount: number) {
-  if (status?.state === "failed") return status.error ?? "Error";
-  if (status?.state === "running") return "Active";
-  if (status?.state === "success" || status?.finishedAt) return "Recent success";
-  if (outputCount > 0) return "Output available";
-  return "No run yet";
+function currentActivity(snapshot: ResearchSnapshot) {
+  if (snapshot.inboxIdeaCount > 0 || snapshot.approvedIdeaCount > 0) {
+    return `${formatNumber(snapshot.inboxIdeaCount)} in Idea Discovery / ${formatNumber(snapshot.approvedIdeaCount)} in Idea Formalization`;
+  }
+  if (snapshot.pendingReadyCount > 0) return `${formatNumber(snapshot.pendingReadyCount)} coded strateg${snapshot.pendingReadyCount === 1 ? "y" : "ies"} waiting for backtests`;
+  if (snapshot.qualifiedCount > 0) return `${formatNumber(snapshot.qualifiedCount)} finished strateg${snapshot.qualifiedCount === 1 ? "y" : "ies"} cleared the requirements`;
+  if (snapshot.backtestedCount > 0) return "Backtest results are waiting for a finished PF > 2 result";
+  if (snapshot.readyCount > 0) return "Coded strategies are staged for the next backtest pass";
+  if (snapshot.approvedIdeaCount > 0) return "Formalized ideas are waiting to become coded strategies";
+  return "Idea discovery is ready for new inputs";
 }
 
 function stageLastRunAt(status: ResearchStageStatus | undefined) {
@@ -653,6 +646,236 @@ function stageDurationMs(status: ResearchStageStatus | undefined) {
   return status?.durationMs;
 }
 
+function researchDetailClass(tone: ResearchDetailTone | undefined) {
+  if (tone === "bad") return "bad";
+  if (tone === "warning") return "warning";
+  return "good";
+}
+
+function stageIntervalText(stage: ResearchStage) {
+  return RESEARCH_STAGE_SCHEDULE_UTC[stage].length > 1 ? "Twice daily" : "Daily";
+}
+
+function stageScopeText(snapshot: ResearchSnapshot, stage: ResearchStage) {
+  if (stage === "research") {
+    return `${formatNumber(snapshot.searchResultCount)} searches / ${formatNumber(snapshot.fetchedPagesCount)} pages`;
+  }
+  if (stage === "idea") {
+    return `${formatNumber(snapshot.inboxIdeaCount)} inbox / ${formatNumber(snapshot.approvedIdeaCount)} formalized`;
+  }
+  if (stage === "coding") {
+    return `${formatNumber(snapshot.approvedIdeaCount)} ideas / ${formatNumber(snapshot.readyCount)} ready specs`;
+  }
+  return `${formatNumber(snapshot.backtestedCount)} tested / ${formatNumber(snapshot.qualifiedCount)} qualified`;
+}
+
+function stageOutputLabel(stage: ResearchStage) {
+  if (stage === "research") return "Inbox ideas";
+  if (stage === "idea") return "Formalized";
+  if (stage === "coding") return "Ready specs";
+  return "Review rows";
+}
+
+function stageStatusTimestamp(status: ResearchStageStatus | undefined, state: SyncTileState) {
+  if (state === "running" && status?.startedAt) return { label: "started", value: status.startedAt };
+  if (state === "success") {
+    const value = status?.finishedAt ?? status?.lastSuccessAt;
+    return value ? { label: "at", value } : undefined;
+  }
+  if (state === "failed") {
+    const value = status?.finishedAt ?? status?.startedAt;
+    return value ? { label: "at", value } : undefined;
+  }
+  return undefined;
+}
+
+function stageStatusLabel(status: ResearchStageStatus | undefined, state: SyncTileState, outputCount: number) {
+  if (state === "running") return "Running";
+  if (state === "failed") return "Failed";
+  if (state === "success") return status?.state === "success" || status?.finishedAt || status?.lastSuccessAt ? "Success" : "Output available";
+  return outputCount > 0 ? "Output queued" : "Waiting";
+}
+
+function ResearchStageStatusValue({
+  outputCount,
+  state,
+  status
+}: {
+  outputCount: number;
+  state: SyncTileState;
+  status: ResearchStageStatus | undefined;
+}) {
+  const timestamp = stageStatusTimestamp(status, state);
+  return (
+    <>
+      <span className="sync-status-value" title={status?.error}>
+        <span>{stageStatusLabel(status, state, outputCount)}</span>
+        {timestamp ? (
+          <span className="sync-status-date">
+            {timestamp.label} <LocalDateTime value={timestamp.value} />
+          </span>
+        ) : null}
+      </span>
+      {state === "failed" && status?.error ? (
+        <span className="sync-status-error" title={status.error}>
+          {status.error.length > 220 ? `${status.error.slice(0, 217)}...` : status.error}
+        </span>
+      ) : null}
+    </>
+  );
+}
+
+function ResearchTileChecks({ ariaLabel, checks }: { ariaLabel: string; checks: ResearchDetailCheck[] }) {
+  return (
+    <div className="dataValidityChecks syncTileChecks" aria-label={ariaLabel}>
+      {checks.map((check) => (
+        <div className={`dataValidityCheck ${researchDetailClass(check.tone)}`} key={check.label} title={check.detail}>
+          <span>{check.label}</span>
+          <strong>{check.value}</strong>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function stageDetailChecks(snapshot: ResearchSnapshot, stage: ResearchStage, status: ResearchStageStatus | undefined): ResearchDetailCheck[] {
+  const runtime = formatDuration(stageDurationMs(status));
+  const jobs = stageJobsLastRun(status);
+  const lastRun = stageLastRunAt(status);
+  const base: ResearchDetailCheck[] = [
+    {
+      detail: "Number of jobs recorded by the most recent stage run.",
+      label: "Jobs last run",
+      tone: status?.state === "failed" ? "bad" : jobs === "n/a" ? "warning" : "good",
+      value: jobs
+    },
+    {
+      detail: "Most recently recorded duration for this stage.",
+      label: status?.state === "running" ? "Runtime now" : "Last runtime",
+      tone: runtime === "n/a" ? "warning" : "good",
+      value: runtime
+    },
+    {
+      detail: "Configured cadence for this stage.",
+      label: "Cadence",
+      value: stageIntervalText(stage)
+    },
+    {
+      detail: "Last stage completion or start timestamp recorded in the status file.",
+      label: "Status file",
+      tone: lastRun ? "good" : "warning",
+      value: lastRun ? "Recorded" : "Missing"
+    }
+  ];
+
+  if (stage === "research") {
+    return [
+      {
+        detail: "Current raw idea files waiting in Research/ideas/inbox.",
+        label: "Inbox ideas",
+        value: formatNumber(snapshot.inboxIdeaCount)
+      },
+      {
+        detail: "Search result files captured from online research.",
+        label: "Search files",
+        value: formatNumber(snapshot.searchResultCount)
+      },
+      {
+        detail: "Fetched source pages stored for later idea formalization.",
+        label: "Fetched pages",
+        value: formatNumber(snapshot.fetchedPagesCount)
+      },
+      {
+        detail: "Markdown research reports available in Research/reports.",
+        label: "Reports",
+        value: formatNumber(snapshot.reportCount)
+      },
+      ...base
+    ];
+  }
+
+  if (stage === "idea") {
+    return [
+      {
+        detail: "Raw discovered ideas still available for formalization.",
+        label: "Inbox queue",
+        value: formatNumber(snapshot.inboxIdeaCount)
+      },
+      {
+        detail: "Formalized, testable strategy plans in Research/ideas/approved.",
+        label: "Approved ideas",
+        value: formatNumber(snapshot.approvedIdeaCount)
+      },
+      {
+        detail: "Formalized ideas currently available for the coding stage.",
+        label: "Coding input",
+        tone: snapshot.approvedIdeaCount > 0 ? "good" : "warning",
+        value: formatNumber(snapshot.approvedIdeaCount)
+      },
+      {
+        detail: "Latest generated report available for review.",
+        label: "Latest report",
+        tone: snapshot.latestReport ? "good" : "warning",
+        value: snapshot.latestReport ? "Available" : "Missing"
+      },
+      ...base
+    ];
+  }
+
+  if (stage === "coding") {
+    return [
+      {
+        detail: "Formalized idea files available as coding inputs.",
+        label: "Idea inputs",
+        value: formatNumber(snapshot.approvedIdeaCount)
+      },
+      {
+        detail: "Executable strategy specs ready for the backtest stage.",
+        label: "Ready specs",
+        value: formatNumber(snapshot.readyCount)
+      },
+      {
+        detail: "Ready specs that are not yet represented in backtested results.",
+        label: "Pending tests",
+        tone: snapshot.pendingReadyCount > 0 ? "warning" : "good",
+        value: formatNumber(snapshot.pendingReadyCount)
+      },
+      {
+        detail: "Loaded ready-to-backtest spec samples displayed lower on the page.",
+        label: "Spec samples",
+        value: formatNumber(snapshot.readySpecs.length)
+      },
+      ...base
+    ];
+  }
+
+  return [
+    {
+      detail: `Configured completion gate is PF > ${RESEARCH_FINISHED_MIN_PF} with at least ${RESEARCH_FINISHED_MIN_TRADES} trades.`,
+      label: "PF/trade gate",
+      value: `>${RESEARCH_FINISHED_MIN_PF} / ${RESEARCH_FINISHED_MIN_TRADES}+`
+    },
+    {
+      detail: "All strategy folders with backtest output available for review.",
+      label: "Backtested",
+      value: formatNumber(snapshot.backtestedCount)
+    },
+    {
+      detail: "Backtests that satisfy the Research page finished strategy requirement.",
+      label: "Finished",
+      tone: snapshot.qualifiedCount > 0 ? "good" : "warning",
+      value: formatNumber(snapshot.qualifiedCount)
+    },
+    {
+      detail: "Backtest rows that still need review or do not meet the current completion gate.",
+      label: "Review queue",
+      tone: snapshot.backtestReviewRows.length > 0 ? "warning" : "good",
+      value: formatNumber(snapshot.backtestReviewRows.length)
+    },
+    ...base
+  ];
+}
+
 function ResearchStageTile({ snapshot, stage }: { snapshot: ResearchSnapshot; stage: ResearchStage }) {
   const status = snapshot.researchStageStatuses[stage];
   const outputCount = stageOutputCount(snapshot, stage);
@@ -664,49 +887,25 @@ function ResearchStageTile({ snapshot, stage }: { snapshot: ResearchSnapshot; st
       <p className="sync-tile-description">{RESEARCH_STAGE_DESCRIPTIONS[stage]}</p>
       <dl className="sync-tile-times">
         <dt>Status</dt>
-        <dd>{stageStatusText(status, outputCount)}</dd>
-        <dt>Last ran</dt>
+        <dd>
+          <ResearchStageStatusValue outputCount={outputCount} state={state} status={status} />
+        </dd>
+        <dt>Last</dt>
         <dd>
           <LocalDateTime value={stageLastRunAt(status)} fallback="Not run yet" />
         </dd>
-        <dt>Next run</dt>
+        <dt>Next scheduled</dt>
         <dd>
           <LocalDateTime value={nextResearchStageRunIso(stage)} />
         </dd>
-        <dt>Jobs last run</dt>
-        <dd>{stageJobsLastRun(status)}</dd>
-        <dt>{RESEARCH_STAGE_JOB_LABELS[stage]} now</dt>
+        <dt>Scope</dt>
+        <dd>{stageScopeText(snapshot, stage)}</dd>
+        <dt>{stageOutputLabel(stage)}</dt>
         <dd>{formatNumber(outputCount)}</dd>
         <dt>{stageDurationLabel(status)}</dt>
         <dd>{formatDuration(stageDurationMs(status))}</dd>
       </dl>
-    </div>
-  );
-}
-
-function ResearchCycleTile({ snapshot }: { snapshot: ResearchSnapshot }) {
-  const state = syncTileStateFromResearch(snapshot.researchStatus, snapshot);
-
-  return (
-    <div className={`dataset-sync-tile sync-state-${state}`}>
-      <span className="sync-tile-name">Cycle Overview</span>
-      <p className="sync-tile-description">{currentActivity(snapshot)}</p>
-      <dl className="sync-tile-times">
-        <dt>Status</dt>
-        <dd>{snapshot.researchStatus?.state ?? (state === "success" ? "ready" : "idle")}</dd>
-        <dt>Last cycle</dt>
-        <dd>
-          <LocalDateTime value={snapshot.researchStatus?.finishedAt ?? snapshot.researchStatus?.lastSuccessAt} fallback="Not run yet" />
-        </dd>
-        <dt>Ideas now</dt>
-        <dd>{formatNumber(snapshot.inboxIdeaCount + snapshot.approvedIdeaCount)}</dd>
-        <dt>Coded specs</dt>
-        <dd>{formatNumber(snapshot.readyCount)}</dd>
-        <dt>Backtests</dt>
-        <dd>{formatNumber(snapshot.backtestedCount)}</dd>
-        <dt>Finished</dt>
-        <dd>{formatNumber(snapshot.qualifiedCount)}</dd>
-      </dl>
+      <ResearchTileChecks ariaLabel={`${RESEARCH_STAGE_TITLES[stage]} details`} checks={stageDetailChecks(snapshot, stage, status)} />
     </div>
   );
 }
@@ -726,7 +925,6 @@ function ResearchWorkSync({ snapshot }: { snapshot: ResearchSnapshot }) {
         </span>
       </div>
       <div className="sync-grid" aria-label="Research work sync status">
-        <ResearchCycleTile snapshot={snapshot} />
         {RESEARCH_STAGE_ORDER.map((stage) => (
           <ResearchStageTile key={stage} snapshot={snapshot} stage={stage} />
         ))}
