@@ -1,11 +1,11 @@
 {
   "assetKeys": [],
-  "createdAt": "2026-05-16T01:00:50.356982+00:00",
+  "createdAt": "2026-05-16T01:00:50.356761+00:00",
   "engines": [
     "intraday_momentum"
   ],
-  "hypothesis": "Return continuation can recur at repeated intraday half-hour intervals. Test the second-to-last interval into the close.",
-  "ideaId": "intraday_repeat_half_hour",
+  "hypothesis": "The first half-hour return predicts the last half-hour return; test both continuation and reversal by asset.",
+  "ideaId": "gao_intraday_momentum_last30",
   "markets": [
     "futures",
     "forex"
@@ -30,16 +30,16 @@
       0.5
     ],
     "signalEndMinute": [
-      915
+      585
     ],
     "signalStartMinute": [
-      900
+      570
     ]
   },
   "provenance": "academic",
   "sourceUrls": [
-    "https://ideas.repec.org/a/bla/jfinan/v65y2010i4p1369-1407.html"
+    "https://www.sciencedirect.com/science/article/abs/pii/S0304405X18301351"
   ],
-  "status": "approved",
-  "title": "Repeated half-hour continuation"
+  "status": "inbox",
+  "title": "First 30 minutes predict last 30 minutes"
 }

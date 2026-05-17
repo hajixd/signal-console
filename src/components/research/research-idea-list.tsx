@@ -89,6 +89,11 @@ function rawIdeaText(idea: ResearchIdeaListItem) {
   return [idea.title, idea.hypothesis, ...(idea.sourceUrls ?? []), idea.notes].filter(Boolean).join("\n\n");
 }
 
+function ideaPreviewText(idea: ResearchIdeaListItem, mode: ResearchIdeaListProps["mode"]) {
+  if (mode === "discovery") return idea.hypothesis ?? idea.notes ?? "No hypothesis text recorded.";
+  return idea.ideaReport?.summary ?? idea.hypothesis ?? "No hypothesis text recorded.";
+}
+
 function titleFromIdeaText(value: string) {
   const firstLine = value
     .split(/\r?\n/)
@@ -295,7 +300,7 @@ export default function ResearchIdeaList({ assets, editable = false, empty, idea
                   <strong>{idea.title ?? idea.ideaId ?? "Untitled idea"}</strong>
                 </div>
               </div>
-              <p>{idea.ideaReport?.summary ?? idea.hypothesis ?? "No hypothesis text recorded."}</p>
+              <p>{ideaPreviewText(idea, mode)}</p>
               <div className="researchIdeaMeta">
                 {(tags.length ? tags : ["timeframe pending"]).slice(0, 10).map((tag) => (
                   <span key={tag}>{tag}</span>

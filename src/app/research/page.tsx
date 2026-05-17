@@ -93,6 +93,7 @@ type ResearchIdea = {
 
 type StrategySpec = {
   assetKey?: string;
+  backtestedAt?: string;
   createdAt?: string;
   engine?: string;
   fileId?: string;
@@ -100,6 +101,7 @@ type StrategySpec = {
   ideaReport?: ResearchIdea["ideaReport"];
   llm?: Record<string, unknown>;
   market?: string;
+  metrics?: Record<string, unknown>;
   params?: Record<string, unknown>;
   provenance?: string;
   sourceUrls?: string[];
@@ -315,6 +317,45 @@ async function readBacktestSummary() {
   }
 }
 
+function metricText(value: unknown, fallback = "0") {
+  if (value === "inf") return "inf";
+  const numericValue = Number(value);
+  return Number.isFinite(numericValue) ? String(numericValue) : fallback;
+}
+
+function backtestRowFromSpec(folder: string, spec: StrategySpec): BacktestRow {
+  const metrics = spec.metrics ?? {};
+  const strategyId = spec.strategyId ?? folder;
+  const profitFactor = metrics.profit_factor ?? metrics.profitFactor;
+  const totalR = metrics.total_r ?? metrics.totalR;
+
+  return {
+    ...spec,
+    asset_key: spec.assetKey ?? "",
+    backtestedAt: spec.backtestedAt,
+    engine: spec.engine ?? "",
+    market: spec.market ?? "",
+    profit_factor: metricText(profitFactor),
+    qualified: spec.status === "qualified" ? "True" : "False",
+    status: spec.status ?? "backtested",
+    strategyId,
+    strategy_id: strategyId,
+    total_r: metricText(totalR),
+    trades: metricText(metrics.trades)
+  };
+}
+
+async function readBacktestFolderRows() {
+  const folders = await listDirectoryNames("strategies/backtested");
+  const rows = await Promise.all(
+    folders.map(async (folder) => {
+      const spec = await readJsonFile<StrategySpec>(path.join(RESEARCH_ROOT, "strategies", "backtested", folder, "strategy.json"));
+      return spec ? backtestRowFromSpec(folder, spec) : null;
+    })
+  );
+  return rows.filter((row): row is BacktestRow => Boolean(row));
+}
+
 type ResearchBacktestTrade = {
   exit_reason?: string;
   r_multiple?: string;
@@ -512,8 +553,15 @@ async function getResearchSnapshot(): Promise<ResearchSnapshot> {
   const backtestedFolders = await listDirectoryNames("strategies/backtested");
   const backtestedIds = new Set(backtestedFolders);
   const pendingReadyFolders = readyFolders.filter((folder) => !backtestedIds.has(folder));
+  const backtestRowsById = new Map<string, BacktestRow>();
+  for (const row of await readBacktestSummary()) {
+    if (row.strategy_id) backtestRowsById.set(row.strategy_id, row);
+  }
+  for (const row of await readBacktestFolderRows()) {
+    backtestRowsById.set(row.strategy_id, row);
+  }
   const candidateRows = await hydrateBacktestRows(
-    (await readBacktestSummary()).sort((left, right) => Number(right.profit_factor) - Number(left.profit_factor))
+    [...backtestRowsById.values()].sort((left, right) => Number(right.profit_factor) - Number(left.profit_factor))
   );
   const finishedRows = candidateRows.filter(isFinishedBacktestRow);
   const belowRequirementRows = candidateRows.filter((row) => !isFinishedBacktestRow(row));
@@ -579,6 +627,7 @@ type SyncTileState = "failed" | "idle" | "running" | "success";
 type ResearchDetailTone = "bad" | "good" | "warning";
 type ResearchDetailCheck = {
   detail?: string;
+  priority?: "flow";
   label: string;
   tone?: ResearchDetailTone;
   value: string;
@@ -634,6 +683,10 @@ function stageJobsLastRun(status: ResearchStageStatus | undefined) {
   return typeof status?.jobsLastRun === "number" ? formatNumber(status.jobsLastRun) : "n/a";
 }
 
+function stageLastRunInputText(status: ResearchStageStatus | undefined) {
+  return typeof status?.limit === "number" ? `${formatNumber(status.limit)} limit` : "n/a";
+}
+
 function stageDurationLabel(status: ResearchStageStatus | undefined) {
   return status?.state === "running" ? "Running for" : "Last duration";
 }
@@ -674,6 +727,34 @@ function stageOutputLabel(stage: ResearchStage) {
   if (stage === "idea") return "Formalized";
   if (stage === "coding") return "Ready specs";
   return "Review rows";
+}
+
+function stageCurrentInputText(snapshot: ResearchSnapshot, stage: ResearchStage) {
+  if (stage === "research") return `${formatNumber(snapshot.searchResultCount + snapshot.fetchedPagesCount)} sources`;
+  if (stage === "idea") return `${formatNumber(snapshot.inboxIdeaCount)} inbox`;
+  if (stage === "coding") return `${formatNumber(snapshot.approvedIdeaCount)} ideas`;
+  return `${formatNumber(snapshot.pendingReadyCount)} ready`;
+}
+
+function stageCurrentOutputText(snapshot: ResearchSnapshot, stage: ResearchStage) {
+  if (stage === "research") return `${formatNumber(snapshot.inboxIdeaCount)} inbox`;
+  if (stage === "idea") return `${formatNumber(snapshot.approvedIdeaCount)} formalized`;
+  if (stage === "coding") return `${formatNumber(snapshot.readyCount)} ready`;
+  return `${formatNumber(snapshot.backtestedCount)} tested`;
+}
+
+function stageCurrentInputDetail(stage: ResearchStage) {
+  if (stage === "research") return "Search result files plus fetched source pages currently available to the discovery stage.";
+  if (stage === "idea") return "Raw discovered ideas currently waiting for formalization.";
+  if (stage === "coding") return "Formalized idea files currently available for strategy coding.";
+  return "Ready-to-backtest strategy specs that are not yet represented in backtested output.";
+}
+
+function stageCurrentOutputDetail(stage: ResearchStage) {
+  if (stage === "research") return "Raw idea files currently available from Idea Discovery.";
+  if (stage === "idea") return "Formalized, testable strategy plans currently available for coding.";
+  if (stage === "coding") return "Executable strategy specs currently ready for the backtest stage.";
+  return "Strategy folders with backtest output currently available for review.";
 }
 
 function stageStatusTimestamp(status: ResearchStageStatus | undefined, state: SyncTileState) {
@@ -726,14 +807,29 @@ function ResearchStageStatusValue({
 }
 
 function ResearchTileChecks({ ariaLabel, checks }: { ariaLabel: string; checks: ResearchDetailCheck[] }) {
+  const flowChecks = checks.filter((check) => check.priority === "flow");
+  const detailChecks = checks.filter((check) => check.priority !== "flow");
+
   return (
-    <div className="dataValidityChecks syncTileChecks" aria-label={ariaLabel}>
-      {checks.map((check) => (
-        <div className={`dataValidityCheck ${researchDetailClass(check.tone)}`} key={check.label} title={check.detail}>
-          <span>{check.label}</span>
-          <strong>{check.value}</strong>
+    <div className="researchTileChecks" aria-label={ariaLabel}>
+      <div className="researchTileFlowChecks">
+        {flowChecks.map((check) => (
+          <div className={`dataValidityCheck ${researchDetailClass(check.tone)}`} key={check.label} title={check.detail}>
+            <span>{check.label}</span>
+            <strong>{check.value}</strong>
+          </div>
+        ))}
+      </div>
+      {detailChecks.length ? (
+        <div className="researchTileDetailChecks">
+          {detailChecks.map((check) => (
+            <div className={`dataValidityCheck ${researchDetailClass(check.tone)}`} key={check.label} title={check.detail}>
+              <span>{check.label}</span>
+              <strong>{check.value}</strong>
+            </div>
+          ))}
         </div>
-      ))}
+      ) : null}
     </div>
   );
 }
@@ -741,14 +837,37 @@ function ResearchTileChecks({ ariaLabel, checks }: { ariaLabel: string; checks: 
 function stageDetailChecks(snapshot: ResearchSnapshot, stage: ResearchStage, status: ResearchStageStatus | undefined): ResearchDetailCheck[] {
   const runtime = formatDuration(stageDurationMs(status));
   const jobs = stageJobsLastRun(status);
+  const lastRunInputs = stageLastRunInputText(status);
   const lastRun = stageLastRunAt(status);
-  const base: ResearchDetailCheck[] = [
+  const flow: ResearchDetailCheck[] = [
+    {
+      detail: stageCurrentInputDetail(stage),
+      label: "Current inputs",
+      priority: "flow",
+      value: stageCurrentInputText(snapshot, stage)
+    },
+    {
+      detail: stageCurrentOutputDetail(stage),
+      label: "Current outputs",
+      priority: "flow",
+      value: stageCurrentOutputText(snapshot, stage)
+    },
+    {
+      detail: "Dispatch input limit recorded for the most recent run of this stage.",
+      label: "Last run inputs",
+      priority: "flow",
+      tone: lastRunInputs === "n/a" ? "warning" : "good",
+      value: lastRunInputs
+    },
     {
       detail: "Number of jobs recorded by the most recent stage run.",
-      label: "Jobs last run",
+      label: "Last run outputs",
+      priority: "flow",
       tone: status?.state === "failed" ? "bad" : jobs === "n/a" ? "warning" : "good",
       value: jobs
-    },
+    }
+  ];
+  const base: ResearchDetailCheck[] = [
     {
       detail: "Most recently recorded duration for this stage.",
       label: status?.state === "running" ? "Runtime now" : "Last runtime",
@@ -770,11 +889,7 @@ function stageDetailChecks(snapshot: ResearchSnapshot, stage: ResearchStage, sta
 
   if (stage === "research") {
     return [
-      {
-        detail: "Current raw idea files waiting in Research/ideas/inbox.",
-        label: "Inbox ideas",
-        value: formatNumber(snapshot.inboxIdeaCount)
-      },
+      ...flow,
       {
         detail: "Search result files captured from online research.",
         label: "Search files",
@@ -796,16 +911,7 @@ function stageDetailChecks(snapshot: ResearchSnapshot, stage: ResearchStage, sta
 
   if (stage === "idea") {
     return [
-      {
-        detail: "Raw discovered ideas still available for formalization.",
-        label: "Inbox queue",
-        value: formatNumber(snapshot.inboxIdeaCount)
-      },
-      {
-        detail: "Formalized, testable strategy plans in Research/ideas/approved.",
-        label: "Approved ideas",
-        value: formatNumber(snapshot.approvedIdeaCount)
-      },
+      ...flow,
       {
         detail: "Formalized ideas currently available for the coding stage.",
         label: "Coding input",
@@ -824,16 +930,7 @@ function stageDetailChecks(snapshot: ResearchSnapshot, stage: ResearchStage, sta
 
   if (stage === "coding") {
     return [
-      {
-        detail: "Formalized idea files available as coding inputs.",
-        label: "Idea inputs",
-        value: formatNumber(snapshot.approvedIdeaCount)
-      },
-      {
-        detail: "Executable strategy specs ready for the backtest stage.",
-        label: "Ready specs",
-        value: formatNumber(snapshot.readyCount)
-      },
+      ...flow,
       {
         detail: "Ready specs that are not yet represented in backtested results.",
         label: "Pending tests",
@@ -850,15 +947,11 @@ function stageDetailChecks(snapshot: ResearchSnapshot, stage: ResearchStage, sta
   }
 
   return [
+    ...flow,
     {
       detail: `Configured completion gate is PF > ${RESEARCH_FINISHED_MIN_PF} with at least ${RESEARCH_FINISHED_MIN_TRADES} trades.`,
       label: "PF/trade gate",
       value: `>${RESEARCH_FINISHED_MIN_PF} / ${RESEARCH_FINISHED_MIN_TRADES}+`
-    },
-    {
-      detail: "All strategy folders with backtest output available for review.",
-      label: "Backtested",
-      value: formatNumber(snapshot.backtestedCount)
     },
     {
       detail: "Backtests that satisfy the Research page finished strategy requirement.",
@@ -914,7 +1007,7 @@ function ResearchWorkSync({ snapshot }: { snapshot: ResearchSnapshot }) {
   const cycleState = syncTileStateFromResearch(snapshot.researchStatus, snapshot);
 
   return (
-    <section className={`backtest-card sync-card researchSyncCard sync-state-${cycleState}`}>
+    <section className={`backtest-card sync-card researchSyncCard sync-state-${cycleState}`} id="research-work">
       <div className="backtest-card-head">
         <div>
           <h2>Research Work</h2>
@@ -1079,27 +1172,32 @@ export default async function ResearchPage() {
           <div className="backtest-card-head">
             <div>
               <h2>Backtest Results To Finished Strategies</h2>
-              <p>Left side collects backtest results below requirements; right side shows strategies that cleared PF above 2 and more than 20 trades.</p>
+              <p>Automatically splits deterministic backtest results into passed and failed groups; no processing stage or LLM is needed.</p>
             </div>
             <span className={`count-pill${snapshot.qualifiedCount > 0 ? "" : " warning"}`}>
-              {formatNumber(snapshot.qualifiedCount)} finished
+              {formatNumber(snapshot.qualifiedCount)} passed / {formatNumber(backtestInputRows.length)} failed
             </span>
           </div>
-          <div className="researchConversionGrid">
-            <div className={`researchLane collecting ${laneState(backtestInputRows.length)}`}>
-              <div className="researchLaneHead">
-                <span>Still under review</span>
-                <strong>Backtest results</strong>
+          <div className="researchFinishedSplit" aria-label="Automatic finished strategy split">
+            <section className={`researchSplitSection passed ${laneState(snapshot.finishedRows.length)}`}>
+              <div className="researchSplitHead">
+                <span>Passed automatically</span>
+                <strong>{formatNumber(snapshot.finishedRows.length)} finished strategies</strong>
               </div>
-              <ResearchBacktestTable empty="No backtest results are waiting for final review." rows={backtestInputRows} />
-            </div>
-            <div className={`researchLane finished ${laneState(snapshot.finishedRows.length)}`}>
-              <div className="researchLaneHead">
-                <span>Cleared requirements</span>
-                <strong>Finished strategies</strong>
+              <ResearchBacktestTable
+                density="split"
+                empty={`No strategy has cleared PF >= ${RESEARCH_FINISHED_MIN_PF} with enough trades yet.`}
+                outcome="passed"
+                rows={snapshot.finishedRows}
+              />
+            </section>
+            <section className={`researchSplitSection failed ${laneState(backtestInputRows.length)}`}>
+              <div className="researchSplitHead">
+                <span>Failed automatically</span>
+                <strong>{formatNumber(backtestInputRows.length)} failed strategies</strong>
               </div>
-              <ResearchBacktestTable empty={`No strategy has cleared PF >= ${RESEARCH_FINISHED_MIN_PF} with enough trades yet.`} rows={snapshot.finishedRows} />
-            </div>
+              <ResearchBacktestTable density="split" empty="No backtest results have failed the finished strategy gate." outcome="failed" rows={backtestInputRows} />
+            </section>
           </div>
         </section>
 

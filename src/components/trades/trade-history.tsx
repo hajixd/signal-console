@@ -110,6 +110,17 @@ function formatSignedMoney(value: number): string {
   })}`;
 }
 
+function formatMoney(value: number, signed = false): string {
+  if (!Number.isFinite(value)) return "--";
+  const formatted = new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    minimumFractionDigits: Math.abs(value) < 100 ? 2 : 0,
+    maximumFractionDigits: Math.abs(value) < 100 ? 2 : 0
+  }).format(value);
+  return signed && value > 0 ? `+${formatted}` : formatted;
+}
+
 function formatLossMoney(value: number): string {
   if (!Number.isFinite(value)) return "--";
   return `-$${Math.abs(value).toLocaleString(undefined, {
@@ -204,11 +215,43 @@ function priceTouched(bar: ChartBar, price: number): boolean {
   return Number.isFinite(price) && bar.low <= price && bar.high >= price;
 }
 
+function barProtectiveTouch(trade: TradeHistoryRow, bar: ChartBar): "tp" | "sl" | null {
+  const touchesTarget = priceTouched(bar, trade.targetPrice);
+  const touchesStop = priceTouched(bar, trade.stopPrice);
+  if (!touchesTarget && !touchesStop) return null;
+  if (touchesTarget && !touchesStop) return "tp";
+  if (!touchesTarget && touchesStop) return "sl";
+
+  const targetDistance = Math.abs(bar.open - trade.targetPrice);
+  const stopDistance = Math.abs(bar.open - trade.stopPrice);
+  return targetDistance <= stopDistance ? "tp" : "sl";
+}
+
 function exitTouchPrice(trade: TradeHistoryRow): number | null {
   const targetTolerance = Math.max(Math.abs(trade.targetPrice) * 0.00001, 0.00001);
   const stopTolerance = Math.max(Math.abs(trade.stopPrice) * 0.00001, 0.00001);
   if (Math.abs(trade.exitPrice - trade.targetPrice) <= targetTolerance) return trade.targetPrice;
   if (Math.abs(trade.exitPrice - trade.stopPrice) <= stopTolerance) return trade.stopPrice;
+  return null;
+}
+
+function resolvedProtectiveExit(
+  trade: TradeHistoryRow,
+  bars: ChartBar[]
+): { bar: ChartBar; position: number; reason: "tp" | "sl" } | null {
+  const entryPosition = nearestPositionForAnchor(bars, trade.entryIndex, trade.entryTime);
+  const fallbackExitPosition = nearestPositionForAnchor(bars, trade.exitIndex, trade.exitTime);
+  if (entryPosition == null || fallbackExitPosition == null || !bars.length) return null;
+
+  const start = Math.min(entryPosition, fallbackExitPosition);
+  const end = Math.max(entryPosition, fallbackExitPosition);
+  for (let position = start; position <= end; position += 1) {
+    const bar = bars[position];
+    if (!bar) continue;
+    const reason = barProtectiveTouch(trade, bar);
+    if (reason) return { bar, position, reason };
+  }
+
   return null;
 }
 
@@ -226,6 +269,34 @@ function resolvedExitPositionForTrade(trade: TradeHistoryRow, bars: ChartBar[]):
   }
 
   return fallbackExitPosition;
+}
+
+function resolvedTradeForDisplay(trade: TradeHistoryRow, bars: ChartBar[]): TradeHistoryRow {
+  const protectiveExit = resolvedProtectiveExit(trade, bars);
+  if (!protectiveExit) return trade;
+
+  const exitPrice = protectiveExit.reason === "tp" ? trade.targetPrice : trade.stopPrice;
+  const pnlDollars = protectiveExit.reason === "tp" ? Math.abs(trade.targetDollars) : -Math.abs(trade.riskDollars);
+  const pnlClassName = resultClassName(pnlDollars);
+  const rMultiple = trade.riskDollars > 0 ? pnlDollars / trade.riskDollars : 0;
+
+  return {
+    ...trade,
+    rowClassName: rowClassNameForPnl(pnlDollars),
+    pnlClassName,
+    pnlDollars,
+    exitIndex: protectiveExit.bar.index,
+    exitTime: protectiveExit.bar.time,
+    exitPrice,
+    exitTimeLabel: timeLabel(protectiveExit.bar.time),
+    exitPriceLabel: `$${formatChartPrice(exitPrice)}`,
+    exitReasonLabel: protectiveExit.reason === "tp" ? "Take Profit" : "Stop Loss",
+    pnlLabel: formatMoney(pnlDollars, true),
+    rMultipleLabel: `${rMultiple.toLocaleString(undefined, {
+      minimumFractionDigits: Number.isInteger(rMultiple) ? 0 : 2,
+      maximumFractionDigits: 2
+    })}R`
+  };
 }
 
 function correctedDurationLabel(trade: TradeHistoryRow, bars: ChartBar[]): string {
@@ -266,10 +337,22 @@ function InfoBox({
 }) {
   return (
     <div className={`tradeInfoBox tone-${tone}`}>
-      <span>{label}</span>
-      <strong className={valueClassName}>{value || "N/A"}</strong>
+      <strong className="tradeInfoLabel">{label}</strong>
+      <strong className={`tradeInfoValue${valueClassName ? ` ${valueClassName}` : ""}`}>{value || "N/A"}</strong>
     </div>
   );
+}
+
+function resultClassName(value: number): string {
+  if (value > 0) return "up";
+  if (value < 0) return "down";
+  return "neutral";
+}
+
+function rowClassNameForPnl(value: number): string {
+  if (value > 0) return "up-row";
+  if (value < 0) return "down-row";
+  return "neutral-row";
 }
 
 function exitReasonClassName(label: string): string {
@@ -788,53 +871,57 @@ export default function TradeHistory({ rows }: TradeHistoryProps) {
     () => (activeTradeId ? rows.find((row) => row.id === activeTradeId) ?? null : null),
     [activeTradeId, rows]
   );
+  const activeDisplayTrade = useMemo(
+    () => (activeTrade ? resolvedTradeForDisplay(activeTrade, chartState.bars) : null),
+    [activeTrade, chartState.bars]
+  );
   const activeChartTrade = useMemo(
     () =>
-      activeTrade
+      activeDisplayTrade
         ? {
-            id: activeTrade.id,
-            symbol: activeTrade.symbol,
-            side: activeTrade.side,
-            entryIndex: activeTrade.entryIndex,
-            exitIndex: activeTrade.exitIndex,
-            signalTime: activeTrade.signalTime,
-            entryTime: activeTrade.entryTime,
-            exitTime: activeTrade.exitTime,
-            sourceTimeframe: activeTrade.sourceTimeframe,
-            phase: activeTrade.phase,
-            variantId: activeTrade.variantId,
-            modelName: activeTrade.modelName,
-            entryType: activeTrade.entryType,
-            entryPrice: activeTrade.entryPrice,
-            exitPrice: activeTrade.exitPrice,
-            targetPrice: activeTrade.targetPrice,
-            stopPrice: activeTrade.stopPrice,
-            pnlLabel: activeTrade.pnlLabel
+            id: activeDisplayTrade.id,
+            symbol: activeDisplayTrade.symbol,
+            side: activeDisplayTrade.side,
+            entryIndex: activeDisplayTrade.entryIndex,
+            exitIndex: activeDisplayTrade.exitIndex,
+            signalTime: activeDisplayTrade.signalTime,
+            entryTime: activeDisplayTrade.entryTime,
+            exitTime: activeDisplayTrade.exitTime,
+            sourceTimeframe: activeDisplayTrade.sourceTimeframe,
+            phase: activeDisplayTrade.phase,
+            variantId: activeDisplayTrade.variantId,
+            modelName: activeDisplayTrade.modelName,
+            entryType: activeDisplayTrade.entryType,
+            entryPrice: activeDisplayTrade.entryPrice,
+            exitPrice: activeDisplayTrade.exitPrice,
+            targetPrice: activeDisplayTrade.targetPrice,
+            stopPrice: activeDisplayTrade.stopPrice,
+            pnlLabel: activeDisplayTrade.pnlLabel
           }
         : null,
     [
-      activeTrade?.entryIndex,
-      activeTrade?.entryPrice,
-      activeTrade?.entryTime,
-      activeTrade?.entryType,
-      activeTrade?.exitIndex,
-      activeTrade?.exitPrice,
-      activeTrade?.exitTime,
-      activeTrade?.id,
-      activeTrade?.modelName,
-      activeTrade?.phase,
-      activeTrade?.pnlLabel,
-      activeTrade?.side,
-      activeTrade?.signalTime,
-      activeTrade?.sourceTimeframe,
-      activeTrade?.stopPrice,
-      activeTrade?.symbol,
-      activeTrade?.targetPrice,
-      activeTrade?.variantId
+      activeDisplayTrade?.entryIndex,
+      activeDisplayTrade?.entryPrice,
+      activeDisplayTrade?.entryTime,
+      activeDisplayTrade?.entryType,
+      activeDisplayTrade?.exitIndex,
+      activeDisplayTrade?.exitPrice,
+      activeDisplayTrade?.exitTime,
+      activeDisplayTrade?.id,
+      activeDisplayTrade?.modelName,
+      activeDisplayTrade?.phase,
+      activeDisplayTrade?.pnlLabel,
+      activeDisplayTrade?.side,
+      activeDisplayTrade?.signalTime,
+      activeDisplayTrade?.sourceTimeframe,
+      activeDisplayTrade?.stopPrice,
+      activeDisplayTrade?.symbol,
+      activeDisplayTrade?.targetPrice,
+      activeDisplayTrade?.variantId
     ]
   );
-  const activeStats = activeTrade ? tradePathStats(activeTrade, chartState.bars) : { mfe: null, mae: null };
-  const activeDurationLabel = activeTrade ? correctedDurationLabel(activeTrade, chartState.bars) : "";
+  const activeStats = activeDisplayTrade ? tradePathStats(activeDisplayTrade, chartState.bars) : { mfe: null, mae: null };
+  const activeDurationLabel = activeDisplayTrade ? correctedDurationLabel(activeDisplayTrade, chartState.bars) : "";
 
   function openTrade(trade: TradeHistoryRow) {
     if (isRestricted) return;
@@ -937,7 +1024,7 @@ export default function TradeHistory({ rows }: TradeHistoryProps) {
       : undefined;
   const displayedChartTimeframe = chartState.fallback && chartState.timeframe ? chartState.timeframe : chartTimeframe;
 
-  const activeTradeModal = !isRestricted && activeTrade ? (
+  const activeTradeModal = !isRestricted && activeTrade && activeDisplayTrade ? (
     <div
       className="tradeModalBackdrop"
       role="presentation"
@@ -946,40 +1033,37 @@ export default function TradeHistory({ rows }: TradeHistoryProps) {
       }}
     >
       <section
-        className={`tradeModal ${activeTrade.rowClassName}`}
+        className={`tradeModal ${activeDisplayTrade.rowClassName}`}
         role="dialog"
         aria-modal="true"
-        aria-label={`${activeTrade.symbol} trade details`}
+        aria-label={`${activeDisplayTrade.symbol} trade details`}
         onMouseDown={(event) => event.stopPropagation()}
       >
         <div className="tradeModalHead">
           <div className="tradeModalTitle">
-            <strong>{activeTrade.modelName}</strong>
-            <span>{activeTrade.symbol} / {activeTrade.marketLabel}</span>
+            <strong>{activeDisplayTrade.modelName}</strong>
+            <span>{activeDisplayTrade.symbol} / {activeDisplayTrade.marketLabel}</span>
           </div>
           <div className="tradeModalHeadActions">
-            <span className={`tradeOutcomeBadge ${activeTrade.pnlClassName}`}>
-              {activeTrade.pnlClassName === "up" ? "WIN" : activeTrade.pnlClassName === "down" ? "LOSS" : "FLAT"}
-            </span>
-            <button type="button" onClick={() => setActiveTradeId(null)}>
-              Close
+            <button type="button" className="tradeModalCloseButton" aria-label="Close trade details" title="Close" onClick={() => setActiveTradeId(null)}>
+              <span aria-hidden="true">X</span>
             </button>
           </div>
         </div>
 
         <div className="tradeModalBody">
           <div className="tradeModalMetrics four">
-            <InfoBox label="Entry Reason" value={`Model: ${activeTrade.modelName}`} tone="blue" />
-            <InfoBox label="Entry Price" value={activeTrade.entryPriceLabel} />
-            <InfoBox label="Exit Reason" value={activeTrade.exitReasonLabel} tone="blue" valueClassName={exitReasonClassName(activeTrade.exitReasonLabel)} />
-            <InfoBox label="Exit Price" value={activeTrade.exitPriceLabel} />
+            <InfoBox label="Entry Reason" value={`Model: ${activeDisplayTrade.modelName}`} tone="blue" />
+            <InfoBox label="Entry Price" value={activeDisplayTrade.entryPriceLabel} />
+            <InfoBox label="Exit Reason" value={activeDisplayTrade.exitReasonLabel} tone="blue" />
+            <InfoBox label="Exit Price" value={activeDisplayTrade.exitPriceLabel} />
           </div>
 
           <div className="tradeModalMetrics six">
-            <InfoBox label="PnL" value={activeTrade.pnlLabel} valueClassName={activeTrade.pnlClassName} tone={activeTrade.pnlClassName === "up" ? "green" : activeTrade.pnlClassName === "down" ? "red" : "neutral"} />
+            <InfoBox label="PnL" value={activeDisplayTrade.pnlLabel} valueClassName={activeDisplayTrade.pnlClassName} tone={activeDisplayTrade.pnlClassName === "up" ? "green" : activeDisplayTrade.pnlClassName === "down" ? "red" : "neutral"} />
             <InfoBox label="Duration" value={activeDurationLabel} />
-            <InfoBox label="Take Profit" value={`${activeTrade.targetPriceLabel} / ${activeTrade.targetLabel}`} tone="green" />
-            <InfoBox label="Stop Loss" value={`${activeTrade.stopPriceLabel} / ${activeTrade.riskLabel}`} tone="red" />
+            <InfoBox label="Take Profit" value={`${activeDisplayTrade.targetPriceLabel} / ${activeDisplayTrade.targetLabel}`} tone="green" />
+            <InfoBox label="Stop Loss" value={`${activeDisplayTrade.stopPriceLabel} / ${activeDisplayTrade.riskLabel}`} tone="red" />
             <InfoBox label="Peak (MFE)" value={activeStats.mfe == null ? "--" : formatSignedMoney(activeStats.mfe)} tone="green" />
             <InfoBox label="DD (MAE)" value={activeStats.mae == null ? "--" : formatLossMoney(activeStats.mae)} tone="red" />
           </div>

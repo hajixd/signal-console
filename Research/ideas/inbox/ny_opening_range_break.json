@@ -31,9 +31,9 @@
       570
     ],
     "riskReward": [
-      1.0,
+      1,
       1.5,
-      2.0,
+      2,
       2.5
     ]
   },
@@ -41,6 +41,6 @@
   "sourceUrls": [
     "https://www.cmegroup.com/education.html"
   ],
-  "status": "approved",
+  "status": "inbox",
   "title": "NY opening range breakout/fade"
 }

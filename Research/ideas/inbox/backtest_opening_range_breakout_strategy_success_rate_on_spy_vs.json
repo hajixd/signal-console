@@ -31,7 +31,7 @@
   "sourceUrls": [
     "https://www.youtube.com/watch?v=ZzIr6-A4oMU"
   ],
-  "status": "approved",
+  "status": "inbox",
   "structure": {
     "researchNote": "Is the ORB strategy working in any market consistently, during this volatility? We'll utilize the Opening Range Breakout Backtester to compare and contrast 3...",
     "sourceTitle": "Backtest: Opening Range Breakout Strategy Success Rate on SPY vs."

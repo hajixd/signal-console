@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import {
   BaselineSeries,
   CandlestickSeries,
@@ -76,6 +76,7 @@ type ChartStatus = "idle" | "loading" | "ready" | "error";
 type ChartTheme = "dark" | "light";
 type ReplaySpeed = 1 | 2 | 4 | 8;
 type ReplayMode = "intrabar" | "bar";
+type ReplayIconName = "reset" | "stepBack" | "play" | "pause" | "stepForward" | "select" | "signal" | "entry" | "exit";
 type MappedCandle = CandlestickData<UTCTimestamp> & {
   source: TradeChartBar;
 };
@@ -210,6 +211,28 @@ const CHART_TIMEFRAME_SECONDS: Record<TradeChartTimeframe, number> = {
   "4h": 4 * 60 * 60,
   "1d": 24 * 60 * 60
 };
+
+const REPLAY_ICON_PATHS: Record<ReplayIconName, string[]> = {
+  reset: ["M4 7v5h5", "M5.8 12a6 6 0 1 0 1.7-6.1L4 9.2"],
+  stepBack: ["M11 6 6 10l5 4V6Z", "M18 6l-5 4 5 4V6Z"],
+  play: ["M7 5v14l12-7L7 5Z"],
+  pause: ["M7 5h4v14H7V5Z", "M13 5h4v14h-4V5Z"],
+  stepForward: ["M6 6l5 4-5 4V6Z", "M13 6l5 4-5 4V6Z"],
+  select: ["M4 12h16", "M12 4v16", "M8 8h8v8H8V8Z"],
+  signal: ["M5 18 19 6", "M7 6h12v12"],
+  entry: ["M12 5v14", "M6 11l6-6 6 6"],
+  exit: ["M12 19V5", "M6 13l6 6 6-6"]
+};
+
+function ReplayIcon({ name }: { name: ReplayIconName }) {
+  return (
+    <svg aria-hidden="true" className="tradeReplayIcon" focusable="false" viewBox="0 0 24 24">
+      {REPLAY_ICON_PATHS[name].map((path) => (
+        <path d={path} fill="none" key={path} stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+      ))}
+    </svg>
+  );
+}
 
 function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
@@ -2360,9 +2383,12 @@ export default function TradePriceChart({
   const lockedLogicalRangeRef = useRef<NumberRange | null>(null);
   const lockedPriceRangeRef = useRef<NumberRange | null>(null);
   const rangeReadyRef = useRef(false);
+  const selectingReplayStartRef = useRef(false);
+  const replaySeekByTimeRef = useRef<(time: number) => void>(() => undefined);
   const [activeBar, setActiveBar] = useState<TradeChartBar | null>(null);
   const [chartTheme, setChartTheme] = useState<ChartTheme>("dark");
   const [isPlaying, setIsPlaying] = useState(false);
+  const [isSelectingReplayStart, setIsSelectingReplayStart] = useState(false);
   const [replayMode, setReplayMode] = useState<ReplayMode>("bar");
   const [showStrategyVisuals, setShowStrategyVisuals] = useState(false);
   const [replayPosition, setReplayPosition] = useState(0);
@@ -2443,6 +2469,8 @@ export default function TradePriceChart({
   const change = displayBar ? displayBar.close - displayBar.open : 0;
   const changePct = displayBar && displayBar.open !== 0 ? (change / displayBar.open) * 100 : 0;
   const up = change >= 0;
+  const replayProgressPercent = maxReplayPosition > 0 ? (clampedReplayPosition / maxReplayPosition) * 100 : 0;
+  const replaySliderStyle = { "--trade-replay-progress": `${replayProgressPercent}%` } as CSSProperties;
   const timeframeControls = (
     <div className="tradeTimeframeButtons" aria-label="Chart timeframe">
       {timeframes.map((option) => (
@@ -2459,6 +2487,21 @@ export default function TradePriceChart({
     </div>
   );
 
+  replaySeekByTimeRef.current = (time: number) => {
+    if (!replayTimeline.length) return;
+    let bestIndex = 0;
+    let bestDistance = Infinity;
+    for (let index = 0; index < replayTimeline.length; index += 1) {
+      const distance = Math.abs(Number(replayTimeline[index]!.time) - time);
+      if (distance < bestDistance) {
+        bestDistance = distance;
+        bestIndex = index;
+      }
+    }
+    setIsPlaying(false);
+    setReplayPosition(bestIndex);
+  };
+
   useEffect(() => {
     setChartTheme(currentChartTheme());
     const observer = new MutationObserver(() => setChartTheme(currentChartTheme()));
@@ -2467,7 +2510,12 @@ export default function TradePriceChart({
   }, []);
 
   useEffect(() => {
+    selectingReplayStartRef.current = isSelectingReplayStart;
+  }, [isSelectingReplayStart]);
+
+  useEffect(() => {
     setIsPlaying(false);
+    setIsSelectingReplayStart(false);
     setReplayMode(hasIntrabarReplay ? "intrabar" : "bar");
     setReplayPosition(Math.max(0, (hasIntrabarReplay ? intrabarReplayTimeline.length : mappedCandles.length) - 1));
   }, [hasIntrabarReplay, intrabarReplayTimeline.length, mappedCandles.length, timeframe, trade.id]);
@@ -2716,11 +2764,18 @@ export default function TradePriceChart({
         setActiveBar((current) => (current?.time === source.time ? current : source));
       }
     };
+    const handleChartClick = (param: { time?: unknown }) => {
+      if (!selectingReplayStartRef.current || typeof param.time !== "number") return;
+      replaySeekByTimeRef.current(param.time);
+      setIsSelectingReplayStart(false);
+    };
 
     chart.subscribeCrosshairMove(handleCrosshairMove);
+    chart.subscribeClick(handleChartClick);
 
     return () => {
       chart.unsubscribeCrosshairMove(handleCrosshairMove);
+      chart.unsubscribeClick(handleChartClick);
       window.cancelAnimationFrame(rangeAnimationFrame);
       if (secondRangeAnimationFrame) window.cancelAnimationFrame(secondRangeAnimationFrame);
       window.clearTimeout(rangeTimeout);
@@ -2796,6 +2851,7 @@ export default function TradePriceChart({
   }, [candleData, chartTheme, currentPartialSource?.close, currentReplayCandle, currentReplayTime, effectiveDataTimeframe, entryCandle, exitCandle, mappedCandles, showStrategyVisuals, signalCandle, trade]);
 
   function togglePlayback() {
+    setIsSelectingReplayStart(false);
     if (isPlaying) {
       setIsPlaying(false);
       return;
@@ -2808,11 +2864,13 @@ export default function TradePriceChart({
   }
 
   function stepReplay(delta: number) {
+    setIsSelectingReplayStart(false);
     setIsPlaying(false);
     setReplayPosition((current) => clamp(current + delta, 0, maxReplayPosition));
   }
 
   function resetReplay() {
+    setIsSelectingReplayStart(false);
     setIsPlaying(false);
     setReplayPosition(0);
   }
@@ -2835,6 +2893,7 @@ export default function TradePriceChart({
   }
 
   function jumpReplay(value: string) {
+    setIsSelectingReplayStart(false);
     setIsPlaying(false);
     setReplayPosition(replayIndexForTime(value));
   }
@@ -2842,6 +2901,7 @@ export default function TradePriceChart({
   function updateReplayMode(nextMode: ReplayMode) {
     if (nextMode === activeReplayMode) return;
     const anchorTime = currentReplayTime;
+    setIsSelectingReplayStart(false);
     setIsPlaying(false);
     setReplayMode(nextMode);
     if (anchorTime == null) return;
@@ -2860,35 +2920,69 @@ export default function TradePriceChart({
 
   const replayControls = mappedCandles.length ? (
     <div className="tradeReplayPanel">
-      <div className="tradeReplayControls">
-        <div className="tradeReplayButtons" aria-label="Replay controls">
-          <button type="button" onClick={resetReplay}>Reset</button>
-          <button type="button" onClick={() => stepReplay(-1)}>Back</button>
-          <button type="button" className={isPlaying ? "active" : ""} onClick={togglePlayback}>
-            {isPlaying ? "Pause" : "Play"}
+      <div className="tradeReplayStatus">
+        <span>{formatChartTime(currentReplayStep?.source.time ?? currentReplayCandle?.source.time)}</span>
+        <strong>{clampedReplayPosition + 1} / {replayTimeline.length}</strong>
+      </div>
+      <div className="tradeReplayCenter">
+        <div className="tradeReplayButtons tradeReplayTransport" aria-label="Replay controls">
+          <button type="button" aria-label="Reset replay" title="Reset" onClick={resetReplay}>
+            <ReplayIcon name="reset" />
           </button>
-          <button type="button" onClick={() => stepReplay(1)}>Forward</button>
+          <button type="button" aria-label="Step back" title="Step back" onClick={() => stepReplay(-1)}>
+            <ReplayIcon name="stepBack" />
+          </button>
+          <button type="button" aria-label={isPlaying ? "Pause replay" : "Play replay"} className={isPlaying ? "active" : ""} title={isPlaying ? "Pause" : "Play"} onClick={togglePlayback}>
+            <ReplayIcon name={isPlaying ? "pause" : "play"} />
+          </button>
+          <button type="button" aria-label="Step forward" title="Step forward" onClick={() => stepReplay(1)}>
+            <ReplayIcon name="stepForward" />
+          </button>
+          <button
+            type="button"
+            aria-label="Select replay point on chart"
+            aria-pressed={isSelectingReplayStart}
+            className={isSelectingReplayStart ? "active" : ""}
+            title="Select replay point on chart"
+            onClick={() => {
+              setIsPlaying(false);
+              setIsSelectingReplayStart((current) => !current);
+            }}
+          >
+            <ReplayIcon name="select" />
+          </button>
         </div>
-        <div className="tradeReplayButtons compact" aria-label="Replay jumps">
-          <button type="button" onClick={() => jumpReplay(trade.signalTime)}>Signal</button>
-          <button type="button" onClick={() => jumpReplay(trade.entryTime)}>Entry</button>
-          <button type="button" onClick={() => jumpReplay(trade.exitTime)}>Exit</button>
+        <div className="tradeReplayButtons tradeReplayJumps" aria-label="Replay jumps">
+          <button type="button" aria-label="Jump to signal" title="Signal" onClick={() => jumpReplay(trade.signalTime)}>
+            <ReplayIcon name="signal" />
+          </button>
+          <button type="button" aria-label="Jump to entry" title="Entry" onClick={() => jumpReplay(trade.entryTime)}>
+            <ReplayIcon name="entry" />
+          </button>
+          <button type="button" aria-label="Jump to exit" title="Exit" onClick={() => jumpReplay(trade.exitTime)}>
+            <ReplayIcon name="exit" />
+          </button>
         </div>
       </div>
-      <label className="tradeReplaySlider">
-        <span>{formatChartTime(currentReplayStep?.source.time ?? currentReplayCandle?.source.time)}</span>
+      <label className="tradeReplaySlider" style={replaySliderStyle}>
         <input
           type="range"
           min={0}
           max={maxReplayPosition}
           step={1}
           value={clampedReplayPosition}
+          aria-label="Replay position"
+          onInput={(event) => {
+            setIsSelectingReplayStart(false);
+            setIsPlaying(false);
+            setReplayPosition(Number(event.currentTarget.value));
+          }}
           onChange={(event) => {
+            setIsSelectingReplayStart(false);
             setIsPlaying(false);
             setReplayPosition(Number(event.target.value));
           }}
         />
-        <strong>{clampedReplayPosition + 1} / {replayTimeline.length}</strong>
       </label>
       <div className="tradeReplayOptions">
         <div className="tradeReplayMode" aria-label="Replay step mode">
@@ -2916,7 +3010,10 @@ export default function TradePriceChart({
               aria-pressed={replaySpeed === speed}
               className={replaySpeed === speed ? "active" : ""}
               key={speed}
-              onClick={() => setReplaySpeed(speed)}
+              onClick={() => {
+                setIsSelectingReplayStart(false);
+                setReplaySpeed(speed);
+              }}
               type="button"
             >
               {speed}x
@@ -2979,7 +3076,11 @@ export default function TradePriceChart({
             Change <strong>{formatChartPrice(change)} / {formatPct(changePct)}</strong>
           </span>
         </div>
-        <div ref={containerRef} className="tradePriceChart" aria-label={`${trade.symbol} TradingView Lightweight candlestick chart`} />
+        <div
+          ref={containerRef}
+          className={`tradePriceChart${isSelectingReplayStart ? " isSelectingReplayStart" : ""}`}
+          aria-label={`${trade.symbol} TradingView Lightweight candlestick chart`}
+        />
       </div>
       {replayControls}
     </section>

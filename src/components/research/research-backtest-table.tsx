@@ -48,6 +48,7 @@ export type ResearchBacktestRow = ResearchStrategyLike & {
 type ResearchBacktestTableProps = {
   density?: "default" | "split";
   empty: string;
+  outcome?: "auto" | "failed" | "passed";
   rows: ResearchBacktestRow[];
 };
 
@@ -68,8 +69,16 @@ function formatPct(value: number | undefined) {
   return value === undefined || !Number.isFinite(value) ? "n/a" : `${value.toFixed(1)}%`;
 }
 
-function passLabel(row: ResearchBacktestRow) {
+function passLabel(row: ResearchBacktestRow, outcome: ResearchBacktestTableProps["outcome"]) {
+  if (outcome === "passed") return "Finished";
+  if (outcome === "failed") return "Failed gate";
   return row.qualified === "True" ? "Finished" : "Needs more edge";
+}
+
+function rowTone(row: ResearchBacktestRow, outcome: ResearchBacktestTableProps["outcome"]) {
+  if (outcome === "passed") return "up-row";
+  if (outcome === "failed") return "down-row";
+  return row.qualified === "True" ? "up-row" : "neutral-row";
 }
 
 function closeFromBackdrop(setSelected: (value: ResearchBacktestRow | null) => void) {
@@ -84,7 +93,7 @@ function exitReasonText(row: ResearchBacktestRow) {
   return entries.map(([reason, count]) => `${reason}: ${count}`).join(", ");
 }
 
-export default function ResearchBacktestTable({ density = "default", empty, rows }: ResearchBacktestTableProps) {
+export default function ResearchBacktestTable({ density = "default", empty, outcome = "auto", rows }: ResearchBacktestTableProps) {
   const [selected, setSelected] = useState<ResearchBacktestRow | null>(null);
 
   useEffect(() => {
@@ -119,7 +128,7 @@ export default function ResearchBacktestTable({ density = "default", empty, rows
           <tbody>
             {rows.map((row) => (
               <tr
-                className={`${row.qualified === "True" ? "up-row" : "neutral-row"} clickable`}
+                className={`${rowTone(row, outcome)} clickable`}
                 key={row.strategy_id}
                 onClick={() => setSelected(row)}
                 tabIndex={0}
@@ -200,7 +209,7 @@ export default function ResearchBacktestTable({ density = "default", empty, rows
               </div>
               <div>
                 <span>Review</span>
-                <strong>{passLabel(selected)}</strong>
+                <strong>{passLabel(selected, outcome)}</strong>
               </div>
             </div>
 
