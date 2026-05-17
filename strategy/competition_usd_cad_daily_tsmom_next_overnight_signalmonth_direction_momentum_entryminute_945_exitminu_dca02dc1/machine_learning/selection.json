@@ -1,6 +1,6 @@
 {
   "strategyId": "competition_usd_cad_daily_tsmom_next_overnight_signalmonth_direction_momentum_entryminute_945_exitminu_dca02dc1",
-  "label": "Competition USDCAD Daily Tsmom Next Overnight Signalmonth",
+  "label": "USDCAD 5-day daily momentum overnight (December filter)",
   "folder": "competition_usd_cad_daily_tsmom_next_overnight_signalmonth_direction_momentum_entryminute_945_exitminu_dca02dc1",
   "assetKey": "usd_cad",
   "phase": "competition_session_edge",

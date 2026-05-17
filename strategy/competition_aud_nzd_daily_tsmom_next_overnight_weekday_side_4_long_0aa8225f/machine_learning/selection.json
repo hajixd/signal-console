@@ -1,0 +1,36 @@
+{
+  "strategyId": "competition_aud_nzd_daily_tsmom_next_overnight_weekday_side_4_long_0aa8225f",
+  "label": "AUDNZD 5-day daily mean reversion overnight (Friday longs)",
+  "folder": "competition_aud_nzd_daily_tsmom_next_overnight_weekday_side_4_long_0aa8225f",
+  "assetKey": "aud_nzd",
+  "phase": "competition_session_edge",
+  "variantId": "competition_session_edge|family=daily_tsmom_next_overnight_weekday_side_4_long|direction=contrarian|entry=945|exit=945|lookback=5|signal_weekday_side=4_long",
+  "source": "competition_session_edge_train_forward_2026_05",
+  "sourceUrls": [
+    "https://w4.stern.nyu.edu/facdir/lpederse/papers/TimeSeriesMomentum.pdf",
+    "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=2694985",
+    "https://www.semanticscholar.org/paper/The-Probability-of-Backtest-Overfitting-Bailey-Borwein/b1233b4f5384f003e85c2e0eec1a2dfc08f624c5"
+  ],
+  "researchSummary": "Daily time-series contrarian using a 5-day close-to-close lookback. Filter: long signals on weekday 4.",
+  "selectionMethod": "Fixed session-edge research grid; pre-2022 training ranked candidates, then post-2022 forward trades had to clear PF/trade-count/split/no-duplicate gates.",
+  "trainingWindow": {
+    "start": "asset_start",
+    "end": "2021-12-31"
+  },
+  "forwardWindow": {
+    "start": "2022-01-01",
+    "end": "asset_latest"
+  },
+  "selectedTrainingProfitFactor": 0.910471,
+  "selectedTrainingTrades": 38,
+  "selectedForwardProfitFactor": 2.74743,
+  "selectedForwardTrades": 87,
+  "forwardWins": 56,
+  "forwardLosses": 30,
+  "forwardTotalR": 73.260495,
+  "forwardAverageR": 0.842075,
+  "forwardMaxDrawdownR": 8.289153,
+  "verificationSummary": "Strict runner verified forward PF 2.75, 87 trades, min split PF 2.10, and no registered same-asset duplicate entries at materialization time.",
+  "costUnits": 0,
+  "oneTradePerDay": false
+}

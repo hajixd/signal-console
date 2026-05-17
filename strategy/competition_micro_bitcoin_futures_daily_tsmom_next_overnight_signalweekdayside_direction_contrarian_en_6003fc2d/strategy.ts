@@ -4,7 +4,7 @@ import selection from "./machine_learning/selection.json";
 
 export default createStrategyDefinition({
   id: "competition_micro_bitcoin_futures_daily_tsmom_next_overnight_signalweekdayside_direction_contrarian_en_6003fc2d",
-  label: "Competition MBT Daily Tsmom Next Overnight Signalweekdayside",
+  label: "MBT 3-day daily mean reversion overnight (Tuesday longs)",
   folder: "competition_micro_bitcoin_futures_daily_tsmom_next_overnight_signalweekdayside_direction_contrarian_en_6003fc2d",
   fileName: "strategy.ts",
   backtestFileName: "backtest_trades.csv",

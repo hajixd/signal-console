@@ -1,6 +1,6 @@
 {
   "strategyId": "competition_usd_cad_us_first30_last30_momentum_signalmonth_direction_same_entryminute_930_exitbarminut_c1317995",
-  "label": "Competition USDCAD Us First30 Last30 Momentum Signalmonth",
+  "label": "USDCAD US opening-range continuation into the close (March filter)",
   "folder": "competition_usd_cad_us_first30_last30_momentum_signalmonth_direction_same_entryminute_930_exitbarminut_c1317995",
   "assetKey": "usd_cad",
   "phase": "competition_session_edge",

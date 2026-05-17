@@ -1,0 +1,36 @@
+{
+  "strategyId": "competition_eur_chf_ny_open_gap_fade_month_9_5044d21c",
+  "label": "EURCHF NY open gap fade (September filter)",
+  "folder": "competition_eur_chf_ny_open_gap_fade_month_9_5044d21c",
+  "assetKey": "eur_chf",
+  "phase": "competition_session_edge",
+  "variantId": "competition_session_edge|family=ny_open_gap_fade_month_9|direction=fade|entry=570|exit=660|min_gap_atr=0.25|signal_month=9",
+  "source": "competition_session_edge_train_forward_2026_05",
+  "sourceUrls": [
+    "https://w4.stern.nyu.edu/facdir/lpederse/papers/TimeSeriesMomentum.pdf",
+    "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=2694985",
+    "https://www.semanticscholar.org/paper/The-Probability-of-Backtest-Overfitting-Bailey-Borwein/b1233b4f5384f003e85c2e0eec1a2dfc08f624c5"
+  ],
+  "researchSummary": "New York open gap fade with a fixed intraday exit. Filter: month 9.",
+  "selectionMethod": "Fixed session-edge research grid; pre-2022 training ranked candidates, then post-2022 forward trades had to clear PF/trade-count/split/no-duplicate gates.",
+  "trainingWindow": {
+    "start": "asset_start",
+    "end": "2021-12-31"
+  },
+  "forwardWindow": {
+    "start": "2022-01-01",
+    "end": "asset_latest"
+  },
+  "selectedTrainingProfitFactor": 0.889555,
+  "selectedTrainingTrades": 39,
+  "selectedForwardProfitFactor": 2.034742,
+  "selectedForwardTrades": 64,
+  "forwardWins": 37,
+  "forwardLosses": 27,
+  "forwardTotalR": 32.265483,
+  "forwardAverageR": 0.504148,
+  "forwardMaxDrawdownR": 7.217251,
+  "verificationSummary": "Strict runner verified forward PF 2.03, 64 trades, min split PF 1.11, and no registered same-asset duplicate entries at materialization time.",
+  "costUnits": 0,
+  "oneTradePerDay": false
+}

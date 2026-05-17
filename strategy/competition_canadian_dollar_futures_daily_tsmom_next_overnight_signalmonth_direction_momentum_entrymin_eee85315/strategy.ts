@@ -4,7 +4,7 @@ import selection from "./machine_learning/selection.json";
 
 export default createStrategyDefinition({
   id: "competition_canadian_dollar_futures_daily_tsmom_next_overnight_signalmonth_direction_momentum_entrymin_eee85315",
-  label: "Competition 6C Daily Tsmom Next Overnight Signalmonth",
+  label: "6C 5-day daily momentum overnight (December filter)",
   folder: "competition_canadian_dollar_futures_daily_tsmom_next_overnight_signalmonth_direction_momentum_entrymin_eee85315",
   fileName: "strategy.ts",
   backtestFileName: "backtest_trades.csv",

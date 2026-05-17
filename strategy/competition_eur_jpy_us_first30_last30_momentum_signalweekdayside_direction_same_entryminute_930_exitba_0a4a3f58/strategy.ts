@@ -4,7 +4,7 @@ import selection from "./machine_learning/selection.json";
 
 export default createStrategyDefinition({
   id: "competition_eur_jpy_us_first30_last30_momentum_signalweekdayside_direction_same_entryminute_930_exitba_0a4a3f58",
-  label: "Competition EURJPY Us First30 Last30 Momentum Signalweekdayside",
+  label: "EURJPY US opening-range continuation into the close (Wednesday longs)",
   folder: "competition_eur_jpy_us_first30_last30_momentum_signalweekdayside_direction_same_entryminute_930_exitba_0a4a3f58",
   fileName: "strategy.ts",
   backtestFileName: "backtest_trades.csv",

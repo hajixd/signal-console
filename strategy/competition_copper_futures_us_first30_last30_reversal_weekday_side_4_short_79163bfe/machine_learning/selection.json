@@ -1,0 +1,36 @@
+{
+  "strategyId": "competition_copper_futures_us_first30_last30_reversal_weekday_side_4_short_79163bfe",
+  "label": "HG US opening-range reversal into the close (Friday shorts)",
+  "folder": "competition_copper_futures_us_first30_last30_reversal_weekday_side_4_short_79163bfe",
+  "assetKey": "copper_futures",
+  "phase": "competition_session_edge",
+  "variantId": "competition_session_edge|family=us_first30_last30_reversal_weekday_side_4_short|direction=opposite|entry=930|exit=945|min_signal_atr=0.5|signal_end=585|signal_start=570|signal_weekday_side=4_short",
+  "source": "competition_session_edge_train_forward_2026_05",
+  "sourceUrls": [
+    "https://w4.stern.nyu.edu/facdir/lpederse/papers/TimeSeriesMomentum.pdf",
+    "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=2694985",
+    "https://www.semanticscholar.org/paper/The-Probability-of-Backtest-Overfitting-Bailey-Borwein/b1233b4f5384f003e85c2e0eec1a2dfc08f624c5"
+  ],
+  "researchSummary": "US opening reversal into the closing half-hour. Filter: short signals on weekday 4.",
+  "selectionMethod": "Fixed session-edge research grid; pre-2022 training ranked candidates, then post-2022 forward trades had to clear PF/trade-count/split/no-duplicate gates.",
+  "trainingWindow": {
+    "start": "asset_start",
+    "end": "2021-12-31"
+  },
+  "forwardWindow": {
+    "start": "2022-01-01",
+    "end": "asset_latest"
+  },
+  "selectedTrainingProfitFactor": 0.813132,
+  "selectedTrainingTrades": 177,
+  "selectedForwardProfitFactor": 2.010287,
+  "selectedForwardTrades": 69,
+  "forwardWins": 44,
+  "forwardLosses": 21,
+  "forwardTotalR": 6.229046,
+  "forwardAverageR": 0.090276,
+  "forwardMaxDrawdownR": 1.320609,
+  "verificationSummary": "Strict runner verified forward PF 2.01, 69 trades, min split PF 1.40, and no registered same-asset duplicate entries at materialization time.",
+  "costUnits": 0,
+  "oneTradePerDay": false
+}

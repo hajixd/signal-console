@@ -1,0 +1,36 @@
+{
+  "strategyId": "competition_gbp_jpy_london_first30_last30_reversal_weekday_side_4_long_ef0c2df3",
+  "label": "GBPJPY London opening-range reversal into the US close (Friday longs)",
+  "folder": "competition_gbp_jpy_london_first30_last30_reversal_weekday_side_4_long_ef0c2df3",
+  "assetKey": "gbp_jpy",
+  "phase": "competition_session_edge",
+  "variantId": "competition_session_edge|family=london_first30_last30_reversal_weekday_side_4_long|direction=opposite|entry=930|exit=945|min_signal_atr=0.35|signal_end=195|signal_start=180|signal_weekday_side=4_long",
+  "source": "competition_session_edge_train_forward_2026_05",
+  "sourceUrls": [
+    "https://w4.stern.nyu.edu/facdir/lpederse/papers/TimeSeriesMomentum.pdf",
+    "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=2694985",
+    "https://www.semanticscholar.org/paper/The-Probability-of-Backtest-Overfitting-Bailey-Borwein/b1233b4f5384f003e85c2e0eec1a2dfc08f624c5"
+  ],
+  "researchSummary": "London first-half-hour reversal into the US close. Filter: long signals on weekday 4.",
+  "selectionMethod": "Fixed session-edge research grid; pre-2022 training ranked candidates, then post-2022 forward trades had to clear PF/trade-count/split/no-duplicate gates.",
+  "trainingWindow": {
+    "start": "asset_start",
+    "end": "2021-12-31"
+  },
+  "forwardWindow": {
+    "start": "2022-01-01",
+    "end": "asset_latest"
+  },
+  "selectedTrainingProfitFactor": 1.467885,
+  "selectedTrainingTrades": 30,
+  "selectedForwardProfitFactor": 2.730689,
+  "selectedForwardTrades": 64,
+  "forwardWins": 39,
+  "forwardLosses": 25,
+  "forwardTotalR": 12.715463,
+  "forwardAverageR": 0.198679,
+  "forwardMaxDrawdownR": 1.813182,
+  "verificationSummary": "Strict runner verified forward PF 2.73, 64 trades, min split PF 1.54, and no registered same-asset duplicate entries at materialization time.",
+  "costUnits": 0,
+  "oneTradePerDay": false
+}

@@ -1,0 +1,30 @@
+{
+  "strategyId": "gbp_usd_ny_sweep_bayes",
+  "label": "GBPUSD NY sweep playbook",
+  "folder": "gbp_usd_ny_sweep_bayes",
+  "assetKey": "gbp_usd",
+  "phase": "ny_sweep_playbook",
+  "variantId": "ny_sweep_v4|model=bayes|min=0.62|start=420|end=540|max_tests=2|risk_min=10|risk_max=22|min_wick=0.5|rr=2|max_bars=96|one_trade=1",
+  "source": "pre_2022_ml_holdout_rebuild_2026_05",
+  "sourceUrls": [
+    "https://www.investopedia.com/terms/s/stop-lossorder.asp"
+  ],
+  "researchSummary": "New York liquidity sweep setup using a naive Bayes confirmation filter and fixed risk multiple exits.",
+  "selectionMethod": "Pre-2022 ML holdout rebuild with post-2022 forward qualification and robust selector gates.",
+  "trainingWindow": {
+    "start": "asset_start",
+    "end": "2021-12-31"
+  },
+  "forwardWindow": {
+    "start": "2022-01-01",
+    "end": "asset_latest"
+  },
+  "selectedForwardProfitFactor": 2.75,
+  "selectedForwardTrades": 38,
+  "forwardTotalR": 28.0,
+  "forwardAverageR": 0.736842,
+  "forwardMaxDrawdownR": 2.0,
+  "verificationSummary": "Selector verified PF 2.75, 38 trades, quarter PF >= 2.00, bootstrap PF p05 > 1.0, and no same-asset near-duplicate entries.",
+  "costUnits": 0,
+  "oneTradePerDay": true
+}

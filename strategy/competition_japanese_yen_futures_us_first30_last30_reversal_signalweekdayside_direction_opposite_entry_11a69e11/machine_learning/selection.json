@@ -1,6 +1,6 @@
 {
   "strategyId": "competition_japanese_yen_futures_us_first30_last30_reversal_signalweekdayside_direction_opposite_entry_11a69e11",
-  "label": "Competition 6J Us First30 Last30 Reversal Signalweekdayside",
+  "label": "6J US opening-range reversal into the close (Wednesday shorts)",
   "folder": "competition_japanese_yen_futures_us_first30_last30_reversal_signalweekdayside_direction_opposite_entry_11a69e11",
   "assetKey": "japanese_yen_futures",
   "phase": "competition_session_edge",

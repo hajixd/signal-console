@@ -1,0 +1,36 @@
+{
+  "strategyId": "competition_eur_usd_overnight_close_to_open_bias_long_month_12_8a49b98f",
+  "label": "EURUSD overnight long close-to-open bias (December filter)",
+  "folder": "competition_eur_usd_overnight_close_to_open_bias_long_month_12_8a49b98f",
+  "assetKey": "eur_usd",
+  "phase": "competition_session_edge",
+  "variantId": "competition_session_edge|family=overnight_close_to_open_bias_long_month_12|side=long|signal_month=12",
+  "source": "competition_session_edge_train_forward_2026_05",
+  "sourceUrls": [
+    "https://w4.stern.nyu.edu/facdir/lpederse/papers/TimeSeriesMomentum.pdf",
+    "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=2694985",
+    "https://www.semanticscholar.org/paper/The-Probability-of-Backtest-Overfitting-Bailey-Borwein/b1233b4f5384f003e85c2e0eec1a2dfc08f624c5"
+  ],
+  "researchSummary": "Fixed long close-to-open overnight bias. Filter: month 12.",
+  "selectionMethod": "Fixed session-edge research grid; pre-2022 training ranked candidates, then post-2022 forward trades had to clear PF/trade-count/split/no-duplicate gates.",
+  "trainingWindow": {
+    "start": "asset_start",
+    "end": "2021-12-31"
+  },
+  "forwardWindow": {
+    "start": "2022-01-01",
+    "end": "asset_latest"
+  },
+  "selectedTrainingProfitFactor": 1.446526,
+  "selectedTrainingTrades": 49,
+  "selectedForwardProfitFactor": 2.391463,
+  "selectedForwardTrades": 73,
+  "forwardWins": 43,
+  "forwardLosses": 30,
+  "forwardTotalR": 84.437922,
+  "forwardAverageR": 1.156684,
+  "forwardMaxDrawdownR": 9.164127,
+  "verificationSummary": "Strict runner verified forward PF 2.39, 73 trades, min split PF 1.60, and no registered same-asset duplicate entries at materialization time.",
+  "costUnits": 0,
+  "oneTradePerDay": false
+}

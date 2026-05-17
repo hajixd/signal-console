@@ -1,0 +1,36 @@
+{
+  "strategyId": "competition_british_pound_futures_us_first30_last30_reversal_month_10_57755118",
+  "label": "6B US opening-range reversal into the close (October filter)",
+  "folder": "competition_british_pound_futures_us_first30_last30_reversal_month_10_57755118",
+  "assetKey": "british_pound_futures",
+  "phase": "competition_session_edge",
+  "variantId": "competition_session_edge|family=us_first30_last30_reversal_month_10|direction=opposite|entry=930|exit=945|min_signal_atr=0.5|signal_end=585|signal_start=570|signal_month=10",
+  "source": "competition_session_edge_train_forward_2026_05",
+  "sourceUrls": [
+    "https://w4.stern.nyu.edu/facdir/lpederse/papers/TimeSeriesMomentum.pdf",
+    "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=2694985",
+    "https://www.semanticscholar.org/paper/The-Probability-of-Backtest-Overfitting-Bailey-Borwein/b1233b4f5384f003e85c2e0eec1a2dfc08f624c5"
+  ],
+  "researchSummary": "US opening reversal into the closing half-hour. Filter: month 10.",
+  "selectionMethod": "Fixed session-edge research grid; pre-2022 training ranked candidates, then post-2022 forward trades had to clear PF/trade-count/split/no-duplicate gates.",
+  "trainingWindow": {
+    "start": "asset_start",
+    "end": "2021-12-31"
+  },
+  "forwardWindow": {
+    "start": "2022-01-01",
+    "end": "asset_latest"
+  },
+  "selectedTrainingProfitFactor": 0.997264,
+  "selectedTrainingTrades": 151,
+  "selectedForwardProfitFactor": 2.626916,
+  "selectedForwardTrades": 57,
+  "forwardWins": 36,
+  "forwardLosses": 19,
+  "forwardTotalR": 11.611687,
+  "forwardAverageR": 0.203714,
+  "forwardMaxDrawdownR": 1.318147,
+  "verificationSummary": "Strict runner verified forward PF 2.63, 57 trades, min split PF 1.75, and no registered same-asset duplicate entries at materialization time.",
+  "costUnits": 0,
+  "oneTradePerDay": false
+}

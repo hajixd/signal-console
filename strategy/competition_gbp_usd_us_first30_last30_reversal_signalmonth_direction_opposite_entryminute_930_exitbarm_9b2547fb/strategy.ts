@@ -4,7 +4,7 @@ import selection from "./machine_learning/selection.json";
 
 export default createStrategyDefinition({
   id: "competition_gbp_usd_us_first30_last30_reversal_signalmonth_direction_opposite_entryminute_930_exitbarm_9b2547fb",
-  label: "Competition GBPUSD Us First30 Last30 Reversal Signalmonth",
+  label: "GBPUSD US opening-range reversal into the close (October filter)",
   folder: "competition_gbp_usd_us_first30_last30_reversal_signalmonth_direction_opposite_entryminute_930_exitbarm_9b2547fb",
   fileName: "strategy.ts",
   backtestFileName: "backtest_trades.csv",

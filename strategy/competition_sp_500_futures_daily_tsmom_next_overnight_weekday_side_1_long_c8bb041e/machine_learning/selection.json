@@ -1,0 +1,36 @@
+{
+  "strategyId": "competition_sp_500_futures_daily_tsmom_next_overnight_weekday_side_1_long_c8bb041e",
+  "label": "ES 20-day daily mean reversion overnight (Tuesday longs)",
+  "folder": "competition_sp_500_futures_daily_tsmom_next_overnight_weekday_side_1_long_c8bb041e",
+  "assetKey": "sp_500_futures",
+  "phase": "competition_session_edge",
+  "variantId": "competition_session_edge|family=daily_tsmom_next_overnight_weekday_side_1_long|direction=contrarian|entry=945|exit=570|lookback=20|signal_weekday_side=1_long",
+  "source": "competition_session_edge_train_forward_2026_05",
+  "sourceUrls": [
+    "https://w4.stern.nyu.edu/facdir/lpederse/papers/TimeSeriesMomentum.pdf",
+    "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=2694985",
+    "https://www.semanticscholar.org/paper/The-Probability-of-Backtest-Overfitting-Bailey-Borwein/b1233b4f5384f003e85c2e0eec1a2dfc08f624c5"
+  ],
+  "researchSummary": "Daily time-series contrarian using a 20-day close-to-close lookback. Filter: long signals on weekday 1.",
+  "selectionMethod": "Fixed session-edge research grid; pre-2022 training ranked candidates, then post-2022 forward trades had to clear PF/trade-count/split/no-duplicate gates.",
+  "trainingWindow": {
+    "start": "asset_start",
+    "end": "2021-12-31"
+  },
+  "forwardWindow": {
+    "start": "2022-01-01",
+    "end": "asset_latest"
+  },
+  "selectedTrainingProfitFactor": 1.218362,
+  "selectedTrainingTrades": 171,
+  "selectedForwardProfitFactor": 2.728575,
+  "selectedForwardTrades": 82,
+  "forwardWins": 60,
+  "forwardLosses": 22,
+  "forwardTotalR": 91.893849,
+  "forwardAverageR": 1.120657,
+  "forwardMaxDrawdownR": 9.187686,
+  "verificationSummary": "Strict runner verified forward PF 2.73, 82 trades, min split PF 2.04, and no registered same-asset duplicate entries at materialization time.",
+  "costUnits": 0,
+  "oneTradePerDay": false
+}

@@ -1,0 +1,36 @@
+{
+  "strategyId": "competition_nzd_usd_us_first30_midday_momentum_month_4_f022fff9",
+  "label": "NZDUSD US opening-range continuation into midday (April filter)",
+  "folder": "competition_nzd_usd_us_first30_midday_momentum_month_4_f022fff9",
+  "assetKey": "nzd_usd",
+  "phase": "competition_session_edge",
+  "variantId": "competition_session_edge|family=us_first30_midday_momentum_month_4|direction=same|entry=720|exit=780|min_signal_atr=0.35|signal_end=585|signal_start=570|signal_month=4",
+  "source": "competition_session_edge_train_forward_2026_05",
+  "sourceUrls": [
+    "https://w4.stern.nyu.edu/facdir/lpederse/papers/TimeSeriesMomentum.pdf",
+    "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=2694985",
+    "https://www.semanticscholar.org/paper/The-Probability-of-Backtest-Overfitting-Bailey-Borwein/b1233b4f5384f003e85c2e0eec1a2dfc08f624c5"
+  ],
+  "researchSummary": "US opening continuation into midday. Filter: month 4.",
+  "selectionMethod": "Fixed session-edge research grid; pre-2022 training ranked candidates, then post-2022 forward trades had to clear PF/trade-count/split/no-duplicate gates.",
+  "trainingWindow": {
+    "start": "asset_start",
+    "end": "2021-12-31"
+  },
+  "forwardWindow": {
+    "start": "2022-01-01",
+    "end": "asset_latest"
+  },
+  "selectedTrainingProfitFactor": 0.676936,
+  "selectedTrainingTrades": 33,
+  "selectedForwardProfitFactor": 2.161741,
+  "selectedForwardTrades": 73,
+  "forwardWins": 48,
+  "forwardLosses": 25,
+  "forwardTotalR": 25.008942,
+  "forwardAverageR": 0.342588,
+  "forwardMaxDrawdownR": 5.62623,
+  "verificationSummary": "Strict runner verified forward PF 2.16, 73 trades, min split PF 1.49, and no registered same-asset duplicate entries at materialization time.",
+  "costUnits": 0,
+  "oneTradePerDay": false
+}

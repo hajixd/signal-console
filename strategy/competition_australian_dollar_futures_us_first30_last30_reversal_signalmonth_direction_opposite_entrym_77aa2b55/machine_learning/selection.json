@@ -1,6 +1,6 @@
 {
   "strategyId": "competition_australian_dollar_futures_us_first30_last30_reversal_signalmonth_direction_opposite_entrym_77aa2b55",
-  "label": "Competition 6A Us First30 Last30 Reversal Signalmonth",
+  "label": "6A US opening-range reversal into the close (December filter)",
   "folder": "competition_australian_dollar_futures_us_first30_last30_reversal_signalmonth_direction_opposite_entrym_77aa2b55",
   "assetKey": "australian_dollar_futures",
   "phase": "competition_session_edge",

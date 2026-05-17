@@ -1,0 +1,36 @@
+{
+  "strategyId": "competition_swiss_franc_futures_overnight_close_to_open_bias_short_month_10_17716ea5",
+  "label": "6S overnight short close-to-open bias (October filter)",
+  "folder": "competition_swiss_franc_futures_overnight_close_to_open_bias_short_month_10_17716ea5",
+  "assetKey": "swiss_franc_futures",
+  "phase": "competition_session_edge",
+  "variantId": "competition_session_edge|family=overnight_close_to_open_bias_short_month_10|side=short|signal_month=10",
+  "source": "competition_session_edge_train_forward_2026_05",
+  "sourceUrls": [
+    "https://w4.stern.nyu.edu/facdir/lpederse/papers/TimeSeriesMomentum.pdf",
+    "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=2694985",
+    "https://www.semanticscholar.org/paper/The-Probability-of-Backtest-Overfitting-Bailey-Borwein/b1233b4f5384f003e85c2e0eec1a2dfc08f624c5"
+  ],
+  "researchSummary": "Fixed short close-to-open overnight bias. Filter: month 10.",
+  "selectionMethod": "Fixed session-edge research grid; pre-2022 training ranked candidates, then post-2022 forward trades had to clear PF/trade-count/split/no-duplicate gates.",
+  "trainingWindow": {
+    "start": "asset_start",
+    "end": "2021-12-31"
+  },
+  "forwardWindow": {
+    "start": "2022-01-01",
+    "end": "asset_latest"
+  },
+  "selectedTrainingProfitFactor": 0.606716,
+  "selectedTrainingTrades": 43,
+  "selectedForwardProfitFactor": 2.421766,
+  "selectedForwardTrades": 89,
+  "forwardWins": 57,
+  "forwardLosses": 29,
+  "forwardTotalR": 135.025424,
+  "forwardAverageR": 1.51714,
+  "forwardMaxDrawdownR": 14.807426,
+  "verificationSummary": "Strict runner verified forward PF 2.42, 89 trades, min split PF 1.42, and no registered same-asset duplicate entries at materialization time.",
+  "costUnits": 0,
+  "oneTradePerDay": false
+}

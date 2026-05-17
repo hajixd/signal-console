@@ -4,7 +4,7 @@ import selection from "./machine_learning/selection.json";
 
 export default createStrategyDefinition({
   id: "competition_gbp_jpy_london_first30_ny_open_reversal_signalmonth_direction_opposite_entryminute_480_exi_d549e3a7",
-  label: "Competition GBPJPY London First30 Ny Open Reversal Signalmonth",
+  label: "GBPJPY London opening-range reversal into New York (June filter)",
   folder: "competition_gbp_jpy_london_first30_ny_open_reversal_signalmonth_direction_opposite_entryminute_480_exi_d549e3a7",
   fileName: "strategy.ts",
   backtestFileName: "backtest_trades.csv",

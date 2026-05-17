@@ -1,0 +1,36 @@
+{
+  "strategyId": "competition_gbp_jpy_ny_open_gap_follow_month_9_eea6b89e",
+  "label": "GBPJPY NY open gap follow-through (September filter)",
+  "folder": "competition_gbp_jpy_ny_open_gap_follow_month_9_eea6b89e",
+  "assetKey": "gbp_jpy",
+  "phase": "competition_session_edge",
+  "variantId": "competition_session_edge|family=ny_open_gap_follow_month_9|direction=follow|entry=570|exit=660|min_gap_atr=0|signal_month=9",
+  "source": "competition_session_edge_train_forward_2026_05",
+  "sourceUrls": [
+    "https://w4.stern.nyu.edu/facdir/lpederse/papers/TimeSeriesMomentum.pdf",
+    "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=2694985",
+    "https://www.semanticscholar.org/paper/The-Probability-of-Backtest-Overfitting-Bailey-Borwein/b1233b4f5384f003e85c2e0eec1a2dfc08f624c5"
+  ],
+  "researchSummary": "New York open gap follow with a fixed intraday exit. Filter: month 9.",
+  "selectionMethod": "Fixed session-edge research grid; pre-2022 training ranked candidates, then post-2022 forward trades had to clear PF/trade-count/split/no-duplicate gates.",
+  "trainingWindow": {
+    "start": "asset_start",
+    "end": "2021-12-31"
+  },
+  "forwardWindow": {
+    "start": "2022-01-01",
+    "end": "asset_latest"
+  },
+  "selectedTrainingProfitFactor": 1.17827,
+  "selectedTrainingTrades": 40,
+  "selectedForwardProfitFactor": 2.151636,
+  "selectedForwardTrades": 68,
+  "forwardWins": 39,
+  "forwardLosses": 27,
+  "forwardTotalR": 53.398865,
+  "forwardAverageR": 0.785277,
+  "forwardMaxDrawdownR": 5.020733,
+  "verificationSummary": "Strict runner verified forward PF 2.15, 68 trades, min split PF 1.81, and no registered same-asset duplicate entries at materialization time.",
+  "costUnits": 0,
+  "oneTradePerDay": false
+}

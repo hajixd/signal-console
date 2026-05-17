@@ -4,7 +4,7 @@ import selection from "./machine_learning/selection.json";
 
 export default createStrategyDefinition({
   id: "competition_euro_futures_daily_tsmom_next_rth_signalmonth_direction_contrarian_entryminute_570_exitmin_0b54da46",
-  label: "Competition 6E Daily Tsmom Next Rth Signalmonth",
+  label: "6E 5-day daily mean reversion into RTH (December filter)",
   folder: "competition_euro_futures_daily_tsmom_next_rth_signalmonth_direction_contrarian_entryminute_570_exitmin_0b54da46",
   fileName: "strategy.ts",
   backtestFileName: "backtest_trades.csv",

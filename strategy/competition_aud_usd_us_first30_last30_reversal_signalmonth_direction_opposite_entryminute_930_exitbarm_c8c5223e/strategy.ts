@@ -4,7 +4,7 @@ import selection from "./machine_learning/selection.json";
 
 export default createStrategyDefinition({
   id: "competition_aud_usd_us_first30_last30_reversal_signalmonth_direction_opposite_entryminute_930_exitbarm_c8c5223e",
-  label: "Competition AUDUSD Us First30 Last30 Reversal Signalmonth",
+  label: "AUDUSD US opening-range reversal into the close (December filter)",
   folder: "competition_aud_usd_us_first30_last30_reversal_signalmonth_direction_opposite_entryminute_930_exitbarm_c8c5223e",
   fileName: "strategy.ts",
   backtestFileName: "backtest_trades.csv",

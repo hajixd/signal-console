@@ -684,6 +684,33 @@ function ResearchStageTile({ snapshot, stage }: { snapshot: ResearchSnapshot; st
   );
 }
 
+function ResearchCycleTile({ snapshot }: { snapshot: ResearchSnapshot }) {
+  const state = syncTileStateFromResearch(snapshot.researchStatus, snapshot);
+
+  return (
+    <div className={`dataset-sync-tile sync-state-${state}`}>
+      <span className="sync-tile-name">Cycle Overview</span>
+      <p className="sync-tile-description">{currentActivity(snapshot)}</p>
+      <dl className="sync-tile-times">
+        <dt>Status</dt>
+        <dd>{snapshot.researchStatus?.state ?? (state === "success" ? "ready" : "idle")}</dd>
+        <dt>Last cycle</dt>
+        <dd>
+          <LocalDateTime value={snapshot.researchStatus?.finishedAt ?? snapshot.researchStatus?.lastSuccessAt} fallback="Not run yet" />
+        </dd>
+        <dt>Ideas now</dt>
+        <dd>{formatNumber(snapshot.inboxIdeaCount + snapshot.approvedIdeaCount)}</dd>
+        <dt>Coded specs</dt>
+        <dd>{formatNumber(snapshot.readyCount)}</dd>
+        <dt>Backtests</dt>
+        <dd>{formatNumber(snapshot.backtestedCount)}</dd>
+        <dt>Finished</dt>
+        <dd>{formatNumber(snapshot.qualifiedCount)}</dd>
+      </dl>
+    </div>
+  );
+}
+
 function ResearchWorkSync({ snapshot }: { snapshot: ResearchSnapshot }) {
   const cycleState = syncTileStateFromResearch(snapshot.researchStatus, snapshot);
 
@@ -699,6 +726,7 @@ function ResearchWorkSync({ snapshot }: { snapshot: ResearchSnapshot }) {
         </span>
       </div>
       <div className="sync-grid" aria-label="Research work sync status">
+        <ResearchCycleTile snapshot={snapshot} />
         {RESEARCH_STAGE_ORDER.map((stage) => (
           <ResearchStageTile key={stage} snapshot={snapshot} stage={stage} />
         ))}

@@ -4,7 +4,7 @@ import selection from "./machine_learning/selection.json";
 
 export default createStrategyDefinition({
   id: "competition_us_treasury_2y_note_futures_ny_open_gap_fade_signalmonth_direction_fade_entryminute_570_ex_d2289e05",
-  label: "Competition ZT Ny Open Gap Fade Signalmonth",
+  label: "ZT NY open gap fade (December filter)",
   folder: "competition_us_treasury_2y_note_futures_ny_open_gap_fade_signalmonth_direction_fade_entryminute_570_ex_d2289e05",
   fileName: "strategy.ts",
   backtestFileName: "backtest_trades.csv",

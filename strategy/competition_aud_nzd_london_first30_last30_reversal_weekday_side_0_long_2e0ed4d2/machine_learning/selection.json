@@ -1,0 +1,36 @@
+{
+  "strategyId": "competition_aud_nzd_london_first30_last30_reversal_weekday_side_0_long_2e0ed4d2",
+  "label": "AUDNZD London opening-range reversal into the US close (Monday longs)",
+  "folder": "competition_aud_nzd_london_first30_last30_reversal_weekday_side_0_long_2e0ed4d2",
+  "assetKey": "aud_nzd",
+  "phase": "competition_session_edge",
+  "variantId": "competition_session_edge|family=london_first30_last30_reversal_weekday_side_0_long|direction=opposite|entry=930|exit=945|min_signal_atr=0.35|signal_end=195|signal_start=180|signal_weekday_side=0_long",
+  "source": "competition_session_edge_train_forward_2026_05",
+  "sourceUrls": [
+    "https://w4.stern.nyu.edu/facdir/lpederse/papers/TimeSeriesMomentum.pdf",
+    "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=2694985",
+    "https://www.semanticscholar.org/paper/The-Probability-of-Backtest-Overfitting-Bailey-Borwein/b1233b4f5384f003e85c2e0eec1a2dfc08f624c5"
+  ],
+  "researchSummary": "London first-half-hour reversal into the US close. Filter: long signals on weekday 0.",
+  "selectionMethod": "Fixed session-edge research grid; pre-2022 training ranked candidates, then post-2022 forward trades had to clear PF/trade-count/split/no-duplicate gates.",
+  "trainingWindow": {
+    "start": "asset_start",
+    "end": "2021-12-31"
+  },
+  "forwardWindow": {
+    "start": "2022-01-01",
+    "end": "asset_latest"
+  },
+  "selectedTrainingProfitFactor": 0.590658,
+  "selectedTrainingTrades": 28,
+  "selectedForwardProfitFactor": 2.133229,
+  "selectedForwardTrades": 53,
+  "forwardWins": 29,
+  "forwardLosses": 20,
+  "forwardTotalR": 6.970513,
+  "forwardAverageR": 0.131519,
+  "forwardMaxDrawdownR": 1.145309,
+  "verificationSummary": "Strict runner verified forward PF 2.13, 53 trades, min split PF 1.11, and no registered same-asset duplicate entries at materialization time.",
+  "costUnits": 0,
+  "oneTradePerDay": false
+}

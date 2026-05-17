@@ -4,7 +4,7 @@ import selection from "./machine_learning/selection.json";
 
 export default createStrategyDefinition({
   id: "competition_japanese_yen_futures_us_first30_last30_reversal_signalweekdayside_direction_opposite_entry_11a69e11",
-  label: "Competition 6J Us First30 Last30 Reversal Signalweekdayside",
+  label: "6J US opening-range reversal into the close (Wednesday shorts)",
   folder: "competition_japanese_yen_futures_us_first30_last30_reversal_signalweekdayside_direction_opposite_entry_11a69e11",
   fileName: "strategy.ts",
   backtestFileName: "backtest_trades.csv",

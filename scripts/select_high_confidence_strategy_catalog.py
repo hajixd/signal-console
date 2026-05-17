@@ -6,6 +6,7 @@ import math
 import random
 import shutil
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from functools import lru_cache
 from itertools import groupby
 from pathlib import Path
@@ -25,6 +26,10 @@ SPLIT_COUNT = 4
 MIN_SPLIT_TRADES = 5
 MIN_SPLIT_PROFIT_FACTOR = 1.0
 BOOTSTRAP_SAMPLES = 400
+NEAR_DUPLICATE_SECONDS = 15 * 60
+MIN_BOOTSTRAP_P05 = 1.0
+MIN_ODD_EVEN_PROFIT_FACTOR = 1.0
+MIN_ANNUAL_PASS_RATE = 0.6
 
 
 @dataclass(frozen=True)
@@ -51,8 +56,12 @@ class Candidate:
     win_rate_pct: float
     max_drawdown_r: float
     pf_bootstrap_p05: float
+    odd_even_min_profit_factor: float
+    annual_pass_rate: float
+    worst_annual_profit_factor: float
     split_metrics: list[SplitMetrics]
     trade_signature: set[tuple[str, str, str]]
+    trade_signature_times: list[tuple[str, str, int]]
     strategy_dir: Path
     rejection_reason: str | None = None
     duplicate_of: str | None = None
@@ -151,6 +160,21 @@ def bootstrap_pf_p05(values: list[float]) -> float:
     return 999.0 if math.isinf(value) else value
 
 
+def annual_walk_forward_metrics(rows: list[tuple[str, int, dict[str, str], float]]) -> tuple[float, float]:
+    annual: dict[int, list[float]] = {}
+    for timestamp, _index, row, r_multiple in rows:
+        parsed = parse_timestamp(row.get("entry_time") or row.get("signal_time") or timestamp)
+        if parsed < 0:
+            continue
+        year = datetime.fromtimestamp(parsed, tz=timezone.utc).year
+        annual.setdefault(year, []).append(r_multiple)
+    windows = [values for _year, values in sorted(annual.items()) if len(values) >= MIN_SPLIT_TRADES]
+    if not windows:
+        return 0.0, 0.0
+    pfs = [profit_factor(values) for values in windows]
+    return sum(1 for value in pfs if value > 1.0) / len(pfs), min(pfs)
+
+
 def fallback_label(strategy_id: str, symbol: str, phase: str) -> str:
     readable_phase = phase.replace("_", " ").title()
     return f"{symbol} {readable_phase}" if symbol else strategy_id.replace("_", " ").title()
@@ -188,10 +212,19 @@ def read_candidate(strategy_dir: Path, assets: dict[str, dict[str, Any]]) -> Can
     source = str(first.get("source") or metadata.get("source") or "backtest_trades")
     wins = sum(1 for value in values if value > 0)
     splits = [split_metric(split) for split in split_values(values)]
+    annual_pass_rate, worst_annual_pf = annual_walk_forward_metrics(rows)
     signature = {
         (row.get("asset_key", ""), row.get("side", ""), row.get("entry_time") or row.get("signal_time") or "")
         for _, _, row, _ in rows
     }
+    signature_times = [
+        (
+            row.get("asset_key", ""),
+            row.get("side", ""),
+            parse_timestamp(row.get("entry_time") or row.get("signal_time") or ""),
+        )
+        for _, _, row, _ in rows
+    ]
 
     return Candidate(
         strategy_id=strategy_id,
@@ -209,10 +242,30 @@ def read_candidate(strategy_dir: Path, assets: dict[str, dict[str, Any]]) -> Can
         win_rate_pct=(wins / len(values) * 100) if values else 0.0,
         max_drawdown_r=max_drawdown(values),
         pf_bootstrap_p05=bootstrap_pf_p05(values),
+        odd_even_min_profit_factor=min(profit_factor(values[::2]), profit_factor(values[1::2])),
+        annual_pass_rate=annual_pass_rate,
+        worst_annual_profit_factor=worst_annual_pf,
         split_metrics=splits,
         trade_signature=signature,
+        trade_signature_times=signature_times,
         strategy_dir=strategy_dir,
     )
+
+
+def parse_timestamp(value: str) -> int:
+    if not value:
+        return -1
+    try:
+        return int(float(value))
+    except ValueError:
+        pass
+    try:
+        parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    except ValueError:
+        return -1
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=timezone.utc)
+    return int(parsed.timestamp())
 
 
 def qualification_reason(candidate: Candidate) -> str | None:
@@ -226,13 +279,38 @@ def qualification_reason(candidate: Candidate) -> str | None:
         return f"thin chronological quarter: {candidate.min_split_trades} trades"
     if not candidate.min_split_profit_factor > MIN_SPLIT_PROFIT_FACTOR:
         return f"quarter PF {candidate.min_split_profit_factor:.6f} is not above {MIN_SPLIT_PROFIT_FACTOR:.1f}"
+    if not candidate.pf_bootstrap_p05 > MIN_BOOTSTRAP_P05:
+        return f"bootstrap PF p05 {candidate.pf_bootstrap_p05:.6f} is not above {MIN_BOOTSTRAP_P05:.1f}"
+    if not candidate.odd_even_min_profit_factor > MIN_ODD_EVEN_PROFIT_FACTOR:
+        return f"odd/even PF {candidate.odd_even_min_profit_factor:.6f} is not above {MIN_ODD_EVEN_PROFIT_FACTOR:.1f}"
+    if not candidate.annual_pass_rate >= MIN_ANNUAL_PASS_RATE:
+        return f"annual walk-forward pass rate {candidate.annual_pass_rate:.6f} is below {MIN_ANNUAL_PASS_RATE:.1f}"
     return None
 
 
 def exact_overlap(left: Candidate, right: Candidate) -> int:
     if left.asset_key != right.asset_key:
         return 0
-    return len(left.trade_signature & right.trade_signature)
+    exact = len(left.trade_signature & right.trade_signature)
+    near = 0
+    right_by_side: dict[str, list[int]] = {}
+    for _, side, timestamp in right.trade_signature_times:
+        if timestamp >= 0:
+            right_by_side.setdefault(side, []).append(timestamp)
+    for timestamps in right_by_side.values():
+        timestamps.sort()
+    for _, side, timestamp in left.trade_signature_times:
+        if timestamp < 0:
+            continue
+        for other in right_by_side.get(side, []):
+            delta = other - timestamp
+            if delta < -NEAR_DUPLICATE_SECONDS:
+                continue
+            if delta > NEAR_DUPLICATE_SECONDS:
+                break
+            near += 1
+            break
+    return max(exact, near)
 
 
 def independent_set_for_asset(candidates: list[Candidate]) -> list[Candidate]:
@@ -331,6 +409,9 @@ def report_row(candidate: Candidate, rank: int | str = "") -> dict[str, str]:
         "win_rate_pct": fmt(candidate.win_rate_pct),
         "max_drawdown_r": fmt(candidate.max_drawdown_r),
         "pf_bootstrap_p05": fmt(candidate.pf_bootstrap_p05),
+        "odd_even_min_pf": fmt(candidate.odd_even_min_profit_factor),
+        "annual_pass_rate": fmt(candidate.annual_pass_rate),
+        "worst_annual_pf": fmt(candidate.worst_annual_profit_factor),
         "split1_pf": fmt(split_pfs[0]),
         "split1_trades": str(split_trades[0]),
         "split2_pf": fmt(split_pfs[1]),
@@ -366,6 +447,9 @@ def write_csv(path: Path, rows: list[dict[str, str]]) -> None:
         "win_rate_pct",
         "max_drawdown_r",
         "pf_bootstrap_p05",
+        "odd_even_min_pf",
+        "annual_pass_rate",
+        "worst_annual_pf",
         "split1_pf",
         "split1_trades",
         "split2_pf",
@@ -423,7 +507,10 @@ def write_markdown(path: Path, selected: list[Candidate], rejected: list[Candida
         f"- At least {MIN_TOTAL_TRADES} trades.",
         f"- {SPLIT_COUNT} chronological quarters, each with at least {MIN_SPLIT_TRADES} trades.",
         f"- Every chronological quarter must have PF > {MIN_SPLIT_PROFIT_FACTOR:.1f}.",
-        "- Strategies on the same asset may not share any exact trade signature `(asset, side, entry_time)`.",
+        f"- Bootstrap resampling 5th percentile PF must be > {MIN_BOOTSTRAP_P05:.1f}.",
+        f"- Odd/even trade-order PF must both be > {MIN_ODD_EVEN_PROFIT_FACTOR:.1f}.",
+        f"- At least {MIN_ANNUAL_PASS_RATE:.0%} of calendar-year walk-forward windows with enough trades must have PF > 1.0.",
+        f"- Strategies on the same asset may not share exact entries or same-side entries within {NEAR_DUPLICATE_SECONDS // 60} minutes.",
         "- Per-asset selection maximizes count first, then robustness score.",
         "",
         "## Selected",
@@ -433,7 +520,7 @@ def write_markdown(path: Path, selected: list[Candidate], rejected: list[Candida
     ]
     for rank, candidate in enumerate(selected, start=1):
         lines.append(
-            f"| {rank} | {candidate.market} | {candidate.symbol} | `{candidate.strategy_id}` | "
+            f"| {rank} | {candidate.market} | {candidate.symbol} | {candidate.label} | "
             f"{fmt(candidate.profit_factor)} | {candidate.trades} | {fmt(candidate.min_split_profit_factor)} | {fmt(candidate.pf_bootstrap_p05)} |"
         )
     lines.append("")

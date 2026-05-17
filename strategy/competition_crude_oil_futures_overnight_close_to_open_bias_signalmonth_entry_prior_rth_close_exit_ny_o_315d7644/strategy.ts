@@ -4,7 +4,7 @@ import selection from "./machine_learning/selection.json";
 
 export default createStrategyDefinition({
   id: "competition_crude_oil_futures_overnight_close_to_open_bias_signalmonth_entry_prior_rth_close_exit_ny_o_315d7644",
-  label: "Competition CL Overnight Close To Open Bias Signalmonth",
+  label: "CL overnight long close-to-open bias (January filter)",
   folder: "competition_crude_oil_futures_overnight_close_to_open_bias_signalmonth_entry_prior_rth_close_exit_ny_o_315d7644",
   fileName: "strategy.ts",
   backtestFileName: "backtest_trades.csv",

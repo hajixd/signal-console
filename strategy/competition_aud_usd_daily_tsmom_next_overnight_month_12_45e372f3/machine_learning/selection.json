@@ -1,0 +1,36 @@
+{
+  "strategyId": "competition_aud_usd_daily_tsmom_next_overnight_month_12_45e372f3",
+  "label": "AUDUSD 20-day daily momentum overnight (December filter)",
+  "folder": "competition_aud_usd_daily_tsmom_next_overnight_month_12_45e372f3",
+  "assetKey": "aud_usd",
+  "phase": "competition_session_edge",
+  "variantId": "competition_session_edge|family=daily_tsmom_next_overnight_month_12|direction=momentum|entry=945|exit=570|lookback=20|signal_month=12",
+  "source": "competition_session_edge_train_forward_2026_05",
+  "sourceUrls": [
+    "https://w4.stern.nyu.edu/facdir/lpederse/papers/TimeSeriesMomentum.pdf",
+    "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=2694985",
+    "https://www.semanticscholar.org/paper/The-Probability-of-Backtest-Overfitting-Bailey-Borwein/b1233b4f5384f003e85c2e0eec1a2dfc08f624c5"
+  ],
+  "researchSummary": "Daily time-series momentum using a 20-day close-to-close lookback. Filter: month 12.",
+  "selectionMethod": "Fixed session-edge research grid; pre-2022 training ranked candidates, then post-2022 forward trades had to clear PF/trade-count/split/no-duplicate gates.",
+  "trainingWindow": {
+    "start": "asset_start",
+    "end": "2021-12-31"
+  },
+  "forwardWindow": {
+    "start": "2022-01-01",
+    "end": "asset_latest"
+  },
+  "selectedTrainingProfitFactor": 1.726114,
+  "selectedTrainingTrades": 53,
+  "selectedForwardProfitFactor": 2.498047,
+  "selectedForwardTrades": 79,
+  "forwardWins": 49,
+  "forwardLosses": 30,
+  "forwardTotalR": 137.912838,
+  "forwardAverageR": 1.745732,
+  "forwardMaxDrawdownR": 21.619634,
+  "verificationSummary": "Strict runner verified forward PF 2.50, 79 trades, min split PF 1.55, and no registered same-asset duplicate entries at materialization time.",
+  "costUnits": 0,
+  "oneTradePerDay": false
+}

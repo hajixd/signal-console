@@ -4,7 +4,7 @@ import selection from "./machine_learning/selection.json";
 
 export default createStrategyDefinition({
   id: "competition_gold_futures_daily_tsmom_next_overnight_signalweekdayside_direction_momentum_entryminute_9_c8e1caae",
-  label: "Competition GC Daily Tsmom Next Overnight Signalweekdayside",
+  label: "GC 3-day daily momentum overnight (Tuesday longs)",
   folder: "competition_gold_futures_daily_tsmom_next_overnight_signalweekdayside_direction_momentum_entryminute_9_c8e1caae",
   fileName: "strategy.ts",
   backtestFileName: "backtest_trades.csv",

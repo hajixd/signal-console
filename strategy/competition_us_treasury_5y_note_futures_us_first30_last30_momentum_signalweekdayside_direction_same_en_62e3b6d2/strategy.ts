@@ -4,7 +4,7 @@ import selection from "./machine_learning/selection.json";
 
 export default createStrategyDefinition({
   id: "competition_us_treasury_5y_note_futures_us_first30_last30_momentum_signalweekdayside_direction_same_en_62e3b6d2",
-  label: "Competition ZF Us First30 Last30 Momentum Signalweekdayside",
+  label: "ZF US opening-range continuation into the close (Friday longs)",
   folder: "competition_us_treasury_5y_note_futures_us_first30_last30_momentum_signalweekdayside_direction_same_en_62e3b6d2",
   fileName: "strategy.ts",
   backtestFileName: "backtest_trades.csv",

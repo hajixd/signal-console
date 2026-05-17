@@ -4,7 +4,7 @@ import selection from "./machine_learning/selection.json";
 
 export default createStrategyDefinition({
   id: "competition_usd_cad_us_first30_last30_momentum_signalmonth_direction_same_entryminute_930_exitbarminut_c1317995",
-  label: "Competition USDCAD Us First30 Last30 Momentum Signalmonth",
+  label: "USDCAD US opening-range continuation into the close (March filter)",
   folder: "competition_usd_cad_us_first30_last30_momentum_signalmonth_direction_same_entryminute_930_exitbarminut_c1317995",
   fileName: "strategy.ts",
   backtestFileName: "backtest_trades.csv",

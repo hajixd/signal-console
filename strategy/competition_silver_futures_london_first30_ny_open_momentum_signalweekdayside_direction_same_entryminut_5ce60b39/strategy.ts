@@ -4,7 +4,7 @@ import selection from "./machine_learning/selection.json";
 
 export default createStrategyDefinition({
   id: "competition_silver_futures_london_first30_ny_open_momentum_signalweekdayside_direction_same_entryminut_5ce60b39",
-  label: "Competition SI London First30 Ny Open Momentum Signalweekdayside",
+  label: "SI London opening-range continuation into New York (Friday longs)",
   folder: "competition_silver_futures_london_first30_ny_open_momentum_signalweekdayside_direction_same_entryminut_5ce60b39",
   fileName: "strategy.ts",
   backtestFileName: "backtest_trades.csv",

@@ -1,0 +1,36 @@
+{
+  "strategyId": "competition_usd_cad_us_first30_midday_reversal_month_12_1f6382c6",
+  "label": "USDCAD US opening-range reversal into midday (December filter)",
+  "folder": "competition_usd_cad_us_first30_midday_reversal_month_12_1f6382c6",
+  "assetKey": "usd_cad",
+  "phase": "competition_session_edge",
+  "variantId": "competition_session_edge|family=us_first30_midday_reversal_month_12|direction=opposite|entry=720|exit=780|min_signal_atr=0.5|signal_end=585|signal_start=570|signal_month=12",
+  "source": "competition_session_edge_train_forward_2026_05",
+  "sourceUrls": [
+    "https://w4.stern.nyu.edu/facdir/lpederse/papers/TimeSeriesMomentum.pdf",
+    "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=2694985",
+    "https://www.semanticscholar.org/paper/The-Probability-of-Backtest-Overfitting-Bailey-Borwein/b1233b4f5384f003e85c2e0eec1a2dfc08f624c5"
+  ],
+  "researchSummary": "US opening reversal into midday. Filter: month 12.",
+  "selectionMethod": "Fixed session-edge research grid; pre-2022 training ranked candidates, then post-2022 forward trades had to clear PF/trade-count/split/no-duplicate gates.",
+  "trainingWindow": {
+    "start": "asset_start",
+    "end": "2021-12-31"
+  },
+  "forwardWindow": {
+    "start": "2022-01-01",
+    "end": "asset_latest"
+  },
+  "selectedTrainingProfitFactor": 1.948946,
+  "selectedTrainingTrades": 27,
+  "selectedForwardProfitFactor": 2.192216,
+  "selectedForwardTrades": 61,
+  "forwardWins": 40,
+  "forwardLosses": 21,
+  "forwardTotalR": 26.817286,
+  "forwardAverageR": 0.439628,
+  "forwardMaxDrawdownR": 6.118447,
+  "verificationSummary": "Strict runner verified forward PF 2.19, 61 trades, min split PF 1.20, and no registered same-asset duplicate entries at materialization time.",
+  "costUnits": 0,
+  "oneTradePerDay": false
+}

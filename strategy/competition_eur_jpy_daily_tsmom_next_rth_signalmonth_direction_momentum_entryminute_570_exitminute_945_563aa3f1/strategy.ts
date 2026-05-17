@@ -4,7 +4,7 @@ import selection from "./machine_learning/selection.json";
 
 export default createStrategyDefinition({
   id: "competition_eur_jpy_daily_tsmom_next_rth_signalmonth_direction_momentum_entryminute_570_exitminute_945_563aa3f1",
-  label: "Competition EURJPY Daily Tsmom Next Rth Signalmonth",
+  label: "EURJPY 5-day daily momentum into RTH (June filter)",
   folder: "competition_eur_jpy_daily_tsmom_next_rth_signalmonth_direction_momentum_entryminute_570_exitminute_945_563aa3f1",
   fileName: "strategy.ts",
   backtestFileName: "backtest_trades.csv",

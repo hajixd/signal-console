@@ -1,0 +1,36 @@
+{
+  "strategyId": "competition_swiss_franc_futures_us_first30_midday_momentum_month_5_a2abc7dd",
+  "label": "6S US opening-range continuation into midday (May filter)",
+  "folder": "competition_swiss_franc_futures_us_first30_midday_momentum_month_5_a2abc7dd",
+  "assetKey": "swiss_franc_futures",
+  "phase": "competition_session_edge",
+  "variantId": "competition_session_edge|family=us_first30_midday_momentum_month_5|direction=same|entry=720|exit=780|min_signal_atr=0|signal_end=585|signal_start=570|signal_month=5",
+  "source": "competition_session_edge_train_forward_2026_05",
+  "sourceUrls": [
+    "https://w4.stern.nyu.edu/facdir/lpederse/papers/TimeSeriesMomentum.pdf",
+    "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=2694985",
+    "https://www.semanticscholar.org/paper/The-Probability-of-Backtest-Overfitting-Bailey-Borwein/b1233b4f5384f003e85c2e0eec1a2dfc08f624c5"
+  ],
+  "researchSummary": "US opening continuation into midday. Filter: month 5.",
+  "selectionMethod": "Fixed session-edge research grid; pre-2022 training ranked candidates, then post-2022 forward trades had to clear PF/trade-count/split/no-duplicate gates.",
+  "trainingWindow": {
+    "start": "asset_start",
+    "end": "2021-12-31"
+  },
+  "forwardWindow": {
+    "start": "2022-01-01",
+    "end": "asset_latest"
+  },
+  "selectedTrainingProfitFactor": 3.038263,
+  "selectedTrainingTrades": 38,
+  "selectedForwardProfitFactor": 2.339639,
+  "selectedForwardTrades": 91,
+  "forwardWins": 57,
+  "forwardLosses": 33,
+  "forwardTotalR": 31.514576,
+  "forwardAverageR": 0.346314,
+  "forwardMaxDrawdownR": 3.736493,
+  "verificationSummary": "Strict runner verified forward PF 2.34, 91 trades, min split PF 1.58, and no registered same-asset duplicate entries at materialization time.",
+  "costUnits": 0,
+  "oneTradePerDay": false
+}

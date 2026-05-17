@@ -4,7 +4,7 @@ import selection from "./machine_learning/selection.json";
 
 export default createStrategyDefinition({
   id: "competition_usd_jpy_asia_range_london_breakout_signalweekdayside_breakendminute_360_breakstartminute_1_83470b07",
-  label: "Competition USDJPY Asia Range London Breakout Signalweekdayside",
+  label: "USDJPY Asia range breakout into London (Wednesday longs)",
   folder: "competition_usd_jpy_asia_range_london_breakout_signalweekdayside_breakendminute_360_breakstartminute_1_83470b07",
   fileName: "strategy.ts",
   backtestFileName: "backtest_trades.csv",

@@ -1,0 +1,36 @@
+{
+  "strategyId": "competition_eur_cad_london_first30_last30_momentum_month_8_c5f12647",
+  "label": "EURCAD London opening-range continuation into the US close (August filter)",
+  "folder": "competition_eur_cad_london_first30_last30_momentum_month_8_c5f12647",
+  "assetKey": "eur_cad",
+  "phase": "competition_session_edge",
+  "variantId": "competition_session_edge|family=london_first30_last30_momentum_month_8|direction=same|entry=930|exit=945|min_signal_atr=0|signal_end=195|signal_start=180|signal_month=8",
+  "source": "competition_session_edge_train_forward_2026_05",
+  "sourceUrls": [
+    "https://w4.stern.nyu.edu/facdir/lpederse/papers/TimeSeriesMomentum.pdf",
+    "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=2694985",
+    "https://www.semanticscholar.org/paper/The-Probability-of-Backtest-Overfitting-Bailey-Borwein/b1233b4f5384f003e85c2e0eec1a2dfc08f624c5"
+  ],
+  "researchSummary": "London first-half-hour continuation into the US close. Filter: month 8.",
+  "selectionMethod": "Fixed session-edge research grid; pre-2022 training ranked candidates, then post-2022 forward trades had to clear PF/trade-count/split/no-duplicate gates.",
+  "trainingWindow": {
+    "start": "asset_start",
+    "end": "2021-12-31"
+  },
+  "forwardWindow": {
+    "start": "2022-01-01",
+    "end": "asset_latest"
+  },
+  "selectedTrainingProfitFactor": 1.289915,
+  "selectedTrainingTrades": 39,
+  "selectedForwardProfitFactor": 2.725629,
+  "selectedForwardTrades": 87,
+  "forwardWins": 56,
+  "forwardLosses": 27,
+  "forwardTotalR": 23.039999,
+  "forwardAverageR": 0.264828,
+  "forwardMaxDrawdownR": 1.762905,
+  "verificationSummary": "Strict runner verified forward PF 2.73, 87 trades, min split PF 2.12, and no registered same-asset duplicate entries at materialization time.",
+  "costUnits": 0,
+  "oneTradePerDay": false
+}

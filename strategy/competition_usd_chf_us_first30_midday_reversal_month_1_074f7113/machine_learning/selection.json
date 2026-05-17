@@ -1,0 +1,36 @@
+{
+  "strategyId": "competition_usd_chf_us_first30_midday_reversal_month_1_074f7113",
+  "label": "USDCHF US opening-range reversal into midday (January filter)",
+  "folder": "competition_usd_chf_us_first30_midday_reversal_month_1_074f7113",
+  "assetKey": "usd_chf",
+  "phase": "competition_session_edge",
+  "variantId": "competition_session_edge|family=us_first30_midday_reversal_month_1|direction=opposite|entry=720|exit=780|min_signal_atr=0|signal_end=585|signal_start=570|signal_month=1",
+  "source": "competition_session_edge_train_forward_2026_05",
+  "sourceUrls": [
+    "https://w4.stern.nyu.edu/facdir/lpederse/papers/TimeSeriesMomentum.pdf",
+    "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=2694985",
+    "https://www.semanticscholar.org/paper/The-Probability-of-Backtest-Overfitting-Bailey-Borwein/b1233b4f5384f003e85c2e0eec1a2dfc08f624c5"
+  ],
+  "researchSummary": "US opening reversal into midday. Filter: month 1.",
+  "selectionMethod": "Fixed session-edge research grid; pre-2022 training ranked candidates, then post-2022 forward trades had to clear PF/trade-count/split/no-duplicate gates.",
+  "trainingWindow": {
+    "start": "asset_start",
+    "end": "2021-12-31"
+  },
+  "forwardWindow": {
+    "start": "2022-01-01",
+    "end": "asset_latest"
+  },
+  "selectedTrainingProfitFactor": 0.499227,
+  "selectedTrainingTrades": 23,
+  "selectedForwardProfitFactor": 2.500264,
+  "selectedForwardTrades": 110,
+  "forwardWins": 66,
+  "forwardLosses": 44,
+  "forwardTotalR": 44.369123,
+  "forwardAverageR": 0.403356,
+  "forwardMaxDrawdownR": 4.255905,
+  "verificationSummary": "Strict runner verified forward PF 2.50, 110 trades, min split PF 1.24, and no registered same-asset duplicate entries at materialization time.",
+  "costUnits": 0,
+  "oneTradePerDay": false
+}

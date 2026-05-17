@@ -4,7 +4,7 @@ import selection from "./machine_learning/selection.json";
 
 export default createStrategyDefinition({
   id: "competition_gbp_jpy_daily_tsmom_next_overnight_signalmonth_direction_contrarian_entryminute_945_exitmi_ab520ea7",
-  label: "Competition GBPJPY Daily Tsmom Next Overnight Signalmonth",
+  label: "GBPJPY 20-day daily mean reversion overnight (September filter)",
   folder: "competition_gbp_jpy_daily_tsmom_next_overnight_signalmonth_direction_contrarian_entryminute_945_exitmi_ab520ea7",
   fileName: "strategy.ts",
   backtestFileName: "backtest_trades.csv",
