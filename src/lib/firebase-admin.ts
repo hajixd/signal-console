@@ -22,6 +22,7 @@ export type FirebaseAdminRuntimeDiagnostics = {
   forcedLocal: boolean;
   googleApplicationCredentialsPresent: boolean;
   localFallbackEnabled: boolean;
+  operationTimeoutMs: number;
   serviceAccountJsonError?: string;
   serviceAccountJsonPresent: boolean;
   serviceAccountJsonUsable: boolean;
@@ -31,7 +32,7 @@ export type FirebaseAdminRuntimeDiagnostics = {
   vercelEnv?: string;
 };
 
-const DEFAULT_FIREBASE_OPERATION_TIMEOUT_MS = 8_000;
+const DEFAULT_FIREBASE_OPERATION_TIMEOUT_MS = 20_000;
 const DEFAULT_FIREBASE_UNAVAILABLE_COOLDOWN_MS = 30_000;
 
 let cachedUnavailable = false;
@@ -170,6 +171,7 @@ export function firebaseAdminRuntimeDiagnostics(): FirebaseAdminRuntimeDiagnosti
     forcedLocal: firebaseForcedLocal(),
     googleApplicationCredentialsPresent: Boolean(trim(process.env.GOOGLE_APPLICATION_CREDENTIALS)),
     localFallbackEnabled: firebaseLocalFallbackEnabled(),
+    operationTimeoutMs: firebaseOperationTimeoutMs(),
     serviceAccountJsonError,
     serviceAccountJsonPresent: Boolean(trim(process.env.FIREBASE_SERVICE_ACCOUNT_JSON)),
     serviceAccountJsonUsable: Boolean(fromJson),
