@@ -438,12 +438,10 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
     }
 
     window.addEventListener("click", closeMenu);
-    window.addEventListener("contextmenu", closeMenu);
     window.addEventListener("keydown", handleKeyDown);
     window.addEventListener("resize", closeMenu);
     return () => {
       window.removeEventListener("click", closeMenu);
-      window.removeEventListener("contextmenu", closeMenu);
       window.removeEventListener("keydown", handleKeyDown);
       window.removeEventListener("resize", closeMenu);
     };
@@ -481,7 +479,7 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
     setFolderAccessError("");
   }
 
-  function openProjectXFolderContextMenu(event: MouseEvent<HTMLButtonElement>, folder: ProjectXConnectionSummary) {
+  function openProjectXFolderContextMenu(event: MouseEvent<HTMLElement>, folder: ProjectXConnectionSummary) {
     event.preventDefault();
     event.stopPropagation();
     if (!canManageAutoTrade) return;
@@ -490,6 +488,11 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
       x: Math.min(event.clientX, window.innerWidth - 190),
       y: Math.min(event.clientY, window.innerHeight - 92)
     });
+  }
+
+  function handleProjectXFolderRightMouseDown(event: MouseEvent<HTMLElement>, folder: ProjectXConnectionSummary) {
+    if (event.button !== 2) return;
+    openProjectXFolderContextMenu(event, folder);
   }
 
   function requestProjectXFolderAction(action: ProjectXFolderAction, folder: ProjectXConnectionSummary) {
@@ -1140,7 +1143,11 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
               {folderAccessError ? <small>{folderAccessError}</small> : null}
             </form>
           ) : activeProjectXFolder ? (
-            <div className="topstepAccountFolderPage">
+            <div
+              className="topstepAccountFolderPage"
+              onContextMenu={(event) => openProjectXFolderContextMenu(event, activeProjectXFolder)}
+              onMouseDown={(event) => handleProjectXFolderRightMouseDown(event, activeProjectXFolder)}
+            >
               <div className="topstepFolderPageHead">
                 <div>
                   <span>Login</span>
@@ -1226,6 +1233,7 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
                   key={folder.id}
                   onClick={() => requestProjectXFolder(folder)}
                   onContextMenu={(event) => openProjectXFolderContextMenu(event, folder)}
+                  onMouseDown={(event) => handleProjectXFolderRightMouseDown(event, folder)}
                   type="button"
                 >
                   <span className="topstepFolderIcon" aria-hidden="true" />
@@ -1246,21 +1254,6 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
                   </div>
                 </button>
               ))}
-              {folderContextMenu ? (
-                <div
-                  className="autoTradeFolderContextMenu"
-                  onClick={(event) => event.stopPropagation()}
-                  role="menu"
-                  style={{ left: folderContextMenu.x, top: folderContextMenu.y }}
-                >
-                  <button onClick={() => requestProjectXFolderAction("edit-password", folderContextMenu.folder)} role="menuitem" type="button">
-                    Edit Password
-                  </button>
-                  <button className="dangerButton" onClick={() => requestProjectXFolderAction("delete", folderContextMenu.folder)} role="menuitem" type="button">
-                    Delete Folder
-                  </button>
-                </div>
-              ) : null}
               {visibleSavedConnections.map((connection) => {
                 const provider = providers.find((item) => item.id === connection.id);
                 const connectionReady = autoTradeProviderFullyFunctioning(connection.id);
@@ -1321,6 +1314,26 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
           )}
         </div>
       )}
+
+      {folderContextMenu ? (
+        <div
+          className="autoTradeFolderContextMenu"
+          onClick={(event) => event.stopPropagation()}
+          onContextMenu={(event) => {
+            event.preventDefault();
+            event.stopPropagation();
+          }}
+          role="menu"
+          style={{ left: folderContextMenu.x, top: folderContextMenu.y }}
+        >
+          <button onClick={() => requestProjectXFolderAction("edit-password", folderContextMenu.folder)} role="menuitem" type="button">
+            Edit Password
+          </button>
+          <button className="dangerButton" onClick={() => requestProjectXFolderAction("delete", folderContextMenu.folder)} role="menuitem" type="button">
+            Delete Folder
+          </button>
+        </div>
+      ) : null}
 
       <div className="topstepConnectionFoot">
         <span>
