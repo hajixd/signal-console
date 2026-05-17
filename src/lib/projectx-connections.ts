@@ -327,6 +327,46 @@ export async function setStoredProjectXConnectionPaused(id: string, autoTradePau
   });
 }
 
+export async function setStoredProjectXConnectionAccessCode(id: string, accessCode: string): Promise<boolean> {
+  const accessCodeHash = hashAccessCode(accessCode);
+  const updatedAt = new Date().toISOString();
+
+  if (hasFirebaseAdmin()) {
+    try {
+      const ref = firebaseDb().collection(PROJECTX_CONNECTION_COLLECTION).doc(id);
+      const snapshot = await withFirebaseTimeout(ref.get(), "Firebase ProjectX connection read");
+      const payload = snapshot.data() as StoredProjectXConnectionPayload | undefined;
+      if (!payload || payload.status !== "connected") return false;
+
+      await withFirebaseTimeout(
+        ref.set(
+          omitUndefinedDeep({
+            accessCodeHash,
+            updatedAt,
+            updatedAtServer: FieldValue.serverTimestamp()
+          }),
+          { merge: true }
+        ),
+        "Firebase ProjectX access-code update"
+      );
+      return true;
+    } catch (error) {
+      if (!firebaseLocalFallbackEnabled()) throw error;
+    }
+  }
+
+  const connections = await readLocalConnections();
+  const connection = connections[id];
+  if (!connection || connection.status !== "connected") return false;
+  connections[id] = {
+    ...connection,
+    accessCodeHash,
+    updatedAt
+  };
+  await writeLocalConnections(connections);
+  return true;
+}
+
 export async function verifyStoredProjectXConnectionAccessCode(id: string, accessCode: string): Promise<boolean> {
   const payload = hasFirebaseAdmin()
     ? await withFirebaseTimeout(firebaseDb().collection(PROJECTX_CONNECTION_COLLECTION).doc(id).get(), "Firebase ProjectX access-code read")

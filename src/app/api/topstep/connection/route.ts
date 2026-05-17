@@ -9,6 +9,7 @@ import {
   getStoredProjectXConnection,
   projectXConnectionStoreMode,
   saveStoredProjectXConnection,
+  setStoredProjectXConnectionAccessCode,
   setStoredProjectXConnectionPaused,
   verifyStoredProjectXConnectionAccessCode
 } from "@/lib/projectx-connections";
@@ -38,6 +39,7 @@ type UpdatePayload = {
   accountId?: unknown;
   autoTradePaused?: unknown;
   connectionId?: unknown;
+  newAccessCode?: unknown;
 };
 
 function normalizeText(value: unknown): string {
@@ -62,6 +64,22 @@ async function authorizeConnectionMutation(request: NextRequest, connectionId: s
   const suppliedCode = normalizeText(accessCode) || normalizeText(request.nextUrl.searchParams.get("accessCode"));
   if (suppliedCode && await verifyStoredProjectXConnectionAccessCode(connectionId, suppliedCode)) return null;
   return adminRequired();
+}
+
+async function requireCurrentConnectionAccessCode(connectionId: string, accessCode: unknown) {
+  const suppliedCode = normalizeText(accessCode);
+  if (suppliedCode && await verifyStoredProjectXConnectionAccessCode(connectionId, suppliedCode)) return null;
+  return jsonStatus(
+    {
+      accounts: [],
+      autoTradePaused: true,
+      connected: false,
+      connections: await getStoredProjectXConnectionSummaries(),
+      error: "Incorrect current folder code.",
+      persisted: false
+    },
+    { status: 401 }
+  );
 }
 
 function preferredConnectionId(): string | undefined {
@@ -283,6 +301,56 @@ export async function PATCH(request: NextRequest) {
       { status: 400 }
     );
   }
+
+  const newAccessCode = normalizeText(payload.newAccessCode);
+  if (newAccessCode) {
+    const unauthorized = await requireCurrentConnectionAccessCode(connectionId, payload.accessCode);
+    if (unauthorized) return unauthorized;
+
+    if (!isValidAccessCode(newAccessCode)) {
+      return jsonStatus(
+        {
+          accounts: [],
+          autoTradePaused: true,
+          connected: false,
+          connections: await getStoredProjectXConnectionSummaries(),
+          error: "Create a 4-12 digit folder code.",
+          persisted: false
+        },
+        { status: 400 }
+      );
+    }
+
+    const updated = await setStoredProjectXConnectionAccessCode(connectionId, newAccessCode);
+    if (!updated) {
+      return jsonStatus(
+        {
+          accounts: [],
+          autoTradePaused: true,
+          connected: false,
+          connections: await getStoredProjectXConnectionSummaries(),
+          error: "ProjectX account folder is no longer connected.",
+          persisted: false
+        },
+        { status: 404 }
+      );
+    }
+
+    const connection = await getStoredProjectXConnection(connectionId).catch(() => null);
+    const response = jsonStatus({
+      accounts: connection?.accounts ?? [],
+      autoTradePaused: connection?.autoTradePaused ?? true,
+      checkedAt: connection?.lastCheckedAt,
+      connected: Boolean(connection),
+      connections: await getStoredProjectXConnectionSummaries(),
+      pausedAccountIds: connection?.pausedAccountIds,
+      persisted: true,
+      userName: connection?.userName
+    });
+    setConnectionCookie(response, connectionId);
+    return response;
+  }
+
   const unauthorized = await authorizeConnectionMutation(request, connectionId, payload.accessCode);
   if (unauthorized) return unauthorized;
 
@@ -323,7 +391,9 @@ export async function PATCH(request: NextRequest) {
 export async function DELETE(request: NextRequest) {
   const connectionId = normalizeConnectionId(request.nextUrl.searchParams.get("connectionId")) ?? connectionIdFromRequest(request);
   if (connectionId) {
-    const unauthorized = await authorizeConnectionMutation(request, connectionId, request.nextUrl.searchParams.get("accessCode"));
+    const unauthorized = request.nextUrl.searchParams.get("connectionId")
+      ? await requireCurrentConnectionAccessCode(connectionId, request.nextUrl.searchParams.get("accessCode"))
+      : await authorizeConnectionMutation(request, connectionId, request.nextUrl.searchParams.get("accessCode"));
     if (unauthorized) return unauthorized;
     await deleteStoredProjectXConnection(connectionId);
   }
