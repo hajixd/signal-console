@@ -13,6 +13,24 @@ type FirebaseServiceAccount = {
   project_id?: string;
 };
 
+export type FirebaseAdminRuntimeDiagnostics = {
+  cachedUnavailable: boolean;
+  envClientEmailPresent: boolean;
+  envPrivateKeyIdPresent: boolean;
+  envPrivateKeyPresent: boolean;
+  envProjectIdPresent: boolean;
+  forcedLocal: boolean;
+  googleApplicationCredentialsPresent: boolean;
+  localFallbackEnabled: boolean;
+  serviceAccountJsonError?: string;
+  serviceAccountJsonPresent: boolean;
+  serviceAccountJsonUsable: boolean;
+  serviceAccountSource: "env" | "json" | "none";
+  unavailableUntil?: string;
+  vercel: boolean;
+  vercelEnv?: string;
+};
+
 const DEFAULT_FIREBASE_OPERATION_TIMEOUT_MS = 8_000;
 const DEFAULT_FIREBASE_UNAVAILABLE_COOLDOWN_MS = 30_000;
 
@@ -130,6 +148,36 @@ export function firebaseLocalFallbackEnabled(): boolean {
   const explicit = trim(process.env.FIREBASE_LOCAL_FALLBACK);
   if (explicit) return !disabledFlag(explicit);
   return firebaseForcedLocal() || process.env.VERCEL !== "1";
+}
+
+export function firebaseAdminRuntimeDiagnostics(): FirebaseAdminRuntimeDiagnostics {
+  const fromEnvironment = readServiceAccountFromEnvironment();
+  let fromJson: FirebaseServiceAccount | null = null;
+  let serviceAccountJsonError: string | undefined;
+
+  try {
+    fromJson = readServiceAccountFromJson();
+  } catch (error) {
+    serviceAccountJsonError = error instanceof Error ? error.message : "Unknown error";
+  }
+
+  return {
+    cachedUnavailable,
+    envClientEmailPresent: Boolean(trim(process.env.FIREBASE_CLIENT_EMAIL)),
+    envPrivateKeyIdPresent: Boolean(trim(process.env.FIREBASE_PRIVATE_KEY_ID)),
+    envPrivateKeyPresent: Boolean(trim(process.env.FIREBASE_PRIVATE_KEY)),
+    envProjectIdPresent: Boolean(trim(process.env.FIREBASE_PROJECT_ID)),
+    forcedLocal: firebaseForcedLocal(),
+    googleApplicationCredentialsPresent: Boolean(trim(process.env.GOOGLE_APPLICATION_CREDENTIALS)),
+    localFallbackEnabled: firebaseLocalFallbackEnabled(),
+    serviceAccountJsonError,
+    serviceAccountJsonPresent: Boolean(trim(process.env.FIREBASE_SERVICE_ACCOUNT_JSON)),
+    serviceAccountJsonUsable: Boolean(fromJson),
+    serviceAccountSource: fromEnvironment ? "env" : fromJson ? "json" : "none",
+    unavailableUntil: cachedUnavailableUntil > Date.now() ? new Date(cachedUnavailableUntil).toISOString() : undefined,
+    vercel: process.env.VERCEL === "1",
+    vercelEnv: trim(process.env.VERCEL_ENV)
+  };
 }
 
 export function markFirebaseAdminUnavailable(cooldownMs = DEFAULT_FIREBASE_UNAVAILABLE_COOLDOWN_MS): void {

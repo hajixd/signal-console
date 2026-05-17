@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { isAdminAuthorized } from "@/lib/admin-api";
+import { firebaseAdminRuntimeDiagnostics } from "@/lib/firebase-admin";
 import { getDatasetStatus, getLiveConfig, saveLiveConfig, type LiveConfig } from "@/lib/live-config";
 
 export const dynamic = "force-dynamic";
@@ -39,7 +40,7 @@ export async function GET(request: Request) {
   }
 
   const [config, datasetStatus] = await Promise.all([getLiveConfig(), getDatasetStatus()]);
-  return NextResponse.json({ config, datasetStatus });
+  return NextResponse.json({ config, datasetStatus, runtime: { firebaseAdmin: firebaseAdminRuntimeDiagnostics() } });
 }
 
 export async function POST(request: Request) {
