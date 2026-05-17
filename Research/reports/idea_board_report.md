@@ -1,47 +1,23 @@
 # Idea Board Report
 
-Generated: 2026-05-16T03:04:18.524054+00:00
+Generated: 2026-05-17T16:00:56.258502+00:00
 
 ## I Backtested 1,178,668 Opening Range Breakout Trades. Here's the Data.
 
 - Idea ID: `draft_draft_i_backtested_1_178_668_opening_range_breakout_trades_here_s_the_data_https_65dc0dae`
-- Timeframes: 15m
+- Timeframes: 1m, 5m, 15m
+- Assets: sp_500_futures, natural_gas_futures, silver_futures, micro_ether_futures
+- Engines: range_break
+- Overall: Draft idea extracted from source text matching engines: range_break.
 - Setup: Test the described source behavior with explicit rule-code.
-- Entry: Enter when the coded condition confirms the setup.
-- Stop: Use ATR or structure invalidation.
-- Target: Use fixed R target and session/time exit.
+- Entry Conditions: Enter when the coded condition confirms the setup in the selected session and timeframe.
+- Exit Conditions: Exit on target, stop, invalidation, or session close.
+- Stop Loss Plan: Use ATR or structure invalidation with a small buffer.
+- Take Profit Plan: Use fixed R target and session/time exit.
+- Use Limit Order: No by default; add a limit-order variant only if the source gives a retest price.
+- Limit Order Plan: First pass should use market entries so the deterministic backtester can measure the base idea.
+- Filters: n/a
+- Parameters: Coding stage should convert the setup into explicit rule-code and parameter ranges.
+- Invalidations: Reject if PF <= 2 or trades <= 20., Reject if the coded conditions cannot be expressed without lookahead.
 
 Draft idea extracted from source text matching engines: range_break.
-
-## Backtest: Opening Range Breakout Strategy Success Rate on SPY vs.
-
-- Idea ID: `draft_draft_backtest_opening_range_breakout_strategy_success_rate_on_spy_vs_https_www_17fb509a`
-- Timeframes: 15m
-- Setup: Test the described source behavior with explicit rule-code.
-- Entry: Enter when the coded condition confirms the setup.
-- Stop: Use ATR or structure invalidation.
-- Target: Use fixed R target and session/time exit.
-
-Draft idea extracted from source text matching engines: range_break.
-
-## Backtest: Opening Range Breakout Strategy Success Rate on SPY vs.
-
-- Idea ID: `backtest_opening_range_breakout_strategy_success_rate_on_spy_vs`
-- Timeframes: 15m
-- Setup: Test the described source behavior with explicit rule-code.
-- Entry: Enter when the coded condition confirms the setup.
-- Stop: Use ATR or structure invalidation.
-- Target: Use fixed R target and session/time exit.
-
-Research source suggests a strategy worth structuring and testing: Is the ORB strategy working in any market consistently, during this volatility? We'll utilize the Opening Range Breakout Backtester to compare and contrast 3...
-
-## Overnight equity futures drift with FX risk filter
-
-- Idea ID: `overnight_equity_futures_drift_with_fx_risk_filter_mp7na87p`
-- Timeframes: overnight, 15m, 1h
-- Setup: Test the described source behavior with explicit rule-code.
-- Entry: Enter when the coded condition confirms the setup.
-- Stop: Use ATR or structure invalidation.
-- Target: Use fixed R target and session/time exit.
-
-Test whether ES and NQ preserve the documented equity close-to-open drift when EUR/USD confirms risk-on conditions, then exit near the US cash open and require more than 20 trades with PF above 2.

@@ -1,0 +1,69 @@
+{
+  "assetKeys": [
+    "sp_500_futures",
+    "natural_gas_futures",
+    "silver_futures",
+    "micro_ether_futures"
+  ],
+  "createdAt": "2026-05-17T16:00:54.375582+00:00",
+  "engines": [
+    "range_break"
+  ],
+  "hypothesis": "Draft idea extracted from source text matching engines: range_break.",
+  "ideaId": "draft_draft_i_backtested_1_178_668_opening_range_breakout_trades_here_s_the_data_https_65dc0dae",
+  "ideaReport": {
+    "assetSelection": "Offline fallback inferred assets from title, symbol mentions, source URLs, and local asset catalog aliases.",
+    "entry": "Enter when the coded condition confirms the setup.",
+    "entryConditions": "Enter when the coded condition confirms the setup in the selected session and timeframe.",
+    "exit": "Exit on target, stop, invalidation, or session close.",
+    "exitConditions": "Exit on target, stop, invalidation, or session close.",
+    "extraNotes": "Offline fallback should be reviewed once richer source text is available.",
+    "filters": [],
+    "implementationNotes": [
+      "Prefer simple session, price-action, trend, range, ATR, and time filters available to the research backtester."
+    ],
+    "invalidations": [
+      "Reject if PF <= 2 or trades <= 20.",
+      "Reject if the coded conditions cannot be expressed without lookahead."
+    ],
+    "limitOrderPlan": "First pass should use market entries so the deterministic backtester can measure the base idea.",
+    "overallDescription": "Draft idea extracted from source text matching engines: range_break.",
+    "parameterNotes": [
+      "Coding stage should convert the setup into explicit rule-code and parameter ranges."
+    ],
+    "setup": "Test the described source behavior with explicit rule-code.",
+    "sourceInterpretation": "Offline fallback inferred the formal idea from the raw inbox text and any saved source URLs.",
+    "stop": "Use ATR or structure invalidation.",
+    "stopLossPlan": "Use ATR or structure invalidation with a small buffer.",
+    "summary": "Draft idea extracted from source text matching engines: range_break.",
+    "takeProfitPlan": "Use fixed R target and session/time exit.",
+    "target": "Use fixed R target and session/time exit.",
+    "timeframes": [
+      "1m",
+      "5m",
+      "15m"
+    ],
+    "useLimitOrder": "No by default; add a limit-order variant only if the source gives a retest price."
+  },
+  "llm": {
+    "ideaModel": "Qwen/Qwen3-235B-A22B-Instruct-2507",
+    "stage": "idea"
+  },
+  "markets": [
+    "futures",
+    "forex"
+  ],
+  "parameterGrid": {},
+  "provenance": "public_research",
+  "sourceFile": "adhoc_1_i_backtested_1_178_668_opening_range_breakout_trades_here_s_th.json",
+  "sourceUrls": [
+    "https://www.youtube.com/watch?v=MOG-DbgmzzI"
+  ],
+  "status": "approved",
+  "timeframes": [
+    "1m",
+    "5m",
+    "15m"
+  ],
+  "title": "I Backtested 1,178,668 Opening Range Breakout Trades. Here's the Data."
+}
