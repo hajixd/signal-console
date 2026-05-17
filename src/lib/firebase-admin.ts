@@ -4,9 +4,13 @@ import { getStorage } from "firebase-admin/storage";
 
 type FirebaseServiceAccount = {
   clientEmail?: string;
+  client_email?: string;
   privateKey?: string;
+  private_key?: string;
   privateKeyId?: string;
+  private_key_id?: string;
   projectId?: string;
+  project_id?: string;
 };
 
 const DEFAULT_FIREBASE_OPERATION_TIMEOUT_MS = 8_000;
@@ -42,18 +46,29 @@ function normalizePrivateKey(value: string | undefined): string | undefined {
   return normalized ? normalized.replace(/\\n/g, "\n") : undefined;
 }
 
+function normalizeServiceAccount(value: FirebaseServiceAccount): FirebaseServiceAccount | null {
+  const clientEmail = trim(value.clientEmail ?? value.client_email);
+  const privateKey = normalizePrivateKey(value.privateKey ?? value.private_key);
+  const privateKeyId = trim(value.privateKeyId ?? value.private_key_id);
+  const projectId = trim(value.projectId ?? value.project_id);
+
+  if (!projectId || !clientEmail || !privateKey) return null;
+
+  return {
+    clientEmail,
+    privateKey,
+    privateKeyId,
+    projectId
+  };
+}
+
 function readServiceAccountFromJson(): FirebaseServiceAccount | null {
   const raw = trim(process.env.FIREBASE_SERVICE_ACCOUNT_JSON);
   if (!raw) return null;
 
   try {
     const parsed = JSON.parse(raw) as FirebaseServiceAccount;
-    return {
-      clientEmail: trim(parsed.clientEmail),
-      privateKey: normalizePrivateKey(parsed.privateKey),
-      privateKeyId: trim(parsed.privateKeyId),
-      projectId: trim(parsed.projectId)
-    };
+    return normalizeServiceAccount(parsed);
   } catch (error) {
     throw new Error(`Invalid FIREBASE_SERVICE_ACCOUNT_JSON: ${error instanceof Error ? error.message : "Unknown error"}`);
   }
@@ -78,6 +93,14 @@ function readServiceAccount(): FirebaseServiceAccount | null {
   };
 }
 
+function firebaseUnavailable(): boolean {
+  if (!cachedUnavailable) return false;
+  if (cachedUnavailableUntil > Date.now()) return true;
+  cachedUnavailable = false;
+  cachedUnavailableUntil = 0;
+  return false;
+}
+
 export function firebaseProjectId(): string | undefined {
   return readServiceAccount()?.projectId ?? trim(process.env.FIREBASE_PROJECT_ID);
 }
@@ -98,7 +121,7 @@ export function storageObjectPath(relativePath: string): string {
 
 export function hasFirebaseAdmin(): boolean {
   if (firebaseForcedLocal()) return false;
-  if (cachedUnavailable) return false;
+  if (firebaseUnavailable()) return false;
   return Boolean(readServiceAccount() || trim(process.env.GOOGLE_APPLICATION_CREDENTIALS));
 }
 
@@ -109,6 +132,7 @@ export function firebaseLocalFallbackEnabled(): boolean {
 }
 
 export function markFirebaseAdminUnavailable(cooldownMs = DEFAULT_FIREBASE_UNAVAILABLE_COOLDOWN_MS): void {
+  cachedUnavailable = true;
   cachedUnavailableUntil = Math.max(cachedUnavailableUntil, Date.now() + cooldownMs);
 }
 
@@ -130,7 +154,7 @@ export async function withFirebaseTimeout<T>(operation: Promise<T>, label = "Fir
 
 export function firebaseAdminApp() {
   if (getApps().length) return getApps()[0]!;
-  if (cachedUnavailable) return null;
+  if (firebaseUnavailable()) return null;
 
   const serviceAccount = readServiceAccount();
   const projectId = firebaseProjectId();
@@ -148,7 +172,7 @@ export function firebaseAdminApp() {
       storageBucket: firebaseStorageBucketName()
     });
   } catch {
-    cachedUnavailable = true;
+    markFirebaseAdminUnavailable();
     return null;
   }
 }
