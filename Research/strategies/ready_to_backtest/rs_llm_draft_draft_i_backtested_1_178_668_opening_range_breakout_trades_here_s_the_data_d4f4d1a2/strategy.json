@@ -1,9 +1,23 @@
 {
   "assetKey": "australian_dollar_futures",
-  "createdAt": "2026-05-16T03:15:32.635629+00:00",
+  "createdAt": "2026-05-17T03:01:35.348880+00:00",
   "engine": "llm_rule_code",
   "hypothesis": "Draft idea extracted from source text matching engines: range_break.",
   "ideaId": "draft_draft_i_backtested_1_178_668_opening_range_breakout_trades_here_s_the_data_https_65dc0dae",
+  "ideaReport": {
+    "entry": "Enter when the coded condition confirms the setup.",
+    "filters": [],
+    "invalidations": [
+      "Reject if PF <= 2 or trades <= 20."
+    ],
+    "setup": "Test the described source behavior with explicit rule-code.",
+    "stop": "Use ATR or structure invalidation.",
+    "summary": "Draft idea extracted from source text matching engines: range_break.",
+    "target": "Use fixed R target and session/time exit.",
+    "timeframes": [
+      "15m"
+    ]
+  },
   "llm": {
     "model": "Qwen/Qwen3-Coder-480B-A35B-Instruct",
     "rationale": "Used when NEBIUS_API_KEY is absent or the LLM call fails.",
