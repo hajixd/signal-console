@@ -164,6 +164,79 @@ function dailySignal(rule: StrategyRule, bars: EnrichedBar[], signalIndex: numbe
   return signalFromRisk(params, rule, bar, side, safeAtr(bar, rule), "Competition session edge: daily time-series momentum.");
 }
 
+function barsInMinuteRange(bars: EnrichedBar[], day: string, startMinute: number, endMinute: number): EnrichedBar[] {
+  const output: EnrichedBar[] = [];
+  for (let minute = startMinute; minute <= endMinute; minute += 15) {
+    const match = barAtDayMinute(bars, day, minute);
+    if (match) output.push(match.bar);
+  }
+  return output;
+}
+
+function rangeSignal(rule: StrategyRule, bars: EnrichedBar[], signalIndex: number, params: Params): StrategySignal | null {
+  const bar = bars[signalIndex];
+  if (!bar) return null;
+
+  const family = params.family ?? "";
+  const rangeStart = num(params, "range_start", 570);
+  const rangeEnd = num(params, "range_end", 585);
+  const breakStart = num(params, "break_start", 600);
+  const breakEnd = num(params, "break_end", 720);
+  const forcedExit = num(params, "forced_exit", 945);
+  if (bar.nyMinutes < breakStart || bar.nyMinutes > breakEnd || bar.nyMinutes > forcedExit) return null;
+
+  const rangeBars = family.startsWith("asia_range")
+    ? (() => {
+        const previousDay = previousTradingDay(bars.slice(0, signalIndex + 1), bar.nyDate);
+        if (!previousDay) return [];
+        return [
+          ...barsInMinuteRange(bars, previousDay, rangeStart, 24 * 60 - 15),
+          ...barsInMinuteRange(bars, bar.nyDate, 0, rangeEnd)
+        ].filter((candidate) => candidate.time < bar.time);
+      })()
+    : barsInMinuteRange(bars, bar.nyDate, rangeStart, rangeEnd).filter((candidate) => candidate.time < bar.time);
+  if (!rangeBars.length) return null;
+
+  const rangeHigh = Math.max(...rangeBars.map((candidate) => candidate.high));
+  const rangeLow = Math.min(...rangeBars.map((candidate) => candidate.low));
+  if (!(rangeHigh > rangeLow)) return null;
+
+  const breakSide = bar.high > rangeHigh ? 1 : bar.low < rangeLow ? -1 : 0;
+  if (breakSide === 0) return null;
+  const direction = params.direction === "breakout" ? 1 : -1;
+  const side = breakSide * direction;
+  if (!passesFilters(params, bar, side)) return null;
+
+  const entryPrice = roundToTick(bar.close, rule.tickSize);
+  const stopReference =
+    direction === 1
+      ? side === 1
+        ? rangeLow
+        : rangeHigh
+      : side === 1
+        ? bar.low
+        : bar.high;
+  const stopLossPrice = roundToTick(stopReference, rule.tickSize);
+  const risk = Math.abs(entryPrice - stopLossPrice);
+  if (!(risk > 0)) return null;
+
+  const riskReward = Math.max(1, num(params, "risk_reward", num(params, "rr", 1)));
+  const takeProfitPrice = roundToTick(entryPrice + side * risk * riskReward, rule.tickSize);
+  return {
+    side: sideText(side),
+    entryPrice,
+    stopLossPrice,
+    takeProfitPrice,
+    tpUnits: Math.abs(takeProfitPrice - entryPrice) / rule.tickSize,
+    slUnits: Math.abs(entryPrice - stopLossPrice) / rule.tickSize,
+    riskReward,
+    takeProfitMode: "risk_multiple",
+    stopLossMode: "price",
+    signalTime: bar.time,
+    notes: "Competition session edge: dynamic session-range break."
+  };
+}
+
 export function evaluateCompetitionSessionEdge(
   rule: StrategyRule,
   bars: EnrichedBar[],
@@ -174,6 +247,7 @@ export function evaluateCompetitionSessionEdge(
   if (family.startsWith("daily_tsmom")) return dailySignal(rule, bars, signalIndex, params);
   if (family.startsWith("overnight_close_to_open")) return overnightSignal(rule, bars, signalIndex, params);
   if (family.startsWith("ny_open_gap")) return gapSignal(rule, bars, signalIndex, params);
+  if (family.startsWith("asia_range") || family.startsWith("ny_opening_range")) return rangeSignal(rule, bars, signalIndex, params);
   if (family.startsWith("us_") || family.startsWith("london_first30")) {
     return intradaySignal(rule, bars, signalIndex, params);
   }

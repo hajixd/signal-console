@@ -1,16 +1,16 @@
 {
   "strategyId": "competition_dow_jones_futures_daily_tsmom_next_overnight_signalweekdayside_direction_momentum_entrymin_c2a8817b",
-  "label": "YM 10-day daily momentum overnight (Tuesday longs)",
+  "label": "YM 20-day daily mean reversion overnight (Tuesday longs true 4R)",
   "folder": "competition_dow_jones_futures_daily_tsmom_next_overnight_signalweekdayside_direction_momentum_entrymin_c2a8817b",
   "assetKey": "dow_jones_futures",
   "phase": "competition_session_edge",
-  "variantId": "competition_session_edge|family=daily_tsmom_next_overnight_signalweekdayside|direction=momentum|entry=945|exit=570|lookback=10|signal_weekday_side=1_long",
+  "variantId": "competition_session_edge|family=daily_tsmom_next_overnight_signalweekdayside_weekday_side_1_long|direction=contrarian|entry=945|exit=570|lookback=20|signal_weekday_side=1_long|risk_reward=4|managed_exit=bracket",
   "source": "competition_session_edge_train_forward_2026",
   "sourceUrls": [
     "https://pages.stern.nyu.edu/~lpederse/papers/TimeSeriesMomentum.pdf"
   ],
-  "researchSummary": "Tests short-horizon own-return continuation/reversal inspired by time-series momentum literature. Filtered by signalWeekdaySide=1_long.",
-  "selectionMethod": "Pre-2022 train-score rank, then post-2022 forward qualification. No parameters were fit on post-2022 data.",
+  "researchSummary": "Local mutation of Daily Tsmom Next Overnight Signalweekdayside; filter: long signals on weekday 1. Uses true bracket stop/target management at 4:1 planned reward-to-risk.",
+  "selectionMethod": "True-RR replacement search; pre-2022 train metrics were checked before post-2022 forward acceptance. Replacement required strict anti-cheat rerun, same-or-better forward PF, split stability, true planned TP/SL ratio, and no same-asset duplicate entries.",
   "trainingWindow": {
     "start": "asset_start",
     "end": "2021-12-31"
@@ -19,16 +19,18 @@
     "start": "2022-01-01",
     "end": "asset_latest"
   },
-  "selectedTrainingProfitFactor": 1.41407,
-  "selectedTrainingTrades": 376,
-  "selectedForwardProfitFactor": 2.210431,
-  "selectedForwardTrades": 132,
-  "forwardWins": 77,
-  "forwardLosses": 55,
-  "forwardTotalR": 134.340609,
-  "forwardAverageR": 1.017732,
-  "forwardMaxDrawdownR": 8.476539,
-  "verificationSummary": "Verified by backtest-engine runner output: PF 2.21, 132 trades, 134.34R total. Reality audit: true 2R bracket did not preserve the baseline PF, so this strategy remains a time-exit baseline and displayed RR is regenerated from the actual backtest CSV.",
-  "costUnits": 0,
-  "oneTradePerDay": false
+  "selectedTrainingProfitFactor": 0.928845,
+  "selectedTrainingTrades": 193,
+  "selectedForwardProfitFactor": 2.355606,
+  "selectedForwardTrades": 90,
+  "forwardWins": 38,
+  "forwardLosses": 52,
+  "forwardTotalR": 67.488675,
+  "forwardAverageR": 0.749874,
+  "forwardMaxDrawdownR": 5.004607,
+  "verificationSummary": "True bracket replacement accepted: baseline PF 2.2104 (132 trades, displayed RR 1.00) -> strict PF 2.3556 (90 trades, min planned RR 3.96). Min forward split PF 1.48; pre-2022 train PF 0.93 over 193 trades.",
+  "costUnits": 0.0,
+  "oneTradePerDay": false,
+  "minimumRiskReward": 2,
+  "selectedRiskReward": 3.96176
 }

@@ -4,7 +4,7 @@ import selection from "./machine_learning/selection.json";
 
 export default createStrategyDefinition({
   id: "competition_us_treasury_30y_bond_futures_daily_tsmom_next_overnight_weekday_side_4_short_72a8080e",
-  label: "ZB 20-day daily mean reversion overnight (Friday shorts)",
+  label: "ZB 5-day daily mean reversion overnight (Friday shorts true 5R)",
   folder: "competition_us_treasury_30y_bond_futures_daily_tsmom_next_overnight_weekday_side_4_short_72a8080e",
   fileName: "strategy.ts",
   backtestFileName: "backtest_trades.csv",

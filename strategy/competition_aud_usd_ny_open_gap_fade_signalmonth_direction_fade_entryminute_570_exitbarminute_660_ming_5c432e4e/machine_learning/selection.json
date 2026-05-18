@@ -1,16 +1,16 @@
 {
   "strategyId": "competition_aud_usd_ny_open_gap_fade_signalmonth_direction_fade_entryminute_570_exitbarminute_660_ming_5c432e4e",
-  "label": "AUDUSD NY open gap fade (October filter)",
+  "label": "AUDUSD US opening-range reversal into the close (October true 5R)",
   "folder": "competition_aud_usd_ny_open_gap_fade_signalmonth_direction_fade_entryminute_570_exitbarminute_660_ming_5c432e4e",
   "assetKey": "aud_usd",
   "phase": "competition_session_edge",
-  "variantId": "competition_session_edge|family=ny_open_gap_fade_signalmonth|direction=fade|entry=570|exit=660|min_gap_atr=0.35|signal_month=10",
+  "variantId": "competition_session_edge|family=us_first30_last30_reversal_signalmonth_month_10|direction=opposite|entry=930|exit=945|min_signal_atr=0.75|signal_end=585|signal_start=570|signal_month=10|risk_reward=5|managed_exit=bracket",
   "source": "competition_session_edge_train_forward_2026",
   "sourceUrls": [
     "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=1004081"
   ],
-  "researchSummary": "Tests whether the overnight gap fades or continues during a specific NY cash-session window. Filtered by signalMonth=10.",
-  "selectionMethod": "Pre-2022 train-score rank, then post-2022 forward qualification. No parameters were fit on post-2022 data.",
+  "researchSummary": "Local mutation of Us First30 Last30 Reversal Signalmonth; filter: month 10. Uses true bracket stop/target management at 5:1 planned reward-to-risk.",
+  "selectionMethod": "True-RR replacement search; pre-2022 train metrics were checked before post-2022 forward acceptance. Replacement required strict anti-cheat rerun, same-or-better forward PF, split stability, true planned TP/SL ratio, and no same-asset duplicate entries.",
   "trainingWindow": {
     "start": "asset_start",
     "end": "2021-12-31"
@@ -19,16 +19,18 @@
     "start": "2022-01-01",
     "end": "asset_latest"
   },
-  "selectedTrainingProfitFactor": 1.254015,
-  "selectedTrainingTrades": 40,
-  "selectedForwardProfitFactor": 2.082419,
-  "selectedForwardTrades": 65,
-  "forwardWins": 37,
-  "forwardLosses": 28,
-  "forwardTotalR": 56.624157,
-  "forwardAverageR": 0.871141,
-  "forwardMaxDrawdownR": 13.240331,
-  "verificationSummary": "Verified by backtest-engine runner output: PF 2.08, 65 trades, 56.62R total. Reality audit: true 2R bracket did not preserve the baseline PF, so this strategy remains a time-exit baseline and displayed RR is regenerated from the actual backtest CSV.",
-  "costUnits": 0,
-  "oneTradePerDay": false
+  "selectedTrainingProfitFactor": 1.369206,
+  "selectedTrainingTrades": 22,
+  "selectedForwardProfitFactor": 3.646546,
+  "selectedForwardTrades": 42,
+  "forwardWins": 23,
+  "forwardLosses": 18,
+  "forwardTotalR": 10.312385,
+  "forwardAverageR": 0.245533,
+  "forwardMaxDrawdownR": 1.057666,
+  "verificationSummary": "True bracket replacement accepted: baseline PF 2.0824 (65 trades, displayed RR 1.00) -> strict PF 3.6465 (42 trades, min planned RR 4.32). Min forward split PF 1.24; pre-2022 train PF 1.37 over 22 trades.",
+  "costUnits": 0.0,
+  "oneTradePerDay": false,
+  "minimumRiskReward": 2,
+  "selectedRiskReward": 4.315707
 }

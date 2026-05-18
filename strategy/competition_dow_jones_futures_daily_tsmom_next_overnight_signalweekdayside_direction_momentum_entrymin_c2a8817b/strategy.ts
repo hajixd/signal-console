@@ -4,7 +4,7 @@ import selection from "./machine_learning/selection.json";
 
 export default createStrategyDefinition({
   id: "competition_dow_jones_futures_daily_tsmom_next_overnight_signalweekdayside_direction_momentum_entrymin_c2a8817b",
-  label: "YM 10-day daily momentum overnight (Tuesday longs)",
+  label: "YM 20-day daily mean reversion overnight (Tuesday longs true 4R)",
   folder: "competition_dow_jones_futures_daily_tsmom_next_overnight_signalweekdayside_direction_momentum_entrymin_c2a8817b",
   fileName: "strategy.ts",
   backtestFileName: "backtest_trades.csv",

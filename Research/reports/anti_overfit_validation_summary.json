@@ -7,7 +7,7 @@
   "minOverallProfitFactor": 2.001805,
   "minBootstrapPfP05": 1.058072,
   "minQuarterPf": 1.010576,
-  "minTrades": 38,
+  "minTrades": 31,
   "methods": [
     "overall PF and trade-count gate",
     "chronological quarter split validation",

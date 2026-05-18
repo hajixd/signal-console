@@ -4,7 +4,7 @@ import selection from "./machine_learning/selection.json";
 
 export default createStrategyDefinition({
   id: "competition_aud_usd_ny_open_gap_fade_signalmonth_direction_fade_entryminute_570_exitbarminute_660_ming_5c432e4e",
-  label: "AUDUSD NY open gap fade (October filter)",
+  label: "AUDUSD US opening-range reversal into the close (October true 5R)",
   folder: "competition_aud_usd_ny_open_gap_fade_signalmonth_direction_fade_entryminute_570_exitbarminute_660_ming_5c432e4e",
   fileName: "strategy.ts",
   backtestFileName: "backtest_trades.csv",
