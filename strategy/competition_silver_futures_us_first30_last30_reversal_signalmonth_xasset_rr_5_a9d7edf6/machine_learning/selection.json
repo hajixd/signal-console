@@ -1,0 +1,38 @@
+{
+  "strategyId": "competition_silver_futures_us_first30_last30_reversal_signalmonth_xasset_rr_5_a9d7edf6",
+  "label": "SI cross-asset US opening-range reversal into the close (December filter) true 5R",
+  "folder": "competition_silver_futures_us_first30_last30_reversal_signalmonth_xasset_rr_5_a9d7edf6",
+  "assetKey": "silver_futures",
+  "phase": "competition_session_edge",
+  "variantId": "competition_session_edge|family=us_first30_last30_reversal_signalmonth|direction=opposite|entry=930|exit=945|min_signal_atr=0.35|signal_end=585|signal_month=12|signal_start=570|risk_reward=5|managed_exit=bracket",
+  "source": "cross_asset_true_rr_search_2026_05",
+  "sourceUrls": [
+    "https://w4.stern.nyu.edu/facdir/lpederse/papers/TimeSeriesMomentum.pdf",
+    "https://www.sciencedirect.com/science/article/abs/pii/S0304405X18301351",
+    "https://www.semanticscholar.org/paper/The-Probability-of-Backtest-Overfitting-Bailey-Borwein/b1233b4f5384f003e85c2e0eec1a2dfc08f624c5"
+  ],
+  "researchSummary": "Cross-asset validation of `6A US opening-range reversal into the close (December filter)`. Session-window return predicts a later same-day session return. Filtered by signalMonth=12. Cross-asset rerun uses true bracket target/stop at 5:1 planned reward-to-risk.",
+  "selectionMethod": "Fast cross-asset true-RR validation: existing bracket pattern was evaluated on a different asset with pre-2022 train diagnostics, post-2022 strict anti-cheat forward validation, bootstrap checks, and same-asset trade-overlap rejection.",
+  "trainingWindow": {
+    "start": "asset_start",
+    "end": "2021-12-31"
+  },
+  "forwardWindow": {
+    "start": "2022-01-01",
+    "end": "asset_latest"
+  },
+  "selectedTrainingProfitFactor": 0.997629,
+  "selectedTrainingTrades": 186,
+  "selectedForwardProfitFactor": 2.409941,
+  "selectedForwardTrades": 63,
+  "minimumRiskReward": 2,
+  "selectedRiskReward": 4.984812,
+  "forwardWins": 35,
+  "forwardLosses": 24,
+  "forwardTotalR": 10.532185,
+  "forwardAverageR": 0.167178,
+  "forwardMaxDrawdownR": 1.356569,
+  "verificationSummary": "Cross-asset strict PF 2.41 over 63 trades; average planned RR 4.98, min planned RR 4.83; bootstrap p05 1.19, block-bootstrap p05 1.45, annual pass rate 100%.",
+  "costUnits": 0.0,
+  "oneTradePerDay": false
+}

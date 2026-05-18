@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import csv
+import hashlib
 import json
 import math
 import random
@@ -165,8 +166,9 @@ def validate_folder(folder: str, rank: int) -> dict[str, str]:
     quarters = [profit_factor(split) for split in split_evenly(values, 4)]
     rolling = rolling_window_pfs(values, 20)
     annual_windows, annual_pass_rate, worst_annual_pf = annual_stats(trades)
-    simple_bootstrap = bootstrap_pf_p05(values, 9173 + rank)
-    block_bootstrap = block_bootstrap_pf_p05(values, 42017 + rank)
+    stable_seed = int(hashlib.sha1(str(metadata.get("strategyId", folder)).encode("utf-8")).hexdigest()[:8], 16)
+    simple_bootstrap = bootstrap_pf_p05(values, 9173 ^ stable_seed)
+    block_bootstrap = block_bootstrap_pf_p05(values, 42017 ^ stable_seed)
     rr = min_planned_rr(trades)
     checks = {
         "overall_pf_gt_1": profit_factor(values) > 1.0,

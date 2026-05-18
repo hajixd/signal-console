@@ -108,19 +108,47 @@ import strategy106 from "@strategy/competition_us_treasury_2y_note_futures_ny_op
 import strategy107 from "@strategy/competition_copper_futures_us_first30_last30_reversal_weekday_side_4_short_79163bfe/strategy";
 import strategy108 from "@strategy/nasdaq_100_futures_round_hundred_rejection_15m/strategy";
 import strategy109 from "@strategy/competition_japanese_yen_futures_london_first30_ny_open_reversal_month_9_6d9e482f/strategy";
-
 import strategy110 from "@strategy/competition_eur_gbp_us_first30_midday_reversal_weekday_side_3_short_true_rr_5_a5fd6477/strategy";
 import strategy111 from "@strategy/competition_eur_jpy_daily_tsmom_next_overnight_weekday_side_2_short_true_rr_5_cae527f4/strategy";
 import strategy112 from "@strategy/competition_usd_cad_us_first30_midday_reversal_month_12_true_rr_5_f342f952/strategy";
 import strategy113 from "@strategy/competition_usd_cad_us_first30_last30_momentum_signalmonth_month_3_true_rr_5_08845764/strategy";
 import strategy114 from "@strategy/competition_gbp_usd_london_first30_last30_reversal_month_12_true_rr_5_f1420549/strategy";
 import strategy115 from "@strategy/competition_usd_jpy_daily_tsmom_next_overnight_weekday_side_2_short_true_rr_3_40484fa0/strategy";
+import strategy116 from "@strategy/competition_eur_usd_us_first30_midday_reversal_month_12_xasset_rr_5_7b276c27/strategy";
+import strategy117 from "@strategy/competition_nzd_usd_london_first30_last30_reversal_month_12_xasset_rr_5_be4b35ac/strategy";
+import strategy118 from "@strategy/competition_eur_jpy_daily_tsmom_next_rth_signalmonth_xasset_rr_5_32a353da/strategy";
+import strategy119 from "@strategy/competition_aud_usd_us_first30_last30_momentum_month_9_xasset_rr_5_629d8cc5/strategy";
+import strategy120 from "@strategy/competition_usd_jpy_london_first30_last30_momentum_weekday_side_4_long_xasset_rr_5_1d1c682f/strategy";
+import strategy121 from "@strategy/competition_usd_jpy_us_first30_last30_reversal_weekday_side_2_long_xasset_rr_4_35df306a/strategy";
+import strategy122 from "@strategy/competition_eur_jpy_us_first30_last30_momentum_weekday_side_2_long_xasset_rr_5_adaebd2b/strategy";
+import strategy123 from "@strategy/competition_usd_jpy_daily_tsmom_next_overnight_weekday_side_2_short_xasset_rr_4_5981840f/strategy";
+import strategy124 from "@strategy/competition_eur_jpy_us_first30_last30_momentum_weekday_side_2_long_xasset_rr_5_3c88e298/strategy";
+import strategy125 from "@strategy/competition_gbp_jpy_us_first30_last30_reversal_signalweekdayside_xasset_rr_5_e67def76/strategy";
+import strategy126 from "@strategy/competition_gbp_usd_us_first30_last30_reversal_month_10_xasset_rr_5_aaed2f73/strategy";
+import strategy127 from "@strategy/competition_aud_usd_london_first30_ny_open_momentum_weekday_side_0_short_xasset_rr_5_3aca24b7/strategy";
+import strategy128 from "@strategy/competition_aud_usd_london_first30_ny_open_momentum_signalweekdayside_xasset_rr_4_0208edb7/strategy";
+import strategy129 from "@strategy/competition_dow_jones_futures_us_first30_last30_momentum_signalmonth_month_3_xasset_rr_5_3d9679eb/strategy";
+import strategy130 from "@strategy/competition_copper_futures_london_first30_last30_reversal_month_1_xasset_rr_5_d91f5efb/strategy";
+import strategy131 from "@strategy/competition_gold_futures_us_first30_last30_reversal_signalmonth_month_10_xasset_rr_5_5519d329/strategy";
+import strategy132 from "@strategy/competition_us_treasury_2y_note_futures_daily_tsmom_next_overnight_weekday_side_4_short_xasset_rr_5_027092c6/strategy";
+import strategy133 from "@strategy/competition_silver_futures_us_first30_last30_reversal_signalmonth_xasset_rr_5_6a54acc6/strategy";
+import strategy134 from "@strategy/competition_silver_futures_daily_tsmom_next_overnight_weekday_side_4_long_xasset_rr_5_e11e58c1/strategy";
+import strategy135 from "@strategy/competition_copper_futures_us_first30_last30_reversal_weekday_side_0_long_xasset_rr_5_412871d7/strategy";
+import strategy136 from "@strategy/competition_us_treasury_5y_note_futures_daily_tsmom_next_overnight_weekday_side_4_short_xasset_rr_5_2d6cdfee/strategy";
+import strategy137 from "@strategy/competition_canadian_dollar_futures_london_first30_ny_open_momentum_weekday_side_0_short_xasset_rr_5_b5089070/strategy";
+import strategy138 from "@strategy/competition_australian_dollar_futures_london_first30_ny_open_momentum_weekday_side_0_short_xasset_rr_5_4fbf7cea/strategy";
+import strategy139 from "@strategy/competition_dow_jones_futures_daily_tsmom_next_overnight_weekday_side_1_long_xasset_rr_4_373963bd/strategy";
+import strategy140 from "@strategy/competition_british_pound_futures_us_first30_last30_reversal_signalmonth_xasset_rr_5_5f0cb0e3/strategy";
+import strategy141 from "@strategy/competition_silver_futures_us_first30_last30_reversal_signalmonth_xasset_rr_5_a9d7edf6/strategy";
+import strategy142 from "@strategy/competition_new_zealand_dollar_futures_daily_tsmom_next_overnight_weekday_side_4_short_xasset_rr_5_bd3c3876/strategy";
+import strategy143 from "@strategy/competition_us_treasury_10y_note_futures_daily_tsmom_next_overnight_weekday_side_4_short_xasset_rr_5_105476cf/strategy";
+import strategy144 from "@strategy/competition_canadian_dollar_futures_us_first30_last30_momentum_signalmonth_month_3_xasset_rr_5_384613a9/strategy";
+
 import type { StrategyDefinition } from "@/lib/strategy-definition";
 
 export type { StrategyDefinition, StrategySignal } from "@/lib/strategy-definition";
 
-export const STRATEGY_DEFINITIONS: StrategyDefinition[] = [
-  strategy000,
+export const STRATEGY_DEFINITIONS: StrategyDefinition[] = [  strategy000,
   strategy001,
   strategy002,
   strategy003,
@@ -235,5 +263,34 @@ export const STRATEGY_DEFINITIONS: StrategyDefinition[] = [
   strategy112,
   strategy113,
   strategy114,
-  strategy115
+  strategy115,
+  strategy116,
+  strategy117,
+  strategy118,
+  strategy119,
+  strategy120,
+  strategy121,
+  strategy122,
+  strategy123,
+  strategy124,
+  strategy125,
+  strategy126,
+  strategy127,
+  strategy128,
+  strategy129,
+  strategy130,
+  strategy131,
+  strategy132,
+  strategy133,
+  strategy134,
+  strategy135,
+  strategy136,
+  strategy137,
+  strategy138,
+  strategy139,
+  strategy140,
+  strategy141,
+  strategy142,
+  strategy143,
+  strategy144
 ];

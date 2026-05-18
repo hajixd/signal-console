@@ -1,0 +1,38 @@
+{
+  "strategyId": "competition_canadian_dollar_futures_us_first30_last30_momentum_signalmonth_month_3_xasset_rr_5_384613a9",
+  "label": "6C cross-asset cross-asset USDCAD March US first30 last30 momentum true 5R true 5R",
+  "folder": "competition_canadian_dollar_futures_us_first30_last30_momentum_signalmonth_month_3_xasset_rr_5_384613a9",
+  "assetKey": "canadian_dollar_futures",
+  "phase": "competition_session_edge",
+  "variantId": "competition_session_edge|family=us_first30_last30_momentum_signalmonth_month_3|direction=same|entry=930|exit=945|min_signal_atr=1|signal_end=585|signal_start=570|signal_month=3|risk_reward=5|managed_exit=bracket",
+  "source": "cross_asset_true_rr_search_2026_05",
+  "sourceUrls": [
+    "https://w4.stern.nyu.edu/facdir/lpederse/papers/TimeSeriesMomentum.pdf",
+    "https://www.sciencedirect.com/science/article/abs/pii/S0304405X18301351",
+    "https://www.semanticscholar.org/paper/The-Probability-of-Backtest-Overfitting-Bailey-Borwein/b1233b4f5384f003e85c2e0eec1a2dfc08f624c5"
+  ],
+  "researchSummary": "Cross-asset validation of `AUDUSD cross-asset USDCAD March US first30 last30 momentum true 5R`. Cross-asset validation of `USDCAD USDCAD March US first30 last30 momentum true 5R`. Add-only true 5R US first-30-minute momentum into the close on USDCAD, filtered to March. Cross-asset rerun uses true bracket target/stop at 5:1 planned reward-to-risk.",
+  "selectionMethod": "Fast cross-asset true-RR validation: existing bracket pattern was evaluated on a different asset with pre-2022 train diagnostics, post-2022 strict anti-cheat forward validation, bootstrap checks, and same-asset trade-overlap rejection.",
+  "trainingWindow": {
+    "start": "asset_start",
+    "end": "2021-12-31"
+  },
+  "forwardWindow": {
+    "start": "2022-01-01",
+    "end": "asset_latest"
+  },
+  "selectedTrainingProfitFactor": 0.884721,
+  "selectedTrainingTrades": 75,
+  "selectedForwardProfitFactor": 2.358774,
+  "selectedForwardTrades": 46,
+  "minimumRiskReward": 2,
+  "selectedRiskReward": 5.002786,
+  "forwardWins": 26,
+  "forwardLosses": 19,
+  "forwardTotalR": 12.559182,
+  "forwardAverageR": 0.273026,
+  "forwardMaxDrawdownR": 1.789258,
+  "verificationSummary": "Cross-asset strict PF 2.36 over 46 trades; average planned RR 5.00, min planned RR 4.62; bootstrap p05 1.26, block-bootstrap p05 1.47, annual pass rate 100%.",
+  "costUnits": 0.0,
+  "oneTradePerDay": false
+}
