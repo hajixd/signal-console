@@ -257,12 +257,12 @@ function formatSizeLabel(contracts: number, sizeName: string): string {
   return `${formatNumber(contracts)} ${sizeName.trim() || "contract"}`;
 }
 
-function displayTargetLabel(strategy: StrategyOption, value: number): string {
-  return strategy.tpMode === "custom" ? "Custom Unit" : formatMoney(value);
+function displayTargetLabel(value: number): string {
+  return formatMoney(value);
 }
 
-function displayRiskLabel(strategy: StrategyOption, value: number): string {
-  return strategy.slMode === "custom" ? "Custom Unit" : formatMoney(value);
+function displayRiskLabel(value: number): string {
+  return formatMoney(value);
 }
 
 function displaySizeLabel(strategy: StrategyOption, contracts: number, sizeName: string): string {
@@ -279,7 +279,7 @@ function editRiskRewardRatio(edit: Pick<StrategyEdit, "targetDollars" | "riskDol
   return edit.slUnits > 0 ? edit.tpUnits / edit.slUnits : undefined;
 }
 
-function displayRiskRewardLabel(strategy: StrategyOption, value: number | undefined, hasBacktestTrades: boolean): string {
+function displayRiskRewardLabel(value: number | undefined, hasBacktestTrades: boolean): string {
   if (!hasBacktestTrades) return "--";
   return Number.isFinite(value) ? formatNumber(value ?? 0) : "--";
 }
@@ -1455,9 +1455,9 @@ export default function StrategySelector({
               </span>
               <span data-label="Win">{hasBacktestTrades ? formatPct(strategy.winRatePct) : "--"}</span>
               <span data-label="Trades">{formatNumber(strategy.trades)}</span>
-              <span data-label="Take Profit">{displayTargetLabel(strategy, effective.targetDollars)}</span>
-              <span data-label="Stop Loss">{displayRiskLabel(strategy, effective.riskDollars)}</span>
-              <span data-label="RRR">{displayRiskRewardLabel(strategy, effectiveRiskRewardRatio, hasBacktestTrades)}</span>
+              <span data-label="Take Profit">{displayTargetLabel(effective.targetDollars)}</span>
+              <span data-label="Stop Loss">{displayRiskLabel(effective.riskDollars)}</span>
+              <span data-label="RRR">{displayRiskRewardLabel(effectiveRiskRewardRatio, hasBacktestTrades)}</span>
               <span data-label="Unit/contract size">{displaySizeLabel(strategy, effective.contracts, effective.sizeName)}</span>
               <span data-label="Scale">{formatScaleRatio(scaleForContracts(strategy, effective.contracts))}</span>
               <label
