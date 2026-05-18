@@ -496,6 +496,11 @@ function catalogHasCurrentStrategyDrift(manifest: StrategyCatalog, local: Strate
   return false;
 }
 
+function shouldUseLocalCatalog(manifest: StrategyCatalog, local: StrategyCatalog, manifestLatestTradeTime: number): boolean {
+  if (local.stats.length < manifest.stats.length || local.trades.length < manifest.trades.length) return false;
+  return latestTradeTime(local) > manifestLatestTradeTime || catalogHasCurrentStrategyDrift(manifest, local);
+}
+
 function latestTradeTime(catalog: StrategyCatalog | null): number {
   if (!catalog?.trades.length) return 0;
   return Math.max(
@@ -570,11 +575,11 @@ async function buildStrategyCatalog(): Promise<StrategyCatalog> {
     : manifestLatestTradeTime;
   const local = await buildLocalStrategyCatalog().catch(() => null);
   if (manifestFreshnessTime && Date.now() - manifestFreshnessTime <= MANIFEST_STALE_AFTER_MS) {
-    if (local && (latestTradeTime(local) > manifestLatestTradeTime || catalogHasCurrentStrategyDrift(manifest, local))) return local;
+    if (local && shouldUseLocalCatalog(manifest, local, manifestLatestTradeTime)) return local;
     return manifest;
   }
 
-  return local && (latestTradeTime(local) > manifestLatestTradeTime || catalogHasCurrentStrategyDrift(manifest, local)) ? local : manifest;
+  return local && shouldUseLocalCatalog(manifest, local, manifestLatestTradeTime) ? local : manifest;
 }
 
 async function loadStrategyCatalog(): Promise<StrategyCatalog> {
