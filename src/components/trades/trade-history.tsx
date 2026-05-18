@@ -376,9 +376,9 @@ function exitReasonClassName(label: string): string {
   return "exitReasonBadge exitOther";
 }
 
-function visibleHistoryExitReason(label: string): string | null {
+function visibleHistoryExitReason(label: string): string {
   const normalized = label.trim().toLowerCase();
-  if (normalized === "time exit" || normalized === "timed exit") return null;
+  if (normalized === "time exit" || normalized === "timed exit") return "Window End";
   return label;
 }
 
@@ -1189,7 +1189,7 @@ export default function TradeHistory({ rows }: TradeHistoryProps) {
                     {trade.durationLabel} <span className="durationDetail">/ {trade.durationDetailLabel}</span>
                   </td>
                   <td data-label="Exit by">
-                    {exitReasonLabel ? <span className={exitReasonClassName(exitReasonLabel)}>{exitReasonLabel}</span> : null}
+                    <span className={exitReasonClassName(exitReasonLabel)}>{exitReasonLabel}</span>
                   </td>
                   <td className={trade.pnlClassName} data-label="P&L $">{trade.pnlLabel}</td>
                   <td className={trade.pnlClassName} data-label="R">{trade.rMultipleLabel}</td>
