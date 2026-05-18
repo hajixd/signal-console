@@ -13,6 +13,7 @@ export type StrategyEditOption = {
   dollarPerUnit: number;
   targetDollars: number;
   riskDollars: number;
+  riskRewardRatio?: number;
 };
 
 export type StrategyEdit = {
@@ -86,6 +87,11 @@ function unitsFromDollars(strategy: StrategyEditOption, dollars: number, contrac
   return dollarValue ? roundControlValue(Math.abs(dollars) / dollarValue) : 0;
 }
 
+function editRiskRewardRatio(edit: Pick<StrategyEdit, "targetDollars" | "riskDollars" | "tpUnits" | "slUnits">): number | undefined {
+  if (edit.riskDollars > 0) return edit.targetDollars / edit.riskDollars;
+  return edit.slUnits > 0 ? edit.tpUnits / edit.slUnits : undefined;
+}
+
 export function normalizeStrategyEdit(strategy: StrategyEditOption, edit: StrategyEdit): StrategyEdit {
   const fallback = defaultStrategyEdit(strategy);
   const savedScale = Number.isFinite(edit.scale) && edit.scale > 0 ? roundControlValue(edit.scale) : undefined;
@@ -111,7 +117,7 @@ export function normalizeStrategyEdit(strategy: StrategyEditOption, edit: Strate
   if (targetDollars <= 0) targetDollars = dollarsFromUnits(strategy, tpUnits, contracts) || fallback.targetDollars;
   if (riskDollars <= 0) riskDollars = dollarsFromUnits(strategy, slUnits, contracts) || fallback.riskDollars;
 
-  return {
+  const normalized = {
     modelName: fallback.modelName,
     contracts,
     sizeName: fallback.sizeName,
@@ -121,10 +127,37 @@ export function normalizeStrategyEdit(strategy: StrategyEditOption, edit: Strate
     targetDollars,
     riskDollars
   };
+
+  const truthRatio = Number.isFinite(strategy.riskRewardRatio) && strategy.riskRewardRatio ? strategy.riskRewardRatio : undefined;
+  const editRatio = editRiskRewardRatio(normalized);
+  if (truthRatio && editRatio !== undefined && editRatio + 0.005 < truthRatio && normalized.slUnits > 0) {
+    const truthfulTpUnits = roundControlValue(normalized.slUnits * truthRatio);
+    return {
+      ...normalized,
+      tpUnits: truthfulTpUnits,
+      targetDollars: dollarsFromUnits(strategy, truthfulTpUnits, normalized.contracts)
+    };
+  }
+
+  return normalized;
 }
 
 function nearlyEqual(left: number, right: number): boolean {
   return Math.abs(left - right) < 0.005;
+}
+
+function isDefaultStrategyEdit(strategy: StrategyEditOption, edit: StrategyEdit): boolean {
+  const fallback = defaultStrategyEdit(strategy);
+  return (
+    edit.modelName === fallback.modelName &&
+    edit.sizeName === fallback.sizeName &&
+    nearlyEqual(edit.contracts, fallback.contracts) &&
+    nearlyEqual(edit.scale, fallback.scale) &&
+    nearlyEqual(edit.tpUnits, fallback.tpUnits) &&
+    nearlyEqual(edit.slUnits, fallback.slUnits) &&
+    nearlyEqual(edit.targetDollars, fallback.targetDollars) &&
+    nearlyEqual(edit.riskDollars, fallback.riskDollars)
+  );
 }
 
 export function effectiveStrategyEdit(strategy: StrategyEditOption, edits: StrategyEditMap): StrategyEdit {
@@ -150,10 +183,13 @@ function normalizeStrategyEdits(strategies: StrategyEditOption[], edits: Strateg
   for (const [key, edit] of Object.entries(edits)) {
     const strategy = optionByKey.get(key);
     if (!strategy) continue;
-    normalized[key] = normalizeStrategyEdit(strategy, {
+    const normalizedEdit = normalizeStrategyEdit(strategy, {
       ...defaultStrategyEdit(strategy),
       ...edit
     });
+    if (!isDefaultStrategyEdit(strategy, normalizedEdit)) {
+      normalized[key] = normalizedEdit;
+    }
   }
 
   return normalized;

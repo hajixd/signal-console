@@ -38,6 +38,8 @@ export type StrategyRuntimeDefaults = {
   tradeRsiMin?: number;
   tradeRsiMax?: number;
   ictRiskReward?: number;
+  minimumRiskReward?: number;
+  selectedRiskReward?: number;
   tpUnits?: number;
   slUnits?: number;
   sizeMultiplier?: number;
@@ -103,6 +105,8 @@ export type StrategyMetadataDefaults = {
   tradeRsiMin?: number | null;
   tradeRsiMax?: number | null;
   ictRiskReward?: number | null;
+  minimumRiskReward?: number | null;
+  selectedRiskReward?: number | null;
   tpUnits?: number | null;
   slUnits?: number | null;
   sizeMultiplier?: number | null;
@@ -266,6 +270,8 @@ export function runtimeDefaultsFromMetadata(metadata: StrategyMetadataDefaults):
     tradeRsiMin: definedNumber(metadata.tradeRsiMin),
     tradeRsiMax: definedNumber(metadata.tradeRsiMax),
     ictRiskReward: definedNumber(metadata.ictRiskReward),
+    minimumRiskReward: definedNumber(metadata.minimumRiskReward),
+    selectedRiskReward: definedNumber(metadata.selectedRiskReward),
     tpUnits: definedNumber(metadata.tpUnits),
     slUnits: definedNumber(metadata.slUnits),
     sizeMultiplier: definedNumber(metadata.sizeMultiplier),

@@ -273,9 +273,14 @@ function riskRewardRatio(targetDollars: number, riskDollars: number): number | u
   return riskDollars > 0 ? targetDollars / riskDollars : undefined;
 }
 
+function editRiskRewardRatio(edit: Pick<StrategyEdit, "targetDollars" | "riskDollars" | "tpUnits" | "slUnits">): number | undefined {
+  const dollarRatio = riskRewardRatio(edit.targetDollars, edit.riskDollars);
+  if (dollarRatio !== undefined) return dollarRatio;
+  return edit.slUnits > 0 ? edit.tpUnits / edit.slUnits : undefined;
+}
+
 function displayRiskRewardLabel(strategy: StrategyOption, value: number | undefined, hasBacktestTrades: boolean): string {
   if (!hasBacktestTrades) return "--";
-  if (strategy.rrrMode === "custom") return "Custom Unit";
   return Number.isFinite(value) ? formatNumber(value ?? 0) : "--";
 }
 
@@ -345,7 +350,7 @@ function normalizeEdit(strategy: StrategyOption, edit: StrategyEdit): StrategyEd
   if (targetDollars <= 0) targetDollars = dollarsFromUnits(strategy, tpUnits, contracts) || fallback.targetDollars;
   if (riskDollars <= 0) riskDollars = dollarsFromUnits(strategy, slUnits, contracts) || fallback.riskDollars;
 
-  return {
+  const normalized = {
     modelName: fallback.modelName,
     contracts,
     sizeName: fallback.sizeName,
@@ -355,6 +360,19 @@ function normalizeEdit(strategy: StrategyOption, edit: StrategyEdit): StrategyEd
     targetDollars,
     riskDollars
   };
+
+  const truthRatio = Number.isFinite(strategy.riskRewardRatio) && strategy.riskRewardRatio ? strategy.riskRewardRatio : undefined;
+  const editRatio = editRiskRewardRatio(normalized);
+  if (truthRatio && editRatio !== undefined && editRatio + 0.005 < truthRatio && normalized.slUnits > 0) {
+    const truthfulTpUnits = roundControlValue(normalized.slUnits * truthRatio);
+    return {
+      ...normalized,
+      tpUnits: truthfulTpUnits,
+      targetDollars: dollarsFromUnits(strategy, truthfulTpUnits, normalized.contracts)
+    };
+  }
+
+  return normalized;
 }
 
 function nearlyEqual(left: number, right: number): boolean {

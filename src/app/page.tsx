@@ -900,6 +900,16 @@ function safeRiskRewardRatio(targetDollars: number, riskDollars: number): number
   return riskDollars > 0 ? targetDollars / riskDollars : undefined;
 }
 
+function adjustedTargetDollarsForRiskReward(
+  targetDollars: number,
+  riskDollars: number,
+  riskRewardRatio: number | undefined
+): number {
+  if (!Number.isFinite(riskRewardRatio) || !riskRewardRatio || riskRewardRatio <= 0 || riskDollars <= 0) return targetDollars;
+  const currentRatio = safeRiskRewardRatio(targetDollars, riskDollars);
+  return currentRatio !== undefined && currentRatio + 0.005 < riskRewardRatio ? riskDollars * riskRewardRatio : targetDollars;
+}
+
 function strategyTableSnapshot(
   trades: BacktestTrade[],
   fallbackSymbol: string,
@@ -1101,6 +1111,13 @@ export default async function Home({ searchParams }: HomeProps) {
       const liveSupported = entry.liveSupported || logicalKeys.some((key) => liveRuleByKey.has(key));
       const displaySymbol = displaySymbols[0] ?? entry.symbol;
       const snapshot = strategyTableSnapshot(trades, displaySymbol, baseSizeMultiplier, fallbackTargetDollars, fallbackRiskDollars);
+      const plannedRiskRewardRatio = stats[0]?.riskRewardRatio ?? snapshot.riskRewardRatio;
+      const targetDollars = adjustedTargetDollarsForRiskReward(
+        snapshot.targetDollars,
+        snapshot.riskDollars,
+        plannedRiskRewardRatio
+      );
+      const riskRewardRatio = safeRiskRewardRatio(targetDollars, snapshot.riskDollars) ?? plannedRiskRewardRatio ?? snapshot.riskRewardRatio;
 
       return {
         key: entry.key,
@@ -1127,14 +1144,14 @@ export default async function Home({ searchParams }: HomeProps) {
         profitFactor: aggregate.profitFactor,
         trades: aggregate.trades,
         tradesPerWeek: cadence.tradesPerWeek,
-        tpUnits: snapshot.targetDollars,
+        tpUnits: targetDollars,
         slUnits: snapshot.riskDollars,
         unitLabel: "avg $",
         dollarPerUnit: 1,
         sizeMultiplier: snapshot.sizeMultiplier,
-        targetDollars: snapshot.targetDollars,
+        targetDollars,
         riskDollars: snapshot.riskDollars,
-        riskRewardRatio: snapshot.riskRewardRatio,
+        riskRewardRatio,
         sizeLabel: snapshot.sizeLabel,
         tpMode: snapshot.tpMode,
         slMode: snapshot.slMode,

@@ -35,6 +35,9 @@ export type BacktestStat = {
   pipOrTickSize?: number;
   tpUnits?: number;
   slUnits?: number;
+  riskRewardRatio?: number;
+  minimumRiskReward?: number;
+  selectedRiskReward?: number;
   tpMode?: BacktestPriceMode;
   slMode?: BacktestPriceMode;
   sizeMode?: BacktestSizeMode;
@@ -255,6 +258,34 @@ function variantNumber(variantId: string | undefined, ...keys: string[]): number
   return undefined;
 }
 
+function positiveNumber(value: number | null | undefined): number | undefined {
+  return typeof value === "number" && Number.isFinite(value) && value > 0 ? value : undefined;
+}
+
+function ratioFromUnits(tpUnits: number | undefined, slUnits: number | undefined): number | undefined {
+  const riskUnits = positiveNumber(slUnits);
+  return riskUnits ? positiveNumber((tpUnits ?? 0) / riskUnits) : undefined;
+}
+
+function averageTradeRiskReward(trades: BacktestTrade[]): number | undefined {
+  return average(
+    trades
+      .map((trade) => ratioFromUnits(Math.abs(trade.tpUnits), Math.abs(trade.slUnits)))
+      .filter((value): value is number => value !== undefined)
+  );
+}
+
+function plannedRiskReward(strategy: StrategyDefinition, variantId: string | undefined, trades: BacktestTrade[]): number | undefined {
+  const defaults = strategy.defaults ?? {};
+  return (
+    positiveNumber(defaults.selectedRiskReward) ??
+    positiveNumber(variantNumber(variantId, "risk_reward", "rr")) ??
+    positiveNumber(defaults.minimumRiskReward) ??
+    positiveNumber(defaults.ictRiskReward) ??
+    averageTradeRiskReward(trades)
+  );
+}
+
 async function readCsvRows(filePath: string, mode: "auto" | "local" | "remote" = "auto"): Promise<CsvRow[]> {
   try {
     return parseCsv(await readProjectText(filePath, mode));
@@ -372,6 +403,9 @@ function backtestStatFromTrades(strategy: StrategyDefinition, trades: BacktestTr
   const slMode: BacktestPriceMode =
     trades.some((trade) => trade.slMode === "custom") || hasMeaningfulVariation(trades.map((trade) => trade.slUnits)) ? "custom" : "fixed";
   const sizeModeValue: BacktestSizeMode = trades.some((trade) => trade.sizeMode === "custom") ? "custom" : "auto";
+  const tpUnits = average(trades.map((trade) => trade.tpUnits));
+  const slUnits = average(trades.map((trade) => trade.slUnits));
+  const riskRewardRatio = plannedRiskReward(strategy, first.variantId, trades) ?? ratioFromUnits(tpUnits, slUnits);
 
   return {
     key: first.key,
@@ -390,8 +424,8 @@ function backtestStatFromTrades(strategy: StrategyDefinition, trades: BacktestTr
       strategy.defaults?.sizeMultiplier ??
       recommendedSizeMultiplier({
         symbol: first.symbol,
-        tpUnits: average(trades.map((trade) => trade.tpUnits)),
-        slUnits: average(trades.map((trade) => trade.slUnits))
+        tpUnits,
+        slUnits
       }),
     trades: aggregate.trades,
     wins: aggregate.wins,
@@ -404,8 +438,11 @@ function backtestStatFromTrades(strategy: StrategyDefinition, trades: BacktestTr
     tradesPerDay: cadence.tradesPerDay,
     tradesPerWeek: cadence.tradesPerWeek,
     pipOrTickSize: asset?.tickSize,
-    tpUnits: average(trades.map((trade) => trade.tpUnits)),
-    slUnits: average(trades.map((trade) => trade.slUnits)),
+    tpUnits,
+    slUnits,
+    riskRewardRatio,
+    minimumRiskReward: strategy.defaults?.minimumRiskReward,
+    selectedRiskReward: strategy.defaults?.selectedRiskReward ?? riskRewardRatio,
     tpMode,
     slMode,
     sizeMode: sizeModeValue,
@@ -433,6 +470,30 @@ async function readManifestCatalog(): Promise<StrategyCatalog | null> {
   }
 
   return null;
+}
+
+function roundedCatalogNumber(value: number | undefined): string {
+  return typeof value === "number" && Number.isFinite(value) ? value.toFixed(6) : "";
+}
+
+function catalogStatRiskReward(stat: BacktestStat): number | undefined {
+  return positiveNumber(stat.riskRewardRatio) ?? ratioFromUnits(stat.tpUnits, stat.slUnits);
+}
+
+function catalogHasCurrentStrategyDrift(manifest: StrategyCatalog, local: StrategyCatalog): boolean {
+  if (manifest.entries.length !== local.entries.length || manifest.stats.length !== local.stats.length) return true;
+
+  const manifestStats = new Map(manifest.stats.map((stat) => [stat.datasetId, stat]));
+  for (const localStat of local.stats) {
+    const manifestStat = manifestStats.get(localStat.datasetId);
+    if (!manifestStat) return true;
+    if ((manifestStat.variantId ?? "") !== (localStat.variantId ?? "")) return true;
+    if (roundedCatalogNumber(catalogStatRiskReward(manifestStat)) !== roundedCatalogNumber(catalogStatRiskReward(localStat))) return true;
+    if (roundedCatalogNumber(manifestStat.tpUnits) !== roundedCatalogNumber(localStat.tpUnits)) return true;
+    if (roundedCatalogNumber(manifestStat.slUnits) !== roundedCatalogNumber(localStat.slUnits)) return true;
+  }
+
+  return false;
 }
 
 function latestTradeTime(catalog: StrategyCatalog | null): number {
@@ -509,11 +570,11 @@ async function buildStrategyCatalog(): Promise<StrategyCatalog> {
     : manifestLatestTradeTime;
   const local = await buildLocalStrategyCatalog().catch(() => null);
   if (manifestFreshnessTime && Date.now() - manifestFreshnessTime <= MANIFEST_STALE_AFTER_MS) {
-    if (local && latestTradeTime(local) > manifestLatestTradeTime) return local;
+    if (local && (latestTradeTime(local) > manifestLatestTradeTime || catalogHasCurrentStrategyDrift(manifest, local))) return local;
     return manifest;
   }
 
-  return local && latestTradeTime(local) > manifestLatestTradeTime ? local : manifest;
+  return local && (latestTradeTime(local) > manifestLatestTradeTime || catalogHasCurrentStrategyDrift(manifest, local)) ? local : manifest;
 }
 
 async function loadStrategyCatalog(): Promise<StrategyCatalog> {

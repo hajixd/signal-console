@@ -97,6 +97,12 @@ function finiteNumber(value: number | null | undefined): value is number {
   return typeof value === "number" && Number.isFinite(value);
 }
 
+function riskRewardAdjustedTpUnits(tpUnits: number, slUnits: number, riskRewardRatio: number | undefined): number {
+  if (!finiteNumber(riskRewardRatio) || riskRewardRatio <= 0 || slUnits <= 0) return tpUnits;
+  const plannedTpUnits = slUnits * riskRewardRatio;
+  return tpUnits / slUnits + 0.005 < riskRewardRatio ? plannedTpUnits : tpUnits;
+}
+
 function invertStrategySignal(rule: StrategyRule, signal: StrategySignal): StrategySignal {
   if (!rule.invertSignal) return signal;
 
@@ -125,6 +131,12 @@ function statToRule(stat: BacktestStat, strategyEdits: Record<string, SavedStrat
   if (!strategy || !strategy.liveEnabled) return null;
   const asset = assetForKey(strategy.assetKey);
   const defaults = strategy.defaults ?? {};
+  const slUnits = stat.slUnits ?? defaults.slUnits ?? 0;
+  const tpUnits = riskRewardAdjustedTpUnits(
+    stat.tpUnits ?? defaults.tpUnits ?? 0,
+    slUnits,
+    stat.riskRewardRatio ?? defaults.selectedRiskReward ?? defaults.minimumRiskReward ?? defaults.ictRiskReward
+  );
 
   const baseRule: StrategyRule = {
     key: stat.key,
@@ -145,8 +157,8 @@ function statToRule(stat: BacktestStat, strategyEdits: Record<string, SavedStrat
     tradeRsiMin: stat.tradeRsiMin ?? defaults.tradeRsiMin,
     tradeRsiMax: stat.tradeRsiMax ?? defaults.tradeRsiMax,
     ictRiskReward: defaults.ictRiskReward,
-    tpUnits: stat.tpUnits ?? defaults.tpUnits ?? 0,
-    slUnits: stat.slUnits ?? defaults.slUnits ?? 0,
+    tpUnits,
+    slUnits,
     tickSize: stat.pipOrTickSize ?? defaultTickSize(asset.symbol, asset.market),
     unitLabel: asset.unitLabel,
     sizeMultiplier:
@@ -154,8 +166,8 @@ function statToRule(stat: BacktestStat, strategyEdits: Record<string, SavedStrat
       defaults.sizeMultiplier ??
       recommendedSizeMultiplier({
         symbol: asset.symbol,
-        tpUnits: stat.tpUnits,
-        slUnits: stat.slUnits
+        tpUnits,
+        slUnits
       }),
     stopLossPolicy: defaults.stopLossPolicy,
     takeProfitPolicy: defaults.takeProfitPolicy,
