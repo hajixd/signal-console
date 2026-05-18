@@ -376,6 +376,12 @@ function exitReasonClassName(label: string): string {
   return "exitReasonBadge exitOther";
 }
 
+function visibleHistoryExitReason(label: string): string | null {
+  const normalized = label.trim().toLowerCase();
+  if (normalized === "time exit" || normalized === "timed exit") return null;
+  return label;
+}
+
 function TradeCandlestickChart({
   trade,
   bars,
@@ -1150,6 +1156,7 @@ export default function TradeHistory({ rows }: TradeHistoryProps) {
           <tbody>
             {rows.map((trade) => {
               const displayedModelName = isRestricted ? "Admin only" : trade.modelName;
+              const exitReasonLabel = visibleHistoryExitReason(trade.exitReasonLabel);
               return (
                 <tr
                   className={`historyTradeRow ${trade.rowClassName}${isRestricted ? " isAccessRestricted" : ""}`}
@@ -1182,7 +1189,7 @@ export default function TradeHistory({ rows }: TradeHistoryProps) {
                     {trade.durationLabel} <span className="durationDetail">/ {trade.durationDetailLabel}</span>
                   </td>
                   <td data-label="Exit by">
-                    <span className={exitReasonClassName(trade.exitReasonLabel)}>{trade.exitReasonLabel}</span>
+                    {exitReasonLabel ? <span className={exitReasonClassName(exitReasonLabel)}>{exitReasonLabel}</span> : null}
                   </td>
                   <td className={trade.pnlClassName} data-label="P&L $">{trade.pnlLabel}</td>
                   <td className={trade.pnlClassName} data-label="R">{trade.rMultipleLabel}</td>
