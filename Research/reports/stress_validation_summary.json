@@ -1,12 +1,12 @@
 {
-  "strategies": 110,
+  "strategies": 115,
   "statusCounts": {
-    "pass": 109,
-    "watch": 1
+    "pass": 113,
+    "watch": 2
   },
   "minOverallPf": 2.001805,
   "minQuarterPf": 1.010576,
-  "minBootstrapPfP05": 1.03139,
+  "minBootstrapPfP05": 0.958374,
   "minBlockBootstrapPfP05": 0.962384,
   "minAnnualPassRate": 0.75,
   "methods": [

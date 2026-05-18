@@ -1,0 +1,38 @@
+{
+  "strategyId": "competition_eur_gbp_us_first30_midday_reversal_weekday_side_3_short_true_rr_5_a5fd6477",
+  "label": "EURGBP EURGBP US first30 midday reversal Wednesday shorts true 5R",
+  "folder": "competition_eur_gbp_us_first30_midday_reversal_weekday_side_3_short_true_rr_5_a5fd6477",
+  "assetKey": "eur_gbp",
+  "phase": "competition_session_edge",
+  "variantId": "competition_session_edge|family=us_first30_midday_reversal_weekday_side_3_short|direction=opposite|entry=720|exit=780|min_signal_atr=1|signal_end=585|signal_start=570|signal_weekday_side=3_short|risk_reward=5|managed_exit=bracket",
+  "source": "true_rr_addition_search_2026_05",
+  "sourceUrls": [
+    "https://w4.stern.nyu.edu/facdir/lpederse/papers/TimeSeriesMomentum.pdf",
+    "https://www.sciencedirect.com/science/article/abs/pii/S0304405X18301351",
+    "https://www.semanticscholar.org/paper/The-Probability-of-Backtest-Overfitting-Bailey-Borwein/b1233b4f5384f003e85c2e0eec1a2dfc08f624c5"
+  ],
+  "researchSummary": "Add-only true 5R US first-30-minute reversal into midday on EURGBP, filtered to Wednesday shorts.",
+  "selectionMethod": "Add-only true-RR search: candidate grid was generated before forward validation; pre-2022 train diagnostics and post-2022 strict anti-cheat forward results are stored separately.",
+  "trainingWindow": {
+    "start": "asset_start",
+    "end": "2021-12-31"
+  },
+  "forwardWindow": {
+    "start": "2022-01-01",
+    "end": "asset_latest"
+  },
+  "selectedTrainingProfitFactor": 0.222084,
+  "selectedTrainingTrades": 11,
+  "selectedForwardProfitFactor": 3.350631,
+  "selectedForwardTrades": 24,
+  "minimumRiskReward": 2,
+  "selectedRiskReward": 5.030752,
+  "forwardWins": 18,
+  "forwardLosses": 6,
+  "forwardTotalR": 9.602479,
+  "forwardAverageR": 0.400103,
+  "forwardMaxDrawdownR": 2.006596,
+  "verificationSummary": "Strict true-bracket forward PF 3.35, 24 trades, average planned RR 5.03; pre-2022 train PF 0.22 over 11 trades.",
+  "costUnits": 0.0,
+  "oneTradePerDay": false
+}

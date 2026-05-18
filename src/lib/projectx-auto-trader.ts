@@ -190,6 +190,8 @@ function summarizeOrders(
   const first = orders[0];
   const failed = orders.filter((order) => order.status === "failed");
   const skipped = orders.filter((order) => order.status === "skipped");
+  const failedError = failed.find((order) => order.error)?.error;
+  const skippedError = skipped.find((order) => order.error)?.error;
   return {
     accountId: orders.length === 1 ? first?.accountId : undefined,
     accountName: orders.length > 1 ? `${orders.length} accounts` : first?.accountName,
@@ -197,13 +199,23 @@ function summarizeOrders(
     contractName: first?.contractName ?? fields.contractName,
     customTag: orders.length === 1 ? first?.customTag : undefined,
     error: failed.length
-      ? `${failed.length} account(s) failed: ${failed.map((order) => order.accountName ?? order.accountId).join(", ")}`
+      ? `${failed.length} account(s) failed: ${failed.map((order) => order.accountName ?? order.accountId).join(", ")}${failedError ? ` - ${failedError}` : ""}`
       : skipped.length
-        ? `${skipped.length} account(s) skipped: ${skipped.map((order) => order.accountName ?? order.accountId).join(", ")}`
+        ? `${skipped.length} account(s) skipped: ${skipped.map((order) => order.accountName ?? order.accountId).join(", ")}${
+            skippedError ? ` - ${skippedError}` : ""
+          }`
         : undefined,
     orderId: orders.length === 1 ? first?.orderId : undefined,
     orders
   };
+}
+
+function projectXOrderErrorMessage(error: unknown): string {
+  const message = readableProjectXError(error);
+  if (/brackets cannot be used with position brackets|auto oco brackets/i.test(message)) {
+    return "ProjectX rejected bracket orders because this account is using Position Brackets. Enable Auto OCO Brackets in ProjectX risk settings; no unprotected order was placed.";
+  }
+  return message;
 }
 
 async function refreshedConnection(): Promise<StoredProjectXConnection | null> {
@@ -326,13 +338,14 @@ export async function executeProjectXAutoTrade(trade: TradeAlert): Promise<Proje
           status: "placed"
         });
       } catch (error) {
+        const message = projectXOrderErrorMessage(error);
         orders.push({
           accountId: account.id,
           accountName: account.name,
           contractId: contract.id,
           contractName: contract.name,
           customTag,
-          error: readableProjectXError(error),
+          error: message,
           size,
           status: "failed"
         });

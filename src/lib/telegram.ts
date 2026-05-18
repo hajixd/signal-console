@@ -92,7 +92,10 @@ function autoTradeLine(trade: TradeAlert): string {
         : skipped && !failed
           ? `${skipped} skipped`
           : `${failed} failed${skipped ? ` / ${skipped} skipped` : ""}`;
-    return `${provider}: ${status} on ${accountLabel}${suffix} (${trade.autoTradeContractName ?? trade.autoTradeContractId ?? trade.symbol})`;
+    const issue = trade.autoTradeOrders.find((order) => (order.status === "failed" || order.status === "skipped") && order.error)?.error;
+    return `${provider}: ${status} on ${accountLabel}${suffix} (${trade.autoTradeContractName ?? trade.autoTradeContractId ?? trade.symbol})${
+      issue ? ` - ${truncate(issue, 180)}` : ""
+    }`;
   }
   if (trade.autoTradeStatus === "placed") {
     return `${provider}: order ${trade.autoTradeOrderId ?? "placed"} on ${trade.autoTradeAccountName ?? trade.autoTradeAccountId ?? "account"} (${trade.autoTradeContractName ?? trade.autoTradeContractId ?? trade.symbol})`;

@@ -1,0 +1,38 @@
+{
+  "strategyId": "competition_usd_cad_us_first30_midday_reversal_month_12_true_rr_5_f342f952",
+  "label": "USDCAD USDCAD December US first30 midday reversal true 5R",
+  "folder": "competition_usd_cad_us_first30_midday_reversal_month_12_true_rr_5_f342f952",
+  "assetKey": "usd_cad",
+  "phase": "competition_session_edge",
+  "variantId": "competition_session_edge|family=us_first30_midday_reversal_month_12|direction=opposite|entry=720|exit=780|min_signal_atr=1|signal_end=585|signal_start=570|signal_month=12|risk_reward=5|managed_exit=bracket",
+  "source": "true_rr_addition_search_2026_05",
+  "sourceUrls": [
+    "https://w4.stern.nyu.edu/facdir/lpederse/papers/TimeSeriesMomentum.pdf",
+    "https://www.sciencedirect.com/science/article/abs/pii/S0304405X18301351",
+    "https://www.semanticscholar.org/paper/The-Probability-of-Backtest-Overfitting-Bailey-Borwein/b1233b4f5384f003e85c2e0eec1a2dfc08f624c5"
+  ],
+  "researchSummary": "Add-only true 5R US first-30-minute reversal into midday on USDCAD, filtered to December.",
+  "selectionMethod": "Add-only true-RR search: candidate grid was generated before forward validation; pre-2022 train diagnostics and post-2022 strict anti-cheat forward results are stored separately.",
+  "trainingWindow": {
+    "start": "asset_start",
+    "end": "2021-12-31"
+  },
+  "forwardWindow": {
+    "start": "2022-01-01",
+    "end": "asset_latest"
+  },
+  "selectedTrainingProfitFactor": 2.771729,
+  "selectedTrainingTrades": 11,
+  "selectedForwardProfitFactor": 2.521328,
+  "selectedForwardTrades": 41,
+  "minimumRiskReward": 2,
+  "selectedRiskReward": 5.030861,
+  "forwardWins": 27,
+  "forwardLosses": 14,
+  "forwardTotalR": 20.166963,
+  "forwardAverageR": 0.491877,
+  "forwardMaxDrawdownR": 3.02272,
+  "verificationSummary": "Strict true-bracket forward PF 2.52, 41 trades, average planned RR 5.03; pre-2022 train PF 2.77 over 11 trades.",
+  "costUnits": 0.0,
+  "oneTradePerDay": false
+}

@@ -1,0 +1,38 @@
+{
+  "strategyId": "competition_usd_cad_us_first30_last30_momentum_signalmonth_month_3_true_rr_5_08845764",
+  "label": "USDCAD USDCAD March US first30 last30 momentum true 5R",
+  "folder": "competition_usd_cad_us_first30_last30_momentum_signalmonth_month_3_true_rr_5_08845764",
+  "assetKey": "usd_cad",
+  "phase": "competition_session_edge",
+  "variantId": "competition_session_edge|family=us_first30_last30_momentum_signalmonth_month_3|direction=same|entry=930|exit=945|min_signal_atr=1|signal_end=585|signal_start=570|signal_month=3|risk_reward=5|managed_exit=bracket",
+  "source": "true_rr_addition_search_2026_05",
+  "sourceUrls": [
+    "https://w4.stern.nyu.edu/facdir/lpederse/papers/TimeSeriesMomentum.pdf",
+    "https://www.sciencedirect.com/science/article/abs/pii/S0304405X18301351",
+    "https://www.semanticscholar.org/paper/The-Probability-of-Backtest-Overfitting-Bailey-Borwein/b1233b4f5384f003e85c2e0eec1a2dfc08f624c5"
+  ],
+  "researchSummary": "Add-only true 5R US first-30-minute momentum into the close on USDCAD, filtered to March.",
+  "selectionMethod": "Add-only true-RR search: candidate grid was generated before forward validation; pre-2022 train diagnostics and post-2022 strict anti-cheat forward results are stored separately.",
+  "trainingWindow": {
+    "start": "asset_start",
+    "end": "2021-12-31"
+  },
+  "forwardWindow": {
+    "start": "2022-01-01",
+    "end": "asset_latest"
+  },
+  "selectedTrainingProfitFactor": 1.795436,
+  "selectedTrainingTrades": 13,
+  "selectedForwardProfitFactor": 3.092868,
+  "selectedForwardTrades": 48,
+  "minimumRiskReward": 2,
+  "selectedRiskReward": 5.025172,
+  "forwardWins": 30,
+  "forwardLosses": 18,
+  "forwardTotalR": 16.720298,
+  "forwardAverageR": 0.34834,
+  "forwardMaxDrawdownR": 2.005775,
+  "verificationSummary": "Strict true-bracket forward PF 3.09, 48 trades, average planned RR 5.03; pre-2022 train PF 1.80 over 13 trades.",
+  "costUnits": 0.0,
+  "oneTradePerDay": false
+}

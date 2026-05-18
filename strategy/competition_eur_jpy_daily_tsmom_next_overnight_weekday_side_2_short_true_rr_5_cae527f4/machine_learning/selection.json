@@ -1,0 +1,38 @@
+{
+  "strategyId": "competition_eur_jpy_daily_tsmom_next_overnight_weekday_side_2_short_true_rr_5_cae527f4",
+  "label": "EURJPY EURJPY Wednesday short daily TSMOM overnight true 5R",
+  "folder": "competition_eur_jpy_daily_tsmom_next_overnight_weekday_side_2_short_true_rr_5_cae527f4",
+  "assetKey": "eur_jpy",
+  "phase": "competition_session_edge",
+  "variantId": "competition_session_edge|family=daily_tsmom_next_overnight_weekday_side_2_short|direction=momentum|entry=945|exit=945|lookback=5|signal_weekday_side=2_short|risk_reward=5|managed_exit=bracket",
+  "source": "true_rr_addition_search_2026_05",
+  "sourceUrls": [
+    "https://w4.stern.nyu.edu/facdir/lpederse/papers/TimeSeriesMomentum.pdf",
+    "https://www.sciencedirect.com/science/article/abs/pii/S0304405X18301351",
+    "https://www.semanticscholar.org/paper/The-Probability-of-Backtest-Overfitting-Bailey-Borwein/b1233b4f5384f003e85c2e0eec1a2dfc08f624c5"
+  ],
+  "researchSummary": "Add-only true 5R daily time-series momentum overnight on EURJPY, filtered to Wednesday shorts.",
+  "selectionMethod": "Add-only true-RR search: candidate grid was generated before forward validation; pre-2022 train diagnostics and post-2022 strict anti-cheat forward results are stored separately.",
+  "trainingWindow": {
+    "start": "asset_start",
+    "end": "2021-12-31"
+  },
+  "forwardWindow": {
+    "start": "2022-01-01",
+    "end": "asset_latest"
+  },
+  "selectedTrainingProfitFactor": 0.665753,
+  "selectedTrainingTrades": 51,
+  "selectedForwardProfitFactor": 2.285175,
+  "selectedForwardTrades": 98,
+  "minimumRiskReward": 2,
+  "selectedRiskReward": 5.004098,
+  "forwardWins": 32,
+  "forwardLosses": 66,
+  "forwardTotalR": 87.179024,
+  "forwardAverageR": 0.889582,
+  "forwardMaxDrawdownR": 7.166056,
+  "verificationSummary": "Strict true-bracket forward PF 2.29, 98 trades, average planned RR 5.00; pre-2022 train PF 0.67 over 51 trades.",
+  "costUnits": 0.0,
+  "oneTradePerDay": false
+}
