@@ -4,12 +4,12 @@
   "folder": "competition_gbp_jpy_daily_tsmom_next_overnight_signalmonth_direction_contrarian_entryminute_945_exitmi_ab520ea7",
   "assetKey": "gbp_jpy",
   "phase": "competition_session_edge",
-  "variantId": "competition_session_edge|family=daily_tsmom_next_overnight_signalmonth|direction=contrarian|entry=945|exit=570|lookback=20|signal_month=9|risk_reward=2",
+  "variantId": "competition_session_edge|family=daily_tsmom_next_overnight_signalmonth|direction=contrarian|entry=945|exit=570|lookback=20|signal_month=9",
   "source": "competition_session_edge_train_forward_2026",
   "sourceUrls": [
     "https://pages.stern.nyu.edu/~lpederse/papers/TimeSeriesMomentum.pdf"
   ],
-  "researchSummary": "Tests short-horizon own-return continuation/reversal inspired by time-series momentum literature. Filtered by signalMonth=9. Upgraded to a distinct 2:1 planned reward-to-risk variant because the time-exit entry/exit path preserves forward PF versus the legacy 1R accounting baseline.",
+  "researchSummary": "Tests short-horizon own-return continuation/reversal inspired by time-series momentum literature. Filtered by signalMonth=9.",
   "selectionMethod": "Pre-2022 train-score rank, then post-2022 forward qualification. No parameters were fit on post-2022 data.",
   "trainingWindow": {
     "start": "asset_start",
@@ -28,9 +28,7 @@
   "forwardTotalR": 134.570145,
   "forwardAverageR": 1.564769,
   "forwardMaxDrawdownR": 17.616736,
-  "verificationSummary": "Verified by backtest-engine runner output: PF 2.02, 86 trades, 134.57R total. RR comparison accepted: baseline PF 2.02 vs 2R PF 2.02, 86 trades.",
+  "verificationSummary": "Verified by backtest-engine runner output: PF 2.02, 86 trades, 134.57R total. Reality audit: true 2R bracket did not preserve the baseline PF, so this strategy remains a time-exit baseline and displayed RR is regenerated from the actual backtest CSV.",
   "costUnits": 0,
-  "oneTradePerDay": false,
-  "minimumRiskReward": 2.0,
-  "selectedRiskReward": 2.0
+  "oneTradePerDay": false
 }

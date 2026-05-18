@@ -4,12 +4,12 @@
   "folder": "competition_usd_jpy_asia_range_london_breakout_signalweekdayside_breakendminute_360_breakstartminute_1_83470b07",
   "assetKey": "usd_jpy",
   "phase": "competition_session_edge",
-  "variantId": "competition_session_edge|family=asia_range_london_breakout_signalweekdayside|break_end=360|break_start=180|direction=breakout|forced_exit=600|range_end=165|range_start=1080|risk_reward=2.5|signal_weekday_side=2_long",
+  "variantId": "competition_session_edge|family=asia_range_london_breakout_signalweekdayside|break_end=360|break_start=180|direction=breakout|forced_exit=600|range_end=165|range_start=1080|risk_reward=2.5|signal_weekday_side=2_long|managed_exit=bracket",
   "source": "competition_session_edge_train_forward_2026",
   "sourceUrls": [
     "https://biblio.ugent.be/publication/8060014"
   ],
-  "researchSummary": "Tests whether a defined session range break continues or should be faded. Filtered by signalWeekdaySide=2_long.",
+  "researchSummary": "Tests whether a defined session range break continues or should be faded. Filtered by signalWeekdaySide=2_long. True bracket exit uses 2.5:1 reward/risk; forward PF was recomputed from actual stop/target/time exits.",
   "selectionMethod": "Pre-2022 train-score rank, then post-2022 forward qualification. No parameters were fit on post-2022 data.",
   "trainingWindow": {
     "start": "asset_start",
@@ -28,7 +28,9 @@
   "forwardTotalR": 20.164413,
   "forwardAverageR": 0.231775,
   "forwardMaxDrawdownR": 2.966176,
-  "verificationSummary": "Verified by backtest-engine runner output: PF 2.19, 87 trades, 20.16R total.",
+  "verificationSummary": "Reality audit: true 2.5R bracket stop/target exit recomputed PF 2.19 over 87 trades, total 20.16R, max drawdown 2.97R (sl=14, time_exit=71, tp=2).",
   "costUnits": 0,
-  "oneTradePerDay": false
+  "oneTradePerDay": false,
+  "minimumRiskReward": 2.0,
+  "selectedRiskReward": 2.5
 }

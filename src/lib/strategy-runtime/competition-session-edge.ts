@@ -80,7 +80,7 @@ function signalFromRisk(
   notes: string,
   entryPriceOverride?: number
 ): StrategySignal {
-  const riskReward = Math.max(2, num(params, "risk_reward", num(params, "rr", 2)));
+  const riskReward = Math.max(1, num(params, "risk_reward", num(params, "rr", 1)));
   const entryPrice = roundToTick(entryPriceOverride ?? bar.close, rule.tickSize);
   const stopLossPrice = roundToTick(entryPrice - side * risk, rule.tickSize);
   const takeProfitPrice = roundToTick(entryPrice + side * risk * riskReward, rule.tickSize);

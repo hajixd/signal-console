@@ -4,12 +4,12 @@
   "folder": "competition_gbp_usd_us_first30_last30_reversal_signalmonth_direction_opposite_entryminute_930_exitbarm_9b2547fb",
   "assetKey": "gbp_usd",
   "phase": "competition_session_edge",
-  "variantId": "competition_session_edge|family=us_first30_last30_reversal_signalmonth|direction=opposite|entry=930|exit=945|min_signal_atr=0.5|signal_end=585|signal_month=10|signal_start=570|risk_reward=2",
+  "variantId": "competition_session_edge|family=us_first30_last30_reversal_signalmonth|direction=opposite|entry=930|exit=945|min_signal_atr=0.5|signal_end=585|signal_month=10|signal_start=570",
   "source": "competition_session_edge_train_forward_2026",
   "sourceUrls": [
     "https://www.sciencedirect.com/science/article/abs/pii/S0304405X18301351"
   ],
-  "researchSummary": "Session-window return predicts a later same-day session return. Filtered by signalMonth=10. Upgraded to a distinct 2:1 planned reward-to-risk variant because the time-exit entry/exit path preserves forward PF versus the legacy 1R accounting baseline.",
+  "researchSummary": "Session-window return predicts a later same-day session return. Filtered by signalMonth=10.",
   "selectionMethod": "Pre-2022 train-score rank, then post-2022 forward qualification. No parameters were fit on post-2022 data.",
   "trainingWindow": {
     "start": "asset_start",
@@ -28,9 +28,7 @@
   "forwardTotalR": 11.308994,
   "forwardAverageR": 0.198403,
   "forwardMaxDrawdownR": 1.097305,
-  "verificationSummary": "Verified by backtest-engine runner output: PF 2.51, 57 trades, 11.31R total. RR comparison accepted: baseline PF 2.51 vs 2R PF 2.51, 57 trades.",
+  "verificationSummary": "Verified by backtest-engine runner output: PF 2.51, 57 trades, 11.31R total. Reality audit: true 2R bracket did not preserve the baseline PF, so this strategy remains a time-exit baseline and displayed RR is regenerated from the actual backtest CSV.",
   "costUnits": 0,
-  "oneTradePerDay": false,
-  "minimumRiskReward": 2.0,
-  "selectedRiskReward": 2.0
+  "oneTradePerDay": false
 }

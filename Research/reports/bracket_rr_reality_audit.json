@@ -1,0 +1,1791 @@
+[
+  {
+    "id": "competition_usd_jpy_us_first30_last30_reversal_signalweekdayside_direction_opposite_entryminute_930_ex_40e6d9ae",
+    "asset": "usd_jpy",
+    "rr": 2.0,
+    "trades": 74,
+    "pf": 4.10254671729368,
+    "totalR": 18.344404934185164,
+    "exits": {
+      "sl": 1,
+      "time_exit": 70,
+      "tp": 3
+    },
+    "baselineTrades": 74,
+    "baselinePf": 3.9844481263811415,
+    "baselineTotalR": 17.147915964373997
+  },
+  {
+    "id": "competition_eur_jpy_us_first30_last30_momentum_signalweekdayside_direction_same_entryminute_930_exitba_0a4a3f58",
+    "asset": "eur_jpy",
+    "rr": 2.0,
+    "trades": 64,
+    "pf": 3.5610670543403256,
+    "totalR": 13.675045994228839,
+    "exits": {
+      "sl": 1,
+      "time_exit": 62,
+      "tp": 1
+    },
+    "baselineTrades": 64,
+    "baselinePf": 3.430395767851041,
+    "baselineTotalR": 13.812501583957003
+  },
+  {
+    "id": "competition_natural_gas_futures_us_first30_last30_momentum_month_9_c678e3c1",
+    "asset": "natural_gas_futures",
+    "rr": 2.0,
+    "trades": 56,
+    "pf": 3.143412334668682,
+    "totalR": 8.93566765023266,
+    "exits": {
+      "sl": 1,
+      "time_exit": 54,
+      "tp": 1
+    },
+    "baselineTrades": 56,
+    "baselinePf": 3.1046390460739346,
+    "baselineTotalR": 8.614455687773997
+  },
+  {
+    "id": "competition_japanese_yen_futures_us_first30_last30_reversal_signalweekdayside_direction_opposite_entry_11a69e11",
+    "asset": "japanese_yen_futures",
+    "rr": 2.0,
+    "trades": 75,
+    "pf": 3.1421238018497326,
+    "totalR": 18.320197588271927,
+    "exits": {
+      "sl": 3,
+      "time_exit": 69,
+      "tp": 3
+    },
+    "baselineTrades": 75,
+    "baselinePf": 4.3497951195184115,
+    "baselineTotalR": 20.981485770927
+  },
+  {
+    "id": "competition_gold_futures_us_first30_last30_reversal_weekday_side_0_long_c0163084",
+    "asset": "gold_futures",
+    "rr": 2.0,
+    "trades": 71,
+    "pf": 2.7845993786091574,
+    "totalR": 11.007438774279867,
+    "exits": {
+      "time_exit": 71
+    },
+    "baselineTrades": 71,
+    "baselinePf": 2.784599378611288,
+    "baselineTotalR": 11.007438774284998
+  },
+  {
+    "id": "competition_gbp_jpy_london_first30_last30_reversal_weekday_side_4_long_ef0c2df3",
+    "asset": "gbp_jpy",
+    "rr": 2.0,
+    "trades": 64,
+    "pf": 2.730688673050937,
+    "totalR": 12.71546327831928,
+    "exits": {
+      "time_exit": 64
+    },
+    "baselineTrades": 64,
+    "baselinePf": 2.7306886730505426,
+    "baselineTotalR": 12.715463278318001
+  },
+  {
+    "id": "competition_copper_futures_us_first30_last30_reversal_weekday_side_0_long_04d98061",
+    "asset": "copper_futures",
+    "rr": 2.0,
+    "trades": 75,
+    "pf": 2.5656419479270074,
+    "totalR": 9.079906681319326,
+    "exits": {
+      "sl": 1,
+      "time_exit": 74
+    },
+    "baselineTrades": 75,
+    "baselinePf": 2.9255572577394666,
+    "baselineTotalR": 9.793384793792
+  },
+  {
+    "id": "competition_gbp_jpy_us_first30_last30_reversal_weekday_side_2_long_bfe5c772",
+    "asset": "gbp_jpy",
+    "rr": 2.0,
+    "trades": 118,
+    "pf": 2.430254342362616,
+    "totalR": 21.525463437158002,
+    "exits": {
+      "sl": 6,
+      "time_exit": 110,
+      "tp": 2
+    },
+    "baselineTrades": 118,
+    "baselinePf": 2.337304495713791,
+    "baselineTotalR": 21.433243516106998
+  },
+  {
+    "id": "competition_new_zealand_dollar_futures_us_first30_last30_reversal_signalmonth_direction_opposite_entry_ce284576",
+    "asset": "new_zealand_dollar_futures",
+    "rr": 2.0,
+    "trades": 48,
+    "pf": 2.373362232538789,
+    "totalR": 8.837654532653932,
+    "exits": {
+      "sl": 3,
+      "time_exit": 45
+    },
+    "baselineTrades": 48,
+    "baselinePf": 3.449855831471447,
+    "baselineTotalR": 11.28966024328
+  },
+  {
+    "id": "competition_gbp_jpy_london_first30_last30_momentum_weekday_side_4_long_6a554e5f",
+    "asset": "gbp_jpy",
+    "rr": 2.0,
+    "trades": 81,
+    "pf": 2.363859965716102,
+    "totalR": 16.175019085467188,
+    "exits": {
+      "sl": 4,
+      "time_exit": 76,
+      "tp": 1
+    },
+    "baselineTrades": 81,
+    "baselinePf": 2.8008755286472797,
+    "baselineTotalR": 19.077846863902003
+  },
+  {
+    "id": "competition_eur_cad_london_first30_last30_momentum_month_8_c5f12647",
+    "asset": "eur_cad",
+    "rr": 2.0,
+    "trades": 87,
+    "pf": 2.2732055134190032,
+    "totalR": 20.38712485434939,
+    "exits": {
+      "sl": 11,
+      "time_exit": 72,
+      "tp": 4
+    },
+    "baselineTrades": 87,
+    "baselinePf": 2.725628754361177,
+    "baselineTotalR": 23.039999315499998
+  },
+  {
+    "id": "competition_eur_chf_us_first30_midday_momentum_month_6_f4946f20",
+    "asset": "eur_chf",
+    "rr": 2.0,
+    "trades": 59,
+    "pf": 2.25184355980888,
+    "totalR": 15.556640867020624,
+    "exits": {
+      "sl": 8,
+      "time_exit": 47,
+      "tp": 4
+    },
+    "baselineTrades": 59,
+    "baselinePf": 2.3494791462870395,
+    "baselineTotalR": 15.629144750197003
+  },
+  {
+    "id": "competition_sp_500_futures_daily_tsmom_next_overnight_weekday_side_1_long_c8bb041e",
+    "asset": "sp_500_futures",
+    "rr": 2.0,
+    "trades": 82,
+    "pf": 2.2448209331378717,
+    "totalR": 50.9789858079333,
+    "exits": {
+      "sl": 39,
+      "sl_gap": 1,
+      "time_exit": 5,
+      "tp": 31,
+      "tp_gap": 6
+    },
+    "baselineTrades": 82,
+    "baselinePf": 2.728575062358334,
+    "baselineTotalR": 91.89384907331701
+  },
+  {
+    "id": "competition_eur_jpy_us_first30_last30_reversal_weekday_side_4_long_6d672b02",
+    "asset": "eur_jpy",
+    "rr": 2.0,
+    "trades": 49,
+    "pf": 2.2263427920492846,
+    "totalR": 6.7260700791845975,
+    "exits": {
+      "time_exit": 49
+    },
+    "baselineTrades": 49,
+    "baselinePf": 2.2263427920497247,
+    "baselineTotalR": 6.726070079185
+  },
+  {
+    "id": "competition_usd_jpy_asia_range_london_breakout_signalweekdayside_breakendminute_360_breakstartminute_1_83470b07",
+    "asset": "usd_jpy",
+    "rr": 2.5,
+    "trades": 87,
+    "pf": 2.1880316877696915,
+    "totalR": 20.16441250255431,
+    "exits": {
+      "sl": 14,
+      "time_exit": 71,
+      "tp": 2
+    },
+    "baselineTrades": 87,
+    "baselinePf": 2.1880316877697705,
+    "baselineTotalR": 20.164412502556
+  },
+  {
+    "id": "competition_british_pound_futures_us_first30_last30_reversal_month_10_57755118",
+    "asset": "british_pound_futures",
+    "rr": 2.0,
+    "trades": 57,
+    "pf": 2.1790917759021706,
+    "totalR": 9.0181820590051,
+    "exits": {
+      "sl": 2,
+      "time_exit": 54,
+      "tp": 1
+    },
+    "baselineTrades": 57,
+    "baselinePf": 2.6269159797112867,
+    "baselineTotalR": 11.611686774934999
+  },
+  {
+    "id": "competition_gbp_jpy_us_first30_last30_momentum_weekday_side_2_long_461ef776",
+    "asset": "gbp_jpy",
+    "rr": 2.0,
+    "trades": 68,
+    "pf": 2.1513274090150167,
+    "totalR": 8.940601325760236,
+    "exits": {
+      "sl": 2,
+      "time_exit": 66
+    },
+    "baselineTrades": 68,
+    "baselinePf": 2.396707772329148,
+    "baselineTotalR": 9.735647965892
+  },
+  {
+    "id": "competition_gbp_usd_us_first30_last30_reversal_signalmonth_direction_opposite_entryminute_930_exitbarm_9b2547fb",
+    "asset": "gbp_usd",
+    "rr": 2.0,
+    "trades": 57,
+    "pf": 2.0828892021867826,
+    "totalR": 8.31505354047363,
+    "exits": {
+      "sl": 1,
+      "time_exit": 55,
+      "tp": 1
+    },
+    "baselineTrades": 57,
+    "baselinePf": 2.5147154351796526,
+    "baselineTotalR": 11.308993604862001
+  },
+  {
+    "id": "competition_eur_jpy_daily_tsmom_next_rth_signalmonth_direction_momentum_entryminute_570_exitminute_945_563aa3f1",
+    "asset": "eur_jpy",
+    "rr": 2.0,
+    "trades": 68,
+    "pf": 2.0753053102014816,
+    "totalR": 35.5921774767637,
+    "exits": {
+      "sl": 33,
+      "time_exit": 2,
+      "tp": 33
+    },
+    "baselineTrades": 68,
+    "baselinePf": 2.6671230088128026,
+    "baselineTotalR": 105.43512101765799
+  },
+  {
+    "id": "competition_eur_gbp_us_first30_last30_reversal_weekday_side_1_short_2371b8e4",
+    "asset": "eur_gbp",
+    "rr": 2.0,
+    "trades": 73,
+    "pf": 2.0182014276392333,
+    "totalR": 8.386239506222203,
+    "exits": {
+      "sl": 2,
+      "time_exit": 71
+    },
+    "baselineTrades": 73,
+    "baselinePf": 2.085623886833216,
+    "baselineTotalR": 8.652497194314002
+  },
+  {
+    "id": "competition_usd_cad_us_first30_last30_momentum_signalmonth_direction_same_entryminute_930_exitbarminut_c1317995",
+    "asset": "usd_cad",
+    "rr": 2.0,
+    "trades": 108,
+    "pf": 1.9437900800149635,
+    "totalR": 21.881530660151544,
+    "exits": {
+      "sl": 15,
+      "time_exit": 86,
+      "tp": 7
+    },
+    "baselineTrades": 108,
+    "baselinePf": 2.6370821068053565,
+    "baselineTotalR": 39.78469386738501
+  },
+  {
+    "id": "competition_usd_cad_london_first30_ny_open_momentum_month_12_f0df56f8",
+    "asset": "usd_cad",
+    "rr": 2.0,
+    "trades": 79,
+    "pf": 1.9312501022563315,
+    "totalR": 35.91037723663491,
+    "exits": {
+      "sl": 38,
+      "sl_gap": 1,
+      "time_exit": 4,
+      "tp": 36
+    },
+    "baselineTrades": 79,
+    "baselinePf": 2.776293938628791,
+    "baselineTotalR": 134.747418373082
+  },
+  {
+    "id": "competition_us_treasury_2y_note_futures_daily_tsmom_next_overnight_weekday_side_4_short_e133c7a3",
+    "asset": "us_treasury_2y_note_futures",
+    "rr": 2.0,
+    "trades": 96,
+    "pf": 1.8534086878087241,
+    "totalR": 46.15834316874255,
+    "exits": {
+      "sl": 41,
+      "sl_gap": 7,
+      "time_exit": 25,
+      "tp": 15,
+      "tp_gap": 8
+    },
+    "baselineTrades": 96,
+    "baselinePf": 3.076241826377667,
+    "baselineTotalR": 86.96405586934806
+  },
+  {
+    "id": "competition_aud_nzd_london_first30_last30_reversal_weekday_side_0_long_2e0ed4d2",
+    "asset": "aud_nzd",
+    "rr": 2.0,
+    "trades": 53,
+    "pf": 1.8491876185752574,
+    "totalR": 5.907613953499956,
+    "exits": {
+      "sl": 3,
+      "time_exit": 49,
+      "tp": 1
+    },
+    "baselineTrades": 53,
+    "baselinePf": 2.133229247996619,
+    "baselineTotalR": 6.970512754967999
+  },
+  {
+    "id": "competition_corn_futures_us_first30_midday_momentum_weekday_side_3_long_cbe1149a",
+    "asset": "corn_futures",
+    "rr": 2.0,
+    "trades": 81,
+    "pf": 1.8398789353887741,
+    "totalR": 31.033808033493674,
+    "exits": {
+      "sl": 36,
+      "time_exit": 18,
+      "tp": 27
+    },
+    "baselineTrades": 81,
+    "baselinePf": 3.220190694981334,
+    "baselineTotalR": 62.72107179281401
+  },
+  {
+    "id": "competition_us_treasury_2y_note_futures_us_first30_last30_momentum_weekday_side_3_long_6989e3fd",
+    "asset": "us_treasury_2y_note_futures",
+    "rr": 2.0,
+    "trades": 91,
+    "pf": 1.8374238510235568,
+    "totalR": 13.832602020234585,
+    "exits": {
+      "sl": 9,
+      "time_exit": 80,
+      "tp": 2
+    },
+    "baselineTrades": 91,
+    "baselinePf": 2.1010620555222532,
+    "baselineTotalR": 15.690456325876994
+  },
+  {
+    "id": "competition_eur_jpy_daily_tsmom_next_overnight_weekday_side_2_short_bad001bc",
+    "asset": "eur_jpy",
+    "rr": 2.0,
+    "trades": 142,
+    "pf": 1.8299497091272032,
+    "totalR": 61.77975005842407,
+    "exits": {
+      "sl": 73,
+      "sl_gap": 1,
+      "tp": 67,
+      "tp_gap": 1
+    },
+    "baselineTrades": 142,
+    "baselinePf": 2.183703077698084,
+    "baselineTotalR": 308.047288709394
+  },
+  {
+    "id": "competition_us_treasury_5y_note_futures_us_first30_last30_momentum_signalweekdayside_direction_same_en_1942c62b",
+    "asset": "us_treasury_5y_note_futures",
+    "rr": 2.0,
+    "trades": 74,
+    "pf": 1.811886467811159,
+    "totalR": 13.77655196905102,
+    "exits": {
+      "sl": 11,
+      "time_exit": 58,
+      "tp": 5
+    },
+    "baselineTrades": 74,
+    "baselinePf": 2.8838444254029176,
+    "baselineTotalR": 22.741238382134007
+  },
+  {
+    "id": "competition_eur_chf_daily_tsmom_next_rth_signalmonth_direction_momentum_entryminute_570_exitminute_945_391afa4a",
+    "asset": "eur_chf",
+    "rr": 2.0,
+    "trades": 94,
+    "pf": 1.7964122470913884,
+    "totalR": 38.779374421036145,
+    "exits": {
+      "sl": 48,
+      "time_exit": 5,
+      "tp": 41
+    },
+    "baselineTrades": 94,
+    "baselinePf": 3.2206406982289186,
+    "baselineTotalR": 162.695963978963
+  },
+  {
+    "id": "competition_crude_oil_futures_us_first30_midday_momentum_month_4_32a2fef5",
+    "asset": "crude_oil_futures",
+    "rr": 2.0,
+    "trades": 102,
+    "pf": 1.7719369788076724,
+    "totalR": 27.842508202830693,
+    "exits": {
+      "sl": 33,
+      "time_exit": 54,
+      "tp": 15
+    },
+    "baselineTrades": 102,
+    "baselinePf": 2.538399735388968,
+    "baselineTotalR": 50.538656095356
+  },
+  {
+    "id": "competition_micro_ether_futures_london_first30_ny_open_momentum_weekday_side_3_short_e779cb85",
+    "asset": "micro_ether_futures",
+    "rr": 2.0,
+    "trades": 53,
+    "pf": 1.7717674465316695,
+    "totalR": 20.78234143382494,
+    "exits": {
+      "sl": 26,
+      "sl_gap": 1,
+      "time_exit": 5,
+      "tp": 19,
+      "tp_gap": 2
+    },
+    "baselineTrades": 53,
+    "baselinePf": 3.5665520313118773,
+    "baselineTotalR": 69.57831739397699
+  },
+  {
+    "id": "competition_eur_cad_us_first30_midday_momentum_month_10_8e114485",
+    "asset": "eur_cad",
+    "rr": 2.0,
+    "trades": 63,
+    "pf": 1.757854628199427,
+    "totalR": 15.067620590893512,
+    "exits": {
+      "sl": 16,
+      "time_exit": 41,
+      "tp": 6
+    },
+    "baselineTrades": 63,
+    "baselinePf": 2.774716630308562,
+    "baselineTotalR": 28.543909282259005
+  },
+  {
+    "id": "competition_australian_dollar_futures_us_first30_last30_reversal_signalmonth_direction_opposite_entrym_77aa2b55",
+    "asset": "australian_dollar_futures",
+    "rr": 2.0,
+    "trades": 61,
+    "pf": 1.7369919901033788,
+    "totalR": 7.654756479888922,
+    "exits": {
+      "sl": 5,
+      "time_exit": 53,
+      "tp": 3
+    },
+    "baselineTrades": 61,
+    "baselinePf": 2.361094108575001,
+    "baselineTotalR": 10.975251965037998
+  },
+  {
+    "id": "competition_us_treasury_5y_note_futures_daily_tsmom_next_overnight_weekday_side_4_short_6dc543f7",
+    "asset": "us_treasury_5y_note_futures",
+    "rr": 2.0,
+    "trades": 95,
+    "pf": 1.7312630478435376,
+    "totalR": 34.32222316880666,
+    "exits": {
+      "sl": 36,
+      "sl_gap": 5,
+      "time_exit": 31,
+      "tp": 15,
+      "tp_gap": 8
+    },
+    "baselineTrades": 95,
+    "baselinePf": 2.9856307345773216,
+    "baselineTotalR": 75.74502772958604
+  },
+  {
+    "id": "competition_nzd_usd_us_first30_midday_momentum_month_4_f022fff9",
+    "asset": "nzd_usd",
+    "rr": 2.0,
+    "trades": 73,
+    "pf": 1.7240536602684198,
+    "totalR": 16.878810284916902,
+    "exits": {
+      "sl": 18,
+      "time_exit": 46,
+      "tp": 9
+    },
+    "baselineTrades": 73,
+    "baselinePf": 2.1617405203310907,
+    "baselineTotalR": 25.008941519020997
+  },
+  {
+    "id": "competition_nasdaq_100_futures_daily_tsmom_next_overnight_weekday_side_1_long_8e593f24",
+    "asset": "nasdaq_100_futures",
+    "rr": 2.0,
+    "trades": 83,
+    "pf": 1.6984065096525185,
+    "totalR": 32.207484385972755,
+    "exits": {
+      "sl": 42,
+      "sl_gap": 2,
+      "time_exit": 4,
+      "tp": 30,
+      "tp_gap": 5
+    },
+    "baselineTrades": 83,
+    "baselinePf": 2.5193244505808634,
+    "baselineTotalR": 87.91206330374801
+  },
+  {
+    "id": "competition_eur_usd_overnight_close_to_open_bias_long_month_12_8a49b98f",
+    "asset": "eur_usd",
+    "rr": 2.0,
+    "trades": 73,
+    "pf": 1.6978058518802845,
+    "totalR": 26.694324030501466,
+    "exits": {
+      "sl": 36,
+      "sl_gap": 1,
+      "time_exit": 4,
+      "tp": 32
+    },
+    "baselineTrades": 73,
+    "baselinePf": 2.3914627823370433,
+    "baselineTotalR": 84.43792194076902
+  },
+  {
+    "id": "competition_us_treasury_5y_note_futures_us_first30_last30_momentum_signalweekdayside_direction_same_en_62e3b6d2",
+    "asset": "us_treasury_5y_note_futures",
+    "rr": 2.0,
+    "trades": 99,
+    "pf": 1.682609396846056,
+    "totalR": 12.378560685123098,
+    "exits": {
+      "sl": 9,
+      "time_exit": 87,
+      "tp": 3
+    },
+    "baselineTrades": 99,
+    "baselinePf": 2.214931444230658,
+    "baselineTotalR": 18.440938512166998
+  },
+  {
+    "id": "competition_copper_futures_daily_tsmom_next_overnight_weekday_side_1_long_28c520df",
+    "asset": "copper_futures",
+    "rr": 2.0,
+    "trades": 101,
+    "pf": 1.6558570987792753,
+    "totalR": 40.15181500344127,
+    "exits": {
+      "sl": 59,
+      "sl_gap": 2,
+      "time_exit": 1,
+      "tp": 36,
+      "tp_gap": 3
+    },
+    "baselineTrades": 101,
+    "baselinePf": 2.0140372250372565,
+    "baselineTotalR": 245.01179189261998
+  },
+  {
+    "id": "competition_micro_bitcoin_futures_daily_tsmom_next_rth_weekday_side_2_short_4be5774f",
+    "asset": "micro_bitcoin_futures",
+    "rr": 2.0,
+    "trades": 101,
+    "pf": 1.6194669472329237,
+    "totalR": 33.55805338049895,
+    "exits": {
+      "sl": 54,
+      "time_exit": 4,
+      "tp": 42,
+      "tp_gap": 1
+    },
+    "baselineTrades": 101,
+    "baselinePf": 2.355671669281674,
+    "baselineTotalR": 182.256436509176
+  },
+  {
+    "id": "competition_copper_futures_us_first30_last30_reversal_weekday_side_4_short_79163bfe",
+    "asset": "copper_futures",
+    "rr": 2.0,
+    "trades": 69,
+    "pf": 1.6149814819754869,
+    "totalR": 4.7198614495072375,
+    "exits": {
+      "sl": 3,
+      "time_exit": 66
+    },
+    "baselineTrades": 69,
+    "baselinePf": 2.0102873949129583,
+    "baselineTotalR": 6.229046075809001
+  },
+  {
+    "id": "competition_british_pound_futures_london_first30_last30_reversal_month_1_c3526d80",
+    "asset": "british_pound_futures",
+    "rr": 2.0,
+    "trades": 78,
+    "pf": 1.6058562545932051,
+    "totalR": 8.83414580651253,
+    "exits": {
+      "sl": 8,
+      "time_exit": 69,
+      "tp": 1
+    },
+    "baselineTrades": 78,
+    "baselinePf": 2.38894420155459,
+    "baselineTotalR": 18.059642070794
+  },
+  {
+    "id": "competition_us_treasury_10y_note_futures_daily_tsmom_next_overnight_weekday_side_4_short_7240deca",
+    "asset": "us_treasury_10y_note_futures",
+    "rr": 2.0,
+    "trades": 96,
+    "pf": 1.5650621009308154,
+    "totalR": 26.940735380798248,
+    "exits": {
+      "sl": 40,
+      "sl_gap": 3,
+      "time_exit": 33,
+      "tp": 14,
+      "tp_gap": 6
+    },
+    "baselineTrades": 96,
+    "baselinePf": 2.21432275220904,
+    "baselineTotalR": 53.281882135689
+  },
+  {
+    "id": "competition_us_treasury_2y_note_futures_ny_open_gap_fade_signalmonth_direction_fade_entryminute_570_ex_d2289e05",
+    "asset": "us_treasury_2y_note_futures",
+    "rr": 2.0,
+    "trades": 62,
+    "pf": 1.5538899072677008,
+    "totalR": 17.13189917689373,
+    "exits": {
+      "sl": 30,
+      "sl_gap": 1,
+      "time_exit": 11,
+      "tp": 20
+    },
+    "baselineTrades": 62,
+    "baselinePf": 2.2157884639532974,
+    "baselineTotalR": 36.33259326516799
+  },
+  {
+    "id": "competition_us_treasury_10y_note_futures_us_first30_last30_momentum_weekday_side_2_long_014bd88f",
+    "asset": "us_treasury_10y_note_futures",
+    "rr": 2.0,
+    "trades": 105,
+    "pf": 1.5354877888815819,
+    "totalR": 12.418006148220218,
+    "exits": {
+      "sl": 17,
+      "time_exit": 83,
+      "tp": 5
+    },
+    "baselineTrades": 105,
+    "baselinePf": 2.0780094992542884,
+    "baselineTotalR": 20.47066524074199
+  },
+  {
+    "id": "competition_eur_gbp_london_first30_ny_open_reversal_weekday_side_4_long_97b8e7c1",
+    "asset": "eur_gbp",
+    "rr": 2.0,
+    "trades": 70,
+    "pf": 1.5038307774923865,
+    "totalR": 19.756118083558988,
+    "exits": {
+      "sl": 37,
+      "time_exit": 5,
+      "tp": 28
+    },
+    "baselineTrades": 70,
+    "baselinePf": 2.1614112165255697,
+    "baselineTotalR": 43.42339902845599
+  },
+  {
+    "id": "competition_eur_gbp_us_first30_midday_reversal_month_5_da8593e8",
+    "asset": "eur_gbp",
+    "rr": 2.0,
+    "trades": 70,
+    "pf": 1.5034381627274866,
+    "totalR": 10.353434593385213,
+    "exits": {
+      "sl": 16,
+      "time_exit": 49,
+      "tp": 5
+    },
+    "baselineTrades": 70,
+    "baselinePf": 2.0460596606696106,
+    "baselineTotalR": 16.567188949116
+  },
+  {
+    "id": "competition_us_treasury_2y_note_futures_us_first30_last30_momentum_signalweekdayside_direction_same_en_339e7451",
+    "asset": "us_treasury_2y_note_futures",
+    "rr": 2.0,
+    "trades": 66,
+    "pf": 1.5018691095270904,
+    "totalR": 7.380970333229948,
+    "exits": {
+      "sl": 10,
+      "time_exit": 54,
+      "tp": 2
+    },
+    "baselineTrades": 66,
+    "baselinePf": 2.5198094573310295,
+    "baselineTotalR": 15.145570937972998
+  },
+  {
+    "id": "competition_swiss_franc_futures_us_first30_midday_momentum_month_5_a2abc7dd",
+    "asset": "swiss_franc_futures",
+    "rr": 2.0,
+    "trades": 91,
+    "pf": 1.4938939170314773,
+    "totalR": 16.0721435787005,
+    "exits": {
+      "sl": 29,
+      "time_exit": 54,
+      "tp": 8
+    },
+    "baselineTrades": 91,
+    "baselinePf": 2.339639394523544,
+    "baselineTotalR": 31.514575513048996
+  },
+  {
+    "id": "competition_nzd_usd_london_first30_ny_open_momentum_month_4_cfddb747",
+    "asset": "nzd_usd",
+    "rr": 2.0,
+    "trades": 102,
+    "pf": 1.492826710539383,
+    "totalR": 28.98934014354507,
+    "exits": {
+      "sl": 50,
+      "sl_gap": 4,
+      "time_exit": 7,
+      "tp": 39,
+      "tp_gap": 2
+    },
+    "baselineTrades": 102,
+    "baselinePf": 2.112208969513054,
+    "baselineTotalR": 91.46225881131203
+  },
+  {
+    "id": "competition_japanese_yen_futures_london_first30_ny_open_reversal_month_9_6d9e482f",
+    "asset": "japanese_yen_futures",
+    "rr": 2.0,
+    "trades": 69,
+    "pf": 1.4858070655145654,
+    "totalR": 18.275705178998415,
+    "exits": {
+      "sl": 36,
+      "time_exit": 6,
+      "tp": 27
+    },
+    "baselineTrades": 69,
+    "baselinePf": 2.1167927030429166,
+    "baselineTotalR": 48.51303127566799
+  },
+  {
+    "id": "competition_dow_jones_futures_daily_tsmom_next_overnight_signalweekdayside_direction_momentum_entrymin_c2a8817b",
+    "asset": "dow_jones_futures",
+    "rr": 2.0,
+    "trades": 132,
+    "pf": 1.4737077207197802,
+    "totalR": 42.20857213176139,
+    "exits": {
+      "sl": 82,
+      "sl_gap": 4,
+      "time_exit": 3,
+      "tp": 34,
+      "tp_gap": 9
+    },
+    "baselineTrades": 132,
+    "baselinePf": 2.2104310160006677,
+    "baselineTotalR": 134.340608760269
+  },
+  {
+    "id": "competition_usd_chf_us_first30_midday_reversal_month_1_074f7113",
+    "asset": "usd_chf",
+    "rr": 2.0,
+    "trades": 110,
+    "pf": 1.4711099554000648,
+    "totalR": 16.91750770711023,
+    "exits": {
+      "sl": 29,
+      "time_exit": 71,
+      "tp": 10
+    },
+    "baselineTrades": 110,
+    "baselinePf": 2.5002639089460548,
+    "baselineTotalR": 44.36912301098202
+  },
+  {
+    "id": "competition_new_zealand_dollar_futures_ny_open_gap_fade_signalmonth_direction_fade_entryminute_570_exi_7ad85d81",
+    "asset": "new_zealand_dollar_futures",
+    "rr": 2.0,
+    "trades": 79,
+    "pf": 1.456587663846139,
+    "totalR": 19.892168992240123,
+    "exits": {
+      "sl": 43,
+      "time_exit": 5,
+      "tp": 31
+    },
+    "baselineTrades": 79,
+    "baselinePf": 2.0698984014942505,
+    "baselineTotalR": 62.419359560547
+  },
+  {
+    "id": "competition_usd_cad_us_first30_midday_reversal_month_12_1f6382c6",
+    "asset": "usd_cad",
+    "rr": 2.0,
+    "trades": 61,
+    "pf": 1.4461050955818688,
+    "totalR": 11.23501861105011,
+    "exits": {
+      "sl": 22,
+      "sl_gap": 1,
+      "time_exit": 30,
+      "tp": 8
+    },
+    "baselineTrades": 61,
+    "baselinePf": 2.192216253917463,
+    "baselineTotalR": 26.817285866645985
+  },
+  {
+    "id": "competition_nzd_usd_daily_tsmom_next_rth_signalmonth_direction_contrarian_entryminute_570_exitminute_9_183b1d88",
+    "asset": "nzd_usd",
+    "rr": 2.0,
+    "trades": 100,
+    "pf": 1.4338736243411614,
+    "totalR": 24.32684947023988,
+    "exits": {
+      "sl": 56,
+      "time_exit": 4,
+      "tp": 38,
+      "tp_gap": 2
+    },
+    "baselineTrades": 100,
+    "baselinePf": 2.3822850950899785,
+    "baselineTotalR": 138.98199279542297
+  },
+  {
+    "id": "competition_aud_usd_london_first30_ny_open_momentum_month_4_6674a830",
+    "asset": "aud_usd",
+    "rr": 2.0,
+    "trades": 103,
+    "pf": 1.4274081544631967,
+    "totalR": 23.33325851440027,
+    "exits": {
+      "sl": 53,
+      "time_exit": 13,
+      "tp": 36,
+      "tp_gap": 1
+    },
+    "baselineTrades": 103,
+    "baselinePf": 2.3413944747131157,
+    "baselineTotalR": 91.07161214017997
+  },
+  {
+    "id": "competition_eur_jpy_london_first30_ny_open_reversal_month_9_ef673bbe",
+    "asset": "eur_jpy",
+    "rr": 2.0,
+    "trades": 84,
+    "pf": 1.4253776687947612,
+    "totalR": 19.22202980036528,
+    "exits": {
+      "sl": 45,
+      "time_exit": 10,
+      "tp": 29
+    },
+    "baselineTrades": 84,
+    "baselinePf": 2.0444518742923607,
+    "baselineTotalR": 44.98552475647298
+  },
+  {
+    "id": "competition_micro_ether_futures_london_first30_ny_open_reversal_weekday_side_0_long_d64af48a",
+    "asset": "micro_ether_futures",
+    "rr": 2.0,
+    "trades": 44,
+    "pf": 1.4166394761191714,
+    "totalR": 9.951589160100168,
+    "exits": {
+      "sl": 20,
+      "sl_gap": 3,
+      "time_exit": 5,
+      "tp": 16
+    },
+    "baselineTrades": 44,
+    "baselinePf": 3.0589519046574454,
+    "baselineTotalR": 41.160586742487
+  },
+  {
+    "id": "competition_australian_dollar_futures_ny_open_gap_fade_signalmonth_direction_fade_entryminute_570_exit_1aa4fa28",
+    "asset": "australian_dollar_futures",
+    "rr": 2.0,
+    "trades": 65,
+    "pf": 1.4092888877614769,
+    "totalR": 15.275192134526074,
+    "exits": {
+      "sl": 37,
+      "time_exit": 2,
+      "tp": 26
+    },
+    "baselineTrades": 65,
+    "baselinePf": 2.2358630067532888,
+    "baselineTotalR": 75.91353079066803
+  },
+  {
+    "id": "competition_eur_jpy_us_first30_midday_momentum_month_8_95ae5d8c",
+    "asset": "eur_jpy",
+    "rr": 2.0,
+    "trades": 57,
+    "pf": 1.3775641095777995,
+    "totalR": 7.183125618769619,
+    "exits": {
+      "sl": 15,
+      "time_exit": 37,
+      "tp": 5
+    },
+    "baselineTrades": 57,
+    "baselinePf": 2.3971941480997097,
+    "baselineTotalR": 17.4081163755
+  },
+  {
+    "id": "competition_aud_usd_us_first30_last30_reversal_signalmonth_direction_opposite_entryminute_930_exitbarm_c8c5223e",
+    "asset": "aud_usd",
+    "rr": 2.0,
+    "trades": 60,
+    "pf": 1.3559422795701486,
+    "totalR": 4.3978182757475635,
+    "exits": {
+      "sl": 6,
+      "time_exit": 51,
+      "tp": 3
+    },
+    "baselineTrades": 60,
+    "baselinePf": 2.3574363808145735,
+    "baselineTotalR": 10.327677754549
+  },
+  {
+    "id": "competition_us_treasury_30y_bond_futures_daily_tsmom_next_overnight_weekday_side_4_short_72a8080e",
+    "asset": "us_treasury_30y_bond_futures",
+    "rr": 2.0,
+    "trades": 96,
+    "pf": 1.343858384097196,
+    "totalR": 16.742164760761177,
+    "exits": {
+      "sl": 43,
+      "sl_gap": 5,
+      "time_exit": 29,
+      "tp": 14,
+      "tp_gap": 5
+    },
+    "baselineTrades": 96,
+    "baselinePf": 2.240353030395528,
+    "baselineTotalR": 57.042586413942004
+  },
+  {
+    "id": "competition_usd_jpy_london_first30_ny_open_reversal_month_9_17887f0e",
+    "asset": "usd_jpy",
+    "rr": 2.0,
+    "trades": 68,
+    "pf": 1.333101590718559,
+    "totalR": 12.899542146766526,
+    "exits": {
+      "sl": 38,
+      "time_exit": 5,
+      "tp": 25
+    },
+    "baselineTrades": 68,
+    "baselinePf": 2.158640640586206,
+    "baselineTotalR": 47.91782272644
+  },
+  {
+    "id": "competition_silver_futures_london_first30_ny_open_momentum_weekday_side_0_short_7456f9c2",
+    "asset": "silver_futures",
+    "rr": 2.0,
+    "trades": 90,
+    "pf": 1.3248909881560065,
+    "totalR": 17.229267559148756,
+    "exits": {
+      "sl": 53,
+      "time_exit": 3,
+      "tp": 34
+    },
+    "baselineTrades": 90,
+    "baselinePf": 2.4540703166300895,
+    "baselineTotalR": 97.56427558993394
+  },
+  {
+    "id": "competition_aud_usd_ny_open_gap_fade_signalmonth_direction_fade_entryminute_570_exitbarminute_660_ming_5c432e4e",
+    "asset": "aud_usd",
+    "rr": 2.0,
+    "trades": 65,
+    "pf": 1.3186403117697794,
+    "totalR": 11.996729930512277,
+    "exits": {
+      "sl": 35,
+      "sl_gap": 1,
+      "time_exit": 7,
+      "tp": 21,
+      "tp_gap": 1
+    },
+    "baselineTrades": 65,
+    "baselinePf": 2.0824191179808818,
+    "baselineTotalR": 56.624156823543
+  },
+  {
+    "id": "competition_russell_2000_futures_daily_tsmom_next_overnight_month_7_d15e8a17",
+    "asset": "russell_2000_futures",
+    "rr": 2.0,
+    "trades": 81,
+    "pf": 1.3169610089944925,
+    "totalR": 14.795057024366328,
+    "exits": {
+      "sl": 41,
+      "sl_gap": 2,
+      "time_exit": 11,
+      "tp": 26,
+      "tp_gap": 1
+    },
+    "baselineTrades": 81,
+    "baselinePf": 2.5553371265779203,
+    "baselineTotalR": 85.31896777424302
+  },
+  {
+    "id": "competition_gbp_usd_london_first30_last30_reversal_month_1_dc2945a5",
+    "asset": "gbp_usd",
+    "rr": 2.0,
+    "trades": 80,
+    "pf": 1.287877997651685,
+    "totalR": 4.771482190914898,
+    "exits": {
+      "sl": 9,
+      "time_exit": 70,
+      "tp": 1
+    },
+    "baselineTrades": 80,
+    "baselinePf": 2.039310193253616,
+    "baselineTotalR": 16.195941541463
+  },
+  {
+    "id": "competition_eur_chf_ny_open_gap_fade_month_9_5044d21c",
+    "asset": "eur_chf",
+    "rr": 2.0,
+    "trades": 64,
+    "pf": 1.2852010212204654,
+    "totalR": 9.74788210260592,
+    "exits": {
+      "sl": 33,
+      "time_exit": 13,
+      "tp": 18
+    },
+    "baselineTrades": 64,
+    "baselinePf": 2.0347421316081102,
+    "baselineTotalR": 32.26548301893101
+  },
+  {
+    "id": "competition_eur_jpy_daily_tsmom_next_overnight_weekday_side_4_long_f8ec3c41",
+    "asset": "eur_jpy",
+    "rr": 2.0,
+    "trades": 135,
+    "pf": 1.2602763342751804,
+    "totalR": 23.823386105634587,
+    "exits": {
+      "sl": 47,
+      "sl_gap": 16,
+      "time_exit": 44,
+      "tp": 18,
+      "tp_gap": 10
+    },
+    "baselineTrades": 135,
+    "baselinePf": 2.152994889907367,
+    "baselineTotalR": 94.39093066712798
+  },
+  {
+    "id": "competition_micro_ether_futures_daily_tsmom_next_overnight_weekday_side_1_long_dc4c34f3",
+    "asset": "micro_ether_futures",
+    "rr": 2.0,
+    "trades": 105,
+    "pf": 1.2569778186752605,
+    "totalR": 19.083366696208188,
+    "exits": {
+      "sl": 48,
+      "sl_gap": 14,
+      "tp": 29,
+      "tp_gap": 14
+    },
+    "baselineTrades": 105,
+    "baselinePf": 3.9496003640206463,
+    "baselineTotalR": 253.92608979857792
+  },
+  {
+    "id": "competition_aud_usd_daily_tsmom_next_overnight_month_12_45e372f3",
+    "asset": "aud_usd",
+    "rr": 2.0,
+    "trades": 79,
+    "pf": 1.24951607931609,
+    "totalR": 12.405270851299665,
+    "exits": {
+      "sl": 41,
+      "sl_gap": 4,
+      "time_exit": 4,
+      "tp": 29,
+      "tp_gap": 1
+    },
+    "baselineTrades": 79,
+    "baselinePf": 2.4980473129472216,
+    "baselineTotalR": 137.9128375085251
+  },
+  {
+    "id": "competition_dow_jones_futures_daily_tsmom_next_overnight_weekday_side_2_short_99ba7153",
+    "asset": "dow_jones_futures",
+    "rr": 2.0,
+    "trades": 83,
+    "pf": 1.2391210759760891,
+    "totalR": 11.88868205268761,
+    "exits": {
+      "sl": 49,
+      "time_exit": 4,
+      "tp": 30
+    },
+    "baselineTrades": 83,
+    "baselinePf": 2.639693418407807,
+    "baselineTotalR": 102.63425627565898
+  },
+  {
+    "id": "competition_usd_chf_daily_tsmom_next_overnight_month_12_4f2024c0",
+    "asset": "usd_chf",
+    "rr": 2.0,
+    "trades": 75,
+    "pf": 1.2360180021355156,
+    "totalR": 11.101209735971498,
+    "exits": {
+      "sl": 44,
+      "sl_gap": 1,
+      "time_exit": 3,
+      "tp": 26,
+      "tp_gap": 1
+    },
+    "baselineTrades": 75,
+    "baselinePf": 3.1113970787668688,
+    "baselineTotalR": 118.66348244358
+  },
+  {
+    "id": "competition_crude_oil_futures_overnight_close_to_open_bias_signalmonth_entry_prior_rth_close_exit_ny_o_315d7644",
+    "asset": "crude_oil_futures",
+    "rr": 2.0,
+    "trades": 102,
+    "pf": 1.2312262039943602,
+    "totalR": 15.307689084505158,
+    "exits": {
+      "sl": 54,
+      "sl_gap": 5,
+      "time_exit": 6,
+      "tp": 34,
+      "tp_gap": 3
+    },
+    "baselineTrades": 102,
+    "baselinePf": 3.2316819178156133,
+    "baselineTotalR": 161.73696033635295
+  },
+  {
+    "id": "competition_gbp_jpy_ny_open_gap_follow_month_9_eea6b89e",
+    "asset": "gbp_jpy",
+    "rr": 2.0,
+    "trades": 68,
+    "pf": 1.219022601827039,
+    "totalR": 8.598821517354743,
+    "exits": {
+      "sl": 38,
+      "sl_gap": 1,
+      "time_exit": 6,
+      "tp": 23
+    },
+    "baselineTrades": 68,
+    "baselinePf": 2.151636053087404,
+    "baselineTotalR": 53.39886506011499
+  },
+  {
+    "id": "competition_russell_2000_futures_ny_open_gap_fade_signalmonth_direction_fade_entryminute_570_exitbarmi_801e97d2",
+    "asset": "russell_2000_futures",
+    "rr": 2.0,
+    "trades": 59,
+    "pf": 1.1926314778396605,
+    "totalR": 6.321127956895068,
+    "exits": {
+      "sl": 32,
+      "time_exit": 10,
+      "tp": 17
+    },
+    "baselineTrades": 59,
+    "baselinePf": 2.8534193739816147,
+    "baselineTotalR": 49.06811311316801
+  },
+  {
+    "id": "competition_australian_dollar_futures_ny_open_gap_fade_signalmonth_direction_fade_entryminute_570_exit_dcd12f25",
+    "asset": "australian_dollar_futures",
+    "rr": 2.0,
+    "trades": 75,
+    "pf": 1.169383191476104,
+    "totalR": 7.443738146405514,
+    "exits": {
+      "sl": 42,
+      "time_exit": 8,
+      "tp": 25
+    },
+    "baselineTrades": 75,
+    "baselinePf": 2.5964101541992113,
+    "baselineTotalR": 82.37036781454503
+  },
+  {
+    "id": "competition_gold_futures_daily_tsmom_next_overnight_signalweekdayside_direction_momentum_entryminute_9_c8e1caae",
+    "asset": "gold_futures",
+    "rr": 2.0,
+    "trades": 116,
+    "pf": 1.1559779142934243,
+    "totalR": 12.903184042263891,
+    "exits": {
+      "sl": 80,
+      "sl_gap": 2,
+      "tp": 31,
+      "tp_gap": 3
+    },
+    "baselineTrades": 116,
+    "baselinePf": 2.143666240716052,
+    "baselineTotalR": 163.48346370567907
+  },
+  {
+    "id": "competition_gbp_jpy_london_first30_ny_open_momentum_weekday_side_3_short_d1634235",
+    "asset": "gbp_jpy",
+    "rr": 2.0,
+    "trades": 75,
+    "pf": 1.1364044684928223,
+    "totalR": 6.233216844519828,
+    "exits": {
+      "sl": 44,
+      "sl_gap": 1,
+      "time_exit": 5,
+      "tp": 25
+    },
+    "baselineTrades": 75,
+    "baselinePf": 2.044439894072877,
+    "baselineTotalR": 64.43819699544501
+  },
+  {
+    "id": "competition_usd_jpy_overnight_close_to_open_bias_long_month_10_06e957d5",
+    "asset": "usd_jpy",
+    "rr": 2.0,
+    "trades": 89,
+    "pf": 1.1301549100565536,
+    "totalR": 8.569206123928709,
+    "exits": {
+      "sl": 64,
+      "sl_gap": 2,
+      "time_exit": 2,
+      "tp": 17,
+      "tp_gap": 4
+    },
+    "baselineTrades": 89,
+    "baselinePf": 2.668913313817174,
+    "baselineTotalR": 177.845492290704
+  },
+  {
+    "id": "competition_nasdaq_100_futures_london_first30_ny_open_momentum_weekday_side_3_short_726e6c71",
+    "asset": "nasdaq_100_futures",
+    "rr": 2.0,
+    "trades": 109,
+    "pf": 1.1223082306083871,
+    "totalR": 8.491221442321784,
+    "exits": {
+      "sl": 69,
+      "time_exit": 1,
+      "tp": 39
+    },
+    "baselineTrades": 109,
+    "baselinePf": 2.0144998052649563,
+    "baselineTotalR": 117.31088729927102
+  },
+  {
+    "id": "competition_corn_futures_london_first30_ny_open_reversal_weekday_side_3_short_bd97e9a5",
+    "asset": "corn_futures",
+    "rr": 2.0,
+    "trades": 100,
+    "pf": 1.1190147863399993,
+    "totalR": 7.929796390843768,
+    "exits": {
+      "sl": 63,
+      "sl_gap": 1,
+      "tp": 35,
+      "tp_gap": 1
+    },
+    "baselineTrades": 100,
+    "baselinePf": 2.0018045919452465,
+    "baselineTotalR": 103.96509240938802
+  },
+  {
+    "id": "competition_gbp_jpy_daily_tsmom_next_rth_month_6_4be2e72e",
+    "asset": "gbp_jpy",
+    "rr": 2.0,
+    "trades": 68,
+    "pf": 1.0844714888864913,
+    "totalR": 3.741952941936736,
+    "exits": {
+      "sl": 44,
+      "tp": 23,
+      "tp_gap": 1
+    },
+    "baselineTrades": 68,
+    "baselinePf": 2.910659226652435,
+    "baselineTotalR": 107.23414764536102
+  },
+  {
+    "id": "competition_us_treasury_30y_bond_futures_daily_tsmom_next_overnight_weekday_side_0_long_157ef9f4",
+    "asset": "us_treasury_30y_bond_futures",
+    "rr": 2.0,
+    "trades": 75,
+    "pf": 1.081928771252847,
+    "totalR": 4.0473506060589735,
+    "exits": {
+      "sl": 44,
+      "sl_gap": 4,
+      "tp": 27
+    },
+    "baselineTrades": 75,
+    "baselinePf": 2.0142087282204146,
+    "baselineTotalR": 90.33414874823795
+  },
+  {
+    "id": "competition_silver_futures_daily_tsmom_next_overnight_weekday_side_1_long_f61a84dd",
+    "asset": "silver_futures",
+    "rr": 2.0,
+    "trades": 87,
+    "pf": 1.0302841563118537,
+    "totalR": 1.7414572956763181,
+    "exits": {
+      "sl": 57,
+      "sl_gap": 1,
+      "time_exit": 1,
+      "tp": 27,
+      "tp_gap": 1
+    },
+    "baselineTrades": 87,
+    "baselinePf": 2.6677237841829777,
+    "baselineTotalR": 170.52019449656498
+  },
+  {
+    "id": "competition_micro_bitcoin_futures_daily_tsmom_next_overnight_signalweekdayside_direction_contrarian_en_6003fc2d",
+    "asset": "micro_bitcoin_futures",
+    "rr": 2.0,
+    "trades": 104,
+    "pf": 0.990008803204955,
+    "totalR": -0.7139033144111525,
+    "exits": {
+      "sl": 64,
+      "sl_gap": 5,
+      "tp": 31,
+      "tp_gap": 4
+    },
+    "baselineTrades": 104,
+    "baselinePf": 3.5534427722887636,
+    "baselineTotalR": 218.76513165718202
+  },
+  {
+    "id": "competition_japanese_yen_futures_overnight_close_to_open_bias_short_month_10_6bc43a25",
+    "asset": "japanese_yen_futures",
+    "rr": 2.0,
+    "trades": 89,
+    "pf": 0.9808801341821706,
+    "totalR": -1.2030194253569597,
+    "exits": {
+      "sl": 55,
+      "sl_gap": 5,
+      "time_exit": 1,
+      "tp": 26,
+      "tp_gap": 2
+    },
+    "baselineTrades": 89,
+    "baselinePf": 2.8690722896675163,
+    "baselineTotalR": 196.49759128629512
+  },
+  {
+    "id": "competition_canadian_dollar_futures_overnight_close_to_open_bias_signalmonth_entry_prior_rth_close_exi_31e5e01a",
+    "asset": "canadian_dollar_futures",
+    "rr": 2.0,
+    "trades": 89,
+    "pf": 0.9671106489292597,
+    "totalR": -1.8561483454291914,
+    "exits": {
+      "sl": 54,
+      "sl_gap": 2,
+      "time_exit": 8,
+      "tp": 25
+    },
+    "baselineTrades": 89,
+    "baselinePf": 2.8503151031923046,
+    "baselineTotalR": 110.00116039122598
+  },
+  {
+    "id": "competition_sp_500_futures_us_first30_last30_reversal_weekday_side_0_long_2b2acc93",
+    "asset": "sp_500_futures",
+    "rr": 2.0,
+    "trades": 59,
+    "pf": 0.9633173769650346,
+    "totalR": -1.1373415679641368,
+    "exits": {
+      "sl": 28,
+      "time_exit": 20,
+      "tp": 11
+    },
+    "baselineTrades": 59,
+    "baselinePf": 2.6628995222892002,
+    "baselineTotalR": 33.831259274781004
+  },
+  {
+    "id": "competition_sp_500_futures_daily_tsmom_next_overnight_weekday_side_2_short_af21c53b",
+    "asset": "sp_500_futures",
+    "rr": 2.0,
+    "trades": 81,
+    "pf": 0.9630691224253312,
+    "totalR": -1.9695858238734276,
+    "exits": {
+      "sl": 53,
+      "time_exit": 3,
+      "tp": 25
+    },
+    "baselineTrades": 81,
+    "baselinePf": 2.2371552191037236,
+    "baselineTotalR": 80.996533319691
+  },
+  {
+    "id": "competition_usd_cad_daily_tsmom_next_overnight_signalmonth_direction_momentum_entryminute_945_exitminu_dca02dc1",
+    "asset": "usd_cad",
+    "rr": 2.0,
+    "trades": 74,
+    "pf": 0.9620522536394678,
+    "totalR": -1.8089447343400844,
+    "exits": {
+      "sl": 46,
+      "sl_gap": 1,
+      "time_exit": 5,
+      "tp": 22
+    },
+    "baselineTrades": 74,
+    "baselinePf": 3.0222056448627708,
+    "baselineTotalR": 129.253263132028
+  },
+  {
+    "id": "competition_silver_futures_london_first30_ny_open_momentum_signalweekdayside_direction_same_entryminut_5ce60b39",
+    "asset": "silver_futures",
+    "rr": 2.0,
+    "trades": 80,
+    "pf": 0.9397820205108476,
+    "totalR": -3.1998933086940795,
+    "exits": {
+      "sl": 53,
+      "time_exit": 3,
+      "tp": 24
+    },
+    "baselineTrades": 80,
+    "baselinePf": 2.2015323444672243,
+    "baselineTotalR": 92.14717807873001
+  },
+  {
+    "id": "competition_gold_futures_daily_tsmom_next_overnight_weekday_side_3_long_648d544b",
+    "asset": "gold_futures",
+    "rr": 2.0,
+    "trades": 79,
+    "pf": 0.9165286724810323,
+    "totalR": -4.534776172528502,
+    "exits": {
+      "sl": 53,
+      "sl_gap": 1,
+      "tp": 25
+    },
+    "baselineTrades": 79,
+    "baselinePf": 2.247497143722641,
+    "baselineTotalR": 177.804738884626
+  },
+  {
+    "id": "competition_swiss_franc_futures_overnight_close_to_open_bias_short_month_10_17716ea5",
+    "asset": "swiss_franc_futures",
+    "rr": 2.0,
+    "trades": 89,
+    "pf": 0.8710209183393989,
+    "totalR": -7.710715269401732,
+    "exits": {
+      "sl": 58,
+      "sl_gap": 1,
+      "time_exit": 7,
+      "tp": 20,
+      "tp_gap": 3
+    },
+    "baselineTrades": 89,
+    "baselinePf": 2.4217658176667767,
+    "baselineTotalR": 135.02542401476003
+  },
+  {
+    "id": "competition_gbp_jpy_ny_open_gap_fade_signalmonth_direction_fade_entryminute_570_exitbarminute_945_ming_297a7a1d",
+    "asset": "gbp_jpy",
+    "rr": 2.0,
+    "trades": 100,
+    "pf": 0.8311779422569278,
+    "totalR": -11.529885238253215,
+    "exits": {
+      "sl": 68,
+      "time_exit": 4,
+      "tp": 28
+    },
+    "baselineTrades": 100,
+    "baselinePf": 2.053984915003024,
+    "baselineTotalR": 117.17501047603103
+  },
+  {
+    "id": "competition_euro_futures_daily_tsmom_next_rth_signalmonth_direction_contrarian_entryminute_570_exitmin_0b54da46",
+    "asset": "euro_futures",
+    "rr": 2.0,
+    "trades": 62,
+    "pf": 0.8249962344795879,
+    "totalR": -7.641460973417734,
+    "exits": {
+      "sl": 44,
+      "tp": 17,
+      "tp_gap": 1
+    },
+    "baselineTrades": 62,
+    "baselinePf": 2.398337728453843,
+    "baselineTotalR": 80.956173127602
+  },
+  {
+    "id": "competition_gbp_jpy_london_first30_ny_open_reversal_signalmonth_direction_opposite_entryminute_480_exi_d549e3a7",
+    "asset": "gbp_jpy",
+    "rr": 2.0,
+    "trades": 59,
+    "pf": 0.8209645741277667,
+    "totalR": -6.906054933406815,
+    "exits": {
+      "sl": 38,
+      "time_exit": 9,
+      "tp": 12
+    },
+    "baselineTrades": 59,
+    "baselinePf": 2.59861611967979,
+    "baselineTotalR": 46.41509743191799
+  },
+  {
+    "id": "competition_canadian_dollar_futures_daily_tsmom_next_overnight_signalmonth_direction_momentum_entrymin_eee85315",
+    "asset": "canadian_dollar_futures",
+    "rr": 2.0,
+    "trades": 82,
+    "pf": 0.8081155448378767,
+    "totalR": -10.29169696764608,
+    "exits": {
+      "sl": 52,
+      "sl_gap": 1,
+      "time_exit": 9,
+      "tp": 20
+    },
+    "baselineTrades": 82,
+    "baselinePf": 2.327247555107679,
+    "baselineTotalR": 85.756885703067
+  },
+  {
+    "id": "competition_aud_nzd_daily_tsmom_next_overnight_weekday_side_4_long_0aa8225f",
+    "asset": "aud_nzd",
+    "rr": 2.0,
+    "trades": 87,
+    "pf": 0.7949229543109556,
+    "totalR": -13.278699611304965,
+    "exits": {
+      "sl": 56,
+      "sl_gap": 3,
+      "time_exit": 4,
+      "tp": 18,
+      "tp_gap": 6
+    },
+    "baselineTrades": 87,
+    "baselinePf": 2.7474300269370935,
+    "baselineTotalR": 73.26049503472798
+  },
+  {
+    "id": "competition_gbp_jpy_daily_tsmom_next_overnight_signalmonth_direction_contrarian_entryminute_945_exitmi_ab520ea7",
+    "asset": "gbp_jpy",
+    "rr": 2.0,
+    "trades": 86,
+    "pf": 0.7783387670371364,
+    "totalR": -16.27447502184374,
+    "exits": {
+      "sl": 49,
+      "sl_gap": 6,
+      "time_exit": 4,
+      "tp": 26,
+      "tp_gap": 1
+    },
+    "baselineTrades": 86,
+    "baselinePf": 2.0161961939523296,
+    "baselineTotalR": 134.57014538799396
+  },
+  {
+    "id": "competition_aud_usd_daily_tsmom_next_overnight_month_6_c0c3d057",
+    "asset": "aud_usd",
+    "rr": 2.0,
+    "trades": 84,
+    "pf": 0.7162742693651908,
+    "totalR": -17.42565936122276,
+    "exits": {
+      "sl": 48,
+      "sl_gap": 9,
+      "time_exit": 7,
+      "tp": 19,
+      "tp_gap": 1
+    },
+    "baselineTrades": 84,
+    "baselinePf": 2.1983773354187903,
+    "baselineTotalR": 152.504621621226
+  },
+  {
+    "id": "competition_eur_usd_daily_tsmom_next_overnight_month_1_33ed35ff",
+    "asset": "eur_usd",
+    "rr": 2.0,
+    "trades": 100,
+    "pf": 0.7056059884832661,
+    "totalR": -20.89664358879207,
+    "exits": {
+      "sl": 70,
+      "sl_gap": 1,
+      "time_exit": 5,
+      "tp": 23,
+      "tp_gap": 1
+    },
+    "baselineTrades": 100,
+    "baselinePf": 2.4561375268457932,
+    "baselineTotalR": 172.39314612720503
+  },
+  {
+    "id": "competition_british_pound_futures_daily_tsmom_next_overnight_month_7_da1c691c",
+    "asset": "british_pound_futures",
+    "rr": 2.0,
+    "trades": 87,
+    "pf": 0.696795959076538,
+    "totalR": -18.406855752633252,
+    "exits": {
+      "sl": 60,
+      "time_exit": 7,
+      "tp": 18,
+      "tp_gap": 2
+    },
+    "baselineTrades": 87,
+    "baselinePf": 2.3945172409766178,
+    "baselineTotalR": 186.69172914010102
+  },
+  {
+    "id": "competition_gbp_jpy_daily_tsmom_next_overnight_month_10_74426304",
+    "asset": "gbp_jpy",
+    "rr": 2.0,
+    "trades": 89,
+    "pf": 0.6944420646335625,
+    "totalR": -20.747310516700814,
+    "exits": {
+      "sl": 60,
+      "sl_gap": 4,
+      "time_exit": 2,
+      "tp": 22,
+      "tp_gap": 1
+    },
+    "baselineTrades": 89,
+    "baselinePf": 2.31602819034689,
+    "baselineTotalR": 212.622557899025
+  },
+  {
+    "id": "competition_usd_cad_daily_tsmom_next_overnight_month_10_941ee263",
+    "asset": "usd_cad",
+    "rr": 2.0,
+    "trades": 89,
+    "pf": 0.631850526125137,
+    "totalR": -24.03971384310184,
+    "exits": {
+      "sl": 64,
+      "time_exit": 5,
+      "tp": 19,
+      "tp_gap": 1
+    },
+    "baselineTrades": 89,
+    "baselinePf": 2.103121511719994,
+    "baselineTotalR": 81.81507203301697
+  },
+  {
+    "id": "competition_eur_chf_daily_tsmom_next_overnight_weekday_side_2_short_15ab1798",
+    "asset": "eur_chf",
+    "rr": 2.0,
+    "trades": 97,
+    "pf": 0.5649850060614151,
+    "totalR": -33.81262117533623,
+    "exits": {
+      "sl": 70,
+      "sl_gap": 6,
+      "tp": 19,
+      "tp_gap": 2
+    },
+    "baselineTrades": 97,
+    "baselinePf": 2.0674607314054367,
+    "baselineTotalR": 150.80570496193485
+  },
+  {
+    "id": "competition_gbp_usd_daily_tsmom_next_overnight_month_7_1cefc684",
+    "asset": "gbp_usd",
+    "rr": 2.0,
+    "trades": 88,
+    "pf": 0.4162560237290775,
+    "totalR": -41.798143889488934,
+    "exits": {
+      "sl": 54,
+      "sl_gap": 11,
+      "time_exit": 10,
+      "tp": 13
+    },
+    "baselineTrades": 88,
+    "baselinePf": 2.2174211403651873,
+    "baselineTotalR": 172.4892536794651
+  }
+]

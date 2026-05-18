@@ -4,14 +4,14 @@
   "folder": "competition_gbp_jpy_london_first30_last30_reversal_weekday_side_4_long_ef0c2df3",
   "assetKey": "gbp_jpy",
   "phase": "competition_session_edge",
-  "variantId": "competition_session_edge|family=london_first30_last30_reversal_weekday_side_4_long|direction=opposite|entry=930|exit=945|min_signal_atr=0.35|signal_end=195|signal_start=180|signal_weekday_side=4_long|risk_reward=2",
+  "variantId": "competition_session_edge|family=london_first30_last30_reversal_weekday_side_4_long|direction=opposite|entry=930|exit=945|min_signal_atr=0.35|signal_end=195|signal_start=180|signal_weekday_side=4_long|risk_reward=2|managed_exit=bracket",
   "source": "competition_session_edge_train_forward_2026_05",
   "sourceUrls": [
     "https://w4.stern.nyu.edu/facdir/lpederse/papers/TimeSeriesMomentum.pdf",
     "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=2694985",
     "https://www.semanticscholar.org/paper/The-Probability-of-Backtest-Overfitting-Bailey-Borwein/b1233b4f5384f003e85c2e0eec1a2dfc08f624c5"
   ],
-  "researchSummary": "London first-half-hour reversal into the US close. Filter: long signals on weekday 4. Upgraded to a distinct 2:1 planned reward-to-risk variant because the time-exit entry/exit path preserves forward PF versus the legacy 1R accounting baseline.",
+  "researchSummary": "London first-half-hour reversal into the US close. Filter: long signals on weekday 4. True bracket exit uses 2:1 reward/risk; forward PF was recomputed from actual stop/target/time exits.",
   "selectionMethod": "Fixed session-edge research grid; pre-2022 training ranked candidates, then post-2022 forward trades had to clear PF/trade-count/split/no-duplicate gates.",
   "trainingWindow": {
     "start": "asset_start",
@@ -30,7 +30,7 @@
   "forwardTotalR": 12.715463,
   "forwardAverageR": 0.198679,
   "forwardMaxDrawdownR": 1.813182,
-  "verificationSummary": "Strict runner verified forward PF 2.73, 64 trades, min split PF 1.54, and no registered same-asset duplicate entries at materialization time. RR comparison accepted: baseline PF 2.73 vs 2R PF 2.73, 64 trades.",
+  "verificationSummary": "Reality audit: true 2R bracket stop/target exit recomputed PF 2.73 over 64 trades, total 12.72R, max drawdown 1.81R (time_exit=64).",
   "costUnits": 0,
   "oneTradePerDay": false,
   "minimumRiskReward": 2.0,

@@ -4,14 +4,14 @@
   "folder": "competition_aud_usd_daily_tsmom_next_overnight_month_6_c0c3d057",
   "assetKey": "aud_usd",
   "phase": "competition_session_edge",
-  "variantId": "competition_session_edge|family=daily_tsmom_next_overnight_month_6|direction=contrarian|entry=945|exit=945|lookback=20|signal_month=6|risk_reward=2",
+  "variantId": "competition_session_edge|family=daily_tsmom_next_overnight_month_6|direction=contrarian|entry=945|exit=945|lookback=20|signal_month=6",
   "source": "competition_session_edge_train_forward_2026_05",
   "sourceUrls": [
     "https://w4.stern.nyu.edu/facdir/lpederse/papers/TimeSeriesMomentum.pdf",
     "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=2694985",
     "https://www.semanticscholar.org/paper/The-Probability-of-Backtest-Overfitting-Bailey-Borwein/b1233b4f5384f003e85c2e0eec1a2dfc08f624c5"
   ],
-  "researchSummary": "Daily time-series contrarian using a 20-day close-to-close lookback. Filter: month 6. Upgraded to a distinct 2:1 planned reward-to-risk variant because the time-exit entry/exit path preserves forward PF versus the legacy 1R accounting baseline.",
+  "researchSummary": "Daily time-series contrarian using a 20-day close-to-close lookback. Filter: month 6.",
   "selectionMethod": "Fixed session-edge research grid; pre-2022 training ranked candidates, then post-2022 forward trades had to clear PF/trade-count/split/no-duplicate gates.",
   "trainingWindow": {
     "start": "asset_start",
@@ -30,9 +30,7 @@
   "forwardTotalR": 152.504622,
   "forwardAverageR": 1.815531,
   "forwardMaxDrawdownR": 19.458862,
-  "verificationSummary": "Strict runner verified forward PF 2.20, 84 trades, min split PF 1.86, and no registered same-asset duplicate entries at materialization time. RR comparison accepted: baseline PF 2.20 vs 2R PF 2.20, 84 trades.",
+  "verificationSummary": "Strict runner verified forward PF 2.20, 84 trades, min split PF 1.86, and no registered same-asset duplicate entries at materialization time. Reality audit: true 2R bracket did not preserve the baseline PF, so this strategy remains a time-exit baseline and displayed RR is regenerated from the actual backtest CSV.",
   "costUnits": 0,
-  "oneTradePerDay": false,
-  "minimumRiskReward": 2.0,
-  "selectedRiskReward": 2.0
+  "oneTradePerDay": false
 }

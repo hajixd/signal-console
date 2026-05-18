@@ -4,14 +4,14 @@
   "folder": "competition_nasdaq_100_futures_daily_tsmom_next_overnight_weekday_side_1_long_8e593f24",
   "assetKey": "nasdaq_100_futures",
   "phase": "competition_session_edge",
-  "variantId": "competition_session_edge|family=daily_tsmom_next_overnight_weekday_side_1_long|direction=contrarian|entry=945|exit=570|lookback=20|signal_weekday_side=1_long|risk_reward=2",
+  "variantId": "competition_session_edge|family=daily_tsmom_next_overnight_weekday_side_1_long|direction=contrarian|entry=945|exit=570|lookback=20|signal_weekday_side=1_long",
   "source": "competition_session_edge_train_forward_2026_05",
   "sourceUrls": [
     "https://w4.stern.nyu.edu/facdir/lpederse/papers/TimeSeriesMomentum.pdf",
     "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=2694985",
     "https://www.semanticscholar.org/paper/The-Probability-of-Backtest-Overfitting-Bailey-Borwein/b1233b4f5384f003e85c2e0eec1a2dfc08f624c5"
   ],
-  "researchSummary": "Daily time-series contrarian using a 20-day close-to-close lookback. Filter: long signals on weekday 1. Upgraded to a distinct 2:1 planned reward-to-risk variant because the time-exit entry/exit path preserves forward PF versus the legacy 1R accounting baseline.",
+  "researchSummary": "Daily time-series contrarian using a 20-day close-to-close lookback. Filter: long signals on weekday 1.",
   "selectionMethod": "Fixed session-edge research grid; pre-2022 training ranked candidates, then post-2022 forward trades had to clear PF/trade-count/split/no-duplicate gates.",
   "trainingWindow": {
     "start": "asset_start",
@@ -30,9 +30,7 @@
   "forwardTotalR": 87.912063,
   "forwardAverageR": 1.059181,
   "forwardMaxDrawdownR": 14.163445,
-  "verificationSummary": "Strict runner verified forward PF 2.52, 83 trades, min split PF 2.06, and no registered same-asset duplicate entries at materialization time. RR comparison accepted: baseline PF 2.52 vs 2R PF 2.52, 83 trades.",
+  "verificationSummary": "Strict runner verified forward PF 2.52, 83 trades, min split PF 2.06, and no registered same-asset duplicate entries at materialization time. Reality audit: true 2R bracket did not preserve the baseline PF, so this strategy remains a time-exit baseline and displayed RR is regenerated from the actual backtest CSV.",
   "costUnits": 0,
-  "oneTradePerDay": false,
-  "minimumRiskReward": 2.0,
-  "selectedRiskReward": 2.0
+  "oneTradePerDay": false
 }

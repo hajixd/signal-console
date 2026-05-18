@@ -1,0 +1,1632 @@
+[
+  {
+    "strategyId": "competition_aud_nzd_daily_tsmom_next_overnight_weekday_side_4_long_0aa8225f",
+    "qualifiedBracket": false,
+    "trades": 87,
+    "wins": 56,
+    "losses": 30,
+    "profitFactor": 2.7474300269370935,
+    "totalR": 73.26049503472798,
+    "averageR": 0.842074655571586,
+    "maxDrawdownR": 8.289152648697,
+    "exits": {
+      "time_exit": 87
+    },
+    "avgRR": 1.0
+  },
+  {
+    "strategyId": "competition_aud_nzd_london_first30_last30_reversal_weekday_side_0_long_2e0ed4d2",
+    "qualifiedBracket": false,
+    "trades": 53,
+    "wins": 29,
+    "losses": 18,
+    "profitFactor": 2.133229247996619,
+    "totalR": 6.970512754967999,
+    "averageR": 0.13151910858430185,
+    "maxDrawdownR": 1.145308792133,
+    "exits": {
+      "time_exit": 53
+    },
+    "avgRR": 1.0
+  },
+  {
+    "strategyId": "competition_aud_usd_daily_tsmom_next_overnight_month_12_45e372f3",
+    "qualifiedBracket": false,
+    "trades": 79,
+    "wins": 49,
+    "losses": 30,
+    "profitFactor": 2.4980473129472216,
+    "totalR": 137.9128375085251,
+    "averageR": 1.745732120361077,
+    "maxDrawdownR": 21.619633894141998,
+    "exits": {
+      "time_exit": 79
+    },
+    "avgRR": 1.0
+  },
+  {
+    "strategyId": "competition_aud_usd_daily_tsmom_next_overnight_month_6_c0c3d057",
+    "qualifiedBracket": false,
+    "trades": 84,
+    "wins": 43,
+    "losses": 41,
+    "profitFactor": 2.1983773354187903,
+    "totalR": 152.504621621226,
+    "averageR": 1.8155312097765,
+    "maxDrawdownR": 19.458862115267998,
+    "exits": {
+      "time_exit": 84
+    },
+    "avgRR": 1.0
+  },
+  {
+    "strategyId": "competition_aud_usd_london_first30_ny_open_momentum_month_4_6674a830",
+    "qualifiedBracket": false,
+    "trades": 103,
+    "wins": 58,
+    "losses": 44,
+    "profitFactor": 2.3413944747131157,
+    "totalR": 91.07161214017997,
+    "averageR": 0.8841904091279609,
+    "maxDrawdownR": 9.631083032538001,
+    "exits": {
+      "time_exit": 103
+    },
+    "avgRR": 1.0
+  },
+  {
+    "strategyId": "competition_aud_usd_ny_open_gap_fade_signalmonth_direction_fade_entryminute_570_exitbarminute_660_ming_5c432e4e",
+    "qualifiedBracket": false,
+    "trades": 65,
+    "wins": 37,
+    "losses": 28,
+    "profitFactor": 2.0824191179808818,
+    "totalR": 56.624156823543,
+    "averageR": 0.8711408742083538,
+    "maxDrawdownR": 13.240330519227998,
+    "exits": {
+      "time_exit": 65
+    },
+    "avgRR": 1.0
+  },
+  {
+    "strategyId": "competition_aud_usd_us_first30_last30_reversal_signalmonth_direction_opposite_entryminute_930_exitbarm_c8c5223e",
+    "qualifiedBracket": false,
+    "trades": 60,
+    "wins": 38,
+    "losses": 21,
+    "profitFactor": 2.3574363808145735,
+    "totalR": 10.327677754549,
+    "averageR": 0.17212796257581667,
+    "maxDrawdownR": 2.150632950989,
+    "exits": {
+      "time_exit": 60
+    },
+    "avgRR": 1.0
+  },
+  {
+    "strategyId": "competition_australian_dollar_futures_ny_open_gap_fade_signalmonth_direction_fade_entryminute_570_exit_1aa4fa28",
+    "qualifiedBracket": false,
+    "trades": 65,
+    "wins": 37,
+    "losses": 28,
+    "profitFactor": 2.2358630067532888,
+    "totalR": 75.91353079066803,
+    "averageR": 1.167900473702585,
+    "maxDrawdownR": 14.027824911181,
+    "exits": {
+      "time_exit": 65
+    },
+    "avgRR": 1.0
+  },
+  {
+    "strategyId": "competition_australian_dollar_futures_ny_open_gap_fade_signalmonth_direction_fade_entryminute_570_exit_dcd12f25",
+    "qualifiedBracket": false,
+    "trades": 75,
+    "wins": 48,
+    "losses": 27,
+    "profitFactor": 2.5964101541992113,
+    "totalR": 82.37036781454503,
+    "averageR": 1.0982715708606003,
+    "maxDrawdownR": 7.546067371289993,
+    "exits": {
+      "time_exit": 75
+    },
+    "avgRR": 1.0
+  },
+  {
+    "strategyId": "competition_australian_dollar_futures_us_first30_last30_reversal_signalmonth_direction_opposite_entrym_77aa2b55",
+    "qualifiedBracket": false,
+    "trades": 61,
+    "wins": 37,
+    "losses": 20,
+    "profitFactor": 2.361094108575001,
+    "totalR": 10.975251965037998,
+    "averageR": 0.17992216336127867,
+    "maxDrawdownR": 2.040885423774,
+    "exits": {
+      "time_exit": 61
+    },
+    "avgRR": 1.0
+  },
+  {
+    "strategyId": "competition_british_pound_futures_daily_tsmom_next_overnight_month_7_da1c691c",
+    "qualifiedBracket": false,
+    "trades": 87,
+    "wins": 51,
+    "losses": 33,
+    "profitFactor": 2.3945172409766178,
+    "totalR": 186.69172914010102,
+    "averageR": 2.145881944139092,
+    "maxDrawdownR": 22.249481127552997,
+    "exits": {
+      "time_exit": 87
+    },
+    "avgRR": 1.0
+  },
+  {
+    "strategyId": "competition_british_pound_futures_london_first30_last30_reversal_month_1_c3526d80",
+    "qualifiedBracket": false,
+    "trades": 78,
+    "wins": 43,
+    "losses": 29,
+    "profitFactor": 2.38894420155459,
+    "totalR": 18.059642070794,
+    "averageR": 0.23153387270248715,
+    "maxDrawdownR": 3.4313795172890007,
+    "exits": {
+      "time_exit": 78
+    },
+    "avgRR": 1.0
+  },
+  {
+    "strategyId": "competition_british_pound_futures_us_first30_last30_reversal_month_10_57755118",
+    "qualifiedBracket": false,
+    "trades": 57,
+    "wins": 34,
+    "losses": 19,
+    "profitFactor": 2.6269159797112867,
+    "totalR": 11.611686774934999,
+    "averageR": 0.20371380306903505,
+    "maxDrawdownR": 1.3181466388160001,
+    "exits": {
+      "time_exit": 57
+    },
+    "avgRR": 1.0
+  },
+  {
+    "strategyId": "competition_canadian_dollar_futures_daily_tsmom_next_overnight_signalmonth_direction_momentum_entrymin_eee85315",
+    "qualifiedBracket": false,
+    "trades": 82,
+    "wins": 52,
+    "losses": 28,
+    "profitFactor": 2.327247555107679,
+    "totalR": 85.756885703067,
+    "averageR": 1.0458156793056952,
+    "maxDrawdownR": 15.506615175673,
+    "exits": {
+      "time_exit": 82
+    },
+    "avgRR": 1.0
+  },
+  {
+    "strategyId": "competition_canadian_dollar_futures_overnight_close_to_open_bias_signalmonth_entry_prior_rth_close_exi_31e5e01a",
+    "qualifiedBracket": false,
+    "trades": 89,
+    "wins": 56,
+    "losses": 32,
+    "profitFactor": 2.8503151031923046,
+    "totalR": 110.00116039122598,
+    "averageR": 1.235968094283438,
+    "maxDrawdownR": 16.828678888162,
+    "exits": {
+      "time_exit": 89
+    },
+    "avgRR": 1.0
+  },
+  {
+    "strategyId": "competition_copper_futures_daily_tsmom_next_overnight_weekday_side_1_long_28c520df",
+    "qualifiedBracket": false,
+    "trades": 101,
+    "wins": 62,
+    "losses": 39,
+    "profitFactor": 2.0140372250372565,
+    "totalR": 245.01179189261998,
+    "averageR": 2.4258593256695047,
+    "maxDrawdownR": 28.333552942715983,
+    "exits": {
+      "time_exit": 101
+    },
+    "avgRR": 1.0
+  },
+  {
+    "strategyId": "competition_copper_futures_us_first30_last30_reversal_weekday_side_0_long_04d98061",
+    "qualifiedBracket": false,
+    "trades": 75,
+    "wins": 42,
+    "losses": 24,
+    "profitFactor": 2.9255572577394666,
+    "totalR": 9.793384793792,
+    "averageR": 0.1305784639172267,
+    "maxDrawdownR": 0.674733513993,
+    "exits": {
+      "time_exit": 75
+    },
+    "avgRR": 1.0
+  },
+  {
+    "strategyId": "competition_copper_futures_us_first30_last30_reversal_weekday_side_4_short_79163bfe",
+    "qualifiedBracket": false,
+    "trades": 69,
+    "wins": 43,
+    "losses": 21,
+    "profitFactor": 2.0102873949129583,
+    "totalR": 6.229046075809001,
+    "averageR": 0.09027603008418843,
+    "maxDrawdownR": 1.320609195467,
+    "exits": {
+      "time_exit": 69
+    },
+    "avgRR": 1.0
+  },
+  {
+    "strategyId": "competition_corn_futures_london_first30_ny_open_reversal_weekday_side_3_short_bd97e9a5",
+    "qualifiedBracket": false,
+    "trades": 100,
+    "wins": 59,
+    "losses": 35,
+    "profitFactor": 2.0018045919452465,
+    "totalR": 103.96509240938802,
+    "averageR": 1.0396509240938803,
+    "maxDrawdownR": 21.926094361949,
+    "exits": {
+      "time_exit": 100
+    },
+    "avgRR": 1.0
+  },
+  {
+    "strategyId": "competition_corn_futures_us_first30_midday_momentum_weekday_side_3_long_cbe1149a",
+    "qualifiedBracket": false,
+    "trades": 81,
+    "wins": 53,
+    "losses": 23,
+    "profitFactor": 3.220190694981334,
+    "totalR": 62.72107179281401,
+    "averageR": 0.7743342196643704,
+    "maxDrawdownR": 3.484977858920999,
+    "exits": {
+      "time_exit": 81
+    },
+    "avgRR": 1.0
+  },
+  {
+    "strategyId": "competition_crude_oil_futures_overnight_close_to_open_bias_signalmonth_entry_prior_rth_close_exit_ny_o_315d7644",
+    "qualifiedBracket": false,
+    "trades": 102,
+    "wins": 66,
+    "losses": 34,
+    "profitFactor": 3.2316819178156133,
+    "totalR": 161.73696033635295,
+    "averageR": 1.5856564738858132,
+    "maxDrawdownR": 12.691502714662995,
+    "exits": {
+      "time_exit": 102
+    },
+    "avgRR": 1.0
+  },
+  {
+    "strategyId": "competition_crude_oil_futures_us_first30_midday_momentum_month_4_32a2fef5",
+    "qualifiedBracket": false,
+    "trades": 102,
+    "wins": 69,
+    "losses": 33,
+    "profitFactor": 2.538399735388968,
+    "totalR": 50.538656095356,
+    "averageR": 0.49547702054270587,
+    "maxDrawdownR": 7.019591358976996,
+    "exits": {
+      "time_exit": 102
+    },
+    "avgRR": 1.0
+  },
+  {
+    "strategyId": "competition_dow_jones_futures_daily_tsmom_next_overnight_signalweekdayside_direction_momentum_entrymin_c2a8817b",
+    "qualifiedBracket": false,
+    "trades": 132,
+    "wins": 77,
+    "losses": 55,
+    "profitFactor": 2.2104310160006677,
+    "totalR": 134.340608760269,
+    "averageR": 1.0177318845474923,
+    "maxDrawdownR": 8.476539398911996,
+    "exits": {
+      "time_exit": 132
+    },
+    "avgRR": 1.0
+  },
+  {
+    "strategyId": "competition_dow_jones_futures_daily_tsmom_next_overnight_weekday_side_2_short_99ba7153",
+    "qualifiedBracket": false,
+    "trades": 83,
+    "wins": 54,
+    "losses": 29,
+    "profitFactor": 2.639693418407807,
+    "totalR": 102.63425627565898,
+    "averageR": 1.2365573045260119,
+    "maxDrawdownR": 11.272733247337008,
+    "exits": {
+      "time_exit": 83
+    },
+    "avgRR": 1.0
+  },
+  {
+    "strategyId": "competition_euro_futures_daily_tsmom_next_rth_signalmonth_direction_contrarian_entryminute_570_exitmin_0b54da46",
+    "qualifiedBracket": false,
+    "trades": 62,
+    "wins": 37,
+    "losses": 25,
+    "profitFactor": 2.398337728453843,
+    "totalR": 80.956173127602,
+    "averageR": 1.3057447278645484,
+    "maxDrawdownR": 12.870460526323999,
+    "exits": {
+      "time_exit": 62
+    },
+    "avgRR": 1.0
+  },
+  {
+    "strategyId": "competition_eur_cad_london_first30_last30_momentum_month_8_c5f12647",
+    "qualifiedBracket": false,
+    "trades": 87,
+    "wins": 55,
+    "losses": 27,
+    "profitFactor": 2.725628754361177,
+    "totalR": 23.039999315499998,
+    "averageR": 0.26482757833908044,
+    "maxDrawdownR": 1.7629047875600001,
+    "exits": {
+      "time_exit": 87
+    },
+    "avgRR": 1.0
+  },
+  {
+    "strategyId": "competition_eur_cad_us_first30_midday_momentum_month_10_8e114485",
+    "qualifiedBracket": false,
+    "trades": 63,
+    "wins": 43,
+    "losses": 19,
+    "profitFactor": 2.774716630308562,
+    "totalR": 28.543909282259005,
+    "averageR": 0.4530779251152223,
+    "maxDrawdownR": 2.160184119429,
+    "exits": {
+      "time_exit": 63
+    },
+    "avgRR": 1.0
+  },
+  {
+    "strategyId": "competition_eur_chf_daily_tsmom_next_overnight_weekday_side_2_short_15ab1798",
+    "qualifiedBracket": false,
+    "trades": 97,
+    "wins": 59,
+    "losses": 38,
+    "profitFactor": 2.0674607314054367,
+    "totalR": 150.80570496193485,
+    "averageR": 1.5546979892982975,
+    "maxDrawdownR": 21.387956395074,
+    "exits": {
+      "time_exit": 97
+    },
+    "avgRR": 1.0
+  },
+  {
+    "strategyId": "competition_eur_chf_daily_tsmom_next_rth_signalmonth_direction_momentum_entryminute_570_exitminute_945_391afa4a",
+    "qualifiedBracket": false,
+    "trades": 94,
+    "wins": 66,
+    "losses": 28,
+    "profitFactor": 3.2206406982289186,
+    "totalR": 162.695963978963,
+    "averageR": 1.7308081274357765,
+    "maxDrawdownR": 13.353414975388002,
+    "exits": {
+      "time_exit": 94
+    },
+    "avgRR": 1.0
+  },
+  {
+    "strategyId": "competition_eur_chf_ny_open_gap_fade_month_9_5044d21c",
+    "qualifiedBracket": false,
+    "trades": 64,
+    "wins": 37,
+    "losses": 27,
+    "profitFactor": 2.0347421316081102,
+    "totalR": 32.26548301893101,
+    "averageR": 0.504148172170797,
+    "maxDrawdownR": 7.2172508745599995,
+    "exits": {
+      "time_exit": 64
+    },
+    "avgRR": 1.0
+  },
+  {
+    "strategyId": "competition_eur_chf_us_first30_midday_momentum_month_6_f4946f20",
+    "qualifiedBracket": false,
+    "trades": 59,
+    "wins": 38,
+    "losses": 20,
+    "profitFactor": 2.3494791462870395,
+    "totalR": 15.629144750197003,
+    "averageR": 0.26490075847791533,
+    "maxDrawdownR": 3.629959043037,
+    "exits": {
+      "time_exit": 59
+    },
+    "avgRR": 1.0
+  },
+  {
+    "strategyId": "competition_eur_gbp_london_first30_ny_open_reversal_weekday_side_4_long_97b8e7c1",
+    "qualifiedBracket": false,
+    "trades": 70,
+    "wins": 43,
+    "losses": 27,
+    "profitFactor": 2.1614112165255697,
+    "totalR": 43.42339902845599,
+    "averageR": 0.6203342718350856,
+    "maxDrawdownR": 7.154789937261995,
+    "exits": {
+      "time_exit": 70
+    },
+    "avgRR": 1.0
+  },
+  {
+    "strategyId": "competition_eur_gbp_us_first30_last30_reversal_weekday_side_1_short_2371b8e4",
+    "qualifiedBracket": false,
+    "trades": 73,
+    "wins": 44,
+    "losses": 28,
+    "profitFactor": 2.085623886833216,
+    "totalR": 8.652497194314002,
+    "averageR": 0.1185273588262192,
+    "maxDrawdownR": 1.5411570803100005,
+    "exits": {
+      "time_exit": 73
+    },
+    "avgRR": 1.0
+  },
+  {
+    "strategyId": "competition_eur_gbp_us_first30_midday_reversal_month_5_da8593e8",
+    "qualifiedBracket": false,
+    "trades": 70,
+    "wins": 42,
+    "losses": 28,
+    "profitFactor": 2.0460596606696106,
+    "totalR": 16.567188949116,
+    "averageR": 0.2366741278445143,
+    "maxDrawdownR": 2.8678687948099997,
+    "exits": {
+      "time_exit": 70
+    },
+    "avgRR": 1.0
+  },
+  {
+    "strategyId": "competition_eur_jpy_daily_tsmom_next_overnight_weekday_side_2_short_bad001bc",
+    "qualifiedBracket": false,
+    "trades": 142,
+    "wins": 88,
+    "losses": 53,
+    "profitFactor": 2.183703077698084,
+    "totalR": 308.047288709394,
+    "averageR": 2.169347103587282,
+    "maxDrawdownR": 28.817175481473015,
+    "exits": {
+      "time_exit": 142
+    },
+    "avgRR": 1.0
+  },
+  {
+    "strategyId": "competition_eur_jpy_daily_tsmom_next_overnight_weekday_side_4_long_f8ec3c41",
+    "qualifiedBracket": false,
+    "trades": 135,
+    "wins": 75,
+    "losses": 60,
+    "profitFactor": 2.152994889907367,
+    "totalR": 94.39093066712798,
+    "averageR": 0.6991920790157627,
+    "maxDrawdownR": 19.732793516289,
+    "exits": {
+      "time_exit": 135
+    },
+    "avgRR": 1.0
+  },
+  {
+    "strategyId": "competition_eur_jpy_daily_tsmom_next_rth_signalmonth_direction_momentum_entryminute_570_exitminute_945_563aa3f1",
+    "qualifiedBracket": false,
+    "trades": 68,
+    "wins": 43,
+    "losses": 25,
+    "profitFactor": 2.6671230088128026,
+    "totalR": 105.43512101765799,
+    "averageR": 1.550516485553794,
+    "maxDrawdownR": 18.6054485783,
+    "exits": {
+      "time_exit": 68
+    },
+    "avgRR": 1.0
+  },
+  {
+    "strategyId": "competition_eur_jpy_london_first30_ny_open_reversal_month_9_ef673bbe",
+    "qualifiedBracket": false,
+    "trades": 84,
+    "wins": 51,
+    "losses": 33,
+    "profitFactor": 2.0444518742923607,
+    "totalR": 44.98552475647298,
+    "averageR": 0.535541961386583,
+    "maxDrawdownR": 6.319607705754,
+    "exits": {
+      "time_exit": 84
+    },
+    "avgRR": 1.0
+  },
+  {
+    "strategyId": "competition_eur_jpy_us_first30_last30_momentum_signalweekdayside_direction_same_entryminute_930_exitba_0a4a3f58",
+    "qualifiedBracket": true,
+    "trades": 64,
+    "wins": 41,
+    "losses": 21,
+    "profitFactor": 3.5610670543415957,
+    "totalR": 13.675045994231004,
+    "averageR": 0.21367259365985944,
+    "maxDrawdownR": 1.0309266392729999,
+    "exits": {
+      "time_exit": 62,
+      "sl": 1,
+      "tp": 1
+    },
+    "avgRR": 2.0063085806822
+  },
+  {
+    "strategyId": "competition_eur_jpy_us_first30_last30_reversal_weekday_side_4_long_6d672b02",
+    "qualifiedBracket": true,
+    "trades": 49,
+    "wins": 26,
+    "losses": 22,
+    "profitFactor": 2.2263427920497247,
+    "totalR": 6.726070079185,
+    "averageR": 0.13726673630989797,
+    "maxDrawdownR": 1.2549107198590002,
+    "exits": {
+      "time_exit": 49
+    },
+    "avgRR": 2.0007916864280206
+  },
+  {
+    "strategyId": "competition_eur_jpy_us_first30_midday_momentum_month_8_95ae5d8c",
+    "qualifiedBracket": false,
+    "trades": 57,
+    "wins": 28,
+    "losses": 25,
+    "profitFactor": 2.3971941480997097,
+    "totalR": 17.4081163755,
+    "averageR": 0.30540555044736845,
+    "maxDrawdownR": 2.7403274209829993,
+    "exits": {
+      "time_exit": 57
+    },
+    "avgRR": 1.0
+  },
+  {
+    "strategyId": "competition_eur_usd_daily_tsmom_next_overnight_month_1_33ed35ff",
+    "qualifiedBracket": false,
+    "trades": 100,
+    "wins": 61,
+    "losses": 38,
+    "profitFactor": 2.4561375268457932,
+    "totalR": 172.39314612720503,
+    "averageR": 1.7239314612720502,
+    "maxDrawdownR": 25.30551287501298,
+    "exits": {
+      "time_exit": 100
+    },
+    "avgRR": 1.0
+  },
+  {
+    "strategyId": "competition_eur_usd_overnight_close_to_open_bias_long_month_12_8a49b98f",
+    "qualifiedBracket": false,
+    "trades": 73,
+    "wins": 43,
+    "losses": 30,
+    "profitFactor": 2.3914627823370433,
+    "totalR": 84.43792194076902,
+    "averageR": 1.1566838622023152,
+    "maxDrawdownR": 9.164127089214997,
+    "exits": {
+      "time_exit": 73
+    },
+    "avgRR": 1.0
+  },
+  {
+    "strategyId": "competition_gbp_jpy_daily_tsmom_next_overnight_month_10_74426304",
+    "qualifiedBracket": false,
+    "trades": 89,
+    "wins": 53,
+    "losses": 36,
+    "profitFactor": 2.31602819034689,
+    "totalR": 212.622557899025,
+    "averageR": 2.389017504483427,
+    "maxDrawdownR": 24.75190740130401,
+    "exits": {
+      "time_exit": 89
+    },
+    "avgRR": 1.0
+  },
+  {
+    "strategyId": "competition_gbp_jpy_daily_tsmom_next_overnight_signalmonth_direction_contrarian_entryminute_945_exitmi_ab520ea7",
+    "qualifiedBracket": false,
+    "trades": 86,
+    "wins": 53,
+    "losses": 33,
+    "profitFactor": 2.0161961939523296,
+    "totalR": 134.57014538799396,
+    "averageR": 1.5647691324185344,
+    "maxDrawdownR": 17.61673564762799,
+    "exits": {
+      "time_exit": 86
+    },
+    "avgRR": 1.0
+  },
+  {
+    "strategyId": "competition_gbp_jpy_daily_tsmom_next_rth_month_6_4be2e72e",
+    "qualifiedBracket": false,
+    "trades": 68,
+    "wins": 45,
+    "losses": 23,
+    "profitFactor": 2.910659226652435,
+    "totalR": 107.23414764536102,
+    "averageR": 1.5769727594906033,
+    "maxDrawdownR": 14.130486832220981,
+    "exits": {
+      "time_exit": 68
+    },
+    "avgRR": 1.0
+  },
+  {
+    "strategyId": "competition_gbp_jpy_london_first30_last30_momentum_weekday_side_4_long_6a554e5f",
+    "qualifiedBracket": false,
+    "trades": 81,
+    "wins": 53,
+    "losses": 27,
+    "profitFactor": 2.8008755286472797,
+    "totalR": 19.077846863902003,
+    "averageR": 0.2355289736284198,
+    "maxDrawdownR": 2.4817151615999986,
+    "exits": {
+      "time_exit": 81
+    },
+    "avgRR": 1.0
+  },
+  {
+    "strategyId": "competition_gbp_jpy_london_first30_last30_reversal_weekday_side_4_long_ef0c2df3",
+    "qualifiedBracket": true,
+    "trades": 64,
+    "wins": 39,
+    "losses": 25,
+    "profitFactor": 2.7306886730505426,
+    "totalR": 12.715463278318001,
+    "averageR": 0.19867911372371877,
+    "maxDrawdownR": 1.8131820139060002,
+    "exits": {
+      "time_exit": 64
+    },
+    "avgRR": 1.9970485270917622
+  },
+  {
+    "strategyId": "competition_gbp_jpy_london_first30_ny_open_momentum_weekday_side_3_short_d1634235",
+    "qualifiedBracket": false,
+    "trades": 75,
+    "wins": 46,
+    "losses": 28,
+    "profitFactor": 2.044439894072877,
+    "totalR": 64.43819699544501,
+    "averageR": 0.8591759599392668,
+    "maxDrawdownR": 9.177848961601,
+    "exits": {
+      "time_exit": 75
+    },
+    "avgRR": 1.0
+  },
+  {
+    "strategyId": "competition_gbp_jpy_london_first30_ny_open_reversal_signalmonth_direction_opposite_entryminute_480_exi_d549e3a7",
+    "qualifiedBracket": false,
+    "trades": 59,
+    "wins": 36,
+    "losses": 23,
+    "profitFactor": 2.59861611967979,
+    "totalR": 46.41509743191799,
+    "averageR": 0.7866965666426778,
+    "maxDrawdownR": 5.083958177957,
+    "exits": {
+      "time_exit": 59
+    },
+    "avgRR": 1.0
+  },
+  {
+    "strategyId": "competition_gbp_jpy_ny_open_gap_fade_signalmonth_direction_fade_entryminute_570_exitbarminute_945_ming_297a7a1d",
+    "qualifiedBracket": false,
+    "trades": 100,
+    "wins": 60,
+    "losses": 40,
+    "profitFactor": 2.053984915003024,
+    "totalR": 117.17501047603103,
+    "averageR": 1.1717501047603103,
+    "maxDrawdownR": 22.317108806739995,
+    "exits": {
+      "time_exit": 100
+    },
+    "avgRR": 1.0
+  },
+  {
+    "strategyId": "competition_gbp_jpy_ny_open_gap_follow_month_9_eea6b89e",
+    "qualifiedBracket": false,
+    "trades": 68,
+    "wins": 39,
+    "losses": 27,
+    "profitFactor": 2.151636053087404,
+    "totalR": 53.39886506011499,
+    "averageR": 0.7852774273546322,
+    "maxDrawdownR": 5.020733066659,
+    "exits": {
+      "time_exit": 68
+    },
+    "avgRR": 1.0
+  },
+  {
+    "strategyId": "competition_gbp_jpy_us_first30_last30_momentum_weekday_side_2_long_461ef776",
+    "qualifiedBracket": false,
+    "trades": 68,
+    "wins": 43,
+    "losses": 25,
+    "profitFactor": 2.396707772329148,
+    "totalR": 9.735647965892,
+    "averageR": 0.14317129361605882,
+    "maxDrawdownR": 2.503530385698,
+    "exits": {
+      "time_exit": 68
+    },
+    "avgRR": 1.0
+  },
+  {
+    "strategyId": "competition_gbp_jpy_us_first30_last30_reversal_weekday_side_2_long_bfe5c772",
+    "qualifiedBracket": true,
+    "trades": 118,
+    "wins": 76,
+    "losses": 37,
+    "profitFactor": 2.4302543423624425,
+    "totalR": 21.525463437157995,
+    "averageR": 0.18241918167083046,
+    "maxDrawdownR": 2.409584539976,
+    "exits": {
+      "sl": 6,
+      "time_exit": 110,
+      "tp": 2
+    },
+    "avgRR": 1.9991967738944263
+  },
+  {
+    "strategyId": "competition_gbp_usd_daily_tsmom_next_overnight_month_7_1cefc684",
+    "qualifiedBracket": false,
+    "trades": 88,
+    "wins": 50,
+    "losses": 37,
+    "profitFactor": 2.2174211403651873,
+    "totalR": 172.4892536794651,
+    "averageR": 1.960105155448467,
+    "maxDrawdownR": 21.676963519301992,
+    "exits": {
+      "time_exit": 88
+    },
+    "avgRR": 1.0
+  },
+  {
+    "strategyId": "competition_gbp_usd_london_first30_last30_reversal_month_1_dc2945a5",
+    "qualifiedBracket": false,
+    "trades": 80,
+    "wins": 46,
+    "losses": 29,
+    "profitFactor": 2.039310193253616,
+    "totalR": 16.195941541463,
+    "averageR": 0.2024492692682875,
+    "maxDrawdownR": 6.424796626773004,
+    "exits": {
+      "time_exit": 80
+    },
+    "avgRR": 1.0
+  },
+  {
+    "strategyId": "competition_gbp_usd_us_first30_last30_reversal_signalmonth_direction_opposite_entryminute_930_exitbarm_9b2547fb",
+    "qualifiedBracket": false,
+    "trades": 57,
+    "wins": 34,
+    "losses": 22,
+    "profitFactor": 2.5147154351796526,
+    "totalR": 11.308993604862001,
+    "averageR": 0.19840339657652634,
+    "maxDrawdownR": 1.0973054554089998,
+    "exits": {
+      "time_exit": 57
+    },
+    "avgRR": 1.0
+  },
+  {
+    "strategyId": "competition_gold_futures_daily_tsmom_next_overnight_signalweekdayside_direction_momentum_entryminute_9_c8e1caae",
+    "qualifiedBracket": false,
+    "trades": 116,
+    "wins": 74,
+    "losses": 42,
+    "profitFactor": 2.143666240716052,
+    "totalR": 163.48346370567907,
+    "averageR": 1.4093402043593024,
+    "maxDrawdownR": 22.581161572766973,
+    "exits": {
+      "time_exit": 116
+    },
+    "avgRR": 1.0
+  },
+  {
+    "strategyId": "competition_gold_futures_daily_tsmom_next_overnight_weekday_side_3_long_648d544b",
+    "qualifiedBracket": false,
+    "trades": 79,
+    "wins": 47,
+    "losses": 32,
+    "profitFactor": 2.247497143722641,
+    "totalR": 177.804738884626,
+    "averageR": 2.2506928972737468,
+    "maxDrawdownR": 19.153674136264,
+    "exits": {
+      "time_exit": 79
+    },
+    "avgRR": 1.0
+  },
+  {
+    "strategyId": "competition_gold_futures_us_first30_last30_reversal_weekday_side_0_long_c0163084",
+    "qualifiedBracket": true,
+    "trades": 71,
+    "wins": 43,
+    "losses": 25,
+    "profitFactor": 2.784599378611288,
+    "totalR": 11.007438774284998,
+    "averageR": 0.15503434893359153,
+    "maxDrawdownR": 1.4342018267230001,
+    "exits": {
+      "time_exit": 71
+    },
+    "avgRR": 1.9982171612002042
+  },
+  {
+    "strategyId": "competition_japanese_yen_futures_london_first30_ny_open_reversal_month_9_6d9e482f",
+    "qualifiedBracket": false,
+    "trades": 69,
+    "wins": 36,
+    "losses": 31,
+    "profitFactor": 2.1167927030429166,
+    "totalR": 48.51303127566799,
+    "averageR": 0.7030874097922897,
+    "maxDrawdownR": 11.814941520751997,
+    "exits": {
+      "time_exit": 69
+    },
+    "avgRR": 1.0
+  },
+  {
+    "strategyId": "competition_japanese_yen_futures_overnight_close_to_open_bias_short_month_10_6bc43a25",
+    "qualifiedBracket": false,
+    "trades": 89,
+    "wins": 58,
+    "losses": 27,
+    "profitFactor": 2.8690722896675163,
+    "totalR": 196.49759128629512,
+    "averageR": 2.2078381043403947,
+    "maxDrawdownR": 21.04736104665899,
+    "exits": {
+      "time_exit": 89
+    },
+    "avgRR": 1.0
+  },
+  {
+    "strategyId": "competition_japanese_yen_futures_us_first30_last30_reversal_signalweekdayside_direction_opposite_entry_11a69e11",
+    "qualifiedBracket": false,
+    "trades": 75,
+    "wins": 49,
+    "losses": 22,
+    "profitFactor": 4.3497951195184115,
+    "totalR": 20.981485770927,
+    "averageR": 0.27975314361236003,
+    "maxDrawdownR": 1.254472791101,
+    "exits": {
+      "time_exit": 75
+    },
+    "avgRR": 1.0
+  },
+  {
+    "strategyId": "competition_micro_bitcoin_futures_daily_tsmom_next_overnight_signalweekdayside_direction_contrarian_en_6003fc2d",
+    "qualifiedBracket": false,
+    "trades": 104,
+    "wins": 71,
+    "losses": 33,
+    "profitFactor": 3.5534427722887636,
+    "totalR": 218.76513165718202,
+    "averageR": 2.1035108813190577,
+    "maxDrawdownR": 10.579191069033982,
+    "exits": {
+      "time_exit": 104
+    },
+    "avgRR": 1.0
+  },
+  {
+    "strategyId": "competition_micro_bitcoin_futures_daily_tsmom_next_rth_weekday_side_2_short_4be5774f",
+    "qualifiedBracket": false,
+    "trades": 101,
+    "wins": 62,
+    "losses": 39,
+    "profitFactor": 2.355671669281674,
+    "totalR": 182.256436509176,
+    "averageR": 1.8045191733581782,
+    "maxDrawdownR": 26.889461124446996,
+    "exits": {
+      "time_exit": 101
+    },
+    "avgRR": 1.0
+  },
+  {
+    "strategyId": "competition_micro_ether_futures_daily_tsmom_next_overnight_weekday_side_1_long_dc4c34f3",
+    "qualifiedBracket": false,
+    "trades": 105,
+    "wins": 67,
+    "losses": 37,
+    "profitFactor": 3.9496003640206463,
+    "totalR": 253.92608979857792,
+    "averageR": 2.4183437123674087,
+    "maxDrawdownR": 18.980357618774008,
+    "exits": {
+      "time_exit": 105
+    },
+    "avgRR": 1.0
+  },
+  {
+    "strategyId": "competition_micro_ether_futures_london_first30_ny_open_momentum_weekday_side_3_short_e779cb85",
+    "qualifiedBracket": false,
+    "trades": 53,
+    "wins": 37,
+    "losses": 16,
+    "profitFactor": 3.5665520313118773,
+    "totalR": 69.57831739397699,
+    "averageR": 1.3127984413957923,
+    "maxDrawdownR": 5.676314943229002,
+    "exits": {
+      "time_exit": 53
+    },
+    "avgRR": 1.0
+  },
+  {
+    "strategyId": "competition_micro_ether_futures_london_first30_ny_open_reversal_weekday_side_0_long_d64af48a",
+    "qualifiedBracket": false,
+    "trades": 44,
+    "wins": 27,
+    "losses": 17,
+    "profitFactor": 3.0589519046574454,
+    "totalR": 41.160586742487,
+    "averageR": 0.9354678805110681,
+    "maxDrawdownR": 7.3901769290840065,
+    "exits": {
+      "time_exit": 44
+    },
+    "avgRR": 1.0
+  },
+  {
+    "strategyId": "competition_nasdaq_100_futures_daily_tsmom_next_overnight_weekday_side_1_long_8e593f24",
+    "qualifiedBracket": false,
+    "trades": 83,
+    "wins": 57,
+    "losses": 26,
+    "profitFactor": 2.5193244505808634,
+    "totalR": 87.91206330374801,
+    "averageR": 1.0591814855873254,
+    "maxDrawdownR": 14.163444694446,
+    "exits": {
+      "time_exit": 83
+    },
+    "avgRR": 1.0
+  },
+  {
+    "strategyId": "competition_nasdaq_100_futures_london_first30_ny_open_momentum_weekday_side_3_short_726e6c71",
+    "qualifiedBracket": false,
+    "trades": 109,
+    "wins": 66,
+    "losses": 43,
+    "profitFactor": 2.0144998052649563,
+    "totalR": 117.31088729927102,
+    "averageR": 1.0762466724703763,
+    "maxDrawdownR": 20.951904710671002,
+    "exits": {
+      "time_exit": 109
+    },
+    "avgRR": 1.0
+  },
+  {
+    "strategyId": "competition_natural_gas_futures_us_first30_last30_momentum_month_9_c678e3c1",
+    "qualifiedBracket": true,
+    "trades": 56,
+    "wins": 34,
+    "losses": 18,
+    "profitFactor": 3.1434123346686595,
+    "totalR": 8.935667650232999,
+    "averageR": 0.15956549375416068,
+    "maxDrawdownR": 1.169194776246,
+    "exits": {
+      "sl": 1,
+      "time_exit": 54,
+      "tp": 1
+    },
+    "avgRR": 2.0000680219217566
+  },
+  {
+    "strategyId": "competition_new_zealand_dollar_futures_ny_open_gap_fade_signalmonth_direction_fade_entryminute_570_exi_7ad85d81",
+    "qualifiedBracket": false,
+    "trades": 79,
+    "wins": 48,
+    "losses": 30,
+    "profitFactor": 2.0698984014942505,
+    "totalR": 62.419359560547,
+    "averageR": 0.790118475449962,
+    "maxDrawdownR": 10.558890357766003,
+    "exits": {
+      "time_exit": 79
+    },
+    "avgRR": 1.0
+  },
+  {
+    "strategyId": "competition_new_zealand_dollar_futures_us_first30_last30_reversal_signalmonth_direction_opposite_entry_ce284576",
+    "qualifiedBracket": false,
+    "trades": 48,
+    "wins": 31,
+    "losses": 11,
+    "profitFactor": 3.449855831471447,
+    "totalR": 11.28966024328,
+    "averageR": 0.23520125506833334,
+    "maxDrawdownR": 2.120662774852001,
+    "exits": {
+      "time_exit": 48
+    },
+    "avgRR": 1.0
+  },
+  {
+    "strategyId": "competition_nzd_usd_daily_tsmom_next_rth_signalmonth_direction_contrarian_entryminute_570_exitminute_9_183b1d88",
+    "qualifiedBracket": false,
+    "trades": 100,
+    "wins": 63,
+    "losses": 36,
+    "profitFactor": 2.3822850950899785,
+    "totalR": 138.98199279542297,
+    "averageR": 1.3898199279542296,
+    "maxDrawdownR": 14.696972706096002,
+    "exits": {
+      "time_exit": 100
+    },
+    "avgRR": 1.0
+  },
+  {
+    "strategyId": "competition_nzd_usd_london_first30_ny_open_momentum_month_4_cfddb747",
+    "qualifiedBracket": false,
+    "trades": 102,
+    "wins": 60,
+    "losses": 41,
+    "profitFactor": 2.112208969513054,
+    "totalR": 91.46225881131203,
+    "averageR": 0.8966888118756081,
+    "maxDrawdownR": 11.021786736593,
+    "exits": {
+      "time_exit": 102
+    },
+    "avgRR": 1.0
+  },
+  {
+    "strategyId": "competition_nzd_usd_us_first30_midday_momentum_month_4_f022fff9",
+    "qualifiedBracket": false,
+    "trades": 73,
+    "wins": 47,
+    "losses": 25,
+    "profitFactor": 2.1617405203310907,
+    "totalR": 25.008941519020997,
+    "averageR": 0.342588239986589,
+    "maxDrawdownR": 5.626230084812999,
+    "exits": {
+      "time_exit": 73
+    },
+    "avgRR": 1.0
+  },
+  {
+    "strategyId": "competition_russell_2000_futures_daily_tsmom_next_overnight_month_7_d15e8a17",
+    "qualifiedBracket": false,
+    "trades": 81,
+    "wins": 47,
+    "losses": 34,
+    "profitFactor": 2.5553371265779203,
+    "totalR": 85.31896777424302,
+    "averageR": 1.0533205898054694,
+    "maxDrawdownR": 11.460727662788997,
+    "exits": {
+      "time_exit": 81
+    },
+    "avgRR": 1.0
+  },
+  {
+    "strategyId": "competition_russell_2000_futures_ny_open_gap_fade_signalmonth_direction_fade_entryminute_570_exitbarmi_801e97d2",
+    "qualifiedBracket": false,
+    "trades": 59,
+    "wins": 38,
+    "losses": 21,
+    "profitFactor": 2.8534193739816147,
+    "totalR": 49.06811311316801,
+    "averageR": 0.8316629341214917,
+    "maxDrawdownR": 5.191115753904004,
+    "exits": {
+      "time_exit": 59
+    },
+    "avgRR": 1.0
+  },
+  {
+    "strategyId": "competition_silver_futures_daily_tsmom_next_overnight_weekday_side_1_long_f61a84dd",
+    "qualifiedBracket": false,
+    "trades": 87,
+    "wins": 55,
+    "losses": 32,
+    "profitFactor": 2.6677237841829777,
+    "totalR": 170.52019449656498,
+    "averageR": 1.960002235592701,
+    "maxDrawdownR": 27.346579659299003,
+    "exits": {
+      "time_exit": 87
+    },
+    "avgRR": 1.0
+  },
+  {
+    "strategyId": "competition_silver_futures_london_first30_ny_open_momentum_signalweekdayside_direction_same_entryminut_5ce60b39",
+    "qualifiedBracket": false,
+    "trades": 80,
+    "wins": 45,
+    "losses": 35,
+    "profitFactor": 2.2015323444672243,
+    "totalR": 92.14717807873001,
+    "averageR": 1.151839725984125,
+    "maxDrawdownR": 14.274638165087985,
+    "exits": {
+      "time_exit": 80
+    },
+    "avgRR": 1.0
+  },
+  {
+    "strategyId": "competition_silver_futures_london_first30_ny_open_momentum_weekday_side_0_short_7456f9c2",
+    "qualifiedBracket": false,
+    "trades": 90,
+    "wins": 57,
+    "losses": 32,
+    "profitFactor": 2.4540703166300895,
+    "totalR": 97.56427558993394,
+    "averageR": 1.0840475065548216,
+    "maxDrawdownR": 15.382346250926005,
+    "exits": {
+      "time_exit": 90
+    },
+    "avgRR": 1.0
+  },
+  {
+    "strategyId": "competition_sp_500_futures_daily_tsmom_next_overnight_weekday_side_1_long_c8bb041e",
+    "qualifiedBracket": false,
+    "trades": 82,
+    "wins": 60,
+    "losses": 22,
+    "profitFactor": 2.728575062358334,
+    "totalR": 91.89384907331701,
+    "averageR": 1.120656696016061,
+    "maxDrawdownR": 9.187685946622999,
+    "exits": {
+      "time_exit": 82
+    },
+    "avgRR": 1.0
+  },
+  {
+    "strategyId": "competition_sp_500_futures_daily_tsmom_next_overnight_weekday_side_2_short_af21c53b",
+    "qualifiedBracket": false,
+    "trades": 81,
+    "wins": 51,
+    "losses": 29,
+    "profitFactor": 2.2371552191037236,
+    "totalR": 80.996533319691,
+    "averageR": 0.9999572014776666,
+    "maxDrawdownR": 11.117141385016993,
+    "exits": {
+      "time_exit": 81
+    },
+    "avgRR": 1.0
+  },
+  {
+    "strategyId": "competition_sp_500_futures_us_first30_last30_reversal_weekday_side_0_long_2b2acc93",
+    "qualifiedBracket": false,
+    "trades": 59,
+    "wins": 37,
+    "losses": 22,
+    "profitFactor": 2.6628995222892002,
+    "totalR": 33.831259274781004,
+    "averageR": 0.5734111741488306,
+    "maxDrawdownR": 4.808003366054997,
+    "exits": {
+      "time_exit": 59
+    },
+    "avgRR": 1.0
+  },
+  {
+    "strategyId": "competition_swiss_franc_futures_overnight_close_to_open_bias_short_month_10_17716ea5",
+    "qualifiedBracket": false,
+    "trades": 89,
+    "wins": 56,
+    "losses": 29,
+    "profitFactor": 2.4217658176667767,
+    "totalR": 135.02542401476003,
+    "averageR": 1.517139595671461,
+    "maxDrawdownR": 14.807426307563006,
+    "exits": {
+      "time_exit": 89
+    },
+    "avgRR": 1.0
+  },
+  {
+    "strategyId": "competition_swiss_franc_futures_us_first30_midday_momentum_month_5_a2abc7dd",
+    "qualifiedBracket": false,
+    "trades": 91,
+    "wins": 57,
+    "losses": 32,
+    "profitFactor": 2.339639394523544,
+    "totalR": 31.514575513048996,
+    "averageR": 0.346314016626912,
+    "maxDrawdownR": 3.7364926303710018,
+    "exits": {
+      "time_exit": 91
+    },
+    "avgRR": 1.0
+  },
+  {
+    "strategyId": "competition_usd_cad_daily_tsmom_next_overnight_month_10_941ee263",
+    "qualifiedBracket": false,
+    "trades": 89,
+    "wins": 51,
+    "losses": 37,
+    "profitFactor": 2.103121511719994,
+    "totalR": 81.81507203301697,
+    "averageR": 0.9192704722810896,
+    "maxDrawdownR": 14.915819985838,
+    "exits": {
+      "time_exit": 89
+    },
+    "avgRR": 1.0
+  },
+  {
+    "strategyId": "competition_usd_cad_daily_tsmom_next_overnight_signalmonth_direction_momentum_entryminute_945_exitminu_dca02dc1",
+    "qualifiedBracket": false,
+    "trades": 74,
+    "wins": 44,
+    "losses": 30,
+    "profitFactor": 3.0222056448627708,
+    "totalR": 129.253263132028,
+    "averageR": 1.7466657180003784,
+    "maxDrawdownR": 11.490994234114002,
+    "exits": {
+      "time_exit": 74
+    },
+    "avgRR": 1.0
+  },
+  {
+    "strategyId": "competition_usd_cad_london_first30_ny_open_momentum_month_12_f0df56f8",
+    "qualifiedBracket": false,
+    "trades": 79,
+    "wins": 52,
+    "losses": 27,
+    "profitFactor": 2.776293938628791,
+    "totalR": 134.747418373082,
+    "averageR": 1.705663523709899,
+    "maxDrawdownR": 12.351241444945998,
+    "exits": {
+      "time_exit": 79
+    },
+    "avgRR": 1.0
+  },
+  {
+    "strategyId": "competition_usd_cad_us_first30_last30_momentum_signalmonth_direction_same_entryminute_930_exitbarminut_c1317995",
+    "qualifiedBracket": false,
+    "trades": 108,
+    "wins": 66,
+    "losses": 40,
+    "profitFactor": 2.6370821068053565,
+    "totalR": 39.78469386738501,
+    "averageR": 0.3683767950683797,
+    "maxDrawdownR": 5.268028373339,
+    "exits": {
+      "time_exit": 108
+    },
+    "avgRR": 1.0
+  },
+  {
+    "strategyId": "competition_usd_cad_us_first30_midday_reversal_month_12_1f6382c6",
+    "qualifiedBracket": false,
+    "trades": 61,
+    "wins": 40,
+    "losses": 21,
+    "profitFactor": 2.192216253917463,
+    "totalR": 26.817285866645985,
+    "averageR": 0.4396276371581309,
+    "maxDrawdownR": 6.118447438262002,
+    "exits": {
+      "time_exit": 61
+    },
+    "avgRR": 1.0
+  },
+  {
+    "strategyId": "competition_usd_chf_daily_tsmom_next_overnight_month_12_4f2024c0",
+    "qualifiedBracket": false,
+    "trades": 75,
+    "wins": 46,
+    "losses": 29,
+    "profitFactor": 3.1113970787668688,
+    "totalR": 118.66348244358,
+    "averageR": 1.5821797659144,
+    "maxDrawdownR": 10.053679711219004,
+    "exits": {
+      "time_exit": 75
+    },
+    "avgRR": 1.0
+  },
+  {
+    "strategyId": "competition_usd_chf_us_first30_midday_reversal_month_1_074f7113",
+    "qualifiedBracket": false,
+    "trades": 110,
+    "wins": 66,
+    "losses": 44,
+    "profitFactor": 2.5002639089460548,
+    "totalR": 44.36912301098202,
+    "averageR": 0.4033556637362002,
+    "maxDrawdownR": 4.255904848799997,
+    "exits": {
+      "time_exit": 110
+    },
+    "avgRR": 1.0
+  },
+  {
+    "strategyId": "competition_usd_jpy_asia_range_london_breakout_signalweekdayside_breakendminute_360_breakstartminute_1_83470b07",
+    "qualifiedBracket": true,
+    "trades": 87,
+    "wins": 59,
+    "losses": 28,
+    "profitFactor": 2.1880316877697705,
+    "totalR": 20.164412502556,
+    "averageR": 0.2317748563512184,
+    "maxDrawdownR": 2.966175617615,
+    "exits": {
+      "sl": 14,
+      "time_exit": 71,
+      "tp": 2
+    },
+    "avgRR": 2.5017142620726576
+  },
+  {
+    "strategyId": "competition_usd_jpy_london_first30_ny_open_reversal_month_9_17887f0e",
+    "qualifiedBracket": false,
+    "trades": 68,
+    "wins": 37,
+    "losses": 31,
+    "profitFactor": 2.158640640586206,
+    "totalR": 47.91782272644,
+    "averageR": 0.7046738636241177,
+    "maxDrawdownR": 12.528964677387002,
+    "exits": {
+      "time_exit": 68
+    },
+    "avgRR": 1.0
+  },
+  {
+    "strategyId": "competition_usd_jpy_overnight_close_to_open_bias_long_month_10_06e957d5",
+    "qualifiedBracket": false,
+    "trades": 89,
+    "wins": 61,
+    "losses": 28,
+    "profitFactor": 2.668913313817174,
+    "totalR": 177.845492290704,
+    "averageR": 1.9982639583225168,
+    "maxDrawdownR": 18.391056915685,
+    "exits": {
+      "time_exit": 89
+    },
+    "avgRR": 1.0
+  },
+  {
+    "strategyId": "competition_usd_jpy_us_first30_last30_reversal_signalweekdayside_direction_opposite_entryminute_930_ex_40e6d9ae",
+    "qualifiedBracket": true,
+    "trades": 74,
+    "wins": 49,
+    "losses": 24,
+    "profitFactor": 4.102546717293668,
+    "totalR": 18.344404934186,
+    "averageR": 0.24789736397548648,
+    "maxDrawdownR": 1.5282416883580003,
+    "exits": {
+      "time_exit": 70,
+      "tp": 3,
+      "sl": 1
+    },
+    "avgRR": 1.9982383932068257
+  },
+  {
+    "strategyId": "competition_us_treasury_10y_note_futures_daily_tsmom_next_overnight_weekday_side_4_short_7240deca",
+    "qualifiedBracket": false,
+    "trades": 96,
+    "wins": 60,
+    "losses": 32,
+    "profitFactor": 2.21432275220904,
+    "totalR": 53.281882135689,
+    "averageR": 0.5550196055800938,
+    "maxDrawdownR": 8.624197995731997,
+    "exits": {
+      "time_exit": 96
+    },
+    "avgRR": 1.0
+  },
+  {
+    "strategyId": "competition_us_treasury_10y_note_futures_us_first30_last30_momentum_weekday_side_2_long_014bd88f",
+    "qualifiedBracket": false,
+    "trades": 105,
+    "wins": 59,
+    "losses": 33,
+    "profitFactor": 2.0780094992542884,
+    "totalR": 20.47066524074199,
+    "averageR": 0.19495871657849514,
+    "maxDrawdownR": 3.3025980693450006,
+    "exits": {
+      "time_exit": 105
+    },
+    "avgRR": 1.0
+  },
+  {
+    "strategyId": "competition_us_treasury_2y_note_futures_daily_tsmom_next_overnight_weekday_side_4_short_e133c7a3",
+    "qualifiedBracket": false,
+    "trades": 96,
+    "wins": 61,
+    "losses": 30,
+    "profitFactor": 3.076241826377667,
+    "totalR": 86.96405586934806,
+    "averageR": 0.9058755819723756,
+    "maxDrawdownR": 12.210302702734992,
+    "exits": {
+      "time_exit": 96
+    },
+    "avgRR": 1.0
+  },
+  {
+    "strategyId": "competition_us_treasury_2y_note_futures_ny_open_gap_fade_signalmonth_direction_fade_entryminute_570_ex_d2289e05",
+    "qualifiedBracket": false,
+    "trades": 62,
+    "wins": 34,
+    "losses": 22,
+    "profitFactor": 2.2157884639532974,
+    "totalR": 36.33259326516799,
+    "averageR": 0.5860095687930321,
+    "maxDrawdownR": 4.3411706565650015,
+    "exits": {
+      "time_exit": 62
+    },
+    "avgRR": 1.0
+  },
+  {
+    "strategyId": "competition_us_treasury_2y_note_futures_us_first30_last30_momentum_signalweekdayside_direction_same_en_339e7451",
+    "qualifiedBracket": false,
+    "trades": 66,
+    "wins": 35,
+    "losses": 23,
+    "profitFactor": 2.5198094573310295,
+    "totalR": 15.145570937972998,
+    "averageR": 0.22947834754504542,
+    "maxDrawdownR": 2.339084380631,
+    "exits": {
+      "time_exit": 66
+    },
+    "avgRR": 1.0
+  },
+  {
+    "strategyId": "competition_us_treasury_2y_note_futures_us_first30_last30_momentum_weekday_side_3_long_6989e3fd",
+    "qualifiedBracket": false,
+    "trades": 91,
+    "wins": 51,
+    "losses": 28,
+    "profitFactor": 2.1010620555222532,
+    "totalR": 15.690456325876994,
+    "averageR": 0.17242259698765927,
+    "maxDrawdownR": 3.296210272245001,
+    "exits": {
+      "time_exit": 91
+    },
+    "avgRR": 1.0
+  },
+  {
+    "strategyId": "competition_us_treasury_30y_bond_futures_daily_tsmom_next_overnight_weekday_side_0_long_157ef9f4",
+    "qualifiedBracket": false,
+    "trades": 75,
+    "wins": 40,
+    "losses": 32,
+    "profitFactor": 2.0142087282204146,
+    "totalR": 90.33414874823795,
+    "averageR": 1.2044553166431726,
+    "maxDrawdownR": 10.176507269603004,
+    "exits": {
+      "time_exit": 75
+    },
+    "avgRR": 1.0
+  },
+  {
+    "strategyId": "competition_us_treasury_30y_bond_futures_daily_tsmom_next_overnight_weekday_side_4_short_72a8080e",
+    "qualifiedBracket": false,
+    "trades": 96,
+    "wins": 60,
+    "losses": 33,
+    "profitFactor": 2.240353030395528,
+    "totalR": 57.042586413942004,
+    "averageR": 0.5941936084785625,
+    "maxDrawdownR": 8.880688986162003,
+    "exits": {
+      "time_exit": 96
+    },
+    "avgRR": 1.0
+  },
+  {
+    "strategyId": "competition_us_treasury_5y_note_futures_daily_tsmom_next_overnight_weekday_side_4_short_6dc543f7",
+    "qualifiedBracket": false,
+    "trades": 95,
+    "wins": 58,
+    "losses": 30,
+    "profitFactor": 2.9856307345773216,
+    "totalR": 75.74502772958604,
+    "averageR": 0.7973160813640636,
+    "maxDrawdownR": 13.903779096243,
+    "exits": {
+      "time_exit": 95
+    },
+    "avgRR": 1.0
+  },
+  {
+    "strategyId": "competition_us_treasury_5y_note_futures_us_first30_last30_momentum_signalweekdayside_direction_same_en_1942c62b",
+    "qualifiedBracket": false,
+    "trades": 74,
+    "wins": 43,
+    "losses": 25,
+    "profitFactor": 2.8838444254029176,
+    "totalR": 22.741238382134007,
+    "averageR": 0.3073140321910001,
+    "maxDrawdownR": 1.902807056366,
+    "exits": {
+      "time_exit": 74
+    },
+    "avgRR": 1.0
+  },
+  {
+    "strategyId": "competition_us_treasury_5y_note_futures_us_first30_last30_momentum_signalweekdayside_direction_same_en_62e3b6d2",
+    "qualifiedBracket": false,
+    "trades": 99,
+    "wins": 55,
+    "losses": 34,
+    "profitFactor": 2.214931444230658,
+    "totalR": 18.440938512166998,
+    "averageR": 0.18627210618350504,
+    "maxDrawdownR": 2.290355406503,
+    "exits": {
+      "time_exit": 99
+    },
+    "avgRR": 1.0
+  }
+]

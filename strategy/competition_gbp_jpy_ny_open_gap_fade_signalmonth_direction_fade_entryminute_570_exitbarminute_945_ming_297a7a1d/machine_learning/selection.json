@@ -4,12 +4,12 @@
   "folder": "competition_gbp_jpy_ny_open_gap_fade_signalmonth_direction_fade_entryminute_570_exitbarminute_945_ming_297a7a1d",
   "assetKey": "gbp_jpy",
   "phase": "competition_session_edge",
-  "variantId": "competition_session_edge|family=ny_open_gap_fade_signalmonth|direction=fade|entry=570|exit=945|min_gap_atr=0.2|signal_month=1|risk_reward=2",
+  "variantId": "competition_session_edge|family=ny_open_gap_fade_signalmonth|direction=fade|entry=570|exit=945|min_gap_atr=0.2|signal_month=1",
   "source": "competition_session_edge_train_forward_2026",
   "sourceUrls": [
     "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=1004081"
   ],
-  "researchSummary": "Tests whether the overnight gap fades or continues during a specific NY cash-session window. Filtered by signalMonth=1. Upgraded to a distinct 2:1 planned reward-to-risk variant because the time-exit entry/exit path preserves forward PF versus the legacy 1R accounting baseline.",
+  "researchSummary": "Tests whether the overnight gap fades or continues during a specific NY cash-session window. Filtered by signalMonth=1.",
   "selectionMethod": "Pre-2022 train-score rank, then post-2022 forward qualification. No parameters were fit on post-2022 data.",
   "trainingWindow": {
     "start": "asset_start",
@@ -28,9 +28,7 @@
   "forwardTotalR": 117.17501,
   "forwardAverageR": 1.17175,
   "forwardMaxDrawdownR": 22.317109,
-  "verificationSummary": "Verified by backtest-engine runner output: PF 2.05, 100 trades, 117.18R total. RR comparison accepted: baseline PF 2.05 vs 2R PF 2.05, 100 trades.",
+  "verificationSummary": "Verified by backtest-engine runner output: PF 2.05, 100 trades, 117.18R total. Reality audit: true 2R bracket did not preserve the baseline PF, so this strategy remains a time-exit baseline and displayed RR is regenerated from the actual backtest CSV.",
   "costUnits": 0,
-  "oneTradePerDay": false,
-  "minimumRiskReward": 2.0,
-  "selectedRiskReward": 2.0
+  "oneTradePerDay": false
 }
