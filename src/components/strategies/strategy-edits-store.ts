@@ -116,6 +116,8 @@ export function normalizeStrategyEdit(strategy: StrategyEditOption, edit: Strate
   if (slUnits <= 0) slUnits = fallback.slUnits;
   if (targetDollars <= 0) targetDollars = dollarsFromUnits(strategy, tpUnits, contracts) || fallback.targetDollars;
   if (riskDollars <= 0) riskDollars = dollarsFromUnits(strategy, slUnits, contracts) || fallback.riskDollars;
+  if (targetDollars > 0) tpUnits = unitsFromDollars(strategy, targetDollars, contracts) || tpUnits;
+  if (riskDollars > 0) slUnits = unitsFromDollars(strategy, riskDollars, contracts) || slUnits;
 
   const normalized = {
     modelName: fallback.modelName,
@@ -130,12 +132,13 @@ export function normalizeStrategyEdit(strategy: StrategyEditOption, edit: Strate
 
   const truthRatio = Number.isFinite(strategy.riskRewardRatio) && strategy.riskRewardRatio ? strategy.riskRewardRatio : undefined;
   const editRatio = editRiskRewardRatio(normalized);
-  if (truthRatio && editRatio !== undefined && editRatio + 0.005 < truthRatio && normalized.slUnits > 0) {
-    const truthfulTpUnits = roundControlValue(normalized.slUnits * truthRatio);
+  if (truthRatio && editRatio !== undefined && editRatio + 0.005 < truthRatio && normalized.riskDollars > 0) {
+    const truthfulTargetDollars = roundControlValue(normalized.riskDollars * truthRatio);
+    const truthfulTpUnits = unitsFromDollars(strategy, truthfulTargetDollars, normalized.contracts) || normalized.tpUnits;
     return {
       ...normalized,
       tpUnits: truthfulTpUnits,
-      targetDollars: dollarsFromUnits(strategy, truthfulTpUnits, normalized.contracts)
+      targetDollars: truthfulTargetDollars
     };
   }
 

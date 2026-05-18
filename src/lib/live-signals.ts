@@ -66,18 +66,31 @@ function scaledSizePolicy(policy: StrategyRule["sizePolicy"], scale: number | un
   };
 }
 
-function applyStrategyEdit(rule: StrategyRule, edit: SavedStrategyEdit | undefined): StrategyRule {
+function applyStrategyEdit(
+  rule: StrategyRule,
+  edit: SavedStrategyEdit | undefined,
+  riskRewardRatio: number | undefined
+): StrategyRule {
   if (!edit) return rule;
 
-  const tpUnits = positiveNumber(edit.tpUnits);
-  const slUnits = positiveNumber(edit.slUnits);
+  const editTpUnits = positiveNumber(edit.tpUnits);
+  const editSlUnits = positiveNumber(edit.slUnits);
+  const editTargetDollars = positiveNumber(edit.targetDollars);
+  const editRiskDollars = positiveNumber(edit.riskDollars);
+  const editDollarRatio = editTargetDollars && editRiskDollars ? editTargetDollars / editRiskDollars : undefined;
+  const editUnitRatio = editTpUnits && editSlUnits ? editTpUnits / editSlUnits : undefined;
+  const editRatio = editDollarRatio ?? editUnitRatio;
+  const canOverrideLevels =
+    editRatio !== undefined && (!riskRewardRatio || editRatio + 0.005 >= riskRewardRatio) && !editTargetDollars && !editRiskDollars;
+  const slUnits = canOverrideLevels ? editSlUnits ?? rule.slUnits : rule.slUnits;
+  const tpUnits = canOverrideLevels ? riskRewardAdjustedTpUnits(editTpUnits ?? rule.tpUnits, slUnits, riskRewardRatio) : rule.tpUnits;
   const scale = editScale(rule, edit);
   const baseSizeMultiplier = positiveNumber(rule.sizeMultiplier) ?? 1;
 
   return {
     ...rule,
-    tpUnits: tpUnits ?? rule.tpUnits,
-    slUnits: slUnits ?? rule.slUnits,
+    tpUnits,
+    slUnits,
     sizeScale: scale ?? rule.sizeScale,
     sizePolicy: scaledSizePolicy(rule.sizePolicy, scale),
     sizeMultiplier: scale ? roundScaleValue(baseSizeMultiplier * scale) : rule.sizeMultiplier
@@ -132,10 +145,11 @@ function statToRule(stat: BacktestStat, strategyEdits: Record<string, SavedStrat
   const asset = assetForKey(strategy.assetKey);
   const defaults = strategy.defaults ?? {};
   const slUnits = stat.slUnits ?? defaults.slUnits ?? 0;
+  const plannedRiskRewardRatio = stat.riskRewardRatio ?? defaults.selectedRiskReward ?? defaults.minimumRiskReward ?? defaults.ictRiskReward;
   const tpUnits = riskRewardAdjustedTpUnits(
     stat.tpUnits ?? defaults.tpUnits ?? 0,
     slUnits,
-    stat.riskRewardRatio ?? defaults.selectedRiskReward ?? defaults.minimumRiskReward ?? defaults.ictRiskReward
+    plannedRiskRewardRatio
   );
 
   const baseRule: StrategyRule = {
@@ -182,7 +196,7 @@ function statToRule(stat: BacktestStat, strategyEdits: Record<string, SavedStrat
     invertSignal: stat.invertSignal ?? defaults.invertSignal ?? false
   };
 
-  return applyStrategyEdit(baseRule, strategyEdits[stat.datasetId]);
+  return applyStrategyEdit(baseRule, strategyEdits[stat.datasetId], plannedRiskRewardRatio);
 }
 
 export async function allRules(): Promise<StrategyRule[]> {
