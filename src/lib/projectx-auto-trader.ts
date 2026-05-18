@@ -99,6 +99,10 @@ function dryRunEnabled(): boolean {
   return envFlag("PROJECTX_AUTO_TRADE_DRY_RUN", false);
 }
 
+function positionBracketFallbackEnabled(): boolean {
+  return envFlag("PROJECTX_POSITION_BRACKET_FALLBACK_ENABLED", true);
+}
+
 function result(status: ProjectXAutoTradeStatus, fields: Omit<ProjectXAutoTradeResult, "checkedAt" | "status"> = {}): ProjectXAutoTradeResult {
   return {
     checkedAt: new Date().toISOString(),
@@ -192,6 +196,7 @@ function summarizeOrders(
   const skipped = orders.filter((order) => order.status === "skipped");
   const failedError = failed.find((order) => order.error)?.error;
   const skippedError = skipped.find((order) => order.error)?.error;
+  const placedNote = orders.find((order) => order.status === "placed" && order.error)?.error;
   return {
     accountId: orders.length === 1 ? first?.accountId : undefined,
     accountName: orders.length > 1 ? `${orders.length} accounts` : first?.accountName,
@@ -204,18 +209,32 @@ function summarizeOrders(
         ? `${skipped.length} account(s) skipped: ${skipped.map((order) => order.accountName ?? order.accountId).join(", ")}${
             skippedError ? ` - ${skippedError}` : ""
           }`
-        : undefined,
+        : placedNote,
     orderId: orders.length === 1 ? first?.orderId : undefined,
     orders
   };
 }
 
-function projectXOrderErrorMessage(error: unknown): string {
-  const message = readableProjectXError(error);
+function isPositionBracketConflict(message: string): boolean {
+  return /brackets cannot be used with position brackets|auto oco brackets/i.test(message);
+}
+
+function projectXOrderErrorMessage(message: string): string {
   if (/brackets cannot be used with position brackets|auto oco brackets/i.test(message)) {
-    return "ProjectX rejected bracket orders because this account is using Position Brackets. Enable Auto OCO Brackets in ProjectX risk settings; no unprotected order was placed.";
+    return positionBracketFallbackEnabled()
+      ? "ProjectX rejected API bracket orders because this account is using Position Brackets. Retried without API bracket fields so ProjectX account-level Position Brackets can manage the exit."
+      : "ProjectX rejected bracket orders because this account is using Position Brackets. Enable Auto OCO Brackets in ProjectX risk settings or set PROJECTX_POSITION_BRACKET_FALLBACK_ENABLED=1 to let account-level Position Brackets manage the exit.";
   }
   return message;
+}
+
+function positionBracketFallbackRequest(request: ProjectXPlaceOrderRequest): ProjectXPlaceOrderRequest {
+  return {
+    ...request,
+    customTag: request.customTag ? `${request.customTag}_pb` : null,
+    stopLossBracket: null,
+    takeProfitBracket: null
+  };
 }
 
 async function refreshedConnection(): Promise<StoredProjectXConnection | null> {
@@ -338,7 +357,40 @@ export async function executeProjectXAutoTrade(trade: TradeAlert): Promise<Proje
           status: "placed"
         });
       } catch (error) {
-        const message = projectXOrderErrorMessage(error);
+        const rawMessage = readableProjectXError(error);
+        if (isPositionBracketConflict(rawMessage) && positionBracketFallbackEnabled()) {
+          const fallbackRequest = positionBracketFallbackRequest(request);
+          try {
+            const fallbackOrder = await placeProjectXOrder(connection.token, fallbackRequest);
+            orders.push({
+              accountId: account.id,
+              accountName: account.name,
+              contractId: contract.id,
+              contractName: contract.name,
+              customTag: fallbackRequest.customTag ?? undefined,
+              error:
+                "Placed via ProjectX Position Brackets fallback. Exit protection is managed by the account-level Position Bracket settings; API TP/SL ticks were not attached.",
+              orderId: fallbackOrder.orderId,
+              size,
+              status: "placed"
+            });
+            continue;
+          } catch (fallbackError) {
+            const message = `${projectXOrderErrorMessage(rawMessage)} Fallback failed: ${readableProjectXError(fallbackError)}`;
+            orders.push({
+              accountId: account.id,
+              accountName: account.name,
+              contractId: contract.id,
+              contractName: contract.name,
+              customTag: fallbackRequest.customTag ?? undefined,
+              error: message,
+              size,
+              status: "failed"
+            });
+            continue;
+          }
+        }
+        const message = projectXOrderErrorMessage(rawMessage);
         orders.push({
           accountId: account.id,
           accountName: account.name,

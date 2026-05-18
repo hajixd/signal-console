@@ -114,6 +114,7 @@ import strategy111 from "@strategy/competition_eur_jpy_daily_tsmom_next_overnigh
 import strategy112 from "@strategy/competition_usd_cad_us_first30_midday_reversal_month_12_true_rr_5_f342f952/strategy";
 import strategy113 from "@strategy/competition_usd_cad_us_first30_last30_momentum_signalmonth_month_3_true_rr_5_08845764/strategy";
 import strategy114 from "@strategy/competition_gbp_usd_london_first30_last30_reversal_month_12_true_rr_5_f1420549/strategy";
+import strategy115 from "@strategy/competition_usd_jpy_daily_tsmom_next_overnight_weekday_side_2_short_true_rr_3_40484fa0/strategy";
 import type { StrategyDefinition } from "@/lib/strategy-definition";
 
 export type { StrategyDefinition, StrategySignal } from "@/lib/strategy-definition";
@@ -233,5 +234,6 @@ export const STRATEGY_DEFINITIONS: StrategyDefinition[] = [
   strategy111,
   strategy112,
   strategy113,
-  strategy114
+  strategy114,
+  strategy115
 ];

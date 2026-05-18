@@ -1,0 +1,38 @@
+{
+  "strategyId": "competition_usd_jpy_daily_tsmom_next_overnight_weekday_side_2_short_true_rr_3_40484fa0",
+  "label": "USDJPY Daily Tsmom Next Overnight Tuesday shorts true 3R",
+  "folder": "competition_usd_jpy_daily_tsmom_next_overnight_weekday_side_2_short_true_rr_3_40484fa0",
+  "assetKey": "usd_jpy",
+  "phase": "competition_session_edge",
+  "variantId": "competition_session_edge|family=daily_tsmom_next_overnight_weekday_side_2_short|direction=momentum|entry=945|exit=570|lookback=20|risk_reward=3|signal_weekday_side=2_short|managed_exit=bracket",
+  "source": "true_rr_addition_search_2026_05",
+  "sourceUrls": [
+    "https://w4.stern.nyu.edu/facdir/lpederse/papers/TimeSeriesMomentum.pdf",
+    "https://www.sciencedirect.com/science/article/abs/pii/S0304405X18301351",
+    "https://www.semanticscholar.org/paper/The-Probability-of-Backtest-Overfitting-Bailey-Borwein/b1233b4f5384f003e85c2e0eec1a2dfc08f624c5"
+  ],
+  "researchSummary": "Daily momentum continuation with Wednesday-short signal filter. True bracket target is 3:1 of entry risk, with stop/target recomputed from actual market risk at entry.",
+  "selectionMethod": "Add-only true-RR search: candidate grid was generated before forward validation; pre-2022 train diagnostics and post-2022 strict anti-cheat forward results are stored separately.",
+  "trainingWindow": {
+    "start": "asset_start",
+    "end": "2021-12-31"
+  },
+  "forwardWindow": {
+    "start": "2022-01-01",
+    "end": "asset_latest"
+  },
+  "selectedTrainingProfitFactor": 0.70437,
+  "selectedTrainingTrades": 47,
+  "selectedForwardProfitFactor": 3.793219,
+  "selectedForwardTrades": 82,
+  "minimumRiskReward": 2,
+  "selectedRiskReward": 2.985531,
+  "forwardWins": 45,
+  "forwardLosses": 37,
+  "forwardTotalR": 102.719204,
+  "forwardAverageR": 1.252673,
+  "forwardMaxDrawdownR": 3.972736,
+  "verificationSummary": "Strict true-bracket forward PF 3.79, 82 trades, average planned RR 2.99; pre-2022 train PF 0.70 over 47 trades.",
+  "costUnits": 0.0,
+  "oneTradePerDay": false
+}

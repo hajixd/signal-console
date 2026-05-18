@@ -3,12 +3,12 @@ import { evaluateCompetitionSessionEdge } from "@/lib/strategy-runtime/competiti
 import selection from "./machine_learning/selection.json";
 
 export default createStrategyDefinition({
-  id: "competition_copper_futures_daily_tsmom_next_overnight_weekday_side_1_long_28c520df",
-  label: "HG 10-day daily mean reversion overnight (Tuesday longs) true 5R",
-  folder: "competition_copper_futures_daily_tsmom_next_overnight_weekday_side_1_long_28c520df",
+  id: "competition_usd_jpy_daily_tsmom_next_overnight_weekday_side_2_short_true_rr_3_40484fa0",
+  label: "USDJPY Daily Tsmom Next Overnight Tuesday shorts true 3R",
+  folder: "competition_usd_jpy_daily_tsmom_next_overnight_weekday_side_2_short_true_rr_3_40484fa0",
   fileName: "strategy.ts",
   backtestFileName: "backtest_trades.csv",
-  assetKey: "copper_futures",
+  assetKey: "usd_jpy",
   phase: "competition_session_edge",
   liveEnabled: true,
   evaluator: evaluateCompetitionSessionEdge,

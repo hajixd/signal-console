@@ -82,7 +82,7 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Find and apply true bracket RR>=2 replacements for active 1R strategies.")
     parser.add_argument("--rr", default="3,2,4,5", help="Comma-separated RR values to scan. Values below 2 are ignored.")
     parser.add_argument("--filter-set", choices=["narrow", "broad"], default="broad")
-    parser.add_argument("--mode", choices=["local", "narrow", "broad"], default="local")
+    parser.add_argument("--mode", choices=["direct", "local", "narrow", "broad"], default="local")
     parser.add_argument("--weakest-targets", type=int, default=45)
     parser.add_argument("--max-specs-per-asset", type=int, default=1800)
     parser.add_argument("--min-trades", type=int, default=20)
