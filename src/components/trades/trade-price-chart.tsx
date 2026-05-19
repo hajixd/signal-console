@@ -25,6 +25,7 @@ import {
   type WhitespaceData
 } from "lightweight-charts";
 import type { CanvasRenderingTarget2D } from "fancy-canvas";
+import { resolveFirstTradeBracketHit } from "@/lib/trade-bracket-truth";
 
 export type TradeChartBar = {
   index: number;
@@ -486,30 +487,21 @@ function firstBracketExitCandle(
 ): MappedCandle | null {
   if (!entryCandle || !fallbackExitCandle || !candles.length) return fallbackExitCandle;
 
-  const entryPosition = candleIndex(candles, entryCandle);
-  const fallbackExitPosition = candleIndex(candles, fallbackExitCandle);
-  const start = Math.min(entryPosition, fallbackExitPosition);
-  const end = Math.max(entryPosition, fallbackExitPosition);
-  const direction = trade.side === "long" ? 1 : -1;
-  const rawExitPnl = rawTradePnlAtPrice(trade, trade.exitPrice);
-  const targetDollars = Math.abs(trade.targetDollars ?? Infinity);
-  const riskDollars = Math.abs(trade.riskDollars ?? Infinity);
-  const targetIsExit = rawExitPnl != null && Number.isFinite(targetDollars) && targetDollars > 0 && rawExitPnl >= targetDollars - 0.01;
-  const stopIsExit = rawExitPnl != null && Number.isFinite(riskDollars) && riskDollars > 0 && rawExitPnl <= -riskDollars + 0.01;
+  const hit = resolveFirstTradeBracketHit(
+    {
+      entryIndex: entryCandle.source.index,
+      entryPrice: trade.entryPrice,
+      entryTime: entryCandle.source.time,
+      exitIndex: fallbackExitCandle.source.index,
+      exitTime: fallbackExitCandle.source.time,
+      side: trade.side,
+      stopPrice: trade.stopPrice,
+      targetPrice: trade.targetPrice
+    },
+    candles.map((candle) => candle.source)
+  );
 
-  if (!targetIsExit && !stopIsExit) return fallbackExitCandle;
-
-  for (let position = start; position <= end; position += 1) {
-    const candle = candles[position];
-    if (!candle) continue;
-
-    const targetHit = direction === 1 ? candle.high >= trade.targetPrice : candle.low <= trade.targetPrice;
-    const stopHit = direction === 1 ? candle.low <= trade.stopPrice : candle.high >= trade.stopPrice;
-    if (targetIsExit && targetHit) return candle;
-    if (stopIsExit && stopHit) return candle;
-  }
-
-  return fallbackExitCandle;
+  return hit ? candles[hit.position] ?? fallbackExitCandle : fallbackExitCandle;
 }
 
 function tradeLogicalRange(candles: MappedCandle[], entryCandle: MappedCandle | null, exitCandle: MappedCandle | null): NumberRange {

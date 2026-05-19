@@ -1,3 +1,5 @@
+import { readFile } from "node:fs/promises";
+import path from "node:path";
 import Link from "next/link";
 import ChallengeReplay from "@/components/challenge/challenge-replay";
 import AutoTradeAccountGate from "@/components/auto-trading/auto-trade-account-gate";
@@ -35,22 +37,26 @@ import {
   type BacktestStat,
   type BacktestTrade
 } from "@/lib/backtest";
+import { assetForSymbol } from "@/lib/assets";
 import { DEFAULT_CHALLENGE_RULES, type ChallengeRules } from "@/lib/challenge";
 import { analyzeBacktestDataValidity, dataValidityClass, type DataValidityResult, type DataValidityTone } from "@/lib/data-validity";
 import { dollarPerUnit, instrumentSizeLabel, instrumentUnitLabel, recommendedSizeMultiplier } from "@/lib/instruments";
 import { defaultDatasetStatus, getDatasetStatus, getLiveConfig, type DatasetStatus, type LiveConfig } from "@/lib/live-config";
 import { allRules } from "@/lib/live-signals";
+import { readDataText } from "@/lib/project-data";
 import { projectAssetMode } from "@/lib/project-assets";
 import { parseStrategySelection } from "@/lib/strategy-selection";
 import { getTrades, storageMode } from "@/lib/storage";
 import { telegramGroupInviteLink } from "@/lib/telegram";
 import { topstepSessionKey } from "@/lib/topstep";
+import { resolveFirstTradeBracketHit, type TradeBracketBar, type TradeBracketHit } from "@/lib/trade-bracket-truth";
 import type { TradeAlert, TradeManagementEvent } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 const DEFAULT_SELECTED_STRATEGY_COUNT = 1;
 const TRADE_CHART_TIMEFRAME_VALUES = new Set<TradeChartTimeframe>(["1m", "5m", "15m", "30m", "45m", "1h", "4h", "1d"]);
 const HISTORY_VISIBLE_TRADE_LIMIT = 500;
+const TRADE_HISTORY_DATA_TIMEFRAME = "15m";
 const EMPTY_LIVE_CONFIG: LiveConfig = {
   customScaleRanges: {},
   dashboardSettings: {},
@@ -73,6 +79,11 @@ type HomeProps = {
 };
 
 type MarketTabKey = "forex" | "futures";
+
+type TradeHistoryBarRange = {
+  end: number;
+  start: number;
+};
 
 const MARKET_TABS: Array<{ key: MarketTabKey; label: string }> = [
   { key: "forex", label: "Forex" },
@@ -277,6 +288,111 @@ function timeframeFromVariant(variantId: string | undefined): TradeChartTimefram
   return timeframe && TRADE_CHART_TIMEFRAME_VALUES.has(timeframe as TradeChartTimeframe)
     ? (timeframe as TradeChartTimeframe)
     : "15m";
+}
+
+function parseHistoryDataBar(line: string, index: number): TradeBracketBar | null {
+  const [timeValue, openValue, highValue, lowValue, closeValue] = line.split(",");
+  const timestamp = Number(timeValue);
+  const open = Number(openValue);
+  const high = Number(highValue);
+  const low = Number(lowValue);
+  const close = Number(closeValue);
+  if (![timestamp, open, high, low, close].every(Number.isFinite)) return null;
+
+  return {
+    close,
+    high,
+    index,
+    low,
+    open,
+    time: new Date(timestamp * 1000).toISOString()
+  };
+}
+
+function localHistoryDataPath(relativeDataPath: string): string {
+  return path.join(/*turbopackIgnore: true*/ process.cwd(), "data", ...relativeDataPath.split("/"));
+}
+
+function mergeBarRanges(ranges: TradeHistoryBarRange[]): TradeHistoryBarRange[] {
+  const sorted = [...ranges]
+    .filter((range) => Number.isFinite(range.start) && Number.isFinite(range.end))
+    .map((range) => ({ start: Math.max(0, Math.floor(Math.min(range.start, range.end))), end: Math.max(0, Math.ceil(Math.max(range.start, range.end))) }))
+    .sort((left, right) => left.start - right.start || left.end - right.end);
+  const merged: TradeHistoryBarRange[] = [];
+
+  for (const range of sorted) {
+    const previous = merged[merged.length - 1];
+    if (previous && range.start <= previous.end + 1) {
+      previous.end = Math.max(previous.end, range.end);
+    } else {
+      merged.push(range);
+    }
+  }
+
+  return merged;
+}
+
+async function localBarsForRanges(relativeDataPath: string, ranges: TradeHistoryBarRange[]): Promise<TradeBracketBar[] | null> {
+  try {
+    return barsFromHistoryDataText(await readFile(localHistoryDataPath(relativeDataPath), "utf8"), ranges);
+  } catch {
+    return null;
+  }
+}
+
+function barsFromHistoryDataText(text: string, ranges: TradeHistoryBarRange[]): TradeBracketBar[] {
+  const merged = mergeBarRanges(ranges);
+  if (!merged.length) return [];
+  const lines = text.split(/\r?\n/);
+  const bars: TradeBracketBar[] = [];
+
+  for (const range of merged) {
+    const end = Math.min(range.end, lines.length - 2);
+    for (let dataIndex = range.start; dataIndex <= end; dataIndex += 1) {
+      const bar = parseHistoryDataBar(lines[dataIndex + 1] ?? "", dataIndex);
+      if (bar) bars.push(bar);
+    }
+  }
+
+  return bars;
+}
+
+async function remoteBarsForRanges(relativeDataPath: string, ranges: TradeHistoryBarRange[]): Promise<TradeBracketBar[]> {
+  return barsFromHistoryDataText(await readDataText(relativeDataPath), ranges);
+}
+
+async function barsForRanges(relativeDataPath: string, ranges: TradeHistoryBarRange[]): Promise<TradeBracketBar[]> {
+  const localBars = process.env.NODE_ENV !== "production" ? await localBarsForRanges(relativeDataPath, ranges) : null;
+  if (localBars) return localBars;
+
+  try {
+    return await remoteBarsForRanges(relativeDataPath, ranges);
+  } catch {
+    return [];
+  }
+}
+
+async function loadHistoryBarsBySymbol(trades: BacktestTrade[]): Promise<Map<string, TradeBracketBar[]>> {
+  const rangesBySymbol = new Map<string, { path: string; ranges: TradeHistoryBarRange[] }>();
+
+  for (const trade of trades) {
+    const asset = assetForSymbol(trade.symbol);
+    if (!asset) continue;
+    const current = rangesBySymbol.get(trade.symbol) ?? {
+      path: `${TRADE_HISTORY_DATA_TIMEFRAME}/${asset.dataFile}`,
+      ranges: []
+    };
+    current.ranges.push({
+      end: trade.exitIndex,
+      start: trade.entryIndex
+    });
+    rangesBySymbol.set(trade.symbol, current);
+  }
+
+  const entries = await Promise.all(
+    [...rangesBySymbol.entries()].map(async ([symbol, config]) => [symbol, await barsForRanges(config.path, config.ranges)] as const)
+  );
+  return new Map(entries);
 }
 
 function tradeEntryType(trade: BacktestTrade): "market" | "limit" {
@@ -839,25 +955,15 @@ function boundedTradeDollarPnl(rawPnlDollars: number, targetDollars: number, ris
 
 type EffectiveExitBoundary = "target" | "stop" | null;
 
-function effectiveExitBoundaryFromPnl(
-  exitReason: string | undefined,
-  rawPnlDollars: number,
-  targetDollars: number,
-  riskDollars: number
-): EffectiveExitBoundary {
+function exitBoundaryFromReason(exitReason: string | undefined): EffectiveExitBoundary {
   const normalizedExit = String(exitReason ?? "").toLowerCase();
-  const target = Math.abs(targetDollars);
-  const risk = Math.abs(riskDollars);
-  const tolerance = 0.01;
 
-  if (target > 0 && (normalizedExit === "tp" || normalizedExit.includes("take") || normalizedExit.includes("target"))) {
+  if (normalizedExit === "tp" || normalizedExit === "tp_gap" || normalizedExit.includes("take") || normalizedExit.includes("target")) {
     return "target";
   }
-  if (risk > 0 && (normalizedExit === "sl" || normalizedExit.includes("stop"))) {
+  if (normalizedExit === "sl" || normalizedExit === "sl_gap" || normalizedExit.includes("stop")) {
     return "stop";
   }
-  if (target > 0 && rawPnlDollars >= target - tolerance) return "target";
-  if (risk > 0 && rawPnlDollars <= -risk + tolerance) return "stop";
 
   return null;
 }
@@ -877,6 +983,76 @@ function effectiveBacktestExitPrice(
   if (boundary === "target") return targetPrice;
   if (boundary === "stop") return stopPrice;
   return trade.exitPrice;
+}
+
+type ResolvedBacktestExit = {
+  barsHeld: number;
+  exitIndex: number;
+  exitPrice: number;
+  exitReason: string;
+  exitTime: string;
+  netUnits: number;
+  pnlDollars: number;
+  rMultiple: number;
+};
+
+function resolvedBacktestExit({
+  bars,
+  priceUnit,
+  rawPnlDollars,
+  riskDollars,
+  stopPrice,
+  targetDollars,
+  targetPrice,
+  trade
+}: {
+  bars: TradeBracketBar[] | undefined;
+  priceUnit: number;
+  rawPnlDollars: number;
+  riskDollars: number;
+  stopPrice: number;
+  targetDollars: number;
+  targetPrice: number;
+  trade: BacktestTrade;
+}): ResolvedBacktestExit {
+  const hit: TradeBracketHit | null = bars?.length
+    ? resolveFirstTradeBracketHit(
+        {
+          entryIndex: trade.entryIndex,
+          entryPrice: trade.entryPrice,
+          entryTime: trade.entryTime,
+          exitIndex: trade.exitIndex,
+          exitTime: trade.exitTime,
+          side: trade.side,
+          stopPrice,
+          targetPrice
+        },
+        bars
+      )
+    : null;
+  const explicitBoundary = exitBoundaryFromReason(trade.exitReason);
+  const boundary = hit?.boundary ?? explicitBoundary;
+  const exitPrice = hit?.exitPrice ?? effectiveBacktestExitPrice(trade, targetPrice, stopPrice, boundary);
+  const direction = trade.side === "long" ? 1 : -1;
+  const netUnits = priceUnit > 0 ? ((exitPrice - trade.entryPrice) * direction) / priceUnit : trade.netUnits;
+  const pnlDollars =
+    boundary === "target"
+      ? Math.abs(targetDollars)
+      : boundary === "stop"
+        ? -Math.abs(riskDollars)
+        : boundedTradeDollarPnl(rawPnlDollars, targetDollars, riskDollars);
+  const rMultiple = riskDollars > 0 ? pnlDollars / riskDollars : trade.rMultiple;
+
+  return {
+    barsHeld: hit?.barsHeld ?? trade.barsHeld,
+    exitIndex: hit?.exitIndex ?? trade.exitIndex,
+    exitPrice,
+    exitReason: effectiveExitReason(trade.exitReason, boundary),
+    exitTime: hit?.exitTime ?? trade.exitTime,
+    netUnits,
+    pnlDollars,
+    rMultiple
+  };
 }
 
 function tradeCostUnits(trade: BacktestTrade): number {
@@ -1267,6 +1443,7 @@ export default async function Home({ searchParams }: HomeProps) {
     rMultiple: trade.rMultiple
   }));
   const visibleStoredBacktestHistoryTrades = historyBacktestTrades.slice(0, HISTORY_VISIBLE_TRADE_LIMIT);
+  const historyTradeBarsBySymbol = await loadHistoryBarsBySymbol(visibleStoredBacktestHistoryTrades);
   const storedBacktestHistoryRows: TradeHistoryRow[] = visibleStoredBacktestHistoryTrades.map((trade, index) => {
     const sizeMultiplier = optionByKey.get(trade.datasetId)?.sizeMultiplier ?? 1;
     const tradeMultiplier = tradeSizeMultiplier(trade, sizeMultiplier);
@@ -1274,22 +1451,26 @@ export default async function Home({ searchParams }: HomeProps) {
     const unitLabel = instrumentUnitLabel(trade.symbol);
     const targetDollars = tradeTargetDollars(trade, sizeMultiplier);
     const riskDollars = tradeRiskDollars(trade, sizeMultiplier);
-    const dollarPnl = boundedTradeDollarPnl(rawDollarPnl, targetDollars, riskDollars);
-    const displayRMultiple = riskDollars > 0 ? dollarPnl / riskDollars : trade.rMultiple;
     const priceUnit = liveRuleByKey.get(trade.logicalKey)?.tickSize ?? statByKey.get(trade.key)?.pipOrTickSize ?? 1;
     const targetPrice = tradeTargetPrice(trade, priceUnit);
     const stopPrice = tradeStopPrice(trade, priceUnit);
     const dollarsPerPricePoint = tradeDollarsPerPricePoint(trade, priceUnit, sizeMultiplier);
-    const exitBoundary = effectiveExitBoundaryFromPnl(trade.exitReason, rawDollarPnl, targetDollars, riskDollars);
-    const displayExitPrice = effectiveBacktestExitPrice(trade, targetPrice, stopPrice, exitBoundary);
-    const direction = trade.side === "long" ? 1 : -1;
-    const displayNetUnits = priceUnit > 0 ? ((displayExitPrice - trade.entryPrice) * direction) / priceUnit : trade.netUnits;
+    const resolvedExit = resolvedBacktestExit({
+      bars: historyTradeBarsBySymbol.get(trade.symbol),
+      priceUnit,
+      rawPnlDollars: rawDollarPnl,
+      riskDollars,
+      stopPrice,
+      targetDollars,
+      targetPrice,
+      trade
+    });
     return {
       id: `${trade.key}-${trade.entryTime}-${index}`,
       strategyKey: trade.datasetId,
-      rowClassName: resultRowClass(dollarPnl),
-      pnlClassName: resultClass(dollarPnl),
-      pnlDollars: dollarPnl,
+      rowClassName: resultRowClass(resolvedExit.pnlDollars),
+      pnlClassName: resultClass(resolvedExit.pnlDollars),
+      pnlDollars: resolvedExit.pnlDollars,
       indexLabel: fmtNumber(index + 1),
       symbol: trade.symbol,
       modelName: optionByKey.get(trade.datasetId)?.label ?? trade.label,
@@ -1299,31 +1480,31 @@ export default async function Home({ searchParams }: HomeProps) {
       sideLabel: sideLabel(trade.side),
       sideClassName: sideClass(trade.side),
       entryIndex: trade.entryIndex,
-      exitIndex: trade.exitIndex,
+      exitIndex: resolvedExit.exitIndex,
       signalTime: trade.signalTime,
       entryTime: trade.entryTime,
-      exitTime: trade.exitTime,
+      exitTime: resolvedExit.exitTime,
       sourceTimeframe: tradeSourceTimeframe(trade),
       phase: trade.phase,
       variantId: trade.variantId,
       entryType: tradeEntryType(trade),
       entryPrice: trade.entryPrice,
-      exitPrice: displayExitPrice,
+      exitPrice: resolvedExit.exitPrice,
       targetPrice,
       stopPrice,
       signalTimeLabel: fmtTime(trade.signalTime),
       entryTimeLabel: fmtTime(trade.entryTime),
-      exitTimeLabel: fmtTime(trade.exitTime),
+      exitTimeLabel: fmtTime(resolvedExit.exitTime),
       entryPriceLabel: fmtDollarPrice(trade.entryPrice),
-      exitPriceLabel: fmtDollarPrice(displayExitPrice),
+      exitPriceLabel: fmtDollarPrice(resolvedExit.exitPrice),
       targetPriceLabel: fmtDollarPrice(targetPrice),
       stopPriceLabel: fmtDollarPrice(stopPrice),
-      durationLabel: `${fmtNumber(trade.barsHeld)} bars`,
-      durationDetailLabel: fmtDuration(trade.entryTime, trade.exitTime),
-      exitReasonLabel: fmtExitReason(effectiveExitReason(trade.exitReason, exitBoundary)),
-      pnlLabel: fmtMoney(dollarPnl, true),
-      rMultipleLabel: `${fmtNumber(displayRMultiple)}R`,
-      netUnitsLabel: `${fmtNumber(displayNetUnits)} ${unitLabel}`,
+      durationLabel: `${fmtNumber(resolvedExit.barsHeld)} bars`,
+      durationDetailLabel: fmtDuration(trade.entryTime, resolvedExit.exitTime),
+      exitReasonLabel: fmtExitReason(resolvedExit.exitReason),
+      pnlLabel: fmtMoney(resolvedExit.pnlDollars, true),
+      rMultipleLabel: `${fmtNumber(resolvedExit.rMultiple)}R`,
+      netUnitsLabel: `${fmtNumber(resolvedExit.netUnits)} ${unitLabel}`,
       sizeLabel: instrumentSizeLabel(trade.symbol, tradeMultiplier),
       sizeMultiplier: tradeMultiplier,
       targetRiskLabel: `${fmtMoney(targetDollars)} / ${fmtMoney(-riskDollars)}`,
@@ -1370,7 +1551,7 @@ export default async function Home({ searchParams }: HomeProps) {
       );
       const pnlDollars = boundedTradeDollarPnl(rawPnlDollars, targetDollars, riskDollars);
       const rMultiple = riskDollars > 0 ? pnlDollars / riskDollars : finiteNumberOr(trade.lifecycleRMultiple, 0);
-      const exitBoundary = effectiveExitBoundaryFromPnl(trade.lifecycleStatus, rawPnlDollars, targetDollars, riskDollars);
+      const exitBoundary = exitBoundaryFromReason(trade.lifecycleStatus);
       const exitPrice = exitBoundary === "target" ? trade.takeProfitPrice : exitBoundary === "stop" ? trade.stopLossPrice : rawExitPrice;
       const sideMultiplier = trade.side === "long" ? 1 : -1;
       const netUnits = priceUnit > 0 ? ((exitPrice - trade.entryPrice) * sideMultiplier) / priceUnit : 0;
