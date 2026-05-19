@@ -7,13 +7,14 @@ import {
   type StrategyEditSeedMap,
   useStrategyEdits
 } from "@/components/strategies/strategy-edits-store";
-import TradeHistory, { type TradeHistoryRow } from "@/components/trades/trade-history";
+import TradeHistory, { TradeHistoryCalendar, type TradeHistoryRow } from "@/components/trades/trade-history";
 import { instrumentSizeLabel } from "@/lib/instruments";
 
 type EditableTradeHistoryProps = {
   rows: TradeHistoryRow[];
   strategies: StrategyEditOption[];
   persistedStrategyEdits?: StrategyEditSeedMap;
+  view?: "calendar" | "list";
 };
 
 function fmtMoney(value: number, signed = false): string {
@@ -39,7 +40,7 @@ function resultRowClass(value: number): string {
   return "neutral-row";
 }
 
-export default function EditableTradeHistory({ rows, strategies, persistedStrategyEdits }: EditableTradeHistoryProps) {
+export default function EditableTradeHistory({ rows, strategies, persistedStrategyEdits, view = "list" }: EditableTradeHistoryProps) {
   const edits = useStrategyEdits(strategies, persistedStrategyEdits);
   const strategyByKey = useMemo(() => new Map(strategies.map((strategy) => [strategy.key, strategy])), [strategies]);
 
@@ -77,5 +78,5 @@ export default function EditableTradeHistory({ rows, strategies, persistedStrate
     [edits, rows, strategyByKey]
   );
 
-  return <TradeHistory rows={adjustedRows} />;
+  return view === "calendar" ? <TradeHistoryCalendar rows={adjustedRows} /> : <TradeHistory rows={adjustedRows} />;
 }

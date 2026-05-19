@@ -256,6 +256,627 @@ function displayExitReasonLabel(trade: TradeHistoryRow): string {
   return trade.exitReasonLabel;
 }
 
+type CalendarActivity = {
+  count: number;
+  pnl: number;
+  wins: number;
+  items: TradeHistoryRow[];
+};
+
+type CalendarChartState = {
+  status: "idle" | "loading" | "ready" | "error";
+  bars: ChartBar[];
+  message?: string;
+};
+
+type MiniChartPoint = {
+  high: number;
+  low: number;
+  price: number;
+  relCand: number;
+  timeMs: number;
+  x: number;
+};
+
+const CALENDAR_DOW_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+function dateKeyUTC(value: string | undefined): string {
+  const date = value ? new Date(value) : null;
+  if (!date || !Number.isFinite(date.getTime())) return "";
+  return date.toISOString().slice(0, 10);
+}
+
+function monthKeyUTC(value: string | undefined): string {
+  const key = dateKeyUTC(value);
+  return key ? key.slice(0, 7) : new Date().toISOString().slice(0, 7);
+}
+
+function shiftMonthKey(monthKey: string, delta: number): string {
+  const [year, month] = monthKey.split("-").map((value) => Number(value));
+  if (!Number.isFinite(year) || !Number.isFinite(month)) return new Date().toISOString().slice(0, 7);
+  return new Date(Date.UTC(year, month - 1 + delta, 1)).toISOString().slice(0, 7);
+}
+
+function monthLabel(monthKey: string): string {
+  const [year, month] = monthKey.split("-").map((value) => Number(value));
+  if (!Number.isFinite(year) || !Number.isFinite(month)) return monthKey;
+  return new Date(Date.UTC(year, month - 1, 1)).toLocaleString(undefined, {
+    month: "long",
+    timeZone: "UTC",
+    year: "numeric"
+  });
+}
+
+function calendarDateLabel(dateKey: string): string {
+  if (!dateKey) return "Select a day";
+  return new Date(`${dateKey}T00:00:00Z`).toLocaleDateString(undefined, {
+    day: "numeric",
+    month: "short",
+    timeZone: "UTC",
+    year: "numeric"
+  });
+}
+
+function weekdayLabel(dateKey: string): string {
+  if (!dateKey) return "";
+  return new Date(`${dateKey}T00:00:00Z`).toLocaleDateString(undefined, {
+    timeZone: "UTC",
+    weekday: "short"
+  });
+}
+
+function buildCalendarGrid(monthKey: string, activityByDay: Map<string, CalendarActivity>) {
+  const [year, month] = monthKey.split("-").map((value) => Number(value));
+  if (!Number.isFinite(year) || !Number.isFinite(month)) return [];
+  const monthStart = new Date(Date.UTC(year, month - 1, 1));
+  const offset = monthStart.getUTCDay();
+  const gridStart = new Date(Date.UTC(year, month - 1, 1 - offset));
+
+  return Array.from({ length: 42 }, (_, index) => {
+    const current = new Date(gridStart.getTime() + index * 86_400_000);
+    const dateKey = current.toISOString().slice(0, 10);
+    return {
+      activity: activityByDay.get(dateKey) ?? null,
+      dateKey,
+      day: current.getUTCDate(),
+      inMonth: current.getUTCMonth() === monthStart.getUTCMonth()
+    };
+  });
+}
+
+function formatMinutesCompact(minutes: number): string {
+  if (!Number.isFinite(minutes) || minutes <= 0) return "0m";
+  if (minutes < 60) return `${Math.round(minutes)}m`;
+  const hours = Math.floor(minutes / 60);
+  const remainingMinutes = Math.round(minutes % 60);
+  if (hours < 24) return remainingMinutes > 0 ? `${hours}h ${remainingMinutes}m` : `${hours}h`;
+  const days = Math.floor(hours / 24);
+  const remainingHours = hours % 24;
+  return remainingHours > 0 ? `${days}d ${remainingHours}h` : `${days}d`;
+}
+
+function tradeDurationMinutes(trade: TradeHistoryRow): number {
+  const entry = Date.parse(trade.entryTime);
+  const exit = Date.parse(trade.exitTime);
+  if (Number.isFinite(entry) && Number.isFinite(exit) && exit > entry) return Math.max(1, (exit - entry) / 60_000);
+  return 0;
+}
+
+function formatCalendarDateTime(value: string): string {
+  const date = new Date(value);
+  if (!Number.isFinite(date.getTime())) return value || "-";
+  return date.toLocaleString(undefined, {
+    day: "numeric",
+    hour: "numeric",
+    hour12: true,
+    minute: "2-digit",
+    month: "short",
+    timeZone: "UTC",
+    year: "numeric"
+  });
+}
+
+function sessionLabel(value: string): string {
+  const date = new Date(value);
+  if (!Number.isFinite(date.getTime())) return "Sydney";
+  const hour = date.getUTCHours() + date.getUTCMinutes() / 60;
+  if (hour >= 16 || hour < 1) return "Tokyo";
+  if (hour >= 12 && hour < 21) return "Sydney";
+  if (hour >= 0 && hour < 9) return "London";
+  if (hour >= 5 && hour < 14) return "New York";
+  return "Sydney";
+}
+
+function buildMiniChartPoints(trade: TradeHistoryRow, bars: ChartBar[]): MiniChartPoint[] {
+  const entryMs = Date.parse(trade.entryTime);
+  const exitMs = Date.parse(trade.exitTime);
+  const safeEntryMs = Number.isFinite(entryMs) ? entryMs : Date.now();
+  const safeExitMs = Number.isFinite(exitMs) && exitMs > safeEntryMs ? exitMs : safeEntryMs + 60_000;
+  const durationMinutes = Math.max(1, Math.ceil((safeExitMs - safeEntryMs) / 60_000));
+  const entryPosition = nearestPositionForAnchor(bars, trade.entryIndex, trade.entryTime);
+  const exitPosition = nearestPositionForAnchor(bars, trade.exitIndex, trade.exitTime);
+
+  if (entryPosition == null || exitPosition == null || !bars.length) {
+    return [
+      {
+        high: trade.entryPrice,
+        low: trade.entryPrice,
+        price: trade.entryPrice,
+        relCand: -1,
+        timeMs: safeEntryMs,
+        x: 0
+      },
+      {
+        high: Math.max(trade.entryPrice, trade.exitPrice),
+        low: Math.min(trade.entryPrice, trade.exitPrice),
+        price: trade.exitPrice,
+        relCand: 0,
+        timeMs: safeExitMs,
+        x: durationMinutes
+      }
+    ];
+  }
+
+  const start = Math.min(entryPosition, exitPosition);
+  const end = Math.max(entryPosition, exitPosition);
+  const rows: MiniChartPoint[] = [
+    {
+      high: trade.entryPrice,
+      low: trade.entryPrice,
+      price: trade.entryPrice,
+      relCand: -1,
+      timeMs: safeEntryMs,
+      x: 0
+    }
+  ];
+
+  let previousPrice = trade.entryPrice;
+  for (let index = start; index <= end; index += 1) {
+    const bar = bars[index];
+    if (!bar) continue;
+    const timeMs = Date.parse(bar.time);
+    const minuteIndex = Number.isFinite(timeMs) ? Math.max(1, Math.ceil((timeMs - safeEntryMs) / 60_000)) : rows.length;
+    const close = Number.isFinite(bar.close) ? bar.close : previousPrice;
+    rows.push({
+      high: Number.isFinite(bar.high) ? bar.high : close,
+      low: Number.isFinite(bar.low) ? bar.low : close,
+      price: close,
+      relCand: index - start,
+      timeMs: Number.isFinite(timeMs) ? timeMs : safeEntryMs + minuteIndex * 60_000,
+      x: minuteIndex
+    });
+    previousPrice = close;
+  }
+
+  const last = rows[rows.length - 1];
+  if (!last || last.x < durationMinutes) {
+    rows.push({
+      high: Math.max(last?.price ?? trade.entryPrice, trade.exitPrice),
+      low: Math.min(last?.price ?? trade.entryPrice, trade.exitPrice),
+      price: trade.exitPrice,
+      relCand: Math.max(0, rows.length - 1),
+      timeMs: safeExitMs,
+      x: durationMinutes
+    });
+  } else {
+    last.price = trade.exitPrice;
+    last.high = Math.max(last.high, trade.exitPrice);
+    last.low = Math.min(last.low, trade.exitPrice);
+    last.timeMs = safeExitMs;
+  }
+
+  return rows.length >= 2 ? rows : [];
+}
+
+function BacktestTradeMiniChart({
+  bars,
+  isOpen,
+  status,
+  trade
+}: {
+  bars: ChartBar[];
+  isOpen: boolean;
+  status: CalendarChartState["status"];
+  trade: TradeHistoryRow;
+}) {
+  const data = useMemo(() => buildMiniChartPoints(trade, bars), [bars, trade]);
+  const direction = trade.side === "long" ? 1 : -1;
+  const dollarsPerPoint = Math.max(0.000001, Math.abs(trade.dollarsPerPricePoint || 1));
+  const entryPrice = trade.entryPrice;
+  const plot = useMemo(() => {
+    if (data.length < 2) return null;
+    const width = 760;
+    const height = 260;
+    const margins = { top: 18, right: 24, bottom: 38, left: 54 };
+    const plotWidth = width - margins.left - margins.right;
+    const plotHeight = height - margins.top - margins.bottom;
+    const lows = data.map((point) => point.low).filter(Number.isFinite);
+    const highs = data.map((point) => point.high).filter(Number.isFinite);
+    let low = Math.min(...lows, trade.stopPrice, trade.targetPrice, trade.entryPrice);
+    let high = Math.max(...highs, trade.stopPrice, trade.targetPrice, trade.entryPrice);
+    if (!Number.isFinite(low) || !Number.isFinite(high)) {
+      low = Math.min(trade.entryPrice, trade.exitPrice);
+      high = Math.max(trade.entryPrice, trade.exitPrice);
+    }
+    const span = Math.max(0.000000001, high - low);
+    const pad = Math.max(span * 0.12, Math.abs(trade.entryPrice) * 0.002, 0.0001);
+    const yMin = low - pad;
+    const yMax = high + pad;
+    const xMax = Math.max(1, ...data.map((point) => point.x));
+    const scaleX = (value: number) => margins.left + (value / xMax) * plotWidth;
+    const scaleY = (value: number) => margins.top + ((yMax - value) / Math.max(0.000000001, yMax - yMin)) * plotHeight;
+    const toneForPrice = (price: number): "up" | "down" | "flat" => {
+      const pnl = (price - entryPrice) * direction * dollarsPerPoint;
+      if (pnl > 0.000001) return "up";
+      if (pnl < -0.000001) return "down";
+      return "flat";
+    };
+    const strokeForTone = (tone: "up" | "down" | "flat") =>
+      tone === "up" ? "#34d399" : tone === "down" ? "#f87171" : "#ffffff";
+    const segments: Array<{ d: string; stroke: string; title: string }> = [];
+
+    for (let index = 1; index < data.length; index += 1) {
+      const previous = data[index - 1]!;
+      const current = data[index]!;
+      const previousTone = toneForPrice(previous.price);
+      const currentTone = toneForPrice(current.price);
+      const pushSegment = (leftX: number, leftPrice: number, rightX: number, rightPrice: number, tone: "up" | "down" | "flat") => {
+        segments.push({
+          d: `M ${scaleX(leftX).toFixed(2)} ${scaleY(leftPrice).toFixed(2)} L ${scaleX(rightX).toFixed(2)} ${scaleY(rightPrice).toFixed(2)}`,
+          stroke: strokeForTone(tone),
+          title: `${formatChartPrice(rightPrice)} / ${formatSignedMoney((rightPrice - entryPrice) * direction * dollarsPerPoint)}`
+        });
+      };
+
+      const signFlip = (previousTone === "up" && currentTone === "down") || (previousTone === "down" && currentTone === "up");
+      if (signFlip && Math.abs(current.price - previous.price) > 0.000000001) {
+        const ratio = (entryPrice - previous.price) / (current.price - previous.price);
+        if (ratio > 0 && ratio < 1) {
+          const crossX = previous.x + (current.x - previous.x) * ratio;
+          pushSegment(previous.x, previous.price, crossX, entryPrice, previousTone);
+          pushSegment(crossX, entryPrice, current.x, current.price, currentTone);
+          continue;
+        }
+      }
+
+      pushSegment(previous.x, previous.price, current.x, current.price, currentTone === "flat" ? previousTone : currentTone);
+    }
+
+    return {
+      axisLabelY: height - 10,
+      data,
+      height,
+      segments,
+      scaleX,
+      scaleY,
+      width,
+      xMax,
+      yTicks: [trade.targetPrice, trade.entryPrice, trade.stopPrice].filter(Number.isFinite)
+    };
+  }, [data, direction, dollarsPerPoint, entryPrice, trade.entryPrice, trade.exitPrice, trade.stopPrice, trade.targetPrice]);
+
+  if (status === "loading") {
+    return <div className="backtest-trade-mini-empty">Loading price movement...</div>;
+  }
+
+  if (!plot) {
+    return <div className="backtest-trade-mini-empty">Price movement unavailable.</div>;
+  }
+
+  return (
+    <div className="backtest-trade-mini-chart">
+      <svg viewBox={`0 0 ${plot.width} ${plot.height}`} role="img" aria-label={`${trade.symbol} per-trade price movement`}>
+        <rect x="0" y="0" width={plot.width} height={plot.height} fill="#0a0a0a" />
+        {[0, 0.25, 0.5, 0.75, 1].map((tick) => (
+          <line
+            key={`v-${tick}`}
+            x1={54 + tick * (plot.width - 78)}
+            x2={54 + tick * (plot.width - 78)}
+            y1="18"
+            y2={plot.height - 38}
+            stroke="rgba(255,255,255,0.045)"
+          />
+        ))}
+        {plot.yTicks.map((value) => {
+          const y = plot.scaleY(value);
+          const tone = value === trade.targetPrice ? "tp" : value === trade.stopPrice ? "sl" : "entry";
+          return (
+            <g key={`${tone}-${value}`}>
+              <line
+                x1="54"
+                x2={plot.width - 24}
+                y1={y}
+                y2={y}
+                stroke={tone === "tp" ? "#34d399" : tone === "sl" ? "#f87171" : "#a3a3a3"}
+                strokeDasharray="4 6"
+              />
+              <text x="12" y={y + 4} fill={tone === "tp" ? "#34d399" : tone === "sl" ? "#f87171" : "#a3a3a3"} fontSize="11">
+                {tone === "tp" ? "TP" : tone === "sl" ? "SL" : "Entry"}
+              </text>
+            </g>
+          );
+        })}
+        <text x={plot.width - 145} y={plot.axisLabelY} fill="#9ca3af" fontSize="11">
+          Minutes since entry
+        </text>
+        <text x="54" y={plot.axisLabelY} fill="#9ca3af" fontSize="11">
+          0
+        </text>
+        <text x={plot.width - 42} y={plot.axisLabelY} fill="#9ca3af" fontSize="11" textAnchor="end">
+          {Math.round(plot.xMax)}
+        </text>
+        <g className={isOpen ? "backtest-trade-mini-reveal" : undefined}>
+          {plot.segments.map((segment, index) => (
+            <path
+              key={`${segment.d}-${index}`}
+              d={segment.d}
+              fill="none"
+              pathLength={1}
+              stroke={segment.stroke}
+              strokeLinecap="butt"
+              strokeWidth="3"
+            >
+              <title>{segment.title}</title>
+            </path>
+          ))}
+        </g>
+      </svg>
+    </div>
+  );
+}
+
+export function TradeHistoryCalendar({ rows }: TradeHistoryProps) {
+  const isRestricted = !useAutoTradeAdminMode();
+  const [selectedMonthKey, setSelectedMonthKey] = useState(() => monthKeyUTC(rows[0]?.exitTime));
+  const [selectedDateKey, setSelectedDateKey] = useState(() => dateKeyUTC(rows[0]?.exitTime));
+  const [expandedTradeId, setExpandedTradeId] = useState<string | null>(null);
+  const [chartStates, setChartStates] = useState<Record<string, CalendarChartState>>({});
+  const chartStatesRef = useRef<Record<string, CalendarChartState>>({});
+  const activityByDay = useMemo(() => {
+    const activity = new Map<string, CalendarActivity>();
+    for (const trade of rows) {
+      const key = dateKeyUTC(trade.exitTime);
+      if (!key) continue;
+      const current = activity.get(key) ?? { count: 0, pnl: 0, wins: 0, items: [] };
+      current.count += 1;
+      current.pnl += trade.pnlDollars;
+      current.wins += trade.pnlDollars > 0 ? 1 : 0;
+      current.items.push(trade);
+      activity.set(key, current);
+    }
+    for (const value of activity.values()) {
+      value.items.sort((left, right) => Date.parse(right.exitTime) - Date.parse(left.exitTime));
+    }
+    return activity;
+  }, [rows]);
+  const latestDateKey = useMemo(() => {
+    const latest = [...activityByDay.keys()].sort((left, right) => right.localeCompare(left))[0];
+    return latest ?? "";
+  }, [activityByDay]);
+  const activeMonthKey = selectedMonthKey || (latestDateKey ? latestDateKey.slice(0, 7) : new Date().toISOString().slice(0, 7));
+  const calendarGrid = useMemo(() => buildCalendarGrid(activeMonthKey, activityByDay), [activeMonthKey, activityByDay]);
+  const selectedDayTrades = useMemo(
+    () => (selectedDateKey ? activityByDay.get(selectedDateKey)?.items ?? [] : []),
+    [activityByDay, selectedDateKey]
+  );
+  const selectedMonthPnl = calendarGrid.reduce((sum, cell) => (cell.inMonth && cell.activity ? sum + cell.activity.pnl : sum), 0);
+  const expandedTrade = expandedTradeId ? rows.find((trade) => trade.id === expandedTradeId) ?? null : null;
+
+  useEffect(() => {
+    if (!latestDateKey) return;
+    setSelectedMonthKey((current) => current || latestDateKey.slice(0, 7));
+    setSelectedDateKey((current) => current || latestDateKey);
+  }, [latestDateKey]);
+
+  useEffect(() => {
+    setExpandedTradeId((current) => (current && selectedDayTrades.some((trade) => trade.id === current) ? current : null));
+  }, [selectedDayTrades]);
+
+  useEffect(() => {
+    chartStatesRef.current = chartStates;
+  }, [chartStates]);
+
+  useEffect(() => {
+    if (!expandedTrade) return undefined;
+    const existing = chartStatesRef.current[expandedTrade.id];
+    if (existing && existing.status !== "idle" && existing.status !== "error") return undefined;
+
+    const controller = new AbortController();
+    const params = new URLSearchParams({
+      context: "8",
+      entryIndex: String(expandedTrade.entryIndex),
+      entryTime: expandedTrade.entryTime,
+      exitIndex: String(expandedTrade.exitIndex),
+      exitTime: expandedTrade.exitTime,
+      market: expandedTrade.market ?? "",
+      symbol: expandedTrade.symbol,
+      timeframe: expandedTrade.sourceTimeframe ?? "15m"
+    });
+
+    setChartStates((current) => ({
+      ...current,
+      [expandedTrade.id]: { status: "loading", bars: [] }
+    }));
+    fetch(`/api/trade-chart?${params.toString()}`, { signal: controller.signal })
+      .then((response) => (response.ok ? (response.json() as Promise<ChartPayload>) : Promise.reject(new Error("Chart unavailable"))))
+      .then((payload) => {
+        setChartStates((current) => ({
+          ...current,
+          [expandedTrade.id]: {
+            status: "ready",
+            bars: payload.replayBars?.length ? payload.replayBars : payload.bars ?? [],
+            message: payload.error
+          }
+        }));
+      })
+      .catch((error: Error) => {
+        if (error.name === "AbortError") return;
+        setChartStates((current) => ({
+          ...current,
+          [expandedTrade.id]: { status: "error", bars: [], message: error.message }
+        }));
+      });
+
+    return () => controller.abort();
+  }, [expandedTrade]);
+
+  return (
+    <div className="backtest-grid">
+      <div className="backtest-calendar-shell">
+        <div className="backtest-calendar-toolbar">
+          <div className="backtest-calendar-nav compact">
+            <button
+              type="button"
+              className="backtest-action-btn backtest-calendar-nav-btn"
+              onClick={() => setSelectedMonthKey((current) => shiftMonthKey(current || activeMonthKey, -1))}
+            >
+              {"<"}
+            </button>
+            <span className="backtest-calendar-label">{monthLabel(activeMonthKey)}</span>
+            <button
+              type="button"
+              className="backtest-action-btn backtest-calendar-nav-btn"
+              onClick={() => setSelectedMonthKey((current) => shiftMonthKey(current || activeMonthKey, 1))}
+            >
+              {">"}
+            </button>
+          </div>
+        </div>
+
+        <div className="backtest-calendar-summary">
+          <div className={`backtest-month-pill ${selectedMonthPnl > 0 ? "up" : selectedMonthPnl < 0 ? "down" : "neutral"}`}>
+            {monthLabel(activeMonthKey)} PnL: {formatSignedMoney(selectedMonthPnl)}
+          </div>
+        </div>
+      </div>
+
+      <div className="backtest-calendar-weekdays">
+        {CALENDAR_DOW_LABELS.map((label) => (
+          <span key={label}>{label}</span>
+        ))}
+      </div>
+
+      <div className="backtest-calendar-grid">
+        {calendarGrid.map((cell) => (
+          <button
+            key={cell.dateKey}
+            type="button"
+            className={`backtest-calendar-cell ${cell.dateKey === selectedDateKey ? "selected" : ""} ${cell.inMonth ? "" : "muted"}`}
+            onClick={() => setSelectedDateKey(cell.dateKey)}
+          >
+            <div className="backtest-calendar-cell-day">{cell.day}</div>
+            {cell.activity ? (
+              <>
+                <div className="backtest-calendar-cell-count">
+                  {cell.activity.count} trade{cell.activity.count === 1 ? "" : "s"}
+                </div>
+                <div className={`backtest-calendar-cell-pnl ${cell.activity.pnl >= 0 ? "up" : "down"}`}>
+                  {formatSignedMoney(cell.activity.pnl)}
+                </div>
+              </>
+            ) : (
+              <div className="backtest-calendar-cell-empty">No trades</div>
+            )}
+          </button>
+        ))}
+      </div>
+
+      <div className="backtest-calendar-detail">
+        <div className="backtest-card-head backtest-calendar-detail-head">
+          <div>
+            <h3>{selectedDateKey || "Select a day"}</h3>
+            <p>
+              {selectedDateKey
+                ? `${weekdayLabel(selectedDateKey)}, ${calendarDateLabel(selectedDateKey)} - ${selectedDayTrades.length} trade${
+                    selectedDayTrades.length === 1 ? "" : "s"
+                  }`
+                : "Select a day in the grid to inspect the matching trade set."}
+            </p>
+          </div>
+        </div>
+
+        <div className="backtest-calendar-day-list">
+          {selectedDayTrades.map((trade) => {
+            const isExpanded = expandedTradeId === trade.id;
+            const durationMinutes = tradeDurationMinutes(trade);
+            const chartState = chartStates[trade.id] ?? { status: "idle", bars: [] };
+            const displayedModelName = isRestricted ? "Admin only" : trade.modelName;
+            return (
+              <div key={`${trade.id}-calendar`} className={`backtest-calendar-trade ${isExpanded ? "expanded" : ""}`}>
+                <button
+                  type="button"
+                  className="backtest-calendar-trade-toggle"
+                  onClick={() => setExpandedTradeId((current) => (current === trade.id ? null : trade.id))}
+                >
+                  <div className="backtest-calendar-trade-main">
+                    <span className={`backtest-calendar-side-pill ${trade.side === "long" ? "up" : "down"}`}>
+                      {trade.side === "long" ? "BUY" : "SELL"}
+                    </span>
+                    <div className="backtest-calendar-trade-copy">
+                      <div className="backtest-calendar-trade-inline">
+                        <span className="backtest-calendar-trade-inline-label">Entry ({trade.sourceTimeframe ?? "15m"}):</span>
+                        <span className="backtest-calendar-trade-inline-value">{formatCalendarDateTime(trade.entryTime)}</span>
+                        <span className="backtest-calendar-trade-inline-price">@ {formatChartPrice(trade.entryPrice)}</span>
+                      </div>
+                      <div className="backtest-calendar-trade-inline optional">
+                        <span className="backtest-calendar-trade-inline-label">Exit ({trade.sourceTimeframe ?? "15m"}):</span>
+                        <span className="backtest-calendar-trade-inline-value">{formatCalendarDateTime(trade.exitTime)}</span>
+                        <span className="backtest-calendar-trade-inline-price">@ {formatChartPrice(trade.exitPrice)}</span>
+                      </div>
+                      <div className="backtest-calendar-trade-duration">Duration: {formatMinutesCompact(durationMinutes)}</div>
+                    </div>
+                  </div>
+                  <div className="backtest-calendar-trade-side">
+                    <span className="backtest-calendar-trade-symbol">{trade.symbol}</span>
+                    <strong className={trade.pnlDollars >= 0 ? "up" : "down"}>{trade.pnlLabel}</strong>
+                  </div>
+                </button>
+
+                {isExpanded ? (
+                  <div className="backtest-calendar-trade-expand">
+                    <div className="backtest-calendar-trade-stat-grid">
+                      <div className="backtest-calendar-trade-stat">
+                        <span>Duration</span>
+                        <strong>{formatMinutesCompact(durationMinutes)}</strong>
+                      </div>
+                      <div className="backtest-calendar-trade-stat">
+                        <span>TP Price</span>
+                        <strong className="backtest-calendar-trade-stat-value tp">{trade.targetPriceLabel}</strong>
+                      </div>
+                      <div className="backtest-calendar-trade-stat">
+                        <span>SL Price</span>
+                        <strong className="backtest-calendar-trade-stat-value sl">{trade.stopPriceLabel}</strong>
+                      </div>
+                    </div>
+
+                    <div className="backtest-calendar-trade-panel">
+                      <div className="backtest-calendar-trade-meta">
+                        <div>Session: {sessionLabel(trade.entryTime)}</div>
+                        <div>Entry Model: {displayedModelName}</div>
+                        <div>Exit Reason: {displayExitReasonLabel(trade)}</div>
+                        <div>R: {trade.rMultipleLabel}</div>
+                      </div>
+                    </div>
+
+                    <div className="backtest-calendar-trade-panel">
+                      <div className="backtest-calendar-trade-chart-copy">
+                        <strong>Price movement</strong>
+                        {chartState.message ? <span>{chartState.message}</span> : null}
+                      </div>
+                      <BacktestTradeMiniChart bars={chartState.bars} isOpen={isExpanded} status={chartState.status} trade={trade} />
+                    </div>
+                  </div>
+                ) : null}
+              </div>
+            );
+          })}
+          {selectedDayTrades.length === 0 ? <div className="backtest-empty-inline">No trades closed on the selected day.</div> : null}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function TradeCandlestickChart({
   trade,
   bars,

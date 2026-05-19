@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import {
   strategyContractScale,
   type StrategyEditOption,
@@ -11,6 +12,8 @@ import { LocalDateTimeStack } from "@/components/ui/local-date-time";
 type BasketTrade = {
   key: string;
   entryTime: string;
+  exitTime: string;
+  barsHeld: number;
   basePnlDollars: number;
   rMultiple: number;
 };
@@ -27,6 +30,12 @@ type DollarAggregate = {
   rewardRiskRatio: number;
   sharpeRatio: number;
   sortinoRatio: number;
+  avgDurationMs: number;
+  avgWinDurationMs: number;
+  avgLossDurationMs: number;
+  avgBarsHeld: number;
+  longestDurationMs: number;
+  maxDailyDrawdownDollars: number;
   totalDollars: number;
   avgDollars: number;
 };
@@ -95,6 +104,18 @@ function fmtRiskReward(value: number): string {
   return value > 0 ? `1:${fmtNumber(value)}` : "--";
 }
 
+function fmtDurationMs(value: number): string {
+  if (!Number.isFinite(value) || value <= 0) return "--";
+  const totalMinutes = Math.max(1, Math.round(value / 60_000));
+  const days = Math.floor(totalMinutes / 1_440);
+  const hours = Math.floor((totalMinutes % 1_440) / 60);
+  const minutes = totalMinutes % 60;
+
+  if (days > 0) return hours > 0 ? `${days}d ${hours}h` : `${days}d`;
+  if (hours > 0) return minutes > 0 ? `${hours}h ${minutes}m` : `${hours}h`;
+  return `${minutes}m`;
+}
+
 function localTradeDayKey(value: string): string {
   const date = new Date(value);
   if (!Number.isFinite(date.getTime())) return value;
@@ -102,6 +123,27 @@ function localTradeDayKey(value: string): string {
   const month = String(date.getMonth() + 1).padStart(2, "0");
   const day = String(date.getDate()).padStart(2, "0");
   return `${year}-${month}-${day}`;
+}
+
+function addDays(dateKey: string, days: number): string {
+  const date = new Date(`${dateKey}T00:00:00`);
+  if (!Number.isFinite(date.getTime())) return dateKey;
+  date.setDate(date.getDate() + days);
+  return localTradeDayKey(date.toISOString());
+}
+
+function dailyCurveValues(dailyPnl: Map<string, number>): number[] {
+  const keys = [...dailyPnl.keys()].sort((left, right) => left.localeCompare(right));
+  const first = keys[0];
+  const last = keys[keys.length - 1];
+  if (!first || !last) return [];
+
+  const values: number[] = [];
+  for (let day = first; day <= last; day = addDays(day, 1)) {
+    values.push(dailyPnl.get(day) ?? 0);
+    if (day === last) break;
+  }
+  return values;
 }
 
 function mean(values: number[]): number {
@@ -120,9 +162,30 @@ function downsideDeviation(values: number[]): number {
   return Math.sqrt(Math.max(0, downsideVariance));
 }
 
-function riskAdjustedRatio(average: number, deviation: number): number {
+function annualizedRatio(average: number, deviation: number, periodsPerYear: number): number {
   if (deviation === 0) return average > 0 ? Infinity : 0;
-  return average / deviation;
+  return (average / deviation) * Math.sqrt(periodsPerYear);
+}
+
+function tradeDurationMs(trade: BasketTrade): number {
+  const entry = Date.parse(trade.entryTime);
+  const exit = Date.parse(trade.exitTime);
+  if (Number.isFinite(entry) && Number.isFinite(exit) && exit > entry) return exit - entry;
+  return Math.max(0, trade.barsHeld) * 15 * 60_000;
+}
+
+function maxDrawdown(values: number[]): number {
+  let equity = 0;
+  let peak = 0;
+  let drawdown = 0;
+
+  for (const value of values) {
+    equity += value;
+    peak = Math.max(peak, equity);
+    drawdown = Math.max(drawdown, peak - equity);
+  }
+
+  return drawdown;
 }
 
 function aggregateDollars(trades: BasketTrade[], pnlForTrade: (trade: BasketTrade) => number): DollarAggregate {
@@ -133,29 +196,37 @@ function aggregateDollars(trades: BasketTrade[], pnlForTrade: (trade: BasketTrad
   let lossDollars = 0;
   let wins = 0;
   let losses = 0;
-  const rMultiples: number[] = [];
   const dailyPnl = new Map<string, number>();
+  const durationsMs: number[] = [];
+  const winDurationsMs: number[] = [];
+  const lossDurationsMs: number[] = [];
+  const barsHeld: number[] = [];
 
   for (const trade of trades) {
     const pnl = pnlForTrade(trade);
     const result = trade.rMultiple;
+    const durationMs = tradeDurationMs(trade);
     totalDollars += pnl;
-    if (Number.isFinite(result)) rMultiples.push(result);
-    const dayKey = localTradeDayKey(trade.entryTime);
+    if (durationMs > 0) durationsMs.push(durationMs);
+    if (Number.isFinite(trade.barsHeld) && trade.barsHeld > 0) barsHeld.push(trade.barsHeld);
+    const dayKey = localTradeDayKey(trade.exitTime);
     dailyPnl.set(dayKey, (dailyPnl.get(dayKey) ?? 0) + pnl);
 
     if (result > 0) {
       wins += 1;
       grossWins += result;
       winDollars += pnl;
+      if (durationMs > 0) winDurationsMs.push(durationMs);
     } else if (result < 0) {
       losses += 1;
       grossLosses += Math.abs(result);
       lossDollars += pnl;
+      if (durationMs > 0) lossDurationsMs.push(durationMs);
     }
   }
 
-  const averageR = mean(rMultiples);
+  const dailyValues = dailyCurveValues(dailyPnl);
+  const averageDailyPnl = mean(dailyValues);
   const avgWinDollars = wins ? winDollars / wins : 0;
   const avgLossDollars = losses ? lossDollars / losses : 0;
   const largestWinningDay = Math.max(0, ...dailyPnl.values());
@@ -171,8 +242,14 @@ function aggregateDollars(trades: BasketTrade[], pnlForTrade: (trade: BasketTrad
     winRatePct: trades.length ? (wins / trades.length) * 100 : 0,
     profitFactor: grossLosses ? grossWins / grossLosses : grossWins ? Infinity : 0,
     rewardRiskRatio: avgLossDollars < 0 ? avgWinDollars / Math.abs(avgLossDollars) : avgWinDollars > 0 ? Infinity : 0,
-    sharpeRatio: riskAdjustedRatio(averageR, sampleStdDev(rMultiples, averageR)),
-    sortinoRatio: riskAdjustedRatio(averageR, downsideDeviation(rMultiples)),
+    sharpeRatio: annualizedRatio(averageDailyPnl, sampleStdDev(dailyValues, averageDailyPnl), 252),
+    sortinoRatio: annualizedRatio(averageDailyPnl, downsideDeviation(dailyValues), 252),
+    avgDurationMs: mean(durationsMs),
+    avgWinDurationMs: mean(winDurationsMs),
+    avgLossDurationMs: mean(lossDurationsMs),
+    avgBarsHeld: mean(barsHeld),
+    longestDurationMs: Math.max(0, ...durationsMs),
+    maxDailyDrawdownDollars: maxDrawdown(dailyValues),
     totalDollars,
     avgDollars: trades.length ? totalDollars / trades.length : 0
   };
@@ -205,6 +282,7 @@ function tradeCadence(trades: BasketTrade[]) {
 }
 
 export default function SelectedStrategyStats({ dataEndAt, strategies, trades, persistedStrategyEdits }: SelectedStrategyStatsProps) {
+  const [expanded, setExpanded] = useState(false);
   const edits = useStrategyEdits(strategies, persistedStrategyEdits);
   const strategyByKey = new Map(strategies.map((strategy) => [strategy.key, strategy]));
   const selectedCadence = tradeCadence(trades);
@@ -212,9 +290,24 @@ export default function SelectedStrategyStats({ dataEndAt, strategies, trades, p
     const strategy = strategyByKey.get(trade.key);
     return trade.basePnlDollars * (strategy ? strategyContractScale(strategy, edits) : 1);
   });
+  const toggleExpanded = () => setExpanded((current) => !current);
 
   return (
-    <div className="backtest-stats-grid">
+    <div
+      className={`selectedStatsSurface${expanded ? " is-expanded" : ""}`}
+      role="button"
+      tabIndex={0}
+      aria-expanded={expanded}
+      aria-label={expanded ? "Collapse selected strategy stats" : "Expand selected strategy stats"}
+      onClick={toggleExpanded}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          toggleExpanded();
+        }
+      }}
+    >
+      <div className="backtest-stats-grid">
       <div className={`backtest-stat-card ${selectedDollarAggregate.profitFactor >= 1 ? "tone-up" : "tone-down"}`}>
         <span>PF</span>
         <strong>{selectedDollarAggregate.trades ? fmtNumber(selectedDollarAggregate.profitFactor) : "--"}</strong>
@@ -239,6 +332,8 @@ export default function SelectedStrategyStats({ dataEndAt, strategies, trades, p
         <span>Losses</span>
         <strong>{fmtNumber(selectedDollarAggregate.losses)}</strong>
       </div>
+      {expanded ? (
+        <>
       <div className="backtest-stat-card tone-neutral">
         <span>Trades / day</span>
         <strong>{selectedDollarAggregate.trades ? fmtNumber(selectedCadence.perDay) : "--"}</strong>
@@ -264,11 +359,11 @@ export default function SelectedStrategyStats({ dataEndAt, strategies, trades, p
         <strong><LocalDateTimeStack value={latestEndDate(dataEndAt, selectedCadence.end)} /></strong>
       </div>
       <div className={`backtest-stat-card ${ratioTone(selectedDollarAggregate.sharpeRatio, 1)}`}>
-        <span>Trade Sharpe</span>
+        <span>Daily Sharpe</span>
         <strong>{selectedDollarAggregate.trades ? fmtNumber(selectedDollarAggregate.sharpeRatio) : "--"}</strong>
       </div>
       <div className={`backtest-stat-card ${ratioTone(selectedDollarAggregate.sortinoRatio, 1)}`}>
-        <span>Trade Sortino</span>
+        <span>Daily Sortino</span>
         <strong>{selectedDollarAggregate.trades ? fmtNumber(selectedDollarAggregate.sortinoRatio) : "--"}</strong>
       </div>
       <div className={`backtest-stat-card ${statTone(selectedDollarAggregate.avgWinDollars)}`}>
@@ -286,6 +381,36 @@ export default function SelectedStrategyStats({ dataEndAt, strategies, trades, p
       <div className={`backtest-stat-card ${consistencyTone(selectedDollarAggregate.consistencyScorePct)}`}>
         <span>Consistency</span>
         <strong>{selectedDollarAggregate.consistencyScorePct == null ? "--" : fmtPct(selectedDollarAggregate.consistencyScorePct)}</strong>
+      </div>
+      <div className="backtest-stat-card tone-neutral">
+        <span>Avg duration</span>
+        <strong>{selectedDollarAggregate.trades ? fmtDurationMs(selectedDollarAggregate.avgDurationMs) : "--"}</strong>
+      </div>
+      <div className="backtest-stat-card tone-neutral">
+        <span>Avg win duration</span>
+        <strong>{selectedDollarAggregate.wins ? fmtDurationMs(selectedDollarAggregate.avgWinDurationMs) : "--"}</strong>
+      </div>
+      <div className="backtest-stat-card tone-neutral">
+        <span>Avg loss duration</span>
+        <strong>{selectedDollarAggregate.losses ? fmtDurationMs(selectedDollarAggregate.avgLossDurationMs) : "--"}</strong>
+      </div>
+      <div className="backtest-stat-card tone-neutral">
+        <span>Avg bars held</span>
+        <strong>{selectedDollarAggregate.trades ? fmtNumber(selectedDollarAggregate.avgBarsHeld) : "--"}</strong>
+      </div>
+      <div className="backtest-stat-card tone-neutral">
+        <span>Longest trade</span>
+        <strong>{selectedDollarAggregate.trades ? fmtDurationMs(selectedDollarAggregate.longestDurationMs) : "--"}</strong>
+      </div>
+      <div className={`backtest-stat-card ${statTone(-selectedDollarAggregate.maxDailyDrawdownDollars)}`}>
+        <span>Max daily DD</span>
+        <strong>{selectedDollarAggregate.trades ? fmtMoney(-selectedDollarAggregate.maxDailyDrawdownDollars) : "--"}</strong>
+      </div>
+        </>
+      ) : null}
+      </div>
+      <div className="selectedStatsToggleHint" aria-hidden="true">
+        <span>{expanded ? "Hide details" : "More stats"}</span>
       </div>
     </div>
   );

@@ -2923,6 +2923,614 @@ html[data-theme="light"] .themeDarkLabel {
   color: #93bbfc;
 }
 
+.selectedStatsSurface {
+  min-width: 0;
+  display: grid;
+  gap: 0.42rem;
+  border-radius: 16px;
+  cursor: pointer;
+  outline: none;
+}
+
+.selectedStatsSurface:focus-visible {
+  box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.42);
+}
+
+.selectedStatsSurface .backtest-stat-card {
+  transition:
+    border-color 140ms ease,
+    background 140ms ease,
+    transform 140ms ease;
+}
+
+.selectedStatsSurface:hover .backtest-stat-card {
+  border-color: rgba(255, 255, 255, 0.16);
+}
+
+.selectedStatsToggleHint {
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.selectedStatsToggleHint span {
+  min-height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.035);
+  color: rgba(255, 255, 255, 0.58);
+  padding: 0 0.6rem;
+  font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+  font-size: 0.56rem;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.historyPanelHead > div {
+  gap: 0.32rem;
+}
+
+.historyTitleLine {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+}
+
+.historyViewSwitch {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.18rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.035);
+  padding: 0.16rem;
+}
+
+.historyViewSwitch button {
+  min-height: 24px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.58);
+  padding: 0 0.62rem;
+  font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+  font-size: 0.58rem;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.historyViewSwitch button.active {
+  background: rgba(96, 165, 250, 0.16);
+  color: #a9c8ff;
+  box-shadow: inset 0 0 0 1px rgba(96, 165, 250, 0.22);
+}
+
+.historyViewSwitch button:focus-visible {
+  outline: 1px solid rgba(147, 187, 252, 0.8);
+  outline-offset: 2px;
+}
+
+.backtest-action-btn {
+  min-height: 34px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.92);
+  padding: 0.42rem 0.72rem;
+  font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+  font-size: 0.68rem;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.45);
+}
+
+.backtest-action-btn:hover:not(:disabled) {
+  color: rgba(255, 255, 255, 0.98);
+}
+
+.backtest-action-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.backtest-calendar-shell {
+  display: grid;
+  gap: 0.42rem;
+  margin-bottom: 0.3rem;
+}
+
+.backtest-calendar-toolbar,
+.backtest-calendar-summary {
+  display: flex;
+}
+
+.backtest-calendar-toolbar {
+  justify-content: flex-start;
+}
+
+.backtest-calendar-summary {
+  justify-content: center;
+}
+
+.backtest-calendar-nav {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0.5rem;
+}
+
+.backtest-calendar-nav-btn {
+  min-width: 42px;
+  padding-inline: 0.8rem;
+  border-color: rgba(255, 255, 255, 0.12);
+  background: #0b0b0b;
+  box-shadow: none;
+}
+
+.backtest-calendar-label {
+  color: rgba(255, 255, 255, 0.92);
+  font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+  font-size: 0.74rem;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.backtest-month-pill {
+  min-height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: fit-content;
+  margin: 0;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(255, 255, 255, 0.86);
+  padding: 0.4rem 0.8rem;
+  font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+  font-size: 0.7rem;
+  font-weight: 800;
+}
+
+.backtest-month-pill.up {
+  border-color: rgba(52, 211, 153, 0.3);
+  background: rgba(52, 211, 153, 0.1);
+  color: #34d399;
+}
+
+.backtest-month-pill.down {
+  border-color: rgba(248, 113, 113, 0.3);
+  background: rgba(248, 113, 113, 0.1);
+  color: #f87171;
+}
+
+.backtest-month-pill.neutral {
+  border-color: rgba(255, 255, 255, 0.14);
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.backtest-calendar-weekdays,
+.backtest-calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+
+.backtest-calendar-weekdays span {
+  color: rgba(255, 255, 255, 0.46);
+  font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+  font-size: 0.61rem;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.backtest-calendar-cell {
+  min-height: 94px;
+  display: grid;
+  align-content: start;
+  gap: 0.24rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  background: #0b0b0b;
+  color: inherit;
+  padding: 0.55rem;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    border-color 140ms ease,
+    background 140ms ease,
+    transform 140ms ease;
+}
+
+.backtest-calendar-cell:hover {
+  border-color: rgba(255, 255, 255, 0.18);
+  transform: translateY(-1px);
+}
+
+.backtest-calendar-cell.selected {
+  border-color: rgba(96, 165, 250, 0.5);
+  background: rgba(96, 165, 250, 0.08);
+  box-shadow: inset 0 0 0 1px rgba(96, 165, 250, 0.15);
+}
+
+.backtest-calendar-cell.muted {
+  opacity: 0.56;
+}
+
+.backtest-calendar-cell-day {
+  color: rgba(255, 255, 255, 0.94);
+  font-size: 0.67rem;
+  font-weight: 800;
+}
+
+.backtest-calendar-cell-count {
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 0.66rem;
+}
+
+.backtest-calendar-cell-pnl {
+  font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+  font-size: 0.64rem;
+}
+
+.backtest-calendar-cell-empty {
+  color: rgba(255, 255, 255, 0.52);
+  font-size: 0.61rem;
+}
+
+.backtest-calendar-detail {
+  margin-top: 0.85rem;
+  display: grid;
+  gap: 0.7rem;
+}
+
+.backtest-calendar-detail-head {
+  padding-bottom: 0;
+}
+
+.backtest-calendar-detail-head h3 {
+  margin: 0 0 0.12rem;
+  color: rgba(255, 255, 255, 0.94);
+  font-size: 0.82rem;
+}
+
+.backtest-calendar-detail-head p {
+  max-width: 100%;
+}
+
+.backtest-calendar-day-list {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.backtest-calendar-trade {
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  background: #0c0c0c;
+  transition:
+    border-color 140ms ease,
+    background 140ms ease;
+}
+
+.backtest-calendar-trade:hover {
+  border-color: rgba(255, 255, 255, 0.18);
+}
+
+.backtest-calendar-trade.expanded {
+  border-color: rgba(96, 165, 250, 0.4);
+  background: #111111;
+}
+
+.backtest-calendar-trade-toggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.9rem;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  padding: 0.72rem 0.78rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.backtest-calendar-trade-toggle:disabled {
+  cursor: default;
+}
+
+.backtest-calendar-trade-main {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.backtest-calendar-side-pill {
+  min-width: 52px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid currentColor;
+  border-radius: 8px;
+  padding: 0.2rem 0.44rem;
+  font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+  font-size: 0.56rem;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.backtest-calendar-side-pill.up {
+  border-color: rgba(52, 211, 153, 0.3);
+  background: rgba(52, 211, 153, 0.12);
+  color: #34d399;
+}
+
+.backtest-calendar-side-pill.down {
+  border-color: rgba(248, 113, 113, 0.3);
+  background: rgba(248, 113, 113, 0.12);
+  color: #f87171;
+}
+
+.backtest-calendar-trade-copy {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.28rem 0.85rem;
+}
+
+.backtest-calendar-trade-inline {
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.24rem;
+  color: rgba(255, 255, 255, 0.76);
+  font-size: 0.64rem;
+}
+
+.backtest-calendar-trade-inline.optional,
+.backtest-calendar-trade-duration {
+  display: none;
+}
+
+.backtest-calendar-trade-inline-label {
+  color: rgba(255, 255, 255, 0.9);
+  font-weight: 900;
+}
+
+.backtest-calendar-trade-inline-value {
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.backtest-calendar-trade-inline-price,
+.backtest-calendar-trade-duration,
+.backtest-calendar-trade-symbol {
+  color: rgba(255, 255, 255, 0.52);
+  font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+}
+
+.backtest-calendar-trade-duration {
+  font-size: 0.58rem;
+  letter-spacing: 0.01em;
+}
+
+.backtest-calendar-trade-side {
+  min-width: fit-content;
+  display: grid;
+  justify-items: end;
+  gap: 0.14rem;
+  text-align: right;
+}
+
+.backtest-calendar-trade-side span {
+  font-size: 0.6rem;
+}
+
+.backtest-calendar-trade-side strong {
+  font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+  font-size: 0.71rem;
+}
+
+.backtest-calendar-trade-expand {
+  display: grid;
+  gap: 0.42rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(0, 0, 0, 0.34);
+  padding: 0.58rem;
+}
+
+.backtest-calendar-trade-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.4rem;
+}
+
+.backtest-calendar-trade-stat {
+  display: grid;
+  gap: 0.14rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  background: #000;
+  padding: 0.44rem 0.5rem;
+}
+
+.backtest-calendar-trade-stat span {
+  color: rgba(255, 255, 255, 0.52);
+  font-size: 0.58rem;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.backtest-calendar-trade-stat strong {
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 0.66rem;
+}
+
+.backtest-calendar-trade-stat-value.tp {
+  color: #34d399;
+  font-weight: 900;
+}
+
+.backtest-calendar-trade-stat-value.sl {
+  color: #f87171;
+  font-weight: 900;
+}
+
+.backtest-calendar-trade-panel {
+  display: grid;
+  gap: 0.5rem;
+  border: 1px solid #262626;
+  border-radius: 12px;
+  background: #000;
+  padding: 0.75rem;
+}
+
+.backtest-calendar-trade-meta {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.backtest-calendar-trade-meta div {
+  color: rgba(255, 255, 255, 0.64);
+  font-size: 0.62rem;
+}
+
+.backtest-calendar-trade-chart-copy {
+  margin-bottom: 0.25rem;
+}
+
+.backtest-calendar-trade-chart-copy strong {
+  display: block;
+  color: #737373;
+  font-size: 0.875rem;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.backtest-calendar-trade-chart-copy span {
+  color: rgba(255, 255, 255, 0.54);
+  font-size: 0.59rem;
+  line-height: 1.35;
+}
+
+.backtest-trade-mini-chart {
+  position: relative;
+  width: 100%;
+  height: 260px;
+  overflow: hidden;
+  border: 1px solid #262626;
+  border-radius: 12px;
+  background: #0a0a0a;
+}
+
+.backtest-trade-mini-chart svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.backtest-trade-mini-empty {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.42);
+  color: rgba(255, 255, 255, 0.62);
+  padding: 0.62rem;
+  font-size: 0.61rem;
+}
+
+.backtest-trade-mini-reveal path {
+  animation: tradeMiniReveal 1.15s ease forwards;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+}
+
+@keyframes tradeMiniReveal {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+.backtest-empty-inline {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.025);
+  color: rgba(255, 255, 255, 0.62);
+  padding: 0.75rem;
+  font-size: 0.68rem;
+}
+
+@media (max-width: 760px) {
+  .historyTitleLine {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 0.45rem;
+  }
+
+  .historyViewSwitch {
+    width: 100%;
+  }
+
+  .historyViewSwitch button {
+    flex: 1;
+  }
+
+  .backtest-calendar-weekdays,
+  .backtest-calendar-grid {
+    gap: 0.28rem;
+  }
+
+  .backtest-calendar-cell {
+    min-height: 74px;
+    border-radius: 9px;
+    padding: 0.42rem 0.35rem;
+  }
+
+  .backtest-calendar-cell-count,
+  .backtest-calendar-cell-pnl,
+  .backtest-calendar-cell-empty {
+    font-size: 0.55rem;
+    line-height: 1.15;
+  }
+
+  .backtest-calendar-trade-toggle {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .backtest-calendar-trade-main {
+    width: 100%;
+    align-items: flex-start;
+  }
+
+  .backtest-calendar-trade-side {
+    width: 100%;
+    justify-items: start;
+    text-align: left;
+  }
+
+  .backtest-calendar-trade-stat-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .backtest-trade-mini-chart {
+    height: 210px;
+  }
+}
+
 .researchWorkspace {
   padding-bottom: 3rem;
 }

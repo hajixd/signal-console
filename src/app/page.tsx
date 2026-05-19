@@ -7,7 +7,7 @@ import AutoTradeAccountModeSwitch from "@/components/auto-trading/auto-trade-acc
 import AutoTradingConnectionDrawer from "@/components/auto-trading/auto-trading-connection-drawer";
 import SelectedStrategyStats from "@/components/strategies/selected-strategy-stats";
 import StrategySelector from "@/components/strategies/strategy-selector";
-import EditableTradeHistory from "@/components/trades/editable-trade-history";
+import BacktestHistoryPanel from "@/components/trades/backtest-history-panel";
 import { type TradeHistoryRow } from "@/components/trades/trade-history";
 import { type TradeChartTimeframe } from "@/components/trades/trade-price-chart";
 import AutoRefresh from "@/components/ui/auto-refresh";
@@ -1439,6 +1439,8 @@ export default async function Home({ searchParams }: HomeProps) {
   const selectedBasketTrades = selectedBacktestTrades.map((trade) => ({
     key: trade.datasetId,
     entryTime: trade.entryTime,
+    exitTime: trade.exitTime,
+    barsHeld: trade.barsHeld,
     basePnlDollars: tradeDollarPnl(trade, optionByKey.get(trade.datasetId)?.sizeMultiplier ?? 1),
     rMultiple: trade.rMultiple
   }));
@@ -1948,31 +1950,14 @@ export default async function Home({ searchParams }: HomeProps) {
         </section>
 
         <section className="backtest-card history-card" id="backtest" aria-label="Backtest trade history">
-          <div className="backtest-card-head">
-            <div>
-              <h2>Backtest History</h2>
-              <p>
-                Stored backtest trades plus closed live alerts for the active market. Latest history trade:{" "}
-                <LocalDateTime value={latestHistoryTradeAt} fallback="unknown" />.
-              </p>
-            </div>
-            <div className="historyHeadActions">
-              <span className={`count-pill${backtestBehindMarketData ? " warning" : ""}`}>{historySourceLabel}</span>
-            </div>
-          </div>
-
-          {tradeHistoryRows.length === 0 ? (
-            <div className="empty-state">
-              <strong>No backtest trades match</strong>
-              <span>No stored backtest trades or closed live alerts are available for this market.</span>
-            </div>
-          ) : (
-            <EditableTradeHistory
-              rows={visibleTradeHistoryRows}
-              strategies={strategyOptions}
-              persistedStrategyEdits={liveConfig.strategyEdits}
-            />
-          )}
+          <BacktestHistoryPanel
+            backtestBehindMarketData={backtestBehindMarketData}
+            historySourceLabel={historySourceLabel}
+            latestHistoryTradeAt={latestHistoryTradeAt}
+            rows={visibleTradeHistoryRows}
+            strategies={strategyOptions}
+            persistedStrategyEdits={liveConfig.strategyEdits}
+          />
         </section>
 
         <section className="backtest-card history-card" id="cron" aria-label="Cron execution history">
