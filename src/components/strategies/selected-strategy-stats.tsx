@@ -16,11 +16,17 @@ type BasketTrade = {
 };
 
 type DollarAggregate = {
+  avgLossDollars: number;
   trades: number;
+  avgWinDollars: number;
+  consistencyScorePct: number | null;
   wins: number;
   losses: number;
   winRatePct: number;
   profitFactor: number;
+  rewardRiskRatio: number;
+  sharpeRatio: number;
+  sortinoRatio: number;
   totalDollars: number;
   avgDollars: number;
 };
@@ -70,32 +76,103 @@ function statTone(value: number, higherIsGood = true): string {
   return good ? "tone-up" : "tone-down";
 }
 
-function aggregateDollars(trades: BasketTrade[], pnlForTrade: (trade: BasketTrade) => number): DollarAggregate {
+function ratioTone(value: number, threshold: number): string {
+  if (!Number.isFinite(value)) return value > 0 ? "tone-up" : "tone-neutral";
+  if (value >= threshold) return "tone-up";
+  if (value > 0) return "tone-neutral";
+  return "tone-down";
+}
+
+function consistencyTone(value: number | null): string {
+  if (value == null) return "tone-neutral";
+  if (value >= 60) return "tone-up";
+  if (value >= 50) return "tone-neutral";
+  return "tone-down";
+}
+
+function fmtRiskReward(value: number): string {
+  if (!Number.isFinite(value)) return value > 0 ? "1:inf" : "--";
+  return value > 0 ? `1:${fmtNumber(value)}` : "--";
+}
+
+function localTradeDayKey(value: string): string {
+  const date = new Date(value);
+  if (!Number.isFinite(date.getTime())) return value;
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function mean(values: number[]): number {
+  return values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : 0;
+}
+
+function sampleStdDev(values: number[], average: number): number {
+  if (values.length < 2) return 0;
+  const variance = values.reduce((sum, value) => sum + (value - average) ** 2, 0) / (values.length - 1);
+  return Math.sqrt(Math.max(0, variance));
+}
+
+function downsideDeviation(values: number[]): number {
+  if (!values.length) return 0;
+  const downsideVariance = values.reduce((sum, value) => sum + Math.min(0, value) ** 2, 0) / values.length;
+  return Math.sqrt(Math.max(0, downsideVariance));
+}
+
+function annualizedRatio(average: number, deviation: number, periodsPerYear: number): number {
+  if (deviation === 0) return average > 0 ? Infinity : 0;
+  return (average / deviation) * Math.sqrt(Math.max(1, periodsPerYear));
+}
+
+function aggregateDollars(trades: BasketTrade[], pnlForTrade: (trade: BasketTrade) => number, tradesPerYear: number): DollarAggregate {
   let grossWins = 0;
   let grossLosses = 0;
   let totalDollars = 0;
+  let winDollars = 0;
+  let lossDollars = 0;
   let wins = 0;
   let losses = 0;
+  const rMultiples: number[] = [];
+  const dailyPnl = new Map<string, number>();
 
   for (const trade of trades) {
     const pnl = pnlForTrade(trade);
     const result = trade.rMultiple;
     totalDollars += pnl;
+    if (Number.isFinite(result)) rMultiples.push(result);
+    const dayKey = localTradeDayKey(trade.entryTime);
+    dailyPnl.set(dayKey, (dailyPnl.get(dayKey) ?? 0) + pnl);
+
     if (result > 0) {
       wins += 1;
       grossWins += result;
+      winDollars += pnl;
     } else if (result < 0) {
       losses += 1;
       grossLosses += Math.abs(result);
+      lossDollars += pnl;
     }
   }
 
+  const averageR = mean(rMultiples);
+  const avgWinDollars = wins ? winDollars / wins : 0;
+  const avgLossDollars = losses ? lossDollars / losses : 0;
+  const largestWinningDay = Math.max(0, ...dailyPnl.values());
+  const consistencyRatio = totalDollars > 0 && largestWinningDay > 0 ? largestWinningDay / totalDollars : null;
+
   return {
+    avgLossDollars,
+    avgWinDollars,
+    consistencyScorePct: consistencyRatio == null ? null : Math.max(0, Math.min(100, (1 - consistencyRatio) * 100)),
     trades: trades.length,
     wins,
     losses,
     winRatePct: trades.length ? (wins / trades.length) * 100 : 0,
     profitFactor: grossLosses ? grossWins / grossLosses : grossWins ? Infinity : 0,
+    rewardRiskRatio: avgLossDollars < 0 ? avgWinDollars / Math.abs(avgLossDollars) : avgWinDollars > 0 ? Infinity : 0,
+    sharpeRatio: annualizedRatio(averageR, sampleStdDev(rMultiples, averageR), tradesPerYear),
+    sortinoRatio: annualizedRatio(averageR, downsideDeviation(rMultiples), tradesPerYear),
     totalDollars,
     avgDollars: trades.length ? totalDollars / trades.length : 0
   };
@@ -130,11 +207,11 @@ function tradeCadence(trades: BasketTrade[]) {
 export default function SelectedStrategyStats({ dataEndAt, strategies, trades, persistedStrategyEdits }: SelectedStrategyStatsProps) {
   const edits = useStrategyEdits(strategies, persistedStrategyEdits);
   const strategyByKey = new Map(strategies.map((strategy) => [strategy.key, strategy]));
+  const selectedCadence = tradeCadence(trades);
   const selectedDollarAggregate = aggregateDollars(trades, (trade) => {
     const strategy = strategyByKey.get(trade.key);
     return trade.basePnlDollars * (strategy ? strategyContractScale(strategy, edits) : 1);
-  });
-  const selectedCadence = tradeCadence(trades);
+  }, selectedCadence.perYear);
 
   return (
     <div className="backtest-stats-grid">
@@ -185,6 +262,30 @@ export default function SelectedStrategyStats({ dataEndAt, strategies, trades, p
       <div className="backtest-stat-card tone-neutral date-stat-card">
         <span>End date</span>
         <strong><LocalDateTimeStack value={latestEndDate(dataEndAt, selectedCadence.end)} /></strong>
+      </div>
+      <div className={`backtest-stat-card ${ratioTone(selectedDollarAggregate.sharpeRatio, 1)}`}>
+        <span>Sharpe ratio</span>
+        <strong>{selectedDollarAggregate.trades ? fmtNumber(selectedDollarAggregate.sharpeRatio) : "--"}</strong>
+      </div>
+      <div className={`backtest-stat-card ${ratioTone(selectedDollarAggregate.sortinoRatio, 1)}`}>
+        <span>Sortino</span>
+        <strong>{selectedDollarAggregate.trades ? fmtNumber(selectedDollarAggregate.sortinoRatio) : "--"}</strong>
+      </div>
+      <div className={`backtest-stat-card ${statTone(selectedDollarAggregate.avgWinDollars)}`}>
+        <span>Average win</span>
+        <strong>{selectedDollarAggregate.wins ? fmtMoney(selectedDollarAggregate.avgWinDollars, true) : "--"}</strong>
+      </div>
+      <div className={`backtest-stat-card ${statTone(selectedDollarAggregate.avgLossDollars)}`}>
+        <span>Average loss</span>
+        <strong>{selectedDollarAggregate.losses ? fmtMoney(selectedDollarAggregate.avgLossDollars, true) : "--"}</strong>
+      </div>
+      <div className={`backtest-stat-card ${ratioTone(selectedDollarAggregate.rewardRiskRatio, 2)}`}>
+        <span>Risk / reward</span>
+        <strong>{selectedDollarAggregate.trades ? fmtRiskReward(selectedDollarAggregate.rewardRiskRatio) : "--"}</strong>
+      </div>
+      <div className={`backtest-stat-card ${consistencyTone(selectedDollarAggregate.consistencyScorePct)}`}>
+        <span>Consistency</span>
+        <strong>{selectedDollarAggregate.consistencyScorePct == null ? "--" : fmtPct(selectedDollarAggregate.consistencyScorePct)}</strong>
       </div>
     </div>
   );
