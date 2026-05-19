@@ -835,12 +835,11 @@ function boundedTradeDollarPnl(
   const normalizedExit = String(trade.exitReason ?? "").toLowerCase();
   const target = Math.abs(targetDollars);
   const risk = Math.abs(riskDollars);
-  const rMultiple = finiteNumberOr(trade.rMultiple, risk > 0 ? rawPnlDollars / risk : 0);
 
-  if (target > 0 && (normalizedExit.includes("take") || normalizedExit.includes("tp") || rMultiple >= 1 || rawPnlDollars >= target)) {
+  if (target > 0 && (normalizedExit === "tp" || normalizedExit.includes("take") || normalizedExit.includes("target"))) {
     return target;
   }
-  if (risk > 0 && (normalizedExit.includes("stop") || normalizedExit.includes("sl") || rMultiple <= -1 || rawPnlDollars <= -risk)) {
+  if (risk > 0 && (normalizedExit === "sl" || normalizedExit.includes("stop"))) {
     return -risk;
   }
 

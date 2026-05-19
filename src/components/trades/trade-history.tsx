@@ -184,7 +184,7 @@ function nearestPositionForAnchor(bars: ChartBar[], indexValue: number, timeValu
 
 function tradePathStats(trade: TradeHistoryRow, bars: ChartBar[]): { mfe: number | null; mae: number | null } {
   const entryPosition = nearestPositionForAnchor(bars, trade.entryIndex, trade.entryTime);
-  const exitPosition = resolvedExitPositionForTrade(trade, bars);
+  const exitPosition = nearestPositionForAnchor(bars, trade.exitIndex, trade.exitTime);
   if (entryPosition == null || exitPosition == null || !bars.length) return { mfe: null, mae: null };
 
   const start = Math.min(entryPosition, exitPosition);
@@ -206,37 +206,9 @@ function tradePathStats(trade: TradeHistoryRow, bars: ChartBar[]): { mfe: number
   }
 
   return {
-    mfe: Number.isFinite(maxFavorable) ? Math.min(maxFavorable, Math.max(0, trade.targetDollars)) : null,
-    mae: Number.isFinite(maxAdverse) ? Math.min(maxAdverse, Math.max(0, trade.riskDollars)) : null
+    mfe: Number.isFinite(maxFavorable) ? maxFavorable : null,
+    mae: Number.isFinite(maxAdverse) ? maxAdverse : null
   };
-}
-
-function priceTouched(bar: ChartBar, price: number): boolean {
-  return Number.isFinite(price) && bar.low <= price && bar.high >= price;
-}
-
-function exitTouchPrice(trade: TradeHistoryRow): number | null {
-  const targetTolerance = Math.max(Math.abs(trade.targetPrice) * 0.00001, 0.00001);
-  const stopTolerance = Math.max(Math.abs(trade.stopPrice) * 0.00001, 0.00001);
-  if (Math.abs(trade.exitPrice - trade.targetPrice) <= targetTolerance) return trade.targetPrice;
-  if (Math.abs(trade.exitPrice - trade.stopPrice) <= stopTolerance) return trade.stopPrice;
-  return null;
-}
-
-function resolvedExitPositionForTrade(trade: TradeHistoryRow, bars: ChartBar[]): number | null {
-  const entryPosition = nearestPositionForAnchor(bars, trade.entryIndex, trade.entryTime);
-  const fallbackExitPosition = nearestPositionForAnchor(bars, trade.exitIndex, trade.exitTime);
-  if (entryPosition == null) return fallbackExitPosition;
-
-  const targetPrice = exitTouchPrice(trade);
-  if (targetPrice == null) return fallbackExitPosition;
-
-  for (let position = entryPosition; position < bars.length; position += 1) {
-    const bar = bars[position];
-    if (bar && priceTouched(bar, targetPrice)) return position;
-  }
-
-  return fallbackExitPosition;
 }
 
 function InfoBox({
