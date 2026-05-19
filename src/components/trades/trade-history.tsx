@@ -205,9 +205,12 @@ function tradePathStats(trade: TradeHistoryRow, bars: ChartBar[]): { mfe: number
     maxAdverse = Math.max(maxAdverse, adverse);
   }
 
+  const targetCap = Math.abs(trade.targetDollars);
+  const riskCap = Math.abs(trade.riskDollars);
+
   return {
-    mfe: Number.isFinite(maxFavorable) ? maxFavorable : null,
-    mae: Number.isFinite(maxAdverse) ? maxAdverse : null
+    mfe: Number.isFinite(maxFavorable) ? (targetCap > 0 ? Math.min(maxFavorable, targetCap) : maxFavorable) : null,
+    mae: Number.isFinite(maxAdverse) ? (riskCap > 0 ? Math.min(maxAdverse, riskCap) : maxAdverse) : null
   };
 }
 

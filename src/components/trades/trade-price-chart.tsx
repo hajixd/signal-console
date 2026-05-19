@@ -478,6 +478,40 @@ function candleIndex(candles: MappedCandle[], candle: MappedCandle | null): numb
   return found >= 0 ? found : 0;
 }
 
+function firstBracketExitCandle(
+  candles: MappedCandle[],
+  trade: TradeChartTrade,
+  entryCandle: MappedCandle | null,
+  fallbackExitCandle: MappedCandle | null
+): MappedCandle | null {
+  if (!entryCandle || !fallbackExitCandle || !candles.length) return fallbackExitCandle;
+
+  const entryPosition = candleIndex(candles, entryCandle);
+  const fallbackExitPosition = candleIndex(candles, fallbackExitCandle);
+  const start = Math.min(entryPosition, fallbackExitPosition);
+  const end = Math.max(entryPosition, fallbackExitPosition);
+  const direction = trade.side === "long" ? 1 : -1;
+  const rawExitPnl = rawTradePnlAtPrice(trade, trade.exitPrice);
+  const targetDollars = Math.abs(trade.targetDollars ?? Infinity);
+  const riskDollars = Math.abs(trade.riskDollars ?? Infinity);
+  const targetIsExit = rawExitPnl != null && Number.isFinite(targetDollars) && targetDollars > 0 && rawExitPnl >= targetDollars - 0.01;
+  const stopIsExit = rawExitPnl != null && Number.isFinite(riskDollars) && riskDollars > 0 && rawExitPnl <= -riskDollars + 0.01;
+
+  if (!targetIsExit && !stopIsExit) return fallbackExitCandle;
+
+  for (let position = start; position <= end; position += 1) {
+    const candle = candles[position];
+    if (!candle) continue;
+
+    const targetHit = direction === 1 ? candle.high >= trade.targetPrice : candle.low <= trade.targetPrice;
+    const stopHit = direction === 1 ? candle.low <= trade.stopPrice : candle.high >= trade.stopPrice;
+    if (targetIsExit && targetHit) return candle;
+    if (stopIsExit && stopHit) return candle;
+  }
+
+  return fallbackExitCandle;
+}
+
 function tradeLogicalRange(candles: MappedCandle[], entryCandle: MappedCandle | null, exitCandle: MappedCandle | null): NumberRange {
   const entryPosition = candleIndex(candles, entryCandle);
   const exitPosition = candleIndex(candles, exitCandle);
@@ -696,8 +730,7 @@ function applyTradeOverlay(series: TradeOverlaySeries, snapshot: TradeVisualSnap
   const startTime = snapshot.entryCandle.time as Time;
   const pathEndTime = pathEndCandle.time as Time;
   const areaEndCandle = snapshot.exitCandle ?? pathEndCandle;
-  const parsedExitTime = timestampFromTime(snapshot.trade.exitTime);
-  const areaEndTime = (parsedExitTime ?? areaEndCandle.time) as Time;
+  const areaEndTime = areaEndCandle.time as Time;
 
   series.profitZone.setData(overlayLineData(startTime, areaEndTime, snapshot.trade.targetPrice));
   series.lossZone.setData(overlayLineData(startTime, areaEndTime, snapshot.trade.stopPrice));
@@ -857,8 +890,7 @@ function tradeDomOverlayGeometry(
   const x1 = chartXForTime(chart, candles, startTime, dataTimeframe);
   const markerX = chartXForTime(chart, candles, endTime, dataTimeframe);
   const areaEndCandle = snapshot.exitCandle ?? pathEndCandle;
-  const parsedExitTime = timestampFromTime(snapshot.trade.exitTime);
-  const areaEndTime = (parsedExitTime ?? areaEndCandle.time) as Time;
+  const areaEndTime = areaEndCandle.time as Time;
   const areaEndCandleForTime = replayCandleForTime(candles, areaEndTime) ?? areaEndCandle;
   const areaEndX = chartXForTime(chart, candles, areaEndTime, dataTimeframe);
   const areaX2 = areaEndX == null ? markerX : chartCandleRightEdgeX(chart, candles, areaEndCandleForTime, areaEndX);
@@ -2582,8 +2614,8 @@ export default function TradePriceChart({
     [mappedCandles, trade.entryIndex, trade.signalTime]
   );
   const exitCandle = useMemo(
-    () => nearestMappedCandle(mappedCandles, trade.exitIndex, trade.exitTime),
-    [mappedCandles, trade.exitIndex, trade.exitTime]
+    () => firstBracketExitCandle(mappedCandles, trade, entryCandle, nearestMappedCandle(mappedCandles, trade.exitIndex, trade.exitTime)),
+    [entryCandle, mappedCandles, trade]
   );
   const structureMappedCandles = useMemo(
     () => aggregateCandlesForTimeframe(mappedCandles, effectiveDataTimeframe, strategyStructureTimeframe),
@@ -2598,8 +2630,8 @@ export default function TradePriceChart({
     [structureMappedCandles, trade.entryIndex, trade.signalTime]
   );
   const structureExitCandle = useMemo(
-    () => nearestMappedCandle(structureMappedCandles, trade.exitIndex, trade.exitTime),
-    [structureMappedCandles, trade.exitIndex, trade.exitTime]
+    () => firstBracketExitCandle(structureMappedCandles, trade, structureEntryCandle, nearestMappedCandle(structureMappedCandles, trade.exitIndex, trade.exitTime)),
+    [structureEntryCandle, structureMappedCandles, trade]
   );
   const visibleAnchor = entryCandle ?? mappedCandles[0] ?? null;
   const currentPartialSource = currentReplayCandle

@@ -825,25 +825,58 @@ function tradeDollarPnl(trade: BacktestTrade, sizeMultiplier = 1): number {
   return trade.netUnits * dollarPerUnit(trade.symbol, trade.entryPrice) * tradeSizeMultiplier(trade, sizeMultiplier);
 }
 
-function boundedTradeDollarPnl(
-  trade: BacktestTrade,
+function boundedTradeDollarPnl(rawPnlDollars: number, targetDollars: number, riskDollars: number): number {
+  if (!Number.isFinite(rawPnlDollars)) return 0;
+  const target = Math.abs(targetDollars);
+  const risk = Math.abs(riskDollars);
+  let bounded = rawPnlDollars;
+
+  if (target > 0) bounded = Math.min(bounded, target);
+  if (risk > 0) bounded = Math.max(bounded, -risk);
+
+  return bounded;
+}
+
+type EffectiveExitBoundary = "target" | "stop" | null;
+
+function effectiveExitBoundaryFromPnl(
+  exitReason: string | undefined,
   rawPnlDollars: number,
   targetDollars: number,
   riskDollars: number
-): number {
-  if (!Number.isFinite(rawPnlDollars)) return 0;
-  const normalizedExit = String(trade.exitReason ?? "").toLowerCase();
+): EffectiveExitBoundary {
+  const normalizedExit = String(exitReason ?? "").toLowerCase();
   const target = Math.abs(targetDollars);
   const risk = Math.abs(riskDollars);
+  const tolerance = 0.01;
 
   if (target > 0 && (normalizedExit === "tp" || normalizedExit.includes("take") || normalizedExit.includes("target"))) {
-    return target;
+    return "target";
   }
   if (risk > 0 && (normalizedExit === "sl" || normalizedExit.includes("stop"))) {
-    return -risk;
+    return "stop";
   }
+  if (target > 0 && rawPnlDollars >= target - tolerance) return "target";
+  if (risk > 0 && rawPnlDollars <= -risk + tolerance) return "stop";
 
-  return rawPnlDollars;
+  return null;
+}
+
+function effectiveExitReason(exitReason: string, boundary: EffectiveExitBoundary): string {
+  if (boundary === "target") return "take_profit";
+  if (boundary === "stop") return "stop_loss";
+  return exitReason;
+}
+
+function effectiveBacktestExitPrice(
+  trade: BacktestTrade,
+  targetPrice: number,
+  stopPrice: number,
+  boundary: EffectiveExitBoundary
+): number {
+  if (boundary === "target") return targetPrice;
+  if (boundary === "stop") return stopPrice;
+  return trade.exitPrice;
 }
 
 function tradeCostUnits(trade: BacktestTrade): number {
@@ -1241,12 +1274,16 @@ export default async function Home({ searchParams }: HomeProps) {
     const unitLabel = instrumentUnitLabel(trade.symbol);
     const targetDollars = tradeTargetDollars(trade, sizeMultiplier);
     const riskDollars = tradeRiskDollars(trade, sizeMultiplier);
-    const dollarPnl = boundedTradeDollarPnl(trade, rawDollarPnl, targetDollars, riskDollars);
+    const dollarPnl = boundedTradeDollarPnl(rawDollarPnl, targetDollars, riskDollars);
     const displayRMultiple = riskDollars > 0 ? dollarPnl / riskDollars : trade.rMultiple;
     const priceUnit = liveRuleByKey.get(trade.logicalKey)?.tickSize ?? statByKey.get(trade.key)?.pipOrTickSize ?? 1;
     const targetPrice = tradeTargetPrice(trade, priceUnit);
     const stopPrice = tradeStopPrice(trade, priceUnit);
     const dollarsPerPricePoint = tradeDollarsPerPricePoint(trade, priceUnit, sizeMultiplier);
+    const exitBoundary = effectiveExitBoundaryFromPnl(trade.exitReason, rawDollarPnl, targetDollars, riskDollars);
+    const displayExitPrice = effectiveBacktestExitPrice(trade, targetPrice, stopPrice, exitBoundary);
+    const direction = trade.side === "long" ? 1 : -1;
+    const displayNetUnits = priceUnit > 0 ? ((displayExitPrice - trade.entryPrice) * direction) / priceUnit : trade.netUnits;
     return {
       id: `${trade.key}-${trade.entryTime}-${index}`,
       strategyKey: trade.datasetId,
@@ -1271,22 +1308,22 @@ export default async function Home({ searchParams }: HomeProps) {
       variantId: trade.variantId,
       entryType: tradeEntryType(trade),
       entryPrice: trade.entryPrice,
-      exitPrice: trade.exitPrice,
+      exitPrice: displayExitPrice,
       targetPrice,
       stopPrice,
       signalTimeLabel: fmtTime(trade.signalTime),
       entryTimeLabel: fmtTime(trade.entryTime),
       exitTimeLabel: fmtTime(trade.exitTime),
       entryPriceLabel: fmtDollarPrice(trade.entryPrice),
-      exitPriceLabel: fmtDollarPrice(trade.exitPrice),
+      exitPriceLabel: fmtDollarPrice(displayExitPrice),
       targetPriceLabel: fmtDollarPrice(targetPrice),
       stopPriceLabel: fmtDollarPrice(stopPrice),
       durationLabel: `${fmtNumber(trade.barsHeld)} bars`,
       durationDetailLabel: fmtDuration(trade.entryTime, trade.exitTime),
-      exitReasonLabel: fmtExitReason(trade.exitReason),
+      exitReasonLabel: fmtExitReason(effectiveExitReason(trade.exitReason, exitBoundary)),
       pnlLabel: fmtMoney(dollarPnl, true),
       rMultipleLabel: `${fmtNumber(displayRMultiple)}R`,
-      netUnitsLabel: `${fmtNumber(trade.netUnits)} ${unitLabel}`,
+      netUnitsLabel: `${fmtNumber(displayNetUnits)} ${unitLabel}`,
       sizeLabel: instrumentSizeLabel(trade.symbol, tradeMultiplier),
       sizeMultiplier: tradeMultiplier,
       targetRiskLabel: `${fmtMoney(targetDollars)} / ${fmtMoney(-riskDollars)}`,
@@ -1326,12 +1363,15 @@ export default async function Home({ searchParams }: HomeProps) {
       const sizeMultiplier = finiteNumberOr(trade.sizeMultiplier, option?.sizeMultiplier ?? 1);
       const targetDollars = alertTargetDollarsWithSize(trade, sizeMultiplier);
       const riskDollars = alertRiskDollarsWithSize(trade, sizeMultiplier);
-      const exitPrice = finiteNumberOr(trade.lifecyclePrice, trade.entryPrice);
-      const pnlDollars = finiteNumberOr(
+      const rawExitPrice = finiteNumberOr(trade.lifecyclePrice, trade.entryPrice);
+      const rawPnlDollars = finiteNumberOr(
         trade.lifecyclePnlDollars,
         trade.lifecycleStatus === "take_profit" ? targetDollars : trade.lifecycleStatus === "stop_loss" ? -riskDollars : 0
       );
-      const rMultiple = finiteNumberOr(trade.lifecycleRMultiple, riskDollars > 0 ? pnlDollars / riskDollars : 0);
+      const pnlDollars = boundedTradeDollarPnl(rawPnlDollars, targetDollars, riskDollars);
+      const rMultiple = riskDollars > 0 ? pnlDollars / riskDollars : finiteNumberOr(trade.lifecycleRMultiple, 0);
+      const exitBoundary = effectiveExitBoundaryFromPnl(trade.lifecycleStatus, rawPnlDollars, targetDollars, riskDollars);
+      const exitPrice = exitBoundary === "target" ? trade.takeProfitPrice : exitBoundary === "stop" ? trade.stopLossPrice : rawExitPrice;
       const sideMultiplier = trade.side === "long" ? 1 : -1;
       const netUnits = priceUnit > 0 ? ((exitPrice - trade.entryPrice) * sideMultiplier) / priceUnit : 0;
       const unitLabel = instrumentUnitLabel(trade.symbol);
@@ -1373,7 +1413,7 @@ export default async function Home({ searchParams }: HomeProps) {
         stopPriceLabel: fmtDollarPrice(trade.stopLossPrice),
         durationLabel: `${fmtNumber(barsHeld)} bars`,
         durationDetailLabel: fmtDuration(trade.signalTime, trade.lifecycleTime),
-        exitReasonLabel: fmtExitReason(trade.lifecycleStatus),
+        exitReasonLabel: fmtExitReason(effectiveExitReason(trade.lifecycleStatus, exitBoundary)),
         pnlLabel: fmtMoney(pnlDollars, true),
         rMultipleLabel: `${fmtNumber(rMultiple)}R`,
         netUnitsLabel: `${fmtNumber(netUnits)} ${unitLabel}`,
