@@ -472,64 +472,6 @@ function nearestMappedCandle(candles: MappedCandle[], indexValue: number, timeVa
   return bestCandle;
 }
 
-function priceTouched(candle: MappedCandle, price: number): boolean {
-  return Number.isFinite(price) && candle.low <= price && candle.high >= price;
-}
-
-function exitTouchPrice(trade: TradeChartTrade): number | null {
-  const targetTolerance = Math.max(Math.abs(trade.targetPrice) * 0.00001, 0.00001);
-  const stopTolerance = Math.max(Math.abs(trade.stopPrice) * 0.00001, 0.00001);
-  if (Math.abs(trade.exitPrice - trade.targetPrice) <= targetTolerance) return trade.targetPrice;
-  if (Math.abs(trade.exitPrice - trade.stopPrice) <= stopTolerance) return trade.stopPrice;
-  return null;
-}
-
-function resolvedExitSearchEnd(
-  candles: MappedCandle[],
-  fallbackPosition: number,
-  trade: TradeChartTrade,
-  dataTimeframe: TradeChartTimeframe
-): number {
-  const sourceTimeframe = trade.sourceTimeframe ?? "15m";
-  const sourceSeconds = CHART_TIMEFRAME_SECONDS[sourceTimeframe];
-  const dataSeconds = CHART_TIMEFRAME_SECONDS[dataTimeframe];
-  const exitTime = timestampFromTime(trade.exitTime);
-  if (!exitTime || dataSeconds >= sourceSeconds) return fallbackPosition;
-
-  const windowEndTime = Number(exitTime) + sourceSeconds - dataSeconds;
-  let searchEnd = fallbackPosition;
-  for (let position = fallbackPosition; position < candles.length; position += 1) {
-    if (Number(candles[position]!.time) > windowEndTime) break;
-    searchEnd = position;
-  }
-
-  return searchEnd;
-}
-
-function resolvedExitCandle(
-  candles: MappedCandle[],
-  trade: TradeChartTrade,
-  entryCandle: MappedCandle | null,
-  dataTimeframe: TradeChartTimeframe
-): MappedCandle | null {
-  if (!candles.length) return null;
-  const fallback = nearestMappedCandle(candles, trade.exitIndex, trade.exitTime);
-  const touchPrice = exitTouchPrice(trade);
-  if (touchPrice == null) return fallback;
-
-  const entryPosition = candleIndex(candles, entryCandle);
-  const fallbackPosition = candleIndex(candles, fallback);
-  const searchStart = Math.max(entryPosition, 0);
-  const searchEnd = Math.min(candles.length - 1, Math.max(fallbackPosition, resolvedExitSearchEnd(candles, fallbackPosition, trade, dataTimeframe)));
-
-  for (let position = searchStart; position <= searchEnd; position += 1) {
-    const candle = candles[position]!;
-    if (priceTouched(candle, touchPrice)) return candle;
-  }
-
-  return fallback;
-}
-
 function candleIndex(candles: MappedCandle[], candle: MappedCandle | null): number {
   if (!candle) return 0;
   const found = candles.findIndex((candidate) => candidate.time === candle.time);
@@ -2612,8 +2554,8 @@ export default function TradePriceChart({
     [mappedCandles, trade.entryIndex, trade.signalTime]
   );
   const exitCandle = useMemo(
-    () => resolvedExitCandle(mappedCandles, trade, entryCandle, effectiveDataTimeframe),
-    [effectiveDataTimeframe, entryCandle, mappedCandles, trade]
+    () => nearestMappedCandle(mappedCandles, trade.exitIndex, trade.exitTime),
+    [mappedCandles, trade.exitIndex, trade.exitTime]
   );
   const structureMappedCandles = useMemo(
     () => aggregateCandlesForTimeframe(mappedCandles, effectiveDataTimeframe, strategyStructureTimeframe),
@@ -2628,8 +2570,8 @@ export default function TradePriceChart({
     [structureMappedCandles, trade.entryIndex, trade.signalTime]
   );
   const structureExitCandle = useMemo(
-    () => resolvedExitCandle(structureMappedCandles, trade, structureEntryCandle, strategyStructureTimeframe),
-    [structureEntryCandle, structureMappedCandles, strategyStructureTimeframe, trade]
+    () => nearestMappedCandle(structureMappedCandles, trade.exitIndex, trade.exitTime),
+    [structureMappedCandles, trade.exitIndex, trade.exitTime]
   );
   const visibleAnchor = entryCandle ?? mappedCandles[0] ?? null;
   const currentPartialSource = currentReplayCandle
