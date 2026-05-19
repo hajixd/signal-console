@@ -120,12 +120,12 @@ function downsideDeviation(values: number[]): number {
   return Math.sqrt(Math.max(0, downsideVariance));
 }
 
-function annualizedRatio(average: number, deviation: number, periodsPerYear: number): number {
+function riskAdjustedRatio(average: number, deviation: number): number {
   if (deviation === 0) return average > 0 ? Infinity : 0;
-  return (average / deviation) * Math.sqrt(Math.max(1, periodsPerYear));
+  return average / deviation;
 }
 
-function aggregateDollars(trades: BasketTrade[], pnlForTrade: (trade: BasketTrade) => number, tradesPerYear: number): DollarAggregate {
+function aggregateDollars(trades: BasketTrade[], pnlForTrade: (trade: BasketTrade) => number): DollarAggregate {
   let grossWins = 0;
   let grossLosses = 0;
   let totalDollars = 0;
@@ -171,8 +171,8 @@ function aggregateDollars(trades: BasketTrade[], pnlForTrade: (trade: BasketTrad
     winRatePct: trades.length ? (wins / trades.length) * 100 : 0,
     profitFactor: grossLosses ? grossWins / grossLosses : grossWins ? Infinity : 0,
     rewardRiskRatio: avgLossDollars < 0 ? avgWinDollars / Math.abs(avgLossDollars) : avgWinDollars > 0 ? Infinity : 0,
-    sharpeRatio: annualizedRatio(averageR, sampleStdDev(rMultiples, averageR), tradesPerYear),
-    sortinoRatio: annualizedRatio(averageR, downsideDeviation(rMultiples), tradesPerYear),
+    sharpeRatio: riskAdjustedRatio(averageR, sampleStdDev(rMultiples, averageR)),
+    sortinoRatio: riskAdjustedRatio(averageR, downsideDeviation(rMultiples)),
     totalDollars,
     avgDollars: trades.length ? totalDollars / trades.length : 0
   };
@@ -211,7 +211,7 @@ export default function SelectedStrategyStats({ dataEndAt, strategies, trades, p
   const selectedDollarAggregate = aggregateDollars(trades, (trade) => {
     const strategy = strategyByKey.get(trade.key);
     return trade.basePnlDollars * (strategy ? strategyContractScale(strategy, edits) : 1);
-  }, selectedCadence.perYear);
+  });
 
   return (
     <div className="backtest-stats-grid">
@@ -264,11 +264,11 @@ export default function SelectedStrategyStats({ dataEndAt, strategies, trades, p
         <strong><LocalDateTimeStack value={latestEndDate(dataEndAt, selectedCadence.end)} /></strong>
       </div>
       <div className={`backtest-stat-card ${ratioTone(selectedDollarAggregate.sharpeRatio, 1)}`}>
-        <span>Sharpe ratio</span>
+        <span>Trade Sharpe</span>
         <strong>{selectedDollarAggregate.trades ? fmtNumber(selectedDollarAggregate.sharpeRatio) : "--"}</strong>
       </div>
       <div className={`backtest-stat-card ${ratioTone(selectedDollarAggregate.sortinoRatio, 1)}`}>
-        <span>Sortino</span>
+        <span>Trade Sortino</span>
         <strong>{selectedDollarAggregate.trades ? fmtNumber(selectedDollarAggregate.sortinoRatio) : "--"}</strong>
       </div>
       <div className={`backtest-stat-card ${statTone(selectedDollarAggregate.avgWinDollars)}`}>
