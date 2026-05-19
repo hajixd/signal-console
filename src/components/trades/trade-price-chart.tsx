@@ -694,18 +694,21 @@ function applyTradeOverlay(series: TradeOverlaySeries, snapshot: TradeVisualSnap
   }
 
   const startTime = snapshot.entryCandle.time as Time;
-  const endTime = pathEndCandle.time as Time;
+  const pathEndTime = pathEndCandle.time as Time;
+  const areaEndCandle = snapshot.exitCandle ?? pathEndCandle;
+  const parsedExitTime = timestampFromTime(snapshot.trade.exitTime);
+  const areaEndTime = (parsedExitTime ?? areaEndCandle.time) as Time;
 
-  series.profitZone.setData(overlayLineData(startTime, endTime, snapshot.trade.targetPrice));
-  series.lossZone.setData(overlayLineData(startTime, endTime, snapshot.trade.stopPrice));
-  series.entryLine.setData(overlayLineData(startTime, endTime, snapshot.trade.entryPrice));
-  series.targetLine.setData(overlayLineData(startTime, endTime, snapshot.trade.targetPrice));
-  series.stopLine.setData(overlayLineData(startTime, endTime, snapshot.trade.stopPrice));
+  series.profitZone.setData(overlayLineData(startTime, areaEndTime, snapshot.trade.targetPrice));
+  series.lossZone.setData(overlayLineData(startTime, areaEndTime, snapshot.trade.stopPrice));
+  series.entryLine.setData(overlayLineData(startTime, areaEndTime, snapshot.trade.entryPrice));
+  series.targetLine.setData(overlayLineData(startTime, areaEndTime, snapshot.trade.targetPrice));
+  series.stopLine.setData(overlayLineData(startTime, areaEndTime, snapshot.trade.stopPrice));
   series.pathLine.setData(
-    isAscendingTime(startTime, endTime)
+    isAscendingTime(startTime, pathEndTime)
       ? [
           { time: startTime, value: snapshot.trade.entryPrice },
-          { time: endTime, value: pathEndPrice }
+          { time: pathEndTime, value: pathEndPrice }
         ]
       : [{ time: startTime, value: snapshot.trade.entryPrice }]
   );
@@ -757,6 +760,23 @@ function chartXForTime(
   const progress = clamp((Number(rawTime) - Number(candle.time)) / timeframeSeconds(dataTimeframe), 0, 1);
 
   return startX + width * progress;
+}
+
+function chartCandleRightEdgeX(chart: IChartApi, candles: MappedCandle[], candle: MappedCandle | null, fallbackX: number): number {
+  if (!candle) return fallbackX;
+  const index = candleIndex(candles, candle);
+  const centerX = chart.timeScale().logicalToCoordinate(index as Logical);
+  if (!coordinateIsVisible(centerX)) return fallbackX;
+
+  const nextX = candles[index + 1] ? chart.timeScale().logicalToCoordinate((index + 1) as Logical) : null;
+  const previousX = candles[index - 1] ? chart.timeScale().logicalToCoordinate((index - 1) as Logical) : null;
+  const barWidth = coordinateIsVisible(nextX)
+    ? Math.abs(nextX - centerX)
+    : coordinateIsVisible(previousX)
+      ? Math.abs(centerX - previousX)
+      : 6;
+
+  return centerX + barWidth / 2;
 }
 
 function structureXForTime(
@@ -835,7 +855,13 @@ function tradeDomOverlayGeometry(
   const startTime = snapshot.entryCandle.time as Time;
   const endTime = (exitRevealed ? pathEndCandle.time : snapshot.currentReplayTime ?? pathEndCandle.time) as Time;
   const x1 = chartXForTime(chart, candles, startTime, dataTimeframe);
-  const x2 = chartXForTime(chart, candles, endTime, dataTimeframe);
+  const markerX = chartXForTime(chart, candles, endTime, dataTimeframe);
+  const areaEndCandle = snapshot.exitCandle ?? pathEndCandle;
+  const parsedExitTime = timestampFromTime(snapshot.trade.exitTime);
+  const areaEndTime = (parsedExitTime ?? areaEndCandle.time) as Time;
+  const areaEndCandleForTime = replayCandleForTime(candles, areaEndTime) ?? areaEndCandle;
+  const areaEndX = chartXForTime(chart, candles, areaEndTime, dataTimeframe);
+  const areaX2 = areaEndX == null ? markerX : chartCandleRightEdgeX(chart, candles, areaEndCandleForTime, areaEndX);
   const yTarget = series.priceToCoordinate(snapshot.trade.targetPrice);
   const yStop = series.priceToCoordinate(snapshot.trade.stopPrice);
   const yPathEnd = series.priceToCoordinate(pathEndPrice);
@@ -846,7 +872,8 @@ function tradeDomOverlayGeometry(
 
   if (
     !coordinateIsVisible(x1) ||
-    !coordinateIsVisible(x2) ||
+    !coordinateIsVisible(markerX) ||
+    !coordinateIsVisible(areaX2) ||
     !coordinateIsVisible(yEntry) ||
     !coordinateIsVisible(yTarget) ||
     !coordinateIsVisible(yStop) ||
@@ -857,7 +884,8 @@ function tradeDomOverlayGeometry(
   }
 
   const clampedX1 = clamp(x1, 0, size.width);
-  const clampedX2 = clamp(x2, 0, size.width);
+  const clampedMarkerX = clamp(markerX, 0, size.width);
+  const clampedAreaX2 = clamp(areaX2, 0, size.width);
 
   return {
     entryLine: yEntry,
@@ -867,7 +895,7 @@ function tradeDomOverlayGeometry(
           label: replayPnlLabel(snapshot.trade, markerPrice, true, exitRevealed),
           side: snapshot.trade.side,
           tone: "exit",
-          x: clampedX2,
+          x: clampedMarkerX,
           y: markerY
         }
       : null,
@@ -875,12 +903,12 @@ function tradeDomOverlayGeometry(
     limitLine,
     path: {
       x1: clampedX1,
-      x2: clampedX2,
+      x2: clampedMarkerX,
       y1: yEntry,
       y2: yPathEnd
     },
-    profit: overlayBand(clampedX1, clampedX2, yEntry, yTarget),
-    risk: overlayBand(clampedX1, clampedX2, yEntry, yStop),
+    profit: overlayBand(clampedX1, clampedAreaX2, yEntry, yTarget),
+    risk: overlayBand(clampedX1, clampedAreaX2, yEntry, yStop),
     startMarker: {
       color: entryColor,
       label: `Entry ${entryAction}`,
@@ -893,7 +921,7 @@ function tradeDomOverlayGeometry(
     targetLine: yTarget,
     width: size.width,
     x1: clampedX1,
-    x2: clampedX2
+    x2: clampedAreaX2
   };
 }
 
