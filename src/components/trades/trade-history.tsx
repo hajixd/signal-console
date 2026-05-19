@@ -121,17 +121,6 @@ function formatSignedMoney(value: number): string {
   })}`;
 }
 
-function formatMoney(value: number, signed = false): string {
-  if (!Number.isFinite(value)) return "--";
-  const formatted = new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-    minimumFractionDigits: Math.abs(value) < 100 ? 2 : 0,
-    maximumFractionDigits: Math.abs(value) < 100 ? 2 : 0
-  }).format(value);
-  return signed && value > 0 ? `+${formatted}` : formatted;
-}
-
 function formatLossMoney(value: number): string {
   if (!Number.isFinite(value)) return "--";
   return `-$${Math.abs(value).toLocaleString(undefined, {
@@ -226,43 +215,11 @@ function priceTouched(bar: ChartBar, price: number): boolean {
   return Number.isFinite(price) && bar.low <= price && bar.high >= price;
 }
 
-function barProtectiveTouch(trade: TradeHistoryRow, bar: ChartBar): "tp" | "sl" | null {
-  const touchesTarget = priceTouched(bar, trade.targetPrice);
-  const touchesStop = priceTouched(bar, trade.stopPrice);
-  if (!touchesTarget && !touchesStop) return null;
-  if (touchesTarget && !touchesStop) return "tp";
-  if (!touchesTarget && touchesStop) return "sl";
-
-  const targetDistance = Math.abs(bar.open - trade.targetPrice);
-  const stopDistance = Math.abs(bar.open - trade.stopPrice);
-  return targetDistance <= stopDistance ? "tp" : "sl";
-}
-
 function exitTouchPrice(trade: TradeHistoryRow): number | null {
   const targetTolerance = Math.max(Math.abs(trade.targetPrice) * 0.00001, 0.00001);
   const stopTolerance = Math.max(Math.abs(trade.stopPrice) * 0.00001, 0.00001);
   if (Math.abs(trade.exitPrice - trade.targetPrice) <= targetTolerance) return trade.targetPrice;
   if (Math.abs(trade.exitPrice - trade.stopPrice) <= stopTolerance) return trade.stopPrice;
-  return null;
-}
-
-function resolvedProtectiveExit(
-  trade: TradeHistoryRow,
-  bars: ChartBar[]
-): { bar: ChartBar; position: number; reason: "tp" | "sl" } | null {
-  const entryPosition = nearestPositionForAnchor(bars, trade.entryIndex, trade.entryTime);
-  const fallbackExitPosition = nearestPositionForAnchor(bars, trade.exitIndex, trade.exitTime);
-  if (entryPosition == null || fallbackExitPosition == null || !bars.length) return null;
-
-  const start = Math.min(entryPosition, fallbackExitPosition);
-  const end = Math.max(entryPosition, fallbackExitPosition);
-  for (let position = start; position <= end; position += 1) {
-    const bar = bars[position];
-    if (!bar) continue;
-    const reason = barProtectiveTouch(trade, bar);
-    if (reason) return { bar, position, reason };
-  }
-
   return null;
 }
 
@@ -280,59 +237,6 @@ function resolvedExitPositionForTrade(trade: TradeHistoryRow, bars: ChartBar[]):
   }
 
   return fallbackExitPosition;
-}
-
-function resolvedTradeForDisplay(trade: TradeHistoryRow, bars: ChartBar[]): TradeHistoryRow {
-  const protectiveExit = resolvedProtectiveExit(trade, bars);
-  if (!protectiveExit) return trade;
-
-  const exitPrice = protectiveExit.reason === "tp" ? trade.targetPrice : trade.stopPrice;
-  const pnlDollars = protectiveExit.reason === "tp" ? Math.abs(trade.targetDollars) : -Math.abs(trade.riskDollars);
-  const pnlClassName = resultClassName(pnlDollars);
-  const rMultiple = trade.riskDollars > 0 ? pnlDollars / trade.riskDollars : 0;
-
-  return {
-    ...trade,
-    rowClassName: rowClassNameForPnl(pnlDollars),
-    pnlClassName,
-    pnlDollars,
-    exitIndex: protectiveExit.bar.index,
-    exitTime: protectiveExit.bar.time,
-    exitPrice,
-    exitTimeLabel: timeLabel(protectiveExit.bar.time),
-    exitPriceLabel: `$${formatChartPrice(exitPrice)}`,
-    exitReasonLabel: protectiveExit.reason === "tp" ? "Take Profit" : "Stop Loss",
-    pnlLabel: formatMoney(pnlDollars, true),
-    rMultipleLabel: `${rMultiple.toLocaleString(undefined, {
-      minimumFractionDigits: Number.isInteger(rMultiple) ? 0 : 2,
-      maximumFractionDigits: 2
-    })}R`
-  };
-}
-
-function correctedDurationLabel(trade: TradeHistoryRow, bars: ChartBar[]): string {
-  const entryPosition = nearestPositionForAnchor(bars, trade.entryIndex, trade.entryTime);
-  const exitPosition = resolvedExitPositionForTrade(trade, bars);
-  if (entryPosition == null || exitPosition == null) return `${trade.durationLabel} / ${trade.durationDetailLabel}`;
-
-  const barsHeld = Math.max(1, Math.abs(exitPosition - entryPosition) + 1);
-  const entryTime = Date.parse(bars[entryPosition]?.time ?? trade.entryTime);
-  const exitTime = Date.parse(bars[exitPosition]?.time ?? trade.exitTime);
-  const detail = Number.isFinite(entryTime) && Number.isFinite(exitTime) ? durationFromMs(Math.abs(exitTime - entryTime)) : trade.durationDetailLabel;
-  return `${barsHeld.toLocaleString()} ${barsHeld === 1 ? "bar" : "bars"} / ${detail}`;
-}
-
-function durationFromMs(value: number): string {
-  let remainingMinutes = Math.round(value / 60_000);
-  const days = Math.floor(remainingMinutes / 1440);
-  remainingMinutes -= days * 1440;
-  const hours = Math.floor(remainingMinutes / 60);
-  const minutes = remainingMinutes - hours * 60;
-  const parts: string[] = [];
-  if (days) parts.push(`${days}d`);
-  if (hours || days) parts.push(`${hours}h`);
-  parts.push(`${minutes}m`);
-  return parts.join(" ");
 }
 
 function InfoBox({
@@ -354,20 +258,11 @@ function InfoBox({
   );
 }
 
-function resultClassName(value: number): string {
-  if (value > 0) return "up";
-  if (value < 0) return "down";
-  return "neutral";
-}
-
-function rowClassNameForPnl(value: number): string {
-  if (value > 0) return "up-row";
-  if (value < 0) return "down-row";
-  return "neutral-row";
-}
-
 function exitReasonClassName(label: string): string {
   const normalized = label.toLowerCase();
+  if (normalized.includes("manual win")) return "exitReasonBadge exitTakeProfit";
+  if (normalized.includes("manual loss")) return "exitReasonBadge exitStopLoss";
+  if (normalized.includes("manual flat")) return "exitReasonBadge exitOther";
   if (normalized.includes("take profit")) return "exitReasonBadge exitTakeProfit";
   if (normalized.includes("stop loss")) return "exitReasonBadge exitStopLoss";
   if (normalized.includes("max")) return "exitReasonBadge exitMaxBars";
@@ -376,10 +271,14 @@ function exitReasonClassName(label: string): string {
   return "exitReasonBadge exitOther";
 }
 
-function visibleHistoryExitReason(label: string): string {
-  const normalized = label.trim().toLowerCase();
-  if (normalized === "time exit" || normalized === "timed exit") return "Window End";
-  return label;
+function displayExitReasonLabel(trade: TradeHistoryRow): string {
+  const normalized = trade.exitReasonLabel.trim().toLowerCase();
+  if (normalized === "time exit" || normalized === "timed exit" || normalized === "window end") {
+    if (trade.pnlDollars > 0) return "Manual Win";
+    if (trade.pnlDollars < 0) return "Manual Loss";
+    return "Manual Flat";
+  }
+  return trade.exitReasonLabel;
 }
 
 function TradeCandlestickChart({
@@ -889,10 +788,7 @@ export default function TradeHistory({ rows }: TradeHistoryProps) {
     [activeTradeId, rows]
   );
   const activeSourceBars = chartState.sourceBars?.length ? chartState.sourceBars : chartState.bars;
-  const activeDisplayTrade = useMemo(
-    () => (activeTrade ? resolvedTradeForDisplay(activeTrade, activeSourceBars) : null),
-    [activeTrade, activeSourceBars]
-  );
+  const activeDisplayTrade = activeTrade;
   const activeChartTrade = useMemo(
     () =>
       activeDisplayTrade
@@ -945,7 +841,7 @@ export default function TradeHistory({ rows }: TradeHistoryProps) {
     ]
   );
   const activeStats = activeDisplayTrade ? tradePathStats(activeDisplayTrade, activeSourceBars) : { mfe: null, mae: null };
-  const activeDurationLabel = activeDisplayTrade ? correctedDurationLabel(activeDisplayTrade, activeSourceBars) : "";
+  const activeDurationLabel = activeDisplayTrade ? `${activeDisplayTrade.durationLabel} / ${activeDisplayTrade.durationDetailLabel}` : "";
 
   function openTrade(trade: TradeHistoryRow) {
     if (isRestricted) return;
@@ -1086,7 +982,7 @@ export default function TradeHistory({ rows }: TradeHistoryProps) {
           <div className="tradeModalMetrics four">
             <InfoBox label="Entry Reason" value={`Model: ${activeDisplayTrade.modelName}`} tone="blue" />
             <InfoBox label="Entry Price" value={activeDisplayTrade.entryPriceLabel} />
-            <InfoBox label="Exit Reason" value={activeDisplayTrade.exitReasonLabel} tone="blue" />
+            <InfoBox label="Exit Reason" value={displayExitReasonLabel(activeDisplayTrade)} tone="blue" />
             <InfoBox label="Exit Price" value={activeDisplayTrade.exitPriceLabel} />
           </div>
 
@@ -1156,7 +1052,7 @@ export default function TradeHistory({ rows }: TradeHistoryProps) {
           <tbody>
             {rows.map((trade) => {
               const displayedModelName = isRestricted ? "Admin only" : trade.modelName;
-              const exitReasonLabel = visibleHistoryExitReason(trade.exitReasonLabel);
+              const exitReasonLabel = displayExitReasonLabel(trade);
               return (
                 <tr
                   className={`historyTradeRow ${trade.rowClassName}${isRestricted ? " isAccessRestricted" : ""}`}
