@@ -48,6 +48,7 @@ export default function EditableTradeHistory({ rows, strategies, persistedStrate
     () =>
       rows.map((row) => {
         const strategy = strategyByKey.get(row.strategyKey);
+        if (row.lockedSize) return row;
         if (!strategy) return row;
 
         const scale = strategyContractScale(strategy, edits);

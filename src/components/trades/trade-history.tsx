@@ -23,6 +23,7 @@ export type TradeHistoryRow = {
   pnlDollars: number;
   indexLabel: string;
   symbol: string;
+  displaySymbol?: string;
   modelName: string;
   marketLabel: string;
   market?: string;
@@ -65,6 +66,7 @@ export type TradeHistoryRow = {
   dollarsPerPricePoint: number;
   tpUnitsLabel: string;
   slUnitsLabel: string;
+  lockedSize?: boolean;
 };
 
 type TradeHistoryProps = {
@@ -255,6 +257,10 @@ function displayExitReasonLabel(trade: TradeHistoryRow): string {
     return "Manual Flat";
   }
   return trade.exitReasonLabel;
+}
+
+function displaySymbol(trade: TradeHistoryRow): string {
+  return trade.displaySymbol?.trim() || trade.symbol;
 }
 
 type CalendarActivity = {
@@ -672,7 +678,7 @@ function BacktestTradeMiniChart({
         style={{ height: `${plot.height}px` }}
         viewBox={`0 0 ${plot.width} ${plot.height}`}
         role="img"
-        aria-label={`${trade.symbol} per-trade price movement`}
+        aria-label={`${displaySymbol(trade)} per-trade price movement`}
       >
         <defs>
           <linearGradient id={`${chartId}-area`} x1="0" x2="0" y1="0" y2="1">
@@ -868,15 +874,15 @@ function BacktestTradeMiniChart({
 
 export function TradeHistoryCalendar({ rows }: TradeHistoryProps) {
   const isRestricted = !useAutoTradeAdminMode();
-  const [selectedMonthKey, setSelectedMonthKey] = useState(() => monthKeyUTC(rows[0]?.exitTime));
-  const [selectedDateKey, setSelectedDateKey] = useState(() => dateKeyUTC(rows[0]?.exitTime));
+  const [selectedMonthKey, setSelectedMonthKey] = useState(() => monthKeyUTC(rows[0]?.entryTime));
+  const [selectedDateKey, setSelectedDateKey] = useState(() => dateKeyUTC(rows[0]?.entryTime));
   const [expandedTradeId, setExpandedTradeId] = useState<string | null>(null);
   const [chartStates, setChartStates] = useState<Record<string, CalendarChartState>>({});
   const chartStatesRef = useRef<Record<string, CalendarChartState>>({});
   const activityByDay = useMemo(() => {
     const activity = new Map<string, CalendarActivity>();
     for (const trade of rows) {
-      const key = dateKeyUTC(trade.exitTime);
+      const key = dateKeyUTC(trade.entryTime);
       if (!key) continue;
       const current = activity.get(key) ?? { count: 0, pnl: 0, wins: 0, items: [] };
       current.count += 1;
@@ -886,7 +892,7 @@ export function TradeHistoryCalendar({ rows }: TradeHistoryProps) {
       activity.set(key, current);
     }
     for (const value of activity.values()) {
-      value.items.sort((left, right) => Date.parse(right.exitTime) - Date.parse(left.exitTime));
+      value.items.sort((left, right) => Date.parse(right.entryTime) - Date.parse(left.entryTime));
     }
     return activity;
   }, [rows]);
@@ -1042,6 +1048,7 @@ export function TradeHistoryCalendar({ rows }: TradeHistoryProps) {
             const durationMinutes = tradeDurationMinutes(trade);
             const chartState = chartStates[trade.id] ?? { status: "idle", bars: [] };
             const displayedModelName = isRestricted ? "Admin only" : trade.modelName;
+            const visibleSymbol = displaySymbol(trade);
             return (
               <div key={`${trade.id}-calendar`} className={`backtest-calendar-trade ${isExpanded ? "expanded" : ""}`}>
                 <button
@@ -1068,7 +1075,9 @@ export function TradeHistoryCalendar({ rows }: TradeHistoryProps) {
                     </div>
                   </div>
                   <div className="backtest-calendar-trade-side">
-                    <span className="backtest-calendar-trade-symbol">{trade.symbol}</span>
+                    <span className="backtest-calendar-trade-symbol" title={visibleSymbol !== trade.symbol ? `Signal ${trade.symbol}` : undefined}>
+                      {visibleSymbol}
+                    </span>
                     <strong className={trade.pnlDollars >= 0 ? "up" : "down"}>{trade.pnlLabel}</strong>
                   </div>
                 </button>
@@ -1081,12 +1090,24 @@ export function TradeHistoryCalendar({ rows }: TradeHistoryProps) {
                         <strong>{formatMinutesCompact(durationMinutes)}</strong>
                       </div>
                       <div className="backtest-calendar-trade-stat">
+                        <span>Size</span>
+                        <strong>{trade.sizeLabel}</strong>
+                      </div>
+                      <div className="backtest-calendar-trade-stat">
                         <span>TP Price</span>
                         <strong className="backtest-calendar-trade-stat-value tp">{trade.targetPriceLabel}</strong>
                       </div>
                       <div className="backtest-calendar-trade-stat">
+                        <span>TP $</span>
+                        <strong className="backtest-calendar-trade-stat-value tp">{trade.targetLabel}</strong>
+                      </div>
+                      <div className="backtest-calendar-trade-stat">
                         <span>SL Price</span>
                         <strong className="backtest-calendar-trade-stat-value sl">{trade.stopPriceLabel}</strong>
+                      </div>
+                      <div className="backtest-calendar-trade-stat">
+                        <span>SL $</span>
+                        <strong className="backtest-calendar-trade-stat-value sl">{trade.riskLabel}</strong>
                       </div>
                     </div>
 
@@ -1111,7 +1132,7 @@ export function TradeHistoryCalendar({ rows }: TradeHistoryProps) {
               </div>
             );
           })}
-          {selectedDayTrades.length === 0 ? <div className="backtest-empty-inline">No trades closed on the selected day.</div> : null}
+          {selectedDayTrades.length === 0 ? <div className="backtest-empty-inline">No trades entered on the selected day.</div> : null}
         </div>
       </div>
     </div>
@@ -1429,7 +1450,7 @@ function TradeCandlestickChart({
         viewBox={`0 0 ${chartWidth} ${chartHeight}`}
         preserveAspectRatio="none"
         role="img"
-        aria-label={`${trade.symbol} trade candlestick chart`}
+        aria-label={`${displaySymbol(trade)} trade candlestick chart`}
         onMouseMove={handleMouseMove}
         onMouseLeave={handleMouseLeave}
         onMouseDown={handleMouseDown}
@@ -1795,13 +1816,15 @@ export default function TradeHistory({ rows }: TradeHistoryProps) {
         className={`tradeModal ${activeDisplayTrade.rowClassName}`}
         role="dialog"
         aria-modal="true"
-        aria-label={`${activeDisplayTrade.symbol} trade details`}
+        aria-label={`${displaySymbol(activeDisplayTrade)} trade details`}
         onMouseDown={(event) => event.stopPropagation()}
       >
         <div className="tradeModalHead">
           <div className="tradeModalTitle">
             <strong>{isRestricted ? "Admin only" : activeDisplayTrade.modelName}</strong>
-            <span>{activeDisplayTrade.symbol} / {activeDisplayTrade.marketLabel}</span>
+            <span title={displaySymbol(activeDisplayTrade) !== activeDisplayTrade.symbol ? `Signal ${activeDisplayTrade.symbol}` : undefined}>
+              {displaySymbol(activeDisplayTrade)} / {activeDisplayTrade.marketLabel}
+            </span>
           </div>
           <div className="tradeModalHeadActions">
             <button type="button" className="tradeModalCloseButton" aria-label="Close trade details" title="Close" onClick={() => setActiveTradeId(null)}>
@@ -1885,13 +1908,14 @@ export default function TradeHistory({ rows }: TradeHistoryProps) {
             {rows.map((trade) => {
               const displayedModelName = isRestricted ? "Admin only" : trade.modelName;
               const exitReasonLabel = displayExitReasonLabel(trade);
+              const visibleSymbol = displaySymbol(trade);
               return (
                 <tr
                   className={`historyTradeRow ${trade.rowClassName}`}
                   key={trade.id}
                   role="button"
                   tabIndex={0}
-                  aria-label={`Open ${trade.symbol} trade details`}
+                  aria-label={`Open ${visibleSymbol} trade details`}
                   onClick={() => openTrade(trade)}
                   onKeyDown={(event) => {
                     if (event.key === "Enter" || event.key === " ") {
@@ -1901,7 +1925,9 @@ export default function TradeHistory({ rows }: TradeHistoryProps) {
                   }}
                 >
                   <td data-label="#">{trade.indexLabel}</td>
-                  <td className="ticker-cell" data-label="Ticker">{trade.symbol}</td>
+                  <td className="ticker-cell" data-label="Ticker" title={visibleSymbol !== trade.symbol ? `Signal ${trade.symbol}` : undefined}>
+                    {visibleSymbol}
+                  </td>
                   <td className="main-cell" data-label="Entry model">
                     <span className={isRestricted ? "adminOnlyMaskedText" : undefined}>{displayedModelName}</span>
                     <small>{isRestricted ? "Click to view trade" : <LocalDateTime value={trade.entryTime} />}</small>

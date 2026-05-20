@@ -725,6 +725,67 @@ function finiteNumberOr(value: number | undefined, fallback: number): number {
   return value !== undefined && Number.isFinite(value) ? value : fallback;
 }
 
+type TradeOrderSummary = NonNullable<TradeAlert["autoTradeOrders"]>[number];
+
+function preferredContractFromOrders(orders: TradeOrderSummary[] | undefined): string | undefined {
+  const preferred =
+    orders?.find((order) => order.status === "placed" && (order.contractName || order.contractId)) ??
+    orders?.find((order) => order.status === "dry_run" && (order.contractName || order.contractId)) ??
+    orders?.find((order) => order.contractName || order.contractId);
+  return preferred?.contractName?.trim() || preferred?.contractId?.trim() || undefined;
+}
+
+function liveTradeDisplaySymbol(trade: TradeAlert): string {
+  return (
+    trade.autoTradeContractName?.trim() ||
+    trade.autoTradeContractId?.trim() ||
+    preferredContractFromOrders(trade.autoTradeOrders) ||
+    trade.symbol
+  );
+}
+
+function liveTradeEventDisplaySymbol(trade: TradeAlert, event: LiveTradeEvent): string {
+  if (event.kind === "limit") {
+    return (
+      trade.limitOrderAutoTradeContractName?.trim() ||
+      trade.limitOrderAutoTradeContractId?.trim() ||
+      preferredContractFromOrders(trade.limitOrderAutoTradeOrders) ||
+      liveTradeDisplaySymbol(trade)
+    );
+  }
+  return liveTradeDisplaySymbol(trade);
+}
+
+function executableOrders(orders: TradeOrderSummary[] | undefined): TradeOrderSummary[] {
+  return (orders ?? []).filter((order) => order.status === "placed" || order.status === "dry_run");
+}
+
+function orderSizeMultiplier(orders: TradeOrderSummary[] | undefined): number | undefined {
+  const sizes = executableOrders(orders)
+    .map((order) => order.size)
+    .filter((size): size is number => typeof size === "number" && Number.isFinite(size) && size > 0);
+  if (!sizes.length) return undefined;
+  return sizes.reduce((sum, size) => sum + size, 0);
+}
+
+function liveTradeOrderSizeMultiplier(trade: TradeAlert, event?: LiveTradeEvent): number | undefined {
+  if (event?.kind === "limit") return orderSizeMultiplier(trade.limitOrderAutoTradeOrders);
+  return orderSizeMultiplier(trade.autoTradeOrders);
+}
+
+function contractSizeLabel(contractLabel: string, size: number, accountCount?: number): string {
+  const formattedSize = fmtNumber(size);
+  return accountCount && accountCount > 1 ? `${formattedSize} ${contractLabel} / ${fmtNumber(accountCount)} accounts` : `${formattedSize} ${contractLabel}`;
+}
+
+function liveTradeOrderSizeLabel(trade: TradeAlert, contractLabel: string, fallbackSizeMultiplier: number, event?: LiveTradeEvent): string {
+  const orders = event?.kind === "limit" ? trade.limitOrderAutoTradeOrders : trade.autoTradeOrders;
+  const size = orderSizeMultiplier(orders);
+  if (size !== undefined) return contractSizeLabel(contractLabel, size, executableOrders(orders).length);
+  const fallback = instrumentSizeLabel(trade.symbol, fallbackSizeMultiplier);
+  return contractLabel !== trade.symbol ? `${fallback} (${contractLabel})` : fallback;
+}
+
 function liveRowClass(trade: TradeAlert): string {
   if (Number.isFinite(trade.lifecyclePnlDollars)) {
     return resultRowClass(trade.lifecyclePnlDollars!);
@@ -852,6 +913,8 @@ function liveTradeEventEntryPrice(trade: TradeAlert, event: LiveTradeEvent): num
 }
 
 function liveTradeEventSizeMultiplier(trade: TradeAlert, event: LiveTradeEvent): number {
+  const orderSize = liveTradeOrderSizeMultiplier(trade, event);
+  if (orderSize !== undefined) return orderSize;
   if (event.kind === "limit" || event.kind === "edit_limit") {
     return trade.sizeMultiplier ?? 1;
   }
@@ -860,7 +923,7 @@ function liveTradeEventSizeMultiplier(trade: TradeAlert, event: LiveTradeEvent):
 }
 
 function liveTradeEventSizeLabel(trade: TradeAlert, event: LiveTradeEvent): string {
-  return instrumentSizeLabel(trade.symbol, liveTradeEventSizeMultiplier(trade, event));
+  return liveTradeOrderSizeLabel(trade, liveTradeEventDisplaySymbol(trade, event), liveTradeEventSizeMultiplier(trade, event), event);
 }
 
 function liveTradeEventPriceUnit(trade: TradeAlert, event: LiveTradeEvent): number {
@@ -1475,6 +1538,7 @@ export default async function Home({ searchParams }: HomeProps) {
       pnlDollars: resolvedExit.pnlDollars,
       indexLabel: fmtNumber(index + 1),
       symbol: trade.symbol,
+      displaySymbol: trade.symbol,
       modelName: optionByKey.get(trade.datasetId)?.label ?? trade.label,
       marketLabel: marketLabel(trade.market),
       market: trade.market,
@@ -1543,12 +1607,15 @@ export default async function Home({ searchParams }: HomeProps) {
       const ruleKey = trade.logicalStrategyKey ?? trade.strategyKey ?? option?.logicalKeys[0] ?? strategyKey;
       const ruleTickSize = liveRuleByKey.get(ruleKey)?.tickSize;
       const priceUnit = inferredAlertPriceUnit(trade, ruleTickSize);
-      const sizeMultiplier = finiteNumberOr(trade.sizeMultiplier, option?.sizeMultiplier ?? 1);
+      const displayContract = liveTradeDisplaySymbol(trade);
+      const sizeMultiplier = liveTradeOrderSizeMultiplier(trade) ?? finiteNumberOr(trade.sizeMultiplier, option?.sizeMultiplier ?? 1);
       const targetDollars = alertTargetDollarsWithSize(trade, sizeMultiplier);
       const riskDollars = alertRiskDollarsWithSize(trade, sizeMultiplier);
       const rawExitPrice = finiteNumberOr(trade.lifecyclePrice, trade.entryPrice);
       const rawPnlDollars = finiteNumberOr(
-        trade.lifecyclePnlDollars,
+        typeof trade.lifecycleRMultiple === "number" && Number.isFinite(trade.lifecycleRMultiple)
+          ? trade.lifecycleRMultiple * riskDollars
+          : trade.lifecyclePnlDollars,
         trade.lifecycleStatus === "take_profit" ? targetDollars : trade.lifecycleStatus === "stop_loss" ? -riskDollars : 0
       );
       const pnlDollars = boundedTradeDollarPnl(rawPnlDollars, targetDollars, riskDollars);
@@ -1568,6 +1635,7 @@ export default async function Home({ searchParams }: HomeProps) {
         pnlDollars,
         indexLabel: fmtNumber(index + 1),
         symbol: trade.symbol,
+        displaySymbol: displayContract,
         modelName: option?.label ?? trade.strategy,
         marketLabel: marketLabel(trade.market),
         market: trade.market,
@@ -1600,7 +1668,7 @@ export default async function Home({ searchParams }: HomeProps) {
         pnlLabel: fmtMoney(pnlDollars, true),
         rMultipleLabel: `${fmtNumber(rMultiple)}R`,
         netUnitsLabel: `${fmtNumber(netUnits)} ${unitLabel}`,
-        sizeLabel: instrumentSizeLabel(trade.symbol, sizeMultiplier),
+        sizeLabel: liveTradeOrderSizeLabel(trade, displayContract, sizeMultiplier),
         sizeMultiplier,
         targetRiskLabel: `${fmtMoney(targetDollars)} / ${fmtMoney(-riskDollars)}`,
         targetLabel: fmtMoney(targetDollars),
@@ -1609,7 +1677,8 @@ export default async function Home({ searchParams }: HomeProps) {
         riskDollars,
         dollarsPerPricePoint: priceUnit > 0 ? (dollarPerUnit(trade.symbol, trade.entryPrice) * sizeMultiplier) / priceUnit : 0,
         tpUnitsLabel: `${fmtNumber(trade.tpUnits)} ${unitLabel}`,
-        slUnitsLabel: `${fmtNumber(trade.slUnits)} ${unitLabel}`
+        slUnitsLabel: `${fmtNumber(trade.slUnits)} ${unitLabel}`,
+        lockedSize: true
       };
     });
   const historyTotalTradeCount = historyBacktestTrades.length + closedLiveHistoryRows.length;
@@ -2024,13 +2093,16 @@ export default async function Home({ searchParams }: HomeProps) {
                 <tbody>
                   {selectedLiveTrades.map((trade, index) => {
                     const events = liveTradeEvents(trade);
+                    const displaySymbol = liveTradeDisplaySymbol(trade);
+                    const symbolTitle = displaySymbol !== trade.symbol ? `Signal ${trade.symbol}` : undefined;
+                    const summarySizeMultiplier = liveTradeOrderSizeMultiplier(trade) ?? (trade.sizeMultiplier ?? 1);
                     return (
                       <tr className={liveRowClass(trade)} key={trade.id}>
                         <td className="cronTradeCell" colSpan={16}>
                           <details className="cronTradeDetails">
-                            <summary className="cronTradeSummary" aria-label={`Expand ${trade.symbol} cron events for ${fmtDate(trade.signalTime)}`}>
+                            <summary className="cronTradeSummary" aria-label={`Expand ${displaySymbol} cron events for ${fmtDate(trade.signalTime)}`}>
                               <span data-label="#">{fmtNumber(index + 1)}</span>
-                              <span className="ticker-cell" data-label="Ticker">{trade.symbol}</span>
+                              <span className="ticker-cell" data-label="Ticker" title={symbolTitle}>{displaySymbol}</span>
                               <span className="main-cell" data-label="Model">
                                 <span>{fmtDate(trade.signalTime)}</span>
                                 <small><LocalDateTime value={trade.signalTime} /></small>
@@ -2042,7 +2114,7 @@ export default async function Home({ searchParams }: HomeProps) {
                                 <span className={sideClass(trade.side)}>{sideLabel(trade.side)}</span>
                               </span>
                               <span data-label="Entry">{fmtDollarPrice(trade.entryPrice)}</span>
-                              <span data-label="Size">{instrumentSizeLabel(trade.symbol, trade.sizeMultiplier ?? 1)}</span>
+                              <span data-label="Size">{liveTradeOrderSizeLabel(trade, displaySymbol, summarySizeMultiplier)}</span>
                               <span className="exit-cell" data-label="Exit">
                                 {liveTradeClosed(trade) ? (
                                   <>
@@ -2055,8 +2127,8 @@ export default async function Home({ searchParams }: HomeProps) {
                               </span>
                               <span data-label="Take Profit">{fmtPrice(trade.takeProfitPrice)}</span>
                               <span data-label="Stop Loss">{fmtPrice(trade.stopLossPrice)}</span>
-                              <span data-label="Target $">{fmtMoney(alertTargetDollars(trade))}</span>
-                              <span data-label="Risk $">{fmtMoney(alertRiskDollars(trade))}</span>
+                              <span data-label="Target $">{fmtMoney(alertTargetDollarsWithSize(trade, summarySizeMultiplier))}</span>
+                              <span data-label="Risk $">{fmtMoney(alertRiskDollarsWithSize(trade, summarySizeMultiplier))}</span>
                               <span data-label="Odds">{fmtPct(trade.estimatedWinRatePct)}</span>
                               <span data-label="Auto Trade" title={trade.autoTradeError ?? trade.autoTradeProviderName ?? trade.autoTradeContractName ?? trade.autoTradeContractId ?? undefined}>
                                 <span className={`status ${autoTradeStatusClass(trade)}`}>{autoTradeStatusLabel(trade)}</span>
@@ -2066,11 +2138,19 @@ export default async function Home({ searchParams }: HomeProps) {
                               </span>
                               <span data-label="Event time"><LocalDateTime value={trade.signalTime} /></span>
                             </summary>
-                            <div className="cronTradeEventPanel" aria-label={`${trade.symbol} cron event details`}>
-                              {events.map((event, eventIndex) => (
+                            <div className="cronTradeEventPanel" aria-label={`${displaySymbol} cron event details`}>
+                              {events.map((event, eventIndex) => {
+                                const eventDisplaySymbol = liveTradeEventDisplaySymbol(trade, event);
+                                return (
                                 <div className="cronTradeEventRow" key={`${trade.id}-${event.kind}-${eventIndex}`}>
                                   <span data-label="#">{`${fmtNumber(index + 1)}.${fmtNumber(eventIndex + 1)}`}</span>
-                                  <span className="ticker-cell" data-label="Ticker">{trade.symbol}</span>
+                                  <span
+                                    className="ticker-cell"
+                                    data-label="Ticker"
+                                    title={eventDisplaySymbol !== trade.symbol ? `Signal ${trade.symbol}` : undefined}
+                                  >
+                                    {eventDisplaySymbol}
+                                  </span>
                                   <span className="main-cell" data-label="Model">
                                     <span>{fmtDate(liveTradeEventTime(trade, event))}</span>
                                     <small><LocalDateTime value={liveTradeEventTime(trade, event)} /></small>
@@ -2113,7 +2193,8 @@ export default async function Home({ searchParams }: HomeProps) {
                                   </span>
                                   <span data-label="Event time"><LocalDateTime value={liveTradeEventTime(trade, event)} /></span>
                                 </div>
-                              ))}
+                              );
+                              })}
                             </div>
                           </details>
                         </td>
