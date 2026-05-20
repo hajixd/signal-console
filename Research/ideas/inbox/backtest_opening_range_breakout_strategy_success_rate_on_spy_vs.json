@@ -1,6 +1,6 @@
 {
   "assetKeys": [],
-  "createdAt": "2026-05-19T13:01:03.702628+00:00",
+  "createdAt": "2026-05-20T13:00:59.658236+00:00",
   "engines": [],
   "hypothesis": "Research source suggests a strategy worth structuring and testing: Is the ORB strategy working in any market consistently, during this volatility? We'll utilize the Opening Range Breakout Backtester to compare and contrast 3...",
   "ideaId": "backtest_opening_range_breakout_strategy_success_rate_on_spy_vs",
