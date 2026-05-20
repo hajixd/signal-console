@@ -507,11 +507,15 @@ function BacktestTradeMiniChart({
     const margins = width < 640 ? { top: 22, right: 18, bottom: 42, left: 48 } : { top: 24, right: 34, bottom: 46, left: 64 };
     const plotWidth = width - margins.left - margins.right;
     const plotHeight = height - margins.top - margins.bottom;
-    const lows = data.map((point) => point.low).filter(Number.isFinite);
-    const highs = data.map((point) => point.high).filter(Number.isFinite);
-    let low = Math.min(...lows, trade.stopPrice, trade.targetPrice, trade.entryPrice);
-    let high = Math.max(...highs, trade.stopPrice, trade.targetPrice, trade.entryPrice);
-    if (!Number.isFinite(low) || !Number.isFinite(high)) {
+    const plannedUpper = direction === 1 ? trade.targetPrice : trade.stopPrice;
+    const plannedLower = direction === 1 ? trade.stopPrice : trade.targetPrice;
+    let low = plannedLower;
+    let high = plannedUpper;
+    if (!Number.isFinite(low) || !Number.isFinite(high) || high <= low) {
+      low = Math.min(trade.stopPrice, trade.targetPrice, trade.entryPrice, trade.exitPrice);
+      high = Math.max(trade.stopPrice, trade.targetPrice, trade.entryPrice, trade.exitPrice);
+    }
+    if (!Number.isFinite(low) || !Number.isFinite(high) || high <= low) {
       low = Math.min(trade.entryPrice, trade.exitPrice);
       high = Math.max(trade.entryPrice, trade.exitPrice);
     }
