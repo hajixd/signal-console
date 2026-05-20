@@ -1400,7 +1400,7 @@ export default function TradeHistory({ rows }: TradeHistoryProps) {
             sourceTimeframe: activeDisplayTrade.sourceTimeframe,
             phase: activeDisplayTrade.phase,
             variantId: activeDisplayTrade.variantId,
-            modelName: activeDisplayTrade.modelName,
+            modelName: isRestricted ? "Admin only" : activeDisplayTrade.modelName,
             entryType: activeDisplayTrade.entryType,
             entryPrice: activeDisplayTrade.entryPrice,
             exitPrice: activeDisplayTrade.exitPrice,
@@ -1433,21 +1433,17 @@ export default function TradeHistory({ rows }: TradeHistoryProps) {
       activeDisplayTrade?.targetPrice,
       activeDisplayTrade?.riskDollars,
       activeDisplayTrade?.dollarsPerPricePoint,
-      activeDisplayTrade?.variantId
+      activeDisplayTrade?.variantId,
+      isRestricted
     ]
   );
   const activeStats = activeDisplayTrade ? tradePathStats(activeDisplayTrade, activeSourceBars) : { mfe: null, mae: null };
   const activeDurationLabel = activeDisplayTrade ? `${activeDisplayTrade.durationLabel} / ${activeDisplayTrade.durationDetailLabel}` : "";
 
   function openTrade(trade: TradeHistoryRow) {
-    if (isRestricted) return;
     setChartTimeframe(trade.sourceTimeframe ?? "15m");
     setActiveTradeId(trade.id);
   }
-
-  useEffect(() => {
-    if (isRestricted) setActiveTradeId(null);
-  }, [isRestricted]);
 
   useEffect(() => {
     if (activeTradeId && !activeTrade) setActiveTradeId(null);
@@ -1468,7 +1464,7 @@ export default function TradeHistory({ rows }: TradeHistoryProps) {
   }, [activeTradeId]);
 
   useEffect(() => {
-    if (!activeTrade || isRestricted) {
+    if (!activeTrade) {
       setChartState({ status: "idle", bars: [] });
       return undefined;
     }
@@ -1537,8 +1533,7 @@ export default function TradeHistory({ rows }: TradeHistoryProps) {
     activeTrade?.market,
     activeTrade?.sourceTimeframe,
     activeTrade?.symbol,
-    chartTimeframe,
-    isRestricted
+    chartTimeframe
   ]);
 
   const chartNotice =
@@ -1547,7 +1542,7 @@ export default function TradeHistory({ rows }: TradeHistoryProps) {
       : undefined;
   const displayedChartTimeframe = chartState.fallback && chartState.timeframe ? chartState.timeframe : chartTimeframe;
 
-  const activeTradeModal = !isRestricted && activeTrade && activeDisplayTrade ? (
+  const activeTradeModal = activeTrade && activeDisplayTrade ? (
     <div
       className="tradeModalBackdrop"
       role="presentation"
@@ -1564,7 +1559,7 @@ export default function TradeHistory({ rows }: TradeHistoryProps) {
       >
         <div className="tradeModalHead">
           <div className="tradeModalTitle">
-            <strong>{activeDisplayTrade.modelName}</strong>
+            <strong>{isRestricted ? "Admin only" : activeDisplayTrade.modelName}</strong>
             <span>{activeDisplayTrade.symbol} / {activeDisplayTrade.marketLabel}</span>
           </div>
           <div className="tradeModalHeadActions">
@@ -1576,7 +1571,7 @@ export default function TradeHistory({ rows }: TradeHistoryProps) {
 
         <div className="tradeModalBody">
           <div className="tradeModalMetrics four">
-            <InfoBox label="Entry Reason" value={`Model: ${activeDisplayTrade.modelName}`} tone="blue" />
+            <InfoBox label="Entry Reason" value={`Model: ${isRestricted ? "Admin only" : activeDisplayTrade.modelName}`} tone="blue" />
             <InfoBox label="Entry Price" value={activeDisplayTrade.entryPriceLabel} />
             <InfoBox label="Exit Reason" value={displayExitReasonLabel(activeDisplayTrade)} tone="blue" />
             <InfoBox label="Exit Price" value={activeDisplayTrade.exitPriceLabel} />
@@ -1651,15 +1646,13 @@ export default function TradeHistory({ rows }: TradeHistoryProps) {
               const exitReasonLabel = displayExitReasonLabel(trade);
               return (
                 <tr
-                  className={`historyTradeRow ${trade.rowClassName}${isRestricted ? " isAccessRestricted" : ""}`}
+                  className={`historyTradeRow ${trade.rowClassName}`}
                   key={trade.id}
-                  role={isRestricted ? undefined : "button"}
-                  tabIndex={isRestricted ? -1 : 0}
-                  aria-disabled={isRestricted}
-                  aria-label={isRestricted ? `${trade.symbol} trade details locked` : `Open ${trade.symbol} ${trade.modelName} trade details`}
-                  onClick={isRestricted ? undefined : () => openTrade(trade)}
+                  role="button"
+                  tabIndex={0}
+                  aria-label={`Open ${trade.symbol} trade details`}
+                  onClick={() => openTrade(trade)}
                   onKeyDown={(event) => {
-                    if (isRestricted) return;
                     if (event.key === "Enter" || event.key === " ") {
                       event.preventDefault();
                       openTrade(trade);
@@ -1670,7 +1663,7 @@ export default function TradeHistory({ rows }: TradeHistoryProps) {
                   <td className="ticker-cell" data-label="Ticker">{trade.symbol}</td>
                   <td className="main-cell" data-label="Entry model">
                     <span className={isRestricted ? "adminOnlyMaskedText" : undefined}>{displayedModelName}</span>
-                    <small>{isRestricted ? "Strategy details locked" : <LocalDateTime value={trade.entryTime} />}</small>
+                    <small>{isRestricted ? "Click to view trade" : <LocalDateTime value={trade.entryTime} />}</small>
                   </td>
                   <td data-label="Direction">
                     <span className={trade.sideClassName}>{trade.sideLabel}</span>

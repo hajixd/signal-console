@@ -2970,6 +2970,287 @@ html[data-theme="light"] .themeDarkLabel {
   text-transform: uppercase;
 }
 
+.dailyCurveStatCard {
+  grid-column: 1 / -1;
+  gap: 0.5rem;
+}
+
+.dailyCurveStatHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.8rem;
+}
+
+.dailyCurveSparkline {
+  position: relative;
+  min-height: 204px;
+  overflow: visible;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.32);
+  cursor: crosshair;
+}
+
+.dailyCurveSparkline svg {
+  width: 100%;
+  height: 164px;
+  display: block;
+  overflow: hidden;
+  border-radius: 12px 12px 0 0;
+}
+
+.dailyCurvePanelBg {
+  fill: #0a0a0a;
+}
+
+.dailyCurveGridLine {
+  stroke: rgba(255, 255, 255, 0.055);
+  stroke-width: 1;
+}
+
+.dailyCurveZeroLine {
+  stroke: rgba(255, 255, 255, 0.18);
+  stroke-dasharray: 4 6;
+  stroke-width: 1;
+}
+
+.dailyCurveZeroLabel,
+.dailyCurveAxisLabel,
+.dailyCurveDateRail text,
+.dailyCurvePeakMarker text,
+.dailyCurveDrawdownMarker text {
+  fill: rgba(255, 255, 255, 0.42);
+  font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+  font-size: 9.5px;
+  font-weight: 800;
+}
+
+.dailyCurveArea {
+  pointer-events: none;
+}
+
+.dailyCurveAreaStopStart {
+  stop-color: rgba(147, 187, 252, 0.32);
+}
+
+.dailyCurveAreaStopEnd {
+  stop-color: rgba(147, 187, 252, 0.02);
+}
+
+.dailyCurveDailyBar {
+  opacity: 0.46;
+  transition: opacity 140ms ease;
+}
+
+.dailyCurveSparkline:hover .dailyCurveDailyBar {
+  opacity: 0.7;
+}
+
+.dailyCurveDailyBar.up {
+  fill: rgba(52, 211, 153, 0.42);
+}
+
+.dailyCurveDailyBar.down {
+  fill: rgba(248, 113, 113, 0.42);
+}
+
+.dailyCurveDrawdownBar {
+  fill: rgba(248, 113, 113, 0.2);
+  opacity: 0.72;
+}
+
+.dailyCurveLine {
+  fill: none;
+  stroke: #93bbfc;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 3;
+  animation: tradeMiniReveal 1.15s ease forwards;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+}
+
+.dailyCurveHighWaterLine {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.32);
+  stroke-dasharray: 6 6;
+  stroke-linecap: round;
+  stroke-width: 1.4;
+  pointer-events: none;
+}
+
+.dailyCurveSparkline.up .dailyCurveAreaStopStart {
+  stop-color: rgba(52, 211, 153, 0.34);
+}
+
+.dailyCurveSparkline.up .dailyCurveAreaStopEnd {
+  stop-color: rgba(52, 211, 153, 0.02);
+}
+
+.dailyCurveSparkline.up .dailyCurveLine,
+.dailyCurveSparkline.up .dailyCurveEndDot {
+  stroke: #34d399;
+}
+
+.dailyCurveSparkline.down .dailyCurveAreaStopStart {
+  stop-color: rgba(248, 113, 113, 0.34);
+}
+
+.dailyCurveSparkline.down .dailyCurveAreaStopEnd {
+  stop-color: rgba(248, 113, 113, 0.02);
+}
+
+.dailyCurveSparkline.down .dailyCurveLine,
+.dailyCurveSparkline.down .dailyCurveEndDot {
+  stroke: #f87171;
+}
+
+.dailyCurveEndDot {
+  fill: #0a0a0a;
+  stroke: #93bbfc;
+  stroke-width: 2;
+}
+
+.dailyCurveEndMarker text {
+  fill: rgba(255, 255, 255, 0.62);
+  font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+  font-size: 10px;
+  font-weight: 900;
+}
+
+.dailyCurvePeakMarker circle {
+  fill: #0a0a0a;
+  stroke: #fbbf24;
+  stroke-width: 2;
+}
+
+.dailyCurvePeakMarker text {
+  fill: rgba(251, 191, 36, 0.82);
+}
+
+.dailyCurveDrawdownMarker circle {
+  fill: #0a0a0a;
+  stroke: #f87171;
+  stroke-width: 2;
+}
+
+.dailyCurveDrawdownMarker text {
+  fill: rgba(248, 113, 113, 0.82);
+}
+
+.dailyCurveCrosshair line {
+  stroke: rgba(255, 255, 255, 0.32);
+  stroke-dasharray: 3 5;
+  stroke-width: 1;
+}
+
+.dailyCurveCrosshair circle {
+  fill: #0a0a0a;
+  stroke: rgba(255, 255, 255, 0.88);
+  stroke-width: 2;
+}
+
+.dailyCurveTooltip {
+  position: absolute;
+  z-index: 4;
+  min-width: 166px;
+  display: grid;
+  gap: 0.2rem;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 10px;
+  background: rgba(5, 5, 5, 0.92);
+  box-shadow: 0 18px 42px rgba(0, 0, 0, 0.45);
+  padding: 0.46rem 0.56rem;
+  pointer-events: none;
+  transform: translate(12px, -50%);
+}
+
+.dailyCurveTooltip.left {
+  transform: translate(calc(-100% - 12px), -50%);
+}
+
+.dailyCurveTooltip strong,
+.dailyCurveTooltip span,
+.dailyCurveLegend span {
+  font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+  font-size: 0.58rem;
+  font-weight: 900;
+}
+
+.dailyCurveTooltip strong {
+  color: rgba(255, 255, 255, 0.92);
+}
+
+.dailyCurveTooltip span {
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.dailyCurveTooltip span.up {
+  color: #34d399;
+}
+
+.dailyCurveTooltip span.down {
+  color: #f87171;
+}
+
+.dailyCurveLegend {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.32rem 0.62rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+  padding: 0.34rem 0.58rem;
+}
+
+.dailyCurveLegend span {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.32rem;
+  color: rgba(255, 255, 255, 0.54);
+}
+
+.dailyCurveLegend span::before {
+  content: "";
+  width: 0.56rem;
+  height: 0.56rem;
+  border-radius: 999px;
+  background: rgba(147, 187, 252, 0.75);
+}
+
+.dailyCurveLegend .daily::before {
+  background: linear-gradient(180deg, rgba(52, 211, 153, 0.82), rgba(248, 113, 113, 0.82));
+}
+
+.dailyCurveLegend .drawdown::before {
+  background: rgba(248, 113, 113, 0.38);
+}
+
+.dailyCurveMeta {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.28rem;
+}
+
+.dailyCurveMeta span,
+.dailyCurveEmpty {
+  color: rgba(255, 255, 255, 0.56);
+  font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+  font-size: 0.58rem;
+  font-weight: 800;
+}
+
+.dailyCurveEmpty {
+  min-height: 112px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.32);
+  text-align: center;
+}
+
 .historyPanelHead > div {
   gap: 0.32rem;
 }
@@ -3068,6 +3349,10 @@ html[data-theme="light"] .themeDarkLabel {
   gap: 0.5rem;
 }
 
+.backtest-calendar-nav.compact {
+  margin-top: 0;
+}
+
 .backtest-calendar-nav-btn {
   min-width: 42px;
   padding-inline: 0.8rem;
@@ -3104,15 +3389,15 @@ html[data-theme="light"] .themeDarkLabel {
 }
 
 .backtest-month-pill.up {
-  border-color: rgba(52, 211, 153, 0.3);
-  background: rgba(52, 211, 153, 0.1);
-  color: #34d399;
+  border-color: rgba(16, 185, 129, 0.45);
+  background: rgba(16, 185, 129, 0.12);
+  color: rgba(110, 231, 183, 0.96);
 }
 
 .backtest-month-pill.down {
-  border-color: rgba(248, 113, 113, 0.3);
-  background: rgba(248, 113, 113, 0.1);
-  color: #f87171;
+  border-color: rgba(239, 68, 68, 0.45);
+  background: rgba(239, 68, 68, 0.1);
+  color: rgba(252, 165, 165, 0.96);
 }
 
 .backtest-month-pill.neutral {
@@ -3154,14 +3439,14 @@ html[data-theme="light"] .themeDarkLabel {
 }
 
 .backtest-calendar-cell:hover {
-  border-color: rgba(255, 255, 255, 0.18);
+  border-color: rgba(16, 185, 129, 0.26);
   transform: translateY(-1px);
 }
 
 .backtest-calendar-cell.selected {
-  border-color: rgba(96, 165, 250, 0.5);
-  background: rgba(96, 165, 250, 0.08);
-  box-shadow: inset 0 0 0 1px rgba(96, 165, 250, 0.15);
+  border-color: rgba(16, 185, 129, 0.5);
+  background: rgba(16, 185, 129, 0.18);
+  box-shadow: inset 0 0 0 1px rgba(16, 185, 129, 0.12);
 }
 
 .backtest-calendar-cell.muted {
@@ -3191,6 +3476,8 @@ html[data-theme="light"] .themeDarkLabel {
 
 .backtest-calendar-detail {
   margin-top: 0.85rem;
+  padding-top: 0;
+  border-top: 0;
   display: grid;
   gap: 0.7rem;
 }
@@ -3225,12 +3512,12 @@ html[data-theme="light"] .themeDarkLabel {
 }
 
 .backtest-calendar-trade:hover {
-  border-color: rgba(255, 255, 255, 0.18);
+  border-color: rgba(16, 185, 129, 0.24);
 }
 
 .backtest-calendar-trade.expanded {
-  border-color: rgba(96, 165, 250, 0.4);
-  background: #111111;
+  border-color: rgba(16, 185, 129, 0.45);
+  background: #161616;
 }
 
 .backtest-calendar-trade-toggle {
@@ -3274,15 +3561,13 @@ html[data-theme="light"] .themeDarkLabel {
 }
 
 .backtest-calendar-side-pill.up {
-  border-color: rgba(52, 211, 153, 0.3);
-  background: rgba(52, 211, 153, 0.12);
-  color: #34d399;
+  background: rgba(16, 185, 129, 0.14);
+  color: rgba(110, 231, 183, 0.96);
 }
 
 .backtest-calendar-side-pill.down {
-  border-color: rgba(248, 113, 113, 0.3);
-  background: rgba(248, 113, 113, 0.12);
-  color: #f87171;
+  background: rgba(239, 68, 68, 0.14);
+  color: rgba(252, 165, 165, 0.96);
 }
 
 .backtest-calendar-trade-copy {
@@ -3409,6 +3694,22 @@ html[data-theme="light"] .themeDarkLabel {
   font-size: 0.62rem;
 }
 
+.backtest-calendar-trade-prices {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+}
+
+.backtest-calendar-trade-prices span {
+  font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+  font-size: 0.62rem;
+}
+
+.backtest-calendar-trade-prices span:first-child {
+  color: rgba(255, 255, 255, 0.72);
+}
+
 .backtest-calendar-trade-chart-copy {
   margin-bottom: 0.25rem;
 }
@@ -3435,6 +3736,19 @@ html[data-theme="light"] .themeDarkLabel {
   border: 1px solid #262626;
   border-radius: 12px;
   background: #0a0a0a;
+}
+
+.backtest-trade-mini-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.backtest-trade-mini-head span {
+  color: rgba(255, 255, 255, 0.62);
+  font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+  font-size: 0.58rem;
 }
 
 .backtest-trade-mini-chart svg {
@@ -3524,6 +3838,10 @@ html[data-theme="light"] .themeDarkLabel {
 
   .backtest-calendar-trade-stat-grid {
     grid-template-columns: 1fr;
+  }
+
+  .dailyCurveMeta {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .backtest-trade-mini-chart {
@@ -5993,6 +6311,88 @@ html[data-theme="light"] .localDateTimeStack small {
 html[data-theme="light"] .date-stat-card .localDateTimeStack span,
 html[data-theme="light"] .date-stat-card .localDateTimeStack small {
   color: #2563eb;
+}
+
+html[data-theme="light"] .dailyCurveSparkline,
+html[data-theme="light"] .dailyCurveEmpty {
+  border-color: rgba(15, 23, 42, 0.08);
+  background: rgba(255, 255, 255, 0.62);
+}
+
+html[data-theme="light"] .dailyCurvePanelBg {
+  fill: rgba(255, 255, 255, 0.84);
+}
+
+html[data-theme="light"] .dailyCurveGridLine {
+  stroke: rgba(15, 23, 42, 0.07);
+}
+
+html[data-theme="light"] .dailyCurveZeroLine {
+  stroke: rgba(15, 23, 42, 0.18);
+}
+
+html[data-theme="light"] .dailyCurveZeroLabel,
+html[data-theme="light"] .dailyCurveAxisLabel,
+html[data-theme="light"] .dailyCurveDateRail text,
+html[data-theme="light"] .dailyCurveEndMarker text {
+  fill: rgba(15, 23, 42, 0.48);
+}
+
+html[data-theme="light"] .dailyCurveHighWaterLine {
+  stroke: rgba(15, 23, 42, 0.3);
+}
+
+html[data-theme="light"] .dailyCurveEndDot {
+  fill: #f8fafc;
+}
+
+html[data-theme="light"] .dailyCurvePeakMarker circle,
+html[data-theme="light"] .dailyCurveDrawdownMarker circle {
+  fill: #ffffff;
+}
+
+html[data-theme="light"] .dailyCurvePeakMarker text {
+  fill: rgba(180, 83, 9, 0.88);
+}
+
+html[data-theme="light"] .dailyCurveDrawdownMarker text {
+  fill: rgba(190, 18, 60, 0.86);
+}
+
+html[data-theme="light"] .dailyCurveCrosshair line {
+  stroke: rgba(15, 23, 42, 0.28);
+}
+
+html[data-theme="light"] .dailyCurveCrosshair circle {
+  fill: #ffffff;
+  stroke: rgba(15, 23, 42, 0.74);
+}
+
+html[data-theme="light"] .dailyCurveTooltip {
+  border-color: rgba(15, 23, 42, 0.12);
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: 0 18px 42px rgba(15, 23, 42, 0.12);
+}
+
+html[data-theme="light"] .dailyCurveTooltip strong {
+  color: rgba(15, 23, 42, 0.88);
+}
+
+html[data-theme="light"] .dailyCurveTooltip span {
+  color: rgba(15, 23, 42, 0.58);
+}
+
+html[data-theme="light"] .dailyCurveLegend {
+  border-top-color: rgba(15, 23, 42, 0.08);
+}
+
+html[data-theme="light"] .dailyCurveLegend span {
+  color: rgba(15, 23, 42, 0.52);
+}
+
+html[data-theme="light"] .dailyCurveMeta span,
+html[data-theme="light"] .dailyCurveEmpty {
+  color: rgba(15, 23, 42, 0.56);
 }
 
 html[data-theme="light"] .challenge-method {
