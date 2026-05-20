@@ -416,7 +416,8 @@ html[data-theme="light"] .themeDarkLabel {
   color: #eef5ff;
 }
 
-.terminal-action:disabled {
+.terminal-action:disabled,
+.terminal-action.isDisabled {
   cursor: default;
   opacity: 0.48;
 }

@@ -4,7 +4,7 @@ import { autoTradeMarketForSignal } from "@/lib/auto-trade-platforms";
 import { dollarPerUnit } from "@/lib/instruments";
 import { fetchStoredAssetBars, fetchStoredMarketBars } from "@/lib/market-data-store";
 import { saveCronRun, updateDatasetSyncRunStatus } from "@/lib/live-config";
-import { activeRules, evaluateLatestSignal } from "@/lib/live-signals";
+import { activeRules, evaluateRecentSignals } from "@/lib/live-signals";
 import { claimTrade, getTrades, hasTrade, saveTrade } from "@/lib/storage";
 import { sendTelegram, sendTelegramManagement, sendTelegramOutcome } from "@/lib/telegram";
 import { TOPSTEP_100K_ACCOUNT, reviewTopstepSignal, withTopstepGuardNote } from "@/lib/topstep";
@@ -13,6 +13,10 @@ import type { Bar, CronResult, StrategyRule, TradeAlert, TradeManagementEvent } 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 export const maxDuration = 300;
+
+const FIFTEEN_MINUTE_MS = 15 * 60_000;
+const DEFAULT_SIGNAL_SCAN_LOOKBACK_HOURS = 26;
+const DEFAULT_SIGNAL_MAX_ACTIONABLE_AGE_MINUTES = 75;
 
 function isAuthorized(request: NextRequest): "ok" | "missing-secret" | "bad-secret" {
   const secret = process.env.CRON_SECRET;
@@ -66,10 +70,33 @@ function repeatSuppressionLookbackMs(): number {
   return (Number.isFinite(hours) && hours > 0 ? hours : 12) * 60 * 60_000;
 }
 
+function signalScanLookbackMs(): number {
+  const minutes = Number(process.env.SIGNAL_SCAN_LOOKBACK_MINUTES);
+  if (Number.isFinite(minutes) && minutes > 0) return minutes * 60_000;
+  const hours = Number(process.env.SIGNAL_SCAN_LOOKBACK_HOURS ?? DEFAULT_SIGNAL_SCAN_LOOKBACK_HOURS);
+  return (Number.isFinite(hours) && hours > 0 ? hours : DEFAULT_SIGNAL_SCAN_LOOKBACK_HOURS) * 60 * 60_000;
+}
+
+function signalScanMaxBars(lookbackMs: number): number {
+  const bars = Number(process.env.SIGNAL_SCAN_MAX_BARS);
+  if (Number.isFinite(bars) && bars > 0) return Math.max(1, Math.trunc(bars));
+  return Math.ceil(lookbackMs / FIFTEEN_MINUTE_MS) + 4;
+}
+
+function maxActionableSignalAgeMs(): number {
+  const minutes = Number(process.env.SIGNAL_MAX_ACTIONABLE_AGE_MINUTES ?? DEFAULT_SIGNAL_MAX_ACTIONABLE_AGE_MINUTES);
+  return (Number.isFinite(minutes) && minutes > 0 ? minutes : DEFAULT_SIGNAL_MAX_ACTIONABLE_AGE_MINUTES) * 60_000;
+}
+
 function repeatSignalKey(trade: Pick<TradeAlert, "logicalStrategyKey" | "side" | "strategy" | "strategyId" | "strategyKey" | "symbol">): string | null {
   const strategyKey = trade.logicalStrategyKey ?? trade.strategyKey ?? trade.strategyId ?? trade.strategy;
   if (!strategyKey || !trade.symbol || !trade.side) return null;
   return [trade.symbol, strategyKey, trade.side].join("\t");
+}
+
+function signalTimeMs(signal: Pick<TradeAlert, "signalTime">): number | null {
+  const time = Date.parse(signal.signalTime);
+  return Number.isFinite(time) ? time : null;
 }
 
 function newYorkDate(value: string): string | null {
@@ -100,19 +127,45 @@ function dailyStrategyKey(signal: TradeAlert): string | null {
 
 function recentRepeatTrade(signal: TradeAlert, trades: TradeAlert[], lookbackMs: number): TradeAlert | null {
   const key = repeatSignalKey(signal);
-  const signalTimeMs = Date.parse(signal.signalTime);
-  if (!key || !Number.isFinite(signalTimeMs)) return null;
+  const signalTimestamp = signalTimeMs(signal);
+  if (!key || signalTimestamp === null) return null;
 
   for (const trade of trades) {
     if (trade.id === signal.id || repeatSignalKey(trade) !== key) continue;
-    const tradeTimeMs = Date.parse(trade.signalTime);
-    if (!Number.isFinite(tradeTimeMs)) continue;
-    if (tradeTimeMs >= signalTimeMs - lookbackMs && tradeTimeMs <= signalTimeMs) {
+    const tradeTimestamp = signalTimeMs(trade);
+    if (tradeTimestamp === null) continue;
+    if (tradeTimestamp >= signalTimestamp - lookbackMs && tradeTimestamp <= signalTimestamp) {
       return trade;
     }
   }
 
   return null;
+}
+
+function recentCandidateRepeatTrade(
+  signal: TradeAlert,
+  candidatesByRepeatKey: Map<string, TradeAlert[]>,
+  lookbackMs: number
+): TradeAlert | null {
+  const key = repeatSignalKey(signal);
+  const signalTimestamp = signalTimeMs(signal);
+  if (!key || signalTimestamp === null) return null;
+
+  for (const trade of candidatesByRepeatKey.get(key) ?? []) {
+    const tradeTimestamp = signalTimeMs(trade);
+    if (tradeTimestamp === null) continue;
+    if (tradeTimestamp >= signalTimestamp - lookbackMs && tradeTimestamp <= signalTimestamp) {
+      return trade;
+    }
+  }
+
+  return null;
+}
+
+function addCandidateRepeatTrade(signal: TradeAlert, candidatesByRepeatKey: Map<string, TradeAlert[]>): void {
+  const key = repeatSignalKey(signal);
+  if (!key) return;
+  candidatesByRepeatKey.set(key, [...(candidatesByRepeatKey.get(key) ?? []), signal]);
 }
 
 type LifecycleAndManagementEvaluation = {
@@ -603,12 +656,25 @@ async function runSignalCheck(): Promise<CronResult> {
   const candidates: Array<{ signal: ReturnType<typeof withTopstepGuardNote>; score: number; riskDollars: number }> = [];
   const recentTrades = await getTrades();
   const repeatLookbackMs = repeatSuppressionLookbackMs();
-  const candidateRepeatKeys = new Set<string>();
+  const scanReferenceMs = Date.now();
+  const scanLookbackMs = signalScanLookbackMs();
+  const scanMaxBars = signalScanMaxBars(scanLookbackMs);
+  const maxActionableAgeMs = maxActionableSignalAgeMs();
+  const scanSinceMs = scanReferenceMs - scanLookbackMs;
+  const candidateRepeatSignals = new Map<string, TradeAlert[]>();
   const candidateDailyKeys = new Set<string>();
   const rules = await activeRules();
   if (!rules.length) {
     throw new Error("No active live strategies are enabled for signal checks.");
   }
+  result.signalScan = {
+    candidates: 0,
+    lookbackMinutes: Math.round(scanLookbackMs / 60_000),
+    maxActionableAgeMinutes: Math.round(maxActionableAgeMs / 60_000),
+    maxBars: scanMaxBars,
+    rawSignals: 0,
+    staleSignals: 0
+  };
 
   const barsByAssetKey = new Map<string, Bar[]>();
   const assetTimings = new Map<string, { assetKey: string; durationMs: number; rules: number; symbol: string }>();
@@ -622,69 +688,81 @@ async function runSignalCheck(): Promise<CronResult> {
         bars = await fetchStoredMarketBars(rule);
         barsByAssetKey.set(rule.assetKey, bars);
       }
-      const signal = evaluateLatestSignal(rule, bars);
-      if (!signal) continue;
+      const signals = evaluateRecentSignals(rule, bars, { maxBars: scanMaxBars, sinceMs: scanSinceMs });
+      result.signalScan.rawSignals += signals.length;
 
-      if (await hasTrade(signal.id)) {
-        result.skippedDuplicates.push(signal.id);
-        continue;
-      }
-
-      if (rule.oneTradePerDay) {
-        const sameDayTrade = recentSameStrategyDay(signal, recentTrades);
-        if (sameDayTrade) {
-          result.skippedDuplicates.push(`${signal.id} repeats ${sameDayTrade.id} on the same New York session`);
+      for (const signal of signals) {
+        if (await hasTrade(signal.id)) {
+          result.skippedDuplicates.push(signal.id);
           continue;
         }
-        const dayKey = dailyStrategyKey(signal);
-        if (dayKey && candidateDailyKeys.has(dayKey)) {
-          result.skippedDuplicates.push(`${signal.id} repeats another same-session signal in this check`);
+
+        const signalTimestamp = signalTimeMs(signal);
+        if (signalTimestamp === null || scanReferenceMs - signalTimestamp > maxActionableAgeMs) {
+          result.signalScan.staleSignals += 1;
+          result.skippedRisk.push({
+            id: signal.id,
+            symbol: signal.symbol,
+            reason: `missed signal is older than the ${result.signalScan.maxActionableAgeMinutes} minute actionable window`
+          });
           continue;
         }
-        if (dayKey) candidateDailyKeys.add(dayKey);
-      }
 
-      const repeat = recentRepeatTrade(signal, recentTrades, repeatLookbackMs);
-      if (repeat) {
-        result.skippedDuplicates.push(`${signal.id} repeats ${repeat.id}`);
-        continue;
-      }
+        if (rule.oneTradePerDay) {
+          const sameDayTrade = recentSameStrategyDay(signal, recentTrades);
+          if (sameDayTrade) {
+            result.skippedDuplicates.push(`${signal.id} repeats ${sameDayTrade.id} on the same New York session`);
+            continue;
+          }
+          const dayKey = dailyStrategyKey(signal);
+          if (dayKey && candidateDailyKeys.has(dayKey)) {
+            result.skippedDuplicates.push(`${signal.id} repeats another same-session signal in this check`);
+            continue;
+          }
+          if (dayKey) candidateDailyKeys.add(dayKey);
+        }
 
-      const candidateRepeatKey = repeatSignalKey(signal);
-      if (candidateRepeatKey && candidateRepeatKeys.has(candidateRepeatKey)) {
-        result.skippedDuplicates.push(`${signal.id} repeats another signal in this check`);
-        continue;
-      }
-      if (candidateRepeatKey) {
-        candidateRepeatKeys.add(candidateRepeatKey);
-      }
+        const repeat = recentRepeatTrade(signal, recentTrades, repeatLookbackMs);
+        if (repeat) {
+          result.skippedDuplicates.push(`${signal.id} repeats ${repeat.id}`);
+          continue;
+        }
 
-      const signalMarket = autoTradeMarketForSignal(signal.market);
-      if (!signalMarket) {
-        result.skippedRisk.push({
-          id: signal.id,
-          symbol: signal.symbol,
-          reason: `no auto-trade market route for ${signal.market}`
+        const candidateRepeat = recentCandidateRepeatTrade(signal, candidateRepeatSignals, repeatLookbackMs);
+        if (candidateRepeat) {
+          result.skippedDuplicates.push(`${signal.id} repeats another signal in this check (${candidateRepeat.id})`);
+          continue;
+        }
+        addCandidateRepeatTrade(signal, candidateRepeatSignals);
+
+        const signalMarket = autoTradeMarketForSignal(signal.market);
+        if (!signalMarket) {
+          result.skippedRisk.push({
+            id: signal.id,
+            symbol: signal.symbol,
+            reason: `no auto-trade market route for ${signal.market}`
+          });
+          continue;
+        }
+
+        const topstepReview = signalMarket === "futures" ? reviewTopstepSignal(rule, signal) : null;
+        if (topstepReview && !topstepReview.allowed) {
+          result.skippedRisk.push({
+            id: signal.id,
+            symbol: signal.symbol,
+            reason: topstepReview.reason ?? "Futures risk guard rejected the signal"
+          });
+          continue;
+        }
+
+        const dollars = topstepReview ?? signalDollars(signal);
+        candidates.push({
+          signal: topstepReview ? withTopstepGuardNote(signal, topstepReview) : signal,
+          score: topstepReview?.score ?? genericSignalScore(signal, dollars.riskDollars, dollars.targetDollars),
+          riskDollars: dollars.riskDollars
         });
-        continue;
+        result.signalScan.candidates = candidates.length;
       }
-
-      const topstepReview = signalMarket === "futures" ? reviewTopstepSignal(rule, signal) : null;
-      if (topstepReview && !topstepReview.allowed) {
-        result.skippedRisk.push({
-          id: signal.id,
-          symbol: signal.symbol,
-          reason: topstepReview.reason ?? "Futures risk guard rejected the signal"
-        });
-        continue;
-      }
-
-      const dollars = topstepReview ?? signalDollars(signal);
-      candidates.push({
-        signal: topstepReview ? withTopstepGuardNote(signal, topstepReview) : signal,
-        score: topstepReview?.score ?? genericSignalScore(signal, dollars.riskDollars, dollars.targetDollars),
-        riskDollars: dollars.riskDollars
-      });
     } catch (error) {
       if (isMarketDataStaleError(error)) {
         if (!skippedDataKeys.has(rule.assetKey)) {
@@ -716,7 +794,7 @@ async function runSignalCheck(): Promise<CronResult> {
   let acceptedCount = 0;
 
   const selected = candidates
-    .sort((left, right) => right.score - left.score)
+    .sort((left, right) => right.score - left.score || (signalTimeMs(right.signal) ?? 0) - (signalTimeMs(left.signal) ?? 0))
     .filter((candidate) => {
       if (acceptedCount >= maxAlerts) {
         result.skippedRisk.push({
@@ -813,6 +891,7 @@ export async function GET(request: NextRequest) {
       durationMs,
       errors: result.errors.length,
       generated: result.generated.length,
+      signalScan: result.signalScan,
       skippedData: result.skippedData?.length ?? 0,
       skippedDuplicates: result.skippedDuplicates.length,
       skippedRisk: result.skippedRisk.length

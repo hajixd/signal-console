@@ -8,7 +8,7 @@ import type { CronResult } from "@/lib/types";
 
 const LIVE_CONFIG_CACHE_TTL_MS = 30_000;
 const DATASET_STATUS_CACHE_TTL_MS = 30_000;
-const LOCAL_RUNTIME_ROOT = process.env.VERCEL === "1" ? path.join(tmpdir(), "signal-console") : path.join(process.cwd(), ".local");
+const LOCAL_RUNTIME_ROOT = process.env.VERCEL === "1" ? path.join(tmpdir(), "signal-console") : path.join(/*turbopackIgnore: true*/ process.cwd(), ".local");
 const LIVE_CONFIG_LOCAL_PATH = path.join(LOCAL_RUNTIME_ROOT, "signal-console-live-config.json");
 const DATASET_STATUS_LOCAL_PATH = path.join(LOCAL_RUNTIME_ROOT, "signal-console-dataset-status.json");
 const LIVE_CONFIG_COLLECTION = "signalConsoleConfig";

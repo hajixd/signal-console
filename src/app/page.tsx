@@ -1860,10 +1860,8 @@ export default async function Home({ searchParams }: HomeProps) {
     }));
   const challengeReplaySeed = `trading-bot:${activeMarket}:${selectedKeys.join("|")}`;
   const challengeHistoricalSessions = challengeSessionCount(challengeReplayTrades);
-  const telegramBotUsername = process.env.TELEGRAM_BOT_USERNAME?.replace(/^@/, "");
   const telegramConfigured = Boolean(process.env.TELEGRAM_BOT_TOKEN && (process.env.TELEGRAM_GROUP_CHAT_ID || process.env.TELEGRAM_CHAT_ID));
-  const telegramInviteLink = telegramGroupInviteLink();
-  const telegramLink = telegramInviteLink ?? (telegramBotUsername ? `https://t.me/${telegramBotUsername}` : "https://t.me/BotFather");
+  const telegramGroupLink = telegramGroupInviteLink();
   const alertStore = storageMode();
   const assetStore = projectAssetMode();
   const liveSelectionCount = persistedLiveEnabledKeys.length || persistedSelectedKeys.length;
@@ -1890,9 +1888,15 @@ export default async function Home({ searchParams }: HomeProps) {
           </div>
           <div className="terminal-actions">
             <ThemeToggle initialTheme={liveConfig.dashboardSettings.theme} persistTheme={syncTheme} />
-            <a className="terminal-action" href={telegramLink} target="_blank" rel="noreferrer">
-              {telegramInviteLink ? "Join Telegram group" : telegramBotUsername ? "Open Telegram bot" : "Open BotFather"}
-            </a>
+            {telegramGroupLink ? (
+              <a className="terminal-action" href={telegramGroupLink} target="_blank" rel="noreferrer">
+                Open Telegram group
+              </a>
+            ) : (
+              <span className="terminal-action isDisabled" aria-disabled="true">
+                Telegram group link missing
+              </span>
+            )}
             <TestAlertButton disabled={!telegramConfigured} sendTestAlert={sendTestTelegramAlert} />
             <AutoTradingConnectionDrawer market={executionMarket} />
           </div>

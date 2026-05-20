@@ -9,6 +9,7 @@ import { planTradeAlert } from "@/lib/trade-planner";
 import type { Bar, StrategyRule, TradeAlert } from "@/lib/types";
 
 const NEXT_BAR_ENTRY_MODE = "market order enters on the next 15m open";
+const MINIMUM_SIGNAL_BARS = 260;
 
 function betterRule(nextRule: StrategyRule, currentRule: StrategyRule): boolean {
   if (nextRule.liveProfitFactor !== currentRule.liveProfitFactor) {
@@ -221,13 +222,33 @@ export async function activeRules(): Promise<StrategyRule[]> {
 }
 
 export function evaluateLatestSignal(rule: StrategyRule, rawBars: Bar[]): TradeAlert | null {
-  if (rawBars.length < 260) return null;
+  return evaluateRecentSignals(rule, rawBars, { maxBars: 1 }).at(-1) ?? null;
+}
+
+export function evaluateRecentSignals(
+  rule: StrategyRule,
+  rawBars: Bar[],
+  options: { maxBars?: number; sinceMs?: number } = {}
+): TradeAlert[] {
+  if (rawBars.length < MINIMUM_SIGNAL_BARS) return [];
   const strategy = STRATEGY_DEFINITIONS.find((item) => item.id === rule.strategyId);
-  if (!strategy) return null;
+  if (!strategy) return [];
   const bars = enrichBars(rawBars);
-  const signalIndex = bars.length - 1;
-  const rawSignal = strategy.evaluator(rule, bars, signalIndex);
-  if (!rawSignal) return null;
-  const signal = invertStrategySignal(rule, rawSignal);
-  return planTradeAlert(rule, signal, bars, signalIndex, NEXT_BAR_ENTRY_MODE);
+  const configuredMaxBars = positiveNumber(options.maxBars);
+  const maxBars = configuredMaxBars ? Math.max(1, Math.trunc(configuredMaxBars)) : bars.length;
+  const startIndex = Math.max(MINIMUM_SIGNAL_BARS - 1, bars.length - maxBars);
+  const signals: TradeAlert[] = [];
+
+  for (let signalIndex = startIndex; signalIndex < bars.length; signalIndex += 1) {
+    const signalTime = Date.parse(bars[signalIndex]?.time ?? "");
+    if (options.sinceMs !== undefined && (!Number.isFinite(signalTime) || signalTime < options.sinceMs)) continue;
+
+    const rawSignal = strategy.evaluator(rule, bars, signalIndex);
+    if (!rawSignal) continue;
+    const signal = invertStrategySignal(rule, rawSignal);
+    const planned = planTradeAlert(rule, signal, bars, signalIndex, NEXT_BAR_ENTRY_MODE);
+    if (planned) signals.push(planned);
+  }
+
+  return signals;
 }

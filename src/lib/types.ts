@@ -235,6 +235,14 @@ export type CronResult = {
     refreshedAt: string;
     uploadedFiles: number;
   };
+  signalScan?: {
+    candidates: number;
+    lookbackMinutes: number;
+    maxActionableAgeMinutes: number;
+    maxBars: number;
+    rawSignals: number;
+    staleSignals: number;
+  };
   generated: TradeAlert[];
   skippedData?: Array<{ assetKey: string; reason: string; symbol: string }>;
   skippedDuplicates: string[];
