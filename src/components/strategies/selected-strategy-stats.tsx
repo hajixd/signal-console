@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useMemo, useState, type MouseEvent as ReactMouseEvent } from "react";
+import { useState } from "react";
 import {
   strategyContractScale,
   type StrategyEditOption,
@@ -131,21 +131,6 @@ function fmtDurationMs(value: number): string {
   if (days > 0) return hours > 0 ? `${days}d ${hours}h` : `${days}d`;
   if (hours > 0) return minutes > 0 ? `${hours}h ${minutes}m` : `${hours}h`;
   return `${minutes}m`;
-}
-
-function clamp(value: number, min: number, max: number): number {
-  return Math.min(max, Math.max(min, value));
-}
-
-function formatDayKeyLabel(dayKey: string): string {
-  const date = new Date(`${dayKey}T00:00:00Z`);
-  if (!Number.isFinite(date.getTime())) return dayKey;
-  return date.toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-    timeZone: "UTC"
-  });
 }
 
 function localTradeDayKey(value: string): string {
@@ -328,221 +313,6 @@ function tradeCadence(trades: BasketTrade[]) {
   };
 }
 
-function DailyCurveSparkline({ points }: { points: DailyCurvePoint[] }) {
-  const [hoverIndex, setHoverIndex] = useState<number | null>(null);
-  const chartId = useId().replace(/[^a-zA-Z0-9_-]/g, "");
-  const width = 720;
-  const height = 164;
-  const padLeft = 54;
-  const padRight = 22;
-  const padTop = 18;
-  const padBottom = 30;
-  const plotWidth = width - padLeft - padRight;
-  const plotHeight = height - padTop - padBottom;
-  const plot = useMemo(() => {
-    if (points.length < 2) return null;
-    const equities = points.map((point) => point.equity);
-    const dailyValues = points.map((point) => point.pnl);
-    const maxDrawdown = Math.max(0, ...points.map((point) => point.drawdown));
-    let runningPeak = 0;
-    const peakValues = points.map((point) => {
-      runningPeak = Math.max(runningPeak, point.equity);
-      return runningPeak;
-    });
-    const minEquity = Math.min(0, ...equities);
-    const maxEquity = Math.max(0, ...equities);
-    const span = Math.max(1, maxEquity - minEquity);
-    const xFor = (index: number) => padLeft + (index / Math.max(1, points.length - 1)) * plotWidth;
-    const yFor = (value: number) => padTop + ((maxEquity - value) / span) * plotHeight;
-    const zeroY = yFor(0);
-    const linePath = points
-      .map((point, index) => `${index === 0 ? "M" : "L"} ${xFor(index).toFixed(2)} ${yFor(point.equity).toFixed(2)}`)
-      .join(" ");
-    const highWaterPath = peakValues
-      .map((peak, index) => `${index === 0 ? "M" : "L"} ${xFor(index).toFixed(2)} ${yFor(peak).toFixed(2)}`)
-      .join(" ");
-    const areaPath = `${linePath} L ${xFor(points.length - 1).toFixed(2)} ${zeroY.toFixed(2)} L ${xFor(0).toFixed(2)} ${zeroY.toFixed(2)} Z`;
-    const yTickValues = [maxEquity, maxEquity - span * 0.25, maxEquity - span * 0.5, maxEquity - span * 0.75, minEquity];
-    const uniqueYTicks = yTickValues.filter((value, index, list) => list.findIndex((candidate) => Math.abs(candidate - value) < 0.01) === index);
-    const dailyMaxAbs = Math.max(1, ...dailyValues.map((value) => Math.abs(value)));
-    const barWidth = clamp((plotWidth / points.length) * 0.55, 2, 11);
-    const drawdownHeight = 22;
-    const drawdownBase = height - 6;
-    const peakIndex = equities.reduce((bestIndex, value, index) => (value > (equities[bestIndex] ?? -Infinity) ? index : bestIndex), 0);
-    const maxDrawdownIndex = points.reduce(
-      (bestIndex, point, index) => (point.drawdown > (points[bestIndex]?.drawdown ?? -Infinity) ? index : bestIndex),
-      0
-    );
-
-    return {
-      areaPath,
-      barWidth,
-      dailyMaxAbs,
-      drawdownBase,
-      drawdownHeight,
-      highWaterPath,
-      linePath,
-      maxDrawdown,
-      maxEquity,
-      maxDrawdownIndex,
-      minEquity,
-      peakIndex,
-      peakValues,
-      xFor,
-      yFor,
-      yTicks: uniqueYTicks,
-      zeroY
-    };
-  }, [padLeft, plotHeight, plotWidth, points]);
-
-  if (points.length < 2) {
-    return <div className="dailyCurveEmpty">Daily curve needs at least two trading days.</div>;
-  }
-
-  if (!plot) return null;
-
-  const last = points[points.length - 1]!;
-  const tone = last.equity >= 0 ? "up" : "down";
-  const activeIndex = hoverIndex ?? points.length - 1;
-  const activePoint = points[activeIndex] ?? last;
-  const activeX = plot.xFor(activeIndex);
-  const activeY = plot.yFor(activePoint.equity);
-  const tooltipSide = activeX > width * 0.68 ? "left" : "right";
-  const tooltipTop = clamp(activeY, 34, height - 38);
-  const peakPoint = points[plot.peakIndex] ?? last;
-  const drawdownPoint = points[plot.maxDrawdownIndex] ?? last;
-  const activePeak = plot.peakValues[activeIndex] ?? 0;
-
-  function handleMouseMove(event: ReactMouseEvent<HTMLDivElement>) {
-    const rect = event.currentTarget.getBoundingClientRect();
-    const ratio = clamp((event.clientX - rect.left) / Math.max(1, rect.width), 0, 1);
-    const svgX = ratio * width;
-    const index = Math.round(((svgX - padLeft) / plotWidth) * Math.max(1, points.length - 1));
-    setHoverIndex(clamp(index, 0, points.length - 1));
-  }
-
-  return (
-    <div
-      className={`dailyCurveSparkline ${tone}${hoverIndex == null ? "" : " isHovering"}`}
-      onClick={(event) => event.stopPropagation()}
-      onMouseLeave={() => setHoverIndex(null)}
-      onMouseMove={handleMouseMove}
-    >
-      <svg viewBox={`0 0 ${width} ${height}`} role="img" aria-label="Cumulative daily profit and loss curve">
-        <defs>
-          <linearGradient id={`${chartId}-area`} x1="0" x2="0" y1="0" y2="1">
-            <stop offset="0%" className="dailyCurveAreaStopStart" />
-            <stop offset="100%" className="dailyCurveAreaStopEnd" />
-          </linearGradient>
-          <linearGradient id={`${chartId}-dd`} x1="0" x2="0" y1="0" y2="1">
-            <stop offset="0%" stopColor="rgba(248,113,113,0.42)" />
-            <stop offset="100%" stopColor="rgba(248,113,113,0.02)" />
-          </linearGradient>
-        </defs>
-
-        <rect x="0" y="0" width={width} height={height} className="dailyCurvePanelBg" />
-        {plot.yTicks.map((value) => {
-          const y = plot.yFor(value);
-          return (
-            <g key={`y-${value.toFixed(2)}`}>
-              <line x1={padLeft} x2={width - padRight} y1={y} y2={y} className="dailyCurveGridLine" />
-              <text x={padLeft - 10} y={y + 4} className="dailyCurveAxisLabel" textAnchor="end">
-                {fmtMoney(value)}
-              </text>
-            </g>
-          );
-        })}
-        <line x1={padLeft} x2={width - padRight} y1={plot.zeroY} y2={plot.zeroY} className="dailyCurveZeroLine" />
-        <text x={width - padRight} y={plot.zeroY - 6} className="dailyCurveZeroLabel" textAnchor="end">
-          break even
-        </text>
-
-        {points.map((point, index) => {
-          const x = plot.xFor(index);
-          const half = plot.barWidth / 2;
-          const positive = point.pnl >= 0;
-          const barHeight = Math.max(2, (Math.abs(point.pnl) / plot.dailyMaxAbs) * 30);
-          const y = positive ? plot.zeroY - barHeight : plot.zeroY;
-          const drawdownHeight = plot.maxDrawdown > 0 ? (point.drawdown / plot.maxDrawdown) * plot.drawdownHeight : 0;
-          return (
-            <g key={point.dayKey}>
-              {drawdownHeight > 0.8 ? (
-                <rect
-                  x={x - half}
-                  y={plot.drawdownBase - drawdownHeight}
-                  width={plot.barWidth}
-                  height={drawdownHeight}
-                  className="dailyCurveDrawdownBar"
-                />
-              ) : null}
-              <rect
-                x={x - half}
-                y={y}
-                width={plot.barWidth}
-                height={barHeight}
-                className={positive ? "dailyCurveDailyBar up" : "dailyCurveDailyBar down"}
-              />
-            </g>
-          );
-        })}
-
-        <path d={plot.areaPath} className="dailyCurveArea" fill={`url(#${chartId}-area)`} />
-        <path d={plot.highWaterPath} className="dailyCurveHighWaterLine" />
-        <path d={plot.linePath} className="dailyCurveLine" pathLength={1} />
-        <g className="dailyCurvePeakMarker">
-          <circle cx={plot.xFor(plot.peakIndex)} cy={plot.yFor(peakPoint.equity)} r="3.5" />
-          <text x={plot.xFor(plot.peakIndex) + 7} y={plot.yFor(peakPoint.equity) - 7}>
-            Peak {fmtMoney(peakPoint.equity, true)}
-          </text>
-        </g>
-        {plot.maxDrawdown > 0 ? (
-          <g className="dailyCurveDrawdownMarker">
-            <circle cx={plot.xFor(plot.maxDrawdownIndex)} cy={plot.yFor(drawdownPoint.equity)} r="3.5" />
-            <text x={plot.xFor(plot.maxDrawdownIndex) + 7} y={plot.yFor(drawdownPoint.equity) + 15}>
-              Max DD {fmtMoney(-plot.maxDrawdown)}
-            </text>
-          </g>
-        ) : null}
-        <g className="dailyCurveEndMarker">
-          <circle cx={plot.xFor(points.length - 1)} cy={plot.yFor(last.equity)} r="4" className="dailyCurveEndDot" />
-          <text x={plot.xFor(points.length - 1) - 8} y={plot.yFor(last.equity) - 10} textAnchor="end">
-            {fmtMoney(last.equity, true)}
-          </text>
-        </g>
-        <g className="dailyCurveDateRail">
-          <text x={padLeft} y={height - 10}>{formatDayKeyLabel(points[0]!.dayKey)}</text>
-          <text x={width - padRight} y={height - 10} textAnchor="end">{formatDayKeyLabel(last.dayKey)}</text>
-        </g>
-
-        {hoverIndex == null ? null : (
-          <g className="dailyCurveCrosshair">
-            <line x1={activeX} x2={activeX} y1={padTop} y2={height - padBottom} />
-            <line x1={padLeft} x2={width - padRight} y1={activeY} y2={activeY} />
-            <circle cx={activeX} cy={activeY} r="5" />
-          </g>
-        )}
-      </svg>
-      {hoverIndex == null ? null : (
-        <div
-          className={`dailyCurveTooltip ${tooltipSide}`}
-          style={{ left: `${(activeX / width) * 100}%`, top: `${(tooltipTop / height) * 100}%` }}
-        >
-          <strong>{formatDayKeyLabel(activePoint.dayKey)}</strong>
-          <span className={activePoint.equity >= 0 ? "up" : "down"}>Equity {fmtMoney(activePoint.equity, true)}</span>
-          <span className={activePoint.pnl >= 0 ? "up" : "down"}>Day {fmtMoney(activePoint.pnl, true)}</span>
-          <span>High water {fmtMoney(activePeak, true)}</span>
-          <span>Drawdown {fmtMoney(-activePoint.drawdown)}</span>
-        </div>
-      )}
-      <div className="dailyCurveLegend" aria-hidden="true">
-        <span className="equity">Equity</span>
-        <span className="daily">Daily P&L</span>
-        <span className="drawdown">Drawdown</span>
-      </div>
-    </div>
-  );
-}
-
 export default function SelectedStrategyStats({ dataEndAt, strategies, trades, persistedStrategyEdits }: SelectedStrategyStatsProps) {
   const [expanded, setExpanded] = useState(false);
   const edits = useStrategyEdits(strategies, persistedStrategyEdits);
@@ -596,19 +366,6 @@ export default function SelectedStrategyStats({ dataEndAt, strategies, trades, p
       </div>
       {expanded ? (
         <>
-      <div className={`backtest-stat-card dailyCurveStatCard ${statTone(selectedDollarAggregate.totalDollars)}`}>
-        <div className="dailyCurveStatHead">
-          <span>Daily curve</span>
-          <strong>{selectedDollarAggregate.trades ? fmtMoney(selectedDollarAggregate.totalDollars, true) : "--"}</strong>
-        </div>
-        <DailyCurveSparkline points={selectedDollarAggregate.dailyCurve} />
-        <div className="dailyCurveMeta">
-          <span>{fmtNumber(selectedDollarAggregate.activeDays)} active days</span>
-          <span>{fmtNumber(selectedDollarAggregate.winningDays)} winning days</span>
-          <span>{fmtNumber(selectedDollarAggregate.losingDays)} losing days</span>
-          <span>{selectedDollarAggregate.trades ? fmtMoney(selectedDollarAggregate.avgDailyDollars, true) : "--"} avg day</span>
-        </div>
-      </div>
       <div className={`backtest-stat-card ${statTone(selectedDollarAggregate.avgDailyDollars)}`}>
         <span>Average day</span>
         <strong>{selectedDollarAggregate.trades ? fmtMoney(selectedDollarAggregate.avgDailyDollars, true) : "--"}</strong>

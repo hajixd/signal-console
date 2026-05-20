@@ -2,6 +2,7 @@
 
 import {
   useEffect,
+  useId,
   useMemo,
   useRef,
   useState,
@@ -479,15 +480,31 @@ function BacktestTradeMiniChart({
   status: CalendarChartState["status"];
   trade: TradeHistoryRow;
 }) {
+  const [hoverIndex, setHoverIndex] = useState<number | null>(null);
+  const [chartWidth, setChartWidth] = useState(820);
+  const chartId = useId().replace(/[^a-zA-Z0-9_-]/g, "");
+  const chartRef = useRef<HTMLDivElement | null>(null);
   const data = useMemo(() => buildMiniChartPoints(trade, bars), [bars, trade]);
   const direction = trade.side === "long" ? 1 : -1;
   const dollarsPerPoint = Math.max(0.000001, Math.abs(trade.dollarsPerPricePoint || 1));
   const entryPrice = trade.entryPrice;
+
+  useEffect(() => {
+    const node = chartRef.current;
+    if (!node || typeof ResizeObserver === "undefined") return undefined;
+
+    const syncWidth = () => setChartWidth(Math.max(360, Math.round(node.getBoundingClientRect().width || 820)));
+    syncWidth();
+    const observer = new ResizeObserver(syncWidth);
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, []);
+
   const plot = useMemo(() => {
     if (data.length < 2) return null;
-    const width = 760;
-    const height = 260;
-    const margins = { top: 18, right: 24, bottom: 38, left: 54 };
+    const width = Math.max(360, chartWidth);
+    const height = width < 640 ? 250 : 300;
+    const margins = width < 640 ? { top: 22, right: 18, bottom: 42, left: 48 } : { top: 24, right: 34, bottom: 46, left: 64 };
     const plotWidth = width - margins.left - margins.right;
     const plotHeight = height - margins.top - margins.bottom;
     const lows = data.map((point) => point.low).filter(Number.isFinite);
@@ -505,15 +522,36 @@ function BacktestTradeMiniChart({
     const xMax = Math.max(1, ...data.map((point) => point.x));
     const scaleX = (value: number) => margins.left + (value / xMax) * plotWidth;
     const scaleY = (value: number) => margins.top + ((yMax - value) / Math.max(0.000000001, yMax - yMin)) * plotHeight;
+    let runningMfe = 0;
+    let runningMae = 0;
+    const points = data.map((point) => {
+      const pricePnl = (point.price - entryPrice) * direction * dollarsPerPoint;
+      const favorablePrice = direction === 1 ? point.high : point.low;
+      const adversePrice = direction === 1 ? point.low : point.high;
+      const favorablePnl = Math.max(0, (favorablePrice - entryPrice) * direction * dollarsPerPoint, pricePnl);
+      const adversePnl = Math.min(0, (adversePrice - entryPrice) * direction * dollarsPerPoint, pricePnl);
+      runningMfe = Math.max(runningMfe, favorablePnl);
+      runningMae = Math.min(runningMae, adversePnl);
+      return {
+        ...point,
+        adversePnl,
+        adversePrice,
+        favorablePrice,
+        favorablePnl,
+        pnlDollars: pricePnl,
+        runningMae,
+        runningMfe,
+        xCoord: scaleX(point.x),
+        yCoord: scaleY(point.price)
+      };
+    });
     const toneForPrice = (price: number): "up" | "down" | "flat" => {
       const pnl = (price - entryPrice) * direction * dollarsPerPoint;
       if (pnl > 0.000001) return "up";
       if (pnl < -0.000001) return "down";
       return "flat";
     };
-    const strokeForTone = (tone: "up" | "down" | "flat") =>
-      tone === "up" ? "#34d399" : tone === "down" ? "#f87171" : "#ffffff";
-    const segments: Array<{ d: string; stroke: string; title: string }> = [];
+    const segments: Array<{ d: string; tone: "up" | "down" | "flat" }> = [];
 
     for (let index = 1; index < data.length; index += 1) {
       const previous = data[index - 1]!;
@@ -523,8 +561,7 @@ function BacktestTradeMiniChart({
       const pushSegment = (leftX: number, leftPrice: number, rightX: number, rightPrice: number, tone: "up" | "down" | "flat") => {
         segments.push({
           d: `M ${scaleX(leftX).toFixed(2)} ${scaleY(leftPrice).toFixed(2)} L ${scaleX(rightX).toFixed(2)} ${scaleY(rightPrice).toFixed(2)}`,
-          stroke: strokeForTone(tone),
-          title: `${formatChartPrice(rightPrice)} / ${formatSignedMoney((rightPrice - entryPrice) * direction * dollarsPerPoint)}`
+          tone
         });
       };
 
@@ -542,18 +579,46 @@ function BacktestTradeMiniChart({
       pushSegment(previous.x, previous.price, current.x, current.price, currentTone === "flat" ? previousTone : currentTone);
     }
 
+    const linePath = points
+      .map((point, index) => `${index === 0 ? "M" : "L"} ${point.xCoord.toFixed(2)} ${point.yCoord.toFixed(2)}`)
+      .join(" ");
+    const entryY = scaleY(trade.entryPrice);
+    const areaPath = `${linePath} L ${points[points.length - 1]!.xCoord.toFixed(2)} ${entryY.toFixed(2)} L ${points[0]!.xCoord.toFixed(2)} ${entryY.toFixed(2)} Z`;
+    const gridTicks = [0, 0.25, 0.5, 0.75, 1].map((ratio) => yMax - (yMax - yMin) * ratio);
+    const levels = [
+      { label: "TP", tone: "tp", value: trade.targetPrice },
+      { label: "Entry", tone: "entry", value: trade.entryPrice },
+      { label: "SL", tone: "sl", value: trade.stopPrice }
+    ].filter((level) => Number.isFinite(level.value));
+    const xTicks = [
+      { label: "Entry", value: 0 },
+      { label: formatMinutesCompact(xMax / 2), value: xMax / 2 },
+      { label: "Exit", value: xMax }
+    ];
+    const mfeIndex = points.reduce((bestIndex, point, index) => (point.favorablePnl > (points[bestIndex]?.favorablePnl ?? -Infinity) ? index : bestIndex), 0);
+    const maeIndex = points.reduce((bestIndex, point, index) => (point.adversePnl < (points[bestIndex]?.adversePnl ?? Infinity) ? index : bestIndex), 0);
+
     return {
-      axisLabelY: height - 10,
-      data,
+      areaPath,
+      entryY,
+      gridTicks,
       height,
+      levels,
+      linePath,
+      maeIndex,
+      margins,
+      mfeIndex,
+      plotHeight,
+      plotWidth,
+      points,
       segments,
       scaleX,
       scaleY,
       width,
       xMax,
-      yTicks: [trade.targetPrice, trade.entryPrice, trade.stopPrice].filter(Number.isFinite)
+      xTicks
     };
-  }, [data, direction, dollarsPerPoint, entryPrice, trade.entryPrice, trade.exitPrice, trade.stopPrice, trade.targetPrice]);
+  }, [chartWidth, data, direction, dollarsPerPoint, entryPrice, trade.entryPrice, trade.exitPrice, trade.stopPrice, trade.targetPrice]);
 
   if (status === "loading") {
     return <div className="backtest-trade-mini-empty">Loading price movement...</div>;
@@ -563,64 +628,236 @@ function BacktestTradeMiniChart({
     return <div className="backtest-trade-mini-empty">Price movement unavailable.</div>;
   }
 
+  const chart = plot;
+  const activeIndex = hoverIndex ?? chart.points.length - 1;
+  const activePoint = chart.points[activeIndex] ?? chart.points[chart.points.length - 1]!;
+  const activeX = activePoint.xCoord;
+  const activeY = activePoint.yCoord;
+  const tooltipSide = activeX > chart.width * 0.68 ? "left" : "right";
+  const tooltipTop = clamp(activeY, 44, chart.height - 52);
+  const tooltipTopRatio = tooltipTop / chart.height;
+  const targetGapDollars = (trade.targetPrice - activePoint.price) * direction * dollarsPerPoint;
+  const stopBufferDollars = (activePoint.price - trade.stopPrice) * direction * dollarsPerPoint;
+  const isTradeWinner = trade.pnlDollars >= 0;
+
+  function handleMouseMove(event: ReactMouseEvent<HTMLDivElement>) {
+    const rect = event.currentTarget.getBoundingClientRect();
+    const ratio = clamp((event.clientX - rect.left) / Math.max(1, rect.width), 0, 1);
+    const svgX = ratio * chart.width;
+    const targetX = clamp((svgX - chart.margins.left) / Math.max(1, chart.plotWidth), 0, 1) * chart.xMax;
+    let nextIndex = 0;
+    let nextDistance = Infinity;
+    for (let index = 0; index < chart.points.length; index += 1) {
+      const distance = Math.abs(chart.points[index]!.x - targetX);
+      if (distance < nextDistance) {
+        nextDistance = distance;
+        nextIndex = index;
+      }
+    }
+    setHoverIndex((current) => (current === nextIndex ? current : nextIndex));
+  }
+
   return (
-    <div className="backtest-trade-mini-chart">
-      <svg viewBox={`0 0 ${plot.width} ${plot.height}`} role="img" aria-label={`${trade.symbol} per-trade price movement`}>
-        <rect x="0" y="0" width={plot.width} height={plot.height} fill="#0a0a0a" />
-        {[0, 0.25, 0.5, 0.75, 1].map((tick) => (
-          <line
-            key={`v-${tick}`}
-            x1={54 + tick * (plot.width - 78)}
-            x2={54 + tick * (plot.width - 78)}
-            y1="18"
-            y2={plot.height - 38}
-            stroke="rgba(255,255,255,0.045)"
+    <div
+      className={`backtest-trade-mini-chart ${isTradeWinner ? "up" : "down"}${hoverIndex == null ? "" : " is-hovering"}`}
+      onMouseLeave={() => setHoverIndex(null)}
+      onMouseMove={handleMouseMove}
+      ref={chartRef}
+    >
+      <svg
+        style={{ height: `${plot.height}px` }}
+        viewBox={`0 0 ${plot.width} ${plot.height}`}
+        role="img"
+        aria-label={`${trade.symbol} per-trade price movement`}
+      >
+        <defs>
+          <linearGradient id={`${chartId}-area`} x1="0" x2="0" y1="0" y2="1">
+            <stop offset="0%" className="backtest-trade-mini-area-start" />
+            <stop offset="100%" className="backtest-trade-mini-area-end" />
+          </linearGradient>
+          <linearGradient id={`${chartId}-tp-zone`} x1="0" x2="0" y1="0" y2="1">
+            <stop offset="0%" stopColor="rgba(52,211,153,0.14)" />
+            <stop offset="100%" stopColor="rgba(52,211,153,0.01)" />
+          </linearGradient>
+          <linearGradient id={`${chartId}-sl-zone`} x1="0" x2="0" y1="0" y2="1">
+            <stop offset="0%" stopColor="rgba(248,113,113,0.01)" />
+            <stop offset="100%" stopColor="rgba(248,113,113,0.15)" />
+          </linearGradient>
+        </defs>
+        <rect x="0" y="0" width={plot.width} height={plot.height} className="backtest-trade-mini-bg" />
+
+        {Number.isFinite(trade.targetPrice) ? (
+          <rect
+            x={plot.margins.left}
+            y={Math.min(plot.scaleY(trade.targetPrice), plot.entryY)}
+            width={plot.plotWidth}
+            height={Math.abs(plot.entryY - plot.scaleY(trade.targetPrice))}
+            className="backtest-trade-mini-zone tp"
+            fill={`url(#${chartId}-tp-zone)`}
           />
-        ))}
-        {plot.yTicks.map((value) => {
+        ) : null}
+        {Number.isFinite(trade.stopPrice) ? (
+          <rect
+            x={plot.margins.left}
+            y={Math.min(plot.scaleY(trade.stopPrice), plot.entryY)}
+            width={plot.plotWidth}
+            height={Math.abs(plot.entryY - plot.scaleY(trade.stopPrice))}
+            className="backtest-trade-mini-zone sl"
+            fill={`url(#${chartId}-sl-zone)`}
+          />
+        ) : null}
+
+        {plot.gridTicks.map((value, index) => {
           const y = plot.scaleY(value);
-          const tone = value === trade.targetPrice ? "tp" : value === trade.stopPrice ? "sl" : "entry";
           return (
-            <g key={`${tone}-${value}`}>
-              <line
-                x1="54"
-                x2={plot.width - 24}
-                y1={y}
-                y2={y}
-                stroke={tone === "tp" ? "#34d399" : tone === "sl" ? "#f87171" : "#a3a3a3"}
-                strokeDasharray="4 6"
-              />
-              <text x="12" y={y + 4} fill={tone === "tp" ? "#34d399" : tone === "sl" ? "#f87171" : "#a3a3a3"} fontSize="11">
-                {tone === "tp" ? "TP" : tone === "sl" ? "SL" : "Entry"}
+            <g key={`mini-grid-${index}`}>
+              <line x1={plot.margins.left} x2={plot.width - plot.margins.right} y1={y} y2={y} className="backtest-trade-mini-grid-line" />
+              <text x={plot.margins.left - 10} y={y + 4} className="backtest-trade-mini-axis-label" textAnchor="end">
+                {formatChartPrice(value)}
               </text>
             </g>
           );
         })}
-        <text x={plot.width - 145} y={plot.axisLabelY} fill="#9ca3af" fontSize="11">
-          Minutes since entry
-        </text>
-        <text x="54" y={plot.axisLabelY} fill="#9ca3af" fontSize="11">
-          0
-        </text>
-        <text x={plot.width - 42} y={plot.axisLabelY} fill="#9ca3af" fontSize="11" textAnchor="end">
-          {Math.round(plot.xMax)}
-        </text>
+
+        {plot.xTicks.map((tick, index) => {
+          const x = plot.scaleX(tick.value);
+          return (
+            <g key={`${tick.label}-${index}`}>
+              <line
+                x1={x}
+                x2={x}
+                y1={plot.margins.top}
+                y2={plot.height - plot.margins.bottom}
+                className="backtest-trade-mini-grid-line vertical"
+              />
+              <text
+                x={x}
+                y={plot.height - 16}
+                className="backtest-trade-mini-axis-label"
+                textAnchor={index === 0 ? "start" : index === plot.xTicks.length - 1 ? "end" : "middle"}
+              >
+                {tick.label}
+              </text>
+            </g>
+          );
+        })}
+
+        {plot.levels.map((level) => {
+          const y = plot.scaleY(level.value);
+          return (
+            <g key={`${level.tone}-${level.value}`}>
+              <line
+                x1={plot.margins.left}
+                x2={plot.width - plot.margins.right}
+                y1={y}
+                y2={y}
+                className={`backtest-trade-mini-level ${level.tone}`}
+              />
+              <text x={plot.margins.left + 8} y={y - 7} className={`backtest-trade-mini-level-label ${level.tone}`}>
+                {level.label}
+              </text>
+            </g>
+          );
+        })}
+
+        {plot.points.map((point, index) => {
+          const highY = plot.scaleY(point.high);
+          const lowY = plot.scaleY(point.low);
+          const tone = point.pnlDollars > 0 ? "up" : point.pnlDollars < 0 ? "down" : "flat";
+          return (
+            <line
+              key={`${point.timeMs}-${index}`}
+              x1={point.xCoord}
+              x2={point.xCoord}
+              y1={highY}
+              y2={lowY}
+              className={`backtest-trade-mini-range ${tone}`}
+            />
+          );
+        })}
+
+        <path d={plot.areaPath} className="backtest-trade-mini-area" fill={`url(#${chartId}-area)`} />
         <g className={isOpen ? "backtest-trade-mini-reveal" : undefined}>
           {plot.segments.map((segment, index) => (
             <path
               key={`${segment.d}-${index}`}
+              className={`backtest-trade-mini-segment ${segment.tone}`}
               d={segment.d}
               fill="none"
               pathLength={1}
-              stroke={segment.stroke}
-              strokeLinecap="butt"
-              strokeWidth="3"
-            >
-              <title>{segment.title}</title>
-            </path>
+            />
           ))}
         </g>
+
+        <g className="backtest-trade-mini-marker mfe">
+          <circle cx={plot.points[plot.mfeIndex]!.xCoord} cy={plot.scaleY(plot.points[plot.mfeIndex]!.favorablePrice)} r="4" />
+          <text
+            x={plot.points[plot.mfeIndex]!.xCoord > plot.width * 0.72 ? plot.points[plot.mfeIndex]!.xCoord - 8 : plot.points[plot.mfeIndex]!.xCoord + 8}
+            y={plot.scaleY(plot.points[plot.mfeIndex]!.favorablePrice) - 8}
+            textAnchor={plot.points[plot.mfeIndex]!.xCoord > plot.width * 0.72 ? "end" : "start"}
+          >
+            MFE {formatSignedMoney(plot.points[plot.mfeIndex]!.favorablePnl)}
+          </text>
+        </g>
+        <g className="backtest-trade-mini-marker mae">
+          <circle cx={plot.points[plot.maeIndex]!.xCoord} cy={plot.scaleY(plot.points[plot.maeIndex]!.adversePrice)} r="4" />
+          <text
+            x={plot.points[plot.maeIndex]!.xCoord > plot.width * 0.72 ? plot.points[plot.maeIndex]!.xCoord - 8 : plot.points[plot.maeIndex]!.xCoord + 8}
+            y={plot.scaleY(plot.points[plot.maeIndex]!.adversePrice) + 16}
+            textAnchor={plot.points[plot.maeIndex]!.xCoord > plot.width * 0.72 ? "end" : "start"}
+          >
+            MAE {formatSignedMoney(plot.points[plot.maeIndex]!.adversePnl)}
+          </text>
+        </g>
+        <g className={`backtest-trade-mini-marker exit ${isTradeWinner ? "up" : "down"}`}>
+          <circle cx={plot.points[plot.points.length - 1]!.xCoord} cy={plot.points[plot.points.length - 1]!.yCoord} r="5" />
+          <text x={plot.points[plot.points.length - 1]!.xCoord - 8} y={plot.points[plot.points.length - 1]!.yCoord - 12} textAnchor="end">
+            Exit {trade.pnlLabel}
+          </text>
+        </g>
+
+        {hoverIndex == null ? null : (
+          <g className="backtest-trade-mini-crosshair">
+            <line x1={activeX} x2={activeX} y1={plot.margins.top} y2={plot.height - plot.margins.bottom} />
+            <line x1={plot.margins.left} x2={plot.width - plot.margins.right} y1={activeY} y2={activeY} />
+            <circle cx={activeX} cy={activeY} r="5" />
+          </g>
+        )}
       </svg>
+      {hoverIndex == null ? null : (
+        <div
+          className={`backtest-trade-mini-tooltip ${tooltipSide}`}
+          style={{
+            left: `${(activeX / plot.width) * 100}%`,
+            top: `calc(${tooltipTopRatio * 100}% - ${(tooltipTopRatio * 31).toFixed(2)}px)`
+          }}
+        >
+          <strong>{formatCalendarDateTime(new Date(activePoint.timeMs).toISOString())}</strong>
+          <span className={activePoint.pnlDollars >= 0 ? "up" : "down"}>
+            Price {formatChartPrice(activePoint.price)} / {formatSignedMoney(activePoint.pnlDollars)}
+          </span>
+          <div className="backtest-trade-mini-tooltip-grid">
+            <span>
+              MFE <strong className="up">{formatSignedMoney(activePoint.runningMfe)}</strong>
+            </span>
+            <span>
+              MAE <strong className="down">{formatSignedMoney(activePoint.runningMae)}</strong>
+            </span>
+            <span>
+              TP gap <strong className={targetGapDollars >= 0 ? "up" : "down"}>{formatSignedMoney(targetGapDollars)}</strong>
+            </span>
+            <span>
+              SL buffer <strong className={stopBufferDollars >= 0 ? "up" : "down"}>{formatSignedMoney(stopBufferDollars)}</strong>
+            </span>
+          </div>
+          <span className="muted">{formatMinutesCompact(activePoint.x)} from entry</span>
+        </div>
+      )}
+      <div className="backtest-trade-mini-legend" aria-hidden="true">
+        <span className="price">Price path</span>
+        <span className="range">High/low range</span>
+        <span className="zone">TP/SL zones</span>
+      </div>
     </div>
   );
 }

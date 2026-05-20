@@ -2970,287 +2970,6 @@ html[data-theme="light"] .themeDarkLabel {
   text-transform: uppercase;
 }
 
-.dailyCurveStatCard {
-  grid-column: 1 / -1;
-  gap: 0.5rem;
-}
-
-.dailyCurveStatHead {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 0.8rem;
-}
-
-.dailyCurveSparkline {
-  position: relative;
-  min-height: 204px;
-  overflow: visible;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 12px;
-  background: rgba(0, 0, 0, 0.32);
-  cursor: crosshair;
-}
-
-.dailyCurveSparkline svg {
-  width: 100%;
-  height: 164px;
-  display: block;
-  overflow: hidden;
-  border-radius: 12px 12px 0 0;
-}
-
-.dailyCurvePanelBg {
-  fill: #0a0a0a;
-}
-
-.dailyCurveGridLine {
-  stroke: rgba(255, 255, 255, 0.055);
-  stroke-width: 1;
-}
-
-.dailyCurveZeroLine {
-  stroke: rgba(255, 255, 255, 0.18);
-  stroke-dasharray: 4 6;
-  stroke-width: 1;
-}
-
-.dailyCurveZeroLabel,
-.dailyCurveAxisLabel,
-.dailyCurveDateRail text,
-.dailyCurvePeakMarker text,
-.dailyCurveDrawdownMarker text {
-  fill: rgba(255, 255, 255, 0.42);
-  font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
-  font-size: 9.5px;
-  font-weight: 800;
-}
-
-.dailyCurveArea {
-  pointer-events: none;
-}
-
-.dailyCurveAreaStopStart {
-  stop-color: rgba(147, 187, 252, 0.32);
-}
-
-.dailyCurveAreaStopEnd {
-  stop-color: rgba(147, 187, 252, 0.02);
-}
-
-.dailyCurveDailyBar {
-  opacity: 0.46;
-  transition: opacity 140ms ease;
-}
-
-.dailyCurveSparkline:hover .dailyCurveDailyBar {
-  opacity: 0.7;
-}
-
-.dailyCurveDailyBar.up {
-  fill: rgba(52, 211, 153, 0.42);
-}
-
-.dailyCurveDailyBar.down {
-  fill: rgba(248, 113, 113, 0.42);
-}
-
-.dailyCurveDrawdownBar {
-  fill: rgba(248, 113, 113, 0.2);
-  opacity: 0.72;
-}
-
-.dailyCurveLine {
-  fill: none;
-  stroke: #93bbfc;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  stroke-width: 3;
-  animation: tradeMiniReveal 1.15s ease forwards;
-  stroke-dasharray: 1;
-  stroke-dashoffset: 1;
-}
-
-.dailyCurveHighWaterLine {
-  fill: none;
-  stroke: rgba(255, 255, 255, 0.32);
-  stroke-dasharray: 6 6;
-  stroke-linecap: round;
-  stroke-width: 1.4;
-  pointer-events: none;
-}
-
-.dailyCurveSparkline.up .dailyCurveAreaStopStart {
-  stop-color: rgba(52, 211, 153, 0.34);
-}
-
-.dailyCurveSparkline.up .dailyCurveAreaStopEnd {
-  stop-color: rgba(52, 211, 153, 0.02);
-}
-
-.dailyCurveSparkline.up .dailyCurveLine,
-.dailyCurveSparkline.up .dailyCurveEndDot {
-  stroke: #34d399;
-}
-
-.dailyCurveSparkline.down .dailyCurveAreaStopStart {
-  stop-color: rgba(248, 113, 113, 0.34);
-}
-
-.dailyCurveSparkline.down .dailyCurveAreaStopEnd {
-  stop-color: rgba(248, 113, 113, 0.02);
-}
-
-.dailyCurveSparkline.down .dailyCurveLine,
-.dailyCurveSparkline.down .dailyCurveEndDot {
-  stroke: #f87171;
-}
-
-.dailyCurveEndDot {
-  fill: #0a0a0a;
-  stroke: #93bbfc;
-  stroke-width: 2;
-}
-
-.dailyCurveEndMarker text {
-  fill: rgba(255, 255, 255, 0.62);
-  font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
-  font-size: 10px;
-  font-weight: 900;
-}
-
-.dailyCurvePeakMarker circle {
-  fill: #0a0a0a;
-  stroke: #fbbf24;
-  stroke-width: 2;
-}
-
-.dailyCurvePeakMarker text {
-  fill: rgba(251, 191, 36, 0.82);
-}
-
-.dailyCurveDrawdownMarker circle {
-  fill: #0a0a0a;
-  stroke: #f87171;
-  stroke-width: 2;
-}
-
-.dailyCurveDrawdownMarker text {
-  fill: rgba(248, 113, 113, 0.82);
-}
-
-.dailyCurveCrosshair line {
-  stroke: rgba(255, 255, 255, 0.32);
-  stroke-dasharray: 3 5;
-  stroke-width: 1;
-}
-
-.dailyCurveCrosshair circle {
-  fill: #0a0a0a;
-  stroke: rgba(255, 255, 255, 0.88);
-  stroke-width: 2;
-}
-
-.dailyCurveTooltip {
-  position: absolute;
-  z-index: 4;
-  min-width: 166px;
-  display: grid;
-  gap: 0.2rem;
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  border-radius: 10px;
-  background: rgba(5, 5, 5, 0.92);
-  box-shadow: 0 18px 42px rgba(0, 0, 0, 0.45);
-  padding: 0.46rem 0.56rem;
-  pointer-events: none;
-  transform: translate(12px, -50%);
-}
-
-.dailyCurveTooltip.left {
-  transform: translate(calc(-100% - 12px), -50%);
-}
-
-.dailyCurveTooltip strong,
-.dailyCurveTooltip span,
-.dailyCurveLegend span {
-  font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
-  font-size: 0.58rem;
-  font-weight: 900;
-}
-
-.dailyCurveTooltip strong {
-  color: rgba(255, 255, 255, 0.92);
-}
-
-.dailyCurveTooltip span {
-  color: rgba(255, 255, 255, 0.62);
-}
-
-.dailyCurveTooltip span.up {
-  color: #34d399;
-}
-
-.dailyCurveTooltip span.down {
-  color: #f87171;
-}
-
-.dailyCurveLegend {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 0.32rem 0.62rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.07);
-  padding: 0.34rem 0.58rem;
-}
-
-.dailyCurveLegend span {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.32rem;
-  color: rgba(255, 255, 255, 0.54);
-}
-
-.dailyCurveLegend span::before {
-  content: "";
-  width: 0.56rem;
-  height: 0.56rem;
-  border-radius: 999px;
-  background: rgba(147, 187, 252, 0.75);
-}
-
-.dailyCurveLegend .daily::before {
-  background: linear-gradient(180deg, rgba(52, 211, 153, 0.82), rgba(248, 113, 113, 0.82));
-}
-
-.dailyCurveLegend .drawdown::before {
-  background: rgba(248, 113, 113, 0.38);
-}
-
-.dailyCurveMeta {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 0.28rem;
-}
-
-.dailyCurveMeta span,
-.dailyCurveEmpty {
-  color: rgba(255, 255, 255, 0.56);
-  font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
-  font-size: 0.58rem;
-  font-weight: 800;
-}
-
-.dailyCurveEmpty {
-  min-height: 112px;
-  display: grid;
-  place-items: center;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 12px;
-  background: rgba(0, 0, 0, 0.32);
-  text-align: center;
-}
-
 .historyPanelHead > div {
   gap: 0.32rem;
 }
@@ -3731,30 +3450,316 @@ html[data-theme="light"] .themeDarkLabel {
 .backtest-trade-mini-chart {
   position: relative;
   width: 100%;
-  height: 260px;
-  overflow: hidden;
-  border: 1px solid #262626;
+  min-height: 0;
+  overflow: visible;
+  border: 1px solid rgba(255, 255, 255, 0.09);
   border-radius: 12px;
-  background: #0a0a0a;
+  background:
+    radial-gradient(circle at 18% 12%, rgba(52, 211, 153, 0.08), transparent 30%),
+    #0a0a0a;
+  cursor: crosshair;
+  isolation: isolate;
 }
 
-.backtest-trade-mini-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.5rem;
+.backtest-trade-mini-chart::after {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  content: "";
+  opacity: 0;
+  transition: opacity 140ms ease;
 }
 
-.backtest-trade-mini-head span {
-  color: rgba(255, 255, 255, 0.62);
-  font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
-  font-size: 0.58rem;
+.backtest-trade-mini-chart.up::after {
+  box-shadow: inset 0 0 0 1px rgba(52, 211, 153, 0.13), 0 18px 52px rgba(16, 185, 129, 0.08);
+}
+
+.backtest-trade-mini-chart.down::after {
+  box-shadow: inset 0 0 0 1px rgba(248, 113, 113, 0.13), 0 18px 52px rgba(248, 113, 113, 0.08);
+}
+
+.backtest-trade-mini-chart.is-hovering::after {
+  opacity: 1;
 }
 
 .backtest-trade-mini-chart svg {
   width: 100%;
-  height: 100%;
   display: block;
+  overflow: hidden;
+  border-radius: 12px 12px 0 0;
+}
+
+.backtest-trade-mini-bg {
+  fill: #080808;
+}
+
+.backtest-trade-mini-grid-line {
+  stroke: rgba(255, 255, 255, 0.06);
+  stroke-width: 1;
+}
+
+.backtest-trade-mini-grid-line.vertical {
+  stroke-dasharray: 3 8;
+}
+
+.backtest-trade-mini-axis-label,
+.backtest-trade-mini-level-label,
+.backtest-trade-mini-marker text,
+.backtest-trade-mini-legend span,
+.backtest-trade-mini-tooltip strong,
+.backtest-trade-mini-tooltip span {
+  font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+  font-weight: 900;
+}
+
+.backtest-trade-mini-axis-label {
+  fill: rgba(255, 255, 255, 0.4);
+  font-size: 10px;
+}
+
+.backtest-trade-mini-level {
+  stroke-dasharray: 6 7;
+  stroke-linecap: round;
+  stroke-width: 1.25;
+}
+
+.backtest-trade-mini-level.tp {
+  stroke: rgba(52, 211, 153, 0.78);
+}
+
+.backtest-trade-mini-level.sl {
+  stroke: rgba(248, 113, 113, 0.78);
+}
+
+.backtest-trade-mini-level.entry {
+  stroke: rgba(255, 255, 255, 0.44);
+}
+
+.backtest-trade-mini-level-label {
+  font-size: 10px;
+}
+
+.backtest-trade-mini-level-label.tp {
+  fill: rgba(52, 211, 153, 0.92);
+}
+
+.backtest-trade-mini-level-label.sl {
+  fill: rgba(248, 113, 113, 0.92);
+}
+
+.backtest-trade-mini-level-label.entry {
+  fill: rgba(255, 255, 255, 0.64);
+}
+
+.backtest-trade-mini-zone {
+  opacity: 0.92;
+  pointer-events: none;
+}
+
+.backtest-trade-mini-range {
+  stroke-linecap: round;
+  stroke-width: 2;
+  opacity: 0.26;
+  transition: opacity 140ms ease;
+}
+
+.backtest-trade-mini-chart:hover .backtest-trade-mini-range {
+  opacity: 0.46;
+}
+
+.backtest-trade-mini-range.up {
+  stroke: rgba(52, 211, 153, 0.74);
+}
+
+.backtest-trade-mini-range.down {
+  stroke: rgba(248, 113, 113, 0.74);
+}
+
+.backtest-trade-mini-range.flat {
+  stroke: rgba(255, 255, 255, 0.38);
+}
+
+.backtest-trade-mini-area {
+  opacity: 0.8;
+  pointer-events: none;
+}
+
+.backtest-trade-mini-area-start {
+  stop-color: rgba(147, 187, 252, 0.22);
+}
+
+.backtest-trade-mini-area-end {
+  stop-color: rgba(147, 187, 252, 0.01);
+}
+
+.backtest-trade-mini-chart.up .backtest-trade-mini-area-start {
+  stop-color: rgba(52, 211, 153, 0.24);
+}
+
+.backtest-trade-mini-chart.down .backtest-trade-mini-area-start {
+  stop-color: rgba(248, 113, 113, 0.24);
+}
+
+.backtest-trade-mini-segment {
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 3.4;
+  filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.08));
+}
+
+.backtest-trade-mini-segment.up {
+  stroke: #34d399;
+}
+
+.backtest-trade-mini-segment.down {
+  stroke: #f87171;
+}
+
+.backtest-trade-mini-segment.flat {
+  stroke: rgba(255, 255, 255, 0.82);
+}
+
+.backtest-trade-mini-marker circle {
+  fill: #090909;
+  stroke-width: 2;
+}
+
+.backtest-trade-mini-marker text {
+  font-size: 10px;
+}
+
+.backtest-trade-mini-marker.mfe circle {
+  stroke: #34d399;
+}
+
+.backtest-trade-mini-marker.mfe text {
+  fill: rgba(52, 211, 153, 0.86);
+}
+
+.backtest-trade-mini-marker.mae circle {
+  stroke: #f87171;
+}
+
+.backtest-trade-mini-marker.mae text {
+  fill: rgba(248, 113, 113, 0.86);
+}
+
+.backtest-trade-mini-marker.exit circle {
+  fill: #090909;
+}
+
+.backtest-trade-mini-marker.exit.up circle {
+  stroke: #34d399;
+}
+
+.backtest-trade-mini-marker.exit.down circle {
+  stroke: #f87171;
+}
+
+.backtest-trade-mini-marker.exit text {
+  fill: rgba(255, 255, 255, 0.72);
+}
+
+.backtest-trade-mini-crosshair line {
+  stroke: rgba(255, 255, 255, 0.34);
+  stroke-dasharray: 3 5;
+  stroke-width: 1;
+}
+
+.backtest-trade-mini-crosshair circle {
+  fill: #090909;
+  stroke: rgba(255, 255, 255, 0.9);
+  stroke-width: 2;
+}
+
+.backtest-trade-mini-tooltip {
+  position: absolute;
+  z-index: 4;
+  min-width: 214px;
+  display: grid;
+  gap: 0.32rem;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 10px;
+  background: rgba(5, 5, 5, 0.93);
+  box-shadow: 0 18px 42px rgba(0, 0, 0, 0.46);
+  padding: 0.55rem 0.62rem;
+  pointer-events: none;
+  transform: translate(13px, -50%);
+}
+
+.backtest-trade-mini-tooltip.left {
+  transform: translate(calc(-100% - 13px), -50%);
+}
+
+.backtest-trade-mini-tooltip strong {
+  color: rgba(255, 255, 255, 0.92);
+  font-size: 0.6rem;
+}
+
+.backtest-trade-mini-tooltip span {
+  color: rgba(255, 255, 255, 0.62);
+  font-size: 0.58rem;
+}
+
+.backtest-trade-mini-tooltip span.up,
+.backtest-trade-mini-tooltip strong.up {
+  color: #34d399;
+}
+
+.backtest-trade-mini-tooltip span.down,
+.backtest-trade-mini-tooltip strong.down {
+  color: #f87171;
+}
+
+.backtest-trade-mini-tooltip span.muted {
+  color: rgba(255, 255, 255, 0.44);
+}
+
+.backtest-trade-mini-tooltip-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.18rem 0.62rem;
+}
+
+.backtest-trade-mini-tooltip-grid span {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.45rem;
+}
+
+.backtest-trade-mini-legend {
+  min-height: 31px;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.34rem 0.68rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+  padding: 0.36rem 0.62rem;
+}
+
+.backtest-trade-mini-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.34rem;
+  color: rgba(255, 255, 255, 0.54);
+  font-size: 0.58rem;
+}
+
+.backtest-trade-mini-legend span::before {
+  width: 0.56rem;
+  height: 0.56rem;
+  border-radius: 999px;
+  background: rgba(147, 187, 252, 0.76);
+  content: "";
+}
+
+.backtest-trade-mini-legend .range::before {
+  background: linear-gradient(180deg, rgba(52, 211, 153, 0.82), rgba(248, 113, 113, 0.82));
+}
+
+.backtest-trade-mini-legend .zone::before {
+  background: linear-gradient(135deg, rgba(52, 211, 153, 0.42), rgba(248, 113, 113, 0.42));
 }
 
 .backtest-trade-mini-empty {
@@ -3840,12 +3845,12 @@ html[data-theme="light"] .themeDarkLabel {
     grid-template-columns: 1fr;
   }
 
-  .dailyCurveMeta {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+  .backtest-trade-mini-tooltip {
+    min-width: 190px;
   }
 
-  .backtest-trade-mini-chart {
-    height: 210px;
+  .backtest-trade-mini-marker text {
+    font-size: 9px;
   }
 }
 
@@ -6313,86 +6318,68 @@ html[data-theme="light"] .date-stat-card .localDateTimeStack small {
   color: #2563eb;
 }
 
-html[data-theme="light"] .dailyCurveSparkline,
-html[data-theme="light"] .dailyCurveEmpty {
-  border-color: rgba(15, 23, 42, 0.08);
-  background: rgba(255, 255, 255, 0.62);
+html[data-theme="light"] .backtest-trade-mini-chart {
+  border-color: rgba(15, 23, 42, 0.1);
+  background:
+    radial-gradient(circle at 18% 12%, rgba(16, 185, 129, 0.08), transparent 30%),
+    #ffffff;
 }
 
-html[data-theme="light"] .dailyCurvePanelBg {
-  fill: rgba(255, 255, 255, 0.84);
+html[data-theme="light"] .backtest-trade-mini-bg {
+  fill: rgba(255, 255, 255, 0.9);
 }
 
-html[data-theme="light"] .dailyCurveGridLine {
-  stroke: rgba(15, 23, 42, 0.07);
+html[data-theme="light"] .backtest-trade-mini-grid-line {
+  stroke: rgba(15, 23, 42, 0.08);
 }
 
-html[data-theme="light"] .dailyCurveZeroLine {
-  stroke: rgba(15, 23, 42, 0.18);
+html[data-theme="light"] .backtest-trade-mini-axis-label {
+  fill: rgba(15, 23, 42, 0.46);
 }
 
-html[data-theme="light"] .dailyCurveZeroLabel,
-html[data-theme="light"] .dailyCurveAxisLabel,
-html[data-theme="light"] .dailyCurveDateRail text,
-html[data-theme="light"] .dailyCurveEndMarker text {
-  fill: rgba(15, 23, 42, 0.48);
+html[data-theme="light"] .backtest-trade-mini-level.entry {
+  stroke: rgba(15, 23, 42, 0.36);
 }
 
-html[data-theme="light"] .dailyCurveHighWaterLine {
-  stroke: rgba(15, 23, 42, 0.3);
+html[data-theme="light"] .backtest-trade-mini-level-label.entry,
+html[data-theme="light"] .backtest-trade-mini-marker.exit text {
+  fill: rgba(15, 23, 42, 0.62);
 }
 
-html[data-theme="light"] .dailyCurveEndDot {
-  fill: #f8fafc;
-}
-
-html[data-theme="light"] .dailyCurvePeakMarker circle,
-html[data-theme="light"] .dailyCurveDrawdownMarker circle {
+html[data-theme="light"] .backtest-trade-mini-marker circle,
+html[data-theme="light"] .backtest-trade-mini-crosshair circle {
   fill: #ffffff;
 }
 
-html[data-theme="light"] .dailyCurvePeakMarker text {
-  fill: rgba(180, 83, 9, 0.88);
-}
-
-html[data-theme="light"] .dailyCurveDrawdownMarker text {
-  fill: rgba(190, 18, 60, 0.86);
-}
-
-html[data-theme="light"] .dailyCurveCrosshair line {
+html[data-theme="light"] .backtest-trade-mini-crosshair line {
   stroke: rgba(15, 23, 42, 0.28);
 }
 
-html[data-theme="light"] .dailyCurveCrosshair circle {
-  fill: #ffffff;
-  stroke: rgba(15, 23, 42, 0.74);
+html[data-theme="light"] .backtest-trade-mini-crosshair circle {
+  stroke: rgba(15, 23, 42, 0.72);
 }
 
-html[data-theme="light"] .dailyCurveTooltip {
+html[data-theme="light"] .backtest-trade-mini-tooltip {
   border-color: rgba(15, 23, 42, 0.12);
   background: rgba(255, 255, 255, 0.94);
-  box-shadow: 0 18px 42px rgba(15, 23, 42, 0.12);
+  box-shadow: 0 18px 42px rgba(15, 23, 42, 0.13);
 }
 
-html[data-theme="light"] .dailyCurveTooltip strong {
+html[data-theme="light"] .backtest-trade-mini-tooltip strong {
   color: rgba(15, 23, 42, 0.88);
 }
 
-html[data-theme="light"] .dailyCurveTooltip span {
+html[data-theme="light"] .backtest-trade-mini-tooltip span {
   color: rgba(15, 23, 42, 0.58);
 }
 
-html[data-theme="light"] .dailyCurveLegend {
+html[data-theme="light"] .backtest-trade-mini-tooltip span.muted,
+html[data-theme="light"] .backtest-trade-mini-legend span {
+  color: rgba(15, 23, 42, 0.5);
+}
+
+html[data-theme="light"] .backtest-trade-mini-legend {
   border-top-color: rgba(15, 23, 42, 0.08);
-}
-
-html[data-theme="light"] .dailyCurveLegend span {
-  color: rgba(15, 23, 42, 0.52);
-}
-
-html[data-theme="light"] .dailyCurveMeta span,
-html[data-theme="light"] .dailyCurveEmpty {
-  color: rgba(15, 23, 42, 0.56);
 }
 
 html[data-theme="light"] .challenge-method {
