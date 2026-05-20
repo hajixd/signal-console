@@ -5,6 +5,10 @@
       "schedule": "*/5 * * * *"
     },
     {
+      "path": "/api/cron/check-signals",
+      "schedule": "2,7,12,17,22,27,32,37,42,47,52,57 * * * *"
+    },
+    {
       "path": "/api/cron/review-validity",
       "schedule": "4,19,34,49 * * * *"
     },

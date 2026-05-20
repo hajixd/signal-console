@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { GET as runCheckSignalsCron } from "@/app/api/cron/check-signals/route";
 import { updateDatasetSyncRunStatus } from "@/lib/live-config";
 import { activeRules } from "@/lib/live-signals";
 import { refreshMarketDataForRules } from "@/lib/market-data-refresh";
@@ -45,19 +46,16 @@ function marketDataFailureMessage(errors: MarketDataSyncError[], refreshedAssetC
     .join("; ");
 }
 
-async function runSignalCheckAfterMarketDataSync(request: NextRequest): Promise<{ error?: string; ok: boolean; status: number }> {
-  const response = await fetch(new URL("/api/cron/check-signals", request.nextUrl.origin), {
-    cache: "no-store",
-    headers: {
-      ...(request.headers.get("authorization") ? { authorization: request.headers.get("authorization")! } : {})
-    },
-    method: "GET"
-  });
+async function runSignalCheckAfterMarketDataSync(request: NextRequest): Promise<{ durationMs: number; error?: string; ok: boolean; status: number }> {
+  const startedAt = Date.now();
+  const response = await runCheckSignalsCron(request);
+  const durationMs = Date.now() - startedAt;
 
-  if (response.ok) return { ok: true, status: response.status };
+  if (response.ok) return { durationMs, ok: true, status: response.status };
 
   const text = await response.text().catch(() => "");
   return {
+    durationMs,
     error: text.slice(0, 500) || `Signal check returned ${response.status}`,
     ok: false,
     status: response.status

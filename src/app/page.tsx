@@ -554,6 +554,22 @@ function syncRunDurationMs(run: SyncTileRun | undefined): number | undefined {
   return Number.isFinite(startedAt) && Number.isFinite(finishedAt) && finishedAt >= startedAt ? finishedAt - startedAt : undefined;
 }
 
+function syncRunRuntimeLabel(run: SyncTileRun | undefined): string {
+  if (run?.state === "running" && run.startedAt) {
+    const startedAt = Date.parse(run.startedAt);
+    if (Number.isFinite(startedAt)) return `Running ${fmtCompactDurationMs(Date.now() - startedAt)}`;
+  }
+  return fmtCompactDurationMs(syncRunDurationMs(run));
+}
+
+function syncRunGapMs(previousRun: SyncTileRun | undefined, nextRun: SyncTileRun | undefined): number | undefined {
+  const previousFinishedAt = previousRun?.finishedAt ? Date.parse(previousRun.finishedAt) : Number.NaN;
+  const nextStartedAt = nextRun?.startedAt ? Date.parse(nextRun.startedAt) : Number.NaN;
+  if (!Number.isFinite(previousFinishedAt) || !Number.isFinite(nextStartedAt)) return undefined;
+  if (nextStartedAt < previousFinishedAt) return undefined;
+  return nextStartedAt - previousFinishedAt;
+}
+
 function SyncTileChecks({ ariaLabel, checks }: { ariaLabel: string; checks: SyncDetailCheck[] }) {
   return (
     <div className="dataValidityChecks syncTileChecks" aria-label={ariaLabel}>
@@ -667,6 +683,8 @@ function DataValidityBox({
         <dd>
           <LocalDateTime value={nextScheduledAt} />
         </dd>
+        <dt>Last runtime</dt>
+        <dd>{syncRunRuntimeLabel(run)}</dd>
         <dt>Scope</dt>
         <dd>
           {fmtNumber(dataValidity.stats.tradesChecked)} trades / {fmtNumber(dataValidity.stats.strategyCount)} strategies /{" "}
@@ -1748,6 +1766,7 @@ export default async function Home({ searchParams }: HomeProps) {
   const closedLiveAlertCount = Math.max(0, activeMarketLiveTrades.length - openLiveAlertCount);
   const latestActiveMarketSignalAt = latestLiveTradeAt(activeMarketLiveTrades);
   const signalPausedForStaleData = isSignalDataPauseError(syncStatus.signalTradeCheck?.error);
+  const signalAfterMarketMs = syncRunGapMs(syncStatus.marketDataSync, syncStatus.signalTradeCheck);
   const activeBacktestStrategyCount = uniqueValues(activeMarketBacktestTrades.map((trade) => trade.datasetId).filter(Boolean)).length;
   const activeBacktestSymbolCount = uniqueValues(activeMarketBacktestTrades.map((trade) => trade.symbol).filter(Boolean)).length;
   const activeBacktestMarketCount = uniqueValues(activeMarketBacktestTrades.map((trade) => trade.market).filter(Boolean)).length;
@@ -1798,7 +1817,13 @@ export default async function Home({ searchParams }: HomeProps) {
       detail: "Most recent market data sync runtime.",
       label: "Runtime",
       tone: syncRunDurationMs(syncStatus.marketDataSync) !== undefined ? "good" : "warning",
-      value: fmtCompactDurationMs(syncRunDurationMs(syncStatus.marketDataSync))
+      value: syncRunRuntimeLabel(syncStatus.marketDataSync)
+    },
+    {
+      detail: "Delay between market data finishing and the signal check starting.",
+      label: "Signal delay",
+      tone: signalAfterMarketMs !== undefined && signalAfterMarketMs <= 30_000 ? "good" : "warning",
+      value: signalAfterMarketMs !== undefined ? fmtCompactDurationMs(signalAfterMarketMs) : "--"
     }
   ];
   const marketDataIssues: SyncDetailIssue[] = [
@@ -1862,7 +1887,7 @@ export default async function Home({ searchParams }: HomeProps) {
       detail: "Most recent signal trade check runtime.",
       label: "Runtime",
       tone: syncRunDurationMs(syncStatus.signalTradeCheck) !== undefined ? "good" : "warning",
-      value: fmtCompactDurationMs(syncRunDurationMs(syncStatus.signalTradeCheck))
+      value: syncRunRuntimeLabel(syncStatus.signalTradeCheck)
     }
   ];
   const signalTradeIssues: SyncDetailIssue[] = [
@@ -1931,6 +1956,12 @@ export default async function Home({ searchParams }: HomeProps) {
       label: "Manifest",
       tone: backtestManifestAt ? "good" : "warning",
       value: fmtShortDateTime(backtestManifestAt)
+    },
+    {
+      detail: "Backtest history is loaded from the current manifest; the manifest build job does not currently persist duration.",
+      label: "Runtime",
+      tone: "warning",
+      value: "Not tracked"
     }
   ];
   const backtestHistoryIssues: SyncDetailIssue[] = [
@@ -2309,6 +2340,10 @@ export default async function Home({ searchParams }: HomeProps) {
                 <dd>
                   <LocalDateTime value={nextMarketDataSyncAt} />
                 </dd>
+                <dt>Last runtime</dt>
+                <dd>{syncRunRuntimeLabel(syncStatus.marketDataSync)}</dd>
+                <dt>Signal delay</dt>
+                <dd>{signalAfterMarketMs !== undefined ? fmtCompactDurationMs(signalAfterMarketMs) : "--"}</dd>
                 <dt>Scope</dt>
                 <dd>
                   {fmtNumber(coverageEntries.length)} assets / {fmtNumber(coverageRows)} rows
@@ -2342,6 +2377,8 @@ export default async function Home({ searchParams }: HomeProps) {
                 <dd>
                   <LocalDateTime value={nextSignalTradeCheckAt} />
                 </dd>
+                <dt>Last runtime</dt>
+                <dd>{syncRunRuntimeLabel(syncStatus.signalTradeCheck)}</dd>
                 <dt>Scope</dt>
                 <dd>
                   {fmtNumber(selectedLiveStrategyCount)} live strategies / {fmtNumber(activeMarketLiveTrades.length)} alerts
@@ -2373,6 +2410,8 @@ export default async function Home({ searchParams }: HomeProps) {
                 <dd>
                   <LocalDateTime value={dataEndsAt} fallback="Unknown" />
                 </dd>
+                <dt>Last runtime</dt>
+                <dd>Not tracked</dd>
                 <dt>Scope</dt>
                 <dd>
                   {fmtNumber(activeMarketBacktestTrades.length)} active / {fmtNumber(activeBacktestStrategyCount)} strategies /{" "}
