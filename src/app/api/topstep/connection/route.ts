@@ -245,7 +245,7 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const connectionId = normalizeConnectionId(payload.connectionId) ?? connectionIdFromRequest(request) ?? randomUUID();
+    const connectionId = normalizeConnectionId(payload.connectionId) ?? randomUUID();
     const token = await loginProjectXApiKey(userName, apiKey);
     const accounts = await searchProjectXAccounts(token, true);
     await saveStoredProjectXConnection({

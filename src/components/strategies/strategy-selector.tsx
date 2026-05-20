@@ -645,6 +645,10 @@ export default function StrategySelector({
   const normalizedSearchQuery = isRestricted ? "" : searchQuery.trim().toLowerCase();
   const orderByKey = new Map(strategies.map((strategy, index) => [strategy.key, index]));
   const strategyScopeKeys = useMemo(() => strategies.map((strategy) => strategy.key), [strategies]);
+  const scopedPersistedLiveKeys = useMemo(() => {
+    const persisted = new Set(persistedLiveKeys);
+    return strategyScopeKeys.filter((key) => persisted.has(key));
+  }, [persistedLiveKeys, strategyScopeKeys]);
   const strategyScopeSignature = strategyScopeKeys.join("|");
   const selectionSignature = selectedKeys.join("|");
   const optimisticSelectionSignature = optimisticSelectedKeys.join("|");
@@ -672,6 +676,7 @@ export default function StrategySelector({
   const editSyncRunRef = useRef(0);
   const editControlsDisabled = isSavingEdits || isRestricted;
   const selectionControlsDisabled = isRestricted;
+  const canShowSavedSelection = optimisticSelectedKeys.length === 0 && scopedPersistedLiveKeys.length > 0;
   const savingSelectionKeySet = useMemo(() => new Set(savingSelectionKeys), [savingSelectionKeys]);
   const isStrategyLoading =
     savingSelectionKeys.length > 0 || isSavingSelection || isSavingEdits || isSavingCustomScaleRange;
@@ -700,6 +705,21 @@ export default function StrategySelector({
       params.set("strategies", NO_STRATEGIES_SELECTION_PARAM);
     }
     const query = params.toString();
+    router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
+  }
+
+  function showSavedSelection() {
+    const params = new URLSearchParams(window.location.search);
+    params.delete("strategies");
+    const query = params.toString();
+    const restoredSignature = scopedPersistedLiveKeys.join("|");
+
+    setSelectionError("");
+    pendingSelectionSignatureRef.current = "";
+    latestSelectionSignatureRef.current = restoredSignature;
+    setSavingSelectionKeys([]);
+    setSelectionProgress(0);
+    setOptimisticSelectedKeys(scopedPersistedLiveKeys);
     router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
   }
 
@@ -1321,6 +1341,11 @@ export default function StrategySelector({
       <div className="pickerHeader">
         <span>Strategies</span>
         <div className="pickerActions">
+          {canShowSavedSelection ? (
+            <button type="button" onClick={showSavedSelection}>
+              Show Saved
+            </button>
+          ) : null}
           <button type="button" onClick={openCustomSelection} disabled={selectionControlsDisabled || strategies.length === 0}>
             Custom Selection
           </button>
