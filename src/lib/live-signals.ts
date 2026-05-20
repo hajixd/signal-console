@@ -4,6 +4,7 @@ import { getBacktestStats, type BacktestStat } from "@/lib/backtest";
 import { instrumentSizeLabel, recommendedSizeMultiplier } from "@/lib/instruments";
 import { getLiveConfig, type SavedStrategyEdit } from "@/lib/live-config";
 import { STRATEGY_DEFINITIONS } from "@/lib/strategy-loader";
+import { conciseStrategyName } from "@/lib/strategy-names";
 import type { StrategySignal } from "@/lib/strategy-definition";
 import { planTradeAlert } from "@/lib/trade-planner";
 import type { Bar, StrategyRule, TradeAlert } from "@/lib/types";
@@ -163,7 +164,13 @@ function statToRule(stat: BacktestStat, strategyEdits: Record<string, SavedStrat
     symbol: asset.symbol,
     databentoSymbol: asset.databentoSymbol,
     phase: strategy.phase,
-    label: strategy.label,
+    label: conciseStrategyName({
+      assetKey: strategy.assetKey,
+      label: strategy.label,
+      phase: strategy.phase,
+      symbol: asset.symbol,
+      variantId: stat.variantId ?? defaults.variantId
+    }),
     variantId: stat.variantId ?? defaults.variantId,
     source: stat.source ?? defaults.source,
     signalAtrMult: stat.signalAtrMult ?? defaults.signalAtrMult,

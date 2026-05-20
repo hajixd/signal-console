@@ -243,6 +243,7 @@ function exitReasonClassName(label: string): string {
   if (normalized.includes("manual flat")) return "exitReasonBadge exitOther";
   if (normalized.includes("take profit")) return "exitReasonBadge exitTakeProfit";
   if (normalized.includes("stop loss")) return "exitReasonBadge exitStopLoss";
+  if (normalized.includes("still open")) return "exitReasonBadge exitOpen";
   if (normalized.includes("max")) return "exitReasonBadge exitMaxBars";
   if (normalized.includes("signal")) return "exitReasonBadge exitSignal";
   if (normalized.includes("time")) return "exitReasonBadge exitTime";
@@ -526,7 +527,7 @@ function BacktestTradeMiniChart({
       high = Math.max(trade.entryPrice, trade.exitPrice);
     }
     const span = Math.max(0.000000001, high - low);
-    const pad = Math.max(span * 0.035, Math.abs(trade.entryPrice) * 0.00008, 0.00005);
+    const pad = Math.max(span * 0.012, Math.abs(trade.entryPrice) * 0.000025, 0.00002);
     const yMin = low - pad;
     const yMax = high + pad;
     const xMax = Math.max(1, ...data.map((point) => point.x));
@@ -648,7 +649,10 @@ function BacktestTradeMiniChart({
   const tooltipTopRatio = tooltipTop / chart.height;
   const targetGapDollars = (trade.targetPrice - activePoint.price) * direction * dollarsPerPoint;
   const stopBufferDollars = (activePoint.price - trade.stopPrice) * direction * dollarsPerPoint;
+  const isStillOpen = trade.exitReasonLabel.trim().toLowerCase().includes("still open");
   const isTradeWinner = trade.pnlDollars >= 0;
+  const chartTone = isStillOpen ? "neutral" : isTradeWinner ? "up" : "down";
+  const activePnlTone = activePoint.pnlDollars > 0 ? "up" : activePoint.pnlDollars < 0 ? "down" : "neutral";
 
   function handleMouseMove(event: ReactMouseEvent<HTMLDivElement>) {
     const rect = event.currentTarget.getBoundingClientRect();
@@ -669,7 +673,7 @@ function BacktestTradeMiniChart({
 
   return (
     <div
-      className={`backtest-trade-mini-chart ${isTradeWinner ? "up" : "down"}${hoverIndex == null ? "" : " is-hovering"}`}
+      className={`backtest-trade-mini-chart ${chartTone}${hoverIndex == null ? "" : " is-hovering"}`}
       onMouseLeave={() => setHoverIndex(null)}
       onMouseMove={handleMouseMove}
       ref={chartRef}
@@ -842,28 +846,63 @@ function BacktestTradeMiniChart({
             top: `calc(${tooltipTopRatio * 100}% - ${(tooltipTopRatio * 31).toFixed(2)}px)`
           }}
         >
-          <strong>{formatCalendarDateTime(new Date(activePoint.timeMs).toISOString())}</strong>
-          <span className={activePoint.pnlDollars >= 0 ? "up" : "down"}>
-            Price {formatChartPrice(activePoint.price)} / {formatSignedMoney(activePoint.pnlDollars)}
-          </span>
-          <div className="backtest-trade-mini-tooltip-grid">
+          <div className="backtest-trade-mini-tooltip-head">
+            <div>
+              <strong>{displaySymbol(trade)} {trade.sideLabel}</strong>
+              <span>{trade.modelName}</span>
+            </div>
+            <strong className={activePnlTone}>{formatSignedMoney(activePoint.pnlDollars)}</strong>
+          </div>
+          <div className="backtest-trade-mini-tooltip-price">
             <span>
-              Size <strong>{trade.sizeLabel}</strong>
+              <small>Time</small>
+              <strong>{formatCalendarDateTime(new Date(activePoint.timeMs).toISOString())}</strong>
             </span>
             <span>
-              MFE <strong className="up">{formatSignedMoney(activePoint.runningMfe)}</strong>
-            </span>
-            <span>
-              MAE <strong className="down">{formatSignedMoney(activePoint.runningMae)}</strong>
-            </span>
-            <span>
-              TP gap <strong className={targetGapDollars >= 0 ? "up" : "down"}>{formatSignedMoney(targetGapDollars)}</strong>
-            </span>
-            <span>
-              SL buffer <strong className={stopBufferDollars >= 0 ? "up" : "down"}>{formatSignedMoney(stopBufferDollars)}</strong>
+              <small>Price</small>
+              <strong>{formatChartPrice(activePoint.price)}</strong>
             </span>
           </div>
-          <span className="muted">{formatMinutesCompact(activePoint.x)} from entry</span>
+          <div className="backtest-trade-mini-tooltip-grid">
+            <span>
+              <small>Elapsed</small>
+              <strong>{formatMinutesCompact(activePoint.x)}</strong>
+            </span>
+            <span>
+              <small>Size</small>
+              <strong>{trade.sizeLabel}</strong>
+            </span>
+            <span>
+              <small>MFE</small>
+              <strong className="up">{formatSignedMoney(activePoint.runningMfe)}</strong>
+            </span>
+            <span>
+              <small>MAE</small>
+              <strong className="down">{formatSignedMoney(activePoint.runningMae)}</strong>
+            </span>
+            <span>
+              <small>TP Gap</small>
+              <strong className={targetGapDollars >= 0 ? "up" : "down"}>{formatSignedMoney(targetGapDollars)}</strong>
+            </span>
+            <span>
+              <small>SL Buffer</small>
+              <strong className={stopBufferDollars >= 0 ? "up" : "down"}>{formatSignedMoney(stopBufferDollars)}</strong>
+            </span>
+          </div>
+          <div className="backtest-trade-mini-tooltip-levels">
+            <span>
+              <small>Entry</small>
+              <strong>{trade.entryPriceLabel}</strong>
+            </span>
+            <span>
+              <small>TP</small>
+              <strong className="up">{trade.targetPriceLabel}</strong>
+            </span>
+            <span>
+              <small>SL</small>
+              <strong className="down">{trade.stopPriceLabel}</strong>
+            </span>
+          </div>
         </div>
       )}
       <div className="backtest-trade-mini-legend" aria-hidden="true">

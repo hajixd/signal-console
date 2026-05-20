@@ -64,10 +64,11 @@ type FolderContextMenuState = {
   y: number;
 };
 
-type ProjectXFolderAction = "edit-password" | "delete";
+type ProjectXFolderAction = "edit-password" | "delete" | "remove-account";
 
 type PendingProjectXFolderAction = {
   action: ProjectXFolderAction;
+  account?: ProjectXAccount;
   folder: ProjectXConnectionSummary;
 };
 
@@ -496,10 +497,10 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
     openProjectXFolderContextMenu(event, folder);
   }
 
-  function requestProjectXFolderAction(action: ProjectXFolderAction, folder: ProjectXConnectionSummary) {
+  function requestProjectXFolderAction(action: ProjectXFolderAction, folder: ProjectXConnectionSummary, account?: ProjectXAccount) {
     setFolderContextMenu(null);
     setPendingProjectXFolder(null);
-    setPendingProjectXFolderAction({ action, folder });
+    setPendingProjectXFolderAction({ account, action, folder });
     setFolderActionCurrentCode("");
     setFolderActionNewCode("");
     setFolderActionError("");
@@ -693,14 +694,18 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
         setUnlockedProjectXFolderIds((current) => (current.includes(folder.id) ? current : [...current, folder.id]));
         setActiveProjectXFolderId(folder.id);
       } else {
-        const response = await fetch(
-          `/api/topstep/connection?connectionId=${encodeURIComponent(folder.id)}&accessCode=${encodeURIComponent(currentCode)}`,
-          { method: "DELETE" }
-        );
+        const params = new URLSearchParams({ accessCode: currentCode, connectionId: folder.id });
+        if (action === "remove-account" && pendingProjectXFolderAction.account) params.set("accountId", String(pendingProjectXFolderAction.account.id));
+        const response = await fetch(`/api/topstep/connection?${params.toString()}`, { method: "DELETE" });
         const nextStatus = await parseConnectionResponse(response);
         setStatus(nextStatus);
-        setActiveProjectXFolderId(null);
-        setUnlockedProjectXFolderIds((current) => current.filter((id) => id !== folder.id));
+        if (action === "remove-account") {
+          setActiveProjectXFolderId(folder.id);
+          setUnlockedProjectXFolderIds((current) => (current.includes(folder.id) ? current : [...current, folder.id]));
+        } else {
+          setActiveProjectXFolderId(null);
+          setUnlockedProjectXFolderIds((current) => current.filter((id) => id !== folder.id));
+        }
       }
 
       setPendingProjectXFolderAction(null);
@@ -990,8 +995,8 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
                   maxLength={ACCESS_CODE_MAX_LENGTH}
                   name="projectx-folder-code"
                   onChange={(event) => setProjectXAccessCode(cleanAccessCode(event.target.value))}
-                  pattern="[0-9]{4,12}"
-                  placeholder="4-12 digits"
+                  pattern="[0-9]{5}"
+                  placeholder="5 digits"
                   required
                   type="password"
                   value={projectXAccessCode}
@@ -1030,8 +1035,8 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
                   maxLength={ACCESS_CODE_MAX_LENGTH}
                   name={`${selectedProvider.id}-account-code`}
                   onChange={(event) => setGenericAccessCode(cleanAccessCode(event.target.value))}
-                  pattern="[0-9]{4,12}"
-                  placeholder="4-12 digits"
+                  pattern="[0-9]{5}"
+                  placeholder="5 digits"
                   required
                   type="password"
                   value={genericAccessCode}
@@ -1058,8 +1063,15 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
           {pendingProjectXFolderAction ? (
             <form className="autoTradeFolderGate autoTradeFolderActionGate" onSubmit={handleProjectXFolderActionSubmit}>
               <div>
-                <span>{pendingProjectXFolderAction.action === "edit-password" ? "Edit folder password" : "Delete folder"}</span>
+                <span>
+                  {pendingProjectXFolderAction.action === "edit-password"
+                    ? "Edit folder password"
+                    : pendingProjectXFolderAction.action === "remove-account"
+                      ? "Remove account"
+                      : "Delete folder"}
+                </span>
                 <strong>{pendingProjectXFolderAction.folder.userName ?? "ProjectX account"}</strong>
+                {pendingProjectXFolderAction.account ? <span>{pendingProjectXFolderAction.account.name}</span> : null}
               </div>
               <label>
                 <span>Current password</span>
@@ -1101,16 +1113,18 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
                 <button type="button" disabled={isSubmittingFolderAction} onClick={cancelProjectXFolderAction}>
                   Cancel
                 </button>
-                <button className={pendingProjectXFolderAction.action === "delete" ? "dangerButton" : undefined} type="submit" disabled={isSubmittingFolderAction}>
+                <button className={pendingProjectXFolderAction.action !== "edit-password" ? "dangerButton" : undefined} type="submit" disabled={isSubmittingFolderAction}>
                   {isSubmittingFolderAction
                     ? "Checking..."
                     : pendingProjectXFolderAction.action === "edit-password"
                       ? "Update Password"
-                      : "Delete Folder"}
+                      : pendingProjectXFolderAction.action === "remove-account"
+                        ? "Remove Account"
+                        : "Delete Folder"}
                 </button>
               </div>
             </form>
-          ) : visibleAccounts.length === 0 && visibleSavedConnections.length === 0 ? (
+          ) : projectXAccountFolders.length === 0 && visibleSavedConnections.length === 0 ? (
             <div className="topstepAccountEmpty">
               <strong>No {marketLabel.toLowerCase()} auto-trade accounts connected</strong>
               <span>
@@ -1239,9 +1253,9 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
                             className="dangerButton"
                             type="button"
                             disabled={isDisconnecting}
-                            onClick={() => requestProjectXFolderAction("delete", activeProjectXFolder)}
+                            onClick={() => requestProjectXFolderAction("remove-account", activeProjectXFolder, account)}
                           >
-                            Delete Folder
+                            Remove Account
                           </button>
                         </div>
                       ) : null}

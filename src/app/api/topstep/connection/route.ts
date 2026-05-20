@@ -9,6 +9,7 @@ import {
   getStoredProjectXConnection,
   projectXConnectionStoreMode,
   saveStoredProjectXConnection,
+  removeStoredProjectXConnectionAccount,
   setStoredProjectXConnectionAccessCode,
   setStoredProjectXConnectionPaused,
   verifyStoredProjectXConnectionAccessCode
@@ -158,25 +159,27 @@ async function connectedStatus(connectionId: string): Promise<{ status: ProjectX
   const refreshedToken = await validateProjectXSession(connection.token);
   const activeToken = refreshedToken ?? connection.token;
   const accounts = await searchProjectXAccounts(activeToken, true);
-  await saveStoredProjectXConnection({
+  const visibleAccounts = accounts.filter((account) => !(connection.removedAccountIds ?? []).includes(account.id));
+  const savedConnection = await saveStoredProjectXConnection({
     accessCodeHash: connection.accessCodeHash,
-    accounts,
+    accounts: visibleAccounts,
     autoTradePaused: connection.autoTradePaused,
     connectedAt: connection.connectedAt,
     id: connectionId,
     pausedAccountIds: connection.pausedAccountIds,
+    removedAccountIds: connection.removedAccountIds,
     token: activeToken,
     userName: connection.userName
   });
 
   return {
     status: {
-      accounts,
+      accounts: visibleAccounts,
       autoTradePaused: connection.autoTradePaused,
       checkedAt: new Date().toISOString(),
       connected: true,
       connections: await getStoredProjectXConnectionSummaries(),
-      pausedAccountIds: connection.pausedAccountIds,
+      pausedAccountIds: savedConnection.pausedAccountIds,
       persisted: true,
       refreshed: Boolean(refreshedToken),
       userName: connection.userName
@@ -237,7 +240,7 @@ export async function POST(request: NextRequest) {
         autoTradePaused: true,
         connected: false,
         connections: await getStoredProjectXConnectionSummaries(),
-        error: "Create a 4-12 digit account code.",
+        error: "Create a 5-digit account code.",
         persisted: false
       },
       { status: 400 }
@@ -313,7 +316,7 @@ export async function PATCH(request: NextRequest) {
           autoTradePaused: true,
           connected: false,
           connections: await getStoredProjectXConnectionSummaries(),
-          error: "Create a 4-12 digit folder code.",
+          error: "Create a 5-digit folder code.",
           persisted: false
         },
         { status: 400 }
@@ -386,11 +389,43 @@ export async function PATCH(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   const connectionId = normalizeConnectionId(request.nextUrl.searchParams.get("connectionId")) ?? connectionIdFromRequest(request);
+  const accountIdValue = Number(request.nextUrl.searchParams.get("accountId"));
+  const accountId = Number.isInteger(accountIdValue) ? accountIdValue : undefined;
   if (connectionId) {
     const unauthorized = request.nextUrl.searchParams.get("connectionId")
       ? await requireCurrentConnectionAccessCode(connectionId, request.nextUrl.searchParams.get("accessCode"))
       : await authorizeConnectionMutation(request, connectionId, request.nextUrl.searchParams.get("accessCode"));
     if (unauthorized) return unauthorized;
+    if (typeof accountId === "number") {
+      const connection = await removeStoredProjectXConnectionAccount(connectionId, accountId);
+      if (!connection) {
+        return jsonStatus(
+          {
+            accounts: [],
+            autoTradePaused: true,
+            connected: false,
+            connections: await getStoredProjectXConnectionSummaries(),
+            error: "ProjectX account is no longer connected.",
+            persisted: false
+          },
+          { status: 404 }
+        );
+      }
+
+      const response = jsonStatus({
+        accounts: connection.accounts,
+        autoTradePaused: connection.autoTradePaused,
+        checkedAt: connection.lastCheckedAt,
+        connected: true,
+        connections: await getStoredProjectXConnectionSummaries(),
+        pausedAccountIds: connection.pausedAccountIds,
+        persisted: true,
+        userName: connection.userName
+      });
+      setConnectionCookie(response, connectionId);
+      return response;
+    }
+
     await deleteStoredProjectXConnection(connectionId);
   }
 

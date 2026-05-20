@@ -24,6 +24,7 @@ type StoredProjectXConnectionPayload = {
   id: string;
   lastCheckedAt?: string;
   pausedAccountIds?: number[];
+  removedAccountIds?: number[];
   status: "connected" | "expired";
   tradeableAccountCount: number;
   updatedAt: string;
@@ -91,9 +92,20 @@ function normalizePausedAccountIds(value: unknown, accounts: ProjectXAccount[], 
     .filter((item) => Number.isInteger(item) && accountIds.has(item));
 }
 
+function normalizeAccountIds(value: unknown): number[] {
+  if (!Array.isArray(value)) return [];
+  return [...new Set(value.map((item) => Number(item)).filter((item) => Number.isInteger(item)))];
+}
+
+function removeAccounts(accounts: ProjectXAccount[], removedAccountIds: number[]): ProjectXAccount[] {
+  const removedIds = new Set(removedAccountIds);
+  return accounts.filter((account) => !removedIds.has(account.id));
+}
+
 function toStoredConnection(value: StoredProjectXConnectionPayload | null | undefined): StoredProjectXConnection | null {
   if (!value?.id || !value.encryptedToken) return null;
   const accounts = normalizeAccounts(value.accounts ?? []);
+  const removedAccountIds = normalizeAccountIds(value.removedAccountIds);
   const autoTradePaused = value.autoTradePaused !== false;
   const pausedAccountIds = normalizePausedAccountIds(value.pausedAccountIds, accounts, autoTradePaused);
   return {
@@ -105,6 +117,7 @@ function toStoredConnection(value: StoredProjectXConnectionPayload | null | unde
     id: value.id,
     lastCheckedAt: typeof value.lastCheckedAt === "string" ? value.lastCheckedAt : undefined,
     pausedAccountIds,
+    removedAccountIds,
     status: value.status === "expired" ? "expired" : "connected",
     token: decryptToken(value.encryptedToken),
     tradeableAccountCount:
@@ -125,6 +138,7 @@ function safeToStoredConnection(value: StoredProjectXConnectionPayload | null | 
 function toConnectionSummary(value: StoredProjectXConnectionPayload | null | undefined): ProjectXConnectionSummary | null {
   if (!value?.id) return null;
   const accounts = normalizeAccounts(value.accounts ?? []);
+  const removedAccountIds = normalizeAccountIds(value.removedAccountIds);
   const autoTradePaused = value.autoTradePaused !== false;
   const pausedAccountIds = normalizePausedAccountIds(value.pausedAccountIds, accounts, autoTradePaused);
   return {
@@ -134,6 +148,7 @@ function toConnectionSummary(value: StoredProjectXConnectionPayload | null | und
     id: value.id,
     pausedAccountIds,
     readable: Boolean(safeToStoredConnection(value)),
+    removedAccountIds,
     status: value.status === "expired" ? "expired" : "connected",
     updatedAt: typeof value.updatedAt === "string" ? value.updatedAt : new Date(0).toISOString(),
     userName: typeof value.userName === "string" ? value.userName : undefined
@@ -244,11 +259,13 @@ export async function saveStoredProjectXConnection(input: {
   connectedAt?: string;
   id: string;
   pausedAccountIds?: number[];
+  removedAccountIds?: number[];
   token: string;
   userName?: string;
 }): Promise<StoredProjectXConnection> {
   const now = new Date().toISOString();
-  const accounts = normalizeAccounts(input.accounts);
+  const removedAccountIds = normalizeAccountIds(input.removedAccountIds);
+  const accounts = removeAccounts(normalizeAccounts(input.accounts), removedAccountIds);
   const pausedAccountIds = normalizePausedAccountIds(input.pausedAccountIds, accounts, input.autoTradePaused !== false);
   const payload: StoredProjectXConnectionPayload = {
     accessCodeHash: input.accessCode ? hashAccessCode(input.accessCode) : input.accessCodeHash,
@@ -260,6 +277,7 @@ export async function saveStoredProjectXConnection(input: {
     id: input.id,
     lastCheckedAt: now,
     pausedAccountIds,
+    removedAccountIds,
     status: "connected",
     tradeableAccountCount: accounts.filter((account) => account.canTrade).length,
     updatedAt: now
@@ -322,6 +340,25 @@ export async function setStoredProjectXConnectionPaused(id: string, autoTradePau
     connectedAt: connection.connectedAt,
     id,
     pausedAccountIds: [...pausedAccountIds],
+    removedAccountIds: connection.removedAccountIds,
+    token: connection.token,
+    userName: connection.userName
+  });
+}
+
+export async function removeStoredProjectXConnectionAccount(id: string, accountId: number): Promise<StoredProjectXConnection | null> {
+  const connection = await getStoredProjectXConnection(id);
+  if (!connection) return null;
+  if (!connection.accounts.some((account) => account.id === accountId)) return connection;
+
+  const removedAccountIds = [...new Set([...(connection.removedAccountIds ?? []), accountId])];
+  return saveStoredProjectXConnection({
+    accounts: connection.accounts,
+    accessCodeHash: connection.accessCodeHash,
+    connectedAt: connection.connectedAt,
+    id,
+    pausedAccountIds: connection.pausedAccountIds?.filter((id) => id !== accountId),
+    removedAccountIds,
     token: connection.token,
     userName: connection.userName
   });

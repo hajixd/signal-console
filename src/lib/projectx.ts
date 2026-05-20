@@ -29,6 +29,7 @@ export type ProjectXConnectionSummary = {
   id: string;
   pausedAccountIds?: number[];
   readable: boolean;
+  removedAccountIds?: number[];
   status: "connected" | "expired";
   updatedAt: string;
   userName?: string;

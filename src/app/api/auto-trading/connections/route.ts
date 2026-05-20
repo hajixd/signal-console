@@ -95,7 +95,7 @@ export async function POST(request: NextRequest) {
 
   const accessCode = text(payload.accessCode);
   if (!isValidAccessCode(accessCode)) {
-    return NextResponse.json({ error: "Create a 4-12 digit account code." }, { status: 400 });
+    return NextResponse.json({ error: "Create a 5-digit account code." }, { status: 400 });
   }
 
   try {
