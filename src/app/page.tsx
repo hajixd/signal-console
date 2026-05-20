@@ -1273,7 +1273,7 @@ export default async function Home({ searchParams }: HomeProps) {
   const backtestBehindMarketData = false;
   const now = new Date();
   const nextMarketDataSyncAt = nextCronRunIso((date) => date.getUTCMinutes() % 5 === 0, now);
-  const nextSignalTradeCheckAt = nextCronRunIso((date) => [2, 17, 32, 47].includes(date.getUTCMinutes()), now);
+  const nextSignalTradeCheckAt = nextMarketDataSyncAt;
   const nextDataValidityRefreshAt = nextCronRunIso((date) => [4, 19, 34, 49].includes(date.getUTCMinutes()), now);
   const liveRuleByKey = new Map(liveRules.map((rule) => [rule.key, rule]));
   const statByKey = new Map(backtestStats.map((stat) => [stat.key, stat]));
@@ -2195,7 +2195,7 @@ export default async function Home({ searchParams }: HomeProps) {
                 <dd>
                   <LocalDateTime value={syncStatus.lastMarketDataSyncAt ?? legacyDatasetSyncAt} fallback="Not synced yet" />
                 </dd>
-                <dt>Next scheduled</dt>
+                <dt>Next after sync</dt>
                 <dd>
                   <LocalDateTime value={nextMarketDataSyncAt} />
                 </dd>
@@ -2240,8 +2240,8 @@ export default async function Home({ searchParams }: HomeProps) {
                 <dd>
                   <LocalDateTime value={latestActiveMarketSignalAt} fallback="No alerts yet" />
                 </dd>
-                <dt>Interval</dt>
-                <dd>Every 15 minutes</dd>
+                <dt>Trigger</dt>
+                <dd>After market data sync</dd>
               </dl>
               <SyncTileChecks ariaLabel="Signal trade check details" checks={signalTradeChecks} />
               <SyncTileIssues ariaLabel="Signal trade check issues" issues={signalTradeIssues} />

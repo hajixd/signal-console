@@ -7,6 +7,7 @@ export type BacktestPriceMode = "fixed" | "custom";
 export type BacktestSizeMode = "auto" | "custom";
 
 export type AutoTradeOrderSummary = {
+  accountBalance?: number;
   accountId: number;
   accountName?: string;
   contractId?: string;

@@ -45,6 +45,25 @@ function marketDataFailureMessage(errors: MarketDataSyncError[], refreshedAssetC
     .join("; ");
 }
 
+async function runSignalCheckAfterMarketDataSync(request: NextRequest): Promise<{ error?: string; ok: boolean; status: number }> {
+  const response = await fetch(new URL("/api/cron/check-signals", request.nextUrl.origin), {
+    cache: "no-store",
+    headers: {
+      ...(request.headers.get("authorization") ? { authorization: request.headers.get("authorization")! } : {})
+    },
+    method: "GET"
+  });
+
+  if (response.ok) return { ok: true, status: response.status };
+
+  const text = await response.text().catch(() => "");
+  return {
+    error: text.slice(0, 500) || `Signal check returned ${response.status}`,
+    ok: false,
+    status: response.status
+  };
+}
+
 export async function GET(request: NextRequest) {
   const auth = isAuthorized(request);
   if (auth === "missing-secret") {
@@ -90,6 +109,12 @@ export async function GET(request: NextRequest) {
       state: failed ? "failed" : "success"
     }).catch((error) => console.error("Failed to mark market data sync finished", error));
 
+    const signalCheck = failed ? undefined : await runSignalCheckAfterMarketDataSync(request).catch((error) => ({
+      error: errorMessage(error),
+      ok: false,
+      status: 0
+    }));
+
     console.info("market-data-sync cron completed", {
       assetTimings: result.summary.assets.map((asset) => ({
         appendedRows: asset.appendedRows,
@@ -101,12 +126,14 @@ export async function GET(request: NextRequest) {
       durationMs,
       errors: result.summary.errors.length,
       errorSummary: failureMessage || undefined,
+      signalCheck,
       totalDurationMs: result.summary.totalDurationMs,
       uploadedFiles: result.summary.uploadedFiles
     });
 
     return NextResponse.json({
       rules: rules.length,
+      signalCheck,
       ...result.summary
     });
   } catch (error) {

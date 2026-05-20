@@ -41,14 +41,52 @@ const CONTRACT_SEARCH_OVERRIDES: Record<string, string> = {
   "6C": "M6C",
   "6E": "M6E",
   "6J": "M6J",
+  "6M": "6M",
+  "6N": "6N",
+  "6S": "6S",
   CL: "MCL",
+  E7: "E7",
   ES: "MES",
   GC: "MGC",
   HG: "MHG",
+  HE: "HE",
+  HO: "HO",
+  LE: "LE",
+  M2K: "M2K",
+  M6A: "M6A",
+  M6B: "M6B",
+  M6E: "M6E",
+  MBT: "MBT",
+  MCL: "MCL",
+  MES: "MES",
+  MET: "MET",
+  MGC: "MGC",
+  MHG: "MHG",
+  MNQ: "MNQ",
+  MNG: "MNG",
+  MYM: "MYM",
+  NG: "QG",
+  NKD: "NKD",
   NQ: "MNQ",
+  PL: "PL",
+  QG: "QG",
+  QM: "QM",
+  RB: "RB",
   RTY: "M2K",
   SI: "SIL",
-  YM: "MYM"
+  SIL: "SIL",
+  TN: "TN",
+  UB: "UB",
+  YM: "MYM",
+  ZB: "ZB",
+  ZC: "ZC",
+  ZF: "ZF",
+  ZL: "ZL",
+  ZM: "ZM",
+  ZN: "ZN",
+  ZS: "ZS",
+  ZT: "ZT",
+  ZW: "ZW"
 };
 
 function envFlag(name: string, fallback: boolean): boolean {
@@ -153,7 +191,7 @@ function contractSearchTextForTrade(trade: TradeAlert): string {
 
   const asset = trade.assetKey ? assetForKey(trade.assetKey) : assetForSymbol(symbol);
   const sizeRoot = asset?.sizeLabel.match(/^\s*\d+(?:\.\d+)?\s+([A-Z][A-Z0-9]{1,4})\b/)?.[1];
-  if (sizeRoot && !["CONTRACT", "FUTURE", "MICRO", "MINI"].includes(sizeRoot)) return sizeRoot;
+  if (sizeRoot && !["CONTRACT", "FUTURE", "FX", "MICRO", "MINI"].includes(sizeRoot)) return sizeRoot;
 
   return CONTRACT_SEARCH_OVERRIDES[symbol] ?? symbol;
 }
@@ -189,7 +227,7 @@ function tradeableAccounts(connection: StoredProjectXConnection): ProjectXAccoun
 
 function summarizeOrders(
   orders: AutoTradeOrderSummary[],
-  fields: Pick<ProjectXAutoTradeResult, "contractId" | "contractName"> = {}
+  fields: Pick<ProjectXAutoTradeResult, "accountName" | "contractId" | "contractName"> = {}
 ): Omit<ProjectXAutoTradeResult, "checkedAt" | "status"> {
   const first = orders[0];
   const failed = orders.filter((order) => order.status === "failed");
@@ -199,7 +237,7 @@ function summarizeOrders(
   const placedNote = orders.find((order) => order.status === "placed" && order.error)?.error;
   return {
     accountId: orders.length === 1 ? first?.accountId : undefined,
-    accountName: orders.length > 1 ? `${orders.length} accounts` : first?.accountName,
+    accountName: fields.accountName ?? (orders.length > 1 ? `${orders.length} accounts` : first?.accountName),
     contractId: first?.contractId ?? fields.contractId,
     contractName: first?.contractName ?? fields.contractName,
     customTag: orders.length === 1 ? first?.customTag : undefined,
@@ -298,6 +336,7 @@ export async function executeProjectXAutoTrade(trade: TradeAlert): Promise<Proje
       if (size <= 0) {
         orders.push({
           accountId: account.id,
+          accountBalance: account.balance,
           accountName: account.name,
           contractId: contract.id,
           contractName: contract.name,
@@ -334,6 +373,7 @@ export async function executeProjectXAutoTrade(trade: TradeAlert): Promise<Proje
       if (dryRunEnabled()) {
         orders.push({
           accountId: account.id,
+          accountBalance: account.balance,
           accountName: account.name,
           contractId: contract.id,
           contractName: contract.name,
@@ -348,6 +388,7 @@ export async function executeProjectXAutoTrade(trade: TradeAlert): Promise<Proje
         const order = await placeProjectXOrder(connection.token, request);
         orders.push({
           accountId: account.id,
+          accountBalance: account.balance,
           accountName: account.name,
           contractId: contract.id,
           contractName: contract.name,
@@ -364,6 +405,7 @@ export async function executeProjectXAutoTrade(trade: TradeAlert): Promise<Proje
             const fallbackOrder = await placeProjectXOrder(connection.token, fallbackRequest);
             orders.push({
               accountId: account.id,
+              accountBalance: account.balance,
               accountName: account.name,
               contractId: contract.id,
               contractName: contract.name,
@@ -379,6 +421,7 @@ export async function executeProjectXAutoTrade(trade: TradeAlert): Promise<Proje
             const message = `${projectXOrderErrorMessage(rawMessage)} Fallback failed: ${readableProjectXError(fallbackError)}`;
             orders.push({
               accountId: account.id,
+              accountBalance: account.balance,
               accountName: account.name,
               contractId: contract.id,
               contractName: contract.name,
@@ -393,6 +436,7 @@ export async function executeProjectXAutoTrade(trade: TradeAlert): Promise<Proje
         const message = projectXOrderErrorMessage(rawMessage);
         orders.push({
           accountId: account.id,
+          accountBalance: account.balance,
           accountName: account.name,
           contractId: contract.id,
           contractName: contract.name,
@@ -406,7 +450,7 @@ export async function executeProjectXAutoTrade(trade: TradeAlert): Promise<Proje
 
     const placedOrders = orders.filter((order) => order.status === "placed");
     const actionableOrders = orders.filter((order) => order.status !== "skipped");
-    const contractFields = { contractId: contract.id, contractName: contract.name };
+    const contractFields = { accountName: connection.userName, contractId: contract.id, contractName: contract.name };
     if (!actionableOrders.length) return result("skipped", summarizeOrders(orders, contractFields));
     if (dryRunEnabled()) return result("dry_run", summarizeOrders(orders, contractFields));
     if (placedOrders.length) return result("placed", summarizeOrders(orders, contractFields));
