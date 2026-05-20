@@ -534,7 +534,7 @@ function tradeLogicalRange(candles: MappedCandle[], entryCandle: MappedCandle | 
 
 function applyTradeChartRange(chart: IChartApi, series: CandleSeriesApi, logicalRange: NumberRange, priceRange: NumberRange | null): void {
   chart.timeScale().setVisibleLogicalRange(logicalRange);
-  series.priceScale().applyOptions({ autoScale: false, scaleMargins: { top: 0.12, bottom: 0.16 } });
+  series.priceScale().applyOptions({ autoScale: false, scaleMargins: { top: 0.04, bottom: 0.06 } });
   if (priceRange) series.priceScale().setVisibleRange(priceRange);
 }
 
@@ -558,7 +558,7 @@ function tradePriceRange(candles: MappedCandle[], levels: number[], logicalRange
   const max = Math.max(...prices);
   if (!Number.isFinite(min) || !Number.isFinite(max)) return null;
   const span = Math.max(max - min, Math.abs(max) * 0.0001, 0.01);
-  const padding = span * 0.16;
+  const padding = span * 0.045;
   return {
     from: min - padding,
     to: max + padding
@@ -2790,7 +2790,7 @@ export default function TradePriceChart({
       rightPriceScale: {
         autoScale: false,
         borderColor: axisColor,
-        scaleMargins: { top: 0.12, bottom: 0.16 }
+        scaleMargins: { top: 0.04, bottom: 0.06 }
       },
       timeScale: {
         borderColor: axisColor,

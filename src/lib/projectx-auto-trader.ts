@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { assetForKey, assetForSymbol } from "@/lib/assets";
+import { assetForKey, assetForSymbol, assetLookupSymbolForSymbol } from "@/lib/assets";
 import { scaledAutoTradeSize } from "@/lib/auto-trade-utils";
 import {
   getLatestStoredProjectXConnection,
@@ -38,12 +38,12 @@ export type ProjectXAutoTradeResult = {
 const CONTRACT_SEARCH_OVERRIDES: Record<string, string> = {
   "6A": "M6A",
   "6B": "M6B",
-  "6C": "M6C",
-  "6E": "M6E",
-  "6J": "M6J",
+  "6C": "6C",
+  "6E": "E7",
+  "6J": "6J",
   "6M": "6M",
   "6N": "6N",
-  "6S": "6S",
+  "6S": "M7",
   CL: "MCL",
   E7: "E7",
   ES: "MES",
@@ -62,6 +62,7 @@ const CONTRACT_SEARCH_OVERRIDES: Record<string, string> = {
   MET: "MET",
   MGC: "MGC",
   MHG: "MHG",
+  M7: "M7",
   MNQ: "MNQ",
   MNG: "MNG",
   MYM: "MYM",
@@ -193,7 +194,7 @@ function contractSearchTextForTrade(trade: TradeAlert): string {
   const sizeRoot = asset?.sizeLabel.match(/^\s*\d+(?:\.\d+)?\s+([A-Z][A-Z0-9]{1,4})\b/)?.[1];
   if (sizeRoot && !["CONTRACT", "FUTURE", "FX", "MICRO", "MINI"].includes(sizeRoot)) return sizeRoot;
 
-  return CONTRACT_SEARCH_OVERRIDES[symbol] ?? symbol;
+  return CONTRACT_SEARCH_OVERRIDES[symbol] ?? assetLookupSymbolForSymbol(symbol);
 }
 
 function contractScore(contract: ProjectXContract, searchText: string): number {

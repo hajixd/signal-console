@@ -29,6 +29,27 @@ export type DataTimeframe = (typeof DATA_TIMEFRAMES)[number];
 
 const ASSET_BY_KEY = new Map(ASSET_LIST.map((asset) => [asset.key, asset]));
 const ASSET_BY_SYMBOL = new Map(ASSET_LIST.map((asset) => [asset.symbol, asset]));
+const FUTURES_LOOKUP_SYMBOL_BY_SYMBOL: Record<string, string> = {
+  "6A": "M6A",
+  "6B": "M6B",
+  "6C": "6C",
+  "6E": "E7",
+  "6J": "6J",
+  "6M": "6M",
+  "6N": "6N",
+  "6S": "M7",
+  CL: "MCL",
+  ES: "MES",
+  GC: "MGC",
+  HG: "MHG",
+  MBT: "MBT",
+  MET: "MET",
+  NG: "QG",
+  NQ: "MNQ",
+  RTY: "M2K",
+  SI: "SIL",
+  YM: "MYM"
+};
 
 export function assetForKey(key: string): AssetDefinition {
   const asset = ASSET_BY_KEY.get(key);
@@ -40,6 +61,24 @@ export function assetForKey(key: string): AssetDefinition {
 
 export function assetForSymbol(symbol: string): AssetDefinition | undefined {
   return ASSET_BY_SYMBOL.get(symbol.trim().toUpperCase());
+}
+
+export function assetLookupSymbolForSymbol(symbol: string): string {
+  const normalizedSymbol = symbol.trim().toUpperCase();
+  if (!normalizedSymbol) return "--";
+  const asset = assetForSymbol(normalizedSymbol);
+  if (!asset) return normalizedSymbol;
+  if (asset.market === "futures") return FUTURES_LOOKUP_SYMBOL_BY_SYMBOL[asset.symbol] ?? asset.symbol;
+  return asset.oandaSymbol ?? asset.twelveDataSymbol ?? asset.symbol;
+}
+
+export function assetDisplayNameForSymbol(symbol: string): string {
+  const normalizedSymbol = symbol.trim().toUpperCase();
+  if (!normalizedSymbol) return "--";
+  const asset = assetForSymbol(normalizedSymbol);
+  if (!asset) return normalizedSymbol;
+  const lookupSymbol = assetLookupSymbolForSymbol(normalizedSymbol);
+  return lookupSymbol === asset.name ? asset.name : `${lookupSymbol} - ${asset.name}`;
 }
 
 export function defaultTickSize(symbol: string, market?: Market): number {

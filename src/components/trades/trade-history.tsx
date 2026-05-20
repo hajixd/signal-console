@@ -526,7 +526,7 @@ function BacktestTradeMiniChart({
       high = Math.max(trade.entryPrice, trade.exitPrice);
     }
     const span = Math.max(0.000000001, high - low);
-    const pad = Math.max(span * 0.12, Math.abs(trade.entryPrice) * 0.002, 0.0001);
+    const pad = Math.max(span * 0.035, Math.abs(trade.entryPrice) * 0.00008, 0.00005);
     const yMin = low - pad;
     const yMax = high + pad;
     const xMax = Math.max(1, ...data.map((point) => point.x));
@@ -847,6 +847,9 @@ function BacktestTradeMiniChart({
             Price {formatChartPrice(activePoint.price)} / {formatSignedMoney(activePoint.pnlDollars)}
           </span>
           <div className="backtest-trade-mini-tooltip-grid">
+            <span>
+              Size <strong>{trade.sizeLabel}</strong>
+            </span>
             <span>
               MFE <strong className="up">{formatSignedMoney(activePoint.runningMfe)}</strong>
             </span>
@@ -1248,7 +1251,7 @@ function TradeCandlestickChart({
   const minPrice = Math.min(...lows, ...importantPrices);
   const maxPrice = Math.max(...highs, ...importantPrices);
   const priceSpan = Math.max(0.0000001, maxPrice - minPrice);
-  const yPadding = Math.max(priceSpan * 0.18, Math.abs(trade.entryPrice) * 0.0005, 0.5);
+  const yPadding = Math.max(priceSpan * 0.045, Math.abs(trade.entryPrice) * 0.00008, 0.02);
   const low = minPrice - yPadding;
   const high = maxPrice + yPadding;
   const candleWidth = Math.max(2, Math.min(18, (plot.width / Math.max(1, viewBars.length)) * 0.7));

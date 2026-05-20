@@ -1098,8 +1098,8 @@ html[data-theme="light"] .themeDarkLabel {
 .basketListRow {
   display: grid;
   grid-template-columns:
-    76px
-    minmax(210px, 1fr)
+    minmax(172px, 0.82fr)
+    minmax(220px, 1fr)
     72px
     72px
     78px
@@ -1111,7 +1111,7 @@ html[data-theme="light"] .themeDarkLabel {
     86px;
   gap: 0.55rem;
   align-items: center;
-  min-width: 1290px;
+  min-width: 1400px;
 }
 
 .basketListHeader {
@@ -1146,6 +1146,7 @@ html[data-theme="light"] .themeDarkLabel {
   cursor: pointer;
 }
 
+.basketSortButton:nth-child(1),
 .basketSortButton:nth-child(2) {
   justify-content: flex-start;
   text-align: left;
@@ -1233,24 +1234,31 @@ html[data-theme="light"] .themeDarkLabel {
 }
 
 .basketListEmpty {
-  min-width: 1290px;
+  min-width: 1400px;
   padding: 0.82rem;
   color: rgba(255, 255, 255, 0.52);
   font-size: 0.68rem;
 }
 
 .basketTicker {
-  justify-self: center;
+  justify-self: start;
   color: rgba(255, 255, 255, 0.9);
-  font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
   font-size: 0.66rem;
   font-weight: 900;
   letter-spacing: 0;
+  line-height: 1.15;
+  overflow-wrap: anywhere;
+  text-align: left;
 }
 
 .basketListRow > span {
   justify-self: center;
   text-align: center;
+}
+
+.basketListRow > .basketTicker {
+  justify-self: start;
+  text-align: left;
 }
 
 .basketModel {
@@ -10072,23 +10080,23 @@ html[data-theme="light"] .tradeReplaySlider input {
   }
 
   .basketListRow {
-    grid-template-columns: 48px minmax(0, 1fr) minmax(0, 1fr) 44px;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) 44px;
     grid-auto-flow: row;
-    align-items: center;
+    align-items: start;
     gap: 4px 6px;
   }
 
   .basketListRow > .basketTicker {
-    grid-column: 1;
+    grid-column: 1 / 4;
     grid-row: 1;
-    align-self: center;
+    align-self: start;
     justify-self: start;
     min-height: 24px;
   }
 
   .basketListRow > .basketModel {
-    grid-column: 2 / 4;
-    grid-row: 1;
+    grid-column: 1 / -1;
+    grid-row: 2;
     display: grid;
     grid-template-columns: minmax(0, 1fr);
     gap: 1px;
@@ -10143,42 +10151,42 @@ html[data-theme="light"] .tradeReplaySlider input {
 
   .basketListRow > span[data-label="PF"] {
     grid-column: 1;
-    grid-row: 2;
+    grid-row: 3;
   }
 
   .basketListRow > span[data-label="Win"] {
     grid-column: 2;
-    grid-row: 2;
+    grid-row: 3;
   }
 
   .basketListRow > span[data-label="Trades"] {
     grid-column: 3;
-    grid-row: 2;
+    grid-row: 3;
   }
 
   .basketListRow > span[data-label="Take Profit"] {
     grid-column: 4;
-    grid-row: 2;
+    grid-row: 3;
   }
 
   .basketListRow > span[data-label="Stop Loss"] {
     grid-column: 1;
-    grid-row: 3;
+    grid-row: 4;
   }
 
   .basketListRow > span[data-label="RRR"] {
     grid-column: 2;
-    grid-row: 3;
+    grid-row: 4;
   }
 
   .basketListRow > span[data-label="Unit/contract size"] {
     grid-column: 3;
-    grid-row: 3;
+    grid-row: 4;
   }
 
   .basketListRow > span[data-label="Scale"] {
     grid-column: 4;
-    grid-row: 3;
+    grid-row: 4;
   }
 }
 

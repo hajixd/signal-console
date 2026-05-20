@@ -1,4 +1,5 @@
 import type { TradeAlert, TradeManagementEvent } from "./types";
+import { assetLookupSymbolForSymbol } from "./assets";
 import { dollarPerUnit, instrumentSizeLabel } from "./instruments";
 
 const TELEGRAM_MAX_TEXT_LENGTH = 3900;
@@ -89,6 +90,29 @@ function formatOrderSize(value: number | undefined): string | undefined {
   return new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 }).format(value);
 }
 
+function sizedOrders(orders: TradeAlert["autoTradeOrders"]): NonNullable<TradeAlert["autoTradeOrders"]> {
+  return (orders ?? []).filter(
+    (order) => order.status !== "skipped" && typeof order.size === "number" && Number.isFinite(order.size) && order.size > 0
+  );
+}
+
+function autoTradeOrderSize(orders: TradeAlert["autoTradeOrders"]): number | undefined {
+  const sizes = sizedOrders(orders).map((order) => order.size!);
+  if (!sizes.length) return undefined;
+  return sizes.reduce((sum, size) => sum + size, 0);
+}
+
+function telegramSizeLabel(trade: TradeAlert, instrumentLabel: string, fallbackSizeMultiplier: number): string {
+  const orderSize = autoTradeOrderSize(trade.autoTradeOrders);
+  const formattedOrderSize = formatOrderSize(orderSize);
+  if (formattedOrderSize) return `${formattedOrderSize} ${instrumentLabel}`;
+  const lookupSymbol = assetLookupSymbolForSymbol(trade.symbol);
+  if (instrumentLabel !== trade.symbol && instrumentLabel !== lookupSymbol) {
+    return `${formatOrderSize(fallbackSizeMultiplier) ?? formatNumber(fallbackSizeMultiplier)} ${instrumentLabel}`;
+  }
+  return instrumentSizeLabel(trade.symbol, fallbackSizeMultiplier);
+}
+
 function accountOrderLine(order: NonNullable<TradeAlert["autoTradeOrders"]>[number]): string {
   const formattedSize = formatOrderSize(order.size);
   const parts = [
@@ -166,7 +190,7 @@ function joinTelegramLines(lines: Array<string | undefined>): string {
 
 export function formatTelegramMessage(trade: TradeAlert): string {
   const dollarUnit = dollarPerUnit(trade.symbol, trade.entryPrice);
-  const sizeMultiplier = trade.sizeMultiplier ?? 1;
+  const sizeMultiplier = autoTradeOrderSize(trade.autoTradeOrders) ?? trade.sizeMultiplier ?? 1;
   const rawSizeScale = trade.sizeScale;
   const sizeScale = typeof rawSizeScale === "number" && Number.isFinite(rawSizeScale) && rawSizeScale > 0 ? rawSizeScale : undefined;
   const targetDollars = Math.abs(trade.tpUnits * dollarUnit * sizeMultiplier);
@@ -187,7 +211,7 @@ export function formatTelegramMessage(trade: TradeAlert): string {
     `Entry <code>${formatPrice(trade.entryPrice)}</code> | ${escapeHtml(formatEntryType(trade))}`,
     `TP <code>${formatPrice(trade.takeProfitPrice)}</code> | <b>${formatMoney(targetDollars, true)}</b>`,
     `SL <code>${formatPrice(trade.stopLossPrice)}</code> | <b>${formatMoney(-riskDollars, true)}</b>`,
-    `Size <code>${escapeHtml(instrumentSizeLabel(trade.symbol, sizeMultiplier))}</code>`,
+    `Size <code>${escapeHtml(telegramSizeLabel(trade, instrumentLabel, sizeMultiplier))}</code>`,
     sizeScale && Math.abs(sizeScale - 1) > 0.005 ? `Scale: ${escapeHtml(formatScale(sizeScale))}x` : undefined,
     "",
     `<b>Edge</b>`,

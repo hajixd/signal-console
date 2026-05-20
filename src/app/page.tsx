@@ -37,7 +37,7 @@ import {
   type BacktestStat,
   type BacktestTrade
 } from "@/lib/backtest";
-import { assetForSymbol } from "@/lib/assets";
+import { assetDisplayNameForSymbol, assetForSymbol, assetLookupSymbolForSymbol } from "@/lib/assets";
 import { DEFAULT_CHALLENGE_RULES, type ChallengeRules } from "@/lib/challenge";
 import { analyzeBacktestDataValidity, dataValidityClass, type DataValidityResult, type DataValidityTone } from "@/lib/data-validity";
 import { dollarPerUnit, instrumentSizeLabel, instrumentUnitLabel, recommendedSizeMultiplier } from "@/lib/instruments";
@@ -438,10 +438,11 @@ function uniqueValues<T>(values: T[]): T[] {
 }
 
 function assetLabel(symbols: string[]): string {
-  if (symbols.length === 0) return "--";
-  if (symbols.length === 1) return symbols[0]!;
-  if (symbols.length <= 3) return symbols.join(", ");
-  return `${symbols.slice(0, 3).join(", ")} +${symbols.length - 3}`;
+  const labels = symbols.map(assetDisplayNameForSymbol).filter((label) => label !== "--");
+  if (labels.length === 0) return "--";
+  if (labels.length === 1) return labels[0]!;
+  if (labels.length <= 3) return labels.join(", ");
+  return `${labels.slice(0, 3).join(", ")} +${labels.length - 3}`;
 }
 
 function strategySizeLabel(symbols: string[], sizeMultiplier: number): string {
@@ -740,7 +741,7 @@ function liveTradeDisplaySymbol(trade: TradeAlert): string {
     trade.autoTradeContractName?.trim() ||
     trade.autoTradeContractId?.trim() ||
     preferredContractFromOrders(trade.autoTradeOrders) ||
-    trade.symbol
+    assetLookupSymbolForSymbol(trade.symbol)
   );
 }
 
@@ -756,14 +757,14 @@ function liveTradeEventDisplaySymbol(trade: TradeAlert, event: LiveTradeEvent): 
   return liveTradeDisplaySymbol(trade);
 }
 
-function executableOrders(orders: TradeOrderSummary[] | undefined): TradeOrderSummary[] {
-  return (orders ?? []).filter((order) => order.status === "placed" || order.status === "dry_run");
+function sizedOrders(orders: TradeOrderSummary[] | undefined): TradeOrderSummary[] {
+  return (orders ?? []).filter(
+    (order) => order.status !== "skipped" && typeof order.size === "number" && Number.isFinite(order.size) && order.size > 0
+  );
 }
 
 function orderSizeMultiplier(orders: TradeOrderSummary[] | undefined): number | undefined {
-  const sizes = executableOrders(orders)
-    .map((order) => order.size)
-    .filter((size): size is number => typeof size === "number" && Number.isFinite(size) && size > 0);
+  const sizes = sizedOrders(orders).map((order) => order.size!);
   if (!sizes.length) return undefined;
   return sizes.reduce((sum, size) => sum + size, 0);
 }
@@ -781,9 +782,35 @@ function contractSizeLabel(contractLabel: string, size: number, accountCount?: n
 function liveTradeOrderSizeLabel(trade: TradeAlert, contractLabel: string, fallbackSizeMultiplier: number, event?: LiveTradeEvent): string {
   const orders = event?.kind === "limit" ? trade.limitOrderAutoTradeOrders : trade.autoTradeOrders;
   const size = orderSizeMultiplier(orders);
-  if (size !== undefined) return contractSizeLabel(contractLabel, size, executableOrders(orders).length);
+  if (size !== undefined) return contractSizeLabel(contractLabel, size, sizedOrders(orders).length);
   const fallback = instrumentSizeLabel(trade.symbol, fallbackSizeMultiplier);
-  return contractLabel !== trade.symbol ? `${fallback} (${contractLabel})` : fallback;
+  return contractLabel !== trade.symbol && contractLabel !== assetLookupSymbolForSymbol(trade.symbol)
+    ? contractSizeLabel(contractLabel, fallbackSizeMultiplier)
+    : fallback;
+}
+
+function isDateLikeLabel(value: string): boolean {
+  const trimmed = value.trim();
+  if (!trimmed) return false;
+  if (!/\d{4}|\b(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\b/i.test(trimmed)) return false;
+  return Number.isFinite(Date.parse(trimmed));
+}
+
+function liveTradeModelLabel(trade: TradeAlert, option?: StrategyOption): string {
+  const candidates = [
+    option?.label,
+    trade.strategy,
+    trade.strategyKey,
+    trade.logicalStrategyKey,
+    trade.datasetId,
+    trade.strategyId
+  ];
+  for (const candidate of candidates) {
+    const label = candidate?.trim();
+    if (!label || isDateLikeLabel(label)) continue;
+    return label;
+  }
+  return "Live signal";
 }
 
 function liveRowClass(trade: TradeAlert): string {
@@ -1400,6 +1427,8 @@ export default async function Home({ searchParams }: HomeProps) {
           ...entry.timeframes,
           normalizedDashboardMarket(entry.market) ?? entry.market,
           ...displaySymbols,
+          ...displaySymbols.map(assetLookupSymbolForSymbol),
+          ...displaySymbols.map(assetDisplayNameForSymbol),
           ...phases,
           ...stats.map((stat) => `${stat.symbol} ${stat.phase}`),
           ...stats.map((stat) => stat.variantId ?? "")
@@ -1538,7 +1567,7 @@ export default async function Home({ searchParams }: HomeProps) {
       pnlDollars: resolvedExit.pnlDollars,
       indexLabel: fmtNumber(index + 1),
       symbol: trade.symbol,
-      displaySymbol: trade.symbol,
+      displaySymbol: assetLookupSymbolForSymbol(trade.symbol),
       modelName: optionByKey.get(trade.datasetId)?.label ?? trade.label,
       marketLabel: marketLabel(trade.market),
       market: trade.market,
@@ -1636,7 +1665,7 @@ export default async function Home({ searchParams }: HomeProps) {
         indexLabel: fmtNumber(index + 1),
         symbol: trade.symbol,
         displaySymbol: displayContract,
-        modelName: option?.label ?? trade.strategy,
+        modelName: liveTradeModelLabel(trade, option),
         marketLabel: marketLabel(trade.market),
         market: trade.market,
         side: trade.side,
@@ -2092,9 +2121,11 @@ export default async function Home({ searchParams }: HomeProps) {
                 </thead>
                 <tbody>
                   {selectedLiveTrades.map((trade, index) => {
+                    const option = optionForLiveTrade(trade);
                     const events = liveTradeEvents(trade);
                     const displaySymbol = liveTradeDisplaySymbol(trade);
                     const symbolTitle = displaySymbol !== trade.symbol ? `Signal ${trade.symbol}` : undefined;
+                    const modelLabel = liveTradeModelLabel(trade, option);
                     const summarySizeMultiplier = liveTradeOrderSizeMultiplier(trade) ?? (trade.sizeMultiplier ?? 1);
                     return (
                       <tr className={liveRowClass(trade)} key={trade.id}>
@@ -2104,8 +2135,7 @@ export default async function Home({ searchParams }: HomeProps) {
                               <span data-label="#">{fmtNumber(index + 1)}</span>
                               <span className="ticker-cell" data-label="Ticker" title={symbolTitle}>{displaySymbol}</span>
                               <span className="main-cell" data-label="Model">
-                                <span>{fmtDate(trade.signalTime)}</span>
-                                <small><LocalDateTime value={trade.signalTime} /></small>
+                                <span>{modelLabel}</span>
                               </span>
                               <span className="event-cell" data-label="Event">
                                 <span className="eventPill neutral">{fmtNumber(events.length)} events</span>
@@ -2152,8 +2182,7 @@ export default async function Home({ searchParams }: HomeProps) {
                                     {eventDisplaySymbol}
                                   </span>
                                   <span className="main-cell" data-label="Model">
-                                    <span>{fmtDate(liveTradeEventTime(trade, event))}</span>
-                                    <small><LocalDateTime value={liveTradeEventTime(trade, event)} /></small>
+                                    <span>{modelLabel}</span>
                                   </span>
                                   <span className="event-cell" data-label="Event">
                                     <span className={`eventPill ${event.className}`} title={event.title}>
