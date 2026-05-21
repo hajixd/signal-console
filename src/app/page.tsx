@@ -1309,28 +1309,42 @@ function tradeDollarsPerPricePoint(trade: BacktestTrade, priceUnit: number, size
 }
 
 function alertTargetDollars(trade: TradeAlert): number {
-  return Math.abs(trade.tpUnits * dollarPerUnit(trade.symbol, trade.entryPrice) * (trade.sizeMultiplier ?? 1));
+  return alertTargetDollarsWithSize(trade, trade.sizeMultiplier ?? 1);
 }
 
 function alertRiskDollars(trade: TradeAlert): number {
-  return Math.abs(trade.slUnits * dollarPerUnit(trade.symbol, trade.entryPrice) * (trade.sizeMultiplier ?? 1));
+  return alertRiskDollarsWithSize(trade, trade.sizeMultiplier ?? 1);
 }
 
 function alertTargetDollarsWithSize(trade: TradeAlert, sizeMultiplier: number): number {
-  return Math.abs(trade.tpUnits * dollarPerUnit(trade.symbol, trade.entryPrice) * sizeMultiplier);
+  return Math.abs(alertTargetUnits(trade) * dollarPerUnit(trade.symbol, trade.entryPrice) * sizeMultiplier);
 }
 
 function alertRiskDollarsWithSize(trade: TradeAlert, sizeMultiplier: number): number {
-  return Math.abs(trade.slUnits * dollarPerUnit(trade.symbol, trade.entryPrice) * sizeMultiplier);
+  return Math.abs(alertRiskUnits(trade) * dollarPerUnit(trade.symbol, trade.entryPrice) * sizeMultiplier);
 }
 
 function inferredAlertPriceUnit(trade: TradeAlert, fallback = 1): number {
   if (fallback > 0 && Number.isFinite(fallback)) return fallback;
+  const assetTickSize = assetForSymbol(trade.symbol)?.tickSize;
+  if (assetTickSize !== undefined && assetTickSize > 0 && Number.isFinite(assetTickSize)) return assetTickSize;
   const targetDelta = Math.abs(trade.takeProfitPrice - trade.entryPrice);
   if (targetDelta > 0 && trade.tpUnits > 0) return targetDelta / trade.tpUnits;
   const stopDelta = Math.abs(trade.entryPrice - trade.stopLossPrice);
   if (stopDelta > 0 && trade.slUnits > 0) return stopDelta / trade.slUnits;
   return 1;
+}
+
+function alertTargetUnits(trade: TradeAlert): number {
+  const priceUnit = inferredAlertPriceUnit(trade, 0);
+  const priceDelta = Math.abs(trade.takeProfitPrice - trade.entryPrice);
+  return priceUnit > 0 && priceDelta > 0 ? priceDelta / priceUnit : trade.tpUnits;
+}
+
+function alertRiskUnits(trade: TradeAlert): number {
+  const priceUnit = inferredAlertPriceUnit(trade, 0);
+  const priceDelta = Math.abs(trade.entryPrice - trade.stopLossPrice);
+  return priceUnit > 0 && priceDelta > 0 ? priceDelta / priceUnit : trade.slUnits;
 }
 
 function approximateBarsHeld(startValue: string, endValue: string, timeframeMinutes = 15): number {
@@ -2011,6 +2025,7 @@ export default async function Home({ searchParams }: HomeProps) {
         </div>
         <header className="terminal-head">
           <div className="asset-meta">
+            <p className="terminal-kicker">{marketLabel(activeMarket)} dashboard</p>
             <h1>Trading Bot</h1>
           </div>
           <div className="terminal-actions">
@@ -2027,9 +2042,54 @@ export default async function Home({ searchParams }: HomeProps) {
             <TestAlertButton disabled={!telegramConfigured} sendTestAlert={sendTestTelegramAlert} />
             <AutoTradingConnectionDrawer market={executionMarket} />
           </div>
+          <div className="mobileDashboardSnapshot" aria-label="Mobile dashboard snapshot">
+            <div>
+              <span>Selected</span>
+              <strong>{fmtNumber(selectedKeys.length || strategyOptions.length)}</strong>
+              <small>{fmtNumber(strategyOptions.length)} total</small>
+            </div>
+            <div>
+              <span>Trades</span>
+              <strong>{fmtNumber(visibleTradeHistoryRows.length)}</strong>
+              <small>{historySourceLabel}</small>
+            </div>
+            <div>
+              <span>Live</span>
+              <strong>{fmtNumber(selectedLiveTrades.length)}</strong>
+              <small>{fmtNumber(selectedLiveEventRows.length)} events</small>
+            </div>
+            <div>
+              <span>Sync</span>
+              <strong>{backtestBehindMarketData ? "Behind" : "Current"}</strong>
+              <small>{latestTradeAt ? "history ready" : "waiting"}</small>
+            </div>
+          </div>
         </header>
 
-        <section className="backtest-card">
+        <nav className="mobileBottomTabbar" aria-label="Dashboard mobile tabs">
+          <a href="#signals" aria-label="Overview">
+            <span className="mobileTabIcon mobileTabIconOverview" aria-hidden="true" />
+            <strong>Home</strong>
+          </a>
+          <a href="#strategies" aria-label="Strategies">
+            <span className="mobileTabIcon mobileTabIconStrategies" aria-hidden="true" />
+            <strong>Strategies</strong>
+          </a>
+          <a href="#challenge" aria-label="Replay">
+            <span className="mobileTabIcon mobileTabIconReplay" aria-hidden="true" />
+            <strong>Replay</strong>
+          </a>
+          <a href="#backtest" aria-label="History">
+            <span className="mobileTabIcon mobileTabIconHistory" aria-hidden="true" />
+            <strong>History</strong>
+          </a>
+          <a href="#live" aria-label="Live alerts">
+            <span className="mobileTabIcon mobileTabIconLive" aria-hidden="true" />
+            <strong>Live</strong>
+          </a>
+        </nav>
+
+        <section className="backtest-card strategies-card" id="strategies">
           <div className="backtest-card-head">
             <div>
               <h2>Strategies</h2>
@@ -2057,7 +2117,7 @@ export default async function Home({ searchParams }: HomeProps) {
           />
         </section>
 
-        <section className="backtest-card challenge-card">
+        <section className="backtest-card challenge-card" id="challenge">
           <div className="backtest-card-head">
             <div>
               <h2>Prop Firm Challenge Replay</h2>
@@ -2091,7 +2151,7 @@ export default async function Home({ searchParams }: HomeProps) {
           />
         </section>
 
-        <section className="backtest-card history-card" id="cron" aria-label="Cron execution history">
+        <section className="backtest-card history-card" id="live" aria-label="Cron execution history">
           <div className="backtest-card-head">
             <div>
               <h2>Cron Executions</h2>
@@ -2261,7 +2321,7 @@ export default async function Home({ searchParams }: HomeProps) {
           )}
         </section>
 
-        <section className="backtest-card telegram-card">
+        <section className="backtest-card telegram-card" id="ops">
           <div className="backtest-card-head">
             <div>
               <h2>Telegram Alerts</h2>

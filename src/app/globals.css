@@ -11116,3 +11116,567 @@ html[data-theme="light"] .tradeReplaySlider input::-webkit-slider-thumb {
     padding-left: 0;
   }
 }
+
+.mobileDashboardSnapshot,
+.mobileBottomTabbar {
+  display: none;
+}
+
+@media (max-width: 680px) {
+  html {
+    scroll-padding-top: 118px;
+    scroll-padding-bottom: calc(92px + env(safe-area-inset-bottom));
+    overflow-x: hidden;
+  }
+
+  body {
+    background:
+      linear-gradient(180deg, rgba(14, 18, 24, 0.98), #07090d 280px),
+      #07090d;
+    color: rgba(245, 247, 251, 0.94);
+    font-size: 13px;
+    line-height: 1.22;
+    overflow-x: hidden;
+    overscroll-behavior-y: none;
+  }
+
+  .terminal {
+    min-height: 100svh;
+    background: transparent;
+  }
+
+  .terminal-workspace {
+    max-width: 100vw;
+    min-width: 0;
+    width: 100%;
+    gap: 10px;
+    padding: 8px 8px calc(104px + env(safe-area-inset-bottom));
+    overflow-x: hidden;
+  }
+
+  .marketView > section,
+  .terminal-head {
+    scroll-margin-top: 118px;
+  }
+
+  .marketTopShell {
+    top: 0;
+    z-index: 70;
+    gap: 6px;
+    margin: -8px -8px 0;
+    padding: 8px 8px 7px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+    background: rgba(7, 9, 13, 0.88);
+    backdrop-filter: blur(22px) saturate(135%);
+  }
+
+  .marketTopRow {
+    gap: 6px;
+  }
+
+  .marketTopShell .autoTradeTopModeBar {
+    grid-template-columns: minmax(88px, 0.72fr) minmax(0, 1.7fr);
+    gap: 6px;
+  }
+
+  .marketTopShell .autoTradeModeBadge,
+  .marketTopShell .autoTradeTopModeBar button,
+  .marketTopShell .autoTradeResearchLink,
+  .marketTopNavLink {
+    min-height: 34px;
+    height: 34px;
+    border-radius: 8px;
+    font-size: 10px;
+  }
+
+  .marketTopNavLink {
+    flex-basis: 96px;
+  }
+
+  .market-tabs {
+    min-height: 38px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.035);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.045);
+  }
+
+  .market-tab {
+    min-height: 38px;
+    color: rgba(235, 241, 249, 0.62);
+    font-size: 11px;
+  }
+
+  .market-tab.active {
+    background: rgba(255, 255, 255, 0.08);
+    color: #f8fafc;
+    box-shadow: inset 0 -2px 0 #00c805;
+  }
+
+  .terminal-head {
+    min-width: 0;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 10px;
+    min-height: 0;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.024)),
+      #090c10;
+    box-shadow: 0 18px 50px rgba(0, 0, 0, 0.38), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    padding: 12px;
+  }
+
+  .asset-meta {
+    gap: 4px;
+  }
+
+  .terminal-kicker {
+    color: rgba(0, 200, 5, 0.86);
+    font-size: 10px;
+  }
+
+  .asset-meta h1 {
+    font-size: 28px;
+    line-height: 0.96;
+    letter-spacing: 0;
+  }
+
+  .terminal-actions {
+    min-width: 0;
+    max-width: 100%;
+    width: 100%;
+    display: flex;
+    gap: 6px;
+    overflow-x: auto;
+    padding-bottom: 2px;
+    scrollbar-width: none;
+  }
+
+  .terminal-actions::-webkit-scrollbar {
+    display: none;
+  }
+
+  .terminal-action,
+  .terminal-actions .autoTradeModeBar,
+  .themeToggle,
+  .topstepDrawerButton {
+    flex: 0 0 auto;
+    min-width: max-content;
+    min-height: 34px;
+    height: 34px;
+    border-radius: 8px;
+    padding: 0 10px;
+    font-size: 10px;
+  }
+
+  .themeToggle {
+    width: 38px;
+    min-width: 38px;
+    padding: 0;
+  }
+
+  .mobileDashboardSnapshot {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+  }
+
+  .mobileDashboardSnapshot div {
+    min-width: 0;
+    min-height: 68px;
+    display: grid;
+    align-content: center;
+    gap: 3px;
+    border: 1px solid rgba(255, 255, 255, 0.065);
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.032);
+    padding: 8px 7px;
+  }
+
+  .mobileDashboardSnapshot span,
+  .mobileDashboardSnapshot small {
+    min-width: 0;
+    overflow: hidden;
+    color: rgba(226, 232, 240, 0.54);
+    font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+    font-size: 8px;
+    font-weight: 800;
+    line-height: 1.05;
+    text-overflow: ellipsis;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  .mobileDashboardSnapshot strong {
+    min-width: 0;
+    overflow: hidden;
+    color: #f8fafc;
+    font-size: 15px;
+    line-height: 1;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .mobileBottomTabbar {
+    position: fixed;
+    right: auto;
+    bottom: calc(9px + env(safe-area-inset-bottom));
+    left: 50%;
+    z-index: 120;
+    width: min(370px, calc(100vw - 20px));
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 3px;
+    min-height: 66px;
+    border: 1px solid rgba(255, 255, 255, 0.095);
+    border-radius: 18px;
+    background: rgba(8, 10, 13, 0.86);
+    box-shadow: 0 24px 70px rgba(0, 0, 0, 0.54), inset 0 1px 0 rgba(255, 255, 255, 0.055);
+    padding: 7px 7px 8px;
+    backdrop-filter: blur(24px) saturate(150%);
+    transform: translateX(-50%);
+  }
+
+  .mobileBottomTabbar a {
+    min-width: 0;
+    display: grid;
+    place-items: center;
+    gap: 4px;
+    border-radius: 12px;
+    color: rgba(226, 232, 240, 0.58);
+    text-decoration: none;
+    transition:
+      background 140ms ease,
+      color 140ms ease,
+      transform 140ms ease;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .mobileBottomTabbar a:focus-visible,
+  .mobileBottomTabbar a:hover {
+    background: rgba(255, 255, 255, 0.07);
+    color: #f8fafc;
+    outline: none;
+    transform: translateY(-1px);
+  }
+
+  .mobileBottomTabbar strong {
+    max-width: 100%;
+    overflow: hidden;
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 0;
+    line-height: 1;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .mobileTabIcon {
+    position: relative;
+    width: 22px;
+    height: 22px;
+    display: block;
+  }
+
+  .mobileTabIcon::before,
+  .mobileTabIcon::after {
+    position: absolute;
+    content: "";
+    border-radius: 5px;
+    transition: border-color 140ms ease, background 140ms ease, box-shadow 140ms ease;
+  }
+
+  .mobileTabIconOverview::before {
+    inset: 4px;
+    border: 2px solid currentColor;
+  }
+
+  .mobileTabIconOverview::after {
+    left: 7px;
+    right: 7px;
+    bottom: 4px;
+    height: 5px;
+    background: currentColor;
+  }
+
+  .mobileTabIconStrategies::before {
+    inset: 3px 4px;
+    border: 2px solid currentColor;
+  }
+
+  .mobileTabIconStrategies::after {
+    top: 7px;
+    right: 8px;
+    bottom: 7px;
+    left: 8px;
+    background: currentColor;
+    box-shadow: -6px 0 0 currentColor, 6px 0 0 currentColor;
+  }
+
+  .mobileTabIconReplay::before {
+    inset: 3px;
+    border: 2px solid currentColor;
+    border-radius: 999px;
+  }
+
+  .mobileTabIconReplay::after {
+    top: 6px;
+    left: 8px;
+    width: 0;
+    height: 0;
+    border-top: 5px solid transparent;
+    border-bottom: 5px solid transparent;
+    border-left: 7px solid currentColor;
+    border-radius: 1px;
+  }
+
+  .mobileTabIconHistory::before {
+    inset: 4px 3px;
+    border: 2px solid currentColor;
+  }
+
+  .mobileTabIconHistory::after {
+    top: 8px;
+    right: 6px;
+    left: 6px;
+    height: 2px;
+    background: currentColor;
+    box-shadow: 0 5px 0 currentColor;
+  }
+
+  .mobileTabIconLive::before {
+    inset: 3px;
+    border: 2px solid currentColor;
+    border-radius: 999px;
+  }
+
+  .mobileTabIconLive::after {
+    top: 9px;
+    left: 9px;
+    width: 4px;
+    height: 4px;
+    border-radius: 999px;
+    background: #00c805;
+    box-shadow: 0 0 0 5px rgba(0, 200, 5, 0.16);
+  }
+
+  .backtest-card {
+    min-width: 0;
+    max-width: 100%;
+    gap: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.075);
+    border-radius: 8px;
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.018)),
+      rgba(9, 11, 15, 0.96);
+    box-shadow: none;
+    padding: 11px;
+  }
+
+  .backtest-card-head {
+    min-height: 32px;
+    align-items: center;
+  }
+
+  .backtest-card-head h2 {
+    font-size: 17px;
+    line-height: 1;
+    letter-spacing: 0;
+  }
+
+  .count-pill,
+  .status {
+    border-radius: 999px;
+  }
+
+  .count-pill {
+    flex: 0 1 auto;
+    max-width: 52%;
+    min-height: 28px;
+    border-color: rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.045);
+    color: rgba(226, 232, 240, 0.72);
+    padding: 0 10px;
+    font-size: 9px;
+  }
+
+  .backtest-stats-grid {
+    min-width: 0;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 7px;
+  }
+
+  .selectedStatsSurface,
+  .backtest-stats-grid,
+  .backtest-stat-card,
+  .telegram-grid div,
+  .challenge-pass-card,
+  .challenge-method,
+  .dataset-sync-tile {
+    min-width: 0;
+    max-width: 100%;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.032);
+  }
+
+  .backtest-stat-card {
+    min-height: 74px;
+    padding: 10px;
+  }
+
+  .backtest-stat-card span,
+  .telegram-grid span {
+    font-size: 9px;
+  }
+
+  .backtest-stat-card strong {
+    font-size: 19px;
+    letter-spacing: 0;
+  }
+
+  .strategySearch input,
+  .challenge-rule-form input,
+  .fieldControl input,
+  .lockedField {
+    min-height: 38px;
+    border-radius: 8px;
+    font-size: 13px;
+  }
+
+  .pickerActions button,
+  .scaleButtons button,
+  .challenge-rule-form button,
+  .strategyModalHead button,
+  .strategyModalActions button {
+    min-height: 34px;
+    border-radius: 8px;
+    font-size: 10px;
+  }
+
+  .basketList {
+    min-width: 0;
+    max-width: 100%;
+    max-height: 62svh;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.018);
+  }
+
+  .basketListRow {
+    min-height: 122px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.03);
+    padding: 10px;
+  }
+
+  .terminal-table tbody {
+    gap: 8px;
+  }
+
+  .terminal-table tbody tr {
+    min-width: 0;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.032);
+    padding: 10px;
+  }
+
+  .terminal-table-wrap.historyScroll {
+    max-height: 62svh;
+    border-radius: 8px;
+  }
+
+  .tradeModal,
+  html[data-theme="light"] .tradeModal,
+  .tradeModal.up-row,
+  .tradeModal.down-row,
+  .tradeModal.neutral-row,
+  html[data-theme="light"] .tradeModal.up-row,
+  html[data-theme="light"] .tradeModal.down-row,
+  html[data-theme="light"] .tradeModal.neutral-row {
+    width: calc(100vw - 12px);
+    height: calc(100svh - 12px);
+    max-height: calc(100svh - 12px);
+    border-radius: 8px !important;
+  }
+}
+
+@media (max-width: 430px) {
+  .mobileDashboardSnapshot {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .asset-meta h1 {
+    font-size: 25px;
+  }
+
+  .mobileBottomTabbar {
+    width: min(360px, calc(100vw - 14px));
+    min-height: 64px;
+    padding-right: 5px;
+    padding-left: 5px;
+  }
+
+  .mobileBottomTabbar strong {
+    font-size: 8.5px;
+  }
+}
+
+@media (max-width: 680px) {
+  html[data-theme="light"] body {
+    background:
+      linear-gradient(180deg, rgba(248, 250, 252, 0.98), #f4f7fb 280px),
+      #f4f7fb;
+    color: rgba(15, 23, 42, 0.92);
+  }
+
+  html[data-theme="light"] .marketTopShell {
+    border-bottom-color: rgba(15, 23, 42, 0.08);
+    background: rgba(244, 247, 251, 0.88);
+  }
+
+  html[data-theme="light"] .terminal-head,
+  html[data-theme="light"] .backtest-card {
+    border-color: rgba(15, 23, 42, 0.09);
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(255, 255, 255, 0.9)),
+      #ffffff;
+  }
+
+  html[data-theme="light"] .mobileDashboardSnapshot div,
+  html[data-theme="light"] .backtest-stat-card,
+  html[data-theme="light"] .telegram-grid div,
+  html[data-theme="light"] .challenge-pass-card,
+  html[data-theme="light"] .challenge-method,
+  html[data-theme="light"] .dataset-sync-tile,
+  html[data-theme="light"] .terminal-table tbody tr,
+  html[data-theme="light"] .basketListRow {
+    border-color: rgba(15, 23, 42, 0.08);
+    background: rgba(15, 23, 42, 0.028);
+  }
+
+  html[data-theme="light"] .mobileDashboardSnapshot strong {
+    color: rgba(15, 23, 42, 0.94);
+  }
+
+  html[data-theme="light"] .mobileDashboardSnapshot span,
+  html[data-theme="light"] .mobileDashboardSnapshot small {
+    color: rgba(15, 23, 42, 0.54);
+  }
+
+  html[data-theme="light"] .mobileBottomTabbar {
+    border-color: rgba(15, 23, 42, 0.1);
+    background: rgba(255, 255, 255, 0.86);
+    box-shadow: 0 20px 60px rgba(15, 23, 42, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.75);
+  }
+
+  html[data-theme="light"] .mobileBottomTabbar a {
+    color: rgba(15, 23, 42, 0.56);
+  }
+
+  html[data-theme="light"] .mobileBottomTabbar a:focus-visible,
+  html[data-theme="light"] .mobileBottomTabbar a:hover {
+    background: rgba(15, 23, 42, 0.065);
+    color: rgba(15, 23, 42, 0.94);
+  }
+}
