@@ -2,6 +2,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { NextRequest, NextResponse } from "next/server";
 import { updateDatasetSyncRunStatus } from "@/lib/live-config";
+import { cronWeekendPause } from "@/lib/market-schedule";
 import { dispatchResearchCycleWorkflow, getResearchGithubConfigStatus } from "@/lib/research-workflow";
 
 export type ResearchStage = "research" | "idea" | "coding" | "backtest" | "pipeline";
@@ -76,6 +77,17 @@ export async function handleResearchCron(request: NextRequest, defaultStage: Res
       ok: true,
       route: routeForStage(stage),
       stage
+    });
+  }
+  const weekendPause = cronWeekendPause();
+  if (weekendPause.paused) {
+    return NextResponse.json({
+      github: getResearchGithubConfigStatus(),
+      ok: true,
+      route: routeForStage(stage),
+      skipped: true,
+      stage,
+      weekendPause
     });
   }
 

@@ -2,31 +2,31 @@
   "crons": [
     {
       "path": "/api/cron/market-data-sync",
-      "schedule": "*/5 * * * *"
+      "schedule": "*/5 * * * 0-5"
     },
     {
       "path": "/api/cron/check-signals",
-      "schedule": "2,7,12,17,22,27,32,37,42,47,52,57 * * * *"
+      "schedule": "2,7,12,17,22,27,32,37,42,47,52,57 * * * 0-5"
     },
     {
       "path": "/api/cron/review-validity",
-      "schedule": "4,19,34,49 * * * *"
+      "schedule": "4,19,34,49 * * * 0-5"
     },
     {
       "path": "/api/cron/research-research",
-      "schedule": "0 13 * * *"
+      "schedule": "0 13 * * 1-5"
     },
     {
       "path": "/api/cron/research-ideas",
-      "schedule": "0 16,0 * * *"
+      "schedule": "0 16,0 * * 1-5"
     },
     {
       "path": "/api/cron/research-coding",
-      "schedule": "0 19,3 * * *"
+      "schedule": "0 19,3 * * 1-5"
     },
     {
       "path": "/api/cron/research-backtest",
-      "schedule": "0 22,6 * * *"
+      "schedule": "0 22,6 * * 1-5"
     }
   ]
 }

@@ -5,10 +5,12 @@ import { dollarPerUnit } from "@/lib/instruments";
 import { fetchStoredAssetBars, fetchStoredMarketBars } from "@/lib/market-data-store";
 import { saveCronRun, updateDatasetSyncRunStatus } from "@/lib/live-config";
 import { activeRules, evaluateRecentSignals } from "@/lib/live-signals";
+import { cronWeekendPause, marketOpenForSignal } from "@/lib/market-schedule";
 import { claimTrade, getTrades, hasTrade, saveTrade } from "@/lib/storage";
 import { sendTelegram, sendTelegramManagement, sendTelegramOutcome } from "@/lib/telegram";
 import { TOPSTEP_100K_ACCOUNT, reviewTopstepSignal, withTopstepGuardNote } from "@/lib/topstep";
 import type { Bar, CronResult, StrategyRule, TradeAlert, TradeManagementEvent } from "@/lib/types";
+import { sendDueWeeklyTradeSummaries } from "@/lib/weekly-trade-summary";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -663,10 +665,12 @@ async function runSignalCheck(): Promise<CronResult> {
   const scanSinceMs = scanReferenceMs - scanLookbackMs;
   const candidateRepeatSignals = new Map<string, TradeAlert[]>();
   const candidateDailyKeys = new Set<string>();
-  const rules = await activeRules();
-  if (!rules.length) {
+  const allRules = await activeRules();
+  if (!allRules.length) {
     throw new Error("No active live strategies are enabled for signal checks.");
   }
+  const sessionReference = new Date(scanReferenceMs);
+  const rules = allRules.filter((rule) => marketOpenForSignal(rule.market, sessionReference)?.open ?? false);
   result.signalScan = {
     candidates: 0,
     lookbackMinutes: Math.round(scanLookbackMs / 60_000),
@@ -675,6 +679,14 @@ async function runSignalCheck(): Promise<CronResult> {
     rawSignals: 0,
     staleSignals: 0
   };
+  if (!rules.length) {
+    result.skippedData?.push({
+      assetKey: "market-session",
+      reason: "No configured forex or futures market is open for signal checks.",
+      symbol: "ALL"
+    });
+    return result;
+  }
 
   const barsByAssetKey = new Map<string, Bar[]>();
   const assetTimings = new Map<string, { assetKey: string; durationMs: number; rules: number; symbol: string }>();
@@ -860,6 +872,23 @@ export async function GET(request: NextRequest) {
       checkedAt: new Date().toISOString(),
       ok: true,
       route: "/api/cron/check-signals"
+    });
+  }
+  const weeklySummary = await sendDueWeeklyTradeSummaries().catch((error) => ({
+    checkedAt: new Date().toISOString(),
+    due: true,
+    reason: errorMessage(error),
+    sent: [],
+    skipped: []
+  }));
+  const weekendPause = cronWeekendPause();
+  if (weekendPause.paused) {
+    return NextResponse.json({
+      ok: true,
+      route: "/api/cron/check-signals",
+      skipped: true,
+      weekendPause,
+      weeklySummary
     });
   }
   const startedAt = Date.now();

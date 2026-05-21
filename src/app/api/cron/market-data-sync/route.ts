@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { GET as runCheckSignalsCron } from "@/app/api/cron/check-signals/route";
 import { updateDatasetSyncRunStatus } from "@/lib/live-config";
 import { activeRules } from "@/lib/live-signals";
+import { cronWeekendPause, marketOpenForSignal } from "@/lib/market-schedule";
 import { refreshMarketDataForRules } from "@/lib/market-data-refresh";
 
 export const dynamic = "force-dynamic";
@@ -78,8 +79,45 @@ export async function GET(request: NextRequest) {
     });
   }
 
+  const weekendPause = cronWeekendPause();
+  if (weekendPause.paused) {
+    return NextResponse.json({
+      ok: true,
+      route: "/api/cron/market-data-sync",
+      skipped: true,
+      weekendPause
+    });
+  }
+
   const startedAt = Date.now();
   const startedAtIso = new Date(startedAt).toISOString();
+
+  let rules: Awaited<ReturnType<typeof activeRules>>;
+  try {
+    const allRules = await activeRules();
+    if (!allRules.length) {
+      return NextResponse.json({
+        ok: true,
+        reason: "No active live strategies are enabled for market data sync.",
+        route: "/api/cron/market-data-sync",
+        skipped: true
+      });
+    }
+
+    rules = allRules.filter((rule) => marketOpenForSignal(rule.market)?.open ?? false);
+    if (!rules.length) {
+      return NextResponse.json({
+        markets: ["forex", "futures"],
+        ok: true,
+        reason: "No configured forex or futures market is open for market data sync.",
+        route: "/api/cron/market-data-sync",
+        skipped: true
+      });
+    }
+  } catch (error) {
+    return NextResponse.json({ error: errorMessage(error) }, { status: 500 });
+  }
+
   await updateDatasetSyncRunStatus("marketDataSync", {
     error: undefined,
     finishedAt: undefined,
@@ -88,11 +126,6 @@ export async function GET(request: NextRequest) {
   }).catch((error) => console.error("Failed to mark market data sync running", error));
 
   try {
-    const rules = await activeRules();
-    if (!rules.length) {
-      throw new Error("No active live strategies are enabled for market data sync.");
-    }
-
     const result = await refreshMarketDataForRules(rules);
     const durationMs = Date.now() - startedAt;
     const finishedAt = new Date().toISOString();

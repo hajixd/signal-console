@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getBacktestStats, getBacktestTrades, getStrategyCatalog } from "@/lib/backtest";
 import { analyzeBacktestDataValidity } from "@/lib/data-validity";
 import { updateDatasetSyncRunStatus } from "@/lib/live-config";
+import { cronWeekendPause } from "@/lib/market-schedule";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -39,6 +40,15 @@ export async function GET(request: NextRequest) {
       checkedAt: new Date().toISOString(),
       ok: true,
       route: "/api/cron/review-validity"
+    });
+  }
+  const weekendPause = cronWeekendPause();
+  if (weekendPause.paused) {
+    return NextResponse.json({
+      ok: true,
+      route: "/api/cron/review-validity",
+      skipped: true,
+      weekendPause
     });
   }
 
