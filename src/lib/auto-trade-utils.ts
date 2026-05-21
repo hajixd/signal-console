@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { defaultTickSize } from "@/lib/assets";
+import { assetForKey, assetForSymbol, defaultTickSize } from "@/lib/assets";
 import type { ProjectXAutoTradeResult, ProjectXAutoTradeStatus } from "@/lib/projectx-auto-trader";
 import type { AutoTradeOrderSummary, TradeAlert } from "@/lib/types";
 
@@ -147,15 +147,33 @@ export function autoTradeAccountSizeScale(...sources: Array<AutoTradeAccountSize
   return 1;
 }
 
+function assetMarketForTrade(trade: Pick<TradeAlert, "assetKey" | "market" | "symbol">): string | undefined {
+  if (trade.assetKey) {
+    try {
+      return assetForKey(trade.assetKey).market;
+    } catch {
+      return assetForSymbol(trade.symbol)?.market;
+    }
+  }
+  return assetForSymbol(trade.symbol)?.market;
+}
+
+export function tradeRequiresWholeNumberSize(trade: Pick<TradeAlert, "assetKey" | "market" | "symbol">): boolean {
+  return trade.market === "futures" || assetMarketForTrade(trade) === "futures";
+}
+
 export function scaledAutoTradeSize(
   baseSize: number,
   sources: AutoTradeAccountSizeSource | Array<AutoTradeAccountSizeSource | undefined> | undefined,
-  options: { minSize?: number; wholeNumber?: boolean } = {}
+  options: { minSize?: number; wholeNumber?: boolean; wholeNumberRounding?: "ceil" | "floor" } = {}
 ): number {
   const normalizedBase = Number.isFinite(baseSize) && baseSize > 0 ? baseSize : 1;
   const sourceList = Array.isArray(sources) ? sources : [sources];
   const scaled = normalizedBase * autoTradeAccountSizeScale(...sourceList);
-  if (options.wholeNumber) return Math.max(options.minSize ?? 1, Math.floor(scaled));
+  if (options.wholeNumber) {
+    const rounded = options.wholeNumberRounding === "floor" ? Math.floor(scaled) : Math.ceil(scaled);
+    return Math.max(options.minSize ?? 1, rounded);
+  }
   return Math.max(options.minSize ?? 0.0001, Number(scaled.toFixed(4)));
 }
 
@@ -175,7 +193,9 @@ export function mappedSize(prefix: ProviderPrefix, trade: TradeAlert, fallback =
     parseMap(fields?.sizeMap)[symbol] ?? parseMap(fields?.lotMap)[symbol] ?? parseEnvMap(`${prefix}_SIZE_MAP`)[symbol] ?? parseEnvMap(`${prefix}_LOT_MAP`)[symbol]
   );
   const size = Number.isFinite(mapped) && mapped > 0 ? mapped : fallback;
-  return scaledAutoTradeSize(Number.isFinite(size) && size > 0 ? size : 1, fields);
+  return scaledAutoTradeSize(Number.isFinite(size) && size > 0 ? size : 1, fields, {
+    wholeNumber: tradeRequiresWholeNumberSize(trade)
+  });
 }
 
 export function tradeLevels(trade: TradeAlert): Pick<AutoTradeRequest, "stopLossPrice" | "takeProfitPrice"> {

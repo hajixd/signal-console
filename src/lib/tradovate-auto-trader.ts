@@ -146,7 +146,7 @@ export async function executeTradovateAutoTrade(trade: TradeAlert): Promise<Proj
         action: request.action === "buy" ? "Buy" : "Sell",
         clOrdId: request.customTag,
         isAutomated: true,
-        orderQty: Math.max(1, Math.floor(request.size)),
+        orderQty: Math.max(1, Math.ceil(request.size)),
         orderType: request.entryType === "limit" ? "Limit" : "Market",
         price: request.entryType === "limit" ? request.entryPrice : undefined,
         symbol: request.symbol,

@@ -321,10 +321,7 @@ export async function executeProjectXAutoTrade(trade: TradeAlert): Promise<Proje
     const contract = bestContract(await searchProjectXContracts(connection.token, searchText, projectXContractLiveFlag()), searchText);
     if (!contract) return result("failed", { error: `No ProjectX contract found for ${searchText}.` });
 
-    const baseSize =
-      trade.orderLeg === "entry" || trade.orderLeg === "limit"
-        ? positiveNumber(trade.sizeMultiplier ?? 1, "Order size")
-        : wholeNumber(trade.sizeMultiplier ?? 1, "Order size");
+    const baseSize = positiveNumber(trade.sizeMultiplier ?? 1, "Order size");
     const stopLossTicks = wholeNumber(Math.abs(trade.slUnits), "Stop-loss ticks");
     const takeProfitTicks = wholeNumber(Math.abs(trade.tpUnits), "Take-profit ticks");
     const entryType: ProjectXOrderType = trade.entryType === "limit" ? 1 : 2;
