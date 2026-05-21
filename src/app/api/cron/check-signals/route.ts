@@ -10,7 +10,7 @@ import { claimTrade, getTrades, hasTrade, saveTrade } from "@/lib/storage";
 import { sendTelegram, sendTelegramManagement, sendTelegramOutcome } from "@/lib/telegram";
 import { TOPSTEP_100K_ACCOUNT, reviewTopstepSignal, withTopstepGuardNote } from "@/lib/topstep";
 import type { Bar, CronResult, StrategyRule, TradeAlert, TradeManagementEvent } from "@/lib/types";
-import { sendDueWeeklyTradeSummaries } from "@/lib/weekly-trade-summary";
+import { sendDueDailyTradeSummaries, sendDueWeeklyTradeSummaries } from "@/lib/weekly-trade-summary";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -28,6 +28,10 @@ function isAuthorized(request: NextRequest): "ok" | "missing-secret" | "bad-secr
 
 function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : "Unknown signal check error";
+}
+
+function isDirectCheckSignalsRequest(request: NextRequest): boolean {
+  return request.nextUrl.pathname.endsWith("/api/cron/check-signals");
 }
 
 function isMarketDataStaleError(error: unknown): boolean {
@@ -874,19 +878,39 @@ export async function GET(request: NextRequest) {
       route: "/api/cron/check-signals"
     });
   }
-  const weeklySummary = await sendDueWeeklyTradeSummaries().catch((error) => ({
-    checkedAt: new Date().toISOString(),
-    due: true,
-    reason: errorMessage(error),
-    sent: [],
-    skipped: []
-  }));
+  const directCheckSignalsRequest = isDirectCheckSignalsRequest(request);
+  const dailySummary = directCheckSignalsRequest
+    ? await sendDueDailyTradeSummaries().catch((error) => ({
+        checkedAt: new Date().toISOString(),
+        sent: [],
+        skipped: [
+          {
+            market: "forex" as const,
+            reason: errorMessage(error)
+          },
+          {
+            market: "futures" as const,
+            reason: errorMessage(error)
+          }
+        ]
+      }))
+    : undefined;
+  const weeklySummary = directCheckSignalsRequest
+    ? await sendDueWeeklyTradeSummaries().catch((error) => ({
+        checkedAt: new Date().toISOString(),
+        due: true,
+        reason: errorMessage(error),
+        sent: [],
+        skipped: []
+      }))
+    : undefined;
   const weekendPause = cronWeekendPause();
   if (weekendPause.paused) {
     return NextResponse.json({
       ok: true,
       route: "/api/cron/check-signals",
       skipped: true,
+      dailySummary,
       weekendPause,
       weeklySummary
     });

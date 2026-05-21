@@ -20,13 +20,15 @@ import { sendTelegramText } from "@/lib/telegram";
 import { getTrades } from "@/lib/storage";
 import type { TradeAlert } from "@/lib/types";
 
-type WeeklySummaryMarker = {
+type TradeSummaryMarker = {
   key: string;
   market: AutoTradeMarket;
+  period: "daily" | "weekly";
   sentAt: string;
   telegramError?: string;
   telegramStatus: "sent" | "skipped";
-  weekKey: string;
+  tradingDateKey?: string;
+  weekKey?: string;
 };
 
 type WeeklySummaryWindow = {
@@ -35,6 +37,14 @@ type WeeklySummaryWindow = {
   sessionClock: string;
   start: Date;
   weekKey: string;
+};
+
+type DailySummaryWindow = {
+  end: Date;
+  market: AutoTradeMarket;
+  sessionClock: string;
+  start: Date;
+  tradingDateKey: string;
 };
 
 export type WeeklySummaryRunResult = {
@@ -55,9 +65,27 @@ export type WeeklySummaryRunResult = {
   }>;
 };
 
+export type DailySummaryRunResult = {
+  checkedAt: string;
+  sent: Array<{
+    error?: string;
+    market: AutoTradeMarket;
+    status: "sent" | "skipped" | "failed";
+    tradeCount: number;
+    tradingDateKey: string;
+  }>;
+  skipped: Array<{
+    market: AutoTradeMarket;
+    reason: string;
+    tradingDateKey?: string;
+  }>;
+};
+
 const WEEKLY_SUMMARY_COLLECTION = "signalConsoleWeeklySummaries";
+const DAILY_SUMMARY_COLLECTION = "signalConsoleDailySummaries";
 const LOCAL_RUNTIME_ROOT = process.env.VERCEL === "1" ? path.join(tmpdir(), "signal-console") : path.join(/*turbopackIgnore: true*/ process.cwd(), ".local");
 const LOCAL_WEEKLY_SUMMARY_PATH = path.join(LOCAL_RUNTIME_ROOT, "signal-console-weekly-summaries.json");
+const LOCAL_DAILY_SUMMARY_PATH = path.join(LOCAL_RUNTIME_ROOT, "signal-console-daily-summaries.json");
 const SUMMARY_MARKETS: AutoTradeMarket[] = ["forex", "futures"];
 const MAX_TRADE_LINES = 14;
 
@@ -98,55 +126,59 @@ function formatPct(value: number): string {
   }).format(value);
 }
 
-function markerKey(market: AutoTradeMarket, weekKey: string): string {
+function weeklyMarkerKey(market: AutoTradeMarket, weekKey: string): string {
   return `${weekKey}-${market}`;
 }
 
-async function readLocalMarkers(): Promise<Record<string, WeeklySummaryMarker>> {
+function dailyMarkerKey(market: AutoTradeMarket, tradingDateKey: string): string {
+  return `daily-${tradingDateKey}-${market}`;
+}
+
+async function readLocalMarkers(filePath: string): Promise<Record<string, TradeSummaryMarker>> {
   try {
-    return JSON.parse(await readFile(LOCAL_WEEKLY_SUMMARY_PATH, "utf8")) as Record<string, WeeklySummaryMarker>;
+    return JSON.parse(await readFile(filePath, "utf8")) as Record<string, TradeSummaryMarker>;
   } catch {
     return {};
   }
 }
 
-async function writeLocalMarkers(markers: Record<string, WeeklySummaryMarker>): Promise<void> {
-  await mkdir(path.dirname(LOCAL_WEEKLY_SUMMARY_PATH), { recursive: true });
-  await writeFile(LOCAL_WEEKLY_SUMMARY_PATH, JSON.stringify(markers, null, 2));
+async function writeLocalMarkers(filePath: string, markers: Record<string, TradeSummaryMarker>): Promise<void> {
+  await mkdir(path.dirname(filePath), { recursive: true });
+  await writeFile(filePath, JSON.stringify(markers, null, 2));
 }
 
-async function getMarker(key: string): Promise<WeeklySummaryMarker | null> {
+async function getMarker(collection: string, localPath: string, key: string): Promise<TradeSummaryMarker | null> {
   if (hasFirebaseAdmin()) {
     try {
       const snapshot = await withFirebaseTimeout(
         firebaseDb()
-          .collection(WEEKLY_SUMMARY_COLLECTION)
+          .collection(collection)
           .doc(key)
           .get(),
-        "Firebase weekly summary marker read"
+        "Firebase trade summary marker read"
       );
-      return snapshot.exists ? (snapshot.data() as WeeklySummaryMarker) : null;
+      return snapshot.exists ? (snapshot.data() as TradeSummaryMarker) : null;
     } catch (error) {
       if (!firebaseLocalFallbackEnabled()) throw error;
     }
   }
 
-  return (await readLocalMarkers())[key] ?? null;
+  return (await readLocalMarkers(localPath))[key] ?? null;
 }
 
-async function saveMarker(marker: WeeklySummaryMarker): Promise<void> {
+async function saveMarker(collection: string, localPath: string, marker: TradeSummaryMarker): Promise<void> {
   const payload = omitUndefinedDeep(marker);
   if (hasFirebaseAdmin()) {
     try {
       await withFirebaseTimeout(
         firebaseDb()
-          .collection(WEEKLY_SUMMARY_COLLECTION)
+          .collection(collection)
           .doc(marker.key)
           .set({
             ...payload,
             updatedAtServer: FieldValue.serverTimestamp()
           }),
-        "Firebase weekly summary marker write"
+        "Firebase trade summary marker write"
       );
       return;
     } catch (error) {
@@ -154,8 +186,8 @@ async function saveMarker(marker: WeeklySummaryMarker): Promise<void> {
     }
   }
 
-  const markers = await readLocalMarkers();
-  await writeLocalMarkers({
+  const markers = await readLocalMarkers(localPath);
+  await writeLocalMarkers(localPath, {
     ...markers,
     [marker.key]: marker
   });
@@ -202,6 +234,68 @@ function summaryWindow(market: AutoTradeMarket, weekKey: string): WeeklySummaryW
     start: zonedDateTimeToUtc({ ...sunday, hour: 17, minute: 0 }, CHICAGO_TIME_ZONE),
     weekKey
   };
+}
+
+function dailySummaryWindow(market: AutoTradeMarket, tradingDateKey: string): DailySummaryWindow {
+  const [yearText, monthText, dayText] = tradingDateKey.split("-");
+  const closeDate = {
+    day: Number(dayText),
+    month: Number(monthText),
+    year: Number(yearText)
+  };
+  const openDate = addCalendarDays(closeDate, -1);
+
+  if (market === "forex") {
+    return {
+      end: zonedDateTimeToUtc({ ...closeDate, hour: 16, minute: 59 }, NEW_YORK_TIME_ZONE),
+      market,
+      sessionClock: "Forex trading day: 5:05 PM to 4:59 PM New York time",
+      start: zonedDateTimeToUtc({ ...openDate, hour: 17, minute: 5 }, NEW_YORK_TIME_ZONE),
+      tradingDateKey
+    };
+  }
+
+  return {
+    end: zonedDateTimeToUtc({ ...closeDate, hour: 16, minute: 0 }, CHICAGO_TIME_ZONE),
+    market,
+    sessionClock: "Futures trading day: 5:00 PM to 4:00 PM Chicago time",
+    start: zonedDateTimeToUtc({ ...openDate, hour: 17, minute: 0 }, CHICAGO_TIME_ZONE),
+    tradingDateKey
+  };
+}
+
+function dailySummaryDueForMarket(market: AutoTradeMarket, value: Date): { due: boolean; reason?: string; tradingDateKey?: string } {
+  const timeZone = market === "forex" ? NEW_YORK_TIME_ZONE : CHICAGO_TIME_ZONE;
+  const parts = zonedParts(value, timeZone);
+  const minutes = parts.hour * 60 + parts.minute;
+  const tradingDateKey = formatLocalDateKey(parts);
+
+  if (market === "forex") {
+    const weekdayClose = parts.weekday >= 1 && parts.weekday <= 4 && minutes >= 16 * 60 + 59 && minutes < 17 * 60 + 5;
+    const fridayClose = parts.weekday === 5 && minutes >= 16 * 60 + 59;
+    return weekdayClose || fridayClose
+      ? { due: true, tradingDateKey }
+      : {
+          due: false,
+          reason: "Forex daily summaries send after the 4:59 PM New York trading-day close."
+        };
+  }
+
+  const weekdayClose = parts.weekday >= 1 && parts.weekday <= 4 && minutes >= 16 * 60 && minutes < 17 * 60;
+  const fridayClose = parts.weekday === 5 && minutes >= 16 * 60;
+  return weekdayClose || fridayClose
+    ? { due: true, tradingDateKey }
+    : {
+        due: false,
+        reason: "Futures daily summaries send after the 4:00 PM Chicago trading-day close."
+      };
+}
+
+export function dueDailySummaryWindows(value = new Date()): DailySummaryWindow[] {
+  return SUMMARY_MARKETS.flatMap((market) => {
+    const due = dailySummaryDueForMarket(market, value);
+    return due.due && due.tradingDateKey ? [dailySummaryWindow(market, due.tradingDateKey)] : [];
+  });
 }
 
 function tradeMarket(trade: TradeAlert): AutoTradeMarket | null {
@@ -307,7 +401,19 @@ function executionSummary(trades: TradeAlert[]): string {
     .join(" | ");
 }
 
-function formatWeeklySummaryMessage(market: AutoTradeMarket, window: WeeklySummaryWindow, trades: TradeAlert[]): string {
+function formatTradeSummaryMessage(
+  market: AutoTradeMarket,
+  fields: {
+    dateLabel: string;
+    emptyTradeText: string;
+    footnote: string;
+    sessionClock: string;
+    title: string;
+    windowEnd: Date;
+    windowStart: Date;
+  },
+  trades: TradeAlert[]
+): string {
   const closedTrades = trades.filter((trade) => tradePnl(trade) !== undefined);
   const openTrades = trades.filter((trade) => tradePnl(trade) === undefined);
   const pnls = closedTrades.map((trade) => tradePnl(trade)!);
@@ -331,10 +437,10 @@ function formatWeeklySummaryMessage(market: AutoTradeMarket, window: WeeklySumma
   const hiddenTradeCount = Math.max(0, trades.length - tradeLines.length);
   const symbolLines = symbolBreakdownLines(trades);
   const lines = [
-    `<b>${marketTitle(market)} Weekly Summary</b>`,
-    `<b>Week ending ${escapeHtml(window.weekKey)}</b>`,
-    `${escapeHtml(window.sessionClock)}`,
-    `${escapeHtml(formatPacificTime(window.start))} to ${escapeHtml(formatPacificTime(window.end))}`,
+    `<b>${marketTitle(market)} ${fields.title}</b>`,
+    `<b>${escapeHtml(fields.dateLabel)}</b>`,
+    `${escapeHtml(fields.sessionClock)}`,
+    `${escapeHtml(formatPacificTime(fields.windowStart))} to ${escapeHtml(formatPacificTime(fields.windowEnd))}`,
     "",
     `<b>Scoreboard</b>`,
     `Trades: <b>${trades.length}</b> | Closed: <b>${closedTrades.length}</b> | Open: <b>${openTrades.length}</b>`,
@@ -353,16 +459,48 @@ function formatWeeklySummaryMessage(market: AutoTradeMarket, window: WeeklySumma
     ...symbolLines.map(escapeHtml),
     "",
     `<b>Trades</b>`,
-    tradeLines.length ? tradeLines.map(escapeHtml).join("\n") : "No trades were alerted for this market this week.",
+    tradeLines.length ? tradeLines.map(escapeHtml).join("\n") : fields.emptyTradeText,
     hiddenTradeCount ? `...and ${hiddenTradeCount} more.` : undefined,
     "",
-    `<i>Realized P/L uses completed lifecycle outcomes; open trades are excluded from net P/L.</i>`
+    `<i>${escapeHtml(fields.footnote)}</i>`
   ];
 
   return lines.filter((line): line is string => line !== undefined).join("\n");
 }
 
-function tradesForWindow(trades: TradeAlert[], market: AutoTradeMarket, window: WeeklySummaryWindow): TradeAlert[] {
+function formatWeeklySummaryMessage(market: AutoTradeMarket, window: WeeklySummaryWindow, trades: TradeAlert[]): string {
+  return formatTradeSummaryMessage(
+    market,
+    {
+      dateLabel: `Week ending ${window.weekKey}`,
+      emptyTradeText: "No trades were alerted for this market this week.",
+      footnote: "Realized P/L uses completed lifecycle outcomes; open trades are excluded from net P/L.",
+      sessionClock: window.sessionClock,
+      title: "Weekly Summary",
+      windowEnd: window.end,
+      windowStart: window.start
+    },
+    trades
+  );
+}
+
+function formatDailySummaryMessage(market: AutoTradeMarket, window: DailySummaryWindow, trades: TradeAlert[]): string {
+  return formatTradeSummaryMessage(
+    market,
+    {
+      dateLabel: `Trading day ${window.tradingDateKey}`,
+      emptyTradeText: "No trades were alerted for this market today.",
+      footnote: "Realized P/L uses completed lifecycle outcomes; open trades are excluded from net P/L.",
+      sessionClock: window.sessionClock,
+      title: "Daily Summary",
+      windowEnd: window.end,
+      windowStart: window.start
+    },
+    trades
+  );
+}
+
+function tradesForWindow(trades: TradeAlert[], market: AutoTradeMarket, window: Pick<WeeklySummaryWindow | DailySummaryWindow, "end" | "start">): TradeAlert[] {
   const startMs = window.start.getTime();
   const endMs = window.end.getTime();
   return trades.filter((trade) => {
@@ -384,8 +522,8 @@ export async function sendDueWeeklyTradeSummaries(value = new Date()): Promise<W
 
   const trades = await getTrades();
   for (const market of SUMMARY_MARKETS) {
-    const key = markerKey(market, due.weekKey);
-    const existing = await getMarker(key);
+    const key = weeklyMarkerKey(market, due.weekKey);
+    const existing = await getMarker(WEEKLY_SUMMARY_COLLECTION, LOCAL_WEEKLY_SUMMARY_PATH, key);
     if (existing?.telegramStatus === "sent" || existing?.telegramStatus === "skipped") {
       result.skipped.push({
         market,
@@ -407,13 +545,73 @@ export async function sendDueWeeklyTradeSummaries(value = new Date()): Promise<W
     });
 
     if (notification.status !== "failed") {
-      await saveMarker({
+      await saveMarker(WEEKLY_SUMMARY_COLLECTION, LOCAL_WEEKLY_SUMMARY_PATH, {
         key,
         market,
+        period: "weekly",
         sentAt: value.toISOString(),
         telegramError: notification.error,
         telegramStatus: notification.status,
         weekKey: due.weekKey
+      });
+    }
+  }
+
+  return result;
+}
+
+export async function sendDueDailyTradeSummaries(value = new Date()): Promise<DailySummaryRunResult> {
+  const result: DailySummaryRunResult = {
+    checkedAt: value.toISOString(),
+    sent: [],
+    skipped: []
+  };
+
+  const windows = dueDailySummaryWindows(value);
+  const windowByMarket = new Map(windows.map((window) => [window.market, window]));
+  for (const market of SUMMARY_MARKETS) {
+    const window = windowByMarket.get(market);
+    if (!window) {
+      result.skipped.push({
+        market,
+        reason: dailySummaryDueForMarket(market, value).reason ?? "Daily summary is not due yet."
+      });
+    }
+  }
+  if (!windows.length) return result;
+
+  const trades = await getTrades();
+  for (const window of windows) {
+    const key = dailyMarkerKey(window.market, window.tradingDateKey);
+    const existing = await getMarker(DAILY_SUMMARY_COLLECTION, LOCAL_DAILY_SUMMARY_PATH, key);
+    if (existing?.telegramStatus === "sent" || existing?.telegramStatus === "skipped") {
+      result.skipped.push({
+        market: window.market,
+        reason: `Daily ${window.market} summary already ${existing.telegramStatus} at ${existing.sentAt}.`,
+        tradingDateKey: window.tradingDateKey
+      });
+      continue;
+    }
+
+    const marketTrades = tradesForWindow(trades, window.market, window);
+    const notification = await sendTelegramText(formatDailySummaryMessage(window.market, window, marketTrades));
+    result.sent.push({
+      error: notification.error,
+      market: window.market,
+      status: notification.status,
+      tradeCount: marketTrades.length,
+      tradingDateKey: window.tradingDateKey
+    });
+
+    if (notification.status !== "failed") {
+      await saveMarker(DAILY_SUMMARY_COLLECTION, LOCAL_DAILY_SUMMARY_PATH, {
+        key,
+        market: window.market,
+        period: "daily",
+        sentAt: value.toISOString(),
+        telegramError: notification.error,
+        telegramStatus: notification.status,
+        tradingDateKey: window.tradingDateKey
       });
     }
   }
