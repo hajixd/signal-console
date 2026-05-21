@@ -674,7 +674,7 @@ async function runSignalCheck(): Promise<CronResult> {
     throw new Error("No active live strategies are enabled for signal checks.");
   }
   const sessionReference = new Date(scanReferenceMs);
-  const rules = allRules.filter((rule) => marketOpenForSignal(rule.market, sessionReference)?.open ?? false);
+  const rules = allRules.filter((rule) => marketOpenForSignal(rule.market, sessionReference, { assetKey: rule.assetKey, symbol: rule.symbol })?.open ?? false);
   result.signalScan = {
     candidates: 0,
     lookbackMinutes: Math.round(scanLookbackMs / 60_000),

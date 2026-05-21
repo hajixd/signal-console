@@ -104,7 +104,8 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    rules = allRules.filter((rule) => marketOpenForSignal(rule.market)?.open ?? false);
+    const sessionReference = new Date();
+    rules = allRules.filter((rule) => marketOpenForSignal(rule.market, sessionReference, { assetKey: rule.assetKey, symbol: rule.symbol })?.open ?? false);
     if (!rules.length) {
       return NextResponse.json({
         markets: ["forex", "futures"],

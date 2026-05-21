@@ -7,10 +7,8 @@ import { firebaseDb, firebaseLocalFallbackEnabled, hasFirebaseAdmin, withFirebas
 import { omitUndefinedDeep } from "@/lib/firestore-utils";
 import {
   addCalendarDays,
-  CHICAGO_TIME_ZONE,
   formatLocalDateKey,
   formatPacificTime,
-  NEW_YORK_TIME_ZONE,
   PACIFIC_TIME_ZONE,
   zonedDateTimeToUtc,
   zonedParts
@@ -196,10 +194,10 @@ async function saveMarker(collection: string, localPath: string, marker: TradeSu
 function weeklySummaryDue(value: Date): { due: boolean; reason?: string; weekKey?: string } {
   const pacific = zonedParts(value, PACIFIC_TIME_ZONE);
   const minutes = pacific.hour * 60 + pacific.minute;
-  if (pacific.weekday !== 5 || minutes < 14 * 60) {
+  if (pacific.weekday !== 5 || minutes < 15 * 60) {
     return {
       due: false,
-      reason: "Weekly summaries are sent after the Friday market close in Pacific time."
+      reason: "Weekly summaries are sent after the Friday 2:00-3:00 PM Pacific rollover window."
     };
   }
   return {
@@ -219,19 +217,19 @@ function summaryWindow(market: AutoTradeMarket, weekKey: string): WeeklySummaryW
 
   if (market === "forex") {
     return {
-      end: zonedDateTimeToUtc({ ...friday, hour: 16, minute: 59 }, NEW_YORK_TIME_ZONE),
+      end: zonedDateTimeToUtc({ ...friday, hour: 14, minute: 0 }, PACIFIC_TIME_ZONE),
       market,
-      sessionClock: "Forex session: Sunday 5:05 PM to Friday 4:59 PM New York time",
-      start: zonedDateTimeToUtc({ ...sunday, hour: 17, minute: 5 }, NEW_YORK_TIME_ZONE),
+      sessionClock: "Forex practical week: Sunday 3:00 PM to Friday 2:00 PM Pacific, with daily 2:00-3:00 PM rollover windows",
+      start: zonedDateTimeToUtc({ ...sunday, hour: 15, minute: 0 }, PACIFIC_TIME_ZONE),
       weekKey
     };
   }
 
   return {
-    end: zonedDateTimeToUtc({ ...friday, hour: 16, minute: 0 }, CHICAGO_TIME_ZONE),
+    end: zonedDateTimeToUtc({ ...friday, hour: 14, minute: 0 }, PACIFIC_TIME_ZONE),
     market,
-    sessionClock: "Futures session: Sunday 5:00 PM to Friday 4:00 PM Chicago time",
-    start: zonedDateTimeToUtc({ ...sunday, hour: 17, minute: 0 }, CHICAGO_TIME_ZONE),
+    sessionClock: "Futures summary week: Sunday 3:00 PM to Friday 2:00 PM Pacific, after the daily 2:00-3:00 PM CME maintenance window",
+    start: zonedDateTimeToUtc({ ...sunday, hour: 15, minute: 0 }, PACIFIC_TIME_ZONE),
     weekKey
   };
 }
@@ -247,47 +245,46 @@ function dailySummaryWindow(market: AutoTradeMarket, tradingDateKey: string): Da
 
   if (market === "forex") {
     return {
-      end: zonedDateTimeToUtc({ ...closeDate, hour: 16, minute: 59 }, NEW_YORK_TIME_ZONE),
+      end: zonedDateTimeToUtc({ ...closeDate, hour: 14, minute: 0 }, PACIFIC_TIME_ZONE),
       market,
-      sessionClock: "Forex trading day: 5:05 PM to 4:59 PM New York time",
-      start: zonedDateTimeToUtc({ ...openDate, hour: 17, minute: 5 }, NEW_YORK_TIME_ZONE),
+      sessionClock: "Forex practical trading day: 3:00 PM to 2:00 PM Pacific, then the 2:00-3:00 PM rollover window",
+      start: zonedDateTimeToUtc({ ...openDate, hour: 15, minute: 0 }, PACIFIC_TIME_ZONE),
       tradingDateKey
     };
   }
 
   return {
-    end: zonedDateTimeToUtc({ ...closeDate, hour: 16, minute: 0 }, CHICAGO_TIME_ZONE),
+    end: zonedDateTimeToUtc({ ...closeDate, hour: 14, minute: 0 }, PACIFIC_TIME_ZONE),
     market,
-    sessionClock: "Futures trading day: 5:00 PM to 4:00 PM Chicago time",
-    start: zonedDateTimeToUtc({ ...openDate, hour: 17, minute: 0 }, CHICAGO_TIME_ZONE),
+    sessionClock: "Futures summary day: 3:00 PM to 2:00 PM Pacific, then the 2:00-3:00 PM CME maintenance window",
+    start: zonedDateTimeToUtc({ ...openDate, hour: 15, minute: 0 }, PACIFIC_TIME_ZONE),
     tradingDateKey
   };
 }
 
 function dailySummaryDueForMarket(market: AutoTradeMarket, value: Date): { due: boolean; reason?: string; tradingDateKey?: string } {
-  const timeZone = market === "forex" ? NEW_YORK_TIME_ZONE : CHICAGO_TIME_ZONE;
-  const parts = zonedParts(value, timeZone);
+  const parts = zonedParts(value, PACIFIC_TIME_ZONE);
   const minutes = parts.hour * 60 + parts.minute;
   const tradingDateKey = formatLocalDateKey(parts);
 
   if (market === "forex") {
-    const weekdayClose = parts.weekday >= 1 && parts.weekday <= 4 && minutes >= 16 * 60 + 59 && minutes < 17 * 60 + 5;
-    const fridayClose = parts.weekday === 5 && minutes >= 16 * 60 + 59;
+    const weekdayClose = parts.weekday >= 1 && parts.weekday <= 4 && minutes >= 15 * 60;
+    const fridayClose = parts.weekday === 5 && minutes >= 15 * 60;
     return weekdayClose || fridayClose
       ? { due: true, tradingDateKey }
       : {
           due: false,
-          reason: "Forex daily summaries send after the 4:59 PM New York trading-day close."
+          reason: "Forex daily summaries send after the 2:00-3:00 PM Pacific rollover window."
         };
   }
 
-  const weekdayClose = parts.weekday >= 1 && parts.weekday <= 4 && minutes >= 16 * 60 && minutes < 17 * 60;
-  const fridayClose = parts.weekday === 5 && minutes >= 16 * 60;
+  const weekdayClose = parts.weekday >= 1 && parts.weekday <= 4 && minutes >= 15 * 60;
+  const fridayClose = parts.weekday === 5 && minutes >= 15 * 60;
   return weekdayClose || fridayClose
     ? { due: true, tradingDateKey }
     : {
         due: false,
-        reason: "Futures daily summaries send after the 4:00 PM Chicago trading-day close."
+        reason: "Futures daily summaries send after the 2:00-3:00 PM Pacific CME maintenance window."
       };
 }
 
