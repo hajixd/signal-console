@@ -1325,9 +1325,9 @@ function alertRiskDollarsWithSize(trade: TradeAlert, sizeMultiplier: number): nu
 }
 
 function inferredAlertPriceUnit(trade: TradeAlert, fallback = 1): number {
-  if (fallback > 0 && Number.isFinite(fallback)) return fallback;
   const assetTickSize = assetForSymbol(trade.symbol)?.tickSize;
   if (assetTickSize !== undefined && assetTickSize > 0 && Number.isFinite(assetTickSize)) return assetTickSize;
+  if (fallback > 0 && Number.isFinite(fallback)) return fallback;
   const targetDelta = Math.abs(trade.takeProfitPrice - trade.entryPrice);
   if (targetDelta > 0 && trade.tpUnits > 0) return targetDelta / trade.tpUnits;
   const stopDelta = Math.abs(trade.entryPrice - trade.stopLossPrice);
