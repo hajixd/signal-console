@@ -43,7 +43,7 @@ const CONTRACT_SEARCH_OVERRIDES: Record<string, string> = {
   "6J": "6J",
   "6M": "6M",
   "6N": "6N",
-  "6S": "M7",
+  "6S": "6S",
   CL: "MCL",
   E7: "E7",
   ES: "MES",
@@ -62,7 +62,6 @@ const CONTRACT_SEARCH_OVERRIDES: Record<string, string> = {
   MET: "MET",
   MGC: "MGC",
   MHG: "MHG",
-  M7: "M7",
   MNQ: "MNQ",
   MNG: "MNG",
   MYM: "MYM",
@@ -185,16 +184,33 @@ function projectXOrderSizeForAccount(trade: TradeAlert, account: ProjectXAccount
   return scaledAutoTradeSize(fallbackBaseSize, account, { minSize: 0, wholeNumber: true });
 }
 
-function contractSearchTextForTrade(trade: TradeAlert): string {
+function uniqueSearchTexts(values: Array<string | undefined>): string[] {
+  const seen = new Set<string>();
+  return values
+    .map((value) => value?.trim().toUpperCase() ?? "")
+    .filter(Boolean)
+    .filter((value) => {
+      if (seen.has(value)) return false;
+      seen.add(value);
+      return true;
+    });
+}
+
+function contractSearchTextsForTrade(trade: TradeAlert): string[] {
   const symbol = trade.symbol.trim().toUpperCase();
   const overrides = parseContractOverrides();
-  if (overrides[symbol]) return overrides[symbol];
 
   const asset = trade.assetKey ? assetForKey(trade.assetKey) : assetForSymbol(symbol);
   const sizeRoot = asset?.sizeLabel.match(/^\s*\d+(?:\.\d+)?\s+([A-Z][A-Z0-9]{1,4})\b/)?.[1];
-  if (sizeRoot && !["CONTRACT", "FUTURE", "FX", "MICRO", "MINI"].includes(sizeRoot)) return sizeRoot;
+  const usableSizeRoot = sizeRoot && !["CONTRACT", "FUTURE", "FX", "MICRO", "MINI"].includes(sizeRoot) ? sizeRoot : undefined;
 
-  return CONTRACT_SEARCH_OVERRIDES[symbol] ?? assetLookupSymbolForSymbol(symbol);
+  return uniqueSearchTexts([
+    overrides[symbol],
+    usableSizeRoot,
+    CONTRACT_SEARCH_OVERRIDES[symbol],
+    assetLookupSymbolForSymbol(symbol),
+    symbol
+  ]);
 }
 
 function contractScore(contract: ProjectXContract, searchText: string): number {
@@ -213,6 +229,18 @@ function contractScore(contract: ProjectXContract, searchText: string): number {
 
 function bestContract(contracts: ProjectXContract[], searchText: string): ProjectXContract | null {
   return [...contracts].sort((left, right) => contractScore(right, searchText) - contractScore(left, searchText))[0] ?? null;
+}
+
+async function projectXContractForTrade(
+  token: string,
+  trade: TradeAlert
+): Promise<{ contract: ProjectXContract | null; searchTexts: string[]; selectedSearchText?: string }> {
+  const searchTexts = contractSearchTextsForTrade(trade);
+  for (const searchText of searchTexts) {
+    const contract = bestContract(await searchProjectXContracts(token, searchText, projectXContractLiveFlag()), searchText);
+    if (contract) return { contract, searchTexts, selectedSearchText: searchText };
+  }
+  return { contract: null, searchTexts };
 }
 
 function tradeableAccounts(connection: StoredProjectXConnection): ProjectXAccount[] {
@@ -317,9 +345,9 @@ export async function executeProjectXAutoTrade(trade: TradeAlert): Promise<Proje
       });
     }
 
-    const searchText = contractSearchTextForTrade(trade);
-    const contract = bestContract(await searchProjectXContracts(connection.token, searchText, projectXContractLiveFlag()), searchText);
-    if (!contract) return result("failed", { error: `No ProjectX contract found for ${searchText}.` });
+    const contractLookup = await projectXContractForTrade(connection.token, trade);
+    const contract = contractLookup.contract;
+    if (!contract) return result("failed", { error: `No ProjectX contract found for ${contractLookup.searchTexts.join(", ")}.` });
 
     const baseSize = positiveNumber(trade.sizeMultiplier ?? 1, "Order size");
     const stopLossTicks = wholeNumber(Math.abs(trade.slUnits), "Stop-loss ticks");

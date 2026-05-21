@@ -37,7 +37,7 @@ const FUTURES_LOOKUP_SYMBOL_BY_SYMBOL: Record<string, string> = {
   "6J": "6J",
   "6M": "6M",
   "6N": "6N",
-  "6S": "M7",
+  "6S": "6S",
   CL: "MCL",
   ES: "MES",
   GC: "MGC",
