@@ -5,6 +5,7 @@ import { dollarPerUnit, instrumentSizeLabel } from "./instruments";
 const TELEGRAM_MAX_TEXT_LENGTH = 3900;
 const TELEGRAM_SEND_TIMEOUT_MS = 10_000;
 const TELEGRAM_SEPARATOR = "-------------------------------------------------------";
+const TELEGRAM_FALLBACK_TIME_ZONE = "America/Los_Angeles";
 
 function formatPrice(value: number): string {
   return new Intl.NumberFormat("en-US", {
@@ -48,6 +49,16 @@ function truncate(value: string, maxLength: number): string {
   return `${value.slice(0, Math.max(0, maxLength - 3))}...`;
 }
 
+function telegramTimeZone(): string {
+  const timeZone = process.env.TELEGRAM_TIME_ZONE?.trim() || TELEGRAM_FALLBACK_TIME_ZONE;
+  try {
+    new Intl.DateTimeFormat("en-US", { timeZone }).format(new Date());
+    return timeZone;
+  } catch {
+    return TELEGRAM_FALLBACK_TIME_ZONE;
+  }
+}
+
 function formatSignalTime(value: string): string {
   return new Intl.DateTimeFormat("en-US", {
     month: "short",
@@ -55,7 +66,7 @@ function formatSignalTime(value: string): string {
     year: "numeric",
     hour: "numeric",
     minute: "2-digit",
-    timeZone: "UTC",
+    timeZone: telegramTimeZone(),
     timeZoneName: "short"
   }).format(new Date(value));
 }
