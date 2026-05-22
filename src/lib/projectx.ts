@@ -14,6 +14,7 @@ export type ProjectXConnectionStatus = {
   checkedAt?: string;
   connected: boolean;
   connections?: ProjectXConnectionSummary[];
+  displayName?: string;
   error?: string;
   persisted?: boolean;
   refreshed?: boolean;
@@ -26,6 +27,7 @@ export type ProjectXConnectionSummary = {
   accounts: ProjectXAccount[];
   autoTradePaused?: boolean;
   connectedAt: string;
+  displayName?: string;
   id: string;
   pausedAccountIds?: number[];
   readable: boolean;

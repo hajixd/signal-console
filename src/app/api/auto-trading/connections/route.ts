@@ -97,12 +97,16 @@ export async function POST(request: NextRequest) {
   if (!isValidAccessCode(accessCode)) {
     return NextResponse.json({ error: "Create a 5-digit account code." }, { status: 400 });
   }
+  const accountName = text(payload.accountName);
+  if (!accountName) {
+    return NextResponse.json({ error: "Enter a name for this auto-trading account." }, { status: 400 });
+  }
 
   try {
     const connection = await saveAutoTradeConnection({
       accessCode,
       accountId: text(payload.accountId),
-      accountName: text(payload.accountName),
+      accountName,
       fields,
       firmId: text(payload.firmId),
       firmLabel: text(payload.firmLabel),

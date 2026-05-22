@@ -12367,14 +12367,17 @@ html[data-theme="light"] .tradeReplaySlider input::-webkit-slider-thumb {
 
   .mobile-phone-history-row,
   .mobile-phone-action-btn {
+    appearance: none;
     width: 100%;
     border: 1px solid rgba(255, 255, 255, 0.08);
     background: rgba(255, 255, 255, 0.03);
     color: inherit;
+    font: inherit;
     transition:
       transform 140ms ease,
       border-color 140ms ease,
-      background 140ms ease;
+      background 140ms ease,
+      color 140ms ease;
   }
 
   .mobile-phone-history-row {
@@ -12385,6 +12388,7 @@ html[data-theme="light"] .tradeReplaySlider input::-webkit-slider-thumb {
     padding: 0.82rem 0;
     display: grid;
     gap: 0.5rem;
+    cursor: pointer;
     text-align: left;
   }
 
@@ -12619,6 +12623,12 @@ html[data-theme="light"] .tradeReplaySlider input::-webkit-slider-thumb {
     color: #f9fcf8;
     font-size: 0.82rem;
     font-weight: 700;
+    transition:
+      transform 180ms ease,
+      border-color 220ms ease,
+      background 220ms ease,
+      color 220ms ease,
+      box-shadow 220ms ease;
   }
 
   .mobile-phone-mode-button:disabled {
@@ -12630,7 +12640,9 @@ html[data-theme="light"] .tradeReplaySlider input::-webkit-slider-thumb {
   .mobile-phone-mode-pin button:not(:disabled) {
     border-color: rgba(88, 233, 116, 0.18);
     background: rgba(88, 233, 116, 0.08);
+    box-shadow: inset 0 0 0 1px rgba(88, 233, 116, 0.08), 0 10px 24px rgba(88, 233, 116, 0.06);
     color: #8df4a8;
+    transform: translateY(-1px);
   }
 
   .mobile-phone-mode-pin {
@@ -12724,6 +12736,21 @@ html[data-theme="light"] .tradeReplaySlider input::-webkit-slider-thumb {
     border-radius: 12px;
   }
 
+  .mobile-phone-card-autotrade .topstepAccountRow,
+  .mobile-phone-card-autotrade .topstepAccountFolderButton {
+    min-height: 86px;
+    padding-top: 0.98rem;
+    padding-bottom: 0.98rem;
+  }
+
+  .mobile-phone-card-autotrade .topstepAccountFields {
+    gap: 0.82rem;
+  }
+
+  .mobile-phone-card-autotrade .topstepAccountFields > div {
+    min-height: 48px;
+  }
+
   .mobile-phone-tabbar {
     padding:
       0.3rem 0
@@ -12786,6 +12813,268 @@ html[data-theme="light"] .tradeReplaySlider input::-webkit-slider-thumb {
   .mobile-phone-action-btn:hover,
   .mobile-phone-tab:hover {
     transform: translateY(-1px);
+  }
+
+  .mobile-mode-transitioning .mobileTradingWorkspace.mobile-phone-shell,
+  .mobile-mode-transitioning .mobile-phone-tabbar,
+  .mobile-mode-transitioning .mobile-phone-card,
+  .mobile-mode-transitioning .mobile-phone-card-autotrade .topstepConnectionSummary,
+  .mobile-mode-transitioning .mobile-phone-card-autotrade .topstepConnectionHero,
+  .mobile-mode-transitioning .mobile-phone-card-autotrade .topstepConnectForm,
+  .mobile-mode-transitioning .mobile-phone-card-autotrade .topstepAccountRow,
+  .mobile-mode-transitioning .mobile-phone-card-autotrade .topstepAccountFolderButton,
+  .mobile-mode-transitioning .mobile-phone-card-autotrade .topstepAccountFolderPage,
+  .mobile-mode-transitioning .mobile-phone-card-autotrade .topstepConnectionFoot,
+  .mobile-mode-transitioning .mobile-phone-card-autotrade .autoTradeProviderOption,
+  .mobile-mode-transitioning .mobile-phone-card-autotrade .topstepAccountEmpty,
+  .mobile-mode-transitioning .mobile-phone-card-autotrade .autoTradeFolderGate,
+  .mobile-mode-transitioning .mobile-phone-history-row,
+  .mobile-mode-transitioning .mobile-phone-action-btn,
+  .mobile-mode-transitioning .mobile-phone-mode-card,
+  .mobile-mode-transitioning .mobile-phone-mode-button {
+    transition:
+      background-color 260ms ease,
+      background 260ms ease,
+      border-color 260ms ease,
+      color 260ms ease,
+      box-shadow 260ms ease;
+  }
+
+  .mobile-trade-modal-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 10000;
+    padding: calc(env(safe-area-inset-top, 0px) + 0.75rem) 0 0;
+    background: rgba(0, 0, 0, 0.76);
+    display: grid;
+    align-items: end;
+  }
+
+  .mobile-trade-modal {
+    width: 100%;
+    max-height: min(88dvh, 720px);
+    overflow-y: auto;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-bottom: 0;
+    border-radius: 24px 24px 0 0;
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.045), transparent 150px),
+      #050505;
+    box-shadow: 0 -26px 80px rgba(0, 0, 0, 0.58);
+    padding:
+      1rem
+      0.9rem
+      max(calc(env(safe-area-inset-bottom, 0px) + 1rem), 1rem);
+  }
+
+  .mobile-trade-modal-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.8rem;
+    margin-bottom: 0.82rem;
+  }
+
+  .mobile-trade-modal-head div {
+    min-width: 0;
+    display: grid;
+    gap: 0.18rem;
+  }
+
+  .mobile-trade-modal-head span,
+  .mobile-trade-modal-stats small,
+  .mobile-trade-modal-note {
+    color: rgba(228, 234, 227, 0.6);
+    font-size: 0.62rem;
+    line-height: 1.35;
+  }
+
+  .mobile-trade-modal-head strong {
+    color: #f9fcf8;
+    font-size: 1.02rem;
+    line-height: 1;
+  }
+
+  .mobile-trade-modal-head button {
+    flex: 0 0 auto;
+    min-height: 34px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.05);
+    color: rgba(249, 252, 248, 0.9);
+    padding: 0 0.72rem;
+    font-size: 0.72rem;
+    font-weight: 800;
+  }
+
+  .mobile-trade-modal-stats {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.52rem;
+    margin-bottom: 0.82rem;
+  }
+
+  .mobile-trade-modal-stats span {
+    min-width: 0;
+    min-height: 58px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.032);
+    display: grid;
+    align-content: center;
+    gap: 0.2rem;
+    padding: 0.58rem 0.65rem;
+  }
+
+  .mobile-trade-modal-stats strong {
+    overflow: hidden;
+    color: #f9fcf8;
+    font-size: 0.82rem;
+    line-height: 1;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .mobile-trade-modal-note {
+    margin: 0 0 0.66rem;
+  }
+
+  .mobile-trade-mini-chart-wrap .backtest-trade-mini-chart {
+    min-height: 250px;
+    border-radius: 16px;
+  }
+
+  .mobile-trade-mini-chart-wrap .backtest-trade-mini-empty {
+    min-height: 250px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+  }
+
+  html[data-theme="light"] .mobileTradingWorkspace.mobile-phone-shell {
+    background: #f8fafc;
+    color: #0f172a;
+  }
+
+  html[data-theme="light"] .mobile-phone-brand-copy h1,
+  html[data-theme="light"] .mobile-phone-card-copy h2,
+  html[data-theme="light"] .mobile-phone-empty-state h2,
+  html[data-theme="light"] .mobile-phone-history-copy strong,
+  html[data-theme="light"] .mobile-phone-history-values strong,
+  html[data-theme="light"] .mobile-phone-account-copy strong,
+  html[data-theme="light"] .mobile-phone-action-btn strong,
+  html[data-theme="light"] .mobile-phone-toggle-copy strong,
+  html[data-theme="light"] .mobile-phone-mode-button {
+    color: #0f172a;
+  }
+
+  html[data-theme="light"] .mobile-phone-card-kicker,
+  html[data-theme="light"] .mobile-phone-header-date,
+  html[data-theme="light"] .mobile-phone-header-time,
+  html[data-theme="light"] .mobile-phone-history-copy span,
+  html[data-theme="light"] .mobile-phone-history-meta span,
+  html[data-theme="light"] .mobile-phone-history-values .mobile-phone-history-size,
+  html[data-theme="light"] .mobile-phone-account-copy span,
+  html[data-theme="light"] .mobile-phone-account-copy small,
+  html[data-theme="light"] .mobile-phone-action-btn span,
+  html[data-theme="light"] .mobile-phone-empty-state p,
+  html[data-theme="light"] .mobile-phone-toggle-copy small {
+    color: rgba(15, 23, 42, 0.58);
+  }
+
+  html[data-theme="light"] .mobile-phone-tabbar {
+    border-top-color: rgba(15, 23, 42, 0.1);
+    background: #f8fafc;
+  }
+
+  html[data-theme="light"] .mobile-phone-history-row,
+  html[data-theme="light"] .mobile-phone-action-btn,
+  html[data-theme="light"] .mobile-phone-account-card,
+  html[data-theme="light"] .mobile-phone-toggle-row,
+  html[data-theme="light"] .mobile-phone-mode-card,
+  html[data-theme="light"] .mobile-phone-card-autotrade .topstepConnectionSummary,
+  html[data-theme="light"] .mobile-phone-card-autotrade .topstepConnectionHero,
+  html[data-theme="light"] .mobile-phone-card-autotrade .topstepConnectForm,
+  html[data-theme="light"] .mobile-phone-card-autotrade .topstepAccountRow,
+  html[data-theme="light"] .mobile-phone-card-autotrade .topstepAccountFolderButton,
+  html[data-theme="light"] .mobile-phone-card-autotrade .topstepAccountFolderPage,
+  html[data-theme="light"] .mobile-phone-card-autotrade .topstepConnectionFoot,
+  html[data-theme="light"] .mobile-phone-card-autotrade .autoTradeProviderOption,
+  html[data-theme="light"] .mobile-phone-card-autotrade .topstepAccountEmpty,
+  html[data-theme="light"] .mobile-phone-card-autotrade .autoTradeFolderGate {
+    border-color: rgba(15, 23, 42, 0.1);
+    background: rgba(255, 255, 255, 0.74);
+  }
+
+  html[data-theme="light"] .mobile-phone-history-row:first-child {
+    border-top-color: rgba(15, 23, 42, 0.1);
+  }
+
+  html[data-theme="light"] .mobile-phone-history-meta span,
+  html[data-theme="light"] .mobile-phone-mode-button,
+  html[data-theme="light"] .mobile-phone-mode-pin input,
+  html[data-theme="light"] .mobile-phone-mode-pin button,
+  html[data-theme="light"] .mobile-phone-header-time-badge {
+    border-color: rgba(15, 23, 42, 0.1);
+    background: rgba(255, 255, 255, 0.72);
+  }
+
+  html[data-theme="light"] .mobile-phone-mode-button.active,
+  html[data-theme="light"] .mobile-phone-mode-pin button:not(:disabled),
+  html[data-theme="light"] .mobile-phone-header-time-badge.live,
+  html[data-theme="light"] .mobile-phone-count-chip {
+    border-color: rgba(37, 99, 235, 0.22);
+    background: rgba(37, 99, 235, 0.08);
+    box-shadow: inset 0 0 0 1px rgba(37, 99, 235, 0.06), 0 10px 24px rgba(37, 99, 235, 0.06);
+    color: #1d4ed8;
+  }
+
+  html[data-theme="light"] .mobile-phone-mode-pin input {
+    color: #0f172a;
+  }
+
+  html[data-theme="light"] .mobile-phone-tab {
+    color: rgba(15, 23, 42, 0.48);
+  }
+
+  html[data-theme="light"] .mobile-phone-tab.active {
+    background: rgba(37, 99, 235, 0.08);
+    color: #1d4ed8;
+  }
+
+  html[data-theme="light"] .mobile-phone-account-avatar {
+    border-color: rgba(15, 23, 42, 0.1);
+    background: rgba(255, 255, 255, 0.72);
+    color: #0f172a;
+  }
+
+  html[data-theme="light"] .mobile-trade-modal-backdrop {
+    background: rgba(15, 23, 42, 0.34);
+  }
+
+  html[data-theme="light"] .mobile-trade-modal {
+    border-color: rgba(15, 23, 42, 0.12);
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(248, 250, 252, 0.96)),
+      #f8fafc;
+    box-shadow: 0 -26px 80px rgba(15, 23, 42, 0.2);
+  }
+
+  html[data-theme="light"] .mobile-trade-modal-head strong,
+  html[data-theme="light"] .mobile-trade-modal-stats strong {
+    color: #0f172a;
+  }
+
+  html[data-theme="light"] .mobile-trade-modal-head span,
+  html[data-theme="light"] .mobile-trade-modal-stats small,
+  html[data-theme="light"] .mobile-trade-modal-note {
+    color: rgba(15, 23, 42, 0.58);
+  }
+
+  html[data-theme="light"] .mobile-trade-modal-head button,
+  html[data-theme="light"] .mobile-trade-modal-stats span {
+    border-color: rgba(15, 23, 42, 0.1);
+    background: rgba(255, 255, 255, 0.78);
+    color: #0f172a;
   }
 }
 

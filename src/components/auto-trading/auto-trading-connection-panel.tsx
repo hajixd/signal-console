@@ -179,11 +179,6 @@ function defaultConnectionFields(providerId: AutoTradeProviderId): Record<string
   );
 }
 
-function genericAccountName(fields: Record<string, string>, firm: PropFirmOption, provider: AutoTradeProvider): string {
-  const account = fields.accountName || fields.accountId || fields.login || fields.username || fields.email || fields.accNum;
-  return account ? `${firm.label} / ${account}` : `${firm.label} / ${provider.shortLabel}`;
-}
-
 function fmtMoney(value: number | undefined): string {
   if (typeof value !== "number" || !Number.isFinite(value)) return "--";
   return new Intl.NumberFormat("en-US", {
@@ -239,6 +234,16 @@ function accountCountLabel(count: number): string {
   return `${count} account${count === 1 ? "" : "s"}`;
 }
 
+function loginNameFallback(value?: string): string | undefined {
+  const trimmed = value?.trim();
+  if (!trimmed) return undefined;
+  return trimmed.includes("@") ? trimmed.split("@")[0] : trimmed;
+}
+
+function folderDisplayName(folder: ProjectXConnectionSummary): string {
+  return folder.displayName?.trim() || loginNameFallback(folder.userName) || "ProjectX account";
+}
+
 async function parseConnectionResponse(response: Response): Promise<ProjectXConnectionStatus> {
   const payload = (await response.json().catch(() => EMPTY_STATUS)) as ProjectXConnectionStatus;
   if (!response.ok) {
@@ -263,6 +268,7 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
   const [selectedFirmId, setSelectedFirmId] = useState(() => firstPropFirmId(market));
   const [selectedProviderId, setSelectedProviderId] = useState<AutoTradeProviderId>(() => firstProviderId(providers));
   const [userName, setUserName] = useState("");
+  const [accountDisplayName, setAccountDisplayName] = useState("");
   const [apiKey, setApiKey] = useState("");
   const [projectXAccessCode, setProjectXAccessCode] = useState("");
   const [genericAccessCode, setGenericAccessCode] = useState("");
@@ -316,6 +322,7 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
                   accounts: visibleAccounts,
                   autoTradePaused: status.autoTradePaused,
                   connectedAt: status.checkedAt ?? new Date(0).toISOString(),
+                  displayName: status.displayName ?? loginNameFallback(displayUserName),
                   id: `projectx-${displayUserName.toLowerCase()}`,
                   pausedAccountIds: status.pausedAccountIds,
                   readable: true,
@@ -326,7 +333,7 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
               ]
             : []
         : [],
-    [displayUserName, market, status.autoTradePaused, status.checkedAt, status.connections, status.pausedAccountIds, visibleAccounts]
+    [displayUserName, market, status.autoTradePaused, status.checkedAt, status.connections, status.displayName, status.pausedAccountIds, visibleAccounts]
   );
   const visibleSavedConnections = savedConnections.filter((connection) => providers.some((provider) => provider.id === connection.id));
   const activeProjectXFolder = projectXAccountFolders.find((folder) => folder.id === activeProjectXFolderId);
@@ -352,6 +359,7 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
         setFolderActionNewCode("");
         setFolderActionError("");
         setUnlockedProjectXFolderIds([]);
+        setAccountDisplayName("");
       }
     }
 
@@ -392,6 +400,7 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
     setUnlockedProjectXFolderIds([]);
     setProjectXAccessCode("");
     setGenericAccessCode("");
+    setAccountDisplayName("");
     setSelectedFirmId(firstPropFirmId(market));
     setGenericFields(defaultConnectionFields(firstProviderId(providers)));
     setShowAdvancedFields(false);
@@ -577,6 +586,7 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
           accessCode: projectXAccessCode,
           apiKey,
           connectionId: reconnectProjectXConnectionId,
+          displayName: accountDisplayName,
           userName
         })
       });
@@ -584,6 +594,7 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
       setStatus(nextStatus);
       setApiKey("");
       setProjectXAccessCode("");
+      setAccountDisplayName("");
       setReconnectProjectXConnectionId(null);
       setActiveProjectXFolderId(null);
       setPendingProjectXFolder(null);
@@ -614,7 +625,7 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
         body: JSON.stringify({
           accessCode: genericAccessCode,
           accountId: genericFields.accountId,
-          accountName: genericAccountName(genericFields, selectedFirm, selectedProvider),
+          accountName: accountDisplayName,
           firmId: selectedFirm.id,
           firmLabel: selectedFirm.label,
           fields: genericFields,
@@ -625,6 +636,7 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
       setSavedConnections(payload.connections);
       setGenericFields(defaultConnectionFields(selectedProvider.id));
       setGenericAccessCode("");
+      setAccountDisplayName("");
       setIsAddingAccount(false);
     } catch (error) {
       setStatus((current) => ({
@@ -764,10 +776,11 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
     }
   }
 
-  function handleProjectXReconnect(connectionId: string, login: string | undefined) {
+  function handleProjectXReconnect(connectionId: string, login: string | undefined, displayName?: string) {
     setReconnectProjectXConnectionId(connectionId);
     setSelectedFirmId("topstep");
     setSelectedProviderId("projectx");
+    setAccountDisplayName(displayName ?? loginNameFallback(login) ?? "");
     setUserName(login ?? "");
     setApiKey("");
     setProjectXAccessCode("");
@@ -892,6 +905,7 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
             setIsAddingAccount(false);
             setProjectXAccessCode("");
             setGenericAccessCode("");
+            setAccountDisplayName("");
           }}>
             Back to Accounts
           </button>
@@ -919,7 +933,10 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
         ) : (
           <>
             {canManageAutoTrade ? (
-              <button type="button" onClick={() => setIsAddingAccount(true)}>
+              <button type="button" onClick={() => {
+                setAccountDisplayName("");
+                setIsAddingAccount(true);
+              }}>
                 Add Account
               </button>
             ) : null}
@@ -963,6 +980,18 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
 
           {canConnectSelectedProvider ? (
             <form className="topstepConnectForm" onSubmit={handleConnect}>
+              <label>
+                <span>Folder name</span>
+                <input
+                  autoComplete="organization-title"
+                  name="projectx-folder-name"
+                  onChange={(event) => setAccountDisplayName(event.target.value)}
+                  placeholder="Foofs"
+                  required
+                  type="text"
+                  value={accountDisplayName}
+                />
+              </label>
               <label>
                 <span>TopstepX username</span>
                 <input
@@ -1008,6 +1037,18 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
             </form>
           ) : selectedProviderReady && selectedProviderFields.length ? (
             <form className="topstepConnectForm" onSubmit={handleGenericConnect}>
+              <label>
+                <span>Account name</span>
+                <input
+                  autoComplete="organization-title"
+                  name={`${selectedProvider.id}-account-name`}
+                  onChange={(event) => setAccountDisplayName(event.target.value)}
+                  placeholder={`${selectedFirm.label} account`}
+                  required
+                  type="text"
+                  value={accountDisplayName}
+                />
+              </label>
               {[...primaryProviderFields, ...(showAdvancedFields ? advancedProviderFields : [])].map((field) => (
                   <label key={field.key}>
                     <span>{field.label}</span>
@@ -1070,7 +1111,7 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
                       ? "Remove account"
                       : "Delete folder"}
                 </span>
-                <strong>{pendingProjectXFolderAction.folder.userName ?? "ProjectX account"}</strong>
+                <strong>{folderDisplayName(pendingProjectXFolderAction.folder)}</strong>
                 {pendingProjectXFolderAction.account ? <span>{pendingProjectXFolderAction.account.name}</span> : null}
               </div>
               <label>
@@ -1137,7 +1178,7 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
             <form className="autoTradeFolderGate" onClick={() => folderCodeInputRef.current?.focus()} onSubmit={handleUnlockProjectXFolder}>
               <div>
                 <span>Locked folder</span>
-                <strong>{pendingProjectXFolder.userName ?? "ProjectX account"}</strong>
+                <strong>{folderDisplayName(pendingProjectXFolder)}</strong>
               </div>
               <div className="autoTradeFolderPinField">
                 <span>Folder code</span>
@@ -1189,8 +1230,8 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
             >
               <div className="topstepFolderPageHead">
                 <div>
-                  <span>Login</span>
-                  <strong>{activeProjectXFolder.userName ?? "--"}</strong>
+                  <span>Name</span>
+                  <strong>{folderDisplayName(activeProjectXFolder)}</strong>
                 </div>
                 <div>
                   <span>Provider</span>
@@ -1244,7 +1285,7 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
                             onClick={() =>
                               activeProjectXFolder.readable
                                 ? handleAutoTradePaused(account.id, !accountPaused, activeProjectXFolder.id)
-                                : handleProjectXReconnect(activeProjectXFolder.id, activeProjectXFolder.userName)
+                                : handleProjectXReconnect(activeProjectXFolder.id, activeProjectXFolder.userName, folderDisplayName(activeProjectXFolder))
                             }
                           >
                             {isUpdatingPaused ? "Updating..." : activeProjectXFolder.readable ? (accountPaused ? "Play" : "Pause") : "Reconnect"}
@@ -1277,8 +1318,8 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
                 >
                   <span className="topstepFolderIcon" aria-hidden="true" />
                   <div className="topstepFolderIdentity">
-                    <span>Login</span>
-                    <strong>{folder.userName ?? "--"}</strong>
+                    <span>Name</span>
+                    <strong>{folderDisplayName(folder)}</strong>
                   </div>
                   <div className="topstepFolderMeta provider">
                     <span>Provider</span>

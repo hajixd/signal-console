@@ -32,6 +32,7 @@ type ConnectPayload = {
   accessCode?: unknown;
   apiKey?: unknown;
   connectionId?: unknown;
+  displayName?: unknown;
   userName?: unknown;
 };
 
@@ -165,6 +166,7 @@ async function connectedStatus(connectionId: string): Promise<{ status: ProjectX
     accounts: visibleAccounts,
     autoTradePaused: connection.autoTradePaused,
     connectedAt: connection.connectedAt,
+    displayName: connection.displayName,
     id: connectionId,
     pausedAccountIds: connection.pausedAccountIds,
     removedAccountIds: connection.removedAccountIds,
@@ -179,6 +181,7 @@ async function connectedStatus(connectionId: string): Promise<{ status: ProjectX
       checkedAt: new Date().toISOString(),
       connected: true,
       connections: await getStoredProjectXConnectionSummaries(),
+      displayName: savedConnection.displayName,
       pausedAccountIds: savedConnection.pausedAccountIds,
       persisted: true,
       refreshed: Boolean(refreshedToken),
@@ -218,6 +221,7 @@ export async function POST(request: NextRequest) {
   const userName = normalizeText(payload.userName);
   const apiKey = normalizeText(payload.apiKey);
   const accessCode = normalizeText(payload.accessCode);
+  const displayName = normalizeText(payload.displayName);
 
   if (!userName || !apiKey) {
     return jsonStatus(
@@ -247,6 +251,20 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  if (!displayName) {
+    return jsonStatus(
+      {
+        accounts: [],
+        autoTradePaused: true,
+        connected: false,
+        connections: await getStoredProjectXConnectionSummaries(),
+        error: "Enter a name for this auto-trading folder.",
+        persisted: false
+      },
+      { status: 400 }
+    );
+  }
+
   try {
     const connectionId = normalizeConnectionId(payload.connectionId) ?? randomUUID();
     const token = await loginProjectXApiKey(userName, apiKey);
@@ -255,6 +273,7 @@ export async function POST(request: NextRequest) {
       accessCode,
       accounts,
       autoTradePaused: true,
+      displayName,
       id: connectionId,
       pausedAccountIds: accounts.map((account) => account.id),
       token,
@@ -266,6 +285,7 @@ export async function POST(request: NextRequest) {
       checkedAt: new Date().toISOString(),
       connected: true,
       connections: await getStoredProjectXConnectionSummaries(),
+      displayName,
       pausedAccountIds: accounts.map((account) => account.id),
       persisted: true,
       userName
@@ -345,6 +365,7 @@ export async function PATCH(request: NextRequest) {
       checkedAt: connection?.lastCheckedAt,
       connected: Boolean(connection),
       connections: await getStoredProjectXConnectionSummaries(),
+      displayName: connection?.displayName,
       pausedAccountIds: connection?.pausedAccountIds,
       persisted: true,
       userName: connection?.userName
@@ -379,6 +400,7 @@ export async function PATCH(request: NextRequest) {
     checkedAt: connection.lastCheckedAt,
     connected: true,
     connections: await getStoredProjectXConnectionSummaries(),
+    displayName: connection.displayName,
     pausedAccountIds: connection.pausedAccountIds,
     persisted: true,
     userName: connection.userName
@@ -418,6 +440,7 @@ export async function DELETE(request: NextRequest) {
         checkedAt: connection.lastCheckedAt,
         connected: true,
         connections: await getStoredProjectXConnectionSummaries(),
+        displayName: connection.displayName,
         pausedAccountIds: connection.pausedAccountIds,
         persisted: true,
         userName: connection.userName

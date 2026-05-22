@@ -2116,6 +2116,7 @@ export default async function Home({ searchParams }: HomeProps) {
       marketLabel={marketLabel(activeMarket)}
       persistedStrategyEdits={liveConfig.strategyEdits}
       persistActiveMarket={syncActiveMarket}
+      persistTheme={syncTheme}
       strategies={strategyOptions}
       telegramGroupLink={telegramGroupLink}
     />

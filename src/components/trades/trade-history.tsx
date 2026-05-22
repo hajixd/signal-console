@@ -476,7 +476,7 @@ function buildMiniChartPoints(trade: TradeHistoryRow, bars: ChartBar[]): MiniCha
   return rows.length >= 2 ? rows : [];
 }
 
-function BacktestTradeMiniChart({
+export function BacktestTradeMiniChart({
   bars,
   isOpen,
   status,

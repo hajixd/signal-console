@@ -20,6 +20,7 @@ type StoredProjectXConnectionPayload = {
   accountCount: number;
   autoTradePaused?: boolean;
   connectedAt: string;
+  displayName?: string;
   encryptedToken: string;
   id: string;
   lastCheckedAt?: string;
@@ -114,6 +115,7 @@ function toStoredConnection(value: StoredProjectXConnectionPayload | null | unde
     accountCount: typeof value.accountCount === "number" ? value.accountCount : accounts.length,
     autoTradePaused: accounts.length > 0 && pausedAccountIds.length === accounts.length,
     connectedAt: typeof value.connectedAt === "string" ? value.connectedAt : new Date(0).toISOString(),
+    displayName: typeof value.displayName === "string" ? value.displayName : undefined,
     id: value.id,
     lastCheckedAt: typeof value.lastCheckedAt === "string" ? value.lastCheckedAt : undefined,
     pausedAccountIds,
@@ -145,6 +147,7 @@ function toConnectionSummary(value: StoredProjectXConnectionPayload | null | und
     accounts,
     autoTradePaused: accounts.length > 0 && pausedAccountIds.length === accounts.length,
     connectedAt: typeof value.connectedAt === "string" ? value.connectedAt : new Date(0).toISOString(),
+    displayName: typeof value.displayName === "string" ? value.displayName : undefined,
     id: value.id,
     pausedAccountIds,
     readable: Boolean(safeToStoredConnection(value)),
@@ -257,6 +260,7 @@ export async function saveStoredProjectXConnection(input: {
   accounts: ProjectXAccount[];
   autoTradePaused?: boolean;
   connectedAt?: string;
+  displayName?: string;
   id: string;
   pausedAccountIds?: number[];
   removedAccountIds?: number[];
@@ -273,6 +277,7 @@ export async function saveStoredProjectXConnection(input: {
     accountCount: accounts.length,
     autoTradePaused: accounts.length > 0 && pausedAccountIds.length === accounts.length,
     connectedAt: input.connectedAt ?? now,
+    displayName: input.displayName?.trim() || undefined,
     encryptedToken: encryptToken(input.token),
     id: input.id,
     lastCheckedAt: now,
@@ -338,6 +343,7 @@ export async function setStoredProjectXConnectionPaused(id: string, autoTradePau
     accounts: connection.accounts,
     accessCodeHash: connection.accessCodeHash,
     connectedAt: connection.connectedAt,
+    displayName: connection.displayName,
     id,
     pausedAccountIds: [...pausedAccountIds],
     removedAccountIds: connection.removedAccountIds,
@@ -356,6 +362,7 @@ export async function removeStoredProjectXConnectionAccount(id: string, accountI
     accounts: connection.accounts,
     accessCodeHash: connection.accessCodeHash,
     connectedAt: connection.connectedAt,
+    displayName: connection.displayName,
     id,
     pausedAccountIds: connection.pausedAccountIds?.filter((id) => id !== accountId),
     removedAccountIds,
