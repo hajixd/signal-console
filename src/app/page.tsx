@@ -11,6 +11,7 @@ import BacktestHistoryPanel from "@/components/trades/backtest-history-panel";
 import { type TradeHistoryRow } from "@/components/trades/trade-history";
 import { type TradeChartTimeframe } from "@/components/trades/trade-price-chart";
 import AutoRefresh from "@/components/ui/auto-refresh";
+import DashboardSectionTabs, { type DashboardSectionTab } from "@/components/ui/dashboard-section-tabs";
 import LocalDateTime from "@/components/ui/local-date-time";
 import MarketSwitchTabs from "@/components/ui/market-switch-tabs";
 import TestAlertButton from "@/components/ui/test-alert-button";
@@ -2008,6 +2009,50 @@ export default async function Home({ searchParams }: HomeProps) {
   const liveSelectionCount = persistedLiveEnabledKeys.length || persistedSelectedKeys.length;
   const executionMarket = activeMarket;
   const persistChallengeRules = syncChallengeRulesForMarket.bind(null, activeMarket);
+  const dashboardSectionTabs: DashboardSectionTab[] = [
+    {
+      icon: "strategies",
+      id: "strategies",
+      label: "Strategies",
+      meta: `${fmtNumber(strategyOptions.length)} strategies`
+    },
+    {
+      icon: "replay",
+      id: "challenge",
+      label: "Replay",
+      meta: `${fmtNumber(challengeReplayTrades.length)} trades`
+    },
+    {
+      icon: "history",
+      id: "backtest",
+      label: "History",
+      meta: `${fmtNumber(visibleTradeHistoryRows.length)} rows`
+    },
+    {
+      icon: "live",
+      id: "live",
+      label: "Live",
+      meta: `${fmtNumber(selectedLiveTrades.length)} alerts`
+    },
+    {
+      icon: "telegram",
+      id: "ops",
+      label: "Telegram",
+      meta: telegramConfigured ? "Configured" : "Needs env"
+    },
+    {
+      icon: "storage",
+      id: "storage",
+      label: "Storage",
+      meta: assetStore
+    },
+    {
+      icon: "sync",
+      id: "sync",
+      label: "Sync",
+      meta: backtestBehindMarketData ? "Behind" : "Current"
+    }
+  ];
 
   return (
     <main className="terminal">
@@ -2066,29 +2111,7 @@ export default async function Home({ searchParams }: HomeProps) {
           </div>
         </header>
 
-        <nav className="mobileBottomTabbar" aria-label="Dashboard mobile tabs">
-          <a href="#signals" aria-label="Overview">
-            <span className="mobileTabIcon mobileTabIconOverview" aria-hidden="true" />
-            <strong>Home</strong>
-          </a>
-          <a href="#strategies" aria-label="Strategies">
-            <span className="mobileTabIcon mobileTabIconStrategies" aria-hidden="true" />
-            <strong>Strategies</strong>
-          </a>
-          <a href="#challenge" aria-label="Replay">
-            <span className="mobileTabIcon mobileTabIconReplay" aria-hidden="true" />
-            <strong>Replay</strong>
-          </a>
-          <a href="#backtest" aria-label="History">
-            <span className="mobileTabIcon mobileTabIconHistory" aria-hidden="true" />
-            <strong>History</strong>
-          </a>
-          <a href="#live" aria-label="Live alerts">
-            <span className="mobileTabIcon mobileTabIconLive" aria-hidden="true" />
-            <strong>Live</strong>
-          </a>
-        </nav>
-
+        <DashboardSectionTabs tabs={dashboardSectionTabs}>
         <section className="backtest-card strategies-card" id="strategies">
           <div className="backtest-card-head">
             <div>
@@ -2348,7 +2371,7 @@ export default async function Home({ searchParams }: HomeProps) {
           </div>
         </section>
 
-        <section className="backtest-card telegram-card">
+        <section className="backtest-card telegram-card" id="storage">
           <div className="backtest-card-head">
             <div>
               <h2>Runtime Storage</h2>
@@ -2371,7 +2394,7 @@ export default async function Home({ searchParams }: HomeProps) {
           </div>
         </section>
 
-        <section className="backtest-card sync-card">
+        <section className="backtest-card sync-card" id="sync">
           <div className="backtest-card-head">
             <div>
               <h2>Sync</h2>
@@ -2490,6 +2513,7 @@ export default async function Home({ searchParams }: HomeProps) {
             />
           </div>
         </section>
+        </DashboardSectionTabs>
       </section>
     </main>
   );
