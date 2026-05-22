@@ -196,11 +196,12 @@ function MobileHistoryList({
                 </div>
                 <div className="mobile-phone-history-values">
                   <strong className={row.pnlClassName}>{row.pnlLabel}</strong>
-                  <span className={row.pnlClassName}>{row.rMultipleLabel}</span>
+                  <span className="mobile-phone-history-size">{row.sizeLabel}</span>
                 </div>
               </div>
               <div className="mobile-phone-history-meta">
                 <span>{row.exitTimeLabel}</span>
+                <span>{row.rMultipleLabel}</span>
                 <span>Entry {row.entryPriceLabel}</span>
                 <span>Exit {row.exitPriceLabel}</span>
               </div>

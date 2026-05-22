@@ -12431,6 +12431,10 @@ html[data-theme="light"] .tradeReplaySlider input::-webkit-slider-thumb {
     font-weight: 700;
   }
 
+  .mobile-phone-history-values .mobile-phone-history-size {
+    color: rgba(228, 234, 227, 0.62);
+  }
+
   .mobile-phone-history-meta {
     display: flex;
     flex-wrap: wrap;
