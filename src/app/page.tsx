@@ -45,10 +45,12 @@ import { analyzeBacktestDataValidity, dataValidityClass, type DataValidityResult
 import { dollarPerUnit, instrumentSizeLabel, instrumentUnitLabel, recommendedSizeMultiplier } from "@/lib/instruments";
 import { defaultDatasetStatus, getDatasetStatus, getLiveConfig, type DatasetStatus, type LiveConfig } from "@/lib/live-config";
 import { allRules } from "@/lib/live-signals";
+import { fetchStoredAssetBars } from "@/lib/market-data-store";
 import { readDataText } from "@/lib/project-data";
 import { parseStrategySelection } from "@/lib/strategy-selection";
 import { getTrades } from "@/lib/storage";
 import { telegramGroupInviteLink } from "@/lib/telegram";
+import { type DataTimeframe } from "@/lib/timeframes";
 import { topstepSessionKey } from "@/lib/topstep";
 import { resolveFirstTradeBracketHit, type TradeBracketBar, type TradeBracketHit } from "@/lib/trade-bracket-truth";
 import { conciseStrategyName } from "@/lib/strategy-names";
@@ -1353,6 +1355,35 @@ function alertRiskUnits(trade: TradeAlert): number {
   return priceUnit > 0 && priceDelta > 0 ? priceDelta / priceUnit : trade.slUnits;
 }
 
+type LatestLivePrice = {
+  price: number;
+  time: string;
+};
+
+type LatestLivePriceConfig = {
+  assetKey: string;
+  key: string;
+  timeframe: DataTimeframe;
+};
+
+function liveTradeLatestPriceConfig(trade: TradeAlert, option?: StrategyOption): LatestLivePriceConfig | null {
+  const assetKey = trade.assetKey ?? option?.assetKey ?? assetForSymbol(trade.symbol)?.key;
+  if (!assetKey) return null;
+  const timeframe = (timeframeFromVariant(option?.variantId, "tf") ?? "15m") as DataTimeframe;
+  return {
+    assetKey,
+    key: `${assetKey}:${timeframe}`,
+    timeframe
+  };
+}
+
+function liveOpenTradePnlDollars(trade: TradeAlert, priceUnit: number, exitPrice: number, sizeMultiplier: number): number {
+  if (!Number.isFinite(exitPrice) || priceUnit <= 0) return 0;
+  const sideMultiplier = trade.side === "long" ? 1 : -1;
+  const netUnits = ((exitPrice - trade.entryPrice) * sideMultiplier) / priceUnit;
+  return netUnits * dollarPerUnit(trade.symbol, trade.entryPrice) * sizeMultiplier;
+}
+
 function approximateBarsHeld(startValue: string, endValue: string, timeframeMinutes = 15): number {
   const start = Date.parse(startValue);
   const end = Date.parse(endValue);
@@ -1672,6 +1703,29 @@ export default async function Home({ searchParams }: HomeProps) {
       slUnitsLabel: `${fmtNumber(trade.slUnits)} ${unitLabel}`
     };
   });
+  const liveOpenPriceConfigs = new Map<string, LatestLivePriceConfig>();
+  for (const trade of activeMarketLiveTrades) {
+    if (!selectedLiveTrades.includes(trade) || liveTradeClosed(trade)) continue;
+    const config = liveTradeLatestPriceConfig(trade, optionForLiveTrade(trade));
+    if (config) liveOpenPriceConfigs.set(config.key, config);
+  }
+  const latestLivePriceByConfigKey = new Map<string, LatestLivePrice>(
+    (
+      await Promise.all(
+        [...liveOpenPriceConfigs.values()].map(async (config) => {
+          try {
+            const bars = await fetchStoredAssetBars(config.assetKey, 5, config.timeframe);
+            const latestBar = [...bars]
+              .reverse()
+              .find((bar) => Number.isFinite(bar.close) && Number.isFinite(Date.parse(bar.time)));
+            return latestBar ? ([config.key, { price: latestBar.close, time: latestBar.time }] as const) : null;
+          } catch {
+            return null;
+          }
+        })
+      )
+    ).filter((entry): entry is readonly [string, LatestLivePrice] => Boolean(entry))
+  );
   const liveHistoryRows: TradeHistoryRow[] = activeMarketLiveTrades
     .filter((trade) => selectedLiveTrades.includes(trade))
     .filter((trade) => {
@@ -1695,7 +1749,13 @@ export default async function Home({ searchParams }: HomeProps) {
       const sizeMultiplier = liveTradeOrderSizeMultiplier(trade) ?? finiteNumberOr(trade.sizeMultiplier, option?.sizeMultiplier ?? 1);
       const targetDollars = alertTargetDollarsWithSize(trade, sizeMultiplier);
       const riskDollars = alertRiskDollarsWithSize(trade, sizeMultiplier);
-      const rawExitPrice = finiteNumberOr(trade.lifecyclePrice, trade.entryPrice);
+      const latestOpenPrice =
+        !isClosed
+          ? latestLivePriceByConfigKey.get(liveTradeLatestPriceConfig(trade, option)?.key ?? "")
+          : undefined;
+      const rawExitPrice = isClosed
+        ? finiteNumberOr(trade.lifecyclePrice, trade.entryPrice)
+        : finiteNumberOr(latestOpenPrice?.price, trade.entryPrice);
       const rawPnlDollars = isClosed
         ? finiteNumberOr(
             typeof trade.lifecycleRMultiple === "number" && Number.isFinite(trade.lifecycleRMultiple)
@@ -1703,22 +1763,22 @@ export default async function Home({ searchParams }: HomeProps) {
               : trade.lifecyclePnlDollars,
             trade.lifecycleStatus === "take_profit" ? targetDollars : trade.lifecycleStatus === "stop_loss" ? -riskDollars : 0
           )
-        : 0;
-      const pnlDollars = boundedTradeDollarPnl(rawPnlDollars, targetDollars, riskDollars);
+        : liveOpenTradePnlDollars(trade, priceUnit, rawExitPrice, sizeMultiplier);
+      const pnlDollars = isClosed ? boundedTradeDollarPnl(rawPnlDollars, targetDollars, riskDollars) : rawPnlDollars;
       const rMultiple = riskDollars > 0 ? pnlDollars / riskDollars : finiteNumberOr(trade.lifecycleRMultiple, 0);
       const exitBoundary = exitBoundaryFromReason(trade.lifecycleStatus);
       const exitPrice = isClosed && exitBoundary === "target" ? trade.takeProfitPrice : isClosed && exitBoundary === "stop" ? trade.stopLossPrice : rawExitPrice;
       const sideMultiplier = trade.side === "long" ? 1 : -1;
       const netUnits = priceUnit > 0 ? ((exitPrice - trade.entryPrice) * sideMultiplier) / priceUnit : 0;
       const unitLabel = instrumentUnitLabel(trade.symbol);
-      const endTime = isClosed ? trade.lifecycleTime : now.toISOString();
+      const endTime = isClosed ? trade.lifecycleTime : latestOpenPrice?.time ?? now.toISOString();
       const barsHeld = approximateBarsHeld(trade.signalTime, endTime);
 
       return {
         id: `live-${trade.id}-${index}`,
         strategyKey,
         rowClassName: isClosed ? resultRowClass(pnlDollars) : "neutral-row",
-        pnlClassName: isClosed ? resultClass(pnlDollars) : "neutral",
+        pnlClassName: isClosed ? resultClass(pnlDollars) : "live-pnl",
         pnlDollars,
         indexLabel: fmtNumber(index + 1),
         symbol: trade.symbol,
@@ -1752,8 +1812,8 @@ export default async function Home({ searchParams }: HomeProps) {
         durationLabel: `${fmtNumber(barsHeld)} bars`,
         durationDetailLabel: fmtDuration(trade.signalTime, endTime),
         exitReasonLabel: isClosed ? fmtExitReason(effectiveExitReason(trade.lifecycleStatus, exitBoundary)) : "Still Open",
-        pnlLabel: isClosed ? fmtMoney(pnlDollars, true) : "Open",
-        rMultipleLabel: isClosed ? `${fmtNumber(rMultiple)}R` : "--",
+        pnlLabel: fmtMoney(pnlDollars, true),
+        rMultipleLabel: riskDollars > 0 ? `${fmtNumber(rMultiple)}R` : "--",
         netUnitsLabel: `${fmtNumber(netUnits)} ${unitLabel}`,
         sizeLabel: liveTradeOrderSizeLabel(trade, displayContract, sizeMultiplier),
         sizeMultiplier,
@@ -2054,6 +2114,9 @@ export default async function Home({ searchParams }: HomeProps) {
       latestLiveAlertAt={latestActiveMarketSignalAt}
       liveAlertRows={liveHistoryRows}
       marketLabel={marketLabel(activeMarket)}
+      persistedStrategyEdits={liveConfig.strategyEdits}
+      persistActiveMarket={syncActiveMarket}
+      strategies={strategyOptions}
       telegramGroupLink={telegramGroupLink}
     />
     <main className="terminal desktopTradingWorkspace">

@@ -5945,6 +5945,11 @@ html[data-theme="light"] .themeDarkLabel {
   font-weight: 900;
 }
 
+.live-pnl {
+  color: #5bb9ff !important;
+  font-weight: 900;
+}
+
 .sidePill,
 .status {
   display: inline-flex;
@@ -6567,6 +6572,10 @@ html[data-theme="light"] .backtest-stat-card.tone-neutral {
 html[data-theme="light"] .backtest-stat-card.tone-neutral strong,
 html[data-theme="light"] .neutral {
   color: #2563eb !important;
+}
+
+html[data-theme="light"] .live-pnl {
+  color: #0284c7 !important;
 }
 
 html[data-theme="light"] .localDateTimeStack small {
@@ -12337,11 +12346,16 @@ html[data-theme="light"] .tradeReplaySlider input::-webkit-slider-thumb {
     color: rgba(244, 248, 243, 0.72);
   }
 
+  .mobile-phone-shell .live-pnl {
+    color: #63c7ff;
+  }
+
   .mobile-phone-history-list {
     flex: 1 1 auto;
     min-height: 0;
     overflow-y: auto;
     display: grid;
+    align-content: start;
     gap: 0;
     padding-right: 0;
     scrollbar-width: none;
@@ -12605,6 +12619,11 @@ html[data-theme="light"] .tradeReplaySlider input::-webkit-slider-thumb {
     color: #f9fcf8;
     font-size: 0.82rem;
     font-weight: 700;
+  }
+
+  .mobile-phone-mode-button:disabled {
+    cursor: wait;
+    opacity: 0.62;
   }
 
   .mobile-phone-mode-button.active,

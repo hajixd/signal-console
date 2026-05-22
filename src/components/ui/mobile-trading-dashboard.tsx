@@ -1,7 +1,7 @@
 "use client";
 
-import Link from "next/link";
-import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { FormEvent, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import AutoTradingConnectionPanel from "@/components/auto-trading/auto-trading-connection-panel";
 import {
   AUTO_TRADE_ACCOUNT_MODE_CHANGE_EVENT,
@@ -10,7 +10,15 @@ import {
   saveAccountMode,
   type AutoTradeAccountMode
 } from "@/components/auto-trading/auto-trade-account-mode";
+import { useAutoTradeAdminMode } from "@/components/auto-trading/use-auto-trade-account-mode";
+import {
+  type StrategyEditOption,
+  type StrategyEditSeedMap,
+  useStrategyEdits
+} from "@/components/strategies/strategy-edits-store";
+import { adjustTradeHistoryRows } from "@/components/trades/adjust-trade-history-rows";
 import { type TradeHistoryRow } from "@/components/trades/trade-history";
+import LocalDateTime, { formatLocalDateTimeParts } from "@/components/ui/local-date-time";
 import ThemeToggle from "@/components/ui/theme-toggle";
 import { type AutoTradeMarket } from "@/lib/auto-trade-platforms";
 
@@ -24,36 +32,28 @@ type MobileTradingDashboardProps = {
   latestLiveAlertAt?: string;
   liveAlertRows: TradeHistoryRow[];
   marketLabel: string;
+  persistedStrategyEdits?: StrategyEditSeedMap;
+  persistActiveMarket?: (market: AutoTradeMarket) => Promise<void>;
+  strategies: StrategyEditOption[];
   telegramGroupLink?: string | null;
 };
 
 const mobileTabs: Array<{ id: MobileTradingTab; label: string }> = [
-  { id: "history", label: "History" },
   { id: "alerts", label: "Live Alerts" },
+  { id: "history", label: "History" },
   { id: "autotrade", label: "Auto-Trade" },
   { id: "settings", label: "Settings" }
 ];
 
-function formatDateLabel(value?: string): string {
-  if (!value) return "No activity yet";
-  const parsed = Date.parse(value);
-  if (!Number.isFinite(parsed)) return "No activity yet";
-  return new Intl.DateTimeFormat("en-US", {
-    month: "long",
-    day: "numeric",
-    year: "numeric"
-  }).format(new Date(parsed));
-}
+function useLocalHeaderParts(value?: string): { date: string; time: string } {
+  const [parts, setParts] = useState<{ date: string; time: string }>({ date: "No activity yet", time: "" });
 
-function formatTimeLabel(value?: string): string {
-  if (!value) return "--";
-  const parsed = Date.parse(value);
-  if (!Number.isFinite(parsed)) return "--";
-  return new Intl.DateTimeFormat("en-US", {
-    hour: "numeric",
-    minute: "2-digit",
-    timeZoneName: "short"
-  }).format(new Date(parsed));
+  useEffect(() => {
+    const nextParts = formatLocalDateTimeParts(value, "No activity yet");
+    setParts(nextParts ?? { date: "No activity yet", time: "" });
+  }, [value]);
+
+  return parts;
 }
 
 function displaySymbol(row: TradeHistoryRow): string {
@@ -69,7 +69,7 @@ function historyRailTone(row: TradeHistoryRow): "model-loss" | "model-win" | "sl
 
 function latestRowTime(rows: TradeHistoryRow[]): string | undefined {
   return rows
-    .map((row) => row.entryTime)
+    .flatMap((row) => [row.exitTime, row.entryTime])
     .filter(Boolean)
     .sort((left, right) => Date.parse(right) - Date.parse(left))[0];
 }
@@ -200,7 +200,9 @@ function MobileHistoryList({
                 </div>
               </div>
               <div className="mobile-phone-history-meta">
-                <span>{row.exitTimeLabel}</span>
+                <span>
+                  <LocalDateTime value={row.exitTime} fallback={row.exitTimeLabel} />
+                </span>
                 <span>{row.rMultipleLabel}</span>
                 <span>Entry {row.entryPriceLabel}</span>
                 <span>Exit {row.exitPriceLabel}</span>
@@ -211,6 +213,66 @@ function MobileHistoryList({
         </div>
       )}
     </section>
+  );
+}
+
+function MobileMarketModeControl({
+  activeMarket,
+  persistActiveMarket
+}: {
+  activeMarket: AutoTradeMarket;
+  persistActiveMarket?: (market: AutoTradeMarket) => Promise<void>;
+}) {
+  const pathname = usePathname();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const [isPending, startTransition] = useTransition();
+  const [pendingMarket, setPendingMarket] = useState<AutoTradeMarket | null>(null);
+  const canPersistActiveMarket = useAutoTradeAdminMode();
+
+  useEffect(() => {
+    setPendingMarket(null);
+  }, [activeMarket]);
+
+  function selectMarket(market: AutoTradeMarket) {
+    if (market === activeMarket || pendingMarket === market) return;
+
+    const nextParams = new URLSearchParams(searchParams.toString());
+    nextParams.set("market", market);
+    const href = `${pathname}?${nextParams.toString()}`;
+    setPendingMarket(market);
+
+    startTransition(() => {
+      if (canPersistActiveMarket && persistActiveMarket) {
+        void persistActiveMarket(market).catch((error) => console.error("Failed to save active market", error));
+      }
+      router.push(href, { scroll: false });
+    });
+  }
+
+  return (
+    <div className="mobile-phone-mode-card">
+      <div className="mobile-phone-card-copy">
+        <span className="mobile-phone-card-kicker">Market</span>
+        <h2>{(pendingMarket ?? activeMarket) === "futures" ? "Futures" : "Forex"}</h2>
+      </div>
+      <div className="mobile-phone-mode-grid" role="group" aria-label="Switch market">
+        {(["forex", "futures"] as const).map((market) => {
+          const isActive = (pendingMarket ?? activeMarket) === market;
+          return (
+            <button
+              type="button"
+              className={`mobile-phone-mode-button${isActive ? " active" : ""}`}
+              disabled={isPending && pendingMarket !== market}
+              key={market}
+              onClick={() => selectMarket(market)}
+            >
+              {market === "futures" ? "Futures" : "Forex"}
+            </button>
+          );
+        })}
+      </div>
+    </div>
   );
 }
 
@@ -341,14 +403,21 @@ export default function MobileTradingDashboard({
   latestLiveAlertAt,
   liveAlertRows,
   marketLabel,
+  persistedStrategyEdits,
+  persistActiveMarket,
+  strategies,
   telegramGroupLink
 }: MobileTradingDashboardProps) {
-  const [activeTab, setActiveTab] = useState<MobileTradingTab>("history");
+  const [activeTab, setActiveTab] = useState<MobileTradingTab>("alerts");
+  const edits = useStrategyEdits(strategies, persistedStrategyEdits);
+  const adjustedHistoryRows = useMemo(() => adjustTradeHistoryRows(historyRows, strategies, edits), [edits, historyRows, strategies]);
+  const adjustedLiveAlertRows = useMemo(() => adjustTradeHistoryRows(liveAlertRows, strategies, edits), [edits, liveAlertRows, strategies]);
   const headerTime = useMemo(() => {
-    if (activeTab === "alerts") return latestLiveAlertAt ?? latestRowTime(liveAlertRows);
-    if (activeTab === "history") return latestHistoryTradeAt ?? latestRowTime(historyRows);
+    if (activeTab === "alerts") return latestRowTime(adjustedLiveAlertRows) ?? latestLiveAlertAt;
+    if (activeTab === "history") return latestRowTime(adjustedHistoryRows) ?? latestHistoryTradeAt;
     return undefined;
-  }, [activeTab, historyRows, latestHistoryTradeAt, latestLiveAlertAt, liveAlertRows]);
+  }, [activeTab, adjustedHistoryRows, adjustedLiveAlertRows, latestHistoryTradeAt, latestLiveAlertAt]);
+  const headerParts = useLocalHeaderParts(headerTime);
   const tabTitle =
     activeTab === "alerts"
       ? "Live Alerts"
@@ -367,9 +436,13 @@ export default function MobileTradingDashboard({
               <h1>{tabTitle}</h1>
               {activeTab === "history" || activeTab === "alerts" ? (
                 <>
-                  <p className="mobile-phone-header-date">{formatDateLabel(headerTime)}</p>
+                  <p className="mobile-phone-header-date" suppressHydrationWarning>
+                    {headerParts.date}
+                  </p>
                   <div className="mobile-phone-header-time-row">
-                    <span className="mobile-phone-header-time">{formatTimeLabel(headerTime)}</span>
+                    <span className="mobile-phone-header-time" suppressHydrationWarning>
+                      {headerParts.time || "--"}
+                    </span>
                     <span className={`mobile-phone-header-time-badge${activeTab === "alerts" ? " live" : ""}`}>
                       {activeTab === "alerts" ? "Live" : "As Of"}
                     </span>
@@ -384,9 +457,9 @@ export default function MobileTradingDashboard({
 
         <div className="mobile-phone-body">
           {activeTab === "history" ? (
-            <MobileHistoryList emptyTitle="No trades yet" kicker="Trade History" rows={historyRows} title="History" />
+            <MobileHistoryList emptyTitle="No trades yet" kicker="Trade History" rows={adjustedHistoryRows} title="History" />
           ) : activeTab === "alerts" ? (
-            <MobileHistoryList emptyTitle="No live alerts yet" kicker="Live Alerts" rows={liveAlertRows} title="Live Alerts" />
+            <MobileHistoryList emptyTitle="No live alerts yet" kicker="Live Alerts" rows={adjustedLiveAlertRows} title="Live Alerts" />
           ) : activeTab === "autotrade" ? (
             <section className="mobile-phone-card mobile-phone-card-autotrade">
               <div className="mobile-phone-social-stack mobile-phone-autotrade-stack">
@@ -406,6 +479,7 @@ export default function MobileTradingDashboard({
 
               <div className="mobile-phone-action-list">
                 <MobileAccountModeControl />
+                <MobileMarketModeControl activeMarket={activeMarket} persistActiveMarket={persistActiveMarket} />
                 <div className="mobile-phone-toggle-row mobile-phone-theme-row">
                   <div className="mobile-phone-toggle-copy">
                     <strong>Theme</strong>
@@ -413,10 +487,6 @@ export default function MobileTradingDashboard({
                   </div>
                   <ThemeToggle initialTheme={initialTheme} />
                 </div>
-                <Link className="mobile-phone-action-btn" href="/research">
-                  <strong>Research</strong>
-                  <span>Open strategy research workspace</span>
-                </Link>
                 {telegramGroupLink ? (
                   <a className="mobile-phone-action-btn" href={telegramGroupLink} rel="noreferrer" target="_blank">
                     <strong>Telegram Group</strong>
