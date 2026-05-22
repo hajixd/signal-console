@@ -4,17 +4,17 @@ import path from "node:path";
 import { assetForKey, type AssetDefinition } from "@/lib/assets";
 import { firebaseBucket, hasFirebaseAdmin, storageObjectPath } from "@/lib/firebase-admin";
 import { defaultDatasetStatus, getDatasetStatus, saveDatasetStatus, type DatasetAssetCoverage } from "@/lib/live-config";
-import { fetchMarketBars } from "@/lib/market-data";
+import { fetchMarketSourceBars } from "@/lib/market-data";
+import {
+  DERIVED_FROM_FIVE_MINUTE_TIMEFRAMES,
+  LIVE_SOURCE_TIMEFRAME,
+  TIMEFRAME_SECONDS,
+  closedBarStartSeconds as closedTimeframeBarStartSeconds,
+  type DataTimeframe
+} from "@/lib/timeframes";
 import type { Bar, StrategyRule } from "@/lib/types";
 
-const DERIVED_TIMEFRAMES = [
-  { label: "30m", seconds: 30 * 60 },
-  { label: "45m", seconds: 45 * 60 },
-  { label: "1h", seconds: 60 * 60 },
-  { label: "4h", seconds: 4 * 60 * 60 },
-  { label: "1d", seconds: 24 * 60 * 60 },
-  { label: "1w", seconds: 7 * 24 * 60 * 60 }
-] as const;
+const REFRESH_TIMEFRAMES = [LIVE_SOURCE_TIMEFRAME, ...DERIVED_FROM_FIVE_MINUTE_TIMEFRAMES] as const;
 
 const ONE_MINUTE_SECONDS = 60;
 const FIVE_MINUTE_SECONDS = 5 * 60;
@@ -622,26 +622,96 @@ function newBarsAfter(existing: StoredCsvState, incomingBars: CsvBar[]): CsvBar[
     .sort((left, right) => left.time - right.time);
 }
 
+type TimeframeUpload = {
+  appendedBars: CsvBar[];
+  existing: StoredCsvState;
+  timeframe: DataTimeframe;
+};
+
+async function readTimeframeStates(
+  asset: AssetDefinition,
+  coverage: DatasetAssetCoverage | undefined
+): Promise<Record<(typeof REFRESH_TIMEFRAMES)[number], StoredCsvState>> {
+  const entries = await Promise.all(
+    REFRESH_TIMEFRAMES.map(async (timeframe) => {
+      const relativePath = `data/${timeframe}/${asset.dataFile}`;
+      return [timeframe, await storedCsvState(relativePath, coverage)] as const;
+    })
+  );
+  return Object.fromEntries(entries) as Record<(typeof REFRESH_TIMEFRAMES)[number], StoredCsvState>;
+}
+
+function refreshStartAfterSeconds(states: Record<(typeof REFRESH_TIMEFRAMES)[number], StoredCsvState>): number | undefined {
+  const candidates = REFRESH_TIMEFRAMES.map((timeframe) => states[timeframe].lastBarTime).filter(
+    (value): value is number => typeof value === "number" && Number.isFinite(value)
+  );
+  return candidates.length ? Math.min(...candidates) : undefined;
+}
+
+function allTimeframesCurrent(states: Record<(typeof REFRESH_TIMEFRAMES)[number], StoredCsvState>): boolean {
+  return REFRESH_TIMEFRAMES.every((timeframe) => {
+    const lastBarTime = states[timeframe].lastBarTime;
+    return lastBarTime != null && lastBarTime >= closedTimeframeBarStartSeconds(timeframe);
+  });
+}
+
+function aggregateCsvBarsToTimeframe(sourceBars: CsvBar[], timeframe: DataTimeframe, afterTime: number | undefined): CsvBar[] {
+  const closedStart = closedTimeframeBarStartSeconds(timeframe);
+  const buckets = new Map<number, CsvBar>();
+
+  for (const bar of sourceBars) {
+    const bucketTime = Math.floor(bar.time / TIMEFRAME_SECONDS[timeframe]) * TIMEFRAME_SECONDS[timeframe];
+    if (bucketTime > closedStart) continue;
+    if (afterTime != null && bucketTime <= afterTime) continue;
+    const current = buckets.get(bucketTime);
+    if (!current) {
+      buckets.set(bucketTime, {
+        close: bar.close,
+        high: bar.high,
+        low: bar.low,
+        open: bar.open,
+        time: bucketTime,
+        volume: bar.volume
+      });
+      continue;
+    }
+    current.high = Math.max(current.high, bar.high);
+    current.low = Math.min(current.low, bar.low);
+    current.close = bar.close;
+    current.volume += bar.volume;
+  }
+
+  return [...buckets.values()].sort((left, right) => left.time - right.time);
+}
+
 function appendedCoverage(
   asset: AssetDefinition,
-  existing: StoredCsvState,
-  appendedBars: CsvBar[],
+  existingCoverage: DatasetAssetCoverage | undefined,
+  uploads: TimeframeUpload[],
   refreshedAt: string
 ): Omit<MarketDataRefreshAsset, "durationMs"> {
-  const firstBarTime = existing.firstBarTime ?? appendedBars[0]?.time;
-  const lastBarTime = appendedBars.at(-1)?.time ?? existing.lastBarTime;
+  const sourceUpload = uploads.find((upload) => upload.timeframe === LIVE_SOURCE_TIMEFRAME) ?? uploads[0];
+  const firstBarTime = existingCoverage?.firstBarAt
+    ? secondsFromIso(existingCoverage.firstBarAt) ?? undefined
+    : sourceUpload?.existing.firstBarTime ?? sourceUpload?.appendedBars[0]?.time;
+  const lastBarTime = sourceUpload?.appendedBars.at(-1)?.time ?? sourceUpload?.existing.lastBarTime;
+  const appendedRows = uploads.reduce((sum, upload) => sum + upload.appendedBars.length, 0);
+  const uploadedFiles = uploads.filter((upload) => upload.appendedBars.length > 0).length;
+  const sourceRows = sourceUpload
+    ? (sourceUpload.existing.rows ?? existingCoverage?.rows ?? 0) + sourceUpload.appendedBars.length
+    : existingCoverage?.rows ?? 0;
 
   return {
-    appendedRows: appendedBars.length,
+    appendedRows,
     assetKey: asset.key,
     dataFile: asset.dataFile,
     firstBarAt: isoFromSeconds(firstBarTime),
     lastBarAt: isoFromSeconds(lastBarTime),
-    rows: (existing.rows ?? 0) + appendedBars.length,
+    rows: sourceRows,
     symbol: asset.symbol,
-    timeframes: ["15m"],
+    timeframes: [...new Set([...(existingCoverage?.timeframes ?? []), ...REFRESH_TIMEFRAMES])],
     updatedAt: refreshedAt,
-    uploadedFiles: appendedBars.length ? 1 : 0
+    uploadedFiles
   };
 }
 
@@ -705,12 +775,10 @@ export async function refreshMarketDataForRulesWithOptions(
     const assetStartedAt = Date.now();
     const asset = assetForKey(rule.assetKey);
     try {
-      const relativePath = `data/15m/${asset.dataFile}`;
-      const existing = await storedCsvState(relativePath, assetCoverage[asset.key]);
-      const latestClosed15m = closedBarStartSeconds(15 * ONE_MINUTE_SECONDS);
+      const states = await readTimeframeStates(asset, assetCoverage[asset.key]);
 
-      if (existing.exists && existing.lastBarTime != null && existing.lastBarTime >= latestClosed15m) {
-        const coverage = appendedCoverage(asset, existing, [], refreshedAt);
+      if (allTimeframesCurrent(states)) {
+        const coverage = appendedCoverage(asset, assetCoverage[asset.key], [], refreshedAt);
         summary.assets.push({
           ...coverage,
           durationMs: Date.now() - assetStartedAt
@@ -718,23 +786,39 @@ export async function refreshMarketDataForRulesWithOptions(
         continue;
       }
 
-      const liveBars = await fetchMarketBars(
-        rule,
-        existing.lastBarTime == null ? {} : { afterSeconds: existing.lastBarTime }
-      );
+      const afterSeconds = refreshStartAfterSeconds(states);
+      const liveBars = await fetchMarketSourceBars(asset, afterSeconds == null ? {} : { afterSeconds });
       barsByAssetKey.set(rule.assetKey, liveBars);
 
       const incomingBars = liveBars.map(barFromLiveBar).filter((bar): bar is CsvBar => Boolean(bar));
-      const appendedBars = newBarsAfter(existing, incomingBars);
-      if (!existing.exists && !appendedBars.length) {
+      if (!incomingBars.length && !states[LIVE_SOURCE_TIMEFRAME].exists) {
         throw new Error("No bars were available to persist.");
       }
 
-      if (appendedBars.length) {
-        await appendStoredCsvRows(relativePath, appendedBars, existing);
+      const uploads: TimeframeUpload[] = [];
+      const sourceAppendedBars = newBarsAfter(states[LIVE_SOURCE_TIMEFRAME], incomingBars);
+      uploads.push({
+        appendedBars: sourceAppendedBars,
+        existing: states[LIVE_SOURCE_TIMEFRAME],
+        timeframe: LIVE_SOURCE_TIMEFRAME
+      });
+      if (sourceAppendedBars.length) {
+        await appendStoredCsvRows(`data/${LIVE_SOURCE_TIMEFRAME}/${asset.dataFile}`, sourceAppendedBars, states[LIVE_SOURCE_TIMEFRAME]);
       }
 
-      const coverage = appendedCoverage(asset, existing, appendedBars, refreshedAt);
+      for (const timeframe of DERIVED_FROM_FIVE_MINUTE_TIMEFRAMES) {
+        const appendedBars = aggregateCsvBarsToTimeframe(incomingBars, timeframe, states[timeframe].lastBarTime);
+        uploads.push({
+          appendedBars,
+          existing: states[timeframe],
+          timeframe
+        });
+        if (appendedBars.length) {
+          await appendStoredCsvRows(`data/${timeframe}/${asset.dataFile}`, appendedBars, states[timeframe]);
+        }
+      }
+
+      const coverage = appendedCoverage(asset, assetCoverage[asset.key], uploads, refreshedAt);
       summary.assets.push({
         ...coverage,
         durationMs: Date.now() - assetStartedAt

@@ -1,0 +1,1 @@
+status,strategy_id,asset_key,timeframe,phase,forward_pf,forward_trades,forward_win_rate_pct,avg_rr,train_pf,train_trades,overall_pf,bootstrap_pf_p05,block_bootstrap_pf_p05,annual_pass_rate,sign_flip_p_value,variant_id

@@ -55,9 +55,8 @@ import type { TradeAlert, TradeManagementEvent } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 const DEFAULT_SELECTED_STRATEGY_COUNT = 1;
-const TRADE_CHART_TIMEFRAME_VALUES = new Set<TradeChartTimeframe>(["1m", "5m", "15m", "30m", "45m", "1h", "4h", "1d"]);
+const TRADE_CHART_TIMEFRAME_VALUES = new Set<TradeChartTimeframe>(["1m", "5m", "10m", "15m", "30m", "45m", "1h", "4h", "1d"]);
 const HISTORY_VISIBLE_TRADE_LIMIT = 500;
-const TRADE_HISTORY_DATA_TIMEFRAME = "15m";
 const EMPTY_LIVE_CONFIG: LiveConfig = {
   customScaleRanges: {},
   dashboardSettings: {},
@@ -281,14 +280,14 @@ function sideLabel(side: "long" | "short"): string {
 }
 
 function tradeSourceTimeframe(trade: BacktestTrade): TradeChartTimeframe {
-  return timeframeFromVariant(trade.variantId);
+  return timeframeFromVariant(trade.variantId, "exec_tf") ?? timeframeFromVariant(trade.variantId, "tf") ?? "15m";
 }
 
-function timeframeFromVariant(variantId: string | undefined): TradeChartTimeframe {
-  const timeframe = variantId?.split("|").find((part) => part.startsWith("tf="))?.slice(3);
+function timeframeFromVariant(variantId: string | undefined, key = "tf"): TradeChartTimeframe | null {
+  const timeframe = variantId?.split("|").find((part) => part.startsWith(`${key}=`))?.slice(key.length + 1);
   return timeframe && TRADE_CHART_TIMEFRAME_VALUES.has(timeframe as TradeChartTimeframe)
     ? (timeframe as TradeChartTimeframe)
-    : "15m";
+    : null;
 }
 
 function parseHistoryDataBar(line: string, index: number): TradeBracketBar | null {
@@ -373,21 +372,27 @@ async function barsForRanges(relativeDataPath: string, ranges: TradeHistoryBarRa
   }
 }
 
+function historyBarsKey(symbol: string, timeframe: TradeChartTimeframe): string {
+  return `${symbol}\t${timeframe}`;
+}
+
 async function loadHistoryBarsBySymbol(trades: BacktestTrade[]): Promise<Map<string, TradeBracketBar[]>> {
   const rangesBySymbol = new Map<string, { path: string; ranges: TradeHistoryBarRange[] }>();
 
   for (const trade of trades) {
     const asset = assetForSymbol(trade.symbol);
     if (!asset) continue;
-    const current = rangesBySymbol.get(trade.symbol) ?? {
-      path: `${TRADE_HISTORY_DATA_TIMEFRAME}/${asset.dataFile}`,
+    const timeframe = tradeSourceTimeframe(trade);
+    const key = historyBarsKey(trade.symbol, timeframe);
+    const current = rangesBySymbol.get(key) ?? {
+      path: `${timeframe}/${asset.dataFile}`,
       ranges: []
     };
     current.ranges.push({
       end: trade.exitIndex,
       start: trade.entryIndex
     });
-    rangesBySymbol.set(trade.symbol, current);
+    rangesBySymbol.set(key, current);
   }
 
   const entries = await Promise.all(
@@ -508,7 +513,7 @@ function syncTileState(
 function isSignalDataPauseError(error: string | undefined): boolean {
   return Boolean(
     error &&
-      (/Stored data for .+ is stale at /.test(error) || /Live data for .+ is stale; latest 15m bar is /.test(error))
+      (/Stored data for .+ is stale at /.test(error) || /Live data for .+ is stale; latest (?:5m|10m|15m|30m|45m|1h|4h|1d|1w) bar is /.test(error))
   );
 }
 
@@ -1595,7 +1600,7 @@ export default async function Home({ searchParams }: HomeProps) {
     const stopPrice = tradeStopPrice(trade, priceUnit);
     const dollarsPerPricePoint = tradeDollarsPerPricePoint(trade, priceUnit, sizeMultiplier);
     const resolvedExit = resolvedBacktestExit({
-      bars: historyTradeBarsBySymbol.get(trade.symbol),
+      bars: historyTradeBarsBySymbol.get(historyBarsKey(trade.symbol, tradeSourceTimeframe(trade))),
       priceUnit,
       rawPnlDollars: rawDollarPnl,
       riskDollars,
@@ -1728,7 +1733,7 @@ export default async function Home({ searchParams }: HomeProps) {
         signalTime: trade.signalTime,
         entryTime: trade.signalTime,
         exitTime: endTime,
-        sourceTimeframe: timeframeFromVariant(option?.variantId),
+        sourceTimeframe: timeframeFromVariant(option?.variantId, "tf") ?? "15m",
         phase: option?.phase,
         variantId: option?.variantId,
         entryType: trade.entryType ?? "market",

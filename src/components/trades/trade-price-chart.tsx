@@ -40,6 +40,7 @@ export type TradeChartBar = {
 export const TRADE_CHART_TIMEFRAMES = [
   { label: "1m", value: "1m" },
   { label: "5m", value: "5m" },
+  { label: "10m", value: "10m" },
   { label: "15m", value: "15m" },
   { label: "30m", value: "30m" },
   { label: "45m", value: "45m" },
@@ -208,6 +209,7 @@ const REPLAY_INTERVAL_MS: Record<ReplaySpeed, number> = {
 const CHART_TIMEFRAME_SECONDS: Record<TradeChartTimeframe, number> = {
   "1m": 60,
   "5m": 5 * 60,
+  "10m": 10 * 60,
   "15m": 15 * 60,
   "30m": 30 * 60,
   "45m": 45 * 60,

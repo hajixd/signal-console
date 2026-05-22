@@ -139,7 +139,11 @@ function intradaySignal(rule: StrategyRule, bars: EnrichedBar[], signalIndex: nu
   const direction = params.direction === "opposite" || params.direction === "fade" || params.direction === "contrarian" ? -1 : 1;
   const side = (move > 0 ? 1 : -1) * direction;
   if (!passesFilters(params, end.bar, side)) return null;
-  return signalFromRisk(params, rule, bar, side, safeAtr(bar, rule), "Competition session edge: scheduled intraday entry.");
+  return {
+    ...signalFromRisk(params, rule, bar, side, safeAtr(bar, rule), "Competition session edge: scheduled intraday entry."),
+    entryType: "limit",
+    entryMode: "Scheduled intraday limit order rests at the computed signal price before the target entry bar."
+  };
 }
 
 function dailySignal(rule: StrategyRule, bars: EnrichedBar[], signalIndex: number, params: Params): StrategySignal | null {
@@ -161,7 +165,14 @@ function dailySignal(rule: StrategyRule, bars: EnrichedBar[], signalIndex: numbe
   const direction = params.direction === "contrarian" ? -1 : 1;
   const side = (move > 0 ? 1 : -1) * direction;
   if (!passesFilters(params, current, side)) return null;
-  return signalFromRisk(params, rule, bar, side, safeAtr(bar, rule), "Competition session edge: daily time-series momentum.");
+  const signal = signalFromRisk(params, rule, bar, side, safeAtr(bar, rule), "Competition session edge: daily time-series momentum.");
+  return overnight
+    ? signal
+    : {
+        ...signal,
+        entryType: "limit",
+        entryMode: "Scheduled daily RTH limit order rests at the computed signal price before the target entry bar."
+      };
 }
 
 function barsInMinuteRange(bars: EnrichedBar[], day: string, startMinute: number, endMinute: number): EnrichedBar[] {

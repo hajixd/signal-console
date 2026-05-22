@@ -1,4 +1,12 @@
 import { assetForKey } from "@/lib/assets";
+import {
+  DEFAULT_STRATEGY_TIMEFRAME,
+  LIVE_SOURCE_TIMEFRAME,
+  floorToTimeframeSeconds,
+  timeframeFromVariant,
+  timeframeSeconds,
+  type DataTimeframe
+} from "@/lib/timeframes";
 import type { Bar, StrategyRule } from "@/lib/types";
 
 type DatabentoRecord = {
@@ -68,30 +76,28 @@ function normalizeDatabentoTime(record: DatabentoRecord): string | null {
   }
 }
 
-function floorTo15Minutes(date: Date): string {
-  const copy = new Date(date);
-  copy.setUTCSeconds(0, 0);
-  const minutes = copy.getUTCMinutes();
-  copy.setUTCMinutes(minutes - (minutes % 15));
-  return copy.toISOString();
-}
-
-function closed15MinuteCutoff(): number {
+function closedBarCutoff(): number {
   return Date.now() - 75_000;
 }
 
-function filterClosed15MinuteBars<T extends { time: string }>(bars: T[]): T[] {
-  const cutoff = closed15MinuteCutoff();
+function filterClosedTimeframeBars<T extends { time: string }>(bars: T[], timeframe: DataTimeframe): T[] {
+  const cutoff = closedBarCutoff();
+  const intervalMs = timeframeSeconds(timeframe) * 1000;
   return bars.filter((bar) => {
     const start = Date.parse(bar.time);
-    return Number.isFinite(start) && start + 15 * 60_000 <= cutoff;
+    return Number.isFinite(start) && start + intervalMs <= cutoff;
   });
 }
 
-function aggregateTo15m(records: Array<{ time: string; open: number; high: number; low: number; close: number; volume: number }>): Bar[] {
+function aggregateToTimeframe(
+  records: Array<{ time: string; open: number; high: number; low: number; close: number; volume?: number }>,
+  timeframe: DataTimeframe
+): Bar[] {
   const buckets = new Map<string, Bar>();
   for (const record of records.sort((left, right) => Date.parse(left.time) - Date.parse(right.time))) {
-    const bucketKey = floorTo15Minutes(new Date(record.time));
+    const recordSeconds = Math.floor(Date.parse(record.time) / 1000);
+    if (!Number.isFinite(recordSeconds)) continue;
+    const bucketKey = new Date(floorToTimeframeSeconds(recordSeconds, timeframe) * 1000).toISOString();
     const current = buckets.get(bucketKey);
     if (!current) {
       buckets.set(bucketKey, {
@@ -100,17 +106,17 @@ function aggregateTo15m(records: Array<{ time: string; open: number; high: numbe
         high: record.high,
         low: record.low,
         close: record.close,
-        volume: record.volume
+        volume: record.volume ?? 0
       });
       continue;
     }
     current.high = Math.max(current.high, record.high);
     current.low = Math.min(current.low, record.low);
     current.close = record.close;
-    current.volume = (current.volume ?? 0) + record.volume;
+    current.volume = (current.volume ?? 0) + (record.volume ?? 0);
   }
 
-  return filterClosed15MinuteBars([...buckets.values()]);
+  return filterClosedTimeframeBars([...buckets.values()], timeframe);
 }
 
 function parseDatabentoJson(text: string): Bar[] {
@@ -135,11 +141,17 @@ function parseDatabentoJson(text: string): Bar[] {
       continue;
     }
   }
-  return aggregateTo15m(records);
+  return aggregateToTimeframe(records, LIVE_SOURCE_TIMEFRAME);
 }
 
 export async function fetchMarketBars(rule: StrategyRule, options: MarketBarsOptions = {}): Promise<Bar[]> {
   const asset = assetForKey(rule.assetKey);
+  const sourceBars = await fetchMarketSourceBars(asset, options);
+  const timeframe = timeframeFromVariant(rule.variantId, DEFAULT_STRATEGY_TIMEFRAME);
+  return timeframe === LIVE_SOURCE_TIMEFRAME ? sourceBars : aggregateToTimeframe(sourceBars, timeframe);
+}
+
+export async function fetchMarketSourceBars(asset: ReturnType<typeof assetForKey>, options: MarketBarsOptions = {}): Promise<Bar[]> {
   if (asset.market === "futures") return fetchDatabentoBars(asset.databentoSymbol, asset.symbol, options);
   if (asset.market !== "crypto" && process.env.OANDA_API_TOKEN) return fetchOandaBars(asset.oandaSymbol ?? asset.symbol, options);
   return fetchTwelveDataBars(asset.twelveDataSymbol ?? asset.symbol, options);
@@ -167,7 +179,7 @@ async function fetchDatabentoBars(databentoSymbol: string | undefined, symbol: s
   if (!apiKey) throw new Error("Missing DATABENTO_API_KEY");
   if (!databentoSymbol) throw new Error(`Missing Databento symbol for ${symbol}`);
 
-  const start = providerStartDate(options, 12 * 24 * 60 * 60 * 1000, 15 * 60);
+  const start = providerStartDate(options, 12 * 24 * 60 * 60 * 1000, timeframeSeconds(LIVE_SOURCE_TIMEFRAME));
   const end = new Date();
   end.setUTCSeconds(0, 0);
   const params = new URLSearchParams({
@@ -211,14 +223,17 @@ async function fetchTwelveDataBars(symbol: string, options: MarketBarsOptions): 
   for (const apiKey of orderedKeys) {
     const params = new URLSearchParams({
       symbol,
-      interval: "15min",
+      interval: "5min",
       outputsize: options.afterSeconds ? "5000" : "500",
       order: "ASC",
       timezone: "UTC",
       apikey: apiKey
     });
     if (options.afterSeconds) {
-      params.set("start_date", providerStartDate(options, 0, 15 * 60).toISOString().replace("T", " ").replace(/\.\d{3}Z$/, ""));
+      params.set(
+        "start_date",
+        providerStartDate(options, 0, timeframeSeconds(LIVE_SOURCE_TIMEFRAME)).toISOString().replace("T", " ").replace(/\.\d{3}Z$/, "")
+      );
       params.set("end_date", endIsoMinute().replace("T", " ").replace(/\.\d{3}Z$/, ""));
     }
     const response = await fetch(`https://api.twelvedata.com/time_series?${params.toString()}`, { cache: "no-store" });
@@ -233,17 +248,19 @@ async function fetchTwelveDataBars(symbol: string, options: MarketBarsOptions): 
     }
 
     if (response.ok && data.values?.length) {
-      return filterClosed15MinuteBars(
+      return filterClosedTimeframeBars(
         data.values
           .map((item) => ({
             time: new Date(`${item.datetime}Z`).toISOString(),
             open: Number(item.open),
             high: Number(item.high),
             low: Number(item.low),
-            close: Number(item.close)
+            close: Number(item.close),
+            volume: Number(item.volume ?? 0)
           }))
           .filter((bar) => [bar.open, bar.high, bar.low, bar.close].every(Number.isFinite))
-          .sort((left, right) => Date.parse(left.time) - Date.parse(right.time))
+          .sort((left, right) => Date.parse(left.time) - Date.parse(right.time)),
+        LIVE_SOURCE_TIMEFRAME
       );
     }
 
@@ -260,10 +277,10 @@ async function fetchOandaBars(instrument: string, options: MarketBarsOptions): P
   const baseUrl = process.env.OANDA_API_BASE_URL ?? "https://api-fxpractice.oanda.com";
   const params = new URLSearchParams({
     price: "M",
-    granularity: "M15"
+    granularity: "M5"
   });
   if (options.afterSeconds) {
-    params.set("from", providerStartDate(options, 0, 15 * 60).toISOString());
+    params.set("from", providerStartDate(options, 0, timeframeSeconds(LIVE_SOURCE_TIMEFRAME)).toISOString());
     params.set("to", endIsoMinute());
   } else {
     params.set("count", "1500");
@@ -277,7 +294,7 @@ async function fetchOandaBars(instrument: string, options: MarketBarsOptions): P
   const data = (await response.json()) as OandaResponse & { errorMessage?: string };
   if (!response.ok || !data.candles) throw new Error(data.errorMessage ?? `OANDA ${response.status}`);
 
-  return filterClosed15MinuteBars(
+  return filterClosedTimeframeBars(
     data.candles
       .filter((candle) => candle.complete && candle.time && candle.mid)
       .map((candle) => ({
@@ -289,7 +306,8 @@ async function fetchOandaBars(instrument: string, options: MarketBarsOptions): P
         volume: Number(candle.volume ?? 0)
       }))
       .filter((bar) => [bar.open, bar.high, bar.low, bar.close].every(Number.isFinite))
-      .sort((left, right) => Date.parse(left.time) - Date.parse(right.time))
+      .sort((left, right) => Date.parse(left.time) - Date.parse(right.time)),
+    LIVE_SOURCE_TIMEFRAME
   );
 }
 

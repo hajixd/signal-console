@@ -2,7 +2,7 @@ import { open, mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import assetsJson from "../config/assets.json";
 
-const DATA_TIMEFRAMES = ["1m", "5m", "15m", "30m", "45m", "1h", "4h", "1d", "1w"] as const;
+const DATA_TIMEFRAMES = ["1m", "5m", "10m", "15m", "30m", "45m", "1h", "4h", "1d", "1w"] as const;
 
 type AssetDefinition = {
   dataFile: string;

@@ -37,8 +37,8 @@ function isDirectCheckSignalsRequest(request: NextRequest): boolean {
 function isMarketDataStaleError(error: unknown): boolean {
   const message = errorMessage(error);
   return (
-    /Stored data for .+ is stale at /.test(message) ||
-    /Live data for .+ is stale; latest 15m bar is /.test(message)
+    /Stored (?:\S+ )?data for .+ is stale at /.test(message) ||
+    /Live data for .+ is stale; latest \S+ bar is /.test(message)
   );
 }
 

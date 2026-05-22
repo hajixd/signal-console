@@ -1,0 +1,22 @@
+{
+  "generatedAt": "2026-05-22T18:58:04.173136Z",
+  "dryRun": false,
+  "selected": 0,
+  "method": "NY liquidity sweep Bayesian/logit/stump model search",
+  "requirements": {
+    "minForwardProfitFactor": 2.0,
+    "minRiskReward": 2.0,
+    "minForwardTrades": 20,
+    "executionTimeframe": "normal"
+  },
+  "antiOverfitGates": [
+    "strict anti-cheat replay",
+    "pre-2022 train / post-2022 forward split",
+    "chronological split PF",
+    "annual walk-forward pass rate",
+    "bootstrap and block-bootstrap PF p05",
+    "odd/even stability",
+    "sign-flip p-value",
+    "same-asset same-side no-overlap"
+  ]
+}

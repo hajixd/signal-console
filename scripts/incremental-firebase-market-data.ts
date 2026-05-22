@@ -53,11 +53,12 @@ type AssetSyncSummary = {
   uploads: Record<string, { lastBarAt?: string; rows: number; wrote: boolean }>;
 };
 
-const DATA_TIMEFRAMES = ["1m", "5m", "15m", "30m", "45m", "1h", "4h", "1d", "1w"] as const;
-const ONE_MINUTE_DERIVED_TIMEFRAMES = ["5m"] as const;
+const DATA_TIMEFRAMES = ["5m", "10m", "15m", "30m", "45m", "1h", "4h", "1d", "1w"] as const;
+const SOURCE_TIMEFRAME = "5m" as const;
+const DERIVED_TIMEFRAMES = ["10m", "15m", "30m", "45m", "1h", "4h", "1d", "1w"] as const;
 const INTERVAL_SECONDS: Record<(typeof DATA_TIMEFRAMES)[number], number> = {
-  "1m": 60,
   "5m": 5 * 60,
+  "10m": 10 * 60,
   "15m": 15 * 60,
   "30m": 30 * 60,
   "45m": 45 * 60,
@@ -559,14 +560,14 @@ async function fetchTwelveChunk(
   startSeconds: number,
   endSeconds: number
 ): Promise<Bar[]> {
-  const closedStartSeconds = closedBucketStart(60);
+  const closedStartSeconds = closedBucketStart(INTERVAL_SECONDS[SOURCE_TIMEFRAME]);
 
   while (true) {
     const { index, key } = await keyPool.acquire();
     const params = new URLSearchParams({
       apikey: key,
       end_date: formatTwelveDate(endSeconds),
-      interval: "1min",
+      interval: "5min",
       order: "ASC",
       outputsize: "5000",
       start_date: formatTwelveDate(startSeconds),
@@ -604,9 +605,9 @@ async function fetchTwelveBars(
   let cursor = startSeconds;
 
   while (cursor <= endSeconds) {
-    const chunkEnd = Math.min(endSeconds, addDays(cursor, TWELVE_CHUNK_DAYS) - 60);
+    const chunkEnd = Math.min(endSeconds, addDays(cursor, TWELVE_CHUNK_DAYS) - INTERVAL_SECONDS[SOURCE_TIMEFRAME]);
     bars.push(...(await fetchTwelveChunk(keyPool, symbol, cursor, chunkEnd)));
-    cursor = chunkEnd + 60;
+    cursor = chunkEnd + INTERVAL_SECONDS[SOURCE_TIMEFRAME];
     await new Promise((resolve) => setTimeout(resolve, 150));
   }
 
@@ -629,24 +630,24 @@ function lowerBoundStart(
   existingCoverage: DatasetAssetCoverage | undefined,
   options: CliOptions
 ): number {
-  const latestAllowedMissingStart = closedBucketStart(60) - options.missingLookbackDays * 24 * 60 * 60;
-  const knownFirst = states["15m"].firstBarTime ?? secondsFromIso(existingCoverage?.firstBarAt);
+  const latestAllowedMissingStart = closedBucketStart(INTERVAL_SECONDS[SOURCE_TIMEFRAME]) - options.missingLookbackDays * 24 * 60 * 60;
+  const knownFirst = states[SOURCE_TIMEFRAME].firstBarTime ?? states["15m"].firstBarTime ?? secondsFromIso(existingCoverage?.firstBarAt);
   const missingStart = Math.max(knownFirst ?? latestAllowedMissingStart, latestAllowedMissingStart);
   const candidates: number[] = [];
 
-  if (states["1m"].exists && states["1m"].lastBarTime != null) {
-    candidates.push(states["1m"].lastBarTime + 60);
+  if (states[SOURCE_TIMEFRAME].exists && states[SOURCE_TIMEFRAME].lastBarTime != null) {
+    candidates.push(states[SOURCE_TIMEFRAME].lastBarTime + INTERVAL_SECONDS[SOURCE_TIMEFRAME]);
   } else {
     candidates.push(missingStart);
   }
 
-  for (const timeframe of ONE_MINUTE_DERIVED_TIMEFRAMES) {
+  for (const timeframe of DERIVED_TIMEFRAMES) {
     const state = states[timeframe];
+    const interval = INTERVAL_SECONDS[timeframe];
     if (!state.exists || state.lastBarTime == null) {
-      candidates.push(missingStart);
+      candidates.push(Math.floor(missingStart / interval) * interval);
       continue;
     }
-    const interval = INTERVAL_SECONDS[timeframe];
     if (state.lastBarTime < closedBucketStart(interval)) {
       candidates.push(state.lastBarTime + interval);
     }
@@ -656,13 +657,13 @@ function lowerBoundStart(
   if (!Number.isFinite(start)) {
     throw new Error(`Could not determine provider start for ${asset.key}`);
   }
-  return Math.max(0, Math.floor(start / 60) * 60);
+  return Math.max(0, Math.floor(start / INTERVAL_SECONDS[SOURCE_TIMEFRAME]) * INTERVAL_SECONDS[SOURCE_TIMEFRAME]);
 }
 
 async function readAssetStates(asset: AssetDefinition, options: CliOptions): Promise<Record<(typeof DATA_TIMEFRAMES)[number], RemoteCsvState>> {
   const entries = await Promise.all(
     DATA_TIMEFRAMES.map(async (timeframe) => {
-      const includeHead = timeframe === "15m";
+      const includeHead = timeframe === SOURCE_TIMEFRAME || timeframe === "15m";
       return [timeframe, await remoteCsvState(`data/${timeframe}/${asset.dataFile}`, options, includeHead)] as const;
     })
   );
@@ -677,7 +678,7 @@ async function syncAsset(
 ): Promise<AssetSyncSummary> {
   const states = await readAssetStates(asset, options);
   const startSeconds = lowerBoundStart(asset, states, existingCoverage, options);
-  const endSeconds = closedBucketStart(60);
+  const endSeconds = closedBucketStart(INTERVAL_SECONDS[SOURCE_TIMEFRAME]);
   const provider = asset.market === "futures" ? "databento" : "twelvedata";
   const summary: AssetSyncSummary = {
     assetKey: asset.key,
@@ -691,14 +692,15 @@ async function syncAsset(
   };
 
   if (startSeconds > endSeconds) {
-    console.log(`[${asset.symbol}] already current through ${isoFromSeconds(states["1m"].lastBarTime) ?? "unknown"}`);
+    console.log(`[${asset.symbol}] already current through ${isoFromSeconds(states[SOURCE_TIMEFRAME].lastBarTime) ?? "unknown"}`);
     return summary;
   }
 
-  console.log(`[${asset.symbol}] fetching ${provider} 1m from ${isoFromSeconds(startSeconds)} to ${isoFromSeconds(endSeconds)}`);
+  console.log(`[${asset.symbol}] fetching ${provider} ${SOURCE_TIMEFRAME} source from ${isoFromSeconds(startSeconds)} to ${isoFromSeconds(endSeconds)}`);
   let sourceBars: Bar[] = [];
   try {
-    sourceBars = await fetchSourceBars(keyPool, asset, startSeconds, endSeconds);
+    const providerBars = await fetchSourceBars(keyPool, asset, startSeconds, endSeconds);
+    sourceBars = asset.market === "futures" ? aggregateBars(providerBars, INTERVAL_SECONDS[SOURCE_TIMEFRAME], states[SOURCE_TIMEFRAME].lastBarTime) : providerBars;
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     summary.errors.push(message);
@@ -711,8 +713,8 @@ async function syncAsset(
     return summary;
   }
 
-  summary.uploads["1m"] = await writeCsvRows(`data/1m/${asset.dataFile}`, sourceBars, states["1m"], options);
-  for (const timeframe of ONE_MINUTE_DERIVED_TIMEFRAMES) {
+  summary.uploads[SOURCE_TIMEFRAME] = await writeCsvRows(`data/${SOURCE_TIMEFRAME}/${asset.dataFile}`, sourceBars, states[SOURCE_TIMEFRAME], options);
+  for (const timeframe of DERIVED_TIMEFRAMES) {
     const rows = aggregateBars(sourceBars, INTERVAL_SECONDS[timeframe], states[timeframe].lastBarTime);
     summary.uploads[timeframe] = await writeCsvRows(`data/${timeframe}/${asset.dataFile}`, rows, states[timeframe], options);
   }
@@ -732,10 +734,10 @@ function mergeCoverage(
   summary: AssetSyncSummary,
   refreshedAt: string
 ): DatasetAssetCoverage {
-  const fifteenMinuteRows = summary.uploads["15m"]?.rows ?? 0;
-  const lastBarAt = summary.uploads["15m"]?.lastBarAt ?? existing?.lastBarAt;
-  const rows = (existing?.rows ?? 0) + fifteenMinuteRows;
-  const timeframes = new Set([...(existing?.timeframes ?? []), "1m", "5m"]);
+  const sourceRows = summary.uploads[SOURCE_TIMEFRAME]?.rows ?? 0;
+  const lastBarAt = summary.uploads[SOURCE_TIMEFRAME]?.lastBarAt ?? summary.uploads["15m"]?.lastBarAt ?? existing?.lastBarAt;
+  const rows = (existing?.rows ?? 0) + sourceRows;
+  const timeframes = new Set([...(existing?.timeframes ?? []), ...DATA_TIMEFRAMES]);
 
   return {
     dataFile: asset.dataFile,

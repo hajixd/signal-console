@@ -129,7 +129,7 @@ type CsvRow = Record<string, string>;
 
 const BACKTEST_MANIFEST_PATH = "cache/backtest-manifest.json";
 const STRATEGY_ROOT = "strategy";
-const TIMEFRAME_ORDER = ["1m", "5m", "15m", "30m", "45m", "1h", "4h", "1d", "1w"] as const;
+const TIMEFRAME_ORDER = ["1m", "5m", "10m", "15m", "30m", "45m", "1h", "4h", "1d", "1w"] as const;
 const CATALOG_CACHE_TTL_MS = 60_000;
 const MANIFEST_STALE_AFTER_MS = 7 * 24 * 60 * 60 * 1000;
 
@@ -151,8 +151,12 @@ function strategyUsesPriorDayStructure(strategy: StrategyDefinition): boolean {
 }
 
 function strategyTimeframes(strategy: StrategyDefinition): string[] {
-  const timeframe = strategy.defaults?.variantId?.split("|").find((part) => part.startsWith("tf="))?.slice(3);
+  const timeframe = variantText(strategy.defaults?.variantId, "tf");
+  const executionTimeframe = variantText(strategy.defaults?.variantId, "exec_tf");
   const timeframes = new Set<string>([timeframe || "15m"]);
+  if (executionTimeframe) {
+    timeframes.add(executionTimeframe);
+  }
   if (strategyUsesPriorDayStructure(strategy)) {
     timeframes.add("1d");
   }
@@ -254,6 +258,15 @@ function variantNumber(variantId: string | undefined, ...keys: string[]): number
     if (!keys.includes(key) || rawValue === undefined || rawValue === "" || rawValue === "none") continue;
     const parsed = Number(rawValue);
     if (Number.isFinite(parsed)) return parsed;
+  }
+  return undefined;
+}
+
+function variantText(variantId: string | undefined, key: string): string | undefined {
+  if (!variantId) return undefined;
+  for (const token of variantId.split("|")) {
+    const [tokenKey, rawValue] = token.split("=", 2);
+    if (tokenKey === key && rawValue) return rawValue;
   }
   return undefined;
 }

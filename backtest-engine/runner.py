@@ -25,6 +25,8 @@ NEW_YORK = ZoneInfo("America/New_York")
 BACKTEST_START_TS = int(datetime(2022, 1, 1, tzinfo=timezone.utc).timestamp())
 
 TIMEFRAME_EVERY = {
+    "5m": "5m",
+    "10m": "10m",
     "15m": "15m",
     "30m": "30m",
     "45m": "45m",
@@ -185,20 +187,28 @@ def select_assets_for_prepare(assets: list[AssetConfig], asset_filters: Iterable
 def prepare_data(source_dir: Path | None = None, asset_filters: Iterable[str] | None = None) -> None:
     assets = load_assets()
     selected_assets = select_assets_for_prepare(assets, asset_filters)
-    base_dir = DATA_ROOT / "15m"
-    base_dir.mkdir(parents=True, exist_ok=True)
-    resolved_source_dir = source_dir.resolve() if source_dir else base_dir.resolve()
+    five_minute_dir = DATA_ROOT / "5m"
+    fifteen_minute_dir = DATA_ROOT / "15m"
+    five_minute_dir.mkdir(parents=True, exist_ok=True)
+    fifteen_minute_dir.mkdir(parents=True, exist_ok=True)
+    resolved_source_dir = source_dir.resolve() if source_dir else None
 
     for asset in selected_assets:
-        source_path = source_csv_path(asset, resolved_source_dir)
+        asset_source_dir = resolved_source_dir
+        if asset_source_dir is None:
+            asset_source_dir = five_minute_dir if (five_minute_dir / asset.data_file).exists() else fifteen_minute_dir
+        source_timeframe = "5m" if asset_source_dir.name == "5m" else "15m"
+        source_path = source_csv_path(asset, asset_source_dir)
         base_frame = read_legacy_csv(source_path)
-        write_candle_csv(base_dir / asset.data_file, base_frame)
+        write_candle_csv(DATA_ROOT / source_timeframe / asset.data_file, base_frame)
 
         for timeframe, every in TIMEFRAME_EVERY.items():
             timeframe_dir = DATA_ROOT / timeframe
             timeframe_dir.mkdir(parents=True, exist_ok=True)
-            if timeframe == "15m":
+            if timeframe == source_timeframe:
                 write_candle_csv(timeframe_dir / asset.data_file, base_frame)
+                continue
+            if source_timeframe == "15m" and timeframe in {"5m", "10m"}:
                 continue
             write_candle_csv(timeframe_dir / asset.data_file, resample_timeframe(base_frame, every))
 
@@ -1200,8 +1210,17 @@ def variant_deciles(variant_id: str, key: str, fallback: set[int]) -> set[int]:
 
 def strategy_timeframe(strategy: BacktestStrategy) -> str:
     timeframe = variant_value(strategy.variant_id, "tf") or "15m"
-    if timeframe not in {"1m", "5m", "15m", "30m", "45m", "1h", "4h", "1d", "1w"}:
+    if timeframe not in {"1m", "5m", "10m", "15m", "30m", "45m", "1h", "4h", "1d", "1w"}:
         raise ValueError(f"Unsupported timeframe '{timeframe}' for {strategy.id}")
+    return timeframe
+
+
+def strategy_execution_timeframe(strategy: BacktestStrategy) -> str | None:
+    timeframe = variant_value(strategy.variant_id, "exec_tf")
+    if timeframe is None:
+        return None
+    if timeframe not in {"1m", "5m"}:
+        raise ValueError(f"Unsupported execution timeframe '{timeframe}' for {strategy.id}")
     return timeframe
 
 
@@ -4720,6 +4739,72 @@ def complete_trade(
     )
 
 
+def refine_trade_with_execution_data(
+    strategy: BacktestStrategy,
+    asset: AssetConfig,
+    execution_data: EnrichedData,
+    trade: BacktestTradeRow,
+) -> BacktestTradeRow | None:
+    entry_index = int(np.searchsorted(execution_data.times, trade.entry_time, side="left"))
+    if entry_index < 0 or entry_index >= execution_data.times.shape[0]:
+        return None
+
+    exit_index = int(np.searchsorted(execution_data.times, trade.exit_time, side="right")) - 1
+    if exit_index < entry_index:
+        return None
+
+    side = trade.side
+    stop_loss = round_price(trade.entry_price - side * trade.sl_units * asset.tick_size, asset.tick_size)
+    take_profit = round_price(trade.entry_price + side * trade.tp_units * asset.tick_size, asset.tick_size)
+    open_trade = OpenTrade(
+        side=side,
+        signal_time=trade.signal_time,
+        entry_index=entry_index,
+        entry_price=trade.entry_price,
+        initial_take_profit=take_profit,
+        initial_stop_loss=stop_loss,
+        initial_tp_units=trade.tp_units,
+        initial_sl_units=trade.sl_units,
+        take_profit=take_profit,
+        stop_loss=stop_loss,
+        tp_units=trade.tp_units,
+        sl_units=trade.sl_units,
+        tp_mode=trade.tp_mode,
+        sl_mode=trade.sl_mode,
+        size_mode=trade.size_mode,
+        size_multiplier=trade.size_multiplier,
+        max_exit_index=execution_data.times.shape[0] + 1,
+    )
+
+    resolved_exit_price = float(execution_data.close[exit_index])
+    resolved_exit_index = exit_index
+    resolved_exit_reason = trade.exit_reason
+    for cursor in range(entry_index, exit_index + 1):
+        exit_result = trade_exit(open_trade, execution_data, cursor, asset.tick_size)
+        if exit_result is not None:
+            resolved_exit_price, resolved_exit_reason = exit_result
+            resolved_exit_index = cursor
+            break
+
+    return complete_trade(strategy, asset, execution_data, open_trade, resolved_exit_index, resolved_exit_price, resolved_exit_reason)
+
+
+def refine_trades_with_execution_data(
+    strategy: BacktestStrategy,
+    asset: AssetConfig,
+    execution_data: EnrichedData | None,
+    trades: list[BacktestTradeRow],
+) -> list[BacktestTradeRow]:
+    if execution_data is None:
+        return trades
+    refined: list[BacktestTradeRow] = []
+    for trade in trades:
+        candidate = refine_trade_with_execution_data(strategy, asset, execution_data, trade)
+        if candidate is not None:
+            refined.append(candidate)
+    return refined
+
+
 def run_single_strategy(
     strategy: BacktestStrategy,
     asset: AssetConfig,
@@ -4727,6 +4812,7 @@ def run_single_strategy(
     start_ts: int = BACKTEST_START_TS,
     end_ts: int | None = None,
     strict_anti_cheat: bool = True,
+    execution_data: EnrichedData | None = None,
 ) -> list[BacktestTradeRow]:
     config = runtime_config(strategy.variant_id)
     max_bars = max(1, config.max_bars)
@@ -4832,7 +4918,7 @@ def run_single_strategy(
         final_index = data.times.shape[0] - 1
         trades.append(complete_trade(strategy, asset, data, open_trade, final_index, float(data.close[final_index]), "end"))
 
-    return trades
+    return refine_trades_with_execution_data(strategy, asset, execution_data, trades)
 
 
 def iso_time(timestamp: int) -> str:
@@ -5141,6 +5227,8 @@ def run_backtests(
             asset = assets[strategy.asset_key]
             timeframe = strategy_timeframe(strategy)
             cache_key = (asset.key, timeframe)
+            execution_timeframe = strategy_execution_timeframe(strategy)
+            execution_cache_key = (asset.key, execution_timeframe) if execution_timeframe else None
             existing_trades = read_strategy_backtest_csv(output_path) if incremental and output_path.exists() else []
             effective_start_ts = start_ts if start_ts is not None else BACKTEST_START_TS
             state_start_ts = incremental_start_state.get((asset.key, timeframe))
@@ -5169,6 +5257,22 @@ def run_backtests(
                 enriched_cache[cache_key] = build_enriched_data(frame, asset)
                 if timings:
                     print(f"  enriched {asset.key} {timeframe}")
+            execution_data = None
+            if execution_cache_key is not None:
+                if execution_cache_key not in enriched_cache:
+                    execution_path = DATA_ROOT / execution_timeframe / asset.data_file
+                    if not execution_path.exists():
+                        raise FileNotFoundError(
+                            f"Missing {execution_timeframe} execution candle file: {execution_path}. "
+                            "Run/import that timeframe before using exec_tf."
+                        )
+                    if timings:
+                        print(f"  loading execution {execution_path}")
+                    execution_frame = load_candle_csv(execution_path)
+                    enriched_cache[execution_cache_key] = build_enriched_data(execution_frame, asset)
+                    if timings:
+                        print(f"  enriched {asset.key} execution {execution_timeframe}")
+                execution_data = enriched_cache[execution_cache_key]
 
             if timings:
                 tail_skip_index = max(0, int(np.searchsorted(enriched_cache[cache_key].times, effective_start_ts, side="left")) - 1)
@@ -5182,6 +5286,7 @@ def run_backtests(
                 start_ts=effective_start_ts,
                 end_ts=end_ts,
                 strict_anti_cheat=strict_anti_cheat,
+                execution_data=execution_data,
             )
             if write_output:
                 output_trades = (
@@ -5246,6 +5351,16 @@ def audit_anti_cheat(
             enriched_cache[cache_key] = build_enriched_data(frame, asset)
 
         data = enriched_cache[cache_key]
+        execution_timeframe = strategy_execution_timeframe(strategy)
+        execution_data = None
+        if execution_timeframe is not None:
+            execution_cache_key = (asset.key, execution_timeframe)
+            if execution_cache_key not in enriched_cache:
+                execution_path = DATA_ROOT / execution_timeframe / asset.data_file
+                if not execution_path.exists():
+                    raise FileNotFoundError(f"Missing {execution_timeframe} execution candle file: {execution_path}.")
+                enriched_cache[execution_cache_key] = build_enriched_data(load_candle_csv(execution_path), asset)
+            execution_data = enriched_cache[execution_cache_key]
         fast_trades = run_single_strategy(
             strategy,
             asset,
@@ -5253,6 +5368,7 @@ def audit_anti_cheat(
             start_ts=start_ts if start_ts is not None else BACKTEST_START_TS,
             end_ts=end_ts,
             strict_anti_cheat=False,
+            execution_data=execution_data,
         )
         strict_trades = run_single_strategy(
             strategy,
@@ -5261,6 +5377,7 @@ def audit_anti_cheat(
             start_ts=start_ts if start_ts is not None else BACKTEST_START_TS,
             end_ts=end_ts,
             strict_anti_cheat=True,
+            execution_data=execution_data,
         )
         drifted, reason = anti_cheat_drift(fast_trades, strict_trades)
         if drifted:
@@ -5286,8 +5403,8 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Trading Bot data and backtest runner")
     subparsers = parser.add_subparsers(dest="command", required=True)
 
-    prepare = subparsers.add_parser("prepare-data", help="Import 15m candles and build higher timeframes")
-    prepare.add_argument("--source", help="Optional source folder. Defaults to data/15m and also accepts the old legacy filenames.")
+    prepare = subparsers.add_parser("prepare-data", help="Import 5m candles when present and build derived higher timeframes")
+    prepare.add_argument("--source", help="Optional source folder. Defaults per asset to data/5m when present, otherwise data/15m legacy data.")
     prepare.add_argument("--asset", action="append", help="Optional asset key/symbol/data file filter. Repeat or comma-separate values.")
 
     run = subparsers.add_parser("run-backtests", help="Regenerate strategy backtest CSV files")
@@ -5295,7 +5412,7 @@ def parse_args() -> argparse.Namespace:
     run.add_argument("--timings", action="store_true", help="Print per-strategy and total runtime timings.")
     run.add_argument("--start-date", help="Optional inclusive UTC start date in YYYY-MM-DD format for bounded test runs.")
     run.add_argument("--end-date", help="Optional exclusive UTC end date in YYYY-MM-DD format for bounded test runs.")
-    run.add_argument("--tail-bars", type=int, help="Optional smoke-test mode: keep only the most recent N 15m bars before enriching.")
+    run.add_argument("--tail-bars", type=int, help="Optional smoke-test mode: keep only the most recent N strategy-timeframe bars before enriching.")
     run.add_argument("--strict-anti-cheat", action="store_true", help="Deprecated alias. Strict anti-cheat mode is now the default.")
     run.add_argument("--fast-unsafe", action="store_true", help="Disable anti-cheat window slicing for faster exploratory runs.")
     run.add_argument("--no-write", action="store_true", help="Compute results without overwriting backtest CSV files.")
@@ -5310,7 +5427,7 @@ def parse_args() -> argparse.Namespace:
     audit.add_argument("--strategy", action="append", help="Optional strategy id/folder/asset filter. Repeat to include multiple.")
     audit.add_argument("--start-date", help="Optional inclusive UTC start date in YYYY-MM-DD format.")
     audit.add_argument("--end-date", help="Optional exclusive UTC end date in YYYY-MM-DD format.")
-    audit.add_argument("--tail-bars", type=int, help="Optional anti-cheat audit sample size using the most recent N 15m bars.")
+    audit.add_argument("--tail-bars", type=int, help="Optional anti-cheat audit sample size using the most recent N strategy-timeframe bars.")
     audit.add_argument("--fail-fast", action="store_true", help="Stop on the first anti-cheat drift.")
     return parser.parse_args()
 

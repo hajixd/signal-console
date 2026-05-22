@@ -17,6 +17,7 @@
     "data:capture-tails": "node --env-file=.env.local --import tsx scripts/capture-data-tails.ts",
     "data:live-tails": "node --import tsx scripts/build-live-data-tails.ts",
     "market-data:refresh-live": "node --env-file=.env.local --import tsx scripts/refresh-live-market-data.ts",
+    "market-data:sync-firebase": "node --env-file=.env.local --import tsx scripts/incremental-firebase-market-data.ts",
     "data:intraday": "node --env-file=.env.local --import tsx scripts/download-intraday-data.ts",
     "prepare:data": "python backtest-engine/runner.py prepare-data",
     "backtest": "python backtest-engine/runner.py run-backtests",

@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { FormEvent, MouseEvent, useEffect, useMemo, useState, useTransition } from "react";
 import type { ResearchAssetOption } from "@/components/research/research-idea-form";
 
-const TIMEFRAME_OPTIONS = ["1m", "5m", "15m", "30m", "45m", "1h", "4h", "1d", "overnight"];
+const TIMEFRAME_OPTIONS = ["1m", "5m", "10m", "15m", "30m", "45m", "1h", "4h", "1d", "overnight"];
 
 type ResearchIdeaReport = {
   assetSelection?: string;

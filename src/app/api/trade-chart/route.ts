@@ -24,11 +24,12 @@ const MAX_BOUNDARY_CACHE_ENTRIES = 48;
 
 const lineCache = new Map<string, { loadedAt: number; lines: string[] }>();
 const boundaryCache = new Map<string, { loadedAt: number; boundary: { first: number; last: number } | null }>();
-const TIMEFRAME_ORDER = ["1m", "5m", "15m", "30m", "45m", "1h", "4h", "1d", "1w"] as const;
+const TIMEFRAME_ORDER = ["1m", "5m", "10m", "15m", "30m", "45m", "1h", "4h", "1d", "1w"] as const;
 const SUPPORTED_TIMEFRAMES = new Set<string>(TIMEFRAME_ORDER);
 const TIMEFRAME_SECONDS: Record<(typeof TIMEFRAME_ORDER)[number], number> = {
   "1m": 60,
   "5m": 5 * 60,
+  "10m": 10 * 60,
   "15m": 15 * 60,
   "30m": 30 * 60,
   "45m": 45 * 60,

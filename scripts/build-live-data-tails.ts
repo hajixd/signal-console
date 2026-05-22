@@ -39,7 +39,8 @@ function parseLine(line: string): CachedBar | null {
 
 async function main(): Promise<void> {
   const limit = barLimit();
-  const sourceDir = path.join(process.cwd(), "data", "15m");
+  const sourceTimeframe = "5m";
+  const sourceDir = path.join(process.cwd(), "data", sourceTimeframe);
   const outputPath = path.join(process.cwd(), "cache", "live-data-tails.json");
   const files = (await readdir(sourceDir, { withFileTypes: true }))
     .filter((entry) => entry.isFile() && entry.name.endsWith(".csv"))
@@ -53,7 +54,7 @@ async function main(): Promise<void> {
 
   for (const fileName of files) {
     const text = await readTail(path.join(sourceDir, fileName), Math.max(MIN_TAIL_BYTES, limit * 128));
-    cache.files[`15m/${fileName}`] = text
+    cache.files[`${sourceTimeframe}/${fileName}`] = text
       .split(/\r?\n/)
       .map((line) => (line.startsWith("time,") ? null : parseLine(line)))
       .filter((bar): bar is CachedBar => Boolean(bar))

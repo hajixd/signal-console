@@ -10,7 +10,7 @@ export const runtime = "nodejs";
 const RESEARCH_ROOT = path.join(process.cwd(), "Research");
 const SUPPORTED_ENGINES = new Set(["overnight_bias", "open_gap", "intraday_momentum", "range_break", "daily_tsmom"]);
 const SUPPORTED_MARKETS = new Set(["futures", "forex"]);
-const SUPPORTED_TIMEFRAMES = new Set(["1m", "5m", "15m", "30m", "45m", "1h", "4h", "1d", "overnight"]);
+const SUPPORTED_TIMEFRAMES = new Set(["1m", "5m", "10m", "15m", "30m", "45m", "1h", "4h", "1d", "overnight"]);
 const URL_PATTERN = /https?:\/\/[^\s<>"')\]]+/g;
 
 type ResearchIdeaPayload = {

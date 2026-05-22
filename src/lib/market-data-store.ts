@@ -3,6 +3,12 @@ import path from "node:path";
 import { assetForKey } from "@/lib/assets";
 import { firebaseBucket, hasFirebaseAdmin, storageObjectPath } from "@/lib/firebase-admin";
 import { fetchMarketBars } from "@/lib/market-data";
+import {
+  DEFAULT_STRATEGY_TIMEFRAME,
+  timeframeFromVariant,
+  timeframeSeconds,
+  type DataTimeframe
+} from "@/lib/timeframes";
 import type { Bar, StrategyRule } from "@/lib/types";
 
 const DEFAULT_BAR_LIMIT = 1500;
@@ -97,9 +103,11 @@ function localCachePath(): string {
   return path.join(/*turbopackIgnore: true*/ process.cwd(), "cache", "live-data-tails.json");
 }
 
-function signalStaleMs(): number {
+function signalStaleMs(timeframe: DataTimeframe): number {
   const minutes = Number(process.env.LIVE_SIGNAL_STALE_MINUTES ?? process.env.MARKET_DATA_STALE_MINUTES);
-  return Number.isFinite(minutes) && minutes > 0 ? minutes * 60_000 : DEFAULT_SIGNAL_STALE_MS;
+  const configured = Number.isFinite(minutes) && minutes > 0 ? minutes * 60_000 : DEFAULT_SIGNAL_STALE_MS;
+  const intervalMs = timeframeSeconds(timeframe) * 1000;
+  return Math.max(configured, intervalMs * 2 + 10 * 60_000);
 }
 
 function barTimeMs(bar: Bar): number | null {
@@ -117,9 +125,9 @@ function latestBarMs(bars: Bar[]): number | null {
   return latest;
 }
 
-function hasFreshSignalBars(bars: Bar[]): boolean {
+function hasFreshSignalBars(bars: Bar[], timeframe: DataTimeframe): boolean {
   const latest = latestBarMs(bars);
-  return latest != null && Date.now() - latest <= signalStaleMs();
+  return latest != null && Date.now() - latest <= signalStaleMs(timeframe);
 }
 
 function mergeBars(storedBars: Bar[], liveBars: Bar[], limit: number): Bar[] {
@@ -192,26 +200,31 @@ async function loadStoredBars(relativePath: string, limit: number, tailBytes: nu
   return readCachedBars(relativePath, limit);
 }
 
-export async function fetchStoredAssetBars(assetKey: string, limit = DEFAULT_BAR_LIMIT): Promise<Bar[]> {
+export async function fetchStoredAssetBars(
+  assetKey: string,
+  limit = DEFAULT_BAR_LIMIT,
+  timeframe: DataTimeframe = DEFAULT_STRATEGY_TIMEFRAME
+): Promise<Bar[]> {
   const asset = assetForKey(assetKey);
-  const relativePath = `15m/${asset.dataFile}`;
+  const relativePath = `${timeframe}/${asset.dataFile}`;
   const tailBytes = Math.max(MIN_TAIL_BYTES, limit * 128);
   const bars = await loadStoredBars(relativePath, limit, tailBytes);
 
   if (bars.length < Math.min(limit, 260)) {
-    throw new Error(`Stored 15m data for ${asset.symbol} only had ${bars.length} readable bars.`);
+    throw new Error(`Stored ${timeframe} data for ${asset.symbol} only had ${bars.length} readable bars.`);
   }
 
   return bars;
 }
 
 export async function fetchStoredMarketBars(rule: StrategyRule, limit = DEFAULT_BAR_LIMIT): Promise<Bar[]> {
+  const timeframe = timeframeFromVariant(rule.variantId, DEFAULT_STRATEGY_TIMEFRAME);
   let storedBars: Bar[] = [];
   let storedError: unknown;
 
   try {
-    storedBars = await fetchStoredAssetBars(rule.assetKey, limit);
-    if (hasFreshSignalBars(storedBars)) return storedBars;
+    storedBars = await fetchStoredAssetBars(rule.assetKey, limit, timeframe);
+    if (hasFreshSignalBars(storedBars, timeframe)) return storedBars;
   } catch (error) {
     storedError = error;
   }
@@ -220,20 +233,20 @@ export async function fetchStoredMarketBars(rule: StrategyRule, limit = DEFAULT_
     const latestStored = latestBarMs(storedBars);
     const liveBars = await fetchMarketBars(rule, latestStored ? { afterSeconds: Math.floor(latestStored / 1000) } : {});
     const merged = mergeBars(storedBars, liveBars, limit);
-    if (merged.length >= Math.min(limit, 260) && hasFreshSignalBars(merged)) return merged;
+    if (merged.length >= Math.min(limit, 260) && hasFreshSignalBars(merged, timeframe)) return merged;
     const latest = latestBarMs(merged);
     throw new Error(
       latest
-        ? `Live data for ${rule.symbol} is stale; latest 15m bar is ${new Date(latest).toISOString()}.`
-        : `Live data for ${rule.symbol} did not include readable 15m bars.`
+        ? `Live data for ${rule.symbol} is stale; latest ${timeframe} bar is ${new Date(latest).toISOString()}.`
+        : `Live data for ${rule.symbol} did not include readable ${timeframe} bars.`
     );
   } catch (error) {
     if (storedBars.length >= Math.min(limit, 260)) {
       const latest = latestBarMs(storedBars);
       throw new Error(
         latest
-          ? `Stored data for ${rule.symbol} is stale at ${new Date(latest).toISOString()} and provider refresh failed: ${error instanceof Error ? error.message : "Unknown provider error"}`
-          : `Stored data for ${rule.symbol} had no readable timestamps and provider refresh failed: ${error instanceof Error ? error.message : "Unknown provider error"}`
+          ? `Stored ${timeframe} data for ${rule.symbol} is stale at ${new Date(latest).toISOString()} and provider refresh failed: ${error instanceof Error ? error.message : "Unknown provider error"}`
+          : `Stored ${timeframe} data for ${rule.symbol} had no readable timestamps and provider refresh failed: ${error instanceof Error ? error.message : "Unknown provider error"}`
       );
     }
     if (storedError instanceof Error) throw storedError;

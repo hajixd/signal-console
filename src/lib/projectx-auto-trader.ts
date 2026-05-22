@@ -88,6 +88,7 @@ const CONTRACT_SEARCH_OVERRIDES: Record<string, string> = {
   ZT: "ZT",
   ZW: "ZW"
 };
+const FUTURES_MONTH_CODES = "FGHJKMNQUVXZ";
 
 function envFlag(name: string, fallback: boolean): boolean {
   const value = process.env[name]?.trim().toLowerCase();
@@ -161,6 +162,14 @@ function wholeNumber(value: number | undefined, label: string): number {
   return rounded;
 }
 
+function signedWholeNumber(value: number, label: string): number {
+  const rounded = Math.round(value);
+  if (!Number.isFinite(value) || Math.abs(value - rounded) > 1e-6 || rounded === 0) {
+    throw new Error(`${label} must be a non-zero whole number for ProjectX orders.`);
+  }
+  return rounded;
+}
+
 function positiveNumber(value: number | undefined, label: string): number {
   if (typeof value !== "number" || !Number.isFinite(value) || value <= 0) {
     throw new Error(`${label} must be a positive number.`);
@@ -196,21 +205,63 @@ function uniqueSearchTexts(values: Array<string | undefined>): string[] {
     });
 }
 
-function contractSearchTextsForTrade(trade: TradeAlert): string[] {
+function futuresRootFromContractSymbol(symbol: string): string | undefined {
+  const normalizedSymbol = symbol.trim().toUpperCase();
+  const roots = Object.keys(CONTRACT_SEARCH_OVERRIDES).sort((left, right) => right.length - left.length);
+  return roots.find((root) => {
+    const suffix = normalizedSymbol.slice(root.length);
+    return (
+      normalizedSymbol.startsWith(root) &&
+      suffix.length >= 2 &&
+      suffix.length <= 3 &&
+      FUTURES_MONTH_CODES.includes(suffix[0] ?? "") &&
+      /^\d{1,2}$/.test(suffix.slice(1))
+    );
+  });
+}
+
+export function contractSearchTextsForTrade(trade: Pick<TradeAlert, "assetKey" | "symbol">): string[] {
   const symbol = trade.symbol.trim().toUpperCase();
   const overrides = parseContractOverrides();
 
   const asset = trade.assetKey ? assetForKey(trade.assetKey) : assetForSymbol(symbol);
+  const assetSymbol = asset?.symbol.trim().toUpperCase();
+  const contractRoot = futuresRootFromContractSymbol(symbol);
   const sizeRoot = asset?.sizeLabel.match(/^\s*\d+(?:\.\d+)?\s+([A-Z][A-Z0-9]{1,4})\b/)?.[1];
   const usableSizeRoot = sizeRoot && !["CONTRACT", "FUTURE", "FX", "MICRO", "MINI"].includes(sizeRoot) ? sizeRoot : undefined;
 
   return uniqueSearchTexts([
     overrides[symbol],
+    assetSymbol ? overrides[assetSymbol] : undefined,
+    symbol.length > 2 ? symbol : undefined,
+    contractRoot,
+    contractRoot ? CONTRACT_SEARCH_OVERRIDES[contractRoot] : undefined,
     usableSizeRoot,
     CONTRACT_SEARCH_OVERRIDES[symbol],
+    assetSymbol ? CONTRACT_SEARCH_OVERRIDES[assetSymbol] : undefined,
+    assetSymbol ? assetLookupSymbolForSymbol(assetSymbol) : undefined,
+    assetSymbol,
     assetLookupSymbolForSymbol(symbol),
     symbol
   ]);
+}
+
+export function projectXBracketTicksForTrade(
+  trade: Pick<TradeAlert, "entryPrice" | "side" | "slUnits" | "stopLossPrice" | "takeProfitPrice" | "tpUnits">
+): { stopLossTicks: number; takeProfitTicks: number } {
+  const direction = trade.side === "long" ? 1 : -1;
+  const takeProfitDistance = direction * (trade.takeProfitPrice - trade.entryPrice);
+  const stopLossDistance = direction * (trade.entryPrice - trade.stopLossPrice);
+  if (!(takeProfitDistance > 0 && stopLossDistance > 0)) {
+    throw new Error(`Invalid ${trade.side} ProjectX bracket geometry: TP/SL must be on the correct side of entry.`);
+  }
+
+  const stopLossTicks = wholeNumber(Math.abs(trade.slUnits), "Stop-loss ticks");
+  const takeProfitTicks = wholeNumber(Math.abs(trade.tpUnits), "Take-profit ticks");
+  return {
+    stopLossTicks: signedWholeNumber(-direction * stopLossTicks, "Signed stop-loss ticks"),
+    takeProfitTicks: signedWholeNumber(direction * takeProfitTicks, "Signed take-profit ticks")
+  };
 }
 
 function contractScore(contract: ProjectXContract, searchText: string): number {
@@ -350,8 +401,7 @@ export async function executeProjectXAutoTrade(trade: TradeAlert): Promise<Proje
     if (!contract) return result("failed", { error: `No ProjectX contract found for ${contractLookup.searchTexts.join(", ")}.` });
 
     const baseSize = positiveNumber(trade.sizeMultiplier ?? 1, "Order size");
-    const stopLossTicks = wholeNumber(Math.abs(trade.slUnits), "Stop-loss ticks");
-    const takeProfitTicks = wholeNumber(Math.abs(trade.tpUnits), "Take-profit ticks");
+    const { stopLossTicks, takeProfitTicks } = projectXBracketTicksForTrade(trade);
     const entryType: ProjectXOrderType = trade.entryType === "limit" ? 1 : 2;
     const side: ProjectXOrderSide = trade.side === "long" ? 0 : 1;
     const orders: AutoTradeOrderSummary[] = [];

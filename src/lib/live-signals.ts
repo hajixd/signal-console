@@ -6,10 +6,14 @@ import { getLiveConfig, type SavedStrategyEdit } from "@/lib/live-config";
 import { STRATEGY_DEFINITIONS } from "@/lib/strategy-loader";
 import { conciseStrategyName } from "@/lib/strategy-names";
 import type { StrategySignal } from "@/lib/strategy-definition";
+import { DEFAULT_STRATEGY_TIMEFRAME, isDataTimeframe, timeframeFromVariant } from "@/lib/timeframes";
 import { planTradeAlert } from "@/lib/trade-planner";
 import type { Bar, StrategyRule, TradeAlert } from "@/lib/types";
 
-const NEXT_BAR_ENTRY_MODE = "market order enters on the next 15m open";
+function nextBarEntryMode(rule: StrategyRule): string {
+  const timeframe = timeframeFromVariant(rule.variantId, DEFAULT_STRATEGY_TIMEFRAME);
+  return `market order enters on the next ${timeframe} open`;
+}
 const MINIMUM_SIGNAL_BARS = 260;
 
 function betterRule(nextRule: StrategyRule, currentRule: StrategyRule): boolean {
@@ -105,7 +109,7 @@ function explicitRuleTimeframe(rule: StrategyRule): string | null {
 
 function isSupportedLiveTimeframe(rule: StrategyRule): boolean {
   const timeframe = explicitRuleTimeframe(rule);
-  return !timeframe || timeframe === "15m";
+  return !timeframe || isDataTimeframe(timeframe);
 }
 
 function finiteNumber(value: number | null | undefined): value is number {
@@ -253,7 +257,7 @@ export function evaluateRecentSignals(
     const rawSignal = strategy.evaluator(rule, bars, signalIndex);
     if (!rawSignal) continue;
     const signal = invertStrategySignal(rule, rawSignal);
-    const planned = planTradeAlert(rule, signal, bars, signalIndex, NEXT_BAR_ENTRY_MODE);
+    const planned = planTradeAlert(rule, signal, bars, signalIndex, nextBarEntryMode(rule));
     if (planned) signals.push(planned);
   }
 

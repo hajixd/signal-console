@@ -1,4 +1,5 @@
 import assetsJson from "@config/assets.json";
+export { DATA_TIMEFRAMES, type DataTimeframe } from "@/lib/timeframes";
 
 export type Market = "futures" | "forex" | "gold_spot" | "crypto";
 
@@ -24,9 +25,6 @@ const ASSET_ENTRIES = Object.entries(assetsJson as Record<string, Omit<AssetDefi
 
 export const ASSET_LIST = [...ASSET_ENTRIES].sort((left, right) => left.name.localeCompare(right.name, "en-US", { sensitivity: "base" }));
 export const ASSET_KEYS = ASSET_LIST.map((asset) => asset.key);
-export const DATA_TIMEFRAMES = ["1m", "5m", "15m", "30m", "45m", "1h", "4h", "1d", "1w"] as const;
-export type DataTimeframe = (typeof DATA_TIMEFRAMES)[number];
-
 const ASSET_BY_KEY = new Map(ASSET_LIST.map((asset) => [asset.key, asset]));
 const ASSET_BY_SYMBOL = new Map(ASSET_LIST.map((asset) => [asset.symbol, asset]));
 const FUTURES_LOOKUP_SYMBOL_BY_SYMBOL: Record<string, string> = {

@@ -19,7 +19,7 @@ type RefreshPlan = {
   strategyCount: number;
 };
 
-const DERIVED_FROM_15M = new Set(["15m", "30m", "45m", "1h", "4h", "1d", "1w"]);
+const DERIVED_FROM_5M = new Set(["10m", "15m", "30m", "45m", "1h", "4h", "1d", "1w"]);
 const METADATA_RELATIVE_PATHS = [
   path.join("machine_learning", "selection.json"),
   path.join("bayes", "selection.json"),
@@ -94,13 +94,13 @@ async function buildPlan(): Promise<RefreshPlan> {
     sourceAssetKeys.push(assetKey);
     backtestCsvPaths.push(path.posix.join("strategy", strategyFolder, "backtest_trades.csv"));
 
-    if (!DERIVED_FROM_15M.has(timeframe)) {
+    if (!DERIVED_FROM_5M.has(timeframe)) {
       nativeDataPaths.push(path.posix.join("data", timeframe, asset.dataFile));
     }
   }
 
   const sourceDataPaths = uniqueSorted(
-    sourceAssetKeys.map((assetKey) => path.posix.join("data", "15m", assets[assetKey]!.dataFile))
+    sourceAssetKeys.map((assetKey) => path.posix.join("data", "5m", assets[assetKey]!.dataFile))
   );
   const nativePaths = uniqueSorted(nativeDataPaths);
 

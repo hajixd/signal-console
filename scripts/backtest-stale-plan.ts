@@ -51,7 +51,7 @@ type StalePlan = {
 const DEFAULT_DATA_TAIL_STATE_PATH = ".local/data-tail-state.json";
 const DEFAULT_MANIFEST_PATH = "cache/backtest-manifest.json";
 const DEFAULT_STALE_TOLERANCE_SECONDS = 60;
-const DERIVED_FROM_15M = new Set(["15m", "30m", "45m", "1h", "4h", "1d", "1w"]);
+const DERIVED_FROM_5M = new Set(["10m", "15m", "30m", "45m", "1h", "4h", "1d", "1w"]);
 
 function argumentValue(name: string): string | undefined {
   const raw = process.argv.find((value) => value.startsWith(`--${name}=`));
@@ -134,7 +134,7 @@ function isoFromSeconds(value: number | undefined): string | undefined {
 
 function dataPathForStrategy(strategy: (typeof STRATEGY_DEFINITIONS)[number], timeframe: string): string {
   const assets = assetsJson as Record<string, AssetDefinition>;
-  const pullTimeframe = DERIVED_FROM_15M.has(timeframe) ? "15m" : timeframe;
+  const pullTimeframe = DERIVED_FROM_5M.has(timeframe) ? "5m" : timeframe;
   return path.posix.join("data", pullTimeframe, assets[strategy.assetKey]?.dataFile ?? `${strategy.assetKey}.csv`);
 }
 
@@ -214,8 +214,8 @@ function buildIncrementalStartState(plan: StalePlan): DataTailState {
   for (const strategy of plan.staleStrategies) {
     if (typeof strategy.previousComputedTime !== "number" || !Number.isFinite(strategy.previousComputedTime)) continue;
     record(strategy.assetKey, strategy.timeframe, strategy.previousComputedTime);
-    if (DERIVED_FROM_15M.has(strategy.timeframe)) {
-      record(strategy.assetKey, "15m", strategy.previousComputedTime);
+    if (DERIVED_FROM_5M.has(strategy.timeframe)) {
+      record(strategy.assetKey, "5m", strategy.previousComputedTime);
     }
   }
 

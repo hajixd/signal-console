@@ -9,7 +9,7 @@ export const runtime = "nodejs";
 
 const RESEARCH_ROOT = path.join(process.cwd(), "Research");
 const IDEA_STATUSES = ["inbox", "approved"] as const;
-const SUPPORTED_TIMEFRAMES = new Set(["1m", "5m", "15m", "30m", "45m", "1h", "4h", "1d", "overnight"]);
+const SUPPORTED_TIMEFRAMES = new Set(["1m", "5m", "10m", "15m", "30m", "45m", "1h", "4h", "1d", "overnight"]);
 const URL_PATTERN = /https?:\/\/[^\s<>"')\]]+/g;
 
 type IdeaStatus = (typeof IDEA_STATUSES)[number];
