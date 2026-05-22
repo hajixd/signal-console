@@ -44,10 +44,13 @@ type DollarAggregate = {
   medianWinDurationMs: number;
   medianLossDurationMs: number;
   avgBarsHeld: number;
+  maxBarsHeld: number;
   longestDurationMs: number;
   maxDailyDrawdownDollars: number;
   avgDailyDollars: number;
+  bestTradeDollars: number;
   bestDayDollars: number;
+  worstTradeDollars: number;
   worstDayDollars: number;
   activeDays: number;
   winningDays: number;
@@ -221,12 +224,14 @@ function aggregateDollars(trades: BasketTrade[], pnlForTrade: (trade: BasketTrad
   const winDurationsMs: number[] = [];
   const lossDurationsMs: number[] = [];
   const barsHeld: number[] = [];
+  const tradePnlDollars: number[] = [];
 
   for (const trade of trades) {
     const pnl = pnlForTrade(trade);
     const result = trade.rMultiple;
     const durationMs = tradeDurationMs(trade);
     totalDollars += pnl;
+    tradePnlDollars.push(pnl);
     if (durationMs > 0) durationsMs.push(durationMs);
     if (Number.isFinite(trade.barsHeld) && trade.barsHeld > 0) barsHeld.push(trade.barsHeld);
     const dayKey = localTradeDayKey(trade.exitTime);
@@ -273,10 +278,13 @@ function aggregateDollars(trades: BasketTrade[], pnlForTrade: (trade: BasketTrad
     medianWinDurationMs: median(winDurationsMs),
     medianLossDurationMs: median(lossDurationsMs),
     avgBarsHeld: mean(barsHeld),
+    maxBarsHeld: Math.max(0, ...barsHeld),
     longestDurationMs: Math.max(0, ...durationsMs),
     maxDailyDrawdownDollars: Math.max(0, ...dailyCurve.map((point) => point.drawdown)),
     avgDailyDollars: averageDailyPnl,
+    bestTradeDollars: tradePnlDollars.length ? Math.max(...tradePnlDollars) : 0,
     bestDayDollars: Math.max(0, ...activeDailyValues),
+    worstTradeDollars: tradePnlDollars.length ? Math.min(...tradePnlDollars) : 0,
     worstDayDollars: Math.min(0, ...activeDailyValues),
     activeDays: dailyPnl.size,
     winningDays: activeDailyValues.filter((value) => value > 0).length,
@@ -469,6 +477,22 @@ export default function SelectedStrategyStats({ dataEndAt, strategies, trades, p
       <div className="backtest-stat-card tone-neutral">
         <span>Longest trade</span>
         <strong>{selectedDollarAggregate.trades ? fmtDurationMs(selectedDollarAggregate.longestDurationMs) : "--"}</strong>
+      </div>
+      <div className="backtest-stat-card tone-neutral">
+        <span>Active days</span>
+        <strong>{selectedDollarAggregate.trades ? fmtNumber(selectedDollarAggregate.activeDays) : "--"}</strong>
+      </div>
+      <div className={`backtest-stat-card ${statTone(selectedDollarAggregate.bestTradeDollars)}`}>
+        <span>Best trade</span>
+        <strong>{selectedDollarAggregate.trades ? fmtMoney(selectedDollarAggregate.bestTradeDollars, true) : "--"}</strong>
+      </div>
+      <div className={`backtest-stat-card ${statTone(selectedDollarAggregate.worstTradeDollars)}`}>
+        <span>Worst trade</span>
+        <strong>{selectedDollarAggregate.trades ? fmtMoney(selectedDollarAggregate.worstTradeDollars) : "--"}</strong>
+      </div>
+      <div className="backtest-stat-card tone-neutral">
+        <span>Max bars held</span>
+        <strong>{selectedDollarAggregate.trades ? fmtNumber(selectedDollarAggregate.maxBarsHeld) : "--"}</strong>
       </div>
         </>
       ) : null}
