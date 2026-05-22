@@ -14,6 +14,7 @@ import AutoRefresh from "@/components/ui/auto-refresh";
 import DashboardSectionTabs, { type DashboardSectionTab } from "@/components/ui/dashboard-section-tabs";
 import LocalDateTime from "@/components/ui/local-date-time";
 import MarketSwitchTabs from "@/components/ui/market-switch-tabs";
+import MobileTradingDashboard from "@/components/ui/mobile-trading-dashboard";
 import TestAlertButton from "@/components/ui/test-alert-button";
 import ThemeToggle from "@/components/ui/theme-toggle";
 import {
@@ -2044,7 +2045,18 @@ export default async function Home({ searchParams }: HomeProps) {
   ];
 
   return (
-    <main className="terminal">
+    <>
+    <MobileTradingDashboard
+      activeMarket={activeMarket}
+      historyRows={visibleTradeHistoryRows}
+      initialTheme={liveConfig.dashboardSettings.theme}
+      latestHistoryTradeAt={latestHistoryTradeAt}
+      latestLiveAlertAt={latestActiveMarketSignalAt}
+      liveAlertRows={liveHistoryRows}
+      marketLabel={marketLabel(activeMarket)}
+      telegramGroupLink={telegramGroupLink}
+    />
+    <main className="terminal desktopTradingWorkspace">
       <AutoRefresh />
       <AutoTradeAccountGate />
       <section className="terminal-workspace marketView" id="signals" key={activeMarket}>
@@ -2459,5 +2471,6 @@ export default async function Home({ searchParams }: HomeProps) {
         </DashboardSectionTabs>
       </section>
     </main>
+    </>
   );
 }

@@ -12128,3 +12128,657 @@ html[data-theme="light"] .tradeReplaySlider input::-webkit-slider-thumb {
     color: rgba(15, 23, 42, 0.94);
   }
 }
+
+.mobileTradingWorkspace {
+  display: none;
+}
+
+@media (max-width: 680px) {
+  .desktopTradingWorkspace {
+    display: none;
+  }
+
+  .mobileTradingWorkspace.mobile-phone-shell {
+    position: relative;
+    display: block;
+    overflow: hidden;
+    min-height: 100dvh;
+    height: 100dvh;
+    background: #000;
+    color: #f4f8f3;
+  }
+
+  .mobile-phone-frame {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-width: none;
+    min-height: 100dvh;
+    height: 100dvh;
+    margin: 0 auto;
+    padding:
+      calc(env(safe-area-inset-top, 0px) + 0.58rem)
+      1rem
+      max(calc(env(safe-area-max-inset-bottom, env(safe-area-inset-bottom, 0px)) + 0.72rem), 1.05rem);
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    gap: 0.44rem;
+    overflow: hidden;
+  }
+
+  .mobile-phone-header {
+    display: grid;
+    gap: 0.34rem;
+  }
+
+  .mobile-phone-brand-row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: flex-start;
+    gap: 0.8rem;
+  }
+
+  .mobile-phone-brand-row-centered {
+    justify-content: center;
+  }
+
+  .mobile-phone-brand-copy {
+    min-width: 0;
+    display: grid;
+    gap: 0.26rem;
+  }
+
+  .mobile-phone-brand-copy-centered {
+    width: 100%;
+    justify-items: center;
+    text-align: center;
+  }
+
+  .mobile-phone-card-kicker,
+  .mobile-phone-tab-label,
+  .mobile-phone-count-chip,
+  .mobile-phone-sync-pill {
+    font-family: "Soehne", "Avenir Next", "Segoe UI", sans-serif;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .mobile-phone-card-kicker {
+    color: rgba(244, 248, 243, 0.5);
+    font-size: 0.48rem;
+    font-weight: 600;
+  }
+
+  .mobile-phone-brand-copy h1 {
+    margin: 0;
+    color: #f8fbf7;
+    font-size: clamp(1.16rem, 5.4vw, 1.38rem);
+    line-height: 1;
+    letter-spacing: 0;
+  }
+
+  .mobile-phone-header-date {
+    margin: 0;
+    color: rgba(234, 239, 232, 0.56);
+    font-size: 0.62rem;
+    font-weight: 600;
+    line-height: 1.2;
+  }
+
+  .mobile-phone-header-time-row {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 0.38rem;
+  }
+
+  .mobile-phone-header-time {
+    color: rgba(248, 251, 247, 0.92);
+    font-size: 0.74rem;
+    font-weight: 600;
+    line-height: 1;
+    letter-spacing: 0;
+  }
+
+  .mobile-phone-header-time-badge {
+    min-height: 20px;
+    padding: 0 0.42rem;
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    background: rgba(255, 255, 255, 0.03);
+    color: rgba(233, 238, 232, 0.74);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.45rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .mobile-phone-header-time-badge.live {
+    border-color: rgba(88, 233, 116, 0.16);
+    background: rgba(88, 233, 116, 0.08);
+    color: #8df4a8;
+  }
+
+  .mobile-phone-body {
+    min-height: 0;
+    overflow: hidden;
+    display: flex;
+    width: 100%;
+  }
+
+  .mobile-phone-card {
+    flex: 1 1 auto;
+    width: 100%;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.72rem;
+    padding: 0.08rem 0 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    overflow: hidden;
+  }
+
+  .mobile-phone-card-head,
+  .mobile-phone-history-main {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.8rem;
+  }
+
+  .mobile-phone-card-copy {
+    min-width: 0;
+    display: grid;
+    gap: 0.18rem;
+  }
+
+  .mobile-phone-card-copy h2,
+  .mobile-phone-empty-state h2 {
+    margin: 0;
+    color: #fbfdfb;
+    letter-spacing: 0;
+  }
+
+  .mobile-phone-card-copy h2 {
+    font-size: 0.88rem;
+    line-height: 0.98;
+  }
+
+  .mobile-phone-count-chip {
+    flex: 0 0 auto;
+    min-height: 22px;
+    padding: 0 0.52rem;
+    border: 1px solid rgba(88, 233, 116, 0.16);
+    border-radius: 999px;
+    background: rgba(88, 233, 116, 0.08);
+    color: #8df4a8;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.44rem;
+    font-weight: 700;
+  }
+
+  .mobile-phone-shell .up {
+    color: #84f5a8;
+  }
+
+  .mobile-phone-shell .down {
+    color: #ff9198;
+  }
+
+  .mobile-phone-shell .neutral {
+    color: rgba(244, 248, 243, 0.72);
+  }
+
+  .mobile-phone-history-list {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    display: grid;
+    gap: 0;
+    padding-right: 0;
+    scrollbar-width: none;
+  }
+
+  .mobile-phone-history-list::-webkit-scrollbar {
+    display: none;
+  }
+
+  .mobile-phone-history-row,
+  .mobile-phone-action-btn {
+    width: 100%;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.03);
+    color: inherit;
+    transition:
+      transform 140ms ease,
+      border-color 140ms ease,
+      background 140ms ease;
+  }
+
+  .mobile-phone-history-row {
+    position: relative;
+    border-radius: 0;
+    border-right: 0;
+    border-left: 0;
+    padding: 0.82rem 0;
+    display: grid;
+    gap: 0.5rem;
+    text-align: left;
+  }
+
+  .mobile-phone-history-row:first-child {
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .mobile-phone-history-copy {
+    min-width: 0;
+    display: grid;
+    gap: 0.16rem;
+  }
+
+  .mobile-phone-history-copy strong,
+  .mobile-phone-history-values strong,
+  .mobile-phone-account-copy strong,
+  .mobile-phone-action-btn strong,
+  .mobile-phone-mode-button {
+    color: #f9fcf8;
+    letter-spacing: 0;
+  }
+
+  .mobile-phone-history-copy strong {
+    overflow: hidden;
+    font-size: 0.88rem;
+    line-height: 1.02;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .mobile-phone-history-copy span,
+  .mobile-phone-history-meta span,
+  .mobile-phone-account-copy span,
+  .mobile-phone-account-copy small,
+  .mobile-phone-action-btn span,
+  .mobile-phone-empty-state p {
+    color: rgba(228, 234, 227, 0.6);
+    font-size: 0.62rem;
+    line-height: 1.32;
+  }
+
+  .mobile-phone-history-values {
+    flex: 0 0 auto;
+    min-width: 0;
+    display: grid;
+    justify-items: end;
+    gap: 0.16rem;
+    padding-right: 12px;
+  }
+
+  .mobile-phone-history-values strong {
+    font-size: 0.9rem;
+    line-height: 1;
+  }
+
+  .mobile-phone-history-values span {
+    font-size: 0.6rem;
+    font-weight: 700;
+  }
+
+  .mobile-phone-history-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+  }
+
+  .mobile-phone-history-meta span {
+    min-height: 24px;
+    padding: 0 0.48rem;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.012);
+    display: inline-flex;
+    align-items: center;
+    font-size: 0.56rem;
+  }
+
+  .mobile-phone-history-rail {
+    position: absolute;
+    top: 9px;
+    right: 0;
+    bottom: 9px;
+    width: 5px;
+    pointer-events: none;
+  }
+
+  .mobile-phone-history-rail.tp {
+    background: #62ef8a;
+  }
+
+  .mobile-phone-history-rail.sl {
+    background: #ff6d76;
+  }
+
+  .mobile-phone-history-rail.model-win {
+    background: #f0d85b;
+  }
+
+  .mobile-phone-history-rail.model-loss {
+    background: #ff9d3b;
+  }
+
+  .mobile-phone-empty-state {
+    flex: 1 1 auto;
+    display: grid;
+    align-content: start;
+    gap: 0.42rem;
+    padding: 0.88rem 0 0.2rem;
+  }
+
+  .mobile-phone-empty-state h2 {
+    font-size: 1.34rem;
+    line-height: 0.96;
+  }
+
+  .mobile-phone-account-card {
+    display: flex;
+    align-items: center;
+    gap: 0.88rem;
+    padding: 0.24rem 0 0.86rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .mobile-phone-account-avatar {
+    flex: 0 0 auto;
+    width: 48px;
+    height: 48px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.02);
+    color: rgba(245, 250, 246, 0.92);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    font-weight: 900;
+    letter-spacing: 0;
+  }
+
+  .mobile-phone-account-copy {
+    min-width: 0;
+    display: grid;
+    gap: 0.16rem;
+  }
+
+  .mobile-phone-account-copy strong {
+    font-size: 0.88rem;
+    line-height: 1;
+  }
+
+  .mobile-phone-action-list,
+  .mobile-phone-detail-list {
+    display: grid;
+    gap: 0;
+  }
+
+  .mobile-phone-card-settings .mobile-phone-action-list {
+    margin-top: 0.3rem;
+    overflow-y: auto;
+    border-top: 1px solid rgba(255, 255, 255, 0.07);
+    scrollbar-width: none;
+  }
+
+  .mobile-phone-card-settings .mobile-phone-action-list::-webkit-scrollbar {
+    display: none;
+  }
+
+  .mobile-phone-action-btn {
+    border-radius: 0;
+    border-right: 0;
+    border-left: 0;
+    padding: 0.92rem 0;
+    display: grid;
+    gap: 0.2rem;
+    text-align: left;
+    text-decoration: none;
+    cursor: pointer;
+  }
+
+  .mobile-phone-action-btn strong {
+    font-size: 0.88rem;
+    line-height: 1.1;
+  }
+
+  .mobile-phone-toggle-row,
+  .mobile-phone-mode-card {
+    min-height: 54px;
+    padding: 0.74rem 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    display: grid;
+    gap: 0.68rem;
+  }
+
+  .mobile-phone-theme-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+  }
+
+  .mobile-phone-toggle-copy {
+    display: grid;
+    gap: 0.18rem;
+  }
+
+  .mobile-phone-toggle-copy strong {
+    color: #f9fcf8;
+    font-size: 0.88rem;
+    line-height: 1.1;
+  }
+
+  .mobile-phone-toggle-copy small {
+    color: rgba(211, 220, 214, 0.62);
+    font-size: 0.7rem;
+    line-height: 1.25;
+  }
+
+  .mobile-phone-mode-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.62rem;
+  }
+
+  .mobile-phone-mode-button,
+  .mobile-phone-mode-pin button {
+    min-height: 42px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.04);
+    color: #f9fcf8;
+    font-size: 0.82rem;
+    font-weight: 700;
+  }
+
+  .mobile-phone-mode-button.active,
+  .mobile-phone-mode-pin button:not(:disabled) {
+    border-color: rgba(88, 233, 116, 0.18);
+    background: rgba(88, 233, 116, 0.08);
+    color: #8df4a8;
+  }
+
+  .mobile-phone-mode-pin {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 0.52rem;
+  }
+
+  .mobile-phone-mode-pin input {
+    min-width: 0;
+    min-height: 42px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.03);
+    color: #f8fbf7;
+    padding: 0 0.72rem;
+    font-size: 0.82rem;
+  }
+
+  .mobile-phone-mode-pin small {
+    grid-column: 1 / -1;
+    color: #ff9198;
+    font-size: 0.66rem;
+  }
+
+  .mobile-phone-theme-row .themeToggle {
+    width: 58px;
+    min-width: 58px;
+    height: 34px;
+    min-height: 34px;
+    border-radius: 999px;
+  }
+
+  .mobile-phone-autotrade-stack {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    display: grid;
+    align-content: start;
+    gap: 0.72rem;
+    padding: 0 0 0.12rem;
+    scrollbar-width: none;
+  }
+
+  .mobile-phone-autotrade-stack::-webkit-scrollbar {
+    display: none;
+  }
+
+  .mobile-phone-card-autotrade .topstepConnection {
+    display: grid;
+    gap: 0.72rem;
+  }
+
+  .mobile-phone-card-autotrade .topstepConnectionSummary,
+  .mobile-phone-card-autotrade .topstepConnectionHero,
+  .mobile-phone-card-autotrade .topstepConnectForm,
+  .mobile-phone-card-autotrade .topstepAccountRow,
+  .mobile-phone-card-autotrade .topstepAccountFolderButton,
+  .mobile-phone-card-autotrade .topstepAccountFolderPage,
+  .mobile-phone-card-autotrade .topstepConnectionFoot,
+  .mobile-phone-card-autotrade .autoTradeProviderOption,
+  .mobile-phone-card-autotrade .topstepAccountEmpty,
+  .mobile-phone-card-autotrade .autoTradeFolderGate {
+    border-radius: 0;
+    border-right: 0;
+    border-left: 0;
+    background: rgba(255, 255, 255, 0.03);
+    box-shadow: none;
+  }
+
+  .mobile-phone-card-autotrade .topstepConnectForm input,
+  .mobile-phone-card-autotrade .topstepConnectForm select,
+  .mobile-phone-card-autotrade .autoTradeSelectControl select,
+  .mobile-phone-card-autotrade .autoTradeFolderGate input:not(.autoTradePinHidden) {
+    min-height: 42px;
+    border-radius: 12px;
+  }
+
+  .mobile-phone-card-autotrade .topstepConnectionActions,
+  .mobile-phone-card-autotrade .autoTradeModeStrip,
+  .mobile-phone-card-autotrade .autoTradeSelectGrid,
+  .mobile-phone-card-autotrade .topstepConnectForm {
+    grid-template-columns: 1fr;
+  }
+
+  .mobile-phone-card-autotrade .topstepConnectionActions button,
+  .mobile-phone-card-autotrade .topstepConnectForm button,
+  .mobile-phone-card-autotrade .topstepAccountControls button,
+  .mobile-phone-card-autotrade .autoTradeFolderGate button {
+    min-height: 40px;
+    border-radius: 12px;
+  }
+
+  .mobile-phone-tabbar {
+    padding:
+      0.3rem 0
+      max(calc(env(safe-area-max-inset-bottom, env(safe-area-inset-bottom, 0px)) * 0.22), 0.22rem);
+    border-top: 1px solid rgba(255, 255, 255, 0.07);
+    border-radius: 0;
+    background: #000;
+    box-shadow: none;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0.18rem;
+    align-self: end;
+  }
+
+  .mobile-phone-tab {
+    min-height: 48px;
+    border: 0;
+    border-radius: 12px;
+    background: transparent;
+    color: rgba(230, 236, 229, 0.45);
+    display: grid;
+    justify-items: center;
+    align-content: center;
+    gap: 0.18rem;
+    cursor: pointer;
+    transition:
+      color 140ms ease,
+      background 140ms ease,
+      transform 140ms ease;
+  }
+
+  .mobile-phone-tab.active {
+    background: rgba(89, 240, 116, 0.05);
+    color: #8ef790;
+  }
+
+  .mobile-phone-tab-icon {
+    width: 17px;
+    height: 17px;
+    display: inline-flex;
+  }
+
+  .mobile-phone-tab-icon svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+
+  .mobile-phone-tab-label {
+    max-width: 100%;
+    overflow: hidden;
+    font-size: 0.39rem;
+    font-weight: 700;
+    line-height: 1;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .mobile-phone-history-row:hover,
+  .mobile-phone-action-btn:hover,
+  .mobile-phone-tab:hover {
+    transform: translateY(-1px);
+  }
+}
+
+@media (max-width: 460px) {
+  .mobile-phone-frame {
+    padding:
+      calc(env(safe-area-inset-top, 0px) + 0.5rem)
+      0.78rem
+      max(calc(env(safe-area-max-inset-bottom, env(safe-area-inset-bottom, 0px)) + 0.72rem), 1.05rem);
+  }
+
+  .mobile-phone-brand-copy h1 {
+    font-size: clamp(1.08rem, 5.2vw, 1.24rem);
+  }
+
+  .mobile-phone-card {
+    gap: 0.68rem;
+  }
+}
