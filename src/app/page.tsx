@@ -2189,21 +2189,25 @@ export default async function Home({ searchParams }: HomeProps) {
                 </colgroup>
                 <thead>
                   <tr>
-                    <th>#</th>
-                    <th>Ticker</th>
-                    <th>Model</th>
-                    <th>Event</th>
-                    <th>Direction</th>
-                    <th>Entry</th>
-                    <th>Size</th>
-                    <th>Exit</th>
-                    <th>Take Profit</th>
-                    <th>Stop Loss</th>
-                    <th>Target $</th>
-                    <th>Risk $</th>
-                    <th>Odds</th>
-                    <th>Auto Trade</th>
-                    <th>Telegram</th>
+                    <th className="cronTradeHeaderCell" colSpan={15}>
+                      <span className="cronTradeHeaderGrid">
+                        <span>#</span>
+                        <span>Ticker</span>
+                        <span>Model</span>
+                        <span>Event</span>
+                        <span>Direction</span>
+                        <span>Entry</span>
+                        <span>Size</span>
+                        <span>Exit</span>
+                        <span>Take Profit</span>
+                        <span>Stop Loss</span>
+                        <span>Target $</span>
+                        <span>Risk $</span>
+                        <span>Odds</span>
+                        <span>Auto Trade</span>
+                        <span>Telegram</span>
+                      </span>
+                    </th>
                   </tr>
                 </thead>
                 <tbody>

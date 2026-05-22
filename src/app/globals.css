@@ -5407,8 +5407,38 @@ html[data-theme="light"] .themeDarkLabel {
 }
 
 .live-alert-table {
-  --cron-grid-columns: 46px 76px 172px 118px 84px 98px 132px 90px 98px 98px 104px 104px 72px 84px 84px;
-  min-width: 1480px;
+  --cron-col-index: 46px;
+  --cron-col-ticker: 76px;
+  --cron-col-model: 172px;
+  --cron-col-event: 118px;
+  --cron-col-direction: 84px;
+  --cron-col-price: 98px;
+  --cron-col-size: 132px;
+  --cron-col-money: 104px;
+  --cron-col-odds: 72px;
+  --cron-col-status: 84px;
+  --cron-grid-columns:
+    var(--cron-col-index)
+    var(--cron-col-ticker)
+    var(--cron-col-model)
+    var(--cron-col-event)
+    var(--cron-col-direction)
+    var(--cron-col-price)
+    var(--cron-col-size)
+    var(--cron-col-price)
+    var(--cron-col-price)
+    var(--cron-col-price)
+    var(--cron-col-money)
+    var(--cron-col-money)
+    var(--cron-col-odds)
+    var(--cron-col-status)
+    var(--cron-col-status);
+  --cron-table-min-width: calc(
+    var(--cron-col-index) + var(--cron-col-ticker) + var(--cron-col-model) + var(--cron-col-event) + var(--cron-col-direction) +
+      var(--cron-col-price) + var(--cron-col-size) + var(--cron-col-price) + var(--cron-col-price) + var(--cron-col-price) +
+      var(--cron-col-money) + var(--cron-col-money) + var(--cron-col-odds) + var(--cron-col-status) + var(--cron-col-status) + 1rem
+  );
+  min-width: var(--cron-table-min-width);
 }
 
 .history-table {
@@ -5417,20 +5447,20 @@ html[data-theme="light"] .themeDarkLabel {
 
 .live-col-index,
 .history-col-index {
-  width: 46px;
+  width: var(--cron-col-index, 46px);
 }
 
 .live-col-ticker,
 .history-col-ticker {
-  width: 76px;
+  width: var(--cron-col-ticker, 76px);
 }
 
 .live-col-model {
-  width: 172px;
+  width: var(--cron-col-model);
 }
 
 .live-col-event {
-  width: 132px;
+  width: var(--cron-col-event);
 }
 
 .history-col-model {
@@ -5439,23 +5469,23 @@ html[data-theme="light"] .themeDarkLabel {
 
 .live-col-direction,
 .history-col-direction {
-  width: 92px;
+  width: var(--cron-col-direction, 92px);
 }
 
 .live-col-price,
 .history-col-price {
-  width: 106px;
+  width: var(--cron-col-price, 106px);
 }
 
 .live-col-size {
-  width: 112px;
+  width: var(--cron-col-size);
 }
 
 .live-col-money,
 .history-col-pnl,
 .history-col-target,
 .history-col-stop {
-  width: 112px;
+  width: var(--cron-col-money, 112px);
 }
 
 .history-col-rmultiple {
@@ -5463,11 +5493,11 @@ html[data-theme="light"] .themeDarkLabel {
 }
 
 .live-col-odds {
-  width: 74px;
+  width: var(--cron-col-odds);
 }
 
 .live-col-status {
-  width: 90px;
+  width: var(--cron-col-status);
 }
 
 .history-col-duration {
@@ -5638,7 +5668,20 @@ html[data-theme="light"] .themeDarkLabel {
 }
 
 .cronTradeDetails {
-  min-width: 1480px;
+  min-width: var(--cron-table-min-width);
+}
+
+.cronTradeHeaderCell {
+  padding: 0 !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+}
+
+.cronTradeHeaderGrid {
+  display: grid;
+  grid-template-columns: var(--cron-grid-columns);
+  align-items: center;
+  padding: 0.6rem 0.5rem;
 }
 
 .cronTradeSummary,
@@ -5668,7 +5711,8 @@ html[data-theme="light"] .themeDarkLabel {
 }
 
 .cronTradeSummary > span,
-.cronTradeEventRow > span {
+.cronTradeEventRow > span,
+.cronTradeHeaderGrid > span {
   min-width: 0;
   overflow: hidden;
   padding-right: 0.5rem;
