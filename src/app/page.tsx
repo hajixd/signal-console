@@ -45,9 +45,8 @@ import { dollarPerUnit, instrumentSizeLabel, instrumentUnitLabel, recommendedSiz
 import { defaultDatasetStatus, getDatasetStatus, getLiveConfig, type DatasetStatus, type LiveConfig } from "@/lib/live-config";
 import { allRules } from "@/lib/live-signals";
 import { readDataText } from "@/lib/project-data";
-import { projectAssetMode } from "@/lib/project-assets";
 import { parseStrategySelection } from "@/lib/strategy-selection";
-import { getTrades, storageMode } from "@/lib/storage";
+import { getTrades } from "@/lib/storage";
 import { telegramGroupInviteLink } from "@/lib/telegram";
 import { topstepSessionKey } from "@/lib/topstep";
 import { resolveFirstTradeBracketHit, type TradeBracketBar, type TradeBracketHit } from "@/lib/trade-bracket-truth";
@@ -2004,9 +2003,6 @@ export default async function Home({ searchParams }: HomeProps) {
   const challengeHistoricalSessions = challengeSessionCount(challengeReplayTrades);
   const telegramConfigured = Boolean(process.env.TELEGRAM_BOT_TOKEN && (process.env.TELEGRAM_GROUP_CHAT_ID || process.env.TELEGRAM_CHAT_ID));
   const telegramGroupLink = telegramGroupInviteLink();
-  const alertStore = storageMode();
-  const assetStore = projectAssetMode();
-  const liveSelectionCount = persistedLiveEnabledKeys.length || persistedSelectedKeys.length;
   const executionMarket = activeMarket;
   const persistChallengeRules = syncChallengeRulesForMarket.bind(null, activeMarket);
   const dashboardSectionTabs: DashboardSectionTab[] = [
@@ -2033,18 +2029,6 @@ export default async function Home({ searchParams }: HomeProps) {
       id: "live",
       label: "Live",
       meta: `${fmtNumber(selectedLiveTrades.length)} alerts`
-    },
-    {
-      icon: "telegram",
-      id: "ops",
-      label: "Telegram",
-      meta: telegramConfigured ? "Configured" : "Needs env"
-    },
-    {
-      icon: "storage",
-      id: "storage",
-      label: "Storage",
-      meta: assetStore
     },
     {
       icon: "sync",
@@ -2346,52 +2330,6 @@ export default async function Home({ searchParams }: HomeProps) {
               </table>
             </div>
           )}
-        </section>
-
-        <section className="backtest-card telegram-card" id="ops">
-          <div className="backtest-card-head">
-            <div>
-              <h2>Telegram Alerts</h2>
-            </div>
-            <span className={`status ${telegramConfigured ? "sent" : "skipped"}`}>{telegramConfigured ? "configured" : "needs env"}</span>
-          </div>
-          <div className="telegram-grid" aria-label="Telegram environment status">
-            <div>
-              <span>Bot token</span>
-              <strong>{process.env.TELEGRAM_BOT_TOKEN ? "Set" : "Missing"}</strong>
-            </div>
-            <div>
-              <span>Group chat ID</span>
-              <strong>{process.env.TELEGRAM_GROUP_CHAT_ID || process.env.TELEGRAM_CHAT_ID ? "Set" : "Missing"}</strong>
-            </div>
-            <div>
-              <span>Route</span>
-              <strong>/api/cron/check-signals</strong>
-            </div>
-          </div>
-        </section>
-
-        <section className="backtest-card telegram-card" id="storage">
-          <div className="backtest-card-head">
-            <div>
-              <h2>Runtime Storage</h2>
-            </div>
-            <span className={`status ${assetStore === "firebase" ? "sent" : "skipped"}`}>{assetStore}</span>
-          </div>
-          <div className="telegram-grid" aria-label="Runtime storage status">
-            <div>
-              <span>Alert store</span>
-              <strong>{alertStore}</strong>
-            </div>
-            <div>
-              <span>Backtest/data source</span>
-              <strong>{assetStore}</strong>
-            </div>
-            <div>
-              <span>Live-enabled sets</span>
-              <strong>{fmtNumber(liveSelectionCount)}</strong>
-            </div>
-          </div>
         </section>
 
         <section className="backtest-card sync-card" id="sync">
