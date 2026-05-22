@@ -6578,6 +6578,172 @@ html[data-theme="light"] .date-stat-card .localDateTimeStack small {
   color: #2563eb;
 }
 
+html[data-theme="light"] .historyViewSwitch {
+  border-color: rgba(15, 23, 42, 0.1);
+  background: rgba(15, 23, 42, 0.04);
+}
+
+html[data-theme="light"] .historyViewSwitch button {
+  color: rgba(15, 23, 42, 0.58);
+}
+
+html[data-theme="light"] .historyViewSwitch button.active {
+  background: rgba(37, 99, 235, 0.1);
+  color: #1d4ed8;
+  box-shadow: inset 0 0 0 1px rgba(37, 99, 235, 0.16);
+}
+
+html[data-theme="light"] .backtest-calendar-nav-btn {
+  border-color: rgba(15, 23, 42, 0.12);
+  background: #ffffff;
+  color: rgba(15, 23, 42, 0.92);
+}
+
+html[data-theme="light"] .backtest-calendar-nav-btn:hover:not(:disabled) {
+  border-color: rgba(37, 99, 235, 0.26);
+  background: rgba(37, 99, 235, 0.055);
+}
+
+html[data-theme="light"] .backtest-calendar-label,
+html[data-theme="light"] .backtest-calendar-detail-head h3 {
+  color: rgba(15, 23, 42, 0.9);
+}
+
+html[data-theme="light"] .backtest-month-pill {
+  border-color: rgba(15, 23, 42, 0.12);
+  background: #ffffff;
+  color: rgba(15, 23, 42, 0.76);
+}
+
+html[data-theme="light"] .backtest-month-pill.up {
+  border-color: rgba(5, 150, 105, 0.26);
+  background: rgba(16, 185, 129, 0.1);
+  color: #047857;
+}
+
+html[data-theme="light"] .backtest-month-pill.down {
+  border-color: rgba(190, 18, 60, 0.22);
+  background: rgba(244, 63, 94, 0.08);
+  color: #be123c;
+}
+
+html[data-theme="light"] .backtest-month-pill.neutral {
+  border-color: rgba(37, 99, 235, 0.18);
+  background: rgba(37, 99, 235, 0.06);
+  color: #1d4ed8;
+}
+
+html[data-theme="light"] .backtest-calendar-weekdays span {
+  color: rgba(15, 23, 42, 0.46);
+}
+
+html[data-theme="light"] .backtest-calendar-cell {
+  border-color: rgba(15, 23, 42, 0.09);
+  background: linear-gradient(180deg, #ffffff, #f8fafc);
+  color: rgba(15, 23, 42, 0.88);
+}
+
+html[data-theme="light"] .backtest-calendar-cell:hover {
+  border-color: rgba(37, 99, 235, 0.24);
+  background: rgba(37, 99, 235, 0.045);
+}
+
+html[data-theme="light"] .backtest-calendar-cell.selected {
+  border-color: rgba(5, 150, 105, 0.42);
+  background: linear-gradient(180deg, rgba(209, 250, 229, 0.95), rgba(236, 253, 245, 0.82));
+  box-shadow: inset 0 0 0 1px rgba(5, 150, 105, 0.12);
+}
+
+html[data-theme="light"] .backtest-calendar-cell.muted {
+  opacity: 1;
+  border-color: rgba(15, 23, 42, 0.06);
+  background: #eef2f7;
+}
+
+html[data-theme="light"] .backtest-calendar-cell-day {
+  color: rgba(15, 23, 42, 0.9);
+}
+
+html[data-theme="light"] .backtest-calendar-cell-count {
+  color: rgba(15, 23, 42, 0.72);
+}
+
+html[data-theme="light"] .backtest-calendar-cell-empty {
+  color: rgba(15, 23, 42, 0.46);
+}
+
+html[data-theme="light"] .backtest-calendar-trade {
+  border-color: rgba(15, 23, 42, 0.09);
+  background: #ffffff;
+}
+
+html[data-theme="light"] .backtest-calendar-trade:hover {
+  border-color: rgba(37, 99, 235, 0.2);
+  background: rgba(248, 250, 252, 0.92);
+}
+
+html[data-theme="light"] .backtest-calendar-trade.expanded {
+  border-color: rgba(37, 99, 235, 0.24);
+  background: #f8fafc;
+}
+
+html[data-theme="light"] .backtest-calendar-trade-inline {
+  color: rgba(15, 23, 42, 0.68);
+}
+
+html[data-theme="light"] .backtest-calendar-trade-inline-label {
+  color: rgba(15, 23, 42, 0.88);
+}
+
+html[data-theme="light"] .backtest-calendar-trade-inline-value {
+  color: rgba(15, 23, 42, 0.68);
+}
+
+html[data-theme="light"] .backtest-calendar-trade-inline-price,
+html[data-theme="light"] .backtest-calendar-trade-duration,
+html[data-theme="light"] .backtest-calendar-trade-symbol {
+  color: rgba(15, 23, 42, 0.5);
+}
+
+html[data-theme="light"] .backtest-calendar-side-pill.up {
+  background: rgba(16, 185, 129, 0.08);
+  color: #047857;
+}
+
+html[data-theme="light"] .backtest-calendar-side-pill.down {
+  background: rgba(244, 63, 94, 0.08);
+  color: #be123c;
+}
+
+html[data-theme="light"] .backtest-calendar-trade-expand {
+  border-top-color: rgba(15, 23, 42, 0.08);
+  background: rgba(15, 23, 42, 0.025);
+}
+
+html[data-theme="light"] .backtest-calendar-trade-stat,
+html[data-theme="light"] .backtest-calendar-trade-panel {
+  border-color: rgba(15, 23, 42, 0.09);
+  background: #ffffff;
+}
+
+html[data-theme="light"] .backtest-calendar-trade-stat span,
+html[data-theme="light"] .backtest-calendar-trade-meta div,
+html[data-theme="light"] .backtest-calendar-trade-chart-copy span {
+  color: rgba(15, 23, 42, 0.52);
+}
+
+html[data-theme="light"] .backtest-calendar-trade-stat strong,
+html[data-theme="light"] .backtest-calendar-trade-prices span:first-child,
+html[data-theme="light"] .backtest-calendar-trade-chart-copy strong {
+  color: rgba(15, 23, 42, 0.86);
+}
+
+html[data-theme="light"] .backtest-empty-inline {
+  border-color: rgba(15, 23, 42, 0.09);
+  background: rgba(15, 23, 42, 0.025);
+  color: rgba(15, 23, 42, 0.58);
+}
+
 html[data-theme="light"] .backtest-trade-mini-chart {
   border-color: rgba(15, 23, 42, 0.1);
   background:
