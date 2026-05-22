@@ -4,6 +4,7 @@ import { dollarPerUnit, instrumentSizeLabel } from "./instruments";
 
 const TELEGRAM_MAX_TEXT_LENGTH = 3900;
 const TELEGRAM_SEND_TIMEOUT_MS = 10_000;
+const TELEGRAM_SEPARATOR = "-------------------------------------------------------";
 
 function formatPrice(value: number): string {
   return new Intl.NumberFormat("en-US", {
@@ -85,9 +86,19 @@ function orderStatusLabel(status: NonNullable<TradeAlert["autoTradeOrders"]>[num
   return status;
 }
 
+function autoTradeStatusLabel(status: TradeAlert["autoTradeStatus"]): string {
+  if (!status) return "attention";
+  if (status === "dry_run") return "dry run";
+  return status.replaceAll("_", " ");
+}
+
 function formatOrderSize(value: number | undefined): string | undefined {
   if (typeof value !== "number" || !Number.isFinite(value)) return undefined;
   return new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 }).format(value);
+}
+
+function formatTradePrice(value: number): string {
+  return `${formatPrice(value)}$`;
 }
 
 function sizedOrders(orders: TradeAlert["autoTradeOrders"]): NonNullable<TradeAlert["autoTradeOrders"]> {
@@ -166,6 +177,60 @@ function autoTradeLine(trade: TradeAlert): string {
   return `${provider}: ${trade.autoTradeStatus}${trade.autoTradeError ? ` - ${trade.autoTradeError}` : ""}`;
 }
 
+function executionAccountParts(value: string | undefined, accountId: number): { name: string; size?: string } {
+  const label = value?.trim();
+  if (!label) return { name: `Account ${accountId}` };
+  const fundedSize = label.match(/\b(50|100|150|200|250|300)\s*k\b/i)?.[0];
+  const name = fundedSize
+    ? label
+        .replace(fundedSize, "")
+        .replace(/[-|()[\]]/g, " ")
+        .replace(/\s+/g, " ")
+        .trim()
+    : label;
+  return {
+    name: name || label,
+    size: fundedSize?.toUpperCase().replace(/\s+/g, "")
+  };
+}
+
+function accountExecutionRow(order: NonNullable<TradeAlert["autoTradeOrders"]>[number]): { line: string; name: string } {
+  const formattedSize = formatOrderSize(order.size);
+  const account = executionAccountParts(order.accountName, order.accountId);
+  const details = [
+    account.size ? `${account.size} account` : `Account ${order.accountId}`,
+    formattedSize ? `Units ${formattedSize}` : undefined,
+    order.status === "placed" ? undefined : orderStatusLabel(order.status),
+    order.error ? `Note: ${truncate(order.error, 90)}` : undefined
+  ].filter((part): part is string => Boolean(part));
+
+  return {
+    name: account.name,
+    line: `- ${details.join(" | ")}`
+  };
+}
+
+function executionLines(trade: TradeAlert): string[] {
+  if (trade.autoTradeOrders?.length) {
+    const groups = new Map<string, string[]>();
+    for (const order of trade.autoTradeOrders.filter((item) => item.status !== "skipped" || item.error)) {
+      const row = accountExecutionRow(order);
+      const lines = groups.get(row.name) ?? [];
+      lines.push(row.line);
+      groups.set(row.name, lines);
+    }
+    return [...groups.entries()].flatMap(([name, lines]) => [`${name}:`, ...lines]);
+  }
+
+  if (!trade.autoTradeStatus && !trade.autoTradeError) return [];
+
+  return [
+    `- ${autoTradeStatusLabel(trade.autoTradeStatus)}${
+      trade.autoTradeError ? ` | Note: ${truncate(trade.autoTradeError, 90)}` : ""
+    }`
+  ];
+}
+
 function autoTradeContractLabel(trade: TradeAlert): string | undefined {
   const orderContract =
     trade.autoTradeOrders?.find((order) => order.status === "placed" || order.status === "dry_run")?.contractName ??
@@ -188,6 +253,10 @@ function joinTelegramLines(lines: Array<string | undefined>): string {
   return lines.filter((line): line is string => line !== undefined).join("\n");
 }
 
+function telegramTitle(title: string): string {
+  return `${TELEGRAM_SEPARATOR}\n<b>${escapeHtml(title)}</b>\n${TELEGRAM_SEPARATOR}`;
+}
+
 export function formatTelegramMessage(trade: TradeAlert): string {
   const dollarUnit = dollarPerUnit(trade.symbol, trade.entryPrice);
   const sizeMultiplier = autoTradeOrderSize(trade.autoTradeOrders) ?? trade.sizeMultiplier ?? 1;
@@ -197,30 +266,25 @@ export function formatTelegramMessage(trade: TradeAlert): string {
   const riskDollars = Math.abs(trade.slUnits * dollarUnit * sizeMultiplier);
   const rewardRisk = riskDollars > 0 ? targetDollars / riskDollars : 0;
   const side = trade.side === "long" ? "BUY" : "SELL";
-  const autoTrade = autoTradeLine(trade);
-  const title = trade.entryType === "limit" ? "LIMIT ORDER" : "ENTRY SIGNAL";
+  const execution = executionLines(trade);
   const instrumentLabel = telegramInstrumentLabel(trade);
   const sourceSignal = instrumentLabel !== trade.symbol ? `Signal ${escapeHtml(trade.symbol)}` : undefined;
   const lines = [
-    `<b>${escapeHtml(telegramGroupTitle())}</b>`,
-    `<b><u>${title}</u></b>`,
-    `<b>${escapeHtml(instrumentLabel)}</b> <u>${side}</u>`,
+    telegramTitle(`${instrumentLabel} Trade`),
     sourceSignal,
+    `Direction: <b>${side}</b>`,
+    `Units: <b>${escapeHtml(telegramSizeLabel(trade, instrumentLabel, sizeMultiplier))}</b>`,
     "",
-    `<b>Levels</b>`,
-    `Entry <code>${formatPrice(trade.entryPrice)}</code> | ${escapeHtml(formatEntryType(trade))}`,
-    `TP <code>${formatPrice(trade.takeProfitPrice)}</code> | <b>${formatMoney(targetDollars, true)}</b>`,
-    `SL <code>${formatPrice(trade.stopLossPrice)}</code> | <b>${formatMoney(-riskDollars, true)}</b>`,
-    `Size <code>${escapeHtml(telegramSizeLabel(trade, instrumentLabel, sizeMultiplier))}</code>`,
+    `Entry: <code>${formatTradePrice(trade.entryPrice)}</code>`,
+    `Take Profit: <code>${formatTradePrice(trade.takeProfitPrice)}</code>`,
+    `Stop Loss: <code>${formatTradePrice(trade.stopLossPrice)}</code>`,
     sizeScale && Math.abs(sizeScale - 1) > 0.005 ? `Scale: ${escapeHtml(formatScale(sizeScale))}x` : undefined,
     "",
-    `<b>Edge</b>`,
-    `Win <b>${formatNumber(trade.estimatedWinRatePct, 1)}%</b> | PF <b>${formatNumber(trade.liveProfitFactor)}</b> | RR <b>${formatNumber(rewardRisk)}R</b>`,
-    autoTrade || trade.autoTradeError ? "" : undefined,
-    autoTrade || trade.autoTradeError ? `<b>Execution</b>` : undefined,
-    autoTrade ? escapeHtml(autoTrade) : undefined,
-    trade.autoTradeError ? `<u>Execution note</u>: ${escapeHtml(truncate(trade.autoTradeError, 160))}` : undefined,
-    `Signal <u>${escapeHtml(formatSignalTime(trade.signalTime))}</u>`
+    `Edge: Win Rate <b>${formatNumber(trade.estimatedWinRatePct, 1)}%</b> | PF <b>${formatNumber(trade.liveProfitFactor)}</b> | RR <b>${formatNumber(rewardRisk)}R</b>`,
+    execution.length ? "" : undefined,
+    execution.length ? `<b>Execution:</b>` : undefined,
+    execution.length ? execution.map(escapeHtml).join("\n") : undefined,
+    `Signal: ${escapeHtml(formatSignalTime(trade.signalTime))}`
   ];
   return fitTelegramMessage(joinTelegramLines(lines));
 }
@@ -236,27 +300,25 @@ export function formatTelegramOutcomeMessage(trade: TradeAlert): string {
   const side = trade.side === "long" ? "BUY" : "SELL";
   const instrumentLabel = telegramInstrumentLabel(trade);
   const sourceSignal = instrumentLabel !== trade.symbol ? `Signal ${escapeHtml(trade.symbol)}` : undefined;
-  const autoTrade = autoTradeLine(trade);
+  const execution = executionLines(trade);
   const lines = [
-    `<b>${escapeHtml(telegramGroupTitle())}</b>`,
-    `<b><u>${title.toUpperCase()}</u></b>`,
-    `<b>${escapeHtml(instrumentLabel)}</b> <u>${side}</u>`,
+    telegramTitle(`${instrumentLabel} ${title}`),
     sourceSignal,
+    `Direction: <b>${side}</b>`,
     "",
-    `<b>Result</b>`,
-    price !== undefined ? `Exit <code>${formatPrice(price)}</code>` : undefined,
-    pnl !== undefined ? `P/L <b>${formatMoney(pnl, true)}</b>` : undefined,
-    rMultiple !== undefined ? `R <b>${formatNumber(rMultiple)}R</b>` : undefined,
-    time ? `Hit <u>${escapeHtml(formatSignalTime(time))}</u>` : undefined,
+    `<b>Result:</b>`,
+    price !== undefined ? `Exit: <code>${formatTradePrice(price)}</code>` : undefined,
+    pnl !== undefined ? `P/L: <b>${formatMoney(pnl, true)}</b>` : undefined,
+    rMultiple !== undefined ? `R: <b>${formatNumber(rMultiple)}R</b>` : undefined,
+    time ? `Time: ${escapeHtml(formatSignalTime(time))}` : undefined,
     "",
-    `<b>Plan</b>`,
-    `Entry <code>${formatPrice(trade.entryPrice)}</code>`,
-    `TP <code>${formatPrice(trade.takeProfitPrice)}</code>`,
-    `SL <code>${formatPrice(trade.stopLossPrice)}</code>`,
-    autoTrade || trade.autoTradeError ? "" : undefined,
-    autoTrade || trade.autoTradeError ? `<b>Execution</b>` : undefined,
-    autoTrade ? escapeHtml(autoTrade) : undefined,
-    trade.autoTradeError ? `<u>Execution note</u>: ${escapeHtml(truncate(trade.autoTradeError, 160))}` : undefined
+    `<b>Plan:</b>`,
+    `Entry: <code>${formatTradePrice(trade.entryPrice)}</code>`,
+    `Take Profit: <code>${formatTradePrice(trade.takeProfitPrice)}</code>`,
+    `Stop Loss: <code>${formatTradePrice(trade.stopLossPrice)}</code>`,
+    execution.length ? "" : undefined,
+    execution.length ? `<b>Execution:</b>` : undefined,
+    execution.length ? execution.map(escapeHtml).join("\n") : undefined
   ];
   return fitTelegramMessage(joinTelegramLines(lines));
 }
@@ -269,26 +331,25 @@ function managementEventTitle(event: TradeManagementEvent): string {
 
 export function formatTelegramManagementMessage(trade: TradeAlert, event: TradeManagementEvent): string {
   const side = trade.side === "long" ? "BUY" : "SELL";
-  const previous = event.previousPrice !== undefined ? `Previous <code>${formatPrice(event.previousPrice)}</code>` : undefined;
-  const reason = event.reason ? `Reason: ${escapeHtml(truncate(event.reason, 180))}` : undefined;
+  const previous = event.previousPrice !== undefined ? `Previous: <code>${formatTradePrice(event.previousPrice)}</code>` : undefined;
+  const reason = event.reason ? `Reason: ${escapeHtml(truncate(event.reason, 120))}` : undefined;
   const instrumentLabel = telegramInstrumentLabel(trade);
   const sourceSignal = instrumentLabel !== trade.symbol ? `Signal ${escapeHtml(trade.symbol)}` : undefined;
   const lines = [
-    `<b>${escapeHtml(telegramGroupTitle())}</b>`,
-    `<b><u>${managementEventTitle(event).toUpperCase()}</u></b>`,
-    `<b>${escapeHtml(instrumentLabel)}</b> <u>${side}</u>`,
+    telegramTitle(`${instrumentLabel} ${managementEventTitle(event)}`),
     sourceSignal,
+    `Direction: <b>${side}</b>`,
     "",
-    `<b>Updated Level</b>`,
-    `New <code>${formatPrice(event.price)}</code>`,
+    `<b>Update:</b>`,
+    `New: <code>${formatTradePrice(event.price)}</code>`,
     previous,
     reason,
     "",
-    `<b>Current Plan</b>`,
-    `Entry <code>${formatPrice(event.entryPrice ?? trade.entryPrice)}</code>`,
-    `TP <code>${formatPrice(event.takeProfitPrice ?? (event.type === "edit_tp" ? event.price : trade.takeProfitPrice))}</code>`,
-    `SL <code>${formatPrice(event.stopLossPrice ?? (event.type === "edit_sl" ? event.price : trade.stopLossPrice))}</code>`,
-    `Event <u>${escapeHtml(formatSignalTime(event.time))}</u>`
+    `<b>Plan:</b>`,
+    `Entry: <code>${formatTradePrice(event.entryPrice ?? trade.entryPrice)}</code>`,
+    `Take Profit: <code>${formatTradePrice(event.takeProfitPrice ?? (event.type === "edit_tp" ? event.price : trade.takeProfitPrice))}</code>`,
+    `Stop Loss: <code>${formatTradePrice(event.stopLossPrice ?? (event.type === "edit_sl" ? event.price : trade.stopLossPrice))}</code>`,
+    `Time: ${escapeHtml(formatSignalTime(event.time))}`
   ];
   return fitTelegramMessage(joinTelegramLines(lines));
 }

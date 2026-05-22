@@ -478,11 +478,13 @@ function buildMiniChartPoints(trade: TradeHistoryRow, bars: ChartBar[]): MiniCha
 
 export function BacktestTradeMiniChart({
   bars,
+  compactTooltip = false,
   isOpen,
   status,
   trade
 }: {
   bars: ChartBar[];
+  compactTooltip?: boolean;
   isOpen: boolean;
   status: CalendarChartState["status"];
   trade: TradeHistoryRow;
@@ -685,6 +687,15 @@ export function BacktestTradeMiniChart({
         aria-label={`${displaySymbol(trade)} per-trade price movement`}
       >
         <defs>
+          <clipPath id={`${chartId}-reveal`}>
+            <rect
+              className={isOpen ? "backtest-trade-mini-reveal-mask" : undefined}
+              x="0"
+              y="0"
+              width={plot.width}
+              height={plot.height}
+            />
+          </clipPath>
           <linearGradient id={`${chartId}-area`} x1="0" x2="0" y1="0" y2="1">
             <stop offset="0%" className="backtest-trade-mini-area-start" />
             <stop offset="100%" className="backtest-trade-mini-area-end" />
@@ -790,17 +801,19 @@ export function BacktestTradeMiniChart({
           );
         })}
 
-        <path d={plot.areaPath} className="backtest-trade-mini-area" fill={`url(#${chartId}-area)`} />
-        <g className={isOpen ? "backtest-trade-mini-reveal" : undefined}>
-          {plot.segments.map((segment, index) => (
-            <path
-              key={`${segment.d}-${index}`}
-              className={`backtest-trade-mini-segment ${segment.tone}`}
-              d={segment.d}
-              fill="none"
-              pathLength={1}
-            />
-          ))}
+        <g className={isOpen ? "backtest-trade-mini-reveal" : undefined} clipPath={isOpen ? `url(#${chartId}-reveal)` : undefined}>
+          <path d={plot.areaPath} className="backtest-trade-mini-area" fill={`url(#${chartId}-area)`} />
+          <g>
+            {plot.segments.map((segment, index) => (
+              <path
+                key={`${segment.d}-${index}`}
+                className={`backtest-trade-mini-segment ${segment.tone}`}
+                d={segment.d}
+                fill="none"
+                pathLength={1}
+              />
+            ))}
+          </g>
         </g>
 
         <g className="backtest-trade-mini-marker mfe">
@@ -846,63 +859,82 @@ export function BacktestTradeMiniChart({
             top: `calc(${tooltipTopRatio * 100}% - ${(tooltipTopRatio * 31).toFixed(2)}px)`
           }}
         >
-          <div className="backtest-trade-mini-tooltip-head">
-            <div>
-              <strong>{displaySymbol(trade)} {trade.sideLabel}</strong>
-              <span>{trade.modelName}</span>
+          {compactTooltip ? (
+            <div className="backtest-trade-mini-tooltip-simple">
+              <span>
+                <small>Elapsed</small>
+                <strong>{formatMinutesCompact(activePoint.x)}</strong>
+              </span>
+              <span>
+                <small>PnL</small>
+                <strong className={activePnlTone}>{formatSignedMoney(activePoint.pnlDollars)}</strong>
+              </span>
+              <span>
+                <small>Price</small>
+                <strong>{formatChartPrice(activePoint.price)}</strong>
+              </span>
             </div>
-            <strong className={activePnlTone}>{formatSignedMoney(activePoint.pnlDollars)}</strong>
-          </div>
-          <div className="backtest-trade-mini-tooltip-price">
-            <span>
-              <small>Time</small>
-              <strong>{formatCalendarDateTime(new Date(activePoint.timeMs).toISOString())}</strong>
-            </span>
-            <span>
-              <small>Price</small>
-              <strong>{formatChartPrice(activePoint.price)}</strong>
-            </span>
-          </div>
-          <div className="backtest-trade-mini-tooltip-grid">
-            <span>
-              <small>Elapsed</small>
-              <strong>{formatMinutesCompact(activePoint.x)}</strong>
-            </span>
-            <span>
-              <small>Size</small>
-              <strong>{trade.sizeLabel}</strong>
-            </span>
-            <span>
-              <small>MFE</small>
-              <strong className="up">{formatSignedMoney(activePoint.runningMfe)}</strong>
-            </span>
-            <span>
-              <small>MAE</small>
-              <strong className="down">{formatSignedMoney(activePoint.runningMae)}</strong>
-            </span>
-            <span>
-              <small>TP Gap</small>
-              <strong className={targetGapDollars >= 0 ? "up" : "down"}>{formatSignedMoney(targetGapDollars)}</strong>
-            </span>
-            <span>
-              <small>SL Buffer</small>
-              <strong className={stopBufferDollars >= 0 ? "up" : "down"}>{formatSignedMoney(stopBufferDollars)}</strong>
-            </span>
-          </div>
-          <div className="backtest-trade-mini-tooltip-levels">
-            <span>
-              <small>Entry</small>
-              <strong>{trade.entryPriceLabel}</strong>
-            </span>
-            <span>
-              <small>TP</small>
-              <strong className="up">{trade.targetPriceLabel}</strong>
-            </span>
-            <span>
-              <small>SL</small>
-              <strong className="down">{trade.stopPriceLabel}</strong>
-            </span>
-          </div>
+          ) : (
+            <>
+              <div className="backtest-trade-mini-tooltip-head">
+                <div>
+                  <strong>{displaySymbol(trade)} {trade.sideLabel}</strong>
+                  <span>{trade.modelName}</span>
+                </div>
+                <strong className={activePnlTone}>{formatSignedMoney(activePoint.pnlDollars)}</strong>
+              </div>
+              <div className="backtest-trade-mini-tooltip-price">
+                <span>
+                  <small>Time</small>
+                  <strong>{formatCalendarDateTime(new Date(activePoint.timeMs).toISOString())}</strong>
+                </span>
+                <span>
+                  <small>Price</small>
+                  <strong>{formatChartPrice(activePoint.price)}</strong>
+                </span>
+              </div>
+              <div className="backtest-trade-mini-tooltip-grid">
+                <span>
+                  <small>Elapsed</small>
+                  <strong>{formatMinutesCompact(activePoint.x)}</strong>
+                </span>
+                <span>
+                  <small>Size</small>
+                  <strong>{trade.sizeLabel}</strong>
+                </span>
+                <span>
+                  <small>MFE</small>
+                  <strong className="up">{formatSignedMoney(activePoint.runningMfe)}</strong>
+                </span>
+                <span>
+                  <small>MAE</small>
+                  <strong className="down">{formatSignedMoney(activePoint.runningMae)}</strong>
+                </span>
+                <span>
+                  <small>TP Gap</small>
+                  <strong className={targetGapDollars >= 0 ? "up" : "down"}>{formatSignedMoney(targetGapDollars)}</strong>
+                </span>
+                <span>
+                  <small>SL Buffer</small>
+                  <strong className={stopBufferDollars >= 0 ? "up" : "down"}>{formatSignedMoney(stopBufferDollars)}</strong>
+                </span>
+              </div>
+              <div className="backtest-trade-mini-tooltip-levels">
+                <span>
+                  <small>Entry</small>
+                  <strong>{trade.entryPriceLabel}</strong>
+                </span>
+                <span>
+                  <small>TP</small>
+                  <strong className="up">{trade.targetPriceLabel}</strong>
+                </span>
+                <span>
+                  <small>SL</small>
+                  <strong className="down">{trade.stopPriceLabel}</strong>
+                </span>
+              </div>
+            </>
+          )}
         </div>
       )}
       <div className="backtest-trade-mini-legend" aria-hidden="true">

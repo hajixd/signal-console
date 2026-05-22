@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { FormEvent, useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { FormEvent, useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { createPortal } from "react-dom";
 import AutoTradingConnectionPanel from "@/components/auto-trading/auto-trading-connection-panel";
 import {
@@ -54,6 +54,13 @@ type MobileChartPayload = {
   timeframe?: TradeChartTimeframe;
 };
 
+type MobileHistoryStats = {
+  averageLoss: string;
+  averageWin: string;
+  profitFactor: string;
+  winRate: string;
+};
+
 const THEME_STORAGE_KEY = "trading-bot-theme";
 const LEGACY_THEME_STORAGE_KEY = "signal-console-theme";
 const TRADE_CHART_CONTEXT_CANDLES = 240;
@@ -81,6 +88,43 @@ function applyMobileTheme(theme: MobileTheme) {
   document.documentElement.dataset.theme = theme;
   document.documentElement.style.colorScheme = theme;
   window.setTimeout(() => document.documentElement.classList.remove("mobile-mode-transitioning"), 360);
+}
+
+function formatMobileMoney(value: number): string {
+  return new Intl.NumberFormat("en-US", {
+    currency: "USD",
+    maximumFractionDigits: Math.abs(value) < 100 ? 2 : 0,
+    minimumFractionDigits: Math.abs(value) < 100 ? 2 : 0,
+    signDisplay: value > 0 ? "always" : "auto",
+    style: "currency"
+  }).format(value);
+}
+
+function formatMobileRatio(value: number): string {
+  if (!Number.isFinite(value)) return "Max";
+  return new Intl.NumberFormat("en-US", {
+    maximumFractionDigits: 2,
+    minimumFractionDigits: 2
+  }).format(value);
+}
+
+function mobileHistoryStats(rows: TradeHistoryRow[]): MobileHistoryStats {
+  const scoredRows = rows.filter((row) => Number.isFinite(row.pnlDollars) && !row.exitReasonLabel.toLowerCase().includes("still open"));
+  const wins = scoredRows.filter((row) => row.pnlDollars > 0);
+  const losses = scoredRows.filter((row) => row.pnlDollars < 0);
+  const grossWin = wins.reduce((sum, row) => sum + row.pnlDollars, 0);
+  const grossLoss = Math.abs(losses.reduce((sum, row) => sum + row.pnlDollars, 0));
+  const winRate = scoredRows.length ? (wins.length / scoredRows.length) * 100 : 0;
+  const profitFactor = grossLoss > 0 ? grossWin / grossLoss : grossWin > 0 ? Number.POSITIVE_INFINITY : 0;
+  const averageWin = wins.length ? grossWin / wins.length : 0;
+  const averageLoss = losses.length ? losses.reduce((sum, row) => sum + row.pnlDollars, 0) / losses.length : 0;
+
+  return {
+    averageLoss: averageLoss ? formatMobileMoney(averageLoss) : "--",
+    averageWin: averageWin ? formatMobileMoney(averageWin) : "--",
+    profitFactor: profitFactor ? formatMobileRatio(profitFactor) : "--",
+    winRate: `${winRate.toFixed(0)}%`
+  };
 }
 
 function readMobileTheme(initialTheme?: MobileTheme): MobileTheme {
@@ -190,6 +234,49 @@ function MobileWorkspaceTabIcon({ tab }: { tab: MobileTradingTab }) {
   );
 }
 
+function MobileTelegramIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden>
+      <path
+        d="M20.8 4.5 3.8 11c-.9.34-.88 1.05-.16 1.28l4.28 1.34 1.65 5.03c.2.56.49.7.9.32l2.36-2.26 4.2 3.08c.77.42 1.31.2 1.5-.72l2.72-12.83c.28-1.12-.42-1.64-1.45-1.18Z"
+        fill="currentColor"
+      />
+      <path d="m8.35 13.27 8.18-5.13c.4-.24.76-.11.46.16l-6.66 6.02-.25 2.62-1.73-3.67Z" fill="#fff" opacity="0.72" />
+    </svg>
+  );
+}
+
+function MobileLoadingBar({ label }: { label: string }) {
+  return (
+    <div className="mobile-phone-loading-bar" role="status" aria-live="polite">
+      <span>{label}</span>
+    </div>
+  );
+}
+
+function MobileHistoryStatsStrip({ stats }: { stats: MobileHistoryStats }) {
+  return (
+    <div className="mobile-phone-history-stats" aria-label="Trade summary">
+      <span>
+        <small>Win Rate</small>
+        <strong>{stats.winRate}</strong>
+      </span>
+      <span>
+        <small>PF</small>
+        <strong>{stats.profitFactor}</strong>
+      </span>
+      <span>
+        <small>Avg Win</small>
+        <strong className="up">{stats.averageWin}</strong>
+      </span>
+      <span>
+        <small>Avg Loss</small>
+        <strong className="down">{stats.averageLoss}</strong>
+      </span>
+    </div>
+  );
+}
+
 function MobileHistoryList({
   emptyTitle,
   kicker,
@@ -203,6 +290,8 @@ function MobileHistoryList({
   rows: TradeHistoryRow[];
   title: string;
 }) {
+  const stats = useMemo(() => mobileHistoryStats(rows), [rows]);
+
   return (
     <section className="mobile-phone-card mobile-phone-card-history">
       <div className="mobile-phone-card-head">
@@ -219,33 +308,36 @@ function MobileHistoryList({
           <h2>{emptyTitle}</h2>
         </div>
       ) : (
-        <div className="mobile-phone-history-list">
-          {rows.map((row) => (
-            <button className="mobile-phone-history-row" key={row.id} onClick={() => onTradeSelect(row)} type="button">
-              <div className="mobile-phone-history-main">
-                <div className="mobile-phone-history-copy">
-                  <strong>{displaySymbol(row)}</strong>
+        <>
+          <MobileHistoryStatsStrip stats={stats} />
+          <div className="mobile-phone-history-list">
+            {rows.map((row) => (
+              <button className="mobile-phone-history-row" key={row.id} onClick={() => onTradeSelect(row)} type="button">
+                <div className="mobile-phone-history-main">
+                  <div className="mobile-phone-history-copy">
+                    <strong>{displaySymbol(row)}</strong>
+                    <span>
+                      {row.sideLabel} | {row.exitReasonLabel}
+                    </span>
+                  </div>
+                  <div className="mobile-phone-history-values">
+                    <strong className={row.pnlClassName}>{row.pnlLabel}</strong>
+                    <span className="mobile-phone-history-size">{row.sizeLabel}</span>
+                  </div>
+                </div>
+                <div className="mobile-phone-history-meta">
                   <span>
-                    {row.sideLabel} | {row.exitReasonLabel}
+                    <LocalDateTime value={row.exitTime} fallback={row.exitTimeLabel} />
                   </span>
+                  <span>{row.rMultipleLabel}</span>
+                  <span>Entry {row.entryPriceLabel}</span>
+                  <span>Exit {row.exitPriceLabel}</span>
                 </div>
-                <div className="mobile-phone-history-values">
-                  <strong className={row.pnlClassName}>{row.pnlLabel}</strong>
-                  <span className="mobile-phone-history-size">{row.sizeLabel}</span>
-                </div>
-              </div>
-              <div className="mobile-phone-history-meta">
-                <span>
-                  <LocalDateTime value={row.exitTime} fallback={row.exitTimeLabel} />
-                </span>
-                <span>{row.rMultipleLabel}</span>
-                <span>Entry {row.entryPriceLabel}</span>
-                <span>Exit {row.exitPriceLabel}</span>
-              </div>
-              <span className={`mobile-phone-history-rail ${historyRailTone(row)}`} aria-hidden="true" />
-            </button>
-          ))}
-        </div>
+                <span className={`mobile-phone-history-rail ${historyRailTone(row)}`} aria-hidden="true" />
+              </button>
+            ))}
+          </div>
+        </>
       )}
     </section>
   );
@@ -253,10 +345,12 @@ function MobileHistoryList({
 
 function MobileMarketModeControl({
   activeMarket,
-  persistActiveMarket
+  persistActiveMarket,
+  showLoading
 }: {
   activeMarket: AutoTradeMarket;
   persistActiveMarket?: (market: AutoTradeMarket) => Promise<void>;
+  showLoading: (label: string, duration?: number) => void;
 }) {
   const pathname = usePathname();
   const router = useRouter();
@@ -276,6 +370,7 @@ function MobileMarketModeControl({
     nextParams.set("market", market);
     const href = `${pathname}?${nextParams.toString()}`;
     setPendingMarket(market);
+    showLoading(`Loading ${market === "futures" ? "Futures" : "Forex"}`, 1400);
 
     startTransition(() => {
       if (canPersistActiveMarket && persistActiveMarket) {
@@ -313,10 +408,12 @@ function MobileMarketModeControl({
 
 function MobileThemeModeControl({
   initialTheme,
-  persistTheme
+  persistTheme,
+  showLoading
 }: {
   initialTheme?: MobileTheme;
   persistTheme?: (theme: MobileTheme) => Promise<void>;
+  showLoading: (label: string, duration?: number) => void;
 }) {
   const [theme, setTheme] = useState<MobileTheme>(() => initialTheme ?? "dark");
   const [, startSavingTheme] = useTransition();
@@ -332,6 +429,7 @@ function MobileThemeModeControl({
   function selectTheme(nextTheme: MobileTheme) {
     if (nextTheme === theme) return;
     setTheme(nextTheme);
+    showLoading(`Switching to ${nextTheme === "light" ? "Light" : "Dark"}`, 760);
     applyMobileTheme(nextTheme);
     window.localStorage.setItem(THEME_STORAGE_KEY, nextTheme);
     window.localStorage.removeItem(LEGACY_THEME_STORAGE_KEY);
@@ -364,7 +462,7 @@ function MobileThemeModeControl({
   );
 }
 
-function MobileAccountModeControl() {
+function MobileAccountModeControl({ showLoading }: { showLoading: (label: string, duration?: number) => void }) {
   const [accountMode, setAccountMode] = useState<AutoTradeAccountMode | null>(null);
   const [adminCodeInput, setAdminCodeInput] = useState("");
   const [isUnlockingAdmin, setIsUnlockingAdmin] = useState(false);
@@ -389,6 +487,7 @@ function MobileAccountModeControl() {
   }, [adminEntryOpen]);
 
   async function selectUserMode() {
+    showLoading("Switching to User", 820);
     setAdminEntryOpen(false);
     setAdminCodeInput("");
     setAccountAccessError("");
@@ -400,6 +499,7 @@ function MobileAccountModeControl() {
     if (code.length < 5 || isUnlockingAdmin) return;
 
     setIsUnlockingAdmin(true);
+    showLoading("Unlocking Admin", 920);
     try {
       const response = await fetch("/api/auto-trading/access-code", {
         method: "POST",
@@ -530,7 +630,7 @@ function MobileTradeChartModal({
         </div>
         {chartState.message ? <p className="mobile-trade-modal-note">{chartState.message}</p> : null}
         <div className="mobile-trade-mini-chart-wrap">
-          <BacktestTradeMiniChart bars={chartState.bars} isOpen status={chartState.status} trade={trade} />
+          <BacktestTradeMiniChart bars={chartState.bars} compactTooltip isOpen status={chartState.status} trade={trade} />
         </div>
       </section>
     </div>,
@@ -555,6 +655,8 @@ export default function MobileTradingDashboard({
   const [activeTab, setActiveTab] = useState<MobileTradingTab>("alerts");
   const [activeTradeId, setActiveTradeId] = useState<string | null>(null);
   const [chartState, setChartState] = useState<MobileChartState>({ status: "idle", bars: [] });
+  const [loadingLabel, setLoadingLabel] = useState<string | null>(null);
+  const loadingTimeoutRef = useRef<number | null>(null);
   const edits = useStrategyEdits(strategies, persistedStrategyEdits);
   const adjustedHistoryRows = useMemo(() => adjustTradeHistoryRows(historyRows, strategies, edits), [edits, historyRows, strategies]);
   const adjustedLiveAlertRows = useMemo(() => adjustTradeHistoryRows(liveAlertRows, strategies, edits), [edits, liveAlertRows, strategies]);
@@ -576,6 +678,28 @@ export default function MobileTradingDashboard({
         : activeTab === "settings"
           ? "Settings"
           : "Trade History";
+
+  const showLoading = useCallback((label: string, duration = 760) => {
+    if (loadingTimeoutRef.current !== null) {
+      window.clearTimeout(loadingTimeoutRef.current);
+    }
+    setLoadingLabel(label);
+    loadingTimeoutRef.current = window.setTimeout(() => {
+      setLoadingLabel(null);
+      loadingTimeoutRef.current = null;
+    }, duration);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (loadingTimeoutRef.current !== null) window.clearTimeout(loadingTimeoutRef.current);
+    };
+  }, []);
+
+  function selectTab(tab: MobileTradingTab) {
+    if (tab === activeTab) return;
+    setActiveTab(tab);
+  }
 
   useEffect(() => {
     if (activeTradeId && !activeTrade) setActiveTradeId(null);
@@ -659,52 +783,57 @@ export default function MobileTradingDashboard({
         </header>
 
         <div className="mobile-phone-body">
-          {activeTab === "history" ? (
-            <MobileHistoryList
-              emptyTitle="No trades yet"
-              kicker="Trade History"
-              onTradeSelect={(row) => setActiveTradeId(row.id)}
-              rows={adjustedHistoryRows}
-              title="History"
-            />
-          ) : activeTab === "alerts" ? (
-            <MobileHistoryList
-              emptyTitle="No live alerts yet"
-              kicker="Live Alerts"
-              onTradeSelect={(row) => setActiveTradeId(row.id)}
-              rows={adjustedLiveAlertRows}
-              title="Live Alerts"
-            />
-          ) : activeTab === "autotrade" ? (
-            <section className="mobile-phone-card mobile-phone-card-autotrade">
-              <div className="mobile-phone-social-stack mobile-phone-autotrade-stack">
-                <AutoTradingConnectionPanel market={activeMarket} />
-              </div>
-            </section>
-          ) : (
-            <section className="mobile-phone-card mobile-phone-card-settings">
-              <div className="mobile-phone-account-card">
-                <div className="mobile-phone-account-avatar">TB</div>
-                <div className="mobile-phone-account-copy">
-                  <span>Signed In</span>
-                  <strong>Trading Bot</strong>
-                  <small>{marketLabel}</small>
+          <div className="mobile-phone-panel" key={activeTab}>
+            {activeTab === "history" ? (
+              <MobileHistoryList
+                emptyTitle="No trades yet"
+                kicker="Trade History"
+                onTradeSelect={(row) => setActiveTradeId(row.id)}
+                rows={adjustedHistoryRows}
+                title="History"
+              />
+            ) : activeTab === "alerts" ? (
+              <MobileHistoryList
+                emptyTitle="No live alerts yet"
+                kicker="Live Alerts"
+                onTradeSelect={(row) => setActiveTradeId(row.id)}
+                rows={adjustedLiveAlertRows}
+                title="Live Alerts"
+              />
+            ) : activeTab === "autotrade" ? (
+              <section className="mobile-phone-card mobile-phone-card-autotrade">
+                <div className="mobile-phone-social-stack mobile-phone-autotrade-stack">
+                  <AutoTradingConnectionPanel market={activeMarket} />
                 </div>
-              </div>
+              </section>
+            ) : (
+              <section className="mobile-phone-card mobile-phone-card-settings">
+                <div className="mobile-phone-account-card">
+                  <div className="mobile-phone-account-avatar">TB</div>
+                  <div className="mobile-phone-account-copy">
+                    <span>Signed In</span>
+                    <strong>Trading Bot</strong>
+                    <small>{marketLabel}</small>
+                  </div>
+                </div>
 
-              <div className="mobile-phone-action-list">
-                <MobileAccountModeControl />
-                <MobileMarketModeControl activeMarket={activeMarket} persistActiveMarket={persistActiveMarket} />
-                <MobileThemeModeControl initialTheme={initialTheme} persistTheme={persistTheme} />
-                {telegramGroupLink ? (
-                  <a className="mobile-phone-action-btn" href={telegramGroupLink} rel="noreferrer" target="_blank">
-                    <strong>Telegram Group</strong>
-                    <span>Open alert channel</span>
-                  </a>
-                ) : null}
-              </div>
-            </section>
-          )}
+                <div className="mobile-phone-action-list">
+                  <MobileAccountModeControl showLoading={showLoading} />
+                  <MobileMarketModeControl activeMarket={activeMarket} persistActiveMarket={persistActiveMarket} showLoading={showLoading} />
+                  <MobileThemeModeControl initialTheme={initialTheme} persistTheme={persistTheme} showLoading={showLoading} />
+                  {telegramGroupLink ? (
+                    <a className="mobile-phone-action-btn mobile-phone-telegram-link" href={telegramGroupLink} rel="noreferrer" target="_blank">
+                      <span className="mobile-phone-action-icon"><MobileTelegramIcon /></span>
+                      <span>
+                        <strong>Telegram Group</strong>
+                        <small>Open alert channel</small>
+                      </span>
+                    </a>
+                  ) : null}
+                </div>
+              </section>
+            )}
+          </div>
         </div>
 
         <nav className="mobile-phone-tabbar" aria-label="Mobile workspace tabs">
@@ -713,7 +842,7 @@ export default function MobileTradingDashboard({
               aria-pressed={activeTab === tab.id}
               className={`mobile-phone-tab${activeTab === tab.id ? " active" : ""}`}
               key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
+              onClick={() => selectTab(tab.id)}
               type="button"
             >
               <span className="mobile-phone-tab-icon">
@@ -723,6 +852,7 @@ export default function MobileTradingDashboard({
             </button>
           ))}
         </nav>
+        {loadingLabel ? <MobileLoadingBar label={loadingLabel} /> : null}
       </section>
       {activeTrade ? <MobileTradeChartModal chartState={chartState} onClose={() => setActiveTradeId(null)} trade={activeTrade} /> : null}
     </main>

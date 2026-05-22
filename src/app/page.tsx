@@ -59,7 +59,7 @@ import type { TradeAlert, TradeManagementEvent } from "@/lib/types";
 export const dynamic = "force-dynamic";
 const DEFAULT_SELECTED_STRATEGY_COUNT = 1;
 const TRADE_CHART_TIMEFRAME_VALUES = new Set<TradeChartTimeframe>(["1m", "5m", "10m", "15m", "30m", "45m", "1h", "4h", "1d"]);
-const HISTORY_VISIBLE_TRADE_LIMIT = 500;
+const HISTORY_LOOKBACK_MS = 365 * 24 * 60 * 60 * 1000;
 const EMPTY_LIVE_CONFIG: LiveConfig = {
   customScaleRanges: {},
   dashboardSettings: {},
@@ -198,6 +198,15 @@ function earliestIsoTime(values: Array<number | string | null | undefined>): str
 
 function latestLiveTradeAt(trades: TradeAlert[]): string | undefined {
   return latestIsoTime(trades.flatMap((trade) => [trade.lifecycleTime, trade.signalTime]));
+}
+
+function timeInWindow(value: string | undefined, startMs: number, endMs: number): boolean {
+  const parsed = value ? Date.parse(value) : Number.NaN;
+  return Number.isFinite(parsed) && parsed >= startMs && parsed <= endMs;
+}
+
+function backtestTradeInWindow(trade: BacktestTrade, startMs: number, endMs: number): boolean {
+  return timeInWindow(trade.entryTime, startMs, endMs) || timeInWindow(trade.exitTime, startMs, endMs);
 }
 
 function latestDatasetCoverageAt(datasetStatus: DatasetStatus | null | undefined): string | undefined {
@@ -1432,6 +1441,12 @@ export default async function Home({ searchParams }: HomeProps) {
   const latestTradeAt = latestIsoTime([latestLiveTradeAt(liveTrades), latestBacktestTradeAt]);
   const backtestManifestAt = backtestFreshness.generatedAt;
   const dataEndsAt = backtestFreshness.computedThroughAt ?? latestMarketDataBarAt;
+  const historyWindowEndMs = Number.isFinite(Date.parse(dataEndsAt ?? ""))
+    ? Date.parse(dataEndsAt!)
+    : Number.isFinite(Date.parse(latestTradeAt ?? ""))
+      ? Date.parse(latestTradeAt!)
+      : Date.now();
+  const historyWindowStartMs = historyWindowEndMs - HISTORY_LOOKBACK_MS;
   const backtestBehindMarketData = false;
   const now = new Date();
   const nextMarketDataSyncAt = nextCronRunIso((date) => date.getUTCMinutes() % 5 === 0, now);
@@ -1603,7 +1618,7 @@ export default async function Home({ searchParams }: HomeProps) {
   );
   const selectedBacktestTrades = backtestTrades.filter((trade) => selectedKeySet.has(trade.datasetId));
   const activeMarketBacktestTrades = backtestTrades.filter((trade) => activeMarketKeySet.has(trade.datasetId));
-  const historyBacktestTrades = selectedBacktestTrades;
+  const historyBacktestTrades = selectedBacktestTrades.filter((trade) => backtestTradeInWindow(trade, historyWindowStartMs, historyWindowEndMs));
   const selectedDataEndAt =
     strategyOptions
       .filter((option) => selectedKeySet.has(option.key))
@@ -1618,7 +1633,7 @@ export default async function Home({ searchParams }: HomeProps) {
     basePnlDollars: tradeDollarPnl(trade, optionByKey.get(trade.datasetId)?.sizeMultiplier ?? 1),
     rMultiple: trade.rMultiple
   }));
-  const visibleStoredBacktestHistoryTrades = historyBacktestTrades.slice(0, HISTORY_VISIBLE_TRADE_LIMIT);
+  const visibleStoredBacktestHistoryTrades = historyBacktestTrades;
   const historyTradeBarsBySymbol = await loadHistoryBarsBySymbol(visibleStoredBacktestHistoryTrades);
   const storedBacktestHistoryRows: TradeHistoryRow[] = visibleStoredBacktestHistoryTrades.map((trade, index) => {
     const sizeMultiplier = optionByKey.get(trade.datasetId)?.sizeMultiplier ?? 1;
@@ -1728,6 +1743,7 @@ export default async function Home({ searchParams }: HomeProps) {
   );
   const liveHistoryRows: TradeHistoryRow[] = activeMarketLiveTrades
     .filter((trade) => selectedLiveTrades.includes(trade))
+    .filter((trade) => timeInWindow(trade.signalTime, historyWindowStartMs, historyWindowEndMs))
     .filter((trade) => {
       const isClosed = liveTradeClosed(trade);
       return (
@@ -1842,12 +1858,12 @@ export default async function Home({ searchParams }: HomeProps) {
       ...row,
       indexLabel: fmtNumber(index + 1)
     }));
-  const visibleTradeHistoryRows = tradeHistoryRows.slice(0, HISTORY_VISIBLE_TRADE_LIMIT);
+  const visibleTradeHistoryRows = tradeHistoryRows;
   const hiddenHistoryTradeCount = Math.max(0, historyTotalTradeCount - visibleTradeHistoryRows.length);
   const historyCountLabel =
     hiddenHistoryTradeCount > 0
       ? `Showing latest ${fmtNumber(visibleTradeHistoryRows.length)} of ${fmtNumber(historyTotalTradeCount)} trades`
-      : `Showing ${fmtNumber(visibleTradeHistoryRows.length)} trades`;
+      : `Showing ${fmtNumber(visibleTradeHistoryRows.length)} trades from the past year`;
   const historySourceLabel = liveHistoryRows.length
     ? `${historyCountLabel} / ${fmtNumber(liveHistoryClosedCount)} closed live / ${fmtNumber(liveHistoryOpenCount)} open live`
     : historyCountLabel;

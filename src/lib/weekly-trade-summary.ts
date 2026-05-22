@@ -86,6 +86,7 @@ const LOCAL_WEEKLY_SUMMARY_PATH = path.join(LOCAL_RUNTIME_ROOT, "signal-console-
 const LOCAL_DAILY_SUMMARY_PATH = path.join(LOCAL_RUNTIME_ROOT, "signal-console-daily-summaries.json");
 const SUMMARY_MARKETS: AutoTradeMarket[] = ["forex", "futures"];
 const MAX_TRADE_LINES = 14;
+const SUMMARY_SEPARATOR = "-------------------------------------------------------";
 
 function escapeHtml(value: string): string {
   return value
@@ -110,6 +111,7 @@ function formatMoney(value: number, signed = false): string {
 }
 
 function formatNumber(value: number, digits = 2): string {
+  if (!Number.isFinite(value)) return "∞";
   return new Intl.NumberFormat("en-US", {
     maximumFractionDigits: digits,
     minimumFractionDigits: digits
@@ -122,6 +124,10 @@ function formatPct(value: number): string {
     minimumFractionDigits: 1,
     style: "percent"
   }).format(value);
+}
+
+function summaryTitle(title: string): string {
+  return `${SUMMARY_SEPARATOR}\n<b>${escapeHtml(title)}</b>\n${SUMMARY_SEPARATOR}`;
 }
 
 function weeklyMarkerKey(market: AutoTradeMarket, weekKey: string): string {
@@ -352,16 +358,13 @@ function sideLabel(trade: TradeAlert): string {
 }
 
 function shortTradeLabel(trade: TradeAlert): string {
-  const strategy = truncate(trade.strategy.replace(/\s+/g, " "), 32);
   const pnl = tradePnl(trade);
   const r = tradeRMultiple(trade);
   return [
-    `- ${formatPacificTime(new Date(tradeTime(trade)))}`,
-    `${trade.symbol} ${sideLabel(trade)}`,
+    `- ${trade.symbol} ${sideLabel(trade)}`,
     outcomeLabel(trade),
     pnl !== undefined ? formatMoney(pnl, true) : `risk ${formatMoney(tradeRiskDollars(trade))}`,
-    r !== undefined ? `${formatNumber(r)}R` : undefined,
-    strategy
+    r !== undefined ? `${formatNumber(r)}R` : undefined
   ]
     .filter((part): part is string => Boolean(part))
     .join(" | ");
@@ -383,10 +386,10 @@ function symbolBreakdownLines(trades: TradeAlert[]): string[] {
   return [...groups.entries()]
     .sort((left, right) => Math.abs(right[1].net) - Math.abs(left[1].net) || right[1].total - left[1].total)
     .slice(0, 6)
-    .map(([symbol, group]) => `- ${symbol}: ${formatMoney(group.net, true)} realized | ${group.closed}/${group.total} closed`);
+    .map(([symbol, group]) => `- ${symbol}: ${formatMoney(group.net, true)} | ${group.closed}/${group.total} closed`);
 }
 
-function executionSummary(trades: TradeAlert[]): string {
+function executionSummaryLines(trades: TradeAlert[]): string[] {
   const counts = new Map<string, number>();
   for (const trade of trades) {
     const label = executionLabel(trade);
@@ -394,8 +397,7 @@ function executionSummary(trades: TradeAlert[]): string {
   }
   return [...counts.entries()]
     .sort((left, right) => right[1] - left[1] || left[0].localeCompare(right[0]))
-    .map(([label, count]) => `${count} ${label}`)
-    .join(" | ");
+    .map(([label, count]) => `- ${count} ${label}`);
 }
 
 function formatTradeSummaryMessage(
@@ -403,8 +405,6 @@ function formatTradeSummaryMessage(
   fields: {
     dateLabel: string;
     emptyTradeText: string;
-    footnote: string;
-    sessionClock: string;
     title: string;
     windowEnd: Date;
     windowStart: Date;
@@ -416,63 +416,57 @@ function formatTradeSummaryMessage(
   const pnls = closedTrades.map((trade) => tradePnl(trade)!);
   const netPnl = pnls.reduce((sum, value) => sum + value, 0);
   const grossWins = pnls.filter((value) => value > 0).reduce((sum, value) => sum + value, 0);
-  const grossLosses = pnls.filter((value) => value < 0).reduce((sum, value) => sum + value, 0);
+  const losingPnls = pnls.filter((value) => value < 0);
+  const grossLosses = Math.abs(losingPnls.reduce((sum, value) => sum + value, 0));
   const winners = pnls.filter((value) => value > 0).length;
   const winRate = closedTrades.length ? winners / closedTrades.length : 0;
-  const rMultiples = closedTrades.map((trade) => tradeRMultiple(trade)).filter((value): value is number => value !== undefined);
-  const avgR = rMultiples.length ? rMultiples.reduce((sum, value) => sum + value, 0) / rMultiples.length : 0;
+  const profitFactor = grossLosses > 0 ? grossWins / grossLosses : grossWins > 0 ? Number.POSITIVE_INFINITY : 0;
+  const averageWin = winners ? grossWins / winners : 0;
+  const averageLoss = losingPnls.length ? losingPnls.reduce((sum, value) => sum + value, 0) / losingPnls.length : 0;
   const openRisk = openTrades.reduce((sum, trade) => sum + tradeRiskDollars(trade), 0);
   const takeProfits = trades.filter((trade) => trade.lifecycleStatus === "take_profit").length;
   const stopLosses = trades.filter((trade) => trade.lifecycleStatus === "stop_loss").length;
   const maxBars = trades.filter((trade) => trade.lifecycleStatus === "max_bars").length;
-  const bestTrade = closedTrades.sort((left, right) => (tradePnl(right) ?? 0) - (tradePnl(left) ?? 0))[0];
-  const worstTrade = closedTrades.sort((left, right) => (tradePnl(left) ?? 0) - (tradePnl(right) ?? 0))[0];
-  const tradeLines = trades
+  const tradeLines = [...trades]
     .sort((left, right) => tradeTime(right) - tradeTime(left))
     .slice(0, MAX_TRADE_LINES)
     .map(shortTradeLabel);
   const hiddenTradeCount = Math.max(0, trades.length - tradeLines.length);
   const symbolLines = symbolBreakdownLines(trades);
+  const executionLines = executionSummaryLines(trades);
   const lines = [
-    `<b>${marketTitle(market)} ${fields.title}</b>`,
-    `<b>${escapeHtml(fields.dateLabel)}</b>`,
-    `${escapeHtml(fields.sessionClock)}`,
+    summaryTitle(`${marketTitle(market)} ${fields.title}`),
+    `Period: <b>${escapeHtml(fields.dateLabel)}</b>`,
     `${escapeHtml(formatPacificTime(fields.windowStart))} to ${escapeHtml(formatPacificTime(fields.windowEnd))}`,
     "",
-    `<b>Scoreboard</b>`,
+    `<b>Results:</b>`,
     `Trades: <b>${trades.length}</b> | Closed: <b>${closedTrades.length}</b> | Open: <b>${openTrades.length}</b>`,
-    `Net P/L: <b>${formatMoney(netPnl, true)}</b> | Wins: ${formatMoney(grossWins, true)} | Losses: ${formatMoney(grossLosses, true)}`,
-    `Win rate: <b>${formatPct(winRate)}</b> | Avg R: <b>${formatNumber(avgR)}R</b>`,
-    `Outcomes: ${takeProfits} TP | ${stopLosses} SL | ${maxBars} max bars | ${openTrades.length} open`,
-    openTrades.length ? `Open risk: ${formatMoney(openRisk)} estimated` : undefined,
+    `Net P/L: <b>${formatMoney(netPnl, true)}</b>`,
+    `Win Rate: <b>${formatPct(winRate)}</b> | PF: <b>${formatNumber(profitFactor)}</b>`,
+    `Avg Win: <b>${formatMoney(averageWin, true)}</b> | Avg Loss: <b>${formatMoney(averageLoss, true)}</b>`,
+    `Outcomes: ${takeProfits} TP | ${stopLosses} SL | ${maxBars} Max Bars`,
+    openTrades.length ? `Open Risk: ${formatMoney(openRisk)}` : undefined,
     "",
-    `<b>Execution</b>`,
-    executionSummary(trades) || "No executions recorded",
-    bestTrade || worstTrade ? "" : undefined,
-    bestTrade ? `<b>Best</b>: ${escapeHtml(bestTrade.symbol)} ${formatMoney(tradePnl(bestTrade) ?? 0, true)} (${formatNumber(tradeRMultiple(bestTrade) ?? 0)}R)` : undefined,
-    worstTrade ? `<b>Worst</b>: ${escapeHtml(worstTrade.symbol)} ${formatMoney(tradePnl(worstTrade) ?? 0, true)} (${formatNumber(tradeRMultiple(worstTrade) ?? 0)}R)` : undefined,
+    `<b>Execution:</b>`,
+    ...(executionLines.length ? executionLines.map(escapeHtml) : ["No executions recorded"]),
     symbolLines.length ? "" : undefined,
-    symbolLines.length ? `<b>By Symbol</b>` : undefined,
+    symbolLines.length ? `<b>By Symbol:</b>` : undefined,
     ...symbolLines.map(escapeHtml),
     "",
-    `<b>Trades</b>`,
-    tradeLines.length ? tradeLines.map(escapeHtml).join("\n") : fields.emptyTradeText,
-    hiddenTradeCount ? `...and ${hiddenTradeCount} more.` : undefined,
-    "",
-    `<i>${escapeHtml(fields.footnote)}</i>`
+    `<b>Trades:</b>`,
+    ...(tradeLines.length ? tradeLines.map(escapeHtml) : [fields.emptyTradeText]),
+    hiddenTradeCount ? `...and ${hiddenTradeCount} more.` : undefined
   ];
 
   return lines.filter((line): line is string => line !== undefined).join("\n");
 }
 
-function formatWeeklySummaryMessage(market: AutoTradeMarket, window: WeeklySummaryWindow, trades: TradeAlert[]): string {
+export function formatWeeklySummaryMessage(market: AutoTradeMarket, window: WeeklySummaryWindow, trades: TradeAlert[]): string {
   return formatTradeSummaryMessage(
     market,
     {
       dateLabel: `Week ending ${window.weekKey}`,
       emptyTradeText: "No trades were alerted for this market this week.",
-      footnote: "Realized P/L uses completed lifecycle outcomes; open trades are excluded from net P/L.",
-      sessionClock: window.sessionClock,
       title: "Weekly Summary",
       windowEnd: window.end,
       windowStart: window.start
@@ -481,14 +475,12 @@ function formatWeeklySummaryMessage(market: AutoTradeMarket, window: WeeklySumma
   );
 }
 
-function formatDailySummaryMessage(market: AutoTradeMarket, window: DailySummaryWindow, trades: TradeAlert[]): string {
+export function formatDailySummaryMessage(market: AutoTradeMarket, window: DailySummaryWindow, trades: TradeAlert[]): string {
   return formatTradeSummaryMessage(
     market,
     {
       dateLabel: `Trading day ${window.tradingDateKey}`,
       emptyTradeText: "No trades were alerted for this market today.",
-      footnote: "Realized P/L uses completed lifecycle outcomes; open trades are excluded from net P/L.",
-      sessionClock: window.sessionClock,
       title: "Daily Summary",
       windowEnd: window.end,
       windowStart: window.start
