@@ -2,7 +2,7 @@ import { enrichBars } from "@/lib/indicators";
 import { assetForKey, defaultTickSize } from "@/lib/assets";
 import { getBacktestStats, type BacktestStat } from "@/lib/backtest";
 import { instrumentSizeLabel, recommendedSizeMultiplier } from "@/lib/instruments";
-import { getLiveConfig, type SavedStrategyEdit } from "@/lib/live-config";
+import { getLiveConfig, type SavedCustomScaleRanges, type SavedStrategyEdit } from "@/lib/live-config";
 import { STRATEGY_DEFINITIONS } from "@/lib/strategy-loader";
 import { conciseStrategyName } from "@/lib/strategy-names";
 import type { StrategySignal } from "@/lib/strategy-definition";
@@ -56,11 +56,11 @@ function scaleFromLegacyContracts(rule: StrategyRule, contracts: number | undefi
   if (!contracts) return undefined;
   const baseSizeMultiplier = positiveNumber(rule.sizeMultiplier) ?? 1;
   const baseContracts = leadingSizeNumber(instrumentSizeLabel(rule.symbol, baseSizeMultiplier));
-  return baseContracts ? roundScaleValue(contracts / baseContracts) : undefined;
+  return baseContracts ? contracts / baseContracts : undefined;
 }
 
 function editScale(rule: StrategyRule, edit: SavedStrategyEdit): number | undefined {
-  return positiveNumber(edit.scale) ?? scaleFromLegacyContracts(rule, positiveNumber(edit.contracts));
+  return scaleFromLegacyContracts(rule, positiveNumber(edit.contracts)) ?? positiveNumber(edit.scale);
 }
 
 function scaledSizePolicy(policy: StrategyRule["sizePolicy"], scale: number | undefined): StrategyRule["sizePolicy"] {
@@ -101,6 +101,12 @@ function applyStrategyEdit(
     sizePolicy: scaledSizePolicy(rule.sizePolicy, scale),
     sizeMultiplier: scale ? roundScaleValue(baseSizeMultiplier * scale) : rule.sizeMultiplier
   };
+}
+
+function customScaleRangeForRule(rule: StrategyRule, ranges: SavedCustomScaleRanges): StrategyRule["customScaleRange"] {
+  if (rule.market === "gold_spot") return ranges.gold_spot ?? ranges.forex;
+  if (rule.market === "forex" || rule.market === "futures") return ranges[rule.market];
+  return undefined;
 }
 
 function explicitRuleTimeframe(rule: StrategyRule): string | null {
@@ -145,7 +151,11 @@ function invertStrategySignal(rule: StrategyRule, signal: StrategySignal): Strat
   };
 }
 
-function statToRule(stat: BacktestStat, strategyEdits: Record<string, SavedStrategyEdit> = {}): StrategyRule | null {
+function statToRule(
+  stat: BacktestStat,
+  strategyEdits: Record<string, SavedStrategyEdit> = {},
+  customScaleRanges: SavedCustomScaleRanges = {}
+): StrategyRule | null {
   const strategy = STRATEGY_DEFINITIONS.find((item) => item.id === stat.datasetId);
   if (!strategy || !strategy.liveEnabled) return null;
   const asset = assetForKey(strategy.assetKey);
@@ -187,6 +197,7 @@ function statToRule(stat: BacktestStat, strategyEdits: Record<string, SavedStrat
     slUnits,
     tickSize: stat.pipOrTickSize ?? defaultTickSize(asset.symbol, asset.market),
     unitLabel: asset.unitLabel,
+    customScaleRange: undefined,
     sizeMultiplier:
       stat.sizeMultiplier ??
       defaults.sizeMultiplier ??
@@ -208,13 +219,18 @@ function statToRule(stat: BacktestStat, strategyEdits: Record<string, SavedStrat
     invertSignal: stat.invertSignal ?? defaults.invertSignal ?? false
   };
 
-  return applyStrategyEdit(baseRule, strategyEdits[stat.datasetId], plannedRiskRewardRatio);
+  return {
+    ...applyStrategyEdit(baseRule, strategyEdits[stat.datasetId], plannedRiskRewardRatio),
+    customScaleRange: customScaleRangeForRule(baseRule, customScaleRanges)
+  };
 }
 
 export async function allRules(): Promise<StrategyRule[]> {
   try {
     const [stats, config] = await Promise.all([getBacktestStats(), getLiveConfig()]);
-    return uniqueRules(stats.map((stat) => statToRule(stat, config.strategyEdits)).filter((rule): rule is StrategyRule => Boolean(rule)));
+    return uniqueRules(
+      stats.map((stat) => statToRule(stat, config.strategyEdits, config.customScaleRanges)).filter((rule): rule is StrategyRule => Boolean(rule))
+    );
   } catch {
     return [];
   }
@@ -223,7 +239,7 @@ export async function allRules(): Promise<StrategyRule[]> {
 export async function activeRules(): Promise<StrategyRule[]> {
   const [stats, config] = await Promise.all([getBacktestStats(), getLiveConfig()]);
   const rules = uniqueRules(
-    stats.map((stat) => statToRule(stat, config.strategyEdits)).filter((rule): rule is StrategyRule => Boolean(rule))
+    stats.map((stat) => statToRule(stat, config.strategyEdits, config.customScaleRanges)).filter((rule): rule is StrategyRule => Boolean(rule))
   );
   const selectedDatasetIds = config.enabledDatasetIds.length ? config.enabledDatasetIds : config.dashboardSelectedDatasetIds;
   if (!selectedDatasetIds.length) return [];

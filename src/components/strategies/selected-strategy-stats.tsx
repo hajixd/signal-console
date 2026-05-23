@@ -15,6 +15,8 @@ type BasketTrade = {
   exitTime: string;
   barsHeld: number;
   basePnlDollars: number;
+  baseRiskDollars: number;
+  baseTargetDollars: number;
   rMultiple: number;
 };
 
@@ -61,10 +63,25 @@ type DollarAggregate = {
 };
 
 type SelectedStrategyStatsProps = {
+  customScaleRange?: CustomScaleRangeSeed;
   dataEndAt?: string;
   strategies: StrategyEditOption[];
   trades: BasketTrade[];
   persistedStrategyEdits?: StrategyEditSeedMap;
+};
+
+type CustomScaleRangeSeed = {
+  riskCeiling?: unknown;
+  riskFloor?: unknown;
+  targetCeiling?: unknown;
+  targetFloor?: unknown;
+};
+
+type CustomScaleRange = {
+  riskCeiling: number;
+  riskFloor: number;
+  targetCeiling: number;
+  targetFloor: number;
 };
 
 function fmtNumber(value: number): string {
@@ -91,6 +108,32 @@ function fmtMoney(value: number, signed = false): string {
   });
   const formatted = formatter.format(value);
   return signed && value > 0 ? `+${formatted}` : formatted;
+}
+
+function positiveNumber(value: unknown): number | undefined {
+  const numeric = Number(value);
+  return Number.isFinite(numeric) && numeric > 0 ? numeric : undefined;
+}
+
+function parseCustomScaleRange(range: CustomScaleRangeSeed | undefined): CustomScaleRange | null {
+  if (!range) return null;
+  const targetFloor = positiveNumber(range.targetFloor);
+  const targetCeiling = positiveNumber(range.targetCeiling);
+  const riskFloor = positiveNumber(range.riskFloor);
+  const riskCeiling = positiveNumber(range.riskCeiling);
+
+  if (!targetFloor || !targetCeiling || !riskFloor || !riskCeiling) return null;
+  if (targetFloor > targetCeiling || riskFloor > riskCeiling) return null;
+  return { riskCeiling, riskFloor, targetCeiling, targetFloor };
+}
+
+function customRangeScaleForTrade(trade: BasketTrade, range: CustomScaleRange): number {
+  const baseTarget = Math.abs(trade.baseTargetDollars);
+  const baseRisk = Math.abs(trade.baseRiskDollars);
+  if (!(baseTarget > 0) || !(baseRisk > 0)) return 1;
+
+  const scale = Math.min(range.targetCeiling / baseTarget, range.riskCeiling / baseRisk);
+  return Number.isFinite(scale) && scale > 0 ? Number(scale.toFixed(6)) : 1;
 }
 
 function latestEndDate(dataEndAt: string | undefined, selectedEnd: number | undefined): number | undefined {
@@ -321,14 +364,20 @@ function tradeCadence(trades: BasketTrade[]) {
   };
 }
 
-export default function SelectedStrategyStats({ dataEndAt, strategies, trades, persistedStrategyEdits }: SelectedStrategyStatsProps) {
+export default function SelectedStrategyStats({ customScaleRange, dataEndAt, strategies, trades, persistedStrategyEdits }: SelectedStrategyStatsProps) {
   const [expanded, setExpanded] = useState(false);
   const edits = useStrategyEdits(strategies, persistedStrategyEdits);
   const strategyByKey = new Map(strategies.map((strategy) => [strategy.key, strategy]));
+  const parsedCustomScaleRange = parseCustomScaleRange(customScaleRange);
   const selectedCadence = tradeCadence(trades);
   const selectedDollarAggregate = aggregateDollars(trades, (trade) => {
     const strategy = strategyByKey.get(trade.key);
-    return trade.basePnlDollars * (strategy ? strategyContractScale(strategy, edits) : 1);
+    const scale = parsedCustomScaleRange
+      ? customRangeScaleForTrade(trade, parsedCustomScaleRange)
+      : strategy
+        ? strategyContractScale(strategy, edits)
+        : 1;
+    return trade.basePnlDollars * scale;
   });
   const toggleExpanded = () => setExpanded((current) => !current);
 

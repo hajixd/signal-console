@@ -34,16 +34,18 @@ function resultRowClass(value: number): string {
 export function adjustTradeHistoryRows(
   rows: TradeHistoryRow[],
   strategies: StrategyEditOption[],
-  edits: StrategyEditMap
+  edits: StrategyEditMap,
+  customScaleRange?: CustomScaleRangeSeed
 ): TradeHistoryRow[] {
   const strategyByKey = new Map(strategies.map((strategy) => [strategy.key, strategy]));
+  const customRange = parseCustomScaleRange(customScaleRange);
 
   return rows.map((row) => {
     const strategy = strategyByKey.get(row.strategyKey);
     if (row.lockedSize) return row;
     if (!strategy) return row;
 
-    const scale = strategyContractScale(strategy, edits);
+    const scale = customRange ? rowCustomRangeScale(row, customRange) : strategyContractScale(strategy, edits);
     const pnlDollars = row.pnlDollars * scale;
     const targetDollars = row.targetDollars * scale;
     const riskDollars = row.riskDollars * scale;
@@ -68,4 +70,45 @@ export function adjustTradeHistoryRows(
       dollarsPerPricePoint: row.dollarsPerPricePoint * scale
     };
   });
+}
+
+type CustomScaleRangeSeed = {
+  riskCeiling?: unknown;
+  riskFloor?: unknown;
+  targetCeiling?: unknown;
+  targetFloor?: unknown;
+};
+
+type CustomScaleRange = {
+  riskCeiling: number;
+  riskFloor: number;
+  targetCeiling: number;
+  targetFloor: number;
+};
+
+function positiveNumber(value: unknown): number | undefined {
+  const numeric = Number(value);
+  return Number.isFinite(numeric) && numeric > 0 ? numeric : undefined;
+}
+
+function parseCustomScaleRange(range: CustomScaleRangeSeed | undefined): CustomScaleRange | null {
+  if (!range) return null;
+  const targetFloor = positiveNumber(range.targetFloor);
+  const targetCeiling = positiveNumber(range.targetCeiling);
+  const riskFloor = positiveNumber(range.riskFloor);
+  const riskCeiling = positiveNumber(range.riskCeiling);
+
+  if (!targetFloor || !targetCeiling || !riskFloor || !riskCeiling) return null;
+  if (targetFloor > targetCeiling || riskFloor > riskCeiling) return null;
+  return { riskCeiling, riskFloor, targetCeiling, targetFloor };
+}
+
+function rowCustomRangeScale(row: TradeHistoryRow, range: CustomScaleRange): number {
+  const baseTarget = Math.abs(row.targetDollars);
+  const baseRisk = Math.abs(row.riskDollars);
+  if (!(baseTarget > 0) || !(baseRisk > 0)) return 1;
+
+  // The largest ceiling-safe scale also satisfies the floors whenever this trade's TP/SL ratio allows it.
+  const scale = Math.min(range.targetCeiling / baseTarget, range.riskCeiling / baseRisk);
+  return Number.isFinite(scale) && scale > 0 ? Number(scale.toFixed(6)) : 1;
 }

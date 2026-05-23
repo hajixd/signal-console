@@ -40,6 +40,13 @@ export type SizePolicy = {
   maxConfidence?: number;
 };
 
+export type CustomScaleRange = {
+  riskCeiling?: string;
+  riskFloor?: string;
+  targetCeiling?: string;
+  targetFloor?: string;
+};
+
 export type EchoNeuralModel = {
   kind: "neural";
   threshold: number;
@@ -125,6 +132,7 @@ export type StrategyRule = {
   unitLabel: string;
   sizeScale?: number;
   sizeMultiplier?: number;
+  customScaleRange?: CustomScaleRange;
   stopLossPolicy?: StopLossPolicy;
   takeProfitPolicy?: TakeProfitPolicy;
   sizePolicy?: SizePolicy;

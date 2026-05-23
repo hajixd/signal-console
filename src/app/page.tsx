@@ -1631,6 +1631,8 @@ export default async function Home({ searchParams }: HomeProps) {
     exitTime: trade.exitTime,
     barsHeld: trade.barsHeld,
     basePnlDollars: tradeDollarPnl(trade, optionByKey.get(trade.datasetId)?.sizeMultiplier ?? 1),
+    baseRiskDollars: tradeRiskDollars(trade, optionByKey.get(trade.datasetId)?.sizeMultiplier ?? 1),
+    baseTargetDollars: tradeTargetDollars(trade, optionByKey.get(trade.datasetId)?.sizeMultiplier ?? 1),
     rMultiple: trade.rMultiple
   }));
   const visibleStoredBacktestHistoryTrades = historyBacktestTrades;
@@ -2124,6 +2126,7 @@ export default async function Home({ searchParams }: HomeProps) {
     <>
     <MobileTradingDashboard
       activeMarket={activeMarket}
+      customScaleRange={liveConfig.customScaleRanges[activeMarket]}
       historyRows={visibleTradeHistoryRows}
       initialTheme={liveConfig.dashboardSettings.theme}
       latestHistoryTradeAt={latestHistoryTradeAt}
@@ -2202,6 +2205,7 @@ export default async function Home({ searchParams }: HomeProps) {
           </div>
 
           <SelectedStrategyStats
+            customScaleRange={liveConfig.customScaleRanges[activeMarket]}
             dataEndAt={selectedDataEndAt}
             strategies={strategyOptions}
             trades={selectedBasketTrades}
@@ -2247,6 +2251,7 @@ export default async function Home({ searchParams }: HomeProps) {
         <section className="backtest-card history-card" id="backtest" aria-label="Backtest trade history">
           <BacktestHistoryPanel
             backtestBehindMarketData={backtestBehindMarketData}
+            customScaleRange={liveConfig.customScaleRanges[activeMarket]}
             historySourceLabel={historySourceLabel}
             latestHistoryTradeAt={latestHistoryTradeAt}
             rows={visibleTradeHistoryRows}

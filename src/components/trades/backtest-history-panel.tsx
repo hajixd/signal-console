@@ -11,6 +11,7 @@ import LocalDateTime from "@/components/ui/local-date-time";
 
 type BacktestHistoryPanelProps = {
   backtestBehindMarketData: boolean;
+  customScaleRange?: CustomScaleRangeSeed;
   historySourceLabel: string;
   latestHistoryTradeAt?: string;
   persistedStrategyEdits?: StrategyEditSeedMap;
@@ -19,9 +20,16 @@ type BacktestHistoryPanelProps = {
 };
 
 type HistoryViewMode = "list" | "calendar";
+type CustomScaleRangeSeed = {
+  riskCeiling?: unknown;
+  riskFloor?: unknown;
+  targetCeiling?: unknown;
+  targetFloor?: unknown;
+};
 
 export default function BacktestHistoryPanel({
   backtestBehindMarketData,
+  customScaleRange,
   historySourceLabel,
   latestHistoryTradeAt,
   persistedStrategyEdits,
@@ -67,7 +75,13 @@ export default function BacktestHistoryPanel({
           <span>No stored backtest trades or live cron executions are available for this market.</span>
         </div>
       ) : (
-        <EditableTradeHistory rows={rows} strategies={strategies} persistedStrategyEdits={persistedStrategyEdits} view={view} />
+        <EditableTradeHistory
+          customScaleRange={customScaleRange}
+          rows={rows}
+          strategies={strategies}
+          persistedStrategyEdits={persistedStrategyEdits}
+          view={view}
+        />
       )}
     </>
   );

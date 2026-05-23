@@ -27,6 +27,7 @@ type MobileTradingTab = "history" | "alerts" | "autotrade" | "settings";
 
 type MobileTradingDashboardProps = {
   activeMarket: AutoTradeMarket;
+  customScaleRange?: CustomScaleRangeSeed;
   historyRows: TradeHistoryRow[];
   initialTheme?: "dark" | "light";
   latestHistoryTradeAt?: string;
@@ -41,6 +42,12 @@ type MobileTradingDashboardProps = {
 };
 
 type MobileTheme = "dark" | "light";
+type CustomScaleRangeSeed = {
+  riskCeiling?: unknown;
+  riskFloor?: unknown;
+  targetCeiling?: unknown;
+  targetFloor?: unknown;
+};
 
 type MobileChartState = {
   bars: TradeChartBar[];
@@ -650,6 +657,7 @@ function MobileTradeChartModal({
 
 export default function MobileTradingDashboard({
   activeMarket,
+  customScaleRange,
   historyRows,
   initialTheme,
   latestHistoryTradeAt,
@@ -668,7 +676,10 @@ export default function MobileTradingDashboard({
   const [loadingLabel, setLoadingLabel] = useState<string | null>(null);
   const loadingTimeoutRef = useRef<number | null>(null);
   const edits = useStrategyEdits(strategies, persistedStrategyEdits);
-  const adjustedHistoryRows = useMemo(() => adjustTradeHistoryRows(historyRows, strategies, edits), [edits, historyRows, strategies]);
+  const adjustedHistoryRows = useMemo(
+    () => adjustTradeHistoryRows(historyRows, strategies, edits, customScaleRange),
+    [customScaleRange, edits, historyRows, strategies]
+  );
   const adjustedLiveAlertRows = useMemo(() => adjustTradeHistoryRows(liveAlertRows, strategies, edits), [edits, liveAlertRows, strategies]);
   const activeTrade = useMemo(
     () => [...adjustedLiveAlertRows, ...adjustedHistoryRows].find((row) => row.id === activeTradeId) ?? null,
