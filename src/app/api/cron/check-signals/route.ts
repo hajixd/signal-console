@@ -7,7 +7,7 @@ import { saveCronRun, updateDatasetSyncRunStatus } from "@/lib/live-config";
 import { activeRules, evaluateRecentSignals } from "@/lib/live-signals";
 import { cronWeekendPause, marketOpenForSignal } from "@/lib/market-schedule";
 import { claimTrade, getTrades, hasTrade, saveTrade } from "@/lib/storage";
-import { sendTelegram, sendTelegramManagement, sendTelegramOutcome } from "@/lib/telegram";
+import { sendTradeManagementNotification, sendTradeNotification, sendTradeOutcomeNotification } from "@/lib/notifications";
 import { TOPSTEP_100K_ACCOUNT, reviewTopstepSignal, withTopstepGuardNote } from "@/lib/topstep";
 import type { Bar, CronResult, StrategyRule, TradeAlert, TradeManagementEvent } from "@/lib/types";
 import { sendDueDailyTradeSummaries, sendDueWeeklyTradeSummaries } from "@/lib/weekly-trade-summary";
@@ -566,11 +566,13 @@ async function notifyTradeLifecycles(result: CronResult, barsByAssetKey: Map<str
       const evaluation = evaluateTradeLifecycleAndManagement(trade, bars, matchingRuleForTrade(trade, rules));
       const notifiedManagementEvents: TradeManagementEvent[] = [];
       for (const event of evaluation.managementEvents) {
-        const notification = await sendTelegramManagement(trade, event);
+        const notification = await sendTradeManagementNotification(trade, event);
         notifiedManagementEvents.push({
           ...event,
-          telegramError: notification.error,
-          telegramStatus: notification.status
+          discordError: notification.discord.error,
+          discordStatus: notification.discord.status,
+          telegramError: notification.telegram.error,
+          telegramStatus: notification.telegram.status
         });
       }
 
@@ -595,11 +597,13 @@ async function notifyTradeLifecycles(result: CronResult, barsByAssetKey: Map<str
         lifecycleStatus: evaluation.hit.status,
         lifecycleTime: evaluation.hit.time
       };
-      const notification = await sendTelegramOutcome(updatedTrade);
+      const notification = await sendTradeOutcomeNotification(updatedTrade);
       await saveTrade({
         ...updatedTrade,
-        telegramLifecycleError: notification.error,
-        telegramLifecycleStatus: notification.status
+        discordLifecycleError: notification.discord.error,
+        discordLifecycleStatus: notification.discord.status,
+        telegramLifecycleError: notification.telegram.error,
+        telegramLifecycleStatus: notification.telegram.status
       });
     } catch (error) {
       result.errors.push({
@@ -847,11 +851,13 @@ async function runSignalCheck(): Promise<CronResult> {
     const autoTrade = await executeAutoTrade(candidate.signal);
     const executableSignal = tradeWithAutoTradeResult(candidate.signal, autoTrade);
     await saveTrade(executableSignal);
-    const notification = await sendTelegram(executableSignal);
+    const notification = await sendTradeNotification(executableSignal);
     const trade: TradeAlert = {
       ...executableSignal,
-      telegramStatus: notification.status,
-      telegramError: notification.error
+      discordError: notification.discord.error,
+      discordStatus: notification.discord.status,
+      telegramError: notification.telegram.error,
+      telegramStatus: notification.telegram.status
     };
 
     await saveTrade(trade);

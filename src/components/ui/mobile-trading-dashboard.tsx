@@ -28,6 +28,7 @@ type MobileTradingTab = "history" | "alerts" | "autotrade" | "settings";
 type MobileTradingDashboardProps = {
   activeMarket: AutoTradeMarket;
   customScaleRange?: CustomScaleRangeSeed;
+  discordChannelLink?: string | null;
   historyRows: TradeHistoryRow[];
   initialTheme?: "dark" | "light";
   latestHistoryTradeAt?: string;
@@ -254,6 +255,22 @@ function MobileTelegramIcon() {
         fill="currentColor"
       />
       <path d="m8.35 13.27 8.18-5.13c.4-.24.76-.11.46.16l-6.66 6.02-.25 2.62-1.73-3.67Z" fill="#fff" opacity="0.72" />
+    </svg>
+  );
+}
+
+function MobileDiscordIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden>
+      <path
+        d="M7.1 7.1c3.1-1.1 6.7-1.1 9.8 0 1.2 1.9 1.8 4 1.9 6.3-1.4 1.1-2.9 1.8-4.5 2.1l-.7-1.1c.8-.2 1.5-.5 2.1-.9-2.4 1.1-5 1.1-7.4 0 .7.4 1.4.7 2.1.9l-.7 1.1c-1.6-.3-3.1-1-4.5-2.1.1-2.3.7-4.4 1.9-6.3Z"
+        fill="currentColor"
+      />
+      <path
+        d="M9.3 12.6c.63 0 1.14-.57 1.14-1.27s-.51-1.27-1.14-1.27-1.14.57-1.14 1.27.51 1.27 1.14 1.27Zm5.4 0c.63 0 1.14-.57 1.14-1.27s-.51-1.27-1.14-1.27-1.14.57-1.14 1.27.51 1.27 1.14 1.27Z"
+        fill="#fff"
+        opacity="0.78"
+      />
     </svg>
   );
 }
@@ -658,6 +675,7 @@ function MobileTradeChartModal({
 export default function MobileTradingDashboard({
   activeMarket,
   customScaleRange,
+  discordChannelLink,
   historyRows,
   initialTheme,
   latestHistoryTradeAt,
@@ -863,6 +881,15 @@ export default function MobileTradingDashboard({
                       <span className="mobile-phone-action-icon"><MobileTelegramIcon /></span>
                       <span>
                         <strong>Telegram Group</strong>
+                        <small>Open alert channel</small>
+                      </span>
+                    </a>
+                  ) : null}
+                  {discordChannelLink ? (
+                    <a className="mobile-phone-action-btn mobile-phone-discord-link" href={discordChannelLink} rel="noreferrer" target="_blank">
+                      <span className="mobile-phone-action-icon"><MobileDiscordIcon /></span>
+                      <span>
+                        <strong>Discord Channel</strong>
                         <small>Open alert channel</small>
                       </span>
                     </a>

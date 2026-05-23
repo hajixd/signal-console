@@ -27,6 +27,7 @@ import {
   syncStrategyEdits,
   syncTheme
 } from "@/app/live-selection-actions";
+import { sendTestDiscordAlert } from "@/app/discord-actions";
 import { sendTestTelegramAlert } from "@/app/telegram-actions";
 import {
   aggregateBacktest,
@@ -49,12 +50,13 @@ import { fetchStoredAssetBars } from "@/lib/market-data-store";
 import { readDataText } from "@/lib/project-data";
 import { parseStrategySelection } from "@/lib/strategy-selection";
 import { getTrades } from "@/lib/storage";
+import { discordChannelInviteLink, discordConfigured as discordIsConfigured } from "@/lib/discord";
 import { telegramGroupInviteLink } from "@/lib/telegram";
 import { type DataTimeframe } from "@/lib/timeframes";
 import { topstepSessionKey } from "@/lib/topstep";
 import { resolveFirstTradeBracketHit, type TradeBracketBar, type TradeBracketHit } from "@/lib/trade-bracket-truth";
 import { conciseStrategyName } from "@/lib/strategy-names";
-import type { TradeAlert, TradeManagementEvent } from "@/lib/types";
+import type { NotificationStatus, TradeAlert, TradeManagementEvent } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 const DEFAULT_SELECTED_STRATEGY_COUNT = 1;
@@ -974,6 +976,13 @@ function liveTradeEventTelegramStatus(trade: TradeAlert, event: LiveTradeEvent):
   if (event.kind === "exit") return trade.telegramLifecycleStatus ?? trade.telegramStatus;
   if (event.kind === "limit") return trade.limitOrderTelegramStatus ?? trade.telegramStatus;
   return trade.telegramStatus;
+}
+
+function liveTradeEventDiscordStatus(trade: TradeAlert, event: LiveTradeEvent): NotificationStatus {
+  if (isManagementLiveTradeEvent(event)) return event.managementEvent.discordStatus ?? "skipped";
+  if (event.kind === "exit") return trade.discordLifecycleStatus ?? trade.discordStatus ?? "skipped";
+  if (event.kind === "limit") return trade.limitOrderDiscordStatus ?? trade.discordStatus ?? "skipped";
+  return trade.discordStatus ?? "skipped";
 }
 
 function liveTradeEventEntryPrice(trade: TradeAlert, event: LiveTradeEvent): number {
@@ -2087,6 +2096,8 @@ export default async function Home({ searchParams }: HomeProps) {
   const challengeHistoricalSessions = challengeSessionCount(challengeReplayTrades);
   const telegramConfigured = Boolean(process.env.TELEGRAM_BOT_TOKEN && (process.env.TELEGRAM_GROUP_CHAT_ID || process.env.TELEGRAM_CHAT_ID));
   const telegramGroupLink = telegramGroupInviteLink();
+  const discordConfigured = discordIsConfigured();
+  const discordChannelLink = discordChannelInviteLink();
   const executionMarket = activeMarket;
   const persistChallengeRules = syncChallengeRulesForMarket.bind(null, activeMarket);
   const dashboardSectionTabs: DashboardSectionTab[] = [
@@ -2137,6 +2148,7 @@ export default async function Home({ searchParams }: HomeProps) {
       persistActiveMarket={syncActiveMarket}
       persistTheme={syncTheme}
       strategies={strategyOptions}
+      discordChannelLink={discordChannelLink}
       telegramGroupLink={telegramGroupLink}
     />
     <main className="terminal desktopTradingWorkspace">
@@ -2169,6 +2181,16 @@ export default async function Home({ searchParams }: HomeProps) {
               </span>
             )}
             <TestAlertButton disabled={!telegramConfigured} sendTestAlert={sendTestTelegramAlert} />
+            {discordChannelLink ? (
+              <a className="terminal-action" href={discordChannelLink} target="_blank" rel="noreferrer">
+                Open Discord
+              </a>
+            ) : (
+              <span className="terminal-action isDisabled" aria-disabled="true">
+                Discord link missing
+              </span>
+            )}
+            <TestAlertButton channelLabel="Discord" disabled={!discordConfigured} sendTestAlert={sendTestDiscordAlert} />
             <AutoTradingConnectionDrawer market={executionMarket} />
           </div>
           <div className="mobileDashboardSnapshot" aria-label="Mobile dashboard snapshot">
@@ -2295,10 +2317,11 @@ export default async function Home({ searchParams }: HomeProps) {
                   <col className="live-col-odds" />
                   <col className="live-col-status" />
                   <col className="live-col-status" />
+                  <col className="live-col-status" />
                 </colgroup>
                 <thead>
                   <tr>
-                    <th className="cronTradeHeaderCell" colSpan={15}>
+                    <th className="cronTradeHeaderCell" colSpan={16}>
                       <span className="cronTradeHeaderGrid">
                         <span>#</span>
                         <span>Ticker</span>
@@ -2315,6 +2338,7 @@ export default async function Home({ searchParams }: HomeProps) {
                         <span>Odds</span>
                         <span>Auto Trade</span>
                         <span>Telegram</span>
+                        <span>Discord</span>
                       </span>
                     </th>
                   </tr>
@@ -2329,7 +2353,7 @@ export default async function Home({ searchParams }: HomeProps) {
                     const summarySizeMultiplier = liveTradeOrderSizeMultiplier(trade) ?? (trade.sizeMultiplier ?? 1);
                     return (
                       <tr className={liveRowClass(trade)} key={trade.id}>
-                        <td className="cronTradeCell" colSpan={15}>
+                        <td className="cronTradeCell" colSpan={16}>
                           <details className="cronTradeDetails">
                             <summary className="cronTradeSummary" aria-label={`Expand ${displaySymbol} cron events for ${fmtDate(trade.signalTime)}`}>
                               <span data-label="#">{fmtNumber(index + 1)}</span>
@@ -2365,6 +2389,9 @@ export default async function Home({ searchParams }: HomeProps) {
                               </span>
                               <span data-label="Telegram">
                                 <span className={`status ${trade.telegramStatus}`}>{trade.telegramStatus}</span>
+                              </span>
+                              <span data-label="Discord">
+                                <span className={`status ${trade.discordStatus ?? "skipped"}`}>{trade.discordStatus ?? "skipped"}</span>
                               </span>
                             </summary>
                             <div className="cronTradeEventPanel" aria-label={`${displaySymbol} cron event details`}>
@@ -2418,6 +2445,9 @@ export default async function Home({ searchParams }: HomeProps) {
                                   </span>
                                   <span data-label="Telegram">
                                     <span className={`status ${liveTradeEventTelegramStatus(trade, event)}`}>{liveTradeEventTelegramStatus(trade, event)}</span>
+                                  </span>
+                                  <span data-label="Discord">
+                                    <span className={`status ${liveTradeEventDiscordStatus(trade, event)}`}>{liveTradeEventDiscordStatus(trade, event)}</span>
                                   </span>
                                 </div>
                               );

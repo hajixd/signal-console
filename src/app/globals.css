@@ -5544,11 +5544,13 @@ html[data-theme="light"] .themeDarkLabel {
     var(--cron-col-money)
     var(--cron-col-odds)
     var(--cron-col-status)
+    var(--cron-col-status)
     var(--cron-col-status);
   --cron-table-min-width: calc(
     var(--cron-col-index) + var(--cron-col-ticker) + var(--cron-col-model) + var(--cron-col-event) + var(--cron-col-direction) +
       var(--cron-col-price) + var(--cron-col-size) + var(--cron-col-price) + var(--cron-col-price) + var(--cron-col-price) +
-      var(--cron-col-money) + var(--cron-col-money) + var(--cron-col-odds) + var(--cron-col-status) + var(--cron-col-status) + 1rem
+      var(--cron-col-money) + var(--cron-col-money) + var(--cron-col-odds) + var(--cron-col-status) + var(--cron-col-status) +
+      var(--cron-col-status) + 1rem
   );
   min-width: var(--cron-table-min-width);
 }
@@ -12627,18 +12629,21 @@ html[data-theme="light"] .tradeReplaySlider input::-webkit-slider-thumb {
     line-height: 1.1;
   }
 
-  .mobile-phone-telegram-link {
+  .mobile-phone-telegram-link,
+  .mobile-phone-discord-link {
     grid-template-columns: auto minmax(0, 1fr);
     align-items: center;
     gap: 0.62rem;
   }
 
-  .mobile-phone-telegram-link > span:last-child {
+  .mobile-phone-telegram-link > span:last-child,
+  .mobile-phone-discord-link > span:last-child {
     display: grid;
     gap: 0.16rem;
   }
 
-  .mobile-phone-telegram-link small {
+  .mobile-phone-telegram-link small,
+  .mobile-phone-discord-link small {
     color: rgba(228, 234, 227, 0.6);
     font-size: 0.56rem;
     line-height: 1.25;
@@ -13297,7 +13302,8 @@ html[data-theme="light"] .tradeReplaySlider input::-webkit-slider-thumb {
     box-shadow: 0 0 22px rgba(37, 99, 235, 0.12);
   }
 
-  html[data-theme="light"] .mobile-phone-telegram-link small {
+  html[data-theme="light"] .mobile-phone-telegram-link small,
+  html[data-theme="light"] .mobile-phone-discord-link small {
     color: rgba(15, 23, 42, 0.58);
   }
 

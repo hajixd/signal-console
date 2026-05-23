@@ -3,7 +3,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Trading Bot",
-  description: "Live signal dashboard, strategy backtests, and Telegram alert console"
+  description: "Live signal dashboard, strategy backtests, and alert console"
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {

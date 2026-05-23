@@ -70,10 +70,14 @@ export type DynamicTakeProfitPolicy = {
   rewardMultiple?: number;
 };
 
+export type NotificationStatus = "sent" | "skipped" | "failed";
+
 export type TradeManagementEvent = {
   autoTradeError?: string;
   autoTradeStatus?: "disabled" | "dry_run" | "failed" | "placed" | "skipped";
   createdAt: string;
+  discordError?: string;
+  discordStatus?: NotificationStatus;
   entryPrice?: number;
   id: string;
   label?: string;
@@ -83,7 +87,7 @@ export type TradeManagementEvent = {
   stopLossPrice?: number;
   takeProfitPrice?: number;
   telegramError?: string;
-  telegramStatus?: "sent" | "skipped" | "failed";
+  telegramStatus?: NotificationStatus;
   time: string;
   type: "edit_tp" | "edit_sl" | "edit_limit";
 };
@@ -199,11 +203,13 @@ export type TradeAlert = {
   limitOrderAutoTradeProviderId?: string;
   limitOrderAutoTradeProviderName?: string;
   limitOrderAutoTradeStatus?: "disabled" | "dry_run" | "failed" | "placed" | "skipped";
+  limitOrderDiscordError?: string;
+  limitOrderDiscordStatus?: NotificationStatus;
   limitOrderError?: string;
   limitOrderPrice?: number;
   limitOrderSizeMultiplier?: number;
   limitOrderTelegramError?: string;
-  limitOrderTelegramStatus?: "sent" | "skipped" | "failed";
+  limitOrderTelegramStatus?: NotificationStatus;
   lifecycleNotifiedAt?: string;
   lifecyclePnlDollars?: number;
   lifecyclePrice?: number;
@@ -213,9 +219,13 @@ export type TradeAlert = {
   managementEvents?: TradeManagementEvent[];
   maxBars?: number;
   status: "alerted" | "skipped";
-  telegramStatus: "sent" | "skipped" | "failed";
+  discordError?: string;
+  discordLifecycleError?: string;
+  discordLifecycleStatus?: NotificationStatus;
+  discordStatus?: NotificationStatus;
+  telegramStatus: NotificationStatus;
   telegramLifecycleError?: string;
-  telegramLifecycleStatus?: "sent" | "skipped" | "failed";
+  telegramLifecycleStatus?: NotificationStatus;
   telegramError?: string;
   notes?: string;
 };

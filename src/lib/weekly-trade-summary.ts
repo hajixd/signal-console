@@ -14,17 +14,19 @@ import {
   zonedParts
 } from "@/lib/market-schedule";
 import { dollarPerUnit } from "@/lib/instruments";
-import { sendTelegramText } from "@/lib/telegram";
+import { combinedNotificationError, combinedNotificationStatus, sendTextNotification } from "@/lib/notifications";
 import { getTrades } from "@/lib/storage";
-import type { TradeAlert } from "@/lib/types";
+import type { NotificationStatus, TradeAlert } from "@/lib/types";
 
 type TradeSummaryMarker = {
+  discordError?: string;
+  discordStatus?: NotificationStatus;
   key: string;
   market: AutoTradeMarket;
   period: "daily" | "weekly";
   sentAt: string;
   telegramError?: string;
-  telegramStatus: "sent" | "skipped";
+  telegramStatus: NotificationStatus;
   tradingDateKey?: string;
   weekKey?: string;
 };
@@ -50,9 +52,13 @@ export type WeeklySummaryRunResult = {
   due: boolean;
   reason?: string;
   sent: Array<{
+    discordError?: string;
+    discordStatus: NotificationStatus;
     error?: string;
     market: AutoTradeMarket;
-    status: "sent" | "skipped" | "failed";
+    status: NotificationStatus;
+    telegramError?: string;
+    telegramStatus: NotificationStatus;
     tradeCount: number;
     weekKey: string;
   }>;
@@ -66,9 +72,13 @@ export type WeeklySummaryRunResult = {
 export type DailySummaryRunResult = {
   checkedAt: string;
   sent: Array<{
+    discordError?: string;
+    discordStatus: NotificationStatus;
     error?: string;
     market: AutoTradeMarket;
-    status: "sent" | "skipped" | "failed";
+    status: NotificationStatus;
+    telegramError?: string;
+    telegramStatus: NotificationStatus;
     tradeCount: number;
     tradingDateKey: string;
   }>;
@@ -524,23 +534,30 @@ export async function sendDueWeeklyTradeSummaries(value = new Date()): Promise<W
 
     const window = summaryWindow(market, due.weekKey);
     const marketTrades = tradesForWindow(trades, market, window);
-    const notification = await sendTelegramText(formatWeeklySummaryMessage(market, window, marketTrades));
+    const notification = await sendTextNotification(formatWeeklySummaryMessage(market, window, marketTrades));
+    const status = combinedNotificationStatus(notification);
     result.sent.push({
-      error: notification.error,
+      discordError: notification.discord.error,
+      discordStatus: notification.discord.status,
+      error: combinedNotificationError(notification),
       market,
-      status: notification.status,
+      status,
+      telegramError: notification.telegram.error,
+      telegramStatus: notification.telegram.status,
       tradeCount: marketTrades.length,
       weekKey: due.weekKey
     });
 
-    if (notification.status !== "failed") {
+    if (status !== "failed") {
       await saveMarker(WEEKLY_SUMMARY_COLLECTION, LOCAL_WEEKLY_SUMMARY_PATH, {
+        discordError: notification.discord.error,
+        discordStatus: notification.discord.status,
         key,
         market,
         period: "weekly",
         sentAt: value.toISOString(),
-        telegramError: notification.error,
-        telegramStatus: notification.status,
+        telegramError: notification.telegram.error,
+        telegramStatus: notification.telegram.status,
         weekKey: due.weekKey
       });
     }
@@ -583,23 +600,30 @@ export async function sendDueDailyTradeSummaries(value = new Date()): Promise<Da
     }
 
     const marketTrades = tradesForWindow(trades, window.market, window);
-    const notification = await sendTelegramText(formatDailySummaryMessage(window.market, window, marketTrades));
+    const notification = await sendTextNotification(formatDailySummaryMessage(window.market, window, marketTrades));
+    const status = combinedNotificationStatus(notification);
     result.sent.push({
-      error: notification.error,
+      discordError: notification.discord.error,
+      discordStatus: notification.discord.status,
+      error: combinedNotificationError(notification),
       market: window.market,
-      status: notification.status,
+      status,
+      telegramError: notification.telegram.error,
+      telegramStatus: notification.telegram.status,
       tradeCount: marketTrades.length,
       tradingDateKey: window.tradingDateKey
     });
 
-    if (notification.status !== "failed") {
+    if (status !== "failed") {
       await saveMarker(DAILY_SUMMARY_COLLECTION, LOCAL_DAILY_SUMMARY_PATH, {
+        discordError: notification.discord.error,
+        discordStatus: notification.discord.status,
         key,
         market: window.market,
         period: "daily",
         sentAt: value.toISOString(),
-        telegramError: notification.error,
-        telegramStatus: notification.status,
+        telegramError: notification.telegram.error,
+        telegramStatus: notification.telegram.status,
         tradingDateKey: window.tradingDateKey
       });
     }

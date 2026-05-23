@@ -1,6 +1,6 @@
 import { executeAutoTrade } from "../src/lib/auto-trader";
+import { sendTextNotification } from "../src/lib/notifications";
 import { getTrades } from "../src/lib/storage";
-import { sendTelegramText } from "../src/lib/telegram";
 import type { AutoTradeOrderSummary, TradeAlert } from "../src/lib/types";
 
 const LIVE_CONFIRMATION = "I_UNDERSTAND_THIS_PLACES_A_REAL_ORDER";
@@ -121,12 +121,12 @@ async function main(): Promise<void> {
     ...(result.orders ?? []).slice(0, 6).map((order) => escapeHtml(shortOrder(order)))
   ].filter((line): line is string => line !== undefined);
 
-  const telegram = await sendTelegramText(lines.join("\n"));
+  const notification = await sendTextNotification(lines.join("\n"));
   console.log(
     JSON.stringify(
       {
         live,
-        telegram,
+        notification,
         testTrade: {
           id: testTrade.id,
           side: testTrade.side,
