@@ -513,7 +513,7 @@ export function BacktestTradeMiniChart({
     if (data.length < 2) return null;
     const width = Math.max(360, chartWidth);
     const height = width < 640 ? 250 : 300;
-    const margins = width < 640 ? { top: 22, right: 18, bottom: 42, left: 48 } : { top: 24, right: 34, bottom: 46, left: 64 };
+    const margins = width < 640 ? { top: 22, right: 16, bottom: 42, left: 58 } : { top: 24, right: 34, bottom: 46, left: 76 };
     const plotWidth = width - margins.left - margins.right;
     const plotHeight = height - margins.top - margins.bottom;
     const plannedUpper = direction === 1 ? trade.targetPrice : trade.stopPrice;
@@ -737,7 +737,7 @@ export function BacktestTradeMiniChart({
           return (
             <g key={`mini-grid-${index}`}>
               <line x1={plot.margins.left} x2={plot.width - plot.margins.right} y1={y} y2={y} className="backtest-trade-mini-grid-line" />
-              <text x={plot.margins.left - 10} y={y + 4} className="backtest-trade-mini-axis-label" textAnchor="end">
+              <text x={plot.margins.left - 10} y={y + 4} className="backtest-trade-mini-axis-label y-axis" textAnchor="end">
                 {formatChartPrice(value)}
               </text>
             </g>
@@ -758,7 +758,7 @@ export function BacktestTradeMiniChart({
               <text
                 x={x}
                 y={plot.height - 16}
-                className="backtest-trade-mini-axis-label"
+                className="backtest-trade-mini-axis-label x-axis"
                 textAnchor={index === 0 ? "start" : index === plot.xTicks.length - 1 ? "end" : "middle"}
               >
                 {tick.label}

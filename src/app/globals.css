@@ -3634,8 +3634,12 @@ html[data-theme="light"] .themeDarkLabel {
 }
 
 .backtest-trade-mini-axis-label {
-  fill: rgba(255, 255, 255, 0.4);
-  font-size: 10px;
+  fill: rgba(255, 255, 255, 0.58);
+  font-size: 12px;
+  paint-order: stroke;
+  stroke: rgba(8, 8, 8, 0.82);
+  stroke-linejoin: round;
+  stroke-width: 3px;
 }
 
 .backtest-trade-mini-level {
@@ -6771,6 +6775,7 @@ html[data-theme="light"] .backtest-trade-mini-grid-line {
 
 html[data-theme="light"] .backtest-trade-mini-axis-label {
   fill: rgba(15, 23, 42, 0.46);
+  stroke: rgba(255, 255, 255, 0.88);
 }
 
 html[data-theme="light"] .backtest-trade-mini-level.entry {
@@ -13076,7 +13081,7 @@ html[data-theme="light"] .tradeReplaySlider input::-webkit-slider-thumb {
   }
 
   .mobile-trade-mini-chart-wrap .backtest-trade-mini-grid-line,
-  .mobile-trade-mini-chart-wrap .backtest-trade-mini-axis-label,
+  .mobile-trade-mini-chart-wrap .backtest-trade-mini-axis-label.x-axis,
   .mobile-trade-mini-chart-wrap .backtest-trade-mini-range,
   .mobile-trade-mini-chart-wrap .backtest-trade-mini-zone,
   .mobile-trade-mini-chart-wrap .backtest-trade-mini-marker.mfe,
@@ -13087,6 +13092,14 @@ html[data-theme="light"] .tradeReplaySlider input::-webkit-slider-thumb {
 
   .mobile-trade-mini-chart-wrap .backtest-trade-mini-bg {
     fill: #050505;
+  }
+
+  .mobile-trade-mini-chart-wrap .backtest-trade-mini-axis-label.y-axis {
+    display: block;
+    fill: rgba(249, 252, 248, 0.72);
+    font-size: 11px;
+    stroke: rgba(5, 5, 5, 0.9);
+    stroke-width: 3.5px;
   }
 
   .mobile-trade-mini-chart-wrap .backtest-trade-mini-level {

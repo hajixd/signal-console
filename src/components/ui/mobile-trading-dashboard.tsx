@@ -61,6 +61,11 @@ type MobileHistoryStats = {
   winRate: string;
 };
 
+type MobileLoadingController = {
+  hideLoading: () => void;
+  showLoading: (label: string, duration?: number | null) => void;
+};
+
 const THEME_STORAGE_KEY = "trading-bot-theme";
 const LEGACY_THEME_STORAGE_KEY = "signal-console-theme";
 const TRADE_CHART_CONTEXT_CANDLES = 240;
@@ -345,23 +350,28 @@ function MobileHistoryList({
 
 function MobileMarketModeControl({
   activeMarket,
+  hideLoading,
   persistActiveMarket,
   showLoading
 }: {
   activeMarket: AutoTradeMarket;
   persistActiveMarket?: (market: AutoTradeMarket) => Promise<void>;
-  showLoading: (label: string, duration?: number) => void;
-}) {
+} & MobileLoadingController) {
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
   const [pendingMarket, setPendingMarket] = useState<AutoTradeMarket | null>(null);
+  const pendingMarketRef = useRef<AutoTradeMarket | null>(null);
   const canPersistActiveMarket = useAutoTradeAdminMode();
 
   useEffect(() => {
+    if (pendingMarketRef.current === activeMarket) {
+      hideLoading();
+    }
+    pendingMarketRef.current = null;
     setPendingMarket(null);
-  }, [activeMarket]);
+  }, [activeMarket, hideLoading]);
 
   function selectMarket(market: AutoTradeMarket) {
     if (market === activeMarket || pendingMarket === market) return;
@@ -369,8 +379,9 @@ function MobileMarketModeControl({
     const nextParams = new URLSearchParams(searchParams.toString());
     nextParams.set("market", market);
     const href = `${pathname}?${nextParams.toString()}`;
+    pendingMarketRef.current = market;
     setPendingMarket(market);
-    showLoading(`Loading ${market === "futures" ? "Futures" : "Forex"}`, 1400);
+    showLoading(`Loading ${market === "futures" ? "Futures" : "Forex"}`, null);
 
     startTransition(() => {
       if (canPersistActiveMarket && persistActiveMarket) {
@@ -413,8 +424,7 @@ function MobileThemeModeControl({
 }: {
   initialTheme?: MobileTheme;
   persistTheme?: (theme: MobileTheme) => Promise<void>;
-  showLoading: (label: string, duration?: number) => void;
-}) {
+} & Pick<MobileLoadingController, "showLoading">) {
   const [theme, setTheme] = useState<MobileTheme>(() => initialTheme ?? "dark");
   const [, startSavingTheme] = useTransition();
   const canPersistTheme = useAutoTradeAdminMode();
@@ -462,7 +472,7 @@ function MobileThemeModeControl({
   );
 }
 
-function MobileAccountModeControl({ showLoading }: { showLoading: (label: string, duration?: number) => void }) {
+function MobileAccountModeControl({ showLoading }: Pick<MobileLoadingController, "showLoading">) {
   const [accountMode, setAccountMode] = useState<AutoTradeAccountMode | null>(null);
   const [adminCodeInput, setAdminCodeInput] = useState("");
   const [isUnlockingAdmin, setIsUnlockingAdmin] = useState(false);
@@ -679,15 +689,26 @@ export default function MobileTradingDashboard({
           ? "Settings"
           : "Trade History";
 
-  const showLoading = useCallback((label: string, duration = 760) => {
+  const hideLoading = useCallback(() => {
     if (loadingTimeoutRef.current !== null) {
       window.clearTimeout(loadingTimeoutRef.current);
+      loadingTimeoutRef.current = null;
+    }
+    setLoadingLabel(null);
+  }, []);
+
+  const showLoading = useCallback((label: string, duration: number | null = 760) => {
+    if (loadingTimeoutRef.current !== null) {
+      window.clearTimeout(loadingTimeoutRef.current);
+      loadingTimeoutRef.current = null;
     }
     setLoadingLabel(label);
-    loadingTimeoutRef.current = window.setTimeout(() => {
-      setLoadingLabel(null);
-      loadingTimeoutRef.current = null;
-    }, duration);
+    if (duration !== null) {
+      loadingTimeoutRef.current = window.setTimeout(() => {
+        setLoadingLabel(null);
+        loadingTimeoutRef.current = null;
+      }, duration);
+    }
   }, []);
 
   useEffect(() => {
@@ -819,7 +840,12 @@ export default function MobileTradingDashboard({
 
                 <div className="mobile-phone-action-list">
                   <MobileAccountModeControl showLoading={showLoading} />
-                  <MobileMarketModeControl activeMarket={activeMarket} persistActiveMarket={persistActiveMarket} showLoading={showLoading} />
+                  <MobileMarketModeControl
+                    activeMarket={activeMarket}
+                    hideLoading={hideLoading}
+                    persistActiveMarket={persistActiveMarket}
+                    showLoading={showLoading}
+                  />
                   <MobileThemeModeControl initialTheme={initialTheme} persistTheme={persistTheme} showLoading={showLoading} />
                   {telegramGroupLink ? (
                     <a className="mobile-phone-action-btn mobile-phone-telegram-link" href={telegramGroupLink} rel="noreferrer" target="_blank">
