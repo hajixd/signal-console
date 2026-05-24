@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { FormEvent, useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { Fragment, FormEvent, useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { createPortal } from "react-dom";
 import AutoTradingConnectionPanel from "@/components/auto-trading/auto-trading-connection-panel";
 import {
@@ -64,7 +64,11 @@ type MobileChartPayload = {
 
 type MobileHistoryStats = {
   averageLoss: string;
+  averageTrade: string;
+  averageTradeTone: "down" | "neutral" | "up";
   averageWin: string;
+  netPnl: string;
+  netPnlTone: "down" | "neutral" | "up";
   profitFactor: string;
   winRate: string;
 };
@@ -127,14 +131,20 @@ function mobileHistoryStats(rows: TradeHistoryRow[]): MobileHistoryStats {
   const losses = scoredRows.filter((row) => row.pnlDollars < 0);
   const grossWin = wins.reduce((sum, row) => sum + row.pnlDollars, 0);
   const grossLoss = Math.abs(losses.reduce((sum, row) => sum + row.pnlDollars, 0));
+  const netPnl = scoredRows.reduce((sum, row) => sum + row.pnlDollars, 0);
   const winRate = scoredRows.length ? (wins.length / scoredRows.length) * 100 : 0;
   const profitFactor = grossLoss > 0 ? grossWin / grossLoss : grossWin > 0 ? Number.POSITIVE_INFINITY : 0;
   const averageWin = wins.length ? grossWin / wins.length : 0;
   const averageLoss = losses.length ? losses.reduce((sum, row) => sum + row.pnlDollars, 0) / losses.length : 0;
+  const averageTrade = scoredRows.length ? netPnl / scoredRows.length : 0;
 
   return {
     averageLoss: averageLoss ? formatMobileMoney(averageLoss) : "--",
+    averageTrade: scoredRows.length ? formatMobileMoney(averageTrade) : "--",
+    averageTradeTone: averageTrade > 0 ? "up" : averageTrade < 0 ? "down" : "neutral",
     averageWin: averageWin ? formatMobileMoney(averageWin) : "--",
+    netPnl: scoredRows.length ? formatMobileMoney(netPnl) : "--",
+    netPnlTone: netPnl > 0 ? "up" : netPnl < 0 ? "down" : "neutral",
     profitFactor: profitFactor ? formatMobileRatio(profitFactor) : "--",
     winRate: `${winRate.toFixed(0)}%`
   };
@@ -162,6 +172,23 @@ function latestRowTime(rows: TradeHistoryRow[]): string | undefined {
     .flatMap((row) => [row.exitTime, row.entryTime])
     .filter(Boolean)
     .sort((left, right) => Date.parse(right) - Date.parse(left))[0];
+}
+
+function mobileHistoryMonthKey(row: TradeHistoryRow): string {
+  const time = row.exitTime || row.entryTime;
+  const date = time ? new Date(time) : null;
+  if (!date || !Number.isFinite(date.getTime())) return "unknown";
+  return date.toISOString().slice(0, 7);
+}
+
+function mobileHistoryMonthLabel(monthKey: string): string {
+  const [year, month] = monthKey.split("-").map((value) => Number(value));
+  if (!Number.isFinite(year) || !Number.isFinite(month)) return "Unknown month";
+  return new Date(Date.UTC(year, month - 1, 1)).toLocaleString(undefined, {
+    month: "long",
+    timeZone: "UTC",
+    year: "numeric"
+  });
 }
 
 function MobileWorkspaceTabIcon({ tab }: { tab: MobileTradingTab }) {
@@ -302,6 +329,14 @@ function MobileHistoryStatsStrip({ stats }: { stats: MobileHistoryStats }) {
         <small>Avg Loss</small>
         <strong className="down">{stats.averageLoss}</strong>
       </span>
+      <span>
+        <small>Avg Trade</small>
+        <strong className={stats.averageTradeTone}>{stats.averageTrade}</strong>
+      </span>
+      <span>
+        <small>Net PnL</small>
+        <strong className={stats.netPnlTone}>{stats.netPnl}</strong>
+      </span>
     </div>
   );
 }
@@ -340,31 +375,44 @@ function MobileHistoryList({
         <>
           <MobileHistoryStatsStrip stats={stats} />
           <div className="mobile-phone-history-list">
-            {rows.map((row) => (
-              <button className="mobile-phone-history-row" key={row.id} onClick={() => onTradeSelect(row)} type="button">
-                <div className="mobile-phone-history-main">
-                  <div className="mobile-phone-history-copy">
-                    <strong>{displaySymbol(row)}</strong>
-                    <span>
-                      {row.sideLabel} | {row.exitReasonLabel}
-                    </span>
-                  </div>
-                  <div className="mobile-phone-history-values">
-                    <strong className={row.pnlClassName}>{row.pnlLabel}</strong>
-                    <span className="mobile-phone-history-size">{row.sizeLabel}</span>
-                  </div>
-                </div>
-                <div className="mobile-phone-history-meta">
-                  <span>
-                    <LocalDateTime value={row.exitTime} fallback={row.exitTimeLabel} />
-                  </span>
-                  <span>{row.rMultipleLabel}</span>
-                  <span>Entry {row.entryPriceLabel}</span>
-                  <span>Exit {row.exitPriceLabel}</span>
-                </div>
-                <span className={`mobile-phone-history-rail ${historyRailTone(row)}`} aria-hidden="true" />
-              </button>
-            ))}
+            {rows.map((row, index) => {
+              const monthKey = mobileHistoryMonthKey(row);
+              const previousMonthKey = index > 0 ? mobileHistoryMonthKey(rows[index - 1]!) : "";
+              const showMonthMarker = monthKey !== previousMonthKey;
+
+              return (
+                <Fragment key={row.id}>
+                  {showMonthMarker ? (
+                    <div className="mobile-phone-history-month-marker">
+                      <span>{mobileHistoryMonthLabel(monthKey)}</span>
+                    </div>
+                  ) : null}
+                  <button className="mobile-phone-history-row" onClick={() => onTradeSelect(row)} type="button">
+                    <div className="mobile-phone-history-main">
+                      <div className="mobile-phone-history-copy">
+                        <strong>{displaySymbol(row)}</strong>
+                        <span>
+                          {row.sideLabel} | {row.exitReasonLabel}
+                        </span>
+                      </div>
+                      <div className="mobile-phone-history-values">
+                        <strong className={row.pnlClassName}>{row.pnlLabel}</strong>
+                        <span className="mobile-phone-history-size">{row.sizeLabel}</span>
+                      </div>
+                    </div>
+                    <div className="mobile-phone-history-meta">
+                      <span>
+                        <LocalDateTime value={row.exitTime} fallback={row.exitTimeLabel} />
+                      </span>
+                      <span>{row.rMultipleLabel}</span>
+                      <span>Entry {row.entryPriceLabel}</span>
+                      <span>Exit {row.exitPriceLabel}</span>
+                    </div>
+                    <span className={`mobile-phone-history-rail ${historyRailTone(row)}`} aria-hidden="true" />
+                  </button>
+                </Fragment>
+              );
+            })}
           </div>
         </>
       )}

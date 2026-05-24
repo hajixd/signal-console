@@ -256,10 +256,12 @@ export type CronResult = {
   };
   signalScan?: {
     candidates: number;
+    dispatchConcurrency?: number;
     lookbackMinutes: number;
     maxActionableAgeMinutes: number;
     maxBars: number;
     rawSignals: number;
+    scanConcurrency?: number;
     staleSignals: number;
   };
   generated: TradeAlert[];

@@ -6,6 +6,7 @@ import { firebaseBucket, hasFirebaseAdmin, storageObjectPath } from "@/lib/fireb
 import { defaultDatasetStatus, getDatasetStatus, saveDatasetStatus, type DatasetAssetCoverage } from "@/lib/live-config";
 import { fetchMarketSourceBars } from "@/lib/market-data";
 import {
+  DEFAULT_STRATEGY_TIMEFRAME,
   DERIVED_FROM_FIVE_MINUTE_TIMEFRAMES,
   LIVE_SOURCE_TIMEFRAME,
   TIMEFRAME_SECONDS,
@@ -89,12 +90,46 @@ export type MarketDataRefreshSummary = {
 
 export type MarketDataRefreshResult = {
   barsByAssetKey: Map<string, Bar[]>;
+  barsByAssetTimeframeKey: Map<string, Bar[]>;
   summary: MarketDataRefreshSummary;
 };
 
 export type MarketDataRefreshOptions = {
   minExistingRows?: number;
+  saveStatus?: boolean;
 };
+
+const DEFAULT_MARKET_DATA_REFRESH_CONCURRENCY = 4;
+
+function boundedIntegerEnv(name: string, fallback: number, min: number, max: number): number {
+  const value = Number(process.env[name]);
+  if (!Number.isFinite(value)) return fallback;
+  return Math.min(max, Math.max(min, Math.trunc(value)));
+}
+
+function marketDataRefreshConcurrency(): number {
+  return boundedIntegerEnv("MARKET_DATA_REFRESH_CONCURRENCY", DEFAULT_MARKET_DATA_REFRESH_CONCURRENCY, 1, 8);
+}
+
+async function mapWithConcurrency<T, R>(
+  items: T[],
+  concurrency: number,
+  worker: (item: T, index: number) => Promise<R>
+): Promise<R[]> {
+  const results = new Array<R>(items.length);
+  let cursor = 0;
+
+  async function runWorker(): Promise<void> {
+    while (cursor < items.length) {
+      const index = cursor;
+      cursor += 1;
+      results[index] = await worker(items[index]!, index);
+    }
+  }
+
+  await Promise.all(Array.from({ length: Math.min(Math.max(1, concurrency), items.length) }, () => runWorker()));
+  return results;
+}
 
 function localProjectPath(relativePath: string): string {
   return path.join(
@@ -177,6 +212,21 @@ function barFromLiveBar(bar: Bar): CsvBar | null {
     close: Number(bar.close),
     volume: Number(bar.volume ?? 0)
   });
+}
+
+function liveBarFromCsvBar(bar: CsvBar): Bar {
+  return {
+    time: new Date(bar.time * 1000).toISOString(),
+    open: bar.open,
+    high: bar.high,
+    low: bar.low,
+    close: bar.close,
+    volume: bar.volume
+  };
+}
+
+export function assetTimeframeBarsKey(assetKey: string, timeframe: DataTimeframe): string {
+  return `${assetKey}\t${timeframe}`;
 }
 
 function closedBarStartSeconds(intervalSeconds: number): number {
@@ -451,6 +501,7 @@ type StoredCsvState = {
   generation?: number;
   lastBarTime?: number;
   rows?: number;
+  tailBars?: CsvBar[];
 };
 
 function csvDataLine(bar: CsvBar): string {
@@ -459,6 +510,27 @@ function csvDataLine(bar: CsvBar): string {
 
 function serializeCsvDataLines(bars: CsvBar[]): string {
   return bars.map(csvDataLine).join("\n") + (bars.length ? "\n" : "");
+}
+
+function parseCsvBarLine(line: string): CsvBar | null {
+  if (!line.trim() || line.startsWith("time,")) return null;
+  const [time, open, high, low, close, volume] = line.trim().split(",");
+  return normalizeCsvBar({
+    time: Number(time),
+    open: Number(open),
+    high: Number(high),
+    low: Number(low),
+    close: Number(close),
+    volume: Number(volume ?? 0)
+  });
+}
+
+function parseCsvTailBars(text: string, limit = 1500): CsvBar[] {
+  return text
+    .split(/\r?\n/)
+    .map(parseCsvBarLine)
+    .filter((bar): bar is CsvBar => Boolean(bar))
+    .slice(-limit);
 }
 
 function firstDataTimestamp(text: string): number | undefined {
@@ -498,12 +570,13 @@ async function localCsvState(relativePath: string, coverage: DatasetAssetCoverag
     const tailText = tail.toString("utf8");
 
     return {
-      endsWithNewline: tailText.endsWith("\n"),
-      exists: true,
-      firstBarTime: secondsFromIso(coverage?.firstBarAt ?? "") ?? firstDataTimestamp(head.toString("utf8")),
-      lastBarTime: lastDataTimestamp(tailText),
-      rows: coverage?.rows
-    };
+        endsWithNewline: tailText.endsWith("\n"),
+        exists: true,
+        firstBarTime: secondsFromIso(coverage?.firstBarAt ?? "") ?? firstDataTimestamp(head.toString("utf8")),
+        lastBarTime: lastDataTimestamp(tailText),
+        rows: coverage?.rows,
+        tailBars: parseCsvTailBars(tailText)
+      };
   } catch {
     return { endsWithNewline: true, exists: false, rows: coverage?.rows };
   } finally {
@@ -531,7 +604,8 @@ async function remoteCsvState(relativePath: string, coverage: DatasetAssetCovera
       firstBarTime: secondsFromIso(coverage?.firstBarAt ?? "") ?? undefined,
       generation: Number.isFinite(Number(metadata.generation)) ? Number(metadata.generation) : undefined,
       lastBarTime: lastDataTimestamp(tailText),
-      rows: coverage?.rows
+      rows: coverage?.rows,
+      tailBars: parseCsvTailBars(tailText)
     };
   } catch {
     return localCsvState(relativePath, coverage);
@@ -742,12 +816,49 @@ async function saveRefreshStatus(summary: MarketDataRefreshSummary): Promise<voi
   });
 }
 
+export async function saveMarketDataRefreshStatus(summary: MarketDataRefreshSummary): Promise<void> {
+  if (summary.assets.length) await saveRefreshStatus(summary);
+}
+
 function uniqueAssetRules(rules: StrategyRule[]): StrategyRule[] {
   const byAssetKey = new Map<string, StrategyRule>();
   for (const rule of rules) {
     if (!byAssetKey.has(rule.assetKey)) byAssetKey.set(rule.assetKey, rule);
   }
   return [...byAssetKey.values()];
+}
+
+type AssetRefreshOutcome =
+  | {
+      asset: MarketDataRefreshAsset;
+      assetKey: string;
+      bars?: Bar[];
+      barsByTimeframe?: Partial<Record<DataTimeframe, Bar[]>>;
+      error?: never;
+    }
+  | {
+      asset?: never;
+      assetKey: string;
+      error: { assetKey: string; message: string; symbol: string };
+      bars?: never;
+      barsByTimeframe?: never;
+    };
+
+function barsByTimeframeFromStates(
+  states: Record<(typeof REFRESH_TIMEFRAMES)[number], StoredCsvState>,
+  uploads: TimeframeUpload[] = []
+): Partial<Record<DataTimeframe, Bar[]>> {
+  const uploadsByTimeframe = new Map(uploads.map((upload) => [upload.timeframe, upload]));
+  const output: Partial<Record<DataTimeframe, Bar[]>> = {};
+
+  for (const timeframe of REFRESH_TIMEFRAMES) {
+    const state = states[timeframe];
+    const upload = uploadsByTimeframe.get(timeframe);
+    const bars = mergeBars(state.tailBars ?? [], upload?.appendedBars ?? []).slice(-1500);
+    if (bars.length) output[timeframe] = bars.map(liveBarFromCsvBar);
+  }
+
+  return output;
 }
 
 export async function refreshMarketDataForRules(rules: StrategyRule[]): Promise<MarketDataRefreshResult> {
@@ -770,8 +881,9 @@ export async function refreshMarketDataForRulesWithOptions(
     uploadedFiles: 0
   };
   const barsByAssetKey = new Map<string, Bar[]>();
+  const barsByAssetTimeframeKey = new Map<string, Bar[]>();
 
-  for (const rule of uniqueAssetRules(rules)) {
+  const outcomes = await mapWithConcurrency(uniqueAssetRules(rules), marketDataRefreshConcurrency(), async (rule): Promise<AssetRefreshOutcome> => {
     const assetStartedAt = Date.now();
     const asset = assetForKey(rule.assetKey);
     try {
@@ -779,16 +891,18 @@ export async function refreshMarketDataForRulesWithOptions(
 
       if (allTimeframesCurrent(states)) {
         const coverage = appendedCoverage(asset, assetCoverage[asset.key], [], refreshedAt);
-        summary.assets.push({
-          ...coverage,
-          durationMs: Date.now() - assetStartedAt
-        });
-        continue;
+        return {
+          asset: {
+            ...coverage,
+            durationMs: Date.now() - assetStartedAt
+          },
+          assetKey: asset.key,
+          barsByTimeframe: barsByTimeframeFromStates(states)
+        };
       }
 
       const afterSeconds = refreshStartAfterSeconds(states);
       const liveBars = await fetchMarketSourceBars(asset, afterSeconds == null ? {} : { afterSeconds });
-      barsByAssetKey.set(rule.assetKey, liveBars);
 
       const incomingBars = liveBars.map(barFromLiveBar).filter((bar): bar is CsvBar => Boolean(bar));
       if (!incomingBars.length && !states[LIVE_SOURCE_TIMEFRAME].exists) {
@@ -802,9 +916,6 @@ export async function refreshMarketDataForRulesWithOptions(
         existing: states[LIVE_SOURCE_TIMEFRAME],
         timeframe: LIVE_SOURCE_TIMEFRAME
       });
-      if (sourceAppendedBars.length) {
-        await appendStoredCsvRows(`data/${LIVE_SOURCE_TIMEFRAME}/${asset.dataFile}`, sourceAppendedBars, states[LIVE_SOURCE_TIMEFRAME]);
-      }
 
       for (const timeframe of DERIVED_FROM_FIVE_MINUTE_TIMEFRAMES) {
         const appendedBars = aggregateCsvBarsToTimeframe(incomingBars, timeframe, states[timeframe].lastBarTime);
@@ -813,34 +924,63 @@ export async function refreshMarketDataForRulesWithOptions(
           existing: states[timeframe],
           timeframe
         });
-        if (appendedBars.length) {
-          await appendStoredCsvRows(`data/${timeframe}/${asset.dataFile}`, appendedBars, states[timeframe]);
-        }
       }
 
+      await Promise.all(
+        uploads.map((upload) =>
+          upload.appendedBars.length
+            ? appendStoredCsvRows(`data/${upload.timeframe}/${asset.dataFile}`, upload.appendedBars, upload.existing)
+            : Promise.resolve()
+        )
+      );
+
       const coverage = appendedCoverage(asset, assetCoverage[asset.key], uploads, refreshedAt);
-      summary.assets.push({
-        ...coverage,
-        durationMs: Date.now() - assetStartedAt
-      });
-      summary.uploadedFiles += coverage.uploadedFiles;
-    } catch (error) {
-      summary.errors.push({
+      return {
+        asset: {
+          ...coverage,
+          durationMs: Date.now() - assetStartedAt
+        },
         assetKey: asset.key,
-        symbol: asset.symbol,
-        message: error instanceof Error ? error.message : "Unknown market data refresh error"
-      });
+        barsByTimeframe: barsByTimeframeFromStates(states, uploads),
+        bars: liveBars
+      };
+    } catch (error) {
+      return {
+        assetKey: asset.key,
+        error: {
+          assetKey: asset.key,
+          symbol: asset.symbol,
+          message: error instanceof Error ? error.message : "Unknown market data refresh error"
+        }
+      };
+    }
+  });
+
+  for (const outcome of outcomes) {
+    if (outcome.error) {
+      summary.errors.push(outcome.error);
+      continue;
+    }
+    summary.assets.push(outcome.asset);
+    summary.uploadedFiles += outcome.asset.uploadedFiles;
+    if (outcome.bars) barsByAssetKey.set(outcome.assetKey, outcome.bars);
+    for (const [timeframe, bars] of Object.entries(outcome.barsByTimeframe ?? {}) as Array<[DataTimeframe, Bar[]]>) {
+      barsByAssetTimeframeKey.set(assetTimeframeBarsKey(outcome.assetKey, timeframe), bars);
+      if (timeframe === DEFAULT_STRATEGY_TIMEFRAME && !barsByAssetKey.has(outcome.assetKey)) {
+        barsByAssetKey.set(outcome.assetKey, bars);
+      }
     }
   }
 
   summary.totalDurationMs = Date.now() - startedAt;
 
-  if (summary.assets.length) {
+  if (options.saveStatus !== false && summary.assets.length) {
     await saveRefreshStatus(summary);
   }
 
   return {
     barsByAssetKey,
+    barsByAssetTimeframeKey,
     summary
   };
 }

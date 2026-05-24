@@ -4,6 +4,7 @@ import { assetForKey } from "@/lib/assets";
 import { firebaseBucket, hasFirebaseAdmin, storageObjectPath } from "@/lib/firebase-admin";
 import { fetchMarketBars } from "@/lib/market-data";
 import {
+  closedBarStartSeconds,
   DEFAULT_STRATEGY_TIMEFRAME,
   timeframeFromVariant,
   timeframeSeconds,
@@ -14,7 +15,6 @@ import type { Bar, StrategyRule } from "@/lib/types";
 const DEFAULT_BAR_LIMIT = 1500;
 const MIN_TAIL_BYTES = 512 * 1024;
 const LIVE_DATA_TAILS_PATH = "cache/live-data-tails.json";
-const DEFAULT_SIGNAL_STALE_MS = 6 * 60 * 60_000;
 
 type CachedBar = [string, number, number, number, number, number?];
 type LiveDataTailCache = {
@@ -103,11 +103,10 @@ function localCachePath(): string {
   return path.join(/*turbopackIgnore: true*/ process.cwd(), "cache", "live-data-tails.json");
 }
 
-function signalStaleMs(timeframe: DataTimeframe): number {
+function configuredSignalStaleMs(timeframe: DataTimeframe): number | null {
   const minutes = Number(process.env.LIVE_SIGNAL_STALE_MINUTES ?? process.env.MARKET_DATA_STALE_MINUTES);
-  const configured = Number.isFinite(minutes) && minutes > 0 ? minutes * 60_000 : DEFAULT_SIGNAL_STALE_MS;
-  const intervalMs = timeframeSeconds(timeframe) * 1000;
-  return Math.max(configured, intervalMs * 2 + 10 * 60_000);
+  if (!Number.isFinite(minutes) || minutes <= 0) return null;
+  return Math.max(minutes * 60_000, timeframeSeconds(timeframe) * 1000);
 }
 
 function barTimeMs(bar: Bar): number | null {
@@ -127,7 +126,14 @@ function latestBarMs(bars: Bar[]): number | null {
 
 function hasFreshSignalBars(bars: Bar[], timeframe: DataTimeframe): boolean {
   const latest = latestBarMs(bars);
-  return latest != null && Date.now() - latest <= signalStaleMs(timeframe);
+  if (latest == null) return false;
+
+  const configuredStaleMs = configuredSignalStaleMs(timeframe);
+  if (configuredStaleMs !== null) {
+    return Date.now() - latest <= configuredStaleMs;
+  }
+
+  return latest >= closedBarStartSeconds(timeframe) * 1000;
 }
 
 function mergeBars(storedBars: Bar[], liveBars: Bar[], limit: number): Bar[] {

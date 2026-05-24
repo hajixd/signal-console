@@ -1,0 +1,1 @@
+status,strategy_id,asset_key,forward_pf,forward_trades,avg_rr,min_rr,train_pf,train_trades,bootstrap_p05,block_bootstrap_p05,odd_even_min_pf,annual_pass_rate,variant_id

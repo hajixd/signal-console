@@ -1636,13 +1636,20 @@ export default async function Home({ searchParams }: HomeProps) {
       .sort((left, right) => Date.parse(right) - Date.parse(left))[0];
   const selectedBasketTrades = selectedBacktestTrades.map((trade) => ({
     key: trade.datasetId,
+    signalTime: trade.signalTime,
     entryTime: trade.entryTime,
     exitTime: trade.exitTime,
     barsHeld: trade.barsHeld,
     basePnlDollars: tradeDollarPnl(trade, optionByKey.get(trade.datasetId)?.sizeMultiplier ?? 1),
     baseRiskDollars: tradeRiskDollars(trade, optionByKey.get(trade.datasetId)?.sizeMultiplier ?? 1),
     baseTargetDollars: tradeTargetDollars(trade, optionByKey.get(trade.datasetId)?.sizeMultiplier ?? 1),
-    rMultiple: trade.rMultiple
+    rMultiple: trade.rMultiple,
+    symbol: trade.symbol,
+    market: trade.market,
+    phase: trade.phase,
+    label: trade.label,
+    side: trade.side,
+    exitReason: trade.exitReason
   }));
   const visibleStoredBacktestHistoryTrades = historyBacktestTrades;
   const historyTradeBarsBySymbol = await loadHistoryBarsBySymbol(visibleStoredBacktestHistoryTrades);

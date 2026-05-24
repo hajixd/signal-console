@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { GET as runCheckSignalsCron } from "@/app/api/cron/check-signals/route";
-import { updateDatasetSyncRunStatus } from "@/lib/live-config";
+import { runSignalCheck } from "@/app/api/cron/check-signals/route";
+import { saveCronRun, updateDatasetSyncRunStatus } from "@/lib/live-config";
 import { activeRules } from "@/lib/live-signals";
 import { cronWeekendPause, marketOpenForSignal } from "@/lib/market-schedule";
-import { refreshMarketDataForRules } from "@/lib/market-data-refresh";
+import { refreshMarketDataForRulesWithOptions, saveMarketDataRefreshStatus, type MarketDataRefreshResult } from "@/lib/market-data-refresh";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -47,20 +47,44 @@ function marketDataFailureMessage(errors: MarketDataSyncError[], refreshedAssetC
     .join("; ");
 }
 
-async function runSignalCheckAfterMarketDataSync(request: NextRequest): Promise<{ durationMs: number; error?: string; ok: boolean; status: number }> {
+async function runSignalCheckAfterMarketDataSync(
+  refreshedData: MarketDataRefreshResult
+): Promise<{ durationMs: number; error?: string; ok: boolean; status: number }> {
   const startedAt = Date.now();
-  const response = await runCheckSignalsCron(request);
-  const durationMs = Date.now() - startedAt;
+  const startedAtIso = new Date(startedAt).toISOString();
+  await updateDatasetSyncRunStatus("signalTradeCheck", {
+    error: undefined,
+    finishedAt: undefined,
+    startedAt: startedAtIso,
+    state: "running"
+  }).catch((error) => console.error("Failed to mark signal check running", error));
 
-  if (response.ok) return { durationMs, ok: true, status: response.status };
+  try {
+    const result = await runSignalCheck({ initialBarsByTimeframeKey: refreshedData.barsByAssetTimeframeKey });
+    await saveCronRun(result);
+    const durationMs = Date.now() - startedAt;
+    const failed = result.errors.length > 0;
+    await updateDatasetSyncRunStatus("signalTradeCheck", {
+      durationMs,
+      error: failed ? result.errors.map((entry) => `${entry.symbol}: ${entry.message}`).join("; ") : undefined,
+      finishedAt: new Date().toISOString(),
+      startedAt: startedAtIso,
+      state: failed ? "failed" : "success"
+    }).catch((error) => console.error("Failed to mark signal check finished", error));
 
-  const text = await response.text().catch(() => "");
-  return {
-    durationMs,
-    error: text.slice(0, 500) || `Signal check returned ${response.status}`,
-    ok: false,
-    status: response.status
-  };
+    return { durationMs, ok: true, status: 200 };
+  } catch (error) {
+    const durationMs = Date.now() - startedAt;
+    const message = errorMessage(error);
+    await updateDatasetSyncRunStatus("signalTradeCheck", {
+      durationMs,
+      error: message,
+      finishedAt: new Date().toISOString(),
+      startedAt: startedAtIso,
+      state: "failed"
+    }).catch((statusError) => console.error("Failed to mark signal check failed", statusError));
+    return { durationMs, error: message, ok: false, status: 500 };
+  }
 }
 
 export async function GET(request: NextRequest) {
@@ -127,11 +151,19 @@ export async function GET(request: NextRequest) {
   }).catch((error) => console.error("Failed to mark market data sync running", error));
 
   try {
-    const result = await refreshMarketDataForRules(rules);
+    const result = await refreshMarketDataForRulesWithOptions(rules, { saveStatus: false });
     const durationMs = Date.now() - startedAt;
     const finishedAt = new Date().toISOString();
     const failed = result.summary.errors.length > 0 || result.summary.assets.length === 0;
     const failureMessage = marketDataFailureMessage(result.summary.errors, result.summary.assets.length);
+    const signalCheck = failed ? undefined : await runSignalCheckAfterMarketDataSync(result).catch((error) => ({
+      durationMs: 0,
+      error: errorMessage(error),
+      ok: false,
+      status: 0
+    }));
+
+    await saveMarketDataRefreshStatus(result.summary);
 
     await updateDatasetSyncRunStatus("marketDataSync", {
       durationMs,
@@ -140,12 +172,6 @@ export async function GET(request: NextRequest) {
       startedAt: startedAtIso,
       state: failed ? "failed" : "success"
     }).catch((error) => console.error("Failed to mark market data sync finished", error));
-
-    const signalCheck = failed ? undefined : await runSignalCheckAfterMarketDataSync(request).catch((error) => ({
-      error: errorMessage(error),
-      ok: false,
-      status: 0
-    }));
 
     console.info("market-data-sync cron completed", {
       assetTimings: result.summary.assets.map((asset) => ({
