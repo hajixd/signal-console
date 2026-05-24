@@ -14,13 +14,19 @@ import {
 import {
   analyzePropFirmChallenge,
   DEFAULT_CHALLENGE_RULES,
+  type ChallengeDistributionBin,
+  type ChallengeFailureReasonStat,
   type ChallengeMethodStats,
   type ChallengeMonthPassStat,
   type ChallengePassRateHorizon,
   type ChallengeReplayProgress,
   type ChallengeReplaySummary,
   type ChallengeReplayTrade,
-  type ChallengeRules
+  type ChallengeRiskSensitivityStat,
+  type ChallengeRules,
+  type ChallengeStartDayPassStat,
+  type ChallengeStrategyContributionStat,
+  type ChallengeWorstStreakStat
 } from "@/lib/challenge";
 
 type ChallengeReplayInputTrade = ChallengeReplayTrade & {
@@ -44,7 +50,7 @@ const STORAGE_KEY = "trading-bot:challenge-rules:v1";
 const REPLAY_CACHE_STORAGE_KEY_PREFIX = "trading-bot:challenge-replay-cache:v2";
 const REPLAY_CACHE_INDEX_KEY = "trading-bot:challenge-replay-cache:index:v2";
 const REPLAY_CACHE_LIMIT = 20;
-const REPLAY_CACHE_VERSION = "mc-10000-months-v1";
+const REPLAY_CACHE_VERSION = "mc-10000-insights-v1";
 
 function fmtNumber(value: number): string {
   if (!Number.isFinite(value)) return "inf";
@@ -201,44 +207,393 @@ function ChallengeReplayPanel({
   );
 }
 
-function ChallengeMonthPassRanking({ months }: { months: ChallengeMonthPassStat[] }) {
+type InsightViewKey = "months" | "days" | "failures" | "pace" | "sensitivity" | "distribution" | "streak" | "strategies" | "confidence" | "launch";
+
+const INSIGHT_VIEW_ORDER: InsightViewKey[] = [
+  "months",
+  "days",
+  "failures",
+  "pace",
+  "sensitivity",
+  "distribution",
+  "streak",
+  "strategies",
+  "confidence",
+  "launch"
+];
+
+function sampleConfidence(total: number): { className: string; label: string } {
+  if (total >= 80) return { className: "tone-up", label: "High sample" };
+  if (total >= 40) return { className: "tone-neutral", label: "Medium sample" };
+  return { className: "tone-down", label: "Low sample" };
+}
+
+function monthLabelFromIndex(monthIndex: number | null): string {
+  if (monthIndex == null) return "Current";
+  return new Intl.DateTimeFormat("en-US", { month: "short", timeZone: "UTC" }).format(new Date(Date.UTC(2024, monthIndex, 1)));
+}
+
+function bestSummary<T extends { label: string; passRatePct: number }>(items: T[], fallback = "--"): string {
+  const best = items[0];
+  return best ? `${best.label} ${fmtPct(best.passRatePct)}` : fallback;
+}
+
+function InsightBar({ pct, tone = "tone-neutral" }: { pct: number; tone?: string }) {
+  return (
+    <div className={`challenge-insight-track ${tone}`} aria-hidden="true">
+      <span style={{ width: `${Math.max(2, Math.min(100, pct))}%` }} />
+    </div>
+  );
+}
+
+function MonthRows({ currentMonthIndex, months }: { currentMonthIndex: number | null; months: ChallengeMonthPassStat[] }) {
+  return (
+    <div className="challenge-insight-list">
+      {months.map((month, index) => {
+        const confidence = sampleConfidence(month.totalSimulations);
+        return (
+          <div className={`challenge-insight-row ${passRateTone(month)}${month.monthIndex === currentMonthIndex ? " is-current" : ""}`} key={month.key}>
+            <span className="challenge-insight-rank">#{index + 1}</span>
+            <strong className="challenge-insight-name">{month.label}</strong>
+            <InsightBar pct={month.passRatePct} tone={passRateTone(month)} />
+            <strong className="challenge-insight-rate">{fmtPct(month.passRatePct)}</strong>
+            <small>
+              {fmtNumber(month.passCount)} / {fmtNumber(month.totalSimulations)} passed
+            </small>
+            <small>Median pass {month.passCount ? fmtChallengeDuration(month.medianMinutesToPass) : "--"}</small>
+            <small className={confidence.className}>{confidence.label}</small>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function StartDayRows({ days }: { days: ChallengeStartDayPassStat[] }) {
+  return (
+    <div className="challenge-insight-list">
+      {days.map((day, index) => (
+        <div className={`challenge-insight-row ${passRateTone(day)}`} key={day.key}>
+          <span className="challenge-insight-rank">#{index + 1}</span>
+          <strong className="challenge-insight-name">{day.label}</strong>
+          <InsightBar pct={day.passRatePct} tone={passRateTone(day)} />
+          <strong className="challenge-insight-rate">{fmtPct(day.passRatePct)}</strong>
+          <small>
+            {fmtNumber(day.passCount)} / {fmtNumber(day.totalSimulations)} passed
+          </small>
+          <small>Median pass {day.passCount ? fmtChallengeDuration(day.medianMinutesToPass) : "--"}</small>
+          <small>P50 final {day.totalSimulations ? fmtMoney(day.p50FinalPnl, true) : "--"}</small>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function FailureRows({ reasons }: { reasons: ChallengeFailureReasonStat[] }) {
+  return (
+    <div className="challenge-insight-list">
+      {reasons.map((reason, index) => (
+        <div className={`challenge-insight-row tone-down`} key={reason.key}>
+          <span className="challenge-insight-rank">#{index + 1}</span>
+          <strong className="challenge-insight-name">{reason.label}</strong>
+          <InsightBar pct={reason.pct} tone="tone-down" />
+          <strong className="challenge-insight-rate">{reason.totalFailures ? fmtPct(reason.pct) : "--"}</strong>
+          <small>
+            {fmtNumber(reason.count)} / {fmtNumber(reason.totalFailures)} fails
+          </small>
+          <small>Avg fail {reason.count ? fmtChallengeDuration(reason.avgMinutesToFail) : "--"}</small>
+          <small>{reason.count ? `${fmtNumber(reason.avgTradesToFail)} trades` : "--"}</small>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function PaceCards({ historical, monteCarlo }: { historical: ChallengeMethodStats; monteCarlo: ChallengeMethodStats }) {
+  return (
+    <div className="challenge-insight-card-grid">
+      <div className="challenge-insight-card tone-up">
+        <span>Historical median pass</span>
+        <strong>{historical.passCount ? fmtChallengeDuration(historical.medianMinutesToPass) : "--"}</strong>
+        <small>{historical.passCount ? `${fmtNumber(historical.medianTradesToPass)} trades to pass` : "No historical pass"}</small>
+      </div>
+      <div className="challenge-insight-card tone-up">
+        <span>Monte Carlo median pass</span>
+        <strong>{monteCarlo.passCount ? fmtChallengeDuration(monteCarlo.medianMinutesToPass) : "--"}</strong>
+        <small>{monteCarlo.passCount ? `${fmtNumber(monteCarlo.medianTradesToPass)} trades to pass` : "No simulated pass"}</small>
+      </div>
+      <div className="challenge-insight-card tone-neutral">
+        <span>Expected final P&L</span>
+        <strong className={resultClass(monteCarlo.avgFinalPnl)}>{monteCarlo.totalSimulations ? fmtMoney(monteCarlo.avgFinalPnl, true) : "--"}</strong>
+        <small>Monte Carlo average ending result</small>
+      </div>
+      <div className="challenge-insight-card tone-neutral">
+        <span>Likely challenge window</span>
+        <strong>{monteCarlo.passCount ? fmtChallengeDuration(monteCarlo.avgMinutesToPass) : "--"}</strong>
+        <small>Average simulated pass time</small>
+      </div>
+    </div>
+  );
+}
+
+function SensitivityRows({ rows }: { rows: ChallengeRiskSensitivityStat[] }) {
+  return (
+    <div className="challenge-risk-table">
+      {rows.map((row) => (
+        <div className={`challenge-risk-row ${row.deltaPct >= 0 ? "tone-up" : "tone-down"}`} key={row.key}>
+          <span>{row.group}</span>
+          <strong>{row.changePct > 0 ? "+" : ""}{fmtNumber(row.changePct)}%</strong>
+          <small>{fmtPct(row.passRatePct)}</small>
+          <small className={row.deltaPct >= 0 ? "up" : "down"}>{row.deltaPct >= 0 ? "+" : ""}{fmtPct(row.deltaPct)}</small>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function DistributionRows({ bins, title }: { bins: ChallengeDistributionBin[]; title: string }) {
+  return (
+    <div className="challenge-distribution-group">
+      <strong>{title}</strong>
+      <div className="challenge-insight-list compact">
+        {bins.map((bin) => (
+          <div className="challenge-insight-row compact tone-neutral" key={bin.key}>
+            <span className="challenge-insight-rank">{bin.label}</span>
+            <InsightBar pct={bin.pct} />
+            <strong className="challenge-insight-rate">{fmtPct(bin.pct)}</strong>
+            <small>{fmtNumber(bin.count)} passes</small>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function DistributionView({ summary }: { summary: ChallengeReplaySummary }) {
+  return (
+    <div className="challenge-distribution-grid">
+      <DistributionRows bins={summary.passDistribution.daysToPass} title="Days to pass" />
+      <DistributionRows bins={summary.passDistribution.tradesToPass} title="Trades to pass" />
+    </div>
+  );
+}
+
+function StreakCards({ streak }: { streak: ChallengeWorstStreakStat }) {
+  return (
+    <div className="challenge-insight-card-grid">
+      <div className={`challenge-insight-card ${streak.survivedMaxLoss ? "tone-up" : "tone-down"}`}>
+        <span>Worst losing streak</span>
+        <strong>{fmtNumber(streak.trades)} trades</strong>
+        <small>{fmtMoney(-streak.lossDollars)} drawdown</small>
+      </div>
+      <div className={`challenge-insight-card ${streak.maxLossCushionDollars > 0 ? "tone-up" : "tone-down"}`}>
+        <span>Max loss cushion</span>
+        <strong>{fmtMoney(streak.maxLossCushionDollars, true)}</strong>
+        <small>{streak.survivedMaxLoss ? "Survives max loss" : "Breaches max loss"}</small>
+      </div>
+      <div className={`challenge-insight-card ${streak.dailyStopBreached ? "tone-down" : "tone-up"}`}>
+        <span>Daily stop stress</span>
+        <strong>{streak.dailyStopBreached ? "Breached" : "Survived"}</strong>
+        <small>Assumes the streak lands in one session</small>
+      </div>
+      <div className="challenge-insight-card tone-neutral">
+        <span>Streak window</span>
+        <strong>{streak.startTime ? fmtChallengeDuration((Date.parse(streak.endTime ?? streak.startTime) - Date.parse(streak.startTime)) / 60_000) : "--"}</strong>
+        <small>{streak.startTime ? new Date(streak.startTime).toLocaleDateString() : "No loss streak"}</small>
+      </div>
+    </div>
+  );
+}
+
+function StrategyContributionRows({
+  labels,
+  rows
+}: {
+  labels: Map<string, string>;
+  rows: ChallengeStrategyContributionStat[];
+}) {
+  return (
+    <div className="challenge-insight-list">
+      {rows.map((row, index) => (
+        <div className={`challenge-insight-row ${row.totalPnl >= 0 ? "tone-up" : "tone-down"}`} key={row.key}>
+          <span className="challenge-insight-rank">#{index + 1}</span>
+          <strong className="challenge-insight-name">{labels.get(row.key) ?? row.key}</strong>
+          <InsightBar pct={Math.min(100, Math.abs(row.avgPnlPerRun) / 100)} tone={row.totalPnl >= 0 ? "tone-up" : "tone-down"} />
+          <strong className={`challenge-insight-rate ${resultClass(row.totalPnl)}`}>{fmtMoney(row.totalPnl, true)}</strong>
+          <small>{fmtNumber(row.trades)} replay trades</small>
+          <small>{fmtNumber(row.passRuns)} pass runs</small>
+          <small>{fmtNumber(row.failRuns)} fail runs</small>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function ConfidenceRows({ currentMonthIndex, months }: { currentMonthIndex: number | null; months: ChallengeMonthPassStat[] }) {
+  return (
+    <div className="challenge-insight-list">
+      {months.map((month) => {
+        const confidence = sampleConfidence(month.totalSimulations);
+        return (
+          <div className={`challenge-insight-row ${confidence.className}${month.monthIndex === currentMonthIndex ? " is-current" : ""}`} key={month.key}>
+            <span className="challenge-insight-rank">{month.label}</span>
+            <strong className="challenge-insight-name">{confidence.label}</strong>
+            <InsightBar pct={Math.min(100, (month.totalSimulations / 100) * 100)} tone={confidence.className} />
+            <strong className="challenge-insight-rate">{fmtNumber(month.totalSimulations)}</strong>
+            <small>starts sampled</small>
+            <small>{fmtPct(month.passRatePct)} pass rate</small>
+            <small>{fmtNumber(month.passCount)} passed</small>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function LaunchWindowCards({
+  currentMonth,
+  currentMonthLabel,
+  days,
+  months
+}: {
+  currentMonth?: ChallengeMonthPassStat;
+  currentMonthLabel: string;
+  days: ChallengeStartDayPassStat[];
+  months: ChallengeMonthPassStat[];
+}) {
+  const bestMonths = months.slice(0, 3);
+  const softestMonth = [...months].sort((left, right) => left.passRatePct - right.passRatePct)[0];
+  const bestDays = days.slice(0, 2);
+  return (
+    <div className="challenge-insight-card-grid">
+      <div className={`challenge-insight-card ${currentMonth ? passRateTone(currentMonth) : "tone-neutral"}`}>
+        <span>Current month</span>
+        <strong>{currentMonth ? `${currentMonth.label} ${fmtPct(currentMonth.passRatePct)}` : `${currentMonthLabel} --`}</strong>
+        <small>{currentMonth ? `${fmtNumber(currentMonth.passCount)} / ${fmtNumber(currentMonth.totalSimulations)} passed` : "No sample yet"}</small>
+      </div>
+      <div className="challenge-insight-card tone-up">
+        <span>Best months</span>
+        <strong>{bestMonths.map((month) => month.label).join(", ") || "--"}</strong>
+        <small>{bestMonths.map((month) => fmtPct(month.passRatePct)).join(" / ") || "No month ranking"}</small>
+      </div>
+      <div className="challenge-insight-card tone-up">
+        <span>Best launch days</span>
+        <strong>{bestDays.map((day) => day.label).join(", ") || "--"}</strong>
+        <small>{bestDays.map((day) => fmtPct(day.passRatePct)).join(" / ") || "No day ranking"}</small>
+      </div>
+      <div className={`challenge-insight-card ${softestMonth ? passRateTone(softestMonth) : "tone-neutral"}`}>
+        <span>Weakest month</span>
+        <strong>{softestMonth ? `${softestMonth.label} ${fmtPct(softestMonth.passRatePct)}` : "--"}</strong>
+        <small>Use this as the caution window</small>
+      </div>
+    </div>
+  );
+}
+
+function ChallengeReplayInsights({
+  strategies,
+  summary
+}: {
+  strategies: StrategyEditOption[];
+  summary: ChallengeReplaySummary;
+}) {
   const [currentMonthIndex, setCurrentMonthIndex] = useState<number | null>(null);
+  const [activeIndex, setActiveIndex] = useState(0);
   useEffect(() => {
     setCurrentMonthIndex(new Date().getMonth());
   }, []);
-  const currentMonth = currentMonthIndex == null ? undefined : months.find((month) => month.monthIndex === currentMonthIndex);
-  const currentMonthLabel =
-    currentMonth?.label ??
-    (currentMonthIndex == null
-      ? "Current"
-      : new Intl.DateTimeFormat("en-US", { month: "short", timeZone: "UTC" }).format(new Date(Date.UTC(2024, currentMonthIndex, 1))));
+  const currentMonth = currentMonthIndex == null ? undefined : summary.monthPassStats.find((month) => month.monthIndex === currentMonthIndex);
+  const currentMonthLabel = currentMonth?.label ?? monthLabelFromIndex(currentMonthIndex);
+  const labels = useMemo(() => new Map(strategies.map((strategy) => [strategy.key, `${strategy.symbol} ${strategy.label}`])), [strategies]);
+  const activeView = INSIGHT_VIEW_ORDER[activeIndex] ?? "months";
+  const strongestFailure = [...summary.failureReasons].sort((left, right) => right.count - left.count)[0];
+  const strongestSensitivity = [...summary.riskSensitivity].sort((left, right) => Math.abs(right.deltaPct) - Math.abs(left.deltaPct))[0];
+  const viewMeta: Record<InsightViewKey, { summary: string; title: string }> = {
+    months: {
+      title: "Start month ranking",
+      summary: currentMonth ? `${currentMonth.label} ${fmtPct(currentMonth.passRatePct)}` : `${currentMonthLabel} --`
+    },
+    days: {
+      title: "Start day ranking",
+      summary: bestSummary(summary.startDayPassStats)
+    },
+    failures: {
+      title: "Failure reasons",
+      summary: strongestFailure ? `${strongestFailure.label} ${fmtPct(strongestFailure.pct)}` : "--"
+    },
+    pace: {
+      title: "Expected challenge pace",
+      summary: summary.monteCarlo.passCount ? fmtChallengeDuration(summary.monteCarlo.medianMinutesToPass) : "--"
+    },
+    sensitivity: {
+      title: "Risk rule sensitivity",
+      summary: strongestSensitivity ? `${strongestSensitivity.group} ${strongestSensitivity.deltaPct >= 0 ? "+" : ""}${fmtPct(strongestSensitivity.deltaPct)}` : "--"
+    },
+    distribution: {
+      title: "Pass path distribution",
+      summary: summary.historical.passCount ? `${fmtNumber(summary.historical.passCount)} passes` : "--"
+    },
+    streak: {
+      title: "Worst streak stress",
+      summary: summary.worstStreak.trades ? `${fmtNumber(summary.worstStreak.trades)} losses` : "--"
+    },
+    strategies: {
+      title: "Strategy contribution",
+      summary: summary.strategyContributions[0] ? fmtMoney(summary.strategyContributions[0].totalPnl, true) : "--"
+    },
+    confidence: {
+      title: "Confidence and sample size",
+      summary: currentMonth ? sampleConfidence(currentMonth.totalSimulations).label : "--"
+    },
+    launch: {
+      title: "Best launch window",
+      summary: bestSummary(summary.monthPassStats)
+    }
+  };
+  const meta = viewMeta[activeView];
+  const previousView = () => setActiveIndex((index) => (index === 0 ? INSIGHT_VIEW_ORDER.length - 1 : index - 1));
+  const nextView = () => setActiveIndex((index) => (index + 1) % INSIGHT_VIEW_ORDER.length);
+
+  function renderActiveView() {
+    if (activeView === "days") return <StartDayRows days={summary.startDayPassStats} />;
+    if (activeView === "failures") return <FailureRows reasons={summary.failureReasons} />;
+    if (activeView === "pace") return <PaceCards historical={summary.historical} monteCarlo={summary.monteCarlo} />;
+    if (activeView === "sensitivity") return <SensitivityRows rows={summary.riskSensitivity} />;
+    if (activeView === "distribution") return <DistributionView summary={summary} />;
+    if (activeView === "streak") return <StreakCards streak={summary.worstStreak} />;
+    if (activeView === "strategies") return <StrategyContributionRows labels={labels} rows={summary.strategyContributions} />;
+    if (activeView === "confidence") return <ConfidenceRows currentMonthIndex={currentMonthIndex} months={summary.monthPassStats} />;
+    if (activeView === "launch") {
+      return (
+        <LaunchWindowCards
+          currentMonth={currentMonth}
+          currentMonthLabel={currentMonthLabel}
+          days={summary.startDayPassStats}
+          months={summary.monthPassStats}
+        />
+      );
+    }
+    return <MonthRows currentMonthIndex={currentMonthIndex} months={summary.monthPassStats} />;
+  }
+
   return (
-    <div className="challenge-month-ranking">
-      <div className="challenge-month-head">
-        <span>Start month ranking</span>
-        <strong>{currentMonth ? `${currentMonth.label} ${fmtPct(currentMonth.passRatePct)}` : `${currentMonthLabel} --`}</strong>
-      </div>
-      {months.length ? (
-        <div className="challenge-month-list">
-          {months.map((month, index) => (
-            <div className={`challenge-month-row ${passRateTone(month)}`} key={month.key}>
-              <span className="challenge-month-rank">#{index + 1}</span>
-              <strong className="challenge-month-name">{month.label}</strong>
-              <div className="challenge-month-track" aria-hidden="true">
-                <span style={{ width: `${Math.max(2, Math.min(100, month.passRatePct))}%` }} />
-              </div>
-              <strong className="challenge-month-rate">{fmtPct(month.passRatePct)}</strong>
-              <small>
-                {fmtNumber(month.passCount)} / {fmtNumber(month.totalSimulations)} passed
-              </small>
-              <small>Median pass {month.passCount ? fmtChallengeDuration(month.medianMinutesToPass) : "--"}</small>
-              <small>P50 final {month.totalSimulations ? fmtMoney(month.p50FinalPnl, true) : "--"}</small>
-            </div>
-          ))}
+    <div className="challenge-month-ranking challenge-insights">
+      <div className="challenge-month-head challenge-insight-head">
+        <div className="challenge-insight-titlebar">
+          <span className="challenge-insight-title">{meta.title}</span>
+          <div className="challenge-insight-arrows" aria-label="Replay insight navigation">
+            <button type="button" onClick={previousView} aria-label="Previous replay insight">
+              &lt;
+            </button>
+            <small>{activeIndex + 1} / {INSIGHT_VIEW_ORDER.length}</small>
+            <button type="button" onClick={nextView} aria-label="Next replay insight">
+              &gt;
+            </button>
+          </div>
         </div>
-      ) : (
-        <div className="challenge-month-empty">No monthly replay samples yet.</div>
-      )}
+        <strong>{meta.summary}</strong>
+      </div>
+      {summary.eligibleTrades ? renderActiveView() : <div className="challenge-month-empty">No replay samples yet.</div>}
     </div>
   );
 }
@@ -295,7 +650,7 @@ function challengeReplayCachePayload(seedPrefix: string, rules: ChallengeRules, 
   return JSON.stringify({
     rules,
     seedPrefix,
-    trades: trades.map((trade) => [trade.entryTime, Math.round(trade.pnlDollars * 10_000) / 10_000]),
+    trades: trades.map((trade) => [trade.entryTime, trade.key ?? "", Math.round(trade.pnlDollars * 10_000) / 10_000]),
     version: REPLAY_CACHE_VERSION
   });
 }
@@ -313,9 +668,15 @@ function isChallengeReplaySummary(value: unknown): value is ChallengeReplaySumma
     typeof summary.historicalSessions === "number" &&
     Boolean(summary.historical && typeof summary.historical === "object") &&
     Boolean(summary.monteCarlo && typeof summary.monteCarlo === "object") &&
+    Array.isArray(summary.failureReasons) &&
     Array.isArray(summary.historicalPassRates) &&
     Array.isArray(summary.monthPassStats) &&
-    Array.isArray(summary.monteCarloPassRates)
+    Array.isArray(summary.monteCarloPassRates) &&
+    Boolean(summary.passDistribution && typeof summary.passDistribution === "object") &&
+    Array.isArray(summary.riskSensitivity) &&
+    Array.isArray(summary.startDayPassStats) &&
+    Array.isArray(summary.strategyContributions) &&
+    Boolean(summary.worstStreak && typeof summary.worstStreak === "object")
   );
 }
 
@@ -436,6 +797,7 @@ export default function ChallengeReplay({
     const accountScale = rules.startingBalance / initialBalance;
     return trades.map((trade) => ({
       entryTime: trade.entryTime,
+      key: trade.key,
       pnlDollars: (() => {
         const strategy = strategyByKey.get(trade.key);
         if (!strategy) return trade.pnlDollars * accountScale;
@@ -547,7 +909,7 @@ export default function ChallengeReplay({
         <ChallengeReplayPanel title="Historical" stats={challengeReplay.historical} rates={challengeReplay.historicalPassRates} />
         <ChallengeReplayPanel title="Monte Carlo" stats={challengeReplay.monteCarlo} rates={challengeReplay.monteCarloPassRates} />
       </div>
-      <ChallengeMonthPassRanking months={challengeReplay.monthPassStats} />
+      <ChallengeReplayInsights strategies={strategies} summary={challengeReplay} />
       <div className="challenge-footnote">
         <span>Avg gap: {fmtChallengeDuration(challengeReplay.avgTradeGapMinutes)}</span>
         <span>Account: {fmtMoney(rules.startingBalance)}</span>

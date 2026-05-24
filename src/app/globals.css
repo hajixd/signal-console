@@ -5608,6 +5608,302 @@ html[data-theme="light"] .themeDarkLabel {
   font-size: 0.7rem;
 }
 
+.challenge-insights {
+  gap: 0.65rem;
+}
+
+.challenge-insight-head {
+  align-items: center;
+}
+
+.challenge-insight-titlebar {
+  min-width: 0;
+  display: flex;
+  flex: 1;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.58rem;
+}
+
+.challenge-month-head .challenge-insight-title {
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 0.92rem;
+  line-height: 1.05;
+}
+
+.challenge-insight-arrows {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 0.28rem;
+}
+
+.challenge-insight-arrows button {
+  width: 28px;
+  height: 28px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 7px;
+  background: rgba(255, 255, 255, 0.035);
+  color: rgba(255, 255, 255, 0.84);
+  font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+  font-size: 0.82rem;
+  font-weight: 950;
+  cursor: pointer;
+}
+
+.challenge-insight-arrows button:hover,
+.challenge-insight-arrows button:focus-visible {
+  border-color: rgba(96, 165, 250, 0.38);
+  background: rgba(96, 165, 250, 0.1);
+  color: #dbeafe;
+  outline: none;
+}
+
+.challenge-insight-arrows small {
+  min-width: 42px;
+  color: rgba(255, 255, 255, 0.48);
+  font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+  font-size: 0.58rem;
+  font-weight: 900;
+  text-align: center;
+}
+
+.challenge-insight-list {
+  display: grid;
+  gap: 0.42rem;
+}
+
+.challenge-insight-list.compact {
+  gap: 0.34rem;
+}
+
+.challenge-insight-row {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: 46px minmax(76px, 0.5fr) minmax(100px, 1fr) 82px minmax(112px, 0.78fr) minmax(122px, 0.82fr) minmax(100px, 0.72fr);
+  align-items: center;
+  gap: 0.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.026);
+  padding: 0.56rem 0.6rem;
+}
+
+.challenge-insight-row.compact {
+  grid-template-columns: minmax(72px, 0.44fr) minmax(110px, 1fr) 76px minmax(86px, 0.55fr);
+}
+
+.challenge-insight-row.is-current {
+  box-shadow: inset 3px 0 0 #93bbfc;
+}
+
+.challenge-insight-row.tone-up,
+.challenge-insight-card.tone-up,
+.challenge-risk-row.tone-up {
+  border-color: rgba(52, 211, 153, 0.24);
+  background: linear-gradient(135deg, rgba(52, 211, 153, 0.075), rgba(255, 255, 255, 0.02));
+}
+
+.challenge-insight-row.tone-down,
+.challenge-insight-card.tone-down,
+.challenge-risk-row.tone-down {
+  border-color: rgba(248, 113, 113, 0.2);
+  background: linear-gradient(135deg, rgba(248, 113, 113, 0.07), rgba(255, 255, 255, 0.018));
+}
+
+.challenge-insight-row.tone-neutral,
+.challenge-insight-card.tone-neutral,
+.challenge-risk-row.tone-neutral {
+  border-color: rgba(96, 165, 250, 0.18);
+  background: linear-gradient(135deg, rgba(96, 165, 250, 0.055), rgba(255, 255, 255, 0.018));
+}
+
+.challenge-insight-rank,
+.challenge-insight-row small {
+  min-width: 0;
+  overflow: hidden;
+  color: rgba(255, 255, 255, 0.58);
+  font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+  font-size: 0.58rem;
+  font-weight: 900;
+  letter-spacing: 0;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.challenge-insight-row small.up,
+.challenge-insight-row small.tone-up,
+.challenge-risk-row small.up {
+  color: var(--up);
+}
+
+.challenge-insight-row small.down,
+.challenge-insight-row small.tone-down,
+.challenge-risk-row small.down {
+  color: var(--down);
+}
+
+.challenge-insight-name,
+.challenge-insight-rate,
+.challenge-risk-row strong,
+.challenge-risk-row small,
+.challenge-distribution-group > strong {
+  min-width: 0;
+  overflow: hidden;
+  font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.challenge-insight-name,
+.challenge-insight-rate {
+  color: rgba(255, 255, 255, 0.92);
+  font-size: 0.82rem;
+  font-weight: 950;
+}
+
+.challenge-insight-row.tone-up .challenge-insight-rate {
+  color: var(--up);
+}
+
+.challenge-insight-row.tone-down .challenge-insight-rate {
+  color: var(--down);
+}
+
+.challenge-insight-track {
+  height: 6px;
+  min-width: 0;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.challenge-insight-track span {
+  display: block;
+  height: 100%;
+  background: #93bbfc;
+}
+
+.challenge-insight-track.tone-up span {
+  background: var(--up);
+}
+
+.challenge-insight-track.tone-down span {
+  background: var(--down);
+}
+
+.challenge-insight-card-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+
+.challenge-insight-card {
+  min-width: 0;
+  display: grid;
+  gap: 0.28rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.026);
+  padding: 0.68rem 0.72rem;
+}
+
+.challenge-insight-card span,
+.challenge-risk-row span {
+  min-width: 0;
+  overflow: hidden;
+  color: rgba(255, 255, 255, 0.58);
+  font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+  font-size: 0.58rem;
+  font-weight: 900;
+  letter-spacing: 0;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.challenge-insight-card strong {
+  min-width: 0;
+  overflow: hidden;
+  color: rgba(255, 255, 255, 0.92);
+  font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+  font-size: 1.08rem;
+  font-weight: 950;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.challenge-insight-card strong.up,
+.challenge-insight-rate.up {
+  color: var(--up);
+}
+
+.challenge-insight-card strong.down,
+.challenge-insight-rate.down {
+  color: var(--down);
+}
+
+.challenge-insight-card small {
+  min-width: 0;
+  overflow: hidden;
+  color: rgba(255, 255, 255, 0.56);
+  font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+  font-size: 0.58rem;
+  font-weight: 850;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.challenge-risk-table {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.42rem;
+}
+
+.challenge-risk-row {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.28rem 0.5rem;
+  align-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.026);
+  padding: 0.56rem 0.6rem;
+}
+
+.challenge-risk-row span {
+  grid-column: 1 / -1;
+}
+
+.challenge-risk-row strong {
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 0.8rem;
+  font-weight: 950;
+}
+
+.challenge-risk-row small {
+  color: rgba(255, 255, 255, 0.58);
+  font-size: 0.58rem;
+  font-weight: 900;
+}
+
+.challenge-distribution-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.6rem;
+}
+
+.challenge-distribution-group {
+  min-width: 0;
+  display: grid;
+  gap: 0.42rem;
+}
+
+.challenge-distribution-group > strong {
+  color: rgba(255, 255, 255, 0.68);
+  font-size: 0.64rem;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
 .terminal-table-wrap {
   min-width: 0;
   overflow: auto;
@@ -7034,38 +7330,97 @@ html[data-theme="light"] .challenge-footnote span {
 }
 
 html[data-theme="light"] .challenge-month-ranking,
-html[data-theme="light"] .challenge-month-row {
+html[data-theme="light"] .challenge-month-row,
+html[data-theme="light"] .challenge-insight-card,
+html[data-theme="light"] .challenge-insight-row,
+html[data-theme="light"] .challenge-risk-row {
   border-color: var(--line);
   background: #ffffff;
 }
 
-html[data-theme="light"] .challenge-month-row.tone-up {
+html[data-theme="light"] .challenge-month-row.tone-up,
+html[data-theme="light"] .challenge-insight-card.tone-up,
+html[data-theme="light"] .challenge-insight-row.tone-up,
+html[data-theme="light"] .challenge-risk-row.tone-up {
   border-color: rgba(4, 120, 87, 0.22);
   background: linear-gradient(135deg, rgba(16, 185, 129, 0.09), rgba(16, 185, 129, 0.025));
 }
 
-html[data-theme="light"] .challenge-month-row.tone-down {
+html[data-theme="light"] .challenge-month-row.tone-down,
+html[data-theme="light"] .challenge-insight-card.tone-down,
+html[data-theme="light"] .challenge-insight-row.tone-down,
+html[data-theme="light"] .challenge-risk-row.tone-down {
   border-color: rgba(190, 18, 60, 0.2);
   background: linear-gradient(135deg, rgba(244, 63, 94, 0.09), rgba(244, 63, 94, 0.025));
 }
 
-html[data-theme="light"] .challenge-month-row.tone-neutral {
+html[data-theme="light"] .challenge-month-row.tone-neutral,
+html[data-theme="light"] .challenge-insight-card.tone-neutral,
+html[data-theme="light"] .challenge-insight-row.tone-neutral,
+html[data-theme="light"] .challenge-risk-row.tone-neutral {
   border-color: rgba(37, 99, 235, 0.18);
   background: linear-gradient(135deg, rgba(37, 99, 235, 0.07), rgba(37, 99, 235, 0.02));
 }
 
 html[data-theme="light"] .challenge-month-head strong,
-html[data-theme="light"] .challenge-month-name {
+html[data-theme="light"] .challenge-month-name,
+html[data-theme="light"] .challenge-month-head .challenge-insight-title,
+html[data-theme="light"] .challenge-insight-name,
+html[data-theme="light"] .challenge-insight-card strong,
+html[data-theme="light"] .challenge-risk-row strong,
+html[data-theme="light"] .challenge-distribution-group > strong {
   color: #0f172a;
 }
 
 html[data-theme="light"] .challenge-month-rank,
-html[data-theme="light"] .challenge-month-row small {
+html[data-theme="light"] .challenge-month-row small,
+html[data-theme="light"] .challenge-insight-rank,
+html[data-theme="light"] .challenge-insight-row small,
+html[data-theme="light"] .challenge-insight-card span,
+html[data-theme="light"] .challenge-insight-card small,
+html[data-theme="light"] .challenge-risk-row span,
+html[data-theme="light"] .challenge-risk-row small {
   color: rgba(15, 23, 42, 0.56);
 }
 
-html[data-theme="light"] .challenge-month-track {
+html[data-theme="light"] .challenge-month-track,
+html[data-theme="light"] .challenge-insight-track {
   background: rgba(15, 23, 42, 0.08);
+}
+
+html[data-theme="light"] .challenge-insight-arrows button {
+  border-color: rgba(15, 23, 42, 0.12);
+  background: rgba(15, 23, 42, 0.035);
+  color: rgba(15, 23, 42, 0.76);
+}
+
+html[data-theme="light"] .challenge-insight-arrows button:hover,
+html[data-theme="light"] .challenge-insight-arrows button:focus-visible {
+  border-color: rgba(37, 99, 235, 0.28);
+  background: rgba(37, 99, 235, 0.08);
+  color: #1d4ed8;
+}
+
+html[data-theme="light"] .challenge-insight-arrows small {
+  color: rgba(15, 23, 42, 0.5);
+}
+
+html[data-theme="light"] .challenge-insight-card strong.up,
+html[data-theme="light"] .challenge-insight-rate.up,
+html[data-theme="light"] .challenge-insight-row.tone-up .challenge-insight-rate,
+html[data-theme="light"] .challenge-insight-row small.up,
+html[data-theme="light"] .challenge-insight-row small.tone-up,
+html[data-theme="light"] .challenge-risk-row small.up {
+  color: #059669;
+}
+
+html[data-theme="light"] .challenge-insight-card strong.down,
+html[data-theme="light"] .challenge-insight-rate.down,
+html[data-theme="light"] .challenge-insight-row.tone-down .challenge-insight-rate,
+html[data-theme="light"] .challenge-insight-row small.down,
+html[data-theme="light"] .challenge-insight-row small.tone-down,
+html[data-theme="light"] .challenge-risk-row small.down {
+  color: #dc2626;
 }
 
 html[data-theme="light"] .challenge-month-empty {
@@ -7922,13 +8277,24 @@ html[data-theme="light"] .strategyToggle input {
   .challenge-pass-rates,
   .challenge-method-grid,
   .challenge-month-row,
+  .challenge-insight-row,
+  .challenge-insight-row.compact,
+  .challenge-insight-card-grid,
+  .challenge-risk-table,
+  .challenge-risk-row,
+  .challenge-distribution-grid,
   .challenge-rule-form {
     grid-template-columns: 1fr;
   }
 
-  .challenge-month-head {
+  .challenge-month-head,
+  .challenge-insight-head {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .challenge-insight-titlebar {
+    justify-content: space-between;
   }
 
   .basketListHeader {
@@ -12160,6 +12526,9 @@ html[data-theme="light"] .tradeReplaySlider input::-webkit-slider-thumb {
   .challenge-method,
   .challenge-month-ranking,
   .challenge-month-row,
+  .challenge-insight-card,
+  .challenge-insight-row,
+  .challenge-risk-row,
   .dataset-sync-tile {
     min-width: 0;
     max-width: 100%;
@@ -12301,6 +12670,9 @@ html[data-theme="light"] .tradeReplaySlider input::-webkit-slider-thumb {
   html[data-theme="light"] .challenge-method,
   html[data-theme="light"] .challenge-month-ranking,
   html[data-theme="light"] .challenge-month-row,
+  html[data-theme="light"] .challenge-insight-card,
+  html[data-theme="light"] .challenge-insight-row,
+  html[data-theme="light"] .challenge-risk-row,
   html[data-theme="light"] .dataset-sync-tile,
   html[data-theme="light"] .terminal-table tbody tr,
   html[data-theme="light"] .basketListRow {

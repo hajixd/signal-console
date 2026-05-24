@@ -2,6 +2,7 @@ import { TOPSTEP_100K_ACCOUNT, topstepSessionKey } from "./topstep";
 
 export type ChallengeReplayTrade = {
   entryTime: string;
+  key?: string;
   pnlDollars: number;
 };
 
@@ -63,19 +64,95 @@ export type ChallengeMonthPassStat = {
   totalSimulations: number;
 };
 
+export type ChallengeStartDayPassStat = {
+  avgFinalPnl: number;
+  dayIndex: number;
+  failCount: number;
+  incompleteCount: number;
+  key: string;
+  label: string;
+  medianMinutesToPass: number;
+  medianTradesToPass: number;
+  passCount: number;
+  passRatePct: number;
+  p50FinalPnl: number;
+  totalSimulations: number;
+};
+
+export type ChallengeFailureReasonStat = {
+  avgMinutesToFail: number;
+  avgTradesToFail: number;
+  count: number;
+  key: "dailyLoss" | "maxLoss";
+  label: string;
+  pct: number;
+  totalFailures: number;
+};
+
+export type ChallengeDistributionBin = {
+  count: number;
+  key: string;
+  label: string;
+  pct: number;
+};
+
+export type ChallengePassDistribution = {
+  daysToPass: ChallengeDistributionBin[];
+  tradesToPass: ChallengeDistributionBin[];
+};
+
+export type ChallengeRiskSensitivityStat = {
+  changePct: number;
+  deltaPct: number;
+  group: string;
+  key: string;
+  label: string;
+  passCount: number;
+  passRatePct: number;
+  totalSimulations: number;
+};
+
+export type ChallengeWorstStreakStat = {
+  dailyStopBreached: boolean;
+  endTime: string | null;
+  lossDollars: number;
+  maxLossCushionDollars: number;
+  startTime: string | null;
+  survivedMaxLoss: boolean;
+  trades: number;
+};
+
+export type ChallengeStrategyContributionStat = {
+  avgPnlPerRun: number;
+  failPnl: number;
+  failRuns: number;
+  key: string;
+  passPnl: number;
+  passRuns: number;
+  totalPnl: number;
+  trades: number;
+};
+
 export type ChallengeReplaySummary = {
   eligibleTrades: number;
   historicalSessions: number;
   avgTradeGapMinutes: number;
+  failureReasons: ChallengeFailureReasonStat[];
   historicalPassRates: ChallengePassRateHorizon[];
   monthPassStats: ChallengeMonthPassStat[];
   monteCarloPassRates: ChallengePassRateHorizon[];
+  passDistribution: ChallengePassDistribution;
+  riskSensitivity: ChallengeRiskSensitivityStat[];
+  startDayPassStats: ChallengeStartDayPassStat[];
+  strategyContributions: ChallengeStrategyContributionStat[];
+  worstStreak: ChallengeWorstStreakStat;
   historical: ChallengeMethodStats;
   monteCarlo: ChallengeMethodStats;
 };
 
 type PreparedTrade = {
   entryTimeMs: number;
+  key: string;
   sessionKey: string;
   pnlDollars: number;
 };
@@ -92,6 +169,9 @@ type ReplayOutcome = {
   minutes: number;
   winRate: number;
   finalPnl: number;
+  failReason?: "dailyLoss" | "maxLoss";
+  pnlByKey: Record<string, number>;
+  tradesByKey: Record<string, number>;
 };
 
 type ReplayRun = {
@@ -110,7 +190,7 @@ type ChallengeReplayProgressCallback = (progress: ChallengeReplayProgress) => vo
 
 type MonteCarloSource = {
   firstMs: number;
-  pnls: number[];
+  samples: Array<{ key: string; pnlDollars: number }>;
   startGapsMs: number[];
   templates: SessionTemplate[];
 };
@@ -124,6 +204,7 @@ const PASS_RATE_HORIZONS = [
   { key: "eventual", label: "Eventual Pass Rate", days: null, minutes: undefined }
 ] as const;
 const MONTH_LABELS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"] as const;
+const DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"] as const;
 
 export const DEFAULT_CHALLENGE_RULES: ChallengeRules = {
   startingBalance: TOPSTEP_100K_ACCOUNT.startingBalance,
@@ -185,6 +266,7 @@ function prepareTrades(trades: ChallengeReplayTrade[]): PreparedTrade[] {
       const entryTimeMs = parseTimestamp(trade.entryTime);
       return {
         entryTimeMs,
+        key: trade.key ?? "unknown",
         sessionKey: Number.isFinite(entryTimeMs) ? topstepSessionKey(new Date(entryTimeMs)) : "",
         pnlDollars: trade.pnlDollars
       };
@@ -248,7 +330,7 @@ function prepareMonteCarloSource(sourceTrades: PreparedTrade[]): MonteCarloSourc
   const templates = sessionTemplates(sourceTrades);
   return {
     firstMs: templates[0]?.startTimeMs ?? sourceTrades[0]?.entryTimeMs ?? Date.now(),
-    pnls: sourceTrades.map((trade) => trade.pnlDollars),
+    samples: sourceTrades.map((trade) => ({ key: trade.key, pnlDollars: trade.pnlDollars })),
     startGapsMs: sessionStartGapsMs(templates),
     templates
   };
@@ -263,6 +345,8 @@ function replayTrades(trades: PreparedTrade[], startMs: number, rules: Challenge
   let tradeCount = 0;
   let wins = 0;
   let endTimeMs = startMs;
+  const pnlByKey: Record<string, number> = {};
+  const tradesByKey: Record<string, number> = {};
   const deadlineMs = horizonMinutes && horizonMinutes > 0 ? startMs + horizonMinutes * 60_000 : Infinity;
 
   function closeSession() {
@@ -288,17 +372,24 @@ function replayTrades(trades: PreparedTrade[], startMs: number, rules: Challenge
 
     tradeCount += 1;
     if (trade.pnlDollars > 0) wins += 1;
+    pnlByKey[trade.key] = (pnlByKey[trade.key] ?? 0) + trade.pnlDollars;
+    tradesByKey[trade.key] = (tradesByKey[trade.key] ?? 0) + 1;
     dailyPnl += trade.pnlDollars;
     balance += trade.pnlDollars;
     endTimeMs = trade.entryTimeMs;
 
-    if ((rules.maximumLossLimit > 0 && balance <= lossFloor) || (rules.dailyLossLimit > 0 && dailyPnl <= -rules.dailyLossLimit)) {
+    const maxLossFailed = rules.maximumLossLimit > 0 && balance <= lossFloor;
+    const dailyLossFailed = rules.dailyLossLimit > 0 && dailyPnl <= -rules.dailyLossLimit;
+    if (maxLossFailed || dailyLossFailed) {
       return {
         status: "fail",
         trades: tradeCount,
         minutes: Math.max(0, (endTimeMs - startMs) / 60_000),
         winRate: tradeCount ? wins / tradeCount : 0,
-        finalPnl: balance - rules.startingBalance
+        finalPnl: balance - rules.startingBalance,
+        failReason: maxLossFailed ? "maxLoss" : "dailyLoss",
+        pnlByKey,
+        tradesByKey
       };
     }
 
@@ -308,7 +399,9 @@ function replayTrades(trades: PreparedTrade[], startMs: number, rules: Challenge
         trades: tradeCount,
         minutes: Math.max(0, (endTimeMs - startMs) / 60_000),
         winRate: tradeCount ? wins / tradeCount : 0,
-        finalPnl: balance - rules.startingBalance
+        finalPnl: balance - rules.startingBalance,
+        pnlByKey,
+        tradesByKey
       };
     }
 
@@ -326,7 +419,9 @@ function replayTrades(trades: PreparedTrade[], startMs: number, rules: Challenge
     trades: tradeCount,
     minutes: Math.max(0, (endTimeMs - startMs) / 60_000),
     winRate: tradeCount ? wins / tradeCount : 0,
-    finalPnl: balance - rules.startingBalance
+    finalPnl: balance - rules.startingBalance,
+    pnlByKey,
+    tradesByKey
   };
 }
 
@@ -413,12 +508,230 @@ function monthPassStatsFromRuns(runs: ReplayRun[]): ChallengeMonthPassStat[] {
     });
 }
 
+function startDayPassStatsFromRuns(runs: ReplayRun[]): ChallengeStartDayPassStat[] {
+  const buckets = new Map<number, ReplayOutcome[]>();
+  for (const run of runs) {
+    const dayIndex = new Date(run.startMs).getUTCDay();
+    if (dayIndex < 0 || dayIndex > 6) continue;
+    const bucket = buckets.get(dayIndex) ?? [];
+    bucket.push(run.outcome);
+    buckets.set(dayIndex, bucket);
+  }
+
+  return [...buckets.entries()]
+    .map(([dayIndex, outcomes]) => {
+      const stats = statsFromOutcomes("historical", outcomes);
+      return {
+        avgFinalPnl: stats.avgFinalPnl,
+        dayIndex,
+        failCount: stats.failCount,
+        incompleteCount: stats.incompleteCount,
+        key: String(dayIndex),
+        label: DAY_LABELS[dayIndex],
+        medianMinutesToPass: stats.medianMinutesToPass,
+        medianTradesToPass: stats.medianTradesToPass,
+        passCount: stats.passCount,
+        passRatePct: stats.passRatePct,
+        p50FinalPnl: stats.p50FinalPnl,
+        totalSimulations: stats.totalSimulations
+      };
+    })
+    .sort((left, right) => {
+      if (right.passRatePct !== left.passRatePct) return right.passRatePct - left.passRatePct;
+      if (right.totalSimulations !== left.totalSimulations) return right.totalSimulations - left.totalSimulations;
+      return left.dayIndex - right.dayIndex;
+    });
+}
+
+function failureReasonsFromOutcomes(outcomes: ReplayOutcome[]): ChallengeFailureReasonStat[] {
+  const failures = outcomes.filter((outcome) => outcome.status === "fail");
+  const totalFailures = failures.length;
+  const reasonLabels: Array<{ key: "dailyLoss" | "maxLoss"; label: string }> = [
+    { key: "maxLoss", label: "Max loss" },
+    { key: "dailyLoss", label: "Daily loss" }
+  ];
+
+  return reasonLabels.map(({ key, label }) => {
+    const bucket = failures.filter((outcome) => outcome.failReason === key);
+    return {
+      avgMinutesToFail: average(bucket.map((outcome) => outcome.minutes)),
+      avgTradesToFail: average(bucket.map((outcome) => outcome.trades)),
+      count: bucket.length,
+      key,
+      label,
+      pct: totalFailures ? (bucket.length / totalFailures) * 100 : 0,
+      totalFailures
+    };
+  });
+}
+
+function distributionBins(values: number[], bins: Array<{ key: string; label: string; max: number }>): ChallengeDistributionBin[] {
+  const total = values.length;
+  return bins.map((bin, index) => {
+    const previousMax = bins[index - 1]?.max ?? -Infinity;
+    const count = values.filter((value) => value > previousMax && value <= bin.max).length;
+    return {
+      count,
+      key: bin.key,
+      label: bin.label,
+      pct: total ? (count / total) * 100 : 0
+    };
+  });
+}
+
+function passDistributionFromRuns(runs: ReplayRun[]): ChallengePassDistribution {
+  const passes = runs.map((run) => run.outcome).filter((outcome) => outcome.status === "pass");
+  return {
+    daysToPass: distributionBins(
+      passes.map((outcome) => outcome.minutes / MINUTES_PER_DAY),
+      [
+        { key: "1d", label: "<= 1d", max: 1 },
+        { key: "2d", label: "2d", max: 2 },
+        { key: "5d", label: "3-5d", max: 5 },
+        { key: "10d", label: "6-10d", max: 10 },
+        { key: "more", label: "10d+", max: Infinity }
+      ]
+    ),
+    tradesToPass: distributionBins(
+      passes.map((outcome) => outcome.trades),
+      [
+        { key: "3t", label: "<= 3", max: 3 },
+        { key: "6t", label: "4-6", max: 6 },
+        { key: "10t", label: "7-10", max: 10 },
+        { key: "15t", label: "11-15", max: 15 },
+        { key: "more", label: "15+", max: Infinity }
+      ]
+    )
+  };
+}
+
+function adjustedRules(rules: ChallengeRules, field: keyof ChallengeRules, changePct: number): ChallengeRules {
+  const nextValue = rules[field] * (1 + changePct / 100);
+  return {
+    ...rules,
+    [field]: Math.max(field === "startingBalance" ? 1 : 0, nextValue)
+  };
+}
+
+function riskSensitivityFromStarts(
+  prepared: PreparedTrade[],
+  starts: number[],
+  rules: ChallengeRules,
+  baselinePassRatePct: number
+): ChallengeRiskSensitivityStat[] {
+  const variants: Array<{ field: keyof ChallengeRules; group: string; label: string }> = [
+    { field: "profitTarget", group: "Target", label: "Profit target" },
+    { field: "maximumLossLimit", group: "Max loss", label: "Max loss" },
+    { field: "dailyLossStop", group: "Daily stop", label: "Daily stop" },
+    { field: "dailyProfitLock", group: "Daily lock", label: "Daily lock" }
+  ];
+  const changes = [-50, -25, -10, 10, 25, 50];
+
+  return variants.flatMap((variant) =>
+    changes.map((changePct) => {
+      const variantRules = adjustedRules(rules, variant.field, changePct);
+      const outcomes = starts.map((startMs) => replayTrades(prepared, startMs, variantRules)).filter((outcome) => outcome.trades > 0);
+      const stats = statsFromOutcomes("historical", outcomes);
+      return {
+        changePct,
+        deltaPct: stats.passRatePct - baselinePassRatePct,
+        group: variant.group,
+        key: `${String(variant.field)}:${changePct}`,
+        label: `${variant.label} ${changePct > 0 ? "+" : ""}${changePct}%`,
+        passCount: stats.passCount,
+        passRatePct: stats.passRatePct,
+        totalSimulations: stats.totalSimulations
+      };
+    })
+  );
+}
+
+function worstStreakFromTrades(trades: PreparedTrade[], rules: ChallengeRules): ChallengeWorstStreakStat {
+  let currentLoss = 0;
+  let currentTrades = 0;
+  let currentStart: number | null = null;
+  let currentEnd: number | null = null;
+  let bestLoss = 0;
+  let bestTrades = 0;
+  let bestStart: number | null = null;
+  let bestEnd: number | null = null;
+
+  for (const trade of trades) {
+    if (trade.pnlDollars < 0) {
+      if (currentTrades === 0) currentStart = trade.entryTimeMs;
+      currentTrades += 1;
+      currentLoss += Math.abs(trade.pnlDollars);
+      currentEnd = trade.entryTimeMs;
+      if (currentLoss > bestLoss) {
+        bestLoss = currentLoss;
+        bestTrades = currentTrades;
+        bestStart = currentStart;
+        bestEnd = currentEnd;
+      }
+    } else {
+      currentLoss = 0;
+      currentTrades = 0;
+      currentStart = null;
+      currentEnd = null;
+    }
+  }
+
+  return {
+    dailyStopBreached: rules.dailyLossStop > 0 ? bestLoss >= rules.dailyLossStop : false,
+    endTime: bestEnd == null ? null : new Date(bestEnd).toISOString(),
+    lossDollars: bestLoss,
+    maxLossCushionDollars: rules.maximumLossLimit - bestLoss,
+    startTime: bestStart == null ? null : new Date(bestStart).toISOString(),
+    survivedMaxLoss: rules.maximumLossLimit <= 0 || bestLoss < rules.maximumLossLimit,
+    trades: bestTrades
+  };
+}
+
+function strategyContributionsFromRuns(runs: ReplayRun[]): ChallengeStrategyContributionStat[] {
+  const contributions = new Map<string, ChallengeStrategyContributionStat>();
+  for (const run of runs) {
+    for (const [key, pnl] of Object.entries(run.outcome.pnlByKey)) {
+      const current =
+        contributions.get(key) ??
+        {
+          avgPnlPerRun: 0,
+          failPnl: 0,
+          failRuns: 0,
+          key,
+          passPnl: 0,
+          passRuns: 0,
+          totalPnl: 0,
+          trades: 0
+        };
+      current.totalPnl += pnl;
+      current.trades += run.outcome.tradesByKey[key] ?? 0;
+      if (run.outcome.status === "pass") {
+        current.passPnl += pnl;
+        current.passRuns += 1;
+      }
+      if (run.outcome.status === "fail") {
+        current.failPnl += pnl;
+        current.failRuns += 1;
+      }
+      contributions.set(key, current);
+    }
+  }
+
+  return [...contributions.values()]
+    .map((entry) => ({
+      ...entry,
+      avgPnlPerRun: runs.length ? entry.totalPnl / runs.length : 0
+    }))
+    .sort((left, right) => Math.abs(right.totalPnl) - Math.abs(left.totalPnl))
+    .slice(0, 12);
+}
+
 function buildMonteCarloTrades(source: MonteCarloSource, rng: () => number): PreparedTrade[] {
   const generated: PreparedTrade[] = [];
   let sessionStartMs = source.firstMs;
   let previousSessionSpanMs = 0;
 
-  for (let sessionIndex = 0; generated.length < source.pnls.length; sessionIndex += 1) {
+  for (let sessionIndex = 0; generated.length < source.samples.length; sessionIndex += 1) {
     // Keep Monte Carlo timing grounded in real behavior by resampling historical
     // session shapes and start-to-start gaps instead of inventing a flat daily cadence.
     const template = source.templates[Math.floor(rng() * source.templates.length)] ?? source.templates[0];
@@ -429,11 +742,13 @@ function buildMonteCarloTrades(source: MonteCarloSource, rng: () => number): Pre
     }
     previousSessionSpanMs = template.spanMs;
     for (const offsetMs of template.tradeOffsetsMs) {
-      if (generated.length >= source.pnls.length) break;
+      if (generated.length >= source.samples.length) break;
+      const sample = source.samples[Math.floor(rng() * source.samples.length)] ?? { key: "unknown", pnlDollars: 0 };
       generated.push({
         entryTimeMs: sessionStartMs + offsetMs,
+        key: sample.key,
         sessionKey: `mc-${sessionIndex}`,
-        pnlDollars: source.pnls[Math.floor(rng() * source.pnls.length)] ?? 0
+        pnlDollars: sample.pnlDollars
       });
     }
   }
@@ -452,6 +767,7 @@ export function analyzePropFirmChallenge(
   const starts = sessionStarts(prepared);
   const tradeGapMinutes = avgTradeGapMinutes(prepared);
   const emptyPassRates = PASS_RATE_HORIZONS.map((horizon) => passRateFromOutcomes(horizon, []));
+  const emptyPassDistribution = passDistributionFromRuns([]);
 
   if (!prepared.length) {
     const empty = statsFromOutcomes("historical", []);
@@ -459,9 +775,15 @@ export function analyzePropFirmChallenge(
       eligibleTrades: 0,
       historicalSessions: 0,
       avgTradeGapMinutes: 0,
+      failureReasons: failureReasonsFromOutcomes([]),
       historicalPassRates: emptyPassRates,
       monthPassStats: [],
       monteCarloPassRates: emptyPassRates,
+      passDistribution: emptyPassDistribution,
+      riskSensitivity: [],
+      startDayPassStats: [],
+      strategyContributions: [],
+      worstStreak: worstStreakFromTrades([], rules),
       historical: empty,
       monteCarlo: { ...empty, method: "montecarlo" }
     };
@@ -516,9 +838,15 @@ export function analyzePropFirmChallenge(
     eligibleTrades: prepared.length,
     historicalSessions: starts.length,
     avgTradeGapMinutes: tradeGapMinutes,
+    failureReasons: failureReasonsFromOutcomes(historicalOutcomes),
     historicalPassRates,
     monthPassStats: monthPassStatsFromRuns(historicalRuns),
     monteCarloPassRates,
+    passDistribution: passDistributionFromRuns(historicalRuns),
+    riskSensitivity: riskSensitivityFromStarts(prepared, starts, rules, statsFromOutcomes("historical", historicalOutcomes).passRatePct),
+    startDayPassStats: startDayPassStatsFromRuns(historicalRuns),
+    strategyContributions: strategyContributionsFromRuns(historicalRuns),
+    worstStreak: worstStreakFromTrades(prepared, rules),
     historical: statsFromOutcomes("historical", historicalOutcomes),
     monteCarlo: statsFromOutcomes("montecarlo", monteCarloOutcomesByHorizon.eventual)
   };

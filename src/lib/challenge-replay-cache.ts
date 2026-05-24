@@ -29,9 +29,15 @@ function isChallengeReplaySummary(value: unknown): value is ChallengeReplaySumma
     typeof summary.historicalSessions === "number" &&
     Boolean(summary.historical && typeof summary.historical === "object") &&
     Boolean(summary.monteCarlo && typeof summary.monteCarlo === "object") &&
+    Array.isArray(summary.failureReasons) &&
     Array.isArray(summary.historicalPassRates) &&
     Array.isArray(summary.monthPassStats) &&
-    Array.isArray(summary.monteCarloPassRates)
+    Array.isArray(summary.monteCarloPassRates) &&
+    Boolean(summary.passDistribution && typeof summary.passDistribution === "object") &&
+    Array.isArray(summary.riskSensitivity) &&
+    Array.isArray(summary.startDayPassStats) &&
+    Array.isArray(summary.strategyContributions) &&
+    Boolean(summary.worstStreak && typeof summary.worstStreak === "object")
   );
 }
 
