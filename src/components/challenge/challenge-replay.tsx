@@ -50,7 +50,7 @@ const STORAGE_KEY = "trading-bot:challenge-rules:v1";
 const REPLAY_CACHE_STORAGE_KEY_PREFIX = "trading-bot:challenge-replay-cache:v2";
 const REPLAY_CACHE_INDEX_KEY = "trading-bot:challenge-replay-cache:index:v2";
 const REPLAY_CACHE_LIMIT = 20;
-const REPLAY_CACHE_VERSION = "mc-10000-insights-v1";
+const REPLAY_CACHE_VERSION = "mc-10000-insights-v2";
 
 function fmtNumber(value: number): string {
   if (!Number.isFinite(value)) return "inf";
@@ -207,11 +207,11 @@ function ChallengeReplayPanel({
   );
 }
 
-type InsightViewKey = "months" | "days" | "failures" | "pace" | "sensitivity" | "distribution" | "streak" | "strategies" | "confidence" | "launch";
+type InsightViewKey = "months" | "endingMonths" | "failures" | "pace" | "sensitivity" | "distribution" | "streak" | "strategies" | "confidence" | "launch";
 
 const INSIGHT_VIEW_ORDER: InsightViewKey[] = [
   "months",
-  "days",
+  "endingMonths",
   "failures",
   "pace",
   "sensitivity",
@@ -269,20 +269,20 @@ function MonthRows({ currentMonthIndex, months }: { currentMonthIndex: number | 
   );
 }
 
-function StartDayRows({ days }: { days: ChallengeStartDayPassStat[] }) {
+function EndingMonthRows({ currentMonthIndex, months }: { currentMonthIndex: number | null; months: ChallengeMonthPassStat[] }) {
   return (
     <div className="challenge-insight-list">
-      {days.map((day, index) => (
-        <div className={`challenge-insight-row ${passRateTone(day)}`} key={day.key}>
+      {months.map((month, index) => (
+        <div className={`challenge-insight-row ${passRateTone(month)}${month.monthIndex === currentMonthIndex ? " is-current" : ""}`} key={month.key}>
           <span className="challenge-insight-rank">#{index + 1}</span>
-          <strong className="challenge-insight-name">{day.label}</strong>
-          <InsightBar pct={day.passRatePct} tone={passRateTone(day)} />
-          <strong className="challenge-insight-rate">{fmtPct(day.passRatePct)}</strong>
+          <strong className="challenge-insight-name">{month.label}</strong>
+          <InsightBar pct={month.passRatePct} tone={passRateTone(month)} />
+          <strong className="challenge-insight-rate">{fmtPct(month.passRatePct)}</strong>
           <small>
-            {fmtNumber(day.passCount)} / {fmtNumber(day.totalSimulations)} passed
+            {fmtNumber(month.passCount)} / {fmtNumber(month.totalSimulations)} passed
           </small>
-          <small>Median pass {day.passCount ? fmtChallengeDuration(day.medianMinutesToPass) : "--"}</small>
-          <small>P50 final {day.totalSimulations ? fmtMoney(day.p50FinalPnl, true) : "--"}</small>
+          <small>Median pass {month.passCount ? fmtChallengeDuration(month.medianMinutesToPass) : "--"}</small>
+          <small>P50 final {month.totalSimulations ? fmtMoney(month.p50FinalPnl, true) : "--"}</small>
         </div>
       ))}
     </div>
@@ -513,9 +513,9 @@ function ChallengeReplayInsights({
       title: "Start month ranking",
       summary: currentMonth ? `${currentMonth.label} ${fmtPct(currentMonth.passRatePct)}` : `${currentMonthLabel} --`
     },
-    days: {
-      title: "Start day ranking",
-      summary: bestSummary(summary.startDayPassStats)
+    endingMonths: {
+      title: "End month ranking",
+      summary: bestSummary(summary.endingMonthPassStats)
     },
     failures: {
       title: "Failure reasons",
@@ -555,7 +555,7 @@ function ChallengeReplayInsights({
   const nextView = () => setActiveIndex((index) => (index + 1) % INSIGHT_VIEW_ORDER.length);
 
   function renderActiveView() {
-    if (activeView === "days") return <StartDayRows days={summary.startDayPassStats} />;
+    if (activeView === "endingMonths") return <EndingMonthRows currentMonthIndex={currentMonthIndex} months={summary.endingMonthPassStats} />;
     if (activeView === "failures") return <FailureRows reasons={summary.failureReasons} />;
     if (activeView === "pace") return <PaceCards historical={summary.historical} monteCarlo={summary.monteCarlo} />;
     if (activeView === "sensitivity") return <SensitivityRows rows={summary.riskSensitivity} />;
@@ -668,6 +668,7 @@ function isChallengeReplaySummary(value: unknown): value is ChallengeReplaySumma
     typeof summary.historicalSessions === "number" &&
     Boolean(summary.historical && typeof summary.historical === "object") &&
     Boolean(summary.monteCarlo && typeof summary.monteCarlo === "object") &&
+    Array.isArray(summary.endingMonthPassStats) &&
     Array.isArray(summary.failureReasons) &&
     Array.isArray(summary.historicalPassRates) &&
     Array.isArray(summary.monthPassStats) &&

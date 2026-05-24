@@ -29,6 +29,7 @@ function isChallengeReplaySummary(value: unknown): value is ChallengeReplaySumma
     typeof summary.historicalSessions === "number" &&
     Boolean(summary.historical && typeof summary.historical === "object") &&
     Boolean(summary.monteCarlo && typeof summary.monteCarlo === "object") &&
+    Array.isArray(summary.endingMonthPassStats) &&
     Array.isArray(summary.failureReasons) &&
     Array.isArray(summary.historicalPassRates) &&
     Array.isArray(summary.monthPassStats) &&

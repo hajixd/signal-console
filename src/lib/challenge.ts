@@ -140,6 +140,7 @@ export type ChallengeReplaySummary = {
   failureReasons: ChallengeFailureReasonStat[];
   historicalPassRates: ChallengePassRateHorizon[];
   monthPassStats: ChallengeMonthPassStat[];
+  endingMonthPassStats: ChallengeMonthPassStat[];
   monteCarloPassRates: ChallengePassRateHorizon[];
   passDistribution: ChallengePassDistribution;
   riskSensitivity: ChallengeRiskSensitivityStat[];
@@ -508,6 +509,43 @@ function monthPassStatsFromRuns(runs: ReplayRun[]): ChallengeMonthPassStat[] {
     });
 }
 
+function endingMonthPassStatsFromRuns(runs: ReplayRun[]): ChallengeMonthPassStat[] {
+  const buckets = new Map<number, ReplayOutcome[]>();
+  for (const run of runs) {
+    const endMs = run.startMs + run.outcome.minutes * 60_000;
+    const monthIndex = new Date(endMs).getUTCMonth();
+    if (monthIndex < 0 || monthIndex > 11) continue;
+    const bucket = buckets.get(monthIndex) ?? [];
+    bucket.push(run.outcome);
+    buckets.set(monthIndex, bucket);
+  }
+
+  return [...buckets.entries()]
+    .map(([monthIndex, outcomes]) => {
+      const stats = statsFromOutcomes("historical", outcomes);
+      return {
+        avgFinalPnl: stats.avgFinalPnl,
+        failCount: stats.failCount,
+        incompleteCount: stats.incompleteCount,
+        key: `end-${String(monthIndex + 1).padStart(2, "0")}`,
+        label: MONTH_LABELS[monthIndex],
+        medianMinutesToPass: stats.medianMinutesToPass,
+        medianTradesToPass: stats.medianTradesToPass,
+        monthIndex,
+        passCount: stats.passCount,
+        passRatePct: stats.passRatePct,
+        p50FinalPnl: stats.p50FinalPnl,
+        totalSimulations: stats.totalSimulations
+      };
+    })
+    .sort((left, right) => {
+      if (right.passRatePct !== left.passRatePct) return right.passRatePct - left.passRatePct;
+      if (right.totalSimulations !== left.totalSimulations) return right.totalSimulations - left.totalSimulations;
+      if (right.p50FinalPnl !== left.p50FinalPnl) return right.p50FinalPnl - left.p50FinalPnl;
+      return left.monthIndex - right.monthIndex;
+    });
+}
+
 function startDayPassStatsFromRuns(runs: ReplayRun[]): ChallengeStartDayPassStat[] {
   const buckets = new Map<number, ReplayOutcome[]>();
   for (const run of runs) {
@@ -778,6 +816,7 @@ export function analyzePropFirmChallenge(
       failureReasons: failureReasonsFromOutcomes([]),
       historicalPassRates: emptyPassRates,
       monthPassStats: [],
+      endingMonthPassStats: [],
       monteCarloPassRates: emptyPassRates,
       passDistribution: emptyPassDistribution,
       riskSensitivity: [],
@@ -841,6 +880,7 @@ export function analyzePropFirmChallenge(
     failureReasons: failureReasonsFromOutcomes(historicalOutcomes),
     historicalPassRates,
     monthPassStats: monthPassStatsFromRuns(historicalRuns),
+    endingMonthPassStats: endingMonthPassStatsFromRuns(historicalRuns),
     monteCarloPassRates,
     passDistribution: passDistributionFromRuns(historicalRuns),
     riskSensitivity: riskSensitivityFromStarts(prepared, starts, rules, statsFromOutcomes("historical", historicalOutcomes).passRatePct),
