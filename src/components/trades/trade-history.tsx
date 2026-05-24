@@ -1135,6 +1135,9 @@ export function TradeHistoryCalendar({ rows }: TradeHistoryProps) {
                       {trade.side === "long" ? "BUY" : "SELL"}
                     </span>
                     <div className="backtest-calendar-trade-copy">
+                      <div className="backtest-calendar-trade-model" title={displayedModelName}>
+                        {displayedModelName}
+                      </div>
                       <div className="backtest-calendar-trade-inline">
                         <span className="backtest-calendar-trade-inline-label">Entry ({trade.sourceTimeframe ?? "15m"}):</span>
                         <span className="backtest-calendar-trade-inline-value">{formatCalendarDateTime(trade.entryTime)}</span>

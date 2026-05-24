@@ -3460,6 +3460,19 @@ html[data-theme="light"] .themeDarkLabel {
   gap: 0.28rem 0.85rem;
 }
 
+.backtest-calendar-trade-model {
+  flex: 1 1 100%;
+  min-width: 0;
+  max-width: min(46rem, 100%);
+  overflow: hidden;
+  color: rgba(255, 255, 255, 0.88);
+  font-size: 0.66rem;
+  font-weight: 900;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .backtest-calendar-trade-inline {
   min-width: 0;
   display: inline-flex;
@@ -7589,6 +7602,10 @@ html[data-theme="light"] .backtest-calendar-trade:hover {
 html[data-theme="light"] .backtest-calendar-trade.expanded {
   border-color: rgba(37, 99, 235, 0.24);
   background: #f8fafc;
+}
+
+html[data-theme="light"] .backtest-calendar-trade-model {
+  color: rgba(15, 23, 42, 0.86);
 }
 
 html[data-theme="light"] .backtest-calendar-trade-inline {
