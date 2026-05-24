@@ -12,7 +12,7 @@
     "https://www.semanticscholar.org/paper/The-Probability-of-Backtest-Overfitting-Bailey-Borwein/b1233b4f5384f003e85c2e0eec1a2dfc08f624c5"
   ],
   "researchSummary": "London first-half-hour continuation into the US close. Filter: month 8.",
-  "selectionMethod": "Fixed session-edge research grid; pre-2022 training ranked candidates, then post-2022 forward trades had to clear PF/trade-count/split/no-duplicate gates.",
+  "selectionMethod": "Fixed session-edge research grid; pre-2022 training ranked candidates, then post-2022 forward trades had to clear PF/trade-count/split/no-duplicate gates. Management sweep promoted `be_trail_prior_bar_b4` only after strict forward PF improved from 2.73 to 2.75.",
   "trainingWindow": {
     "start": "asset_start",
     "end": "2021-12-31"
@@ -21,16 +21,20 @@
     "start": "2022-01-01",
     "end": "asset_latest"
   },
-  "selectedTrainingProfitFactor": 1.289915,
+  "selectedTrainingProfitFactor": 1.282568,
   "selectedTrainingTrades": 39,
-  "selectedForwardProfitFactor": 2.725629,
+  "selectedForwardProfitFactor": 2.750883,
   "selectedForwardTrades": 87,
   "forwardWins": 56,
   "forwardLosses": 27,
-  "forwardTotalR": 23.039999,
-  "forwardAverageR": 0.264828,
-  "forwardMaxDrawdownR": 1.762905,
-  "verificationSummary": "Strict runner verified forward PF 2.73, 87 trades, min split PF 2.12, and no registered same-asset duplicate entries at materialization time. Reality audit: true 2R bracket did not preserve the baseline PF, so this strategy remains a time-exit baseline and displayed RR is regenerated from the actual backtest CSV.",
+  "forwardTotalR": 23.162572,
+  "forwardAverageR": 0.266236,
+  "forwardMaxDrawdownR": 2.093753,
+  "verificationSummary": "Management sweep `be_trail_prior_bar_b4` strict PF 2.75 over 87 trades, beating baseline PF 2.73; train PF 1.28, bootstrap p05 1.71, block-bootstrap p05 1.71, odd/even min PF 2.59, annual pass rate 100%.",
   "costUnits": 0,
-  "oneTradePerDay": false
+  "oneTradePerDay": false,
+  "dynamicStopLossPolicy": {
+    "mode": "trail_prior_bar",
+    "bufferUnits": 4.0
+  }
 }

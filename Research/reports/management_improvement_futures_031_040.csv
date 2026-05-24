@@ -1,0 +1,4 @@
+status,strategy_id,asset_key,spec,baseline_pf,forward_pf,pf_gain,forward_trades,train_pf,train_trades,bootstrap_p05,block_bootstrap_p05,odd_even_min_pf,annual_pass_rate
+applied,competition_micro_bitcoin_futures_daily_tsmom_next_rth_weekday_side_2_short_4be5774f,micro_bitcoin_futures,be_trail_prior_bar_b4,2.355672,3.071177,0.715506,101,1.578105,19,2.003319,2.012131,2.396059,1.000000
+applied,competition_micro_bitcoin_futures_daily_tsmom_next_overnight_signalweekdayside_direction_contrarian_en_6003fc2d,micro_bitcoin_futures,be_trail_hourly_pivot_b0,3.553443,3.718575,0.165132,104,1.017511,20,2.426511,2.554918,3.102975,1.000000
+applied,competition_nasdaq_100_futures_daily_tsmom_next_overnight_weekday_side_1_long_8e593f24,nasdaq_100_futures,be_trail_hourly_pivot_b0,2.519324,2.689685,0.170360,83,1.014873,185,1.594204,1.731701,1.636153,1.000000

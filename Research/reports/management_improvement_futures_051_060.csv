@@ -1,0 +1,4 @@
+status,strategy_id,asset_key,spec,baseline_pf,forward_pf,pf_gain,forward_trades,train_pf,train_trades,bootstrap_p05,block_bootstrap_p05,odd_even_min_pf,annual_pass_rate
+applied,competition_silver_futures_us_first30_last30_reversal_signalmonth_xasset_rr_5_6a54acc6,silver_futures,be_trail_prior_bar_b4,2.833107,2.989477,0.156370,58,1.026040,164,1.760958,1.777876,2.363497,0.750000
+applied,competition_us_treasury_10y_note_futures_daily_tsmom_next_overnight_weekday_side_4_short_xasset_rr_5_105476cf,us_treasury_10y_note_futures,be_trail_prior_bar_b4,2.161728,2.269707,0.107980,90,1.169086,310,1.504896,1.420987,2.269582,1.000000
+applied,competition_silver_futures_us_first30_last30_reversal_signalmonth_xasset_rr_5_a9d7edf6,silver_futures,be_trail_prior_bar_b4,2.409941,2.515489,0.105548,63,1.000448,186,1.504631,1.310356,1.063104,1.000000

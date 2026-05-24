@@ -1,0 +1,2 @@
+status,strategy_id,asset_key,spec,baseline_pf,forward_pf,pf_gain,forward_trades,train_pf,train_trades,bootstrap_p05,block_bootstrap_p05,odd_even_min_pf,annual_pass_rate
+applied,competition_eur_jpy_daily_tsmom_next_rth_signalmonth_xasset_rr_5_32a353da,eur_jpy,be_trail_hourly_pivot_b4,2.205678,2.572317,0.366639,98,0.805070,37,1.608953,1.885765,2.228816,1.000000

@@ -10,7 +10,7 @@
     "https://pages.stern.nyu.edu/~lpederse/papers/TimeSeriesMomentum.pdf"
   ],
   "researchSummary": "Tests short-horizon own-return continuation/reversal inspired by time-series momentum literature. Filtered by signalMonth=12.",
-  "selectionMethod": "Pre-2022 train-score rank, then post-2022 forward qualification. No parameters were fit on post-2022 data.",
+  "selectionMethod": "Pre-2022 train-score rank, then post-2022 forward qualification. No parameters were fit on post-2022 data. Management sweep promoted `be_trail_hourly_pivot_b0` only after strict forward PF improved from 2.40 to 2.43.",
   "trainingWindow": {
     "start": "asset_start",
     "end": "2021-12-31"
@@ -19,16 +19,20 @@
     "start": "2022-01-01",
     "end": "asset_latest"
   },
-  "selectedTrainingProfitFactor": 1.293376,
-  "selectedTrainingTrades": 243,
-  "selectedForwardProfitFactor": 2.398338,
+  "selectedTrainingProfitFactor": 1.410319,
+  "selectedTrainingTrades": 191,
+  "selectedForwardProfitFactor": 2.425272,
   "selectedForwardTrades": 62,
   "forwardWins": 37,
   "forwardLosses": 25,
-  "forwardTotalR": 80.956173,
-  "forwardAverageR": 1.305745,
+  "forwardTotalR": 81.599122,
+  "forwardAverageR": 1.316115,
   "forwardMaxDrawdownR": 12.870461,
-  "verificationSummary": "Verified by backtest-engine runner output: PF 2.40, 62 trades, 80.96R total. Reality audit: true 2R bracket did not preserve the baseline PF, so this strategy remains a time-exit baseline and displayed RR is regenerated from the actual backtest CSV.",
+  "verificationSummary": "Management sweep `be_trail_hourly_pivot_b0` strict PF 2.43 over 62 trades, beating baseline PF 2.40; train PF 1.41, bootstrap p05 1.34, block-bootstrap p05 1.37, odd/even min PF 2.22, annual pass rate 100%.",
   "costUnits": 0,
-  "oneTradePerDay": false
+  "oneTradePerDay": false,
+  "dynamicStopLossPolicy": {
+    "mode": "trail_hourly_pivot",
+    "bufferUnits": 0.0
+  }
 }

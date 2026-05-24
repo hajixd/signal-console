@@ -12,7 +12,7 @@
     "https://www.semanticscholar.org/paper/The-Probability-of-Backtest-Overfitting-Bailey-Borwein/b1233b4f5384f003e85c2e0eec1a2dfc08f624c5"
   ],
   "researchSummary": "Daily time-series contrarian using a 20-day close-to-close lookback. Filter: long signals on weekday 3.",
-  "selectionMethod": "Fixed session-edge research grid; pre-2022 training ranked candidates, then post-2022 forward trades had to clear PF/trade-count/split/no-duplicate gates.",
+  "selectionMethod": "Fixed session-edge research grid; pre-2022 training ranked candidates, then post-2022 forward trades had to clear PF/trade-count/split/no-duplicate gates. Management sweep promoted `be_trail_hourly_pivot_b0` only after strict forward PF improved from 2.20 to 3.88.",
   "trainingWindow": {
     "start": "asset_start",
     "end": "2021-12-31"
@@ -21,16 +21,20 @@
     "start": "2022-01-01",
     "end": "asset_latest"
   },
-  "selectedTrainingProfitFactor": 1.469923,
-  "selectedTrainingTrades": 284,
-  "selectedForwardProfitFactor": 2.247497,
-  "selectedForwardTrades": 79,
-  "forwardWins": 47,
-  "forwardLosses": 32,
-  "forwardTotalR": 177.804739,
-  "forwardAverageR": 2.250693,
-  "forwardMaxDrawdownR": 19.153674,
-  "verificationSummary": "Strict runner verified forward PF 2.25, 79 trades, min split PF 1.30, and no registered same-asset duplicate entries at materialization time. Reality audit: true 2R bracket did not preserve the baseline PF, so this strategy remains a time-exit baseline and displayed RR is regenerated from the actual backtest CSV.",
+  "selectedTrainingProfitFactor": 1.600375,
+  "selectedTrainingTrades": 281,
+  "selectedForwardProfitFactor": 3.880018,
+  "selectedForwardTrades": 80,
+  "forwardWins": 41,
+  "forwardLosses": 39,
+  "forwardTotalR": 168.249847,
+  "forwardAverageR": 2.103123,
+  "forwardMaxDrawdownR": 15.211529,
+  "verificationSummary": "Management sweep `be_trail_hourly_pivot_b0` strict PF 3.88 over 80 trades, beating baseline PF 2.20; train PF 1.60, bootstrap p05 2.37, block-bootstrap p05 2.13, odd/even min PF 3.21, annual pass rate 100%.",
   "costUnits": 0,
-  "oneTradePerDay": false
+  "oneTradePerDay": false,
+  "dynamicStopLossPolicy": {
+    "mode": "trail_hourly_pivot",
+    "bufferUnits": 0.0
+  }
 }

@@ -1,0 +1,2 @@
+status,strategy_id,asset_key,spec,baseline_pf,forward_pf,pf_gain,forward_trades,train_pf,train_trades,bootstrap_p05,block_bootstrap_p05,odd_even_min_pf,annual_pass_rate
+applied,competition_eur_cad_london_first30_last30_momentum_month_8_c5f12647,eur_cad,be_trail_prior_bar_b4,2.725629,2.750883,0.025254,87,1.282568,39,1.714967,1.708886,2.585744,1.000000

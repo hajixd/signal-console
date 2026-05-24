@@ -12,7 +12,7 @@
     "https://www.semanticscholar.org/paper/The-Probability-of-Backtest-Overfitting-Bailey-Borwein/b1233b4f5384f003e85c2e0eec1a2dfc08f624c5"
   ],
   "researchSummary": "London first-half-hour continuation into New York. Filter: short signals on weekday 3.",
-  "selectionMethod": "Fixed session-edge research grid; pre-2022 training ranked candidates, then post-2022 forward trades had to clear PF/trade-count/split/no-duplicate gates.",
+  "selectionMethod": "Fixed session-edge research grid; pre-2022 training ranked candidates, then post-2022 forward trades had to clear PF/trade-count/split/no-duplicate gates. Management sweep promoted `be_trail_prior_bar_b4` only after strict forward PF improved from 2.04 to 3.11.",
   "trainingWindow": {
     "start": "asset_start",
     "end": "2021-12-31"
@@ -21,16 +21,20 @@
     "start": "2022-01-01",
     "end": "asset_latest"
   },
-  "selectedTrainingProfitFactor": 1.352082,
+  "selectedTrainingProfitFactor": 2.6733,
   "selectedTrainingTrades": 30,
-  "selectedForwardProfitFactor": 2.04444,
+  "selectedForwardProfitFactor": 3.114107,
   "selectedForwardTrades": 75,
-  "forwardWins": 46,
-  "forwardLosses": 28,
-  "forwardTotalR": 64.438197,
-  "forwardAverageR": 0.859176,
-  "forwardMaxDrawdownR": 9.177849,
-  "verificationSummary": "Strict runner verified forward PF 2.04, 75 trades, min split PF 1.15, and no registered same-asset duplicate entries at materialization time. Reality audit: true 2R bracket did not preserve the baseline PF, so this strategy remains a time-exit baseline and displayed RR is regenerated from the actual backtest CSV.",
+  "forwardWins": 29,
+  "forwardLosses": 43,
+  "forwardTotalR": 60.387763,
+  "forwardAverageR": 0.80517,
+  "forwardMaxDrawdownR": 4.997437,
+  "verificationSummary": "Management sweep `be_trail_prior_bar_b4` strict PF 3.11 over 75 trades, beating baseline PF 2.04; train PF 2.67, bootstrap p05 1.20, block-bootstrap p05 1.39, odd/even min PF 1.74, annual pass rate 100%.",
   "costUnits": 0,
-  "oneTradePerDay": false
+  "oneTradePerDay": false,
+  "dynamicStopLossPolicy": {
+    "mode": "trail_prior_bar",
+    "bufferUnits": 4.0
+  }
 }

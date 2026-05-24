@@ -10,7 +10,7 @@
     "https://pages.stern.nyu.edu/~lpederse/papers/TimeSeriesMomentum.pdf"
   ],
   "researchSummary": "Local mutation of Daily Tsmom Next Overnight Signalweekdayside; filter: long signals on weekday 1. Uses true bracket stop/target management at 4:1 planned reward-to-risk.",
-  "selectionMethod": "True-RR replacement search; pre-2022 train metrics were checked before post-2022 forward acceptance. Replacement required strict anti-cheat rerun, same-or-better forward PF, split stability, true planned TP/SL ratio, and no same-asset duplicate entries.",
+  "selectionMethod": "True-RR replacement search; pre-2022 train metrics were checked before post-2022 forward acceptance. Replacement required strict anti-cheat rerun, same-or-better forward PF, split stability, true planned TP/SL ratio, and no same-asset duplicate entries. Management sweep promoted `be_trail_hourly_pivot_b0` only after strict forward PF improved from 2.36 to 3.26.",
   "trainingWindow": {
     "start": "asset_start",
     "end": "2021-12-31"
@@ -19,18 +19,22 @@
     "start": "2022-01-01",
     "end": "asset_latest"
   },
-  "selectedTrainingProfitFactor": 0.928845,
+  "selectedTrainingProfitFactor": 0.98385,
   "selectedTrainingTrades": 193,
-  "selectedForwardProfitFactor": 2.355606,
+  "selectedForwardProfitFactor": 3.261122,
   "selectedForwardTrades": 90,
-  "forwardWins": 38,
-  "forwardLosses": 52,
-  "forwardTotalR": 67.488675,
-  "forwardAverageR": 0.749874,
-  "forwardMaxDrawdownR": 5.004607,
-  "verificationSummary": "True bracket replacement accepted: baseline PF 2.2104 (132 trades, displayed RR 1.00) -> strict PF 2.3556 (90 trades, min planned RR 3.96). Min forward split PF 1.48; pre-2022 train PF 0.93 over 193 trades.",
+  "forwardWins": 36,
+  "forwardLosses": 32,
+  "forwardTotalR": 66.731456,
+  "forwardAverageR": 0.741461,
+  "forwardMaxDrawdownR": 5.274786,
+  "verificationSummary": "Management sweep `be_trail_hourly_pivot_b0` strict PF 3.26 over 90 trades, beating baseline PF 2.36; train PF 0.98, bootstrap p05 1.94, block-bootstrap p05 1.90, odd/even min PF 2.76, annual pass rate 100%.",
   "costUnits": 0.0,
   "oneTradePerDay": false,
   "minimumRiskReward": 2,
-  "selectedRiskReward": 3.96176
+  "selectedRiskReward": 3.96176,
+  "dynamicStopLossPolicy": {
+    "mode": "trail_hourly_pivot",
+    "bufferUnits": 0.0
+  }
 }

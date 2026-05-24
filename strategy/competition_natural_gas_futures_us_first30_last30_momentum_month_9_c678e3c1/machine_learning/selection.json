@@ -12,7 +12,7 @@
     "https://www.semanticscholar.org/paper/The-Probability-of-Backtest-Overfitting-Bailey-Borwein/b1233b4f5384f003e85c2e0eec1a2dfc08f624c5"
   ],
   "researchSummary": "US opening continuation into the closing half-hour. Filter: month 9. True bracket exit uses 2:1 reward/risk; forward PF was recomputed from actual stop/target/time exits.",
-  "selectionMethod": "Fixed session-edge research grid; pre-2022 training ranked candidates, then post-2022 forward trades had to clear PF/trade-count/split/no-duplicate gates.",
+  "selectionMethod": "Fixed session-edge research grid; pre-2022 training ranked candidates, then post-2022 forward trades had to clear PF/trade-count/split/no-duplicate gates. Management sweep promoted `be_trail_hourly_pivot_b0` only after strict forward PF improved from 3.14 to 3.28.",
   "trainingWindow": {
     "start": "asset_start",
     "end": "2021-12-31"
@@ -21,18 +21,22 @@
     "start": "2022-01-01",
     "end": "asset_latest"
   },
-  "selectedTrainingProfitFactor": 0.873608,
+  "selectedTrainingProfitFactor": 0.946458,
   "selectedTrainingTrades": 161,
-  "selectedForwardProfitFactor": 3.143412,
+  "selectedForwardProfitFactor": 3.275728,
   "selectedForwardTrades": 56,
   "forwardWins": 34,
   "forwardLosses": 18,
-  "forwardTotalR": 8.935668,
-  "forwardAverageR": 0.159565,
-  "forwardMaxDrawdownR": 1.169195,
-  "verificationSummary": "Reality audit: true 2R bracket stop/target exit recomputed PF 3.14 over 56 trades, total 8.94R, max drawdown 1.17R (sl=1, time_exit=54, tp=1).",
+  "forwardTotalR": 9.104061,
+  "forwardAverageR": 0.162573,
+  "forwardMaxDrawdownR": 1.000801,
+  "verificationSummary": "Management sweep `be_trail_hourly_pivot_b0` strict PF 3.28 over 56 trades, beating baseline PF 3.14; train PF 0.95, bootstrap p05 1.79, block-bootstrap p05 1.81, odd/even min PF 2.05, annual pass rate 100%.",
   "costUnits": 0,
   "oneTradePerDay": false,
   "minimumRiskReward": 2.0,
-  "selectedRiskReward": 2.0
+  "selectedRiskReward": 2.0,
+  "dynamicStopLossPolicy": {
+    "mode": "trail_hourly_pivot",
+    "bufferUnits": 0.0
+  }
 }

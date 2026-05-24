@@ -1,0 +1,2 @@
+status,strategy_id,asset_key,spec,baseline_pf,forward_pf,pf_gain,forward_trades,train_pf,train_trades,bootstrap_p05,block_bootstrap_p05,odd_even_min_pf,annual_pass_rate
+applied,competition_gbp_jpy_london_first30_ny_open_momentum_weekday_side_3_short_d1634235,gbp_jpy,be_trail_prior_bar_b4,2.044440,3.114107,1.069667,75,2.673300,30,1.202882,1.389492,1.736622,1.000000

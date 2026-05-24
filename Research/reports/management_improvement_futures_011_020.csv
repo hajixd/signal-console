@@ -1,0 +1,2 @@
+status,strategy_id,asset_key,spec,baseline_pf,forward_pf,pf_gain,forward_trades,train_pf,train_trades,bootstrap_p05,block_bootstrap_p05,odd_even_min_pf,annual_pass_rate
+applied,competition_copper_futures_london_first30_last30_reversal_month_1_xasset_rr_5_d91f5efb,copper_futures,be_trail_hourly_pivot_b4,2.880637,3.201458,0.320822,77,0.886788,152,1.986527,1.934514,2.439097,1.000000

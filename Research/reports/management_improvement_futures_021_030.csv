@@ -1,0 +1,5 @@
+status,strategy_id,asset_key,spec,baseline_pf,forward_pf,pf_gain,forward_trades,train_pf,train_trades,bootstrap_p05,block_bootstrap_p05,odd_even_min_pf,annual_pass_rate
+applied,competition_gold_futures_daily_tsmom_next_overnight_weekday_side_3_long_648d544b,gold_futures,be_trail_hourly_pivot_b0,2.196660,3.880018,1.683358,80,1.600375,281,2.371216,2.132067,3.211526,1.000000
+applied,competition_dow_jones_futures_daily_tsmom_next_overnight_weekday_side_1_long_xasset_rr_4_373963bd,dow_jones_futures,be_trail_hourly_pivot_b0,2.355606,3.261122,0.905516,90,0.983850,193,1.935844,2.151039,2.759234,1.000000
+applied,competition_dow_jones_futures_daily_tsmom_next_overnight_signalweekdayside_direction_momentum_entrymin_c2a8817b,dow_jones_futures,be_trail_hourly_pivot_b0,2.355606,3.261122,0.905516,90,0.983850,193,1.944500,1.903557,2.759234,1.000000
+applied,competition_euro_futures_daily_tsmom_next_rth_signalmonth_direction_contrarian_entryminute_570_exitmin_0b54da46,euro_futures,be_trail_hourly_pivot_b0,2.398338,2.425272,0.026934,62,1.410319,191,1.337467,1.370784,2.223581,1.000000

@@ -12,7 +12,7 @@
     "https://www.semanticscholar.org/paper/The-Probability-of-Backtest-Overfitting-Bailey-Borwein/b1233b4f5384f003e85c2e0eec1a2dfc08f624c5"
   ],
   "researchSummary": "US opening reversal into the closing half-hour. Filter: month 10.",
-  "selectionMethod": "Fixed session-edge research grid; pre-2022 training ranked candidates, then post-2022 forward trades had to clear PF/trade-count/split/no-duplicate gates.",
+  "selectionMethod": "Fixed session-edge research grid; pre-2022 training ranked candidates, then post-2022 forward trades had to clear PF/trade-count/split/no-duplicate gates. Management sweep promoted `be_trail_prior_bar_b1` only after strict forward PF improved from 2.63 to 2.75.",
   "trainingWindow": {
     "start": "asset_start",
     "end": "2021-12-31"
@@ -21,16 +21,20 @@
     "start": "2022-01-01",
     "end": "asset_latest"
   },
-  "selectedTrainingProfitFactor": 0.997264,
+  "selectedTrainingProfitFactor": 0.854078,
   "selectedTrainingTrades": 151,
-  "selectedForwardProfitFactor": 2.626916,
+  "selectedForwardProfitFactor": 2.753302,
   "selectedForwardTrades": 57,
-  "forwardWins": 36,
-  "forwardLosses": 19,
-  "forwardTotalR": 11.611687,
-  "forwardAverageR": 0.203714,
-  "forwardMaxDrawdownR": 1.318147,
-  "verificationSummary": "Strict runner verified forward PF 2.63, 57 trades, min split PF 1.75, and no registered same-asset duplicate entries at materialization time. Reality audit: true 2R bracket did not preserve the baseline PF, so this strategy remains a time-exit baseline and displayed RR is regenerated from the actual backtest CSV.",
+  "forwardWins": 34,
+  "forwardLosses": 21,
+  "forwardTotalR": 11.733687,
+  "forwardAverageR": 0.205854,
+  "forwardMaxDrawdownR": 1.151601,
+  "verificationSummary": "Management sweep `be_trail_prior_bar_b1` strict PF 2.75 over 57 trades, beating baseline PF 2.63; train PF 0.85, bootstrap p05 1.39, block-bootstrap p05 1.81, odd/even min PF 1.28, annual pass rate 100%.",
   "costUnits": 0,
-  "oneTradePerDay": false
+  "oneTradePerDay": false,
+  "dynamicStopLossPolicy": {
+    "mode": "trail_prior_bar",
+    "bufferUnits": 1.0
+  }
 }

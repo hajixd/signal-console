@@ -1,0 +1,3 @@
+status,strategy_id,asset_key,spec,baseline_pf,forward_pf,pf_gain,forward_trades,train_pf,train_trades,bootstrap_p05,block_bootstrap_p05,odd_even_min_pf,annual_pass_rate
+applied,competition_british_pound_futures_us_first30_last30_reversal_signalmonth_xasset_rr_5_5f0cb0e3,british_pound_futures,be_trail_prior_bar_b1,2.451348,2.753302,0.301954,57,1.051726,151,1.546569,1.594643,1.280516,1.000000
+applied,competition_british_pound_futures_us_first30_last30_reversal_month_10_57755118,british_pound_futures,be_trail_prior_bar_b1,2.626916,2.753302,0.126386,57,0.854078,151,1.385564,1.809067,1.280516,1.000000

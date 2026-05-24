@@ -10,7 +10,7 @@
     "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=1004081"
   ],
   "researchSummary": "Tests whether the overnight gap fades or continues during a specific NY cash-session window. Filtered by signalMonth=12.",
-  "selectionMethod": "Pre-2022 train-score rank, then post-2022 forward qualification. No parameters were fit on post-2022 data.",
+  "selectionMethod": "Pre-2022 train-score rank, then post-2022 forward qualification. No parameters were fit on post-2022 data. Management sweep promoted `be_trail_prior_bar_b2` only after strict forward PF improved from 2.22 to 2.55.",
   "trainingWindow": {
     "start": "asset_start",
     "end": "2021-12-31"
@@ -19,16 +19,20 @@
     "start": "2022-01-01",
     "end": "asset_latest"
   },
-  "selectedTrainingProfitFactor": 1.495581,
-  "selectedTrainingTrades": 34,
-  "selectedForwardProfitFactor": 2.215788,
+  "selectedTrainingProfitFactor": 0.82524,
+  "selectedTrainingTrades": 35,
+  "selectedForwardProfitFactor": 2.553656,
   "selectedForwardTrades": 62,
-  "forwardWins": 34,
-  "forwardLosses": 22,
-  "forwardTotalR": 36.332593,
-  "forwardAverageR": 0.58601,
-  "forwardMaxDrawdownR": 4.341171,
-  "verificationSummary": "Verified by backtest-engine runner output: PF 2.22, 62 trades, 36.33R total. Reality audit: true 2R bracket did not preserve the baseline PF, so this strategy remains a time-exit baseline and displayed RR is regenerated from the actual backtest CSV.",
+  "forwardWins": 31,
+  "forwardLosses": 25,
+  "forwardTotalR": 39.72375,
+  "forwardAverageR": 0.640706,
+  "forwardMaxDrawdownR": 4.722336,
+  "verificationSummary": "Management sweep `be_trail_prior_bar_b2` strict PF 2.55 over 62 trades, beating baseline PF 2.22; train PF 0.83, bootstrap p05 1.50, block-bootstrap p05 1.62, odd/even min PF 1.53, annual pass rate 100%.",
   "costUnits": 0,
-  "oneTradePerDay": false
+  "oneTradePerDay": false,
+  "dynamicStopLossPolicy": {
+    "mode": "trail_prior_bar",
+    "bufferUnits": 2.0
+  }
 }

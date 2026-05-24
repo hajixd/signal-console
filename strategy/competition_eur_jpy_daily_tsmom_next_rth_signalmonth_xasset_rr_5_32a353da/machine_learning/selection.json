@@ -12,7 +12,7 @@
     "https://www.semanticscholar.org/paper/The-Probability-of-Backtest-Overfitting-Bailey-Borwein/b1233b4f5384f003e85c2e0eec1a2dfc08f624c5"
   ],
   "researchSummary": "Cross-asset validation of `EURCHF 5-day daily momentum into RTH (February filter)`. Tests short-horizon own-return continuation/reversal inspired by time-series momentum literature. Filtered by signalMonth=2. Cross-asset rerun uses true bracket target/stop at 5:1 planned reward-to-risk.",
-  "selectionMethod": "Fast cross-asset true-RR validation: existing bracket pattern was evaluated on a different asset with pre-2022 train diagnostics, post-2022 strict anti-cheat forward validation, bootstrap checks, and same-asset trade-overlap rejection.",
+  "selectionMethod": "Fast cross-asset true-RR validation: existing bracket pattern was evaluated on a different asset with pre-2022 train diagnostics, post-2022 strict anti-cheat forward validation, bootstrap checks, and same-asset trade-overlap rejection. Management sweep promoted `be_trail_hourly_pivot_b4` only after strict forward PF improved from 2.21 to 2.57.",
   "trainingWindow": {
     "start": "asset_start",
     "end": "2021-12-31"
@@ -21,18 +21,22 @@
     "start": "2022-01-01",
     "end": "asset_latest"
   },
-  "selectedTrainingProfitFactor": 0.856035,
+  "selectedTrainingProfitFactor": 0.80507,
   "selectedTrainingTrades": 37,
-  "selectedForwardProfitFactor": 2.205678,
+  "selectedForwardProfitFactor": 2.572317,
   "selectedForwardTrades": 98,
   "minimumRiskReward": 2,
   "selectedRiskReward": 4.986617,
-  "forwardWins": 36,
-  "forwardLosses": 62,
-  "forwardTotalR": 72.609452,
-  "forwardAverageR": 0.740913,
-  "forwardMaxDrawdownR": 7.197493,
-  "verificationSummary": "Cross-asset strict PF 2.21 over 98 trades; average planned RR 4.99, min planned RR 4.63; bootstrap p05 1.50, block-bootstrap p05 1.65, annual pass rate 100%.",
+  "forwardWins": 26,
+  "forwardLosses": 45,
+  "forwardTotalR": 68.968405,
+  "forwardAverageR": 0.703759,
+  "forwardMaxDrawdownR": 9.204066,
+  "verificationSummary": "Management sweep `be_trail_hourly_pivot_b4` strict PF 2.57 over 98 trades, beating baseline PF 2.21; train PF 0.81, bootstrap p05 1.61, block-bootstrap p05 1.89, odd/even min PF 2.23, annual pass rate 100%.",
   "costUnits": 0.0,
-  "oneTradePerDay": false
+  "oneTradePerDay": false,
+  "dynamicStopLossPolicy": {
+    "mode": "trail_hourly_pivot",
+    "bufferUnits": 4.0
+  }
 }

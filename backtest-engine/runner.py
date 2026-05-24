@@ -3376,6 +3376,13 @@ def trade_levels_valid(side: int, entry_price: float, stop_loss: float, take_pro
     return stop_loss > entry_price + tolerance and take_profit < entry_price - tolerance
 
 
+def managed_trade_levels_valid(side: int, stop_loss: float, take_profit: float, tick_size: float) -> bool:
+    tolerance = max(abs(tick_size), 1e-12) * 0.5
+    if side == 1:
+        return stop_loss < take_profit - tolerance
+    return stop_loss > take_profit + tolerance
+
+
 def resolved_size_multiplier(signal: dict[str, Any], asset: AssetConfig, tp_units: float, sl_units: float) -> float:
     raw = signal.get("size_multiplier")
     if raw is not None:
@@ -3543,37 +3550,56 @@ def dynamic_stop_loss_price(
     reference_index: int,
     asset: AssetConfig,
 ) -> float | None:
+    candidates: list[float] = []
+    initial_risk = abs(open_trade.entry_price - open_trade.initial_stop_loss)
+    if initial_risk > 0:
+        moved_one_r = (
+            data.high[reference_index] >= open_trade.entry_price + initial_risk
+            if open_trade.side == 1
+            else data.low[reference_index] <= open_trade.entry_price - initial_risk
+        )
+        if moved_one_r:
+            candidates.append(open_trade.entry_price)
+
     if policy.mode == "trail_prior_bar":
         reference = float(data.low[reference_index]) if open_trade.side == 1 else float(data.high[reference_index])
     elif policy.mode == "trail_hourly_pivot":
         if data.hourly is None:
-            return None
-        swing = max(1, min(2, variant_int(strategy.variant_id, "swing", 2)))
-        pivot_high, pivot_low = timeframe_pivot_arrays(data.hourly, swing)
-        hour_index = int(np.searchsorted(data.hourly.times, int(data.times[reference_index]), side="right") - 1)
-        entry_hour_index = int(np.searchsorted(data.hourly.times, int(data.times[open_trade.entry_index]), side="right") - 1)
-        confirmed_limit = hour_index - swing
-        if confirmed_limit <= entry_hour_index:
-            return None
-        reference = math.nan
-        if open_trade.side == 1:
-            for cursor in range(confirmed_limit, entry_hour_index, -1):
-                if bool(pivot_low[cursor]):
-                    reference = float(data.hourly.low[cursor])
-                    break
+            reference = math.nan
         else:
-            for cursor in range(confirmed_limit, entry_hour_index, -1):
-                if bool(pivot_high[cursor]):
-                    reference = float(data.hourly.high[cursor])
-                    break
+            swing = max(1, min(2, variant_int(strategy.variant_id, "swing", 2)))
+            pivot_high, pivot_low = timeframe_pivot_arrays(data.hourly, swing)
+            hour_index = int(np.searchsorted(data.hourly.times, int(data.times[reference_index]), side="right") - 1)
+            entry_hour_index = int(np.searchsorted(data.hourly.times, int(data.times[open_trade.entry_index]), side="right") - 1)
+            confirmed_limit = hour_index - swing
+            if confirmed_limit <= entry_hour_index:
+                reference = math.nan
+            else:
+                reference = math.nan
+                if open_trade.side == 1:
+                    for cursor in range(confirmed_limit, entry_hour_index, -1):
+                        if bool(pivot_low[cursor]):
+                            reference = float(data.hourly.low[cursor])
+                            break
+                else:
+                    for cursor in range(confirmed_limit, entry_hour_index, -1):
+                        if bool(pivot_high[cursor]):
+                            reference = float(data.hourly.high[cursor])
+                            break
     else:
+        reference = math.nan
+    if maybe_number(reference):
+        adjustment = policy.buffer_units * asset.tick_size
+        candidate = reference - adjustment if open_trade.side == 1 else reference + adjustment
+        candidates.append(round_price(candidate, asset.tick_size))
+    improving = [
+        candidate
+        for candidate in candidates
+        if (candidate > open_trade.stop_loss if open_trade.side == 1 else candidate < open_trade.stop_loss)
+    ]
+    if not improving:
         return None
-    if not maybe_number(reference):
-        return None
-    adjustment = policy.buffer_units * asset.tick_size
-    candidate = reference - adjustment if open_trade.side == 1 else reference + adjustment
-    candidate = round_price(candidate, asset.tick_size)
-    return max(open_trade.stop_loss, candidate) if open_trade.side == 1 else min(open_trade.stop_loss, candidate)
+    return max(improving) if open_trade.side == 1 else min(improving)
 
 
 def dynamic_take_profit_price(
@@ -3600,7 +3626,8 @@ def dynamic_take_profit_price(
         if not maybe_number(current_risk) or current_risk <= 0:
             return None
         candidate = open_trade.entry_price + open_trade.side * current_risk * reward_multiple
-        return round_price(candidate, asset.tick_size)
+        candidate = round_price(candidate, asset.tick_size)
+        return max(open_trade.take_profit, candidate) if open_trade.side == 1 else min(open_trade.take_profit, candidate)
     if policy.mode == "trail_hourly_extreme":
         if data.hourly is None:
             return None
@@ -3645,14 +3672,14 @@ def apply_dynamic_trade_management(
     if strategy.dynamic_stop_loss_policy is not None:
         candidate_stop = dynamic_stop_loss_price(strategy, strategy.dynamic_stop_loss_policy, open_trade, data, reference_index, asset)
         if candidate_stop is not None and candidate_stop != open_trade.stop_loss:
-            if trade_levels_valid(open_trade.side, open_trade.entry_price, candidate_stop, open_trade.take_profit, asset.tick_size):
+            if managed_trade_levels_valid(open_trade.side, candidate_stop, open_trade.take_profit, asset.tick_size):
                 open_trade.stop_loss = candidate_stop
                 open_trade.sl_units = signal_units(open_trade.entry_price, candidate_stop, asset.tick_size)
 
     if strategy.dynamic_take_profit_policy is not None:
         candidate_take_profit = dynamic_take_profit_price(strategy, strategy.dynamic_take_profit_policy, open_trade, data, reference_index, asset)
         if candidate_take_profit is not None and candidate_take_profit != open_trade.take_profit:
-            if trade_levels_valid(open_trade.side, open_trade.entry_price, open_trade.stop_loss, candidate_take_profit, asset.tick_size):
+            if managed_trade_levels_valid(open_trade.side, open_trade.stop_loss, candidate_take_profit, asset.tick_size):
                 open_trade.take_profit = candidate_take_profit
                 open_trade.tp_units = signal_units(open_trade.entry_price, candidate_take_profit, asset.tick_size)
 
