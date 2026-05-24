@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition, type CSSProperties } from "react";
 import { useAutoTradeAdminMode } from "@/components/auto-trading/use-auto-trade-account-mode";
 import ChallengeRulesForm from "@/components/challenge/challenge-rules-form";
 import { emitDashboardLoading } from "@/components/ui/dashboard-loading";
@@ -238,6 +238,10 @@ function bestSummary<T extends { label: string; passRatePct: number }>(items: T[
   return best ? `${best.label} ${fmtPct(best.passRatePct)}` : fallback;
 }
 
+function maxPct(values: number[]): number {
+  return Math.max(1, ...values.map((value) => Math.abs(value)).filter(Number.isFinite));
+}
+
 function InsightBar({ pct, tone = "tone-neutral" }: { pct: number; tone?: string }) {
   return (
     <div className={`challenge-insight-track ${tone}`} aria-hidden="true">
@@ -289,64 +293,160 @@ function EndingMonthRows({ currentMonthIndex, months }: { currentMonthIndex: num
   );
 }
 
-function FailureRows({ reasons }: { reasons: ChallengeFailureReasonStat[] }) {
-  return (
-    <div className="challenge-insight-list">
-      {reasons.map((reason, index) => (
-        <div className={`challenge-insight-row tone-down`} key={reason.key}>
-          <span className="challenge-insight-rank">#{index + 1}</span>
-          <strong className="challenge-insight-name">{reason.label}</strong>
-          <InsightBar pct={reason.pct} tone="tone-down" />
-          <strong className="challenge-insight-rate">{reason.totalFailures ? fmtPct(reason.pct) : "--"}</strong>
-          <small>
-            {fmtNumber(reason.count)} / {fmtNumber(reason.totalFailures)} fails
-          </small>
-          <small>Avg fail {reason.count ? fmtChallengeDuration(reason.avgMinutesToFail) : "--"}</small>
-          <small>{reason.count ? `${fmtNumber(reason.avgTradesToFail)} trades` : "--"}</small>
-        </div>
-      ))}
-    </div>
-  );
-}
+function FailureChart({ reasons }: { reasons: ChallengeFailureReasonStat[] }) {
+  const [activeKey, setActiveKey] = useState<string | null>(null);
+  const maxCount = maxPct(reasons.map((reason) => reason.count));
+  const activeReason = reasons.find((reason) => reason.key === activeKey) ?? [...reasons].sort((left, right) => right.count - left.count)[0];
 
-function PaceCards({ historical, monteCarlo }: { historical: ChallengeMethodStats; monteCarlo: ChallengeMethodStats }) {
   return (
-    <div className="challenge-insight-card-grid">
-      <div className="challenge-insight-card tone-up">
-        <span>Historical median pass</span>
-        <strong>{historical.passCount ? fmtChallengeDuration(historical.medianMinutesToPass) : "--"}</strong>
-        <small>{historical.passCount ? `${fmtNumber(historical.medianTradesToPass)} trades to pass` : "No historical pass"}</small>
+    <div className="challenge-failure-chart">
+      <div className="challenge-failure-bars" aria-label="Failure reason chart">
+        {reasons.map((reason) => (
+          <button
+            aria-label={`${reason.label} failure reason`}
+            className={`challenge-failure-bar ${activeReason?.key === reason.key ? "is-active" : ""}`}
+            key={reason.key}
+            onClick={() => setActiveKey(reason.key)}
+            onFocus={() => setActiveKey(reason.key)}
+            onPointerEnter={() => setActiveKey(reason.key)}
+            style={{ "--bar-height": `${Math.max(reason.count ? 10 : 3, (reason.count / maxCount) * 100)}%` } as CSSProperties}
+            type="button"
+          >
+            <span className="challenge-failure-bar-rail">
+              <span />
+            </span>
+            <strong>{reason.totalFailures ? fmtPct(reason.pct) : "--"}</strong>
+            <small>{reason.label}</small>
+          </button>
+        ))}
       </div>
-      <div className="challenge-insight-card tone-up">
-        <span>Monte Carlo median pass</span>
-        <strong>{monteCarlo.passCount ? fmtChallengeDuration(monteCarlo.medianMinutesToPass) : "--"}</strong>
-        <small>{monteCarlo.passCount ? `${fmtNumber(monteCarlo.medianTradesToPass)} trades to pass` : "No simulated pass"}</small>
-      </div>
-      <div className="challenge-insight-card tone-neutral">
-        <span>Expected final P&L</span>
-        <strong className={resultClass(monteCarlo.avgFinalPnl)}>{monteCarlo.totalSimulations ? fmtMoney(monteCarlo.avgFinalPnl, true) : "--"}</strong>
-        <small>Monte Carlo average ending result</small>
-      </div>
-      <div className="challenge-insight-card tone-neutral">
-        <span>Likely challenge window</span>
-        <strong>{monteCarlo.passCount ? fmtChallengeDuration(monteCarlo.avgMinutesToPass) : "--"}</strong>
-        <small>Average simulated pass time</small>
+      <div className="challenge-failure-detail tone-down">
+        <span>{activeReason?.label ?? "Failure reason"}</span>
+        <strong>{activeReason?.totalFailures ? `${fmtNumber(activeReason.count)} fails` : "--"}</strong>
+        <small>{activeReason?.totalFailures ? `${fmtPct(activeReason.pct)} of failed starts` : "No failed starts"}</small>
+        <small>Avg fail {activeReason?.count ? fmtChallengeDuration(activeReason.avgMinutesToFail) : "--"}</small>
+        <small>{activeReason?.count ? `${fmtNumber(activeReason.avgTradesToFail)} trades before fail` : "--"}</small>
       </div>
     </div>
   );
 }
 
-function SensitivityRows({ rows }: { rows: ChallengeRiskSensitivityStat[] }) {
+function PaceDistribution({ summary }: { summary: ChallengeReplaySummary }) {
+  const [mode, setMode] = useState<"days" | "trades">("days");
+  const [activeKey, setActiveKey] = useState<string | null>(null);
+  const bins = mode === "days" ? summary.passDistribution.daysToPass : summary.passDistribution.tradesToPass;
+  const activeBin = bins.find((bin) => bin.key === activeKey) ?? [...bins].sort((left, right) => right.count - left.count)[0];
+  const maxBinPct = maxPct(bins.map((bin) => bin.pct));
+
   return (
-    <div className="challenge-risk-table">
-      {rows.map((row) => (
-        <div className={`challenge-risk-row ${row.deltaPct >= 0 ? "tone-up" : "tone-down"}`} key={row.key}>
-          <span>{row.group}</span>
-          <strong>{row.changePct > 0 ? "+" : ""}{fmtNumber(row.changePct)}%</strong>
-          <small>{fmtPct(row.passRatePct)}</small>
-          <small className={row.deltaPct >= 0 ? "up" : "down"}>{row.deltaPct >= 0 ? "+" : ""}{fmtPct(row.deltaPct)}</small>
+    <div className="challenge-pace-distribution">
+      <div className="challenge-pace-stat-grid">
+        <div className="challenge-pace-stat tone-up">
+          <span>Historical median pass</span>
+          <strong>{summary.historical.passCount ? fmtChallengeDuration(summary.historical.medianMinutesToPass) : "--"}</strong>
+          <small>{summary.historical.passCount ? `${fmtNumber(summary.historical.medianTradesToPass)} trades` : "No historical pass"}</small>
         </div>
-      ))}
+        <div className="challenge-pace-stat tone-up">
+          <span>Monte Carlo median pass</span>
+          <strong>{summary.monteCarlo.passCount ? fmtChallengeDuration(summary.monteCarlo.medianMinutesToPass) : "--"}</strong>
+          <small>{summary.monteCarlo.passCount ? `${fmtNumber(summary.monteCarlo.medianTradesToPass)} trades` : "No simulated pass"}</small>
+        </div>
+        <div className="challenge-pace-stat tone-neutral">
+          <span>Expected final P&L</span>
+          <strong className={resultClass(summary.monteCarlo.avgFinalPnl)}>{summary.monteCarlo.totalSimulations ? fmtMoney(summary.monteCarlo.avgFinalPnl, true) : "--"}</strong>
+          <small>Monte Carlo average</small>
+        </div>
+      </div>
+      <div className="challenge-pace-chart">
+        <div className="challenge-pace-chart-head">
+          <div>
+            <span>{mode === "days" ? "Time to pass" : "Trades to pass"}</span>
+            <strong>{activeBin ? `${activeBin.label} ${fmtPct(activeBin.pct)}` : "--"}</strong>
+          </div>
+          <div className="challenge-mode-tabs" aria-label="Pace distribution mode">
+            <button className={mode === "days" ? "is-active" : ""} onClick={() => setMode("days")} type="button">
+              Days
+            </button>
+            <button className={mode === "trades" ? "is-active" : ""} onClick={() => setMode("trades")} type="button">
+              Trades
+            </button>
+          </div>
+        </div>
+        <div className="challenge-pace-bars">
+          {bins.map((bin) => (
+            <button
+              aria-label={`${bin.label} pace bucket`}
+              className={`challenge-pace-bin ${activeBin?.key === bin.key ? "is-active" : ""}`}
+              key={bin.key}
+              onClick={() => setActiveKey(bin.key)}
+              onFocus={() => setActiveKey(bin.key)}
+              onPointerEnter={() => setActiveKey(bin.key)}
+              type="button"
+            >
+              <span>{bin.label}</span>
+              <div aria-hidden="true">
+                <span style={{ width: `${Math.max(bin.pct ? 5 : 2, (bin.pct / maxBinPct) * 100)}%` }} />
+              </div>
+              <strong>{fmtPct(bin.pct)}</strong>
+              <small>{fmtNumber(bin.count)} passes</small>
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function RiskHeatmap({ rows }: { rows: ChallengeRiskSensitivityStat[] }) {
+  const [activeKey, setActiveKey] = useState<string | null>(null);
+  const changes = useMemo(() => [...new Set(rows.map((row) => row.changePct))].sort((left, right) => left - right), [rows]);
+  const groups = useMemo(() => [...new Set(rows.map((row) => row.group))], [rows]);
+  const maxDelta = maxPct(rows.map((row) => row.deltaPct));
+  const activeRow = rows.find((row) => row.key === activeKey) ?? [...rows].sort((left, right) => Math.abs(right.deltaPct) - Math.abs(left.deltaPct))[0];
+
+  return (
+    <div className="challenge-risk-heatmap-shell">
+      <div className={`challenge-risk-detail ${activeRow && activeRow.deltaPct >= 0 ? "tone-up" : "tone-down"}`}>
+        <span>{activeRow?.label ?? "Rule change"}</span>
+        <strong>{activeRow ? fmtPct(activeRow.passRatePct) : "--"}</strong>
+        <small className={activeRow && activeRow.deltaPct >= 0 ? "up" : "down"}>
+          {activeRow ? `${activeRow.deltaPct >= 0 ? "+" : ""}${fmtPct(activeRow.deltaPct)} vs current rules` : "--"}
+        </small>
+        <small>{activeRow ? `${fmtNumber(activeRow.passCount)} / ${fmtNumber(activeRow.totalSimulations)} passed` : "--"}</small>
+      </div>
+      <div className="challenge-risk-heatmap" aria-label="Risk rule sensitivity heatmap">
+        <div className="challenge-risk-heatmap-head">
+          <span>Rule</span>
+          {changes.map((change) => (
+            <strong key={change}>{change > 0 ? "+" : ""}{fmtNumber(change)}%</strong>
+          ))}
+        </div>
+        {groups.map((group) => (
+          <div className="challenge-risk-heatmap-row" key={group}>
+            <span>{group}</span>
+            {changes.map((change) => {
+              const row = rows.find((entry) => entry.group === group && entry.changePct === change);
+              const heatAlpha = row ? 0.16 + Math.min(0.72, (Math.abs(row.deltaPct) / maxDelta) * 0.72) : 0.08;
+              return (
+                <button
+                  aria-label={row ? row.label : `${group} ${change}%`}
+                  className={`challenge-heatmap-cell ${row && row.deltaPct >= 0 ? "is-up" : "is-down"}${activeRow?.key === row?.key ? " is-active" : ""}`}
+                  disabled={!row}
+                  key={`${group}:${change}`}
+                  onClick={() => row && setActiveKey(row.key)}
+                  onFocus={() => row && setActiveKey(row.key)}
+                  onPointerEnter={() => row && setActiveKey(row.key)}
+                  style={{ "--heat-alpha": heatAlpha.toFixed(3) } as CSSProperties}
+                  type="button"
+                >
+                  <strong>{row ? fmtPct(row.passRatePct) : "--"}</strong>
+                  <small>{row ? `${row.deltaPct >= 0 ? "+" : ""}${fmtPct(row.deltaPct)}` : "--"}</small>
+                </button>
+              );
+            })}
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
@@ -412,19 +512,38 @@ function StrategyContributionRows({
   labels: Map<string, string>;
   rows: ChallengeStrategyContributionStat[];
 }) {
+  const [activeKey, setActiveKey] = useState<string | null>(null);
+  const activeRow = rows.find((row) => row.key === activeKey) ?? rows[0];
+  const maxImpact = maxPct(rows.map((row) => row.totalPnl));
+
   return (
-    <div className="challenge-insight-list">
-      {rows.map((row, index) => (
-        <div className={`challenge-insight-row ${row.totalPnl >= 0 ? "tone-up" : "tone-down"}`} key={row.key}>
-          <span className="challenge-insight-rank">#{index + 1}</span>
-          <strong className="challenge-insight-name">{labels.get(row.key) ?? row.key}</strong>
-          <InsightBar pct={Math.min(100, Math.abs(row.avgPnlPerRun) / 100)} tone={row.totalPnl >= 0 ? "tone-up" : "tone-down"} />
-          <strong className={`challenge-insight-rate ${resultClass(row.totalPnl)}`}>{fmtMoney(row.totalPnl, true)}</strong>
-          <small>{fmtNumber(row.trades)} replay trades</small>
-          <small>{fmtNumber(row.passRuns)} pass runs</small>
-          <small>{fmtNumber(row.failRuns)} fail runs</small>
-        </div>
-      ))}
+    <div className="challenge-strategy-distribution">
+      <div className={`challenge-strategy-detail ${activeRow && activeRow.totalPnl >= 0 ? "tone-up" : "tone-down"}`}>
+        <span>{activeRow ? labels.get(activeRow.key) ?? activeRow.key : "Strategy"}</span>
+        <strong className={activeRow ? resultClass(activeRow.totalPnl) : "neutral"}>{activeRow ? fmtMoney(activeRow.totalPnl, true) : "--"}</strong>
+        <small>{activeRow ? `${fmtMoney(activeRow.avgPnlPerRun, true)} avg per replay start` : "--"}</small>
+        <small>{activeRow ? `${fmtNumber(activeRow.passRuns)} pass runs / ${fmtNumber(activeRow.failRuns)} fail runs` : "--"}</small>
+      </div>
+      <div className="challenge-strategy-impact-list" aria-label="Strategy contribution distribution">
+        {rows.map((row, index) => (
+          <button
+            aria-label={`${labels.get(row.key) ?? row.key} strategy impact`}
+            className={`challenge-strategy-impact ${row.totalPnl >= 0 ? "tone-up" : "tone-down"}${activeRow?.key === row.key ? " is-active" : ""}`}
+            key={row.key}
+            onClick={() => setActiveKey(row.key)}
+            onFocus={() => setActiveKey(row.key)}
+            onPointerEnter={() => setActiveKey(row.key)}
+            type="button"
+          >
+            <span>#{index + 1}</span>
+            <strong>{labels.get(row.key) ?? row.key}</strong>
+            <div aria-hidden="true">
+              <span style={{ width: `${Math.max(4, (Math.abs(row.totalPnl) / maxImpact) * 100)}%` }} />
+            </div>
+            <small className={resultClass(row.totalPnl)}>{fmtMoney(row.totalPnl, true)}</small>
+          </button>
+        ))}
+      </div>
     </div>
   );
 }
@@ -518,15 +637,15 @@ function ChallengeReplayInsights({
       summary: bestSummary(summary.endingMonthPassStats)
     },
     failures: {
-      title: "Failure reasons",
+      title: "Why challenges fail",
       summary: strongestFailure ? `${strongestFailure.label} ${fmtPct(strongestFailure.pct)}` : "--"
     },
     pace: {
-      title: "Expected challenge pace",
+      title: "Challenge pace distribution",
       summary: summary.monteCarlo.passCount ? fmtChallengeDuration(summary.monteCarlo.medianMinutesToPass) : "--"
     },
     sensitivity: {
-      title: "Risk rule sensitivity",
+      title: "Risk rule heatmap",
       summary: strongestSensitivity ? `${strongestSensitivity.group} ${strongestSensitivity.deltaPct >= 0 ? "+" : ""}${fmtPct(strongestSensitivity.deltaPct)}` : "--"
     },
     distribution: {
@@ -538,7 +657,7 @@ function ChallengeReplayInsights({
       summary: summary.worstStreak.trades ? `${fmtNumber(summary.worstStreak.trades)} losses` : "--"
     },
     strategies: {
-      title: "Strategy contribution",
+      title: "Strategy impact distribution",
       summary: summary.strategyContributions[0] ? fmtMoney(summary.strategyContributions[0].totalPnl, true) : "--"
     },
     confidence: {
@@ -556,9 +675,9 @@ function ChallengeReplayInsights({
 
   function renderActiveView() {
     if (activeView === "endingMonths") return <EndingMonthRows currentMonthIndex={currentMonthIndex} months={summary.endingMonthPassStats} />;
-    if (activeView === "failures") return <FailureRows reasons={summary.failureReasons} />;
-    if (activeView === "pace") return <PaceCards historical={summary.historical} monteCarlo={summary.monteCarlo} />;
-    if (activeView === "sensitivity") return <SensitivityRows rows={summary.riskSensitivity} />;
+    if (activeView === "failures") return <FailureChart reasons={summary.failureReasons} />;
+    if (activeView === "pace") return <PaceDistribution summary={summary} />;
+    if (activeView === "sensitivity") return <RiskHeatmap rows={summary.riskSensitivity} />;
     if (activeView === "distribution") return <DistributionView summary={summary} />;
     if (activeView === "streak") return <StreakCards streak={summary.worstStreak} />;
     if (activeView === "strategies") return <StrategyContributionRows labels={labels} rows={summary.strategyContributions} />;

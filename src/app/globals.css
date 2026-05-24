@@ -5904,6 +5904,423 @@ html[data-theme="light"] .themeDarkLabel {
   text-transform: uppercase;
 }
 
+.challenge-failure-chart,
+.challenge-risk-heatmap-shell,
+.challenge-strategy-distribution {
+  min-width: 0;
+  display: grid;
+  gap: 0.58rem;
+}
+
+.challenge-failure-chart {
+  grid-template-columns: minmax(220px, 1fr) minmax(180px, 0.42fr);
+}
+
+.challenge-failure-bars {
+  min-height: 230px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(92px, 1fr));
+  align-items: end;
+  gap: 0.6rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.026);
+  padding: 0.72rem;
+}
+
+.challenge-failure-bar {
+  min-width: 0;
+  height: 100%;
+  display: grid;
+  grid-template-rows: 1fr auto auto;
+  gap: 0.34rem;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  padding: 0;
+  text-align: center;
+  cursor: pointer;
+}
+
+.challenge-failure-bar-rail {
+  min-height: 152px;
+  display: flex;
+  align-items: end;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.challenge-failure-bar-rail span {
+  width: 100%;
+  height: var(--bar-height);
+  min-height: 4px;
+  background: linear-gradient(180deg, rgba(248, 113, 113, 0.95), rgba(248, 113, 113, 0.46));
+  transition: height 160ms ease, filter 160ms ease;
+}
+
+.challenge-failure-bar strong,
+.challenge-failure-bar small,
+.challenge-failure-detail span,
+.challenge-failure-detail strong,
+.challenge-failure-detail small,
+.challenge-risk-detail span,
+.challenge-risk-detail strong,
+.challenge-risk-detail small,
+.challenge-pace-stat span,
+.challenge-pace-stat strong,
+.challenge-pace-stat small,
+.challenge-pace-chart-head span,
+.challenge-pace-chart-head strong,
+.challenge-pace-bin span,
+.challenge-pace-bin strong,
+.challenge-pace-bin small,
+.challenge-risk-heatmap-head span,
+.challenge-risk-heatmap-head strong,
+.challenge-risk-heatmap-row > span,
+.challenge-heatmap-cell strong,
+.challenge-heatmap-cell small,
+.challenge-strategy-detail span,
+.challenge-strategy-detail strong,
+.challenge-strategy-detail small,
+.challenge-strategy-impact span,
+.challenge-strategy-impact strong,
+.challenge-strategy-impact small {
+  min-width: 0;
+  overflow: hidden;
+  font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+  letter-spacing: 0;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.challenge-failure-bar strong,
+.challenge-failure-detail strong,
+.challenge-risk-detail strong,
+.challenge-pace-stat strong,
+.challenge-pace-chart-head strong,
+.challenge-strategy-detail strong {
+  color: rgba(255, 255, 255, 0.92);
+  font-size: 1rem;
+  font-weight: 950;
+}
+
+.challenge-failure-bar small,
+.challenge-failure-detail span,
+.challenge-failure-detail small,
+.challenge-risk-detail span,
+.challenge-risk-detail small,
+.challenge-pace-stat span,
+.challenge-pace-stat small,
+.challenge-pace-chart-head span,
+.challenge-pace-bin small,
+.challenge-risk-heatmap-head span,
+.challenge-risk-heatmap-row > span,
+.challenge-heatmap-cell small,
+.challenge-strategy-detail span,
+.challenge-strategy-detail small,
+.challenge-strategy-impact span,
+.challenge-strategy-impact small {
+  color: rgba(255, 255, 255, 0.58);
+  font-size: 0.58rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.challenge-failure-bar.is-active .challenge-failure-bar-rail span,
+.challenge-failure-bar:hover .challenge-failure-bar-rail span,
+.challenge-failure-bar:focus-visible .challenge-failure-bar-rail span {
+  filter: saturate(1.32) brightness(1.12);
+}
+
+.challenge-failure-bar:focus-visible,
+.challenge-mode-tabs button:focus-visible,
+.challenge-pace-bin:focus-visible,
+.challenge-heatmap-cell:focus-visible,
+.challenge-strategy-impact:focus-visible {
+  outline: 1px solid rgba(147, 197, 253, 0.68);
+  outline-offset: 2px;
+}
+
+.challenge-failure-detail,
+.challenge-risk-detail,
+.challenge-strategy-detail,
+.challenge-pace-stat,
+.challenge-pace-chart {
+  min-width: 0;
+  display: grid;
+  gap: 0.28rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.026);
+  padding: 0.68rem 0.72rem;
+}
+
+.challenge-failure-detail.tone-down,
+.challenge-risk-detail.tone-down,
+.challenge-strategy-detail.tone-down {
+  border-color: rgba(248, 113, 113, 0.22);
+  background: linear-gradient(135deg, rgba(248, 113, 113, 0.075), rgba(255, 255, 255, 0.02));
+}
+
+.challenge-risk-detail.tone-up,
+.challenge-strategy-detail.tone-up,
+.challenge-pace-stat.tone-up {
+  border-color: rgba(52, 211, 153, 0.24);
+  background: linear-gradient(135deg, rgba(52, 211, 153, 0.075), rgba(255, 255, 255, 0.02));
+}
+
+.challenge-pace-stat.tone-neutral {
+  border-color: rgba(96, 165, 250, 0.18);
+  background: linear-gradient(135deg, rgba(96, 165, 250, 0.055), rgba(255, 255, 255, 0.018));
+}
+
+.challenge-risk-detail small.up,
+.challenge-strategy-detail strong.up,
+.challenge-strategy-impact small.up {
+  color: var(--up);
+}
+
+.challenge-risk-detail small.down,
+.challenge-strategy-detail strong.down,
+.challenge-strategy-impact small.down {
+  color: var(--down);
+}
+
+.challenge-pace-distribution {
+  min-width: 0;
+  display: grid;
+  gap: 0.58rem;
+}
+
+.challenge-pace-stat-grid {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+
+.challenge-pace-chart {
+  gap: 0.55rem;
+}
+
+.challenge-pace-chart-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.65rem;
+}
+
+.challenge-pace-chart-head > div:first-child {
+  min-width: 0;
+  display: grid;
+  gap: 0.18rem;
+}
+
+.challenge-mode-tabs {
+  display: inline-flex;
+  flex: 0 0 auto;
+  gap: 0.24rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.035);
+  padding: 0.18rem;
+}
+
+.challenge-mode-tabs button {
+  border: 0;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.56);
+  padding: 0.3rem 0.48rem;
+  font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+  font-size: 0.58rem;
+  font-weight: 950;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.challenge-mode-tabs button.is-active {
+  background: rgba(147, 197, 253, 0.16);
+  color: #dbeafe;
+}
+
+.challenge-pace-bars {
+  display: grid;
+  gap: 0.36rem;
+}
+
+.challenge-pace-bin {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(72px, 0.36fr) minmax(120px, 1fr) 70px 82px;
+  align-items: center;
+  gap: 0.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  background: rgba(255, 255, 255, 0.018);
+  color: inherit;
+  padding: 0.46rem 0.52rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.challenge-pace-bin.is-active,
+.challenge-pace-bin:hover {
+  border-color: rgba(147, 197, 253, 0.28);
+  background: rgba(96, 165, 250, 0.075);
+}
+
+.challenge-pace-bin > div {
+  height: 8px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.challenge-pace-bin > div span {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, #93bbfc, rgba(52, 211, 153, 0.88));
+}
+
+.challenge-pace-bin strong {
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 0.72rem;
+  font-weight: 950;
+}
+
+.challenge-risk-heatmap-shell {
+  grid-template-columns: minmax(190px, 0.35fr) minmax(0, 1fr);
+  align-items: stretch;
+}
+
+.challenge-risk-heatmap {
+  min-width: 0;
+  display: grid;
+  gap: 0.32rem;
+  overflow-x: auto;
+  scrollbar-color: rgba(255, 255, 255, 0.22) transparent;
+  scrollbar-width: thin;
+}
+
+.challenge-risk-heatmap-head,
+.challenge-risk-heatmap-row {
+  min-width: 640px;
+  display: grid;
+  grid-template-columns: 92px repeat(6, minmax(78px, 1fr));
+  gap: 0.32rem;
+  align-items: stretch;
+}
+
+.challenge-risk-heatmap-head span,
+.challenge-risk-heatmap-head strong,
+.challenge-risk-heatmap-row > span {
+  display: flex;
+  align-items: center;
+  min-height: 30px;
+}
+
+.challenge-risk-heatmap-head strong {
+  justify-content: center;
+  color: rgba(255, 255, 255, 0.58);
+  font-size: 0.58rem;
+  font-weight: 950;
+}
+
+.challenge-risk-heatmap-row > span {
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.challenge-heatmap-cell {
+  min-width: 0;
+  min-height: 54px;
+  display: grid;
+  place-items: center;
+  gap: 0.12rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: inherit;
+  padding: 0.34rem;
+  cursor: pointer;
+}
+
+.challenge-heatmap-cell.is-up {
+  border-color: rgba(52, 211, 153, 0.18);
+  background: rgba(52, 211, 153, var(--heat-alpha));
+}
+
+.challenge-heatmap-cell.is-down {
+  border-color: rgba(248, 113, 113, 0.18);
+  background: rgba(248, 113, 113, var(--heat-alpha));
+}
+
+.challenge-heatmap-cell.is-active,
+.challenge-heatmap-cell:hover {
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.38);
+}
+
+.challenge-heatmap-cell strong {
+  color: rgba(255, 255, 255, 0.94);
+  font-size: 0.72rem;
+  font-weight: 950;
+}
+
+.challenge-strategy-distribution {
+  grid-template-columns: minmax(210px, 0.34fr) minmax(0, 1fr);
+}
+
+.challenge-strategy-impact-list {
+  min-width: 0;
+  display: grid;
+  gap: 0.34rem;
+}
+
+.challenge-strategy-impact {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: 42px minmax(128px, 0.7fr) minmax(120px, 1fr) 98px;
+  align-items: center;
+  gap: 0.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.026);
+  color: inherit;
+  padding: 0.5rem 0.58rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.challenge-strategy-impact.tone-up {
+  border-color: rgba(52, 211, 153, 0.18);
+}
+
+.challenge-strategy-impact.tone-down {
+  border-color: rgba(248, 113, 113, 0.18);
+}
+
+.challenge-strategy-impact.is-active,
+.challenge-strategy-impact:hover {
+  background: rgba(96, 165, 250, 0.07);
+  box-shadow: inset 0 0 0 1px rgba(147, 197, 253, 0.2);
+}
+
+.challenge-strategy-impact strong {
+  color: rgba(255, 255, 255, 0.88);
+  font-size: 0.68rem;
+  font-weight: 950;
+}
+
+.challenge-strategy-impact > div {
+  height: 7px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.challenge-strategy-impact > div span {
+  display: block;
+  height: 100%;
+}
+
+.challenge-strategy-impact.tone-up > div span {
+  background: var(--up);
+}
+
+.challenge-strategy-impact.tone-down > div span {
+  background: var(--down);
+}
+
 .terminal-table-wrap {
   min-width: 0;
   overflow: auto;
@@ -7423,6 +7840,110 @@ html[data-theme="light"] .challenge-risk-row small.down {
   color: #dc2626;
 }
 
+html[data-theme="light"] .challenge-failure-bars,
+html[data-theme="light"] .challenge-failure-detail,
+html[data-theme="light"] .challenge-risk-detail,
+html[data-theme="light"] .challenge-pace-stat,
+html[data-theme="light"] .challenge-pace-chart,
+html[data-theme="light"] .challenge-pace-bin,
+html[data-theme="light"] .challenge-strategy-detail,
+html[data-theme="light"] .challenge-strategy-impact {
+  border-color: var(--line);
+  background: #ffffff;
+}
+
+html[data-theme="light"] .challenge-failure-detail.tone-down,
+html[data-theme="light"] .challenge-risk-detail.tone-down,
+html[data-theme="light"] .challenge-strategy-detail.tone-down {
+  border-color: rgba(190, 18, 60, 0.2);
+  background: linear-gradient(135deg, rgba(244, 63, 94, 0.09), rgba(244, 63, 94, 0.025));
+}
+
+html[data-theme="light"] .challenge-risk-detail.tone-up,
+html[data-theme="light"] .challenge-strategy-detail.tone-up,
+html[data-theme="light"] .challenge-pace-stat.tone-up {
+  border-color: rgba(4, 120, 87, 0.22);
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.09), rgba(16, 185, 129, 0.025));
+}
+
+html[data-theme="light"] .challenge-pace-stat.tone-neutral {
+  border-color: rgba(37, 99, 235, 0.18);
+  background: linear-gradient(135deg, rgba(37, 99, 235, 0.07), rgba(37, 99, 235, 0.02));
+}
+
+html[data-theme="light"] .challenge-failure-bar strong,
+html[data-theme="light"] .challenge-failure-detail strong,
+html[data-theme="light"] .challenge-risk-detail strong,
+html[data-theme="light"] .challenge-pace-stat strong,
+html[data-theme="light"] .challenge-pace-chart-head strong,
+html[data-theme="light"] .challenge-pace-bin strong,
+html[data-theme="light"] .challenge-heatmap-cell strong,
+html[data-theme="light"] .challenge-strategy-detail strong,
+html[data-theme="light"] .challenge-strategy-impact strong {
+  color: #0f172a;
+}
+
+html[data-theme="light"] .challenge-failure-bar small,
+html[data-theme="light"] .challenge-failure-detail span,
+html[data-theme="light"] .challenge-failure-detail small,
+html[data-theme="light"] .challenge-risk-detail span,
+html[data-theme="light"] .challenge-risk-detail small,
+html[data-theme="light"] .challenge-pace-stat span,
+html[data-theme="light"] .challenge-pace-stat small,
+html[data-theme="light"] .challenge-pace-chart-head span,
+html[data-theme="light"] .challenge-pace-bin span,
+html[data-theme="light"] .challenge-pace-bin small,
+html[data-theme="light"] .challenge-risk-heatmap-head span,
+html[data-theme="light"] .challenge-risk-heatmap-head strong,
+html[data-theme="light"] .challenge-risk-heatmap-row > span,
+html[data-theme="light"] .challenge-heatmap-cell small,
+html[data-theme="light"] .challenge-strategy-detail span,
+html[data-theme="light"] .challenge-strategy-detail small,
+html[data-theme="light"] .challenge-strategy-impact span,
+html[data-theme="light"] .challenge-strategy-impact small {
+  color: rgba(15, 23, 42, 0.56);
+}
+
+html[data-theme="light"] .challenge-failure-bar-rail,
+html[data-theme="light"] .challenge-pace-bin > div,
+html[data-theme="light"] .challenge-strategy-impact > div {
+  background: rgba(15, 23, 42, 0.08);
+}
+
+html[data-theme="light"] .challenge-mode-tabs {
+  border-color: rgba(15, 23, 42, 0.1);
+  background: rgba(15, 23, 42, 0.035);
+}
+
+html[data-theme="light"] .challenge-mode-tabs button {
+  color: rgba(15, 23, 42, 0.58);
+}
+
+html[data-theme="light"] .challenge-mode-tabs button.is-active {
+  background: rgba(37, 99, 235, 0.09);
+  color: #1d4ed8;
+}
+
+html[data-theme="light"] .challenge-pace-bin.is-active,
+html[data-theme="light"] .challenge-pace-bin:hover,
+html[data-theme="light"] .challenge-strategy-impact.is-active,
+html[data-theme="light"] .challenge-strategy-impact:hover {
+  border-color: rgba(37, 99, 235, 0.22);
+  background: rgba(37, 99, 235, 0.055);
+}
+
+html[data-theme="light"] .challenge-risk-detail small.up,
+html[data-theme="light"] .challenge-strategy-detail strong.up,
+html[data-theme="light"] .challenge-strategy-impact small.up {
+  color: #059669;
+}
+
+html[data-theme="light"] .challenge-risk-detail small.down,
+html[data-theme="light"] .challenge-strategy-detail strong.down,
+html[data-theme="light"] .challenge-strategy-impact small.down {
+  color: #dc2626;
+}
+
 html[data-theme="light"] .challenge-month-empty {
   border-color: rgba(15, 23, 42, 0.1);
   background: rgba(15, 23, 42, 0.035);
@@ -8282,9 +8803,32 @@ html[data-theme="light"] .strategyToggle input {
   .challenge-insight-card-grid,
   .challenge-risk-table,
   .challenge-risk-row,
+  .challenge-failure-chart,
+  .challenge-pace-stat-grid,
+  .challenge-risk-heatmap-shell,
+  .challenge-strategy-distribution,
   .challenge-distribution-grid,
   .challenge-rule-form {
     grid-template-columns: 1fr;
+  }
+
+  .challenge-pace-bin,
+  .challenge-strategy-impact {
+    grid-template-columns: 1fr;
+    align-items: stretch;
+  }
+
+  .challenge-pace-chart-head {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .challenge-mode-tabs {
+    width: 100%;
+  }
+
+  .challenge-mode-tabs button {
+    flex: 1;
   }
 
   .challenge-month-head,
@@ -12529,6 +13073,14 @@ html[data-theme="light"] .tradeReplaySlider input::-webkit-slider-thumb {
   .challenge-insight-card,
   .challenge-insight-row,
   .challenge-risk-row,
+  .challenge-failure-bars,
+  .challenge-failure-detail,
+  .challenge-risk-detail,
+  .challenge-pace-stat,
+  .challenge-pace-chart,
+  .challenge-pace-bin,
+  .challenge-strategy-detail,
+  .challenge-strategy-impact,
   .dataset-sync-tile {
     min-width: 0;
     max-width: 100%;
@@ -12673,6 +13225,14 @@ html[data-theme="light"] .tradeReplaySlider input::-webkit-slider-thumb {
   html[data-theme="light"] .challenge-insight-card,
   html[data-theme="light"] .challenge-insight-row,
   html[data-theme="light"] .challenge-risk-row,
+  html[data-theme="light"] .challenge-failure-bars,
+  html[data-theme="light"] .challenge-failure-detail,
+  html[data-theme="light"] .challenge-risk-detail,
+  html[data-theme="light"] .challenge-pace-stat,
+  html[data-theme="light"] .challenge-pace-chart,
+  html[data-theme="light"] .challenge-pace-bin,
+  html[data-theme="light"] .challenge-strategy-detail,
+  html[data-theme="light"] .challenge-strategy-impact,
   html[data-theme="light"] .dataset-sync-tile,
   html[data-theme="light"] .terminal-table tbody tr,
   html[data-theme="light"] .basketListRow {
