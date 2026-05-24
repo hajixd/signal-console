@@ -2108,6 +2108,12 @@ export default async function Home({ searchParams }: HomeProps) {
       meta: `${fmtNumber(strategyOptions.length)} strategies`
     },
     {
+      icon: "stats",
+      id: "stats",
+      label: "Stats",
+      meta: `${fmtNumber(selectedBacktestTrades.length)} trades`
+    },
+    {
       icon: "replay",
       id: "challenge",
       label: "Replay",
@@ -2226,14 +2232,6 @@ export default async function Home({ searchParams }: HomeProps) {
             <span className="count-pill">{fmtNumber(strategyOptions.length)} strategies / {fmtNumber(selectedBacktestTrades.length)} trades</span>
           </div>
 
-          <SelectedStrategyStats
-            customScaleRange={liveConfig.customScaleRanges[activeMarket]}
-            dataEndAt={selectedDataEndAt}
-            strategies={strategyOptions}
-            trades={selectedBasketTrades}
-            persistedStrategyEdits={liveConfig.strategyEdits}
-          />
-
           <StrategySelector
             market={activeMarket}
             strategies={strategyOptions}
@@ -2244,6 +2242,25 @@ export default async function Home({ searchParams }: HomeProps) {
             persistLiveSelection={syncLiveSelection}
             persistCustomScaleRange={syncCustomScaleRange}
             persistStrategyEdits={syncStrategyEdits}
+          />
+        </section>
+
+        <section className="backtest-card strategies-card" id="stats">
+          <div className="backtest-card-head">
+            <div>
+              <h2>Stats</h2>
+            </div>
+            <span className="count-pill">{fmtNumber(selectedBacktestTrades.length)} selected trades</span>
+          </div>
+
+          <SelectedStrategyStats
+            customScaleRange={liveConfig.customScaleRanges[activeMarket]}
+            dataEndAt={selectedDataEndAt}
+            defaultExpanded
+            strategies={strategyOptions}
+            toggleable={false}
+            trades={selectedBasketTrades}
+            persistedStrategyEdits={liveConfig.strategyEdits}
           />
         </section>
 

@@ -1046,6 +1046,7 @@ html[data-theme="light"] .themeDarkLabel {
 
 .challenge-method-head span,
 .challenge-method-grid span,
+.challenge-month-head span,
 .challenge-footnote span {
   color: var(--text-faint);
   font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
@@ -3044,8 +3045,11 @@ html[data-theme="light"] .themeDarkLabel {
   display: grid;
   gap: 0.42rem;
   border-radius: 16px;
-  cursor: pointer;
   outline: none;
+}
+
+.selectedStatsSurface.is-toggleable {
+  cursor: pointer;
 }
 
 .selectedStatsSurface:focus-visible {
@@ -3059,7 +3063,7 @@ html[data-theme="light"] .themeDarkLabel {
     transform 140ms ease;
 }
 
-.selectedStatsSurface:hover .backtest-stat-card {
+.selectedStatsSurface.is-toggleable:hover .backtest-stat-card {
   border-color: rgba(255, 255, 255, 0.16);
 }
 
@@ -5484,6 +5488,126 @@ html[data-theme="light"] .themeDarkLabel {
   color: rgba(255, 255, 255, 0.64);
 }
 
+.challenge-month-ranking {
+  min-width: 0;
+  display: grid;
+  gap: 0.55rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.028);
+  padding: 0.72rem;
+}
+
+.challenge-month-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.65rem;
+}
+
+.challenge-month-head strong {
+  min-width: 0;
+  overflow: hidden;
+  color: #a9c8ff;
+  font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+  font-size: 1rem;
+  font-weight: 950;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.challenge-month-list {
+  display: grid;
+  gap: 0.42rem;
+}
+
+.challenge-month-row {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: 46px 68px minmax(90px, 1fr) 82px minmax(112px, 0.8fr) minmax(122px, 0.9fr) minmax(112px, 0.8fr);
+  align-items: center;
+  gap: 0.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.026);
+  padding: 0.56rem 0.6rem;
+}
+
+.challenge-month-row.tone-up {
+  border-color: rgba(52, 211, 153, 0.24);
+  background: linear-gradient(135deg, rgba(52, 211, 153, 0.075), rgba(255, 255, 255, 0.02));
+}
+
+.challenge-month-row.tone-down {
+  border-color: rgba(248, 113, 113, 0.2);
+  background: linear-gradient(135deg, rgba(248, 113, 113, 0.07), rgba(255, 255, 255, 0.018));
+}
+
+.challenge-month-row.tone-neutral {
+  border-color: rgba(96, 165, 250, 0.18);
+  background: linear-gradient(135deg, rgba(96, 165, 250, 0.055), rgba(255, 255, 255, 0.018));
+}
+
+.challenge-month-rank,
+.challenge-month-row small {
+  min-width: 0;
+  overflow: hidden;
+  color: rgba(255, 255, 255, 0.58);
+  font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+  font-size: 0.58rem;
+  font-weight: 900;
+  letter-spacing: 0;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.challenge-month-name,
+.challenge-month-rate {
+  min-width: 0;
+  overflow: hidden;
+  color: rgba(255, 255, 255, 0.92);
+  font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+  font-size: 0.82rem;
+  font-weight: 950;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.challenge-month-row.tone-up .challenge-month-rate {
+  color: var(--up);
+}
+
+.challenge-month-row.tone-down .challenge-month-rate {
+  color: var(--down);
+}
+
+.challenge-month-track {
+  height: 6px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.challenge-month-track span {
+  display: block;
+  height: 100%;
+  background: #93bbfc;
+}
+
+.challenge-month-row.tone-up .challenge-month-track span {
+  background: var(--up);
+}
+
+.challenge-month-row.tone-down .challenge-month-track span {
+  background: var(--down);
+}
+
+.challenge-month-empty {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.025);
+  padding: 0.72rem;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.7rem;
+}
+
 .terminal-table-wrap {
   min-width: 0;
   overflow: auto;
@@ -6909,6 +7033,47 @@ html[data-theme="light"] .challenge-footnote span {
   color: rgba(15, 23, 42, 0.62);
 }
 
+html[data-theme="light"] .challenge-month-ranking,
+html[data-theme="light"] .challenge-month-row {
+  border-color: var(--line);
+  background: #ffffff;
+}
+
+html[data-theme="light"] .challenge-month-row.tone-up {
+  border-color: rgba(4, 120, 87, 0.22);
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.09), rgba(16, 185, 129, 0.025));
+}
+
+html[data-theme="light"] .challenge-month-row.tone-down {
+  border-color: rgba(190, 18, 60, 0.2);
+  background: linear-gradient(135deg, rgba(244, 63, 94, 0.09), rgba(244, 63, 94, 0.025));
+}
+
+html[data-theme="light"] .challenge-month-row.tone-neutral {
+  border-color: rgba(37, 99, 235, 0.18);
+  background: linear-gradient(135deg, rgba(37, 99, 235, 0.07), rgba(37, 99, 235, 0.02));
+}
+
+html[data-theme="light"] .challenge-month-head strong,
+html[data-theme="light"] .challenge-month-name {
+  color: #0f172a;
+}
+
+html[data-theme="light"] .challenge-month-rank,
+html[data-theme="light"] .challenge-month-row small {
+  color: rgba(15, 23, 42, 0.56);
+}
+
+html[data-theme="light"] .challenge-month-track {
+  background: rgba(15, 23, 42, 0.08);
+}
+
+html[data-theme="light"] .challenge-month-empty {
+  border-color: rgba(15, 23, 42, 0.1);
+  background: rgba(15, 23, 42, 0.035);
+  color: rgba(15, 23, 42, 0.62);
+}
+
 html[data-theme="light"] .researchStage,
 html[data-theme="light"] .researchLane,
 html[data-theme="light"] .researchStatusList div,
@@ -7756,8 +7921,14 @@ html[data-theme="light"] .strategyToggle input {
   .challenge-grid,
   .challenge-pass-rates,
   .challenge-method-grid,
+  .challenge-month-row,
   .challenge-rule-form {
     grid-template-columns: 1fr;
+  }
+
+  .challenge-month-head {
+    align-items: stretch;
+    flex-direction: column;
   }
 
   .basketListHeader {
@@ -11792,6 +11963,23 @@ html[data-theme="light"] .tradeReplaySlider input::-webkit-slider-thumb {
     box-shadow: -6px 0 0 currentColor, 6px 0 0 currentColor;
   }
 
+  .mobileTabIconStats::before {
+    left: 4px;
+    right: 4px;
+    bottom: 4px;
+    height: 2px;
+    background: currentColor;
+  }
+
+  .mobileTabIconStats::after {
+    left: 5px;
+    bottom: 7px;
+    width: 3px;
+    height: 7px;
+    background: currentColor;
+    box-shadow: 5px -4px 0 currentColor, 10px -1px 0 currentColor;
+  }
+
   .mobileTabIconReplay::before {
     inset: 3px;
     border: 2px solid currentColor;
@@ -11970,6 +12158,8 @@ html[data-theme="light"] .tradeReplaySlider input::-webkit-slider-thumb {
   .telegram-grid div,
   .challenge-pass-card,
   .challenge-method,
+  .challenge-month-ranking,
+  .challenge-month-row,
   .dataset-sync-tile {
     min-width: 0;
     max-width: 100%;
@@ -12109,6 +12299,8 @@ html[data-theme="light"] .tradeReplaySlider input::-webkit-slider-thumb {
   html[data-theme="light"] .telegram-grid div,
   html[data-theme="light"] .challenge-pass-card,
   html[data-theme="light"] .challenge-method,
+  html[data-theme="light"] .challenge-month-ranking,
+  html[data-theme="light"] .challenge-month-row,
   html[data-theme="light"] .dataset-sync-tile,
   html[data-theme="light"] .terminal-table tbody tr,
   html[data-theme="light"] .basketListRow {

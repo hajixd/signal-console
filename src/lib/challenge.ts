@@ -48,11 +48,27 @@ export type ChallengePassRateHorizon = {
   totalSimulations: number;
 };
 
+export type ChallengeMonthPassStat = {
+  avgFinalPnl: number;
+  incompleteCount: number;
+  failCount: number;
+  key: string;
+  label: string;
+  medianMinutesToPass: number;
+  medianTradesToPass: number;
+  monthIndex: number;
+  passCount: number;
+  passRatePct: number;
+  p50FinalPnl: number;
+  totalSimulations: number;
+};
+
 export type ChallengeReplaySummary = {
   eligibleTrades: number;
   historicalSessions: number;
   avgTradeGapMinutes: number;
   historicalPassRates: ChallengePassRateHorizon[];
+  monthPassStats: ChallengeMonthPassStat[];
   monteCarloPassRates: ChallengePassRateHorizon[];
   historical: ChallengeMethodStats;
   monteCarlo: ChallengeMethodStats;
@@ -76,6 +92,11 @@ type ReplayOutcome = {
   minutes: number;
   winRate: number;
   finalPnl: number;
+};
+
+type ReplayRun = {
+  outcome: ReplayOutcome;
+  startMs: number;
 };
 
 export type ChallengeReplayProgress = {
@@ -102,6 +123,7 @@ const PASS_RATE_HORIZONS = [
   { key: "30d", label: "30 Day Pass Rate", days: 30, minutes: 30 * MINUTES_PER_DAY },
   { key: "eventual", label: "Eventual Pass Rate", days: null, minutes: undefined }
 ] as const;
+const MONTH_LABELS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"] as const;
 
 export const DEFAULT_CHALLENGE_RULES: ChallengeRules = {
   startingBalance: TOPSTEP_100K_ACCOUNT.startingBalance,
@@ -355,6 +377,42 @@ function passRateFromOutcomes(
   };
 }
 
+function monthPassStatsFromRuns(runs: ReplayRun[]): ChallengeMonthPassStat[] {
+  const buckets = new Map<number, ReplayOutcome[]>();
+  for (const run of runs) {
+    const monthIndex = new Date(run.startMs).getUTCMonth();
+    if (monthIndex < 0 || monthIndex > 11) continue;
+    const bucket = buckets.get(monthIndex) ?? [];
+    bucket.push(run.outcome);
+    buckets.set(monthIndex, bucket);
+  }
+
+  return [...buckets.entries()]
+    .map(([monthIndex, outcomes]) => {
+      const stats = statsFromOutcomes("historical", outcomes);
+      return {
+        avgFinalPnl: stats.avgFinalPnl,
+        failCount: stats.failCount,
+        incompleteCount: stats.incompleteCount,
+        key: String(monthIndex + 1).padStart(2, "0"),
+        label: MONTH_LABELS[monthIndex],
+        medianMinutesToPass: stats.medianMinutesToPass,
+        medianTradesToPass: stats.medianTradesToPass,
+        monthIndex,
+        passCount: stats.passCount,
+        passRatePct: stats.passRatePct,
+        p50FinalPnl: stats.p50FinalPnl,
+        totalSimulations: stats.totalSimulations
+      };
+    })
+    .sort((left, right) => {
+      if (right.passRatePct !== left.passRatePct) return right.passRatePct - left.passRatePct;
+      if (right.totalSimulations !== left.totalSimulations) return right.totalSimulations - left.totalSimulations;
+      if (right.p50FinalPnl !== left.p50FinalPnl) return right.p50FinalPnl - left.p50FinalPnl;
+      return left.monthIndex - right.monthIndex;
+    });
+}
+
 function buildMonteCarloTrades(source: MonteCarloSource, rng: () => number): PreparedTrade[] {
   const generated: PreparedTrade[] = [];
   let sessionStartMs = source.firstMs;
@@ -402,6 +460,7 @@ export function analyzePropFirmChallenge(
       historicalSessions: 0,
       avgTradeGapMinutes: 0,
       historicalPassRates: emptyPassRates,
+      monthPassStats: [],
       monteCarloPassRates: emptyPassRates,
       historical: empty,
       monteCarlo: { ...empty, method: "montecarlo" }
@@ -409,7 +468,13 @@ export function analyzePropFirmChallenge(
   }
 
   onProgress?.({ progress: 0.12, stage: "historical" });
-  const historicalOutcomes = starts.map((startMs) => replayTrades(prepared, startMs, rules)).filter((outcome) => outcome.trades > 0);
+  const historicalRuns = starts
+    .map((startMs) => ({
+      outcome: replayTrades(prepared, startMs, rules),
+      startMs
+    }))
+    .filter((run) => run.outcome.trades > 0);
+  const historicalOutcomes = historicalRuns.map((run) => run.outcome);
   const historicalPassRates = PASS_RATE_HORIZONS.map((horizon) => {
     const outcomes =
       horizon.minutes == null
@@ -452,6 +517,7 @@ export function analyzePropFirmChallenge(
     historicalSessions: starts.length,
     avgTradeGapMinutes: tradeGapMinutes,
     historicalPassRates,
+    monthPassStats: monthPassStatsFromRuns(historicalRuns),
     monteCarloPassRates,
     historical: statsFromOutcomes("historical", historicalOutcomes),
     monteCarlo: statsFromOutcomes("montecarlo", monteCarloOutcomesByHorizon.eventual)

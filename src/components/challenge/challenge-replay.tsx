@@ -15,6 +15,7 @@ import {
   analyzePropFirmChallenge,
   DEFAULT_CHALLENGE_RULES,
   type ChallengeMethodStats,
+  type ChallengeMonthPassStat,
   type ChallengePassRateHorizon,
   type ChallengeReplayProgress,
   type ChallengeReplaySummary,
@@ -43,7 +44,7 @@ const STORAGE_KEY = "trading-bot:challenge-rules:v1";
 const REPLAY_CACHE_STORAGE_KEY_PREFIX = "trading-bot:challenge-replay-cache:v2";
 const REPLAY_CACHE_INDEX_KEY = "trading-bot:challenge-replay-cache:index:v2";
 const REPLAY_CACHE_LIMIT = 20;
-const REPLAY_CACHE_VERSION = "mc-10000-v1";
+const REPLAY_CACHE_VERSION = "mc-10000-months-v1";
 
 function fmtNumber(value: number): string {
   if (!Number.isFinite(value)) return "inf";
@@ -101,7 +102,7 @@ function challengeTone(stats: ChallengeMethodStats): string {
   return "tone-down";
 }
 
-function passRateTone(rate: ChallengePassRateHorizon): string {
+function passRateTone(rate: Pick<ChallengePassRateHorizon, "passCount" | "passRatePct" | "totalSimulations">): string {
   if (!rate.totalSimulations) return "tone-neutral";
   if (rate.passRatePct >= 70) return "tone-up";
   if (rate.passRatePct >= 50 || rate.passCount > 0) return "tone-neutral";
@@ -171,7 +172,64 @@ function ChallengeReplayPanel({
           <span>P50 final P&L</span>
           <strong className={resultClass(stats.p50FinalPnl)}>{fmtMoney(stats.p50FinalPnl, true)}</strong>
         </div>
+        <div>
+          <span>Avg fail time</span>
+          <strong className={stats.failCount ? "down" : "up"}>{stats.failCount ? fmtChallengeDuration(stats.avgMinutesToFail) : "No fail"}</strong>
+        </div>
+        <div>
+          <span>Avg trades to fail</span>
+          <strong>{stats.failCount ? fmtNumber(stats.avgTradesToFail) : "--"}</strong>
+        </div>
+        <div>
+          <span>Avg pass win rate</span>
+          <strong>{hasPasses ? fmtPct(stats.avgWinRatePassPct) : "--"}</strong>
+        </div>
+        <div>
+          <span>Avg final P&L</span>
+          <strong className={resultClass(stats.avgFinalPnl)}>{stats.totalSimulations ? fmtMoney(stats.avgFinalPnl, true) : "--"}</strong>
+        </div>
+        <div>
+          <span>P10 final P&L</span>
+          <strong className={resultClass(stats.p10FinalPnl)}>{stats.totalSimulations ? fmtMoney(stats.p10FinalPnl, true) : "--"}</strong>
+        </div>
+        <div>
+          <span>P90 final P&L</span>
+          <strong className={resultClass(stats.p90FinalPnl)}>{stats.totalSimulations ? fmtMoney(stats.p90FinalPnl, true) : "--"}</strong>
+        </div>
       </div>
+    </div>
+  );
+}
+
+function ChallengeMonthPassRanking({ months }: { months: ChallengeMonthPassStat[] }) {
+  const topMonth = months[0];
+  return (
+    <div className="challenge-month-ranking">
+      <div className="challenge-month-head">
+        <span>Start month ranking</span>
+        <strong>{topMonth ? `${topMonth.label} ${fmtPct(topMonth.passRatePct)}` : "--"}</strong>
+      </div>
+      {months.length ? (
+        <div className="challenge-month-list">
+          {months.map((month, index) => (
+            <div className={`challenge-month-row ${passRateTone(month)}`} key={month.key}>
+              <span className="challenge-month-rank">#{index + 1}</span>
+              <strong className="challenge-month-name">{month.label}</strong>
+              <div className="challenge-month-track" aria-hidden="true">
+                <span style={{ width: `${Math.max(2, Math.min(100, month.passRatePct))}%` }} />
+              </div>
+              <strong className="challenge-month-rate">{fmtPct(month.passRatePct)}</strong>
+              <small>
+                {fmtNumber(month.passCount)} / {fmtNumber(month.totalSimulations)} passed
+              </small>
+              <small>Median pass {month.passCount ? fmtChallengeDuration(month.medianMinutesToPass) : "--"}</small>
+              <small>P50 final {month.totalSimulations ? fmtMoney(month.p50FinalPnl, true) : "--"}</small>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="challenge-month-empty">No monthly replay samples yet.</div>
+      )}
     </div>
   );
 }
@@ -247,6 +305,7 @@ function isChallengeReplaySummary(value: unknown): value is ChallengeReplaySumma
     Boolean(summary.historical && typeof summary.historical === "object") &&
     Boolean(summary.monteCarlo && typeof summary.monteCarlo === "object") &&
     Array.isArray(summary.historicalPassRates) &&
+    Array.isArray(summary.monthPassStats) &&
     Array.isArray(summary.monteCarloPassRates)
   );
 }
@@ -479,6 +538,7 @@ export default function ChallengeReplay({
         <ChallengeReplayPanel title="Historical" stats={challengeReplay.historical} rates={challengeReplay.historicalPassRates} />
         <ChallengeReplayPanel title="Monte Carlo" stats={challengeReplay.monteCarlo} rates={challengeReplay.monteCarloPassRates} />
       </div>
+      <ChallengeMonthPassRanking months={challengeReplay.monthPassStats} />
       <div className="challenge-footnote">
         <span>Avg gap: {fmtChallengeDuration(challengeReplay.avgTradeGapMinutes)}</span>
         <span>Account: {fmtMoney(rules.startingBalance)}</span>

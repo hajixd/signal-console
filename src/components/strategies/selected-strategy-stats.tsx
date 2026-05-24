@@ -65,7 +65,9 @@ type DollarAggregate = {
 type SelectedStrategyStatsProps = {
   customScaleRange?: CustomScaleRangeSeed;
   dataEndAt?: string;
+  defaultExpanded?: boolean;
   strategies: StrategyEditOption[];
+  toggleable?: boolean;
   trades: BasketTrade[];
   persistedStrategyEdits?: StrategyEditSeedMap;
 };
@@ -364,8 +366,16 @@ function tradeCadence(trades: BasketTrade[]) {
   };
 }
 
-export default function SelectedStrategyStats({ customScaleRange, dataEndAt, strategies, trades, persistedStrategyEdits }: SelectedStrategyStatsProps) {
-  const [expanded, setExpanded] = useState(false);
+export default function SelectedStrategyStats({
+  customScaleRange,
+  dataEndAt,
+  defaultExpanded = false,
+  strategies,
+  toggleable = true,
+  trades,
+  persistedStrategyEdits
+}: SelectedStrategyStatsProps) {
+  const [expanded, setExpanded] = useState(defaultExpanded);
   const edits = useStrategyEdits(strategies, persistedStrategyEdits);
   const strategyByKey = new Map(strategies.map((strategy) => [strategy.key, strategy]));
   const parsedCustomScaleRange = parseCustomScaleRange(customScaleRange);
@@ -379,17 +389,20 @@ export default function SelectedStrategyStats({ customScaleRange, dataEndAt, str
         : 1;
     return trade.basePnlDollars * scale;
   });
-  const toggleExpanded = () => setExpanded((current) => !current);
+  const toggleExpanded = () => {
+    if (toggleable) setExpanded((current) => !current);
+  };
 
   return (
     <div
-      className={`selectedStatsSurface${expanded ? " is-expanded" : ""}`}
-      role="button"
-      tabIndex={0}
-      aria-expanded={expanded}
-      aria-label={expanded ? "Collapse selected strategy stats" : "Expand selected strategy stats"}
-      onClick={toggleExpanded}
+      className={`selectedStatsSurface${expanded ? " is-expanded" : ""}${toggleable ? " is-toggleable" : ""}`}
+      role={toggleable ? "button" : undefined}
+      tabIndex={toggleable ? 0 : undefined}
+      aria-expanded={toggleable ? expanded : undefined}
+      aria-label={toggleable ? (expanded ? "Collapse selected strategy stats" : "Expand selected strategy stats") : undefined}
+      onClick={toggleable ? toggleExpanded : undefined}
       onKeyDown={(event) => {
+        if (!toggleable) return;
         if (event.key === "Enter" || event.key === " ") {
           event.preventDefault();
           toggleExpanded();
@@ -546,9 +559,11 @@ export default function SelectedStrategyStats({ customScaleRange, dataEndAt, str
         </>
       ) : null}
       </div>
-      <div className="selectedStatsToggleHint" aria-hidden="true">
-        <span>{expanded ? "Hide details" : "More stats"}</span>
-      </div>
+      {toggleable ? (
+        <div className="selectedStatsToggleHint" aria-hidden="true">
+          <span>{expanded ? "Hide details" : "More stats"}</span>
+        </div>
+      ) : null}
     </div>
   );
 }

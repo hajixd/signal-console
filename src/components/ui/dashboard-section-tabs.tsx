@@ -3,7 +3,7 @@
 import { Children, type KeyboardEvent, type ReactNode, useEffect, useMemo, useState } from "react";
 
 export type DashboardSectionTab = {
-  icon: "history" | "live" | "replay" | "storage" | "strategies" | "sync" | "telegram";
+  icon: "history" | "live" | "replay" | "stats" | "storage" | "strategies" | "sync" | "telegram";
   id: string;
   label: string;
   meta?: string;
