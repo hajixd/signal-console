@@ -1,0 +1,33 @@
+{
+  "strategyId": "gold_futures_tori_trades_trendline_break_retest",
+  "label": "Gold Futures Tori Trendline Break Retest",
+  "folder": "gold_futures_tori_trades_trendline_break_retest",
+  "assetKey": "gold_futures",
+  "phase": "tori_trendline_mtf",
+  "variantId": "tori_trendline_mtf|all|lookback=24|swing=2|touch=2|gap=1|lead=4|break=0.02|tol=0.3|stop_buf=0.1|risk=3|rr=2|target_lookback=48|max_bars=80|one_trade=0",
+  "source": "tori_public_mtf_research_2026",
+  "sourceUrls": [
+    "https://www.youtube.com/@ToriTrades"
+  ],
+  "researchSummary": "Public trendline break-and-retest playbook promoted because it cleared high-PF stress validation.",
+  "selectionMethod": "Existing research folder promoted after chronological split, rolling-window, bootstrap, block-bootstrap, and annual walk-forward stress checks. No RR threshold was required for this competition pass.",
+  "trainingWindow": {
+    "start": "not_available",
+    "end": "not_available"
+  },
+  "forwardWindow": {
+    "start": "2022-01-01",
+    "end": "asset_latest"
+  },
+  "selectedTrainingProfitFactor": null,
+  "selectedTrainingTrades": 0,
+  "selectedForwardProfitFactor": 2.715948,
+  "selectedForwardTrades": 63,
+  "minimumRiskReward": null,
+  "selectedRiskReward": 1.733333,
+  "forwardTotalR": 32.901232,
+  "forwardMaxDrawdownR": 3.879206,
+  "verificationSummary": "Stress PF 2.72 over 63 trades; quarter PF floor 1.24; bootstrap p05 1.72; block-bootstrap p05 1.71; annual pass 80%.",
+  "costUnits": 0,
+  "oneTradePerDay": false
+}

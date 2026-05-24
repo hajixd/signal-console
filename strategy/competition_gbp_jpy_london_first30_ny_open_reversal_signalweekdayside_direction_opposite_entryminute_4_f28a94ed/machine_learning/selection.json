@@ -1,0 +1,36 @@
+{
+  "strategyId": "competition_gbp_jpy_london_first30_ny_open_reversal_signalweekdayside_direction_opposite_entryminute_4_f28a94ed",
+  "label": "Competition GBPJPY London First30 Ny Open Reversal Signalweekdayside",
+  "folder": "competition_gbp_jpy_london_first30_ny_open_reversal_signalweekdayside_direction_opposite_entryminute_4_f28a94ed",
+  "assetKey": "gbp_jpy",
+  "phase": "competition_session_edge",
+  "variantId": "competition_session_edge|family=london_first30_ny_open_reversal_signalweekdayside|direction=opposite|entry=480|exit=570|min_signal_atr=0.2|signal_end=195|signal_start=180|signal_weekday_side=2_short",
+  "source": "high_pf_isolated_competition_2026_05",
+  "sourceUrls": [
+    "https://biblio.ugent.be/publication/8060014"
+  ],
+  "researchSummary": "Session-window return predicts a later same-day session return. Filtered by signalWeekdaySide=2_short.",
+  "selectionMethod": "High-profit-factor isolated candidate promotion. Required pre-2022 train split, post-2022 strict anti-cheat replay, PF/trade-count gate, chronological quarter stability, ordinary and block-bootstrap PF p05 > 1, odd/even stability, and >=75% annual walk-forward pass rate.",
+  "trainingWindow": {
+    "start": "asset_start",
+    "end": "2021-12-31"
+  },
+  "forwardWindow": {
+    "start": "2022-01-01",
+    "end": "asset_latest"
+  },
+  "selectedTrainingProfitFactor": 1.76103,
+  "selectedTrainingTrades": 42,
+  "selectedForwardProfitFactor": 2.045998,
+  "selectedForwardTrades": 111,
+  "minimumRiskReward": null,
+  "selectedRiskReward": 1.0,
+  "forwardWins": 63,
+  "forwardLosses": 48,
+  "forwardTotalR": 79.391866,
+  "forwardAverageR": 0.715242,
+  "forwardMaxDrawdownR": 11.985847,
+  "verificationSummary": "High-PF strict replay: forward PF 2.05 over 111 trades; train PF 1.76 over 42; quarter PF 1.07; bootstrap p05 1.28; block-bootstrap p05 1.25; annual pass 100%.",
+  "costUnits": 0,
+  "oneTradePerDay": false
+}

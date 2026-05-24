@@ -45,6 +45,20 @@ function passesFilters(params: Params, bar: EnrichedBar, side: number): boolean 
     if (month !== Number(signalMonth)) return false;
   }
 
+  const signalQuarter = params.signal_quarter;
+  if (signalQuarter !== undefined) {
+    const month = Number(bar.nyDate.slice(5, 7));
+    const quarter = Math.floor((month - 1) / 3) + 1;
+    if (quarter !== Number(signalQuarter)) return false;
+  }
+
+  const signalHalfyear = params.signal_halfyear;
+  if (signalHalfyear !== undefined) {
+    const month = Number(bar.nyDate.slice(5, 7));
+    const halfyear = month <= 6 ? 1 : 2;
+    if (halfyear !== Number(signalHalfyear)) return false;
+  }
+
   return true;
 }
 

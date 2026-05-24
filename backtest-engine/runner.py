@@ -3843,9 +3843,15 @@ def competition_passes_filters(strategy: BacktestStrategy, data: EnrichedData, s
             return False
 
     month = variant_value(strategy.variant_id, "signal_month")
-    if month is not None:
+    quarter = variant_value(strategy.variant_id, "signal_quarter")
+    halfyear = variant_value(strategy.variant_id, "signal_halfyear")
+    if month is not None or quarter is not None or halfyear is not None:
         signal_dt = datetime.fromtimestamp(int(data.times[signal_index]), tz=timezone.utc).astimezone(NEW_YORK)
-        if signal_dt.month != int(float(month)):
+        if month is not None and signal_dt.month != int(float(month)):
+            return False
+        if quarter is not None and ((signal_dt.month - 1) // 3 + 1) != int(float(quarter)):
+            return False
+        if halfyear is not None and (1 if signal_dt.month <= 6 else 2) != int(float(halfyear)):
             return False
 
     return True

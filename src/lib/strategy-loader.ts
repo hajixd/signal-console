@@ -144,11 +144,17 @@ import strategy142 from "@strategy/competition_new_zealand_dollar_futures_daily_
 import strategy143 from "@strategy/competition_us_treasury_10y_note_futures_daily_tsmom_next_overnight_weekday_side_4_short_xasset_rr_5_105476cf/strategy";
 import strategy144 from "@strategy/competition_canadian_dollar_futures_us_first30_last30_momentum_signalmonth_month_3_xasset_rr_5_384613a9/strategy";
 
+import strategy145 from "@strategy/competition_gbp_jpy_london_first30_ny_open_reversal_signalweekdayside_direction_opposite_entryminute_4_4eee8ecb/strategy";
+import strategy146 from "@strategy/competition_gbp_jpy_london_first30_ny_open_reversal_signalweekdayside_direction_opposite_entryminute_4_5322bb1f/strategy";
+import strategy147 from "@strategy/competition_gbp_jpy_london_first30_ny_open_reversal_signalweekdayside_direction_opposite_entryminute_4_61184239/strategy";
+import strategy148 from "@strategy/competition_gbp_jpy_london_first30_ny_open_reversal_signalweekdayside_direction_opposite_entryminute_4_f28a94ed/strategy";
+import strategy149 from "@strategy/gold_futures_tori_trades_trendline_break_retest/strategy";
 import type { StrategyDefinition } from "@/lib/strategy-definition";
 
 export type { StrategyDefinition, StrategySignal } from "@/lib/strategy-definition";
 
-export const STRATEGY_DEFINITIONS: StrategyDefinition[] = [  strategy000,
+export const STRATEGY_DEFINITIONS: StrategyDefinition[] = [
+  strategy000,
   strategy001,
   strategy002,
   strategy003,
@@ -292,5 +298,10 @@ export const STRATEGY_DEFINITIONS: StrategyDefinition[] = [  strategy000,
   strategy141,
   strategy142,
   strategy143,
-  strategy144
+  strategy144,
+  strategy145,
+  strategy146,
+  strategy147,
+  strategy148,
+  strategy149
 ];
