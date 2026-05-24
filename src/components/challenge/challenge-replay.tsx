@@ -202,12 +202,21 @@ function ChallengeReplayPanel({
 }
 
 function ChallengeMonthPassRanking({ months }: { months: ChallengeMonthPassStat[] }) {
-  const topMonth = months[0];
+  const [currentMonthIndex, setCurrentMonthIndex] = useState<number | null>(null);
+  useEffect(() => {
+    setCurrentMonthIndex(new Date().getMonth());
+  }, []);
+  const currentMonth = currentMonthIndex == null ? undefined : months.find((month) => month.monthIndex === currentMonthIndex);
+  const currentMonthLabel =
+    currentMonth?.label ??
+    (currentMonthIndex == null
+      ? "Current"
+      : new Intl.DateTimeFormat("en-US", { month: "short", timeZone: "UTC" }).format(new Date(Date.UTC(2024, currentMonthIndex, 1))));
   return (
     <div className="challenge-month-ranking">
       <div className="challenge-month-head">
         <span>Start month ranking</span>
-        <strong>{topMonth ? `${topMonth.label} ${fmtPct(topMonth.passRatePct)}` : "--"}</strong>
+        <strong>{currentMonth ? `${currentMonth.label} ${fmtPct(currentMonth.passRatePct)}` : `${currentMonthLabel} --`}</strong>
       </div>
       {months.length ? (
         <div className="challenge-month-list">
