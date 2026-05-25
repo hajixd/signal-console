@@ -420,6 +420,44 @@ function tradeEntryType(trade: BacktestTrade): "market" | "limit" {
   return fingerprint.includes("ict_sweep_fvg") || fingerprint.includes("ict sweep fvg") ? "limit" : "market";
 }
 
+function normalizedHistoryText(value: string | undefined): string {
+  return (value ?? "").trim().replace(/\s+/g, " ").toLowerCase();
+}
+
+function roundedHistoryNumber(value: number): string {
+  return Number.isFinite(value) ? value.toFixed(8) : "";
+}
+
+function tradeHistoryDuplicateKey(row: TradeHistoryRow): string {
+  return [
+    normalizedHistoryText(row.modelName),
+    normalizedHistoryText(row.displaySymbol ?? row.symbol),
+    normalizedHistoryText(row.market),
+    row.side,
+    row.sourceTimeframe ?? "",
+    row.entryType ?? "",
+    row.entryTime,
+    roundedHistoryNumber(row.entryPrice),
+    row.exitTime,
+    roundedHistoryNumber(row.exitPrice),
+    roundedHistoryNumber(row.pnlDollars)
+  ].join("|");
+}
+
+function dedupeTradeHistoryRows(rows: TradeHistoryRow[]): TradeHistoryRow[] {
+  const seen = new Set<string>();
+  const deduped: TradeHistoryRow[] = [];
+
+  for (const row of rows) {
+    const key = tradeHistoryDuplicateKey(row);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    deduped.push(row);
+  }
+
+  return deduped;
+}
+
 function validMarketTab(value: string | undefined): MarketTabKey | undefined {
   if (value === "gold_spot") return "forex";
   return value === "forex" || value === "futures" ? value : undefined;
@@ -1736,6 +1774,7 @@ export default async function Home({ searchParams }: HomeProps) {
       slUnitsLabel: `${fmtNumber(trade.slUnits)} ${unitLabel}`
     };
   });
+  const visibleStoredBacktestHistoryRows = dedupeTradeHistoryRows(storedBacktestHistoryRows);
   const liveOpenPriceConfigs = new Map<string, LatestLivePriceConfig>();
   for (const trade of activeMarketLiveTrades) {
     if (!selectedLiveTrades.includes(trade) || liveTradeClosed(trade)) continue;
@@ -1864,8 +1903,8 @@ export default async function Home({ searchParams }: HomeProps) {
     });
   const liveHistoryOpenCount = liveHistoryRows.filter((row) => row.exitReasonLabel === "Still Open").length;
   const liveHistoryClosedCount = liveHistoryRows.length - liveHistoryOpenCount;
-  const historyTotalTradeCount = historyBacktestTrades.length + liveHistoryRows.length;
-  const tradeHistoryRows = [...storedBacktestHistoryRows, ...liveHistoryRows]
+  const historyTotalTradeCount = visibleStoredBacktestHistoryRows.length + liveHistoryRows.length;
+  const tradeHistoryRows = [...visibleStoredBacktestHistoryRows, ...liveHistoryRows]
     .sort(
       (left, right) =>
         Date.parse(right.entryTime) - Date.parse(left.entryTime) ||
