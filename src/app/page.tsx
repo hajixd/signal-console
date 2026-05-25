@@ -1196,7 +1196,8 @@ function resolvedBacktestExit({
   targetPrice: number;
   trade: BacktestTrade;
 }): ResolvedBacktestExit {
-  const hit: TradeBracketHit | null = bars?.length
+  const hasManagedLevels = Boolean(trade.managementEvents?.length);
+  const hit: TradeBracketHit | null = !hasManagedLevels && bars?.length
     ? resolveFirstTradeBracketHit(
         {
           entryIndex: trade.entryIndex,
@@ -1213,16 +1214,17 @@ function resolvedBacktestExit({
     : null;
   const explicitBoundary = exitBoundaryFromReason(trade.exitReason);
   const boundary = hit?.boundary ?? explicitBoundary;
-  const exitPrice = hit?.exitPrice ?? effectiveBacktestExitPrice(trade, targetPrice, stopPrice, boundary);
+  const exitPrice = hit?.exitPrice ?? (hasManagedLevels ? trade.exitPrice : effectiveBacktestExitPrice(trade, targetPrice, stopPrice, boundary));
   const direction = trade.side === "long" ? 1 : -1;
   const netUnits = priceUnit > 0 ? ((exitPrice - trade.entryPrice) * direction) / priceUnit : trade.netUnits;
-  const pnlDollars =
-    boundary === "target"
+  const pnlDollars = hasManagedLevels
+    ? rawPnlDollars
+    : boundary === "target"
       ? Math.abs(targetDollars)
       : boundary === "stop"
         ? -Math.abs(riskDollars)
         : boundedTradeDollarPnl(rawPnlDollars, targetDollars, riskDollars);
-  const rMultiple = riskDollars > 0 ? pnlDollars / riskDollars : trade.rMultiple;
+  const rMultiple = hasManagedLevels ? trade.rMultiple : riskDollars > 0 ? pnlDollars / riskDollars : trade.rMultiple;
 
   return {
     barsHeld: hit?.barsHeld ?? trade.barsHeld,
@@ -1749,6 +1751,7 @@ export default async function Home({ searchParams }: HomeProps) {
       exitPrice: resolvedExit.exitPrice,
       targetPrice,
       stopPrice,
+      managementEvents: trade.managementEvents,
       signalTimeLabel: fmtTime(trade.signalTime),
       entryTimeLabel: fmtTime(trade.entryTime),
       exitTimeLabel: fmtTime(resolvedExit.exitTime),
@@ -1840,7 +1843,12 @@ export default async function Home({ searchParams }: HomeProps) {
       const pnlDollars = isClosed ? boundedTradeDollarPnl(rawPnlDollars, targetDollars, riskDollars) : rawPnlDollars;
       const rMultiple = riskDollars > 0 ? pnlDollars / riskDollars : finiteNumberOr(trade.lifecycleRMultiple, 0);
       const exitBoundary = exitBoundaryFromReason(trade.lifecycleStatus);
-      const exitPrice = isClosed && exitBoundary === "target" ? trade.takeProfitPrice : isClosed && exitBoundary === "stop" ? trade.stopLossPrice : rawExitPrice;
+      const exitPrice =
+        isClosed && exitBoundary === "target"
+          ? finiteNumberOr(trade.lifecyclePrice, trade.takeProfitPrice)
+          : isClosed && exitBoundary === "stop"
+            ? finiteNumberOr(trade.lifecyclePrice, trade.stopLossPrice)
+            : rawExitPrice;
       const sideMultiplier = trade.side === "long" ? 1 : -1;
       const netUnits = priceUnit > 0 ? ((exitPrice - trade.entryPrice) * sideMultiplier) / priceUnit : 0;
       const unitLabel = instrumentUnitLabel(trade.symbol);
@@ -1875,6 +1883,7 @@ export default async function Home({ searchParams }: HomeProps) {
         exitPrice,
         targetPrice: trade.takeProfitPrice,
         stopPrice: trade.stopLossPrice,
+        managementEvents: trade.managementEvents,
         signalTimeLabel: fmtTime(trade.signalTime),
         entryTimeLabel: fmtTime(trade.signalTime),
         exitTimeLabel: isClosed ? fmtTime(trade.lifecycleTime) : "Still Open",

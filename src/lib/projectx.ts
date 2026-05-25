@@ -73,6 +73,32 @@ export type ProjectXPlaceOrderResult = {
   orderId: number;
 };
 
+export type ProjectXOpenOrder = {
+  accountId?: number;
+  contractId?: string;
+  creationTimestamp?: string;
+  customTag?: string | null;
+  id?: number;
+  limitPrice?: number | null;
+  orderId?: number;
+  side?: ProjectXOrderSide;
+  size?: number;
+  status?: number | string;
+  stopPrice?: number | null;
+  trailPrice?: number | null;
+  type?: ProjectXOrderType;
+  updateTimestamp?: string;
+};
+
+export type ProjectXModifyOrderRequest = {
+  accountId: number;
+  limitPrice?: number | null;
+  orderId: number;
+  size?: number | null;
+  stopPrice?: number | null;
+  trailPrice?: number | null;
+};
+
 type ProjectXBaseResponse = {
   errorCode?: number;
   errorMessage?: string | null;
@@ -99,6 +125,12 @@ type ProjectXContractSearchResponse = ProjectXBaseResponse & {
 type ProjectXPlaceOrderResponse = ProjectXBaseResponse & {
   orderId?: number;
 };
+
+type ProjectXOrderSearchOpenResponse = ProjectXBaseResponse & {
+  orders?: ProjectXOpenOrder[];
+};
+
+type ProjectXModifyOrderResponse = ProjectXBaseResponse;
 
 export class ProjectXApiError extends Error {
   constructor(
@@ -208,6 +240,15 @@ export async function placeProjectXOrder(token: string, request: ProjectXPlaceOr
     throw new ProjectXApiError("ProjectX accepted the request but did not return an order id.");
   }
   return { orderId: response.orderId };
+}
+
+export async function searchProjectXOpenOrders(token: string, accountId: number): Promise<ProjectXOpenOrder[]> {
+  const response = await projectXPost<ProjectXOrderSearchOpenResponse>("/api/Order/searchOpen", { accountId }, token);
+  return response.orders ?? [];
+}
+
+export async function modifyProjectXOrder(token: string, request: ProjectXModifyOrderRequest): Promise<void> {
+  await projectXPost<ProjectXModifyOrderResponse>("/api/Order/modify", request, token);
 }
 
 export function readableProjectXError(error: unknown): string {

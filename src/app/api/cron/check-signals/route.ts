@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { executeAutoTrade, type AutoTradeExecutionResult } from "@/lib/auto-trader";
+import { executeAutoTrade, executeAutoTradeManagement, type AutoTradeExecutionResult } from "@/lib/auto-trader";
 import { autoTradeMarketForSignal } from "@/lib/auto-trade-platforms";
 import { dollarPerUnit } from "@/lib/instruments";
 import { assetTimeframeBarsKey } from "@/lib/market-data-refresh";
@@ -245,9 +245,6 @@ type LifecycleAndManagementEvaluation = {
   hit: TradeLifecycleHit | null;
   managementEvents: TradeManagementEvent[];
 };
-
-const MANAGEMENT_AUTO_TRADE_NOTE =
-  "ProjectX order modification is not configured in this app yet; this management event was logged and sent as a notification.";
 
 function finiteNumber(value: number | null | undefined): value is number {
   return typeof value === "number" && Number.isFinite(value);
@@ -531,8 +528,6 @@ function evaluateTradeLifecycleAndManagement(
   ) => {
     const roundedPrice = roundToPriceUnit(price, priceUnit);
     const event: TradeManagementEvent = {
-      autoTradeError: MANAGEMENT_AUTO_TRADE_NOTE,
-      autoTradeStatus: "skipped",
       createdAt: new Date().toISOString(),
       entryPrice: plan?.entryPrice,
       id: managementEventId(trade, type, time, roundedPrice),
@@ -632,15 +627,34 @@ async function notifyTradeLifecycles(result: CronResult, barsByAssetKey: Map<str
 
       const evaluation = evaluateTradeLifecycleAndManagement(trade, bars, matchingRuleForTrade(trade, rules));
       const notifiedManagementEvents: TradeManagementEvent[] = [];
+      let tradeForManagement = trade;
       for (const event of evaluation.managementEvents) {
-        const notification = await sendTradeManagementNotification(trade, event);
-        notifiedManagementEvents.push({
+        const autoTrade = await executeAutoTradeManagement(tradeForManagement, event).catch(
+          (error): AutoTradeExecutionResult => ({
+            checkedAt: new Date().toISOString(),
+            error: errorMessage(error),
+            status: "failed"
+          })
+        );
+        const eventWithAutoTrade: TradeManagementEvent = {
           ...event,
+          autoTradeError: autoTrade.error,
+          autoTradeOrders: autoTrade.orders,
+          autoTradeStatus: autoTrade.status
+        };
+        const notification = await sendTradeManagementNotification(tradeForManagement, eventWithAutoTrade);
+        const savedEvent: TradeManagementEvent = {
+          ...eventWithAutoTrade,
           discordError: notification.discord.error,
           discordStatus: notification.discord.status,
           telegramError: notification.telegram.error,
           telegramStatus: notification.telegram.status
-        });
+        };
+        notifiedManagementEvents.push(savedEvent);
+        tradeForManagement = {
+          ...tradeForManagement,
+          managementEvents: mergeManagementEvents(tradeForManagement.managementEvents, [savedEvent])
+        };
       }
 
       const tradeWithManagementEvents: TradeAlert = notifiedManagementEvents.length

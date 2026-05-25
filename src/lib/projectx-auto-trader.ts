@@ -7,18 +7,21 @@ import {
   type StoredProjectXConnection
 } from "@/lib/projectx-connections";
 import {
+  modifyProjectXOrder,
   placeProjectXOrder,
   readableProjectXError,
+  searchProjectXOpenOrders,
   searchProjectXAccounts,
   searchProjectXContracts,
   validateProjectXSession,
   type ProjectXAccount,
   type ProjectXContract,
+  type ProjectXOpenOrder,
   type ProjectXOrderSide,
   type ProjectXOrderType,
   type ProjectXPlaceOrderRequest
 } from "@/lib/projectx";
-import type { AutoTradeOrderSummary, TradeAlert } from "@/lib/types";
+import type { AutoTradeOrderSummary, TradeAlert, TradeManagementEvent } from "@/lib/types";
 
 export type ProjectXAutoTradeStatus = "disabled" | "dry_run" | "failed" | "placed" | "skipped";
 
@@ -372,6 +375,210 @@ async function refreshedConnection(): Promise<StoredProjectXConnection | null> {
     token: activeToken,
     userName: connection.userName
   });
+}
+
+function eventManagementPrice(event: TradeManagementEvent): number {
+  return event.type === "edit_sl"
+    ? event.stopLossPrice ?? event.price
+    : event.type === "edit_tp"
+      ? event.takeProfitPrice ?? event.price
+      : event.entryPrice ?? event.price;
+}
+
+function orderSummaryStatus(status: TradeAlert["autoTradeStatus"]): AutoTradeOrderSummary["status"] | null {
+  if (status === "dry_run" || status === "failed" || status === "placed" || status === "skipped") return status;
+  return null;
+}
+
+function singleOrderSummaryFromTrade(trade: TradeAlert, limitOrder: boolean): AutoTradeOrderSummary | null {
+  const accountId = limitOrder ? trade.limitOrderAutoTradeOrderId && trade.autoTradeAccountId : trade.autoTradeAccountId;
+  const orderId = limitOrder ? trade.limitOrderAutoTradeOrderId : trade.autoTradeOrderId;
+  const status = orderSummaryStatus(limitOrder ? trade.limitOrderAutoTradeStatus : trade.autoTradeStatus);
+  if (!accountId || !orderId || !status) return null;
+  return {
+    accountId,
+    accountName: trade.autoTradeAccountName,
+    contractId: limitOrder ? trade.limitOrderAutoTradeContractId : trade.autoTradeContractId,
+    contractName: limitOrder ? trade.limitOrderAutoTradeContractName : trade.autoTradeContractName,
+    customTag: limitOrder ? trade.limitOrderAutoTradeCustomTag : trade.autoTradeCustomTag,
+    orderId,
+    size: trade.sizeMultiplier,
+    status
+  };
+}
+
+function managementSourceOrders(trade: TradeAlert, event: TradeManagementEvent): AutoTradeOrderSummary[] {
+  const limitOrders = trade.limitOrderAutoTradeOrders?.length
+    ? trade.limitOrderAutoTradeOrders
+    : [singleOrderSummaryFromTrade(trade, true)].filter((order): order is AutoTradeOrderSummary => Boolean(order));
+  const primaryOrders = trade.autoTradeOrders?.length
+    ? trade.autoTradeOrders
+    : [singleOrderSummaryFromTrade(trade, false)].filter((order): order is AutoTradeOrderSummary => Boolean(order));
+  const preferredOrders = event.type === "edit_limit" && limitOrders.length ? limitOrders : primaryOrders;
+  return preferredOrders.filter((order) => order.status === "placed" || order.status === "dry_run");
+}
+
+function openOrderId(order: ProjectXOpenOrder): number | null {
+  const id = order.orderId ?? order.id;
+  return typeof id === "number" && Number.isFinite(id) ? id : null;
+}
+
+function openOrderTypeMatches(event: TradeManagementEvent, order: ProjectXOpenOrder): boolean {
+  if (event.type === "edit_sl") return order.type === 4 || order.type === 5;
+  if (event.type === "edit_tp") return order.type === 1;
+  return order.type === 1;
+}
+
+function openOrderSideMatches(trade: TradeAlert, event: TradeManagementEvent, order: ProjectXOpenOrder): boolean {
+  const entrySide: ProjectXOrderSide = trade.side === "long" ? 0 : 1;
+  const exitSide: ProjectXOrderSide = trade.side === "long" ? 1 : 0;
+  return order.side === (event.type === "edit_limit" ? entrySide : exitSide);
+}
+
+function matchingOpenOrders(
+  trade: TradeAlert,
+  event: TradeManagementEvent,
+  summary: AutoTradeOrderSummary,
+  openOrders: ProjectXOpenOrder[]
+): ProjectXOpenOrder[] {
+  let candidates = openOrders.filter(
+    (order) =>
+      openOrderId(order) !== null &&
+      openOrderTypeMatches(event, order) &&
+      openOrderSideMatches(trade, event, order) &&
+      (!summary.contractId || order.contractId === summary.contractId)
+  );
+
+  if (summary.customTag) {
+    const tagged = candidates.filter((order) => order.customTag === summary.customTag);
+    if (tagged.length) candidates = tagged;
+  }
+
+  const checkedAt = Date.parse(trade.autoTradeCheckedAt ?? "");
+  if (Number.isFinite(checkedAt)) {
+    const recent = candidates.filter((order) => {
+      const createdAt = Date.parse(order.creationTimestamp ?? "");
+      return !Number.isFinite(createdAt) || createdAt >= checkedAt - 15 * 60_000;
+    });
+    if (recent.length) candidates = recent;
+  }
+
+  if (typeof summary.size === "number" && Number.isFinite(summary.size)) {
+    const sameSize = candidates.filter((order) => typeof order.size !== "number" || Math.round(order.size) === Math.round(summary.size ?? 0));
+    if (sameSize.length) candidates = sameSize;
+  }
+
+  return candidates;
+}
+
+function managementModifyPayload(
+  accountId: number,
+  orderId: number,
+  size: number | undefined,
+  event: TradeManagementEvent
+) {
+  const price = eventManagementPrice(event);
+  return {
+    accountId,
+    orderId,
+    size: typeof size === "number" && Number.isFinite(size) && size > 0 ? Math.round(size) : undefined,
+    limitPrice: event.type === "edit_tp" || event.type === "edit_limit" ? price : null,
+    stopPrice: event.type === "edit_sl" ? price : null,
+    trailPrice: null
+  };
+}
+
+export async function executeProjectXManagementTrade(trade: TradeAlert, event: TradeManagementEvent): Promise<ProjectXAutoTradeResult> {
+  if (!projectXAutoTradingEnabled()) {
+    return result("disabled", { error: "PROJECTX_AUTO_TRADE_ENABLED is disabled." });
+  }
+
+  if (trade.market !== "futures") {
+    return result("skipped", { error: "ProjectX management is only enabled for futures signals." });
+  }
+
+  try {
+    const connection = await refreshedConnection();
+    if (!connection) return result("skipped", { error: "No TopstepX ProjectX connection is available." });
+
+    const sourceOrders = managementSourceOrders(trade, event);
+    if (!sourceOrders.length) {
+      return result("skipped", { error: "No placed ProjectX order metadata was stored for this trade." });
+    }
+
+    const orders: AutoTradeOrderSummary[] = [];
+    for (const sourceOrder of sourceOrders) {
+      if (sourceOrder.status === "dry_run" || dryRunEnabled()) {
+        orders.push({
+          ...sourceOrder,
+          error: "Dry run: ProjectX order modification was not sent.",
+          status: "dry_run"
+        });
+        continue;
+      }
+
+      if (event.type === "edit_limit" && sourceOrder.orderId) {
+        try {
+          await modifyProjectXOrder(
+            connection.token,
+            managementModifyPayload(sourceOrder.accountId, sourceOrder.orderId, sourceOrder.size, event)
+          );
+          orders.push({ ...sourceOrder, status: "placed" });
+        } catch (error) {
+          orders.push({ ...sourceOrder, error: readableProjectXError(error), status: "failed" });
+        }
+        continue;
+      }
+
+      const openOrders = await searchProjectXOpenOrders(connection.token, sourceOrder.accountId);
+      const matches = matchingOpenOrders(trade, event, sourceOrder, openOrders);
+      if (matches.length !== 1) {
+        orders.push({
+          ...sourceOrder,
+          error: matches.length
+            ? `Found ${matches.length} matching ProjectX open orders; skipped to avoid modifying the wrong order.`
+            : "No matching ProjectX open order was found for this managed TP/SL.",
+          status: "skipped"
+        });
+        continue;
+      }
+
+      const match = matches[0]!;
+      const orderId = openOrderId(match);
+      if (orderId == null) {
+        orders.push({ ...sourceOrder, error: "Matched ProjectX order did not include an order id.", status: "failed" });
+        continue;
+      }
+
+      try {
+        await modifyProjectXOrder(
+          connection.token,
+          managementModifyPayload(sourceOrder.accountId, orderId, match.size ?? sourceOrder.size, event)
+        );
+        orders.push({
+          ...sourceOrder,
+          orderId,
+          status: "placed"
+        });
+      } catch (error) {
+        orders.push({
+          ...sourceOrder,
+          orderId,
+          error: readableProjectXError(error),
+          status: "failed"
+        });
+      }
+    }
+
+    const actionableOrders = orders.filter((order) => order.status !== "skipped");
+    const placedOrders = orders.filter((order) => order.status === "placed");
+    if (!actionableOrders.length) return result("skipped", summarizeOrders(orders));
+    if (orders.some((order) => order.status === "dry_run")) return result("dry_run", summarizeOrders(orders));
+    if (placedOrders.length) return result("placed", summarizeOrders(orders));
+    return result("failed", summarizeOrders(orders));
+  } catch (error) {
+    return result("failed", { error: readableProjectXError(error) });
+  }
 }
 
 export async function executeProjectXAutoTrade(trade: TradeAlert): Promise<ProjectXAutoTradeResult> {

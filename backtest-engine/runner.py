@@ -4,7 +4,7 @@ import argparse
 import csv
 import json
 import math
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from functools import lru_cache
 from pathlib import Path
@@ -707,6 +707,7 @@ class OpenTrade:
     forced_exit_minute: int | None = None
     forced_exit_day_offset: int = 0
     forced_exit_reason: str = "time_exit"
+    management_events: list[dict[str, Any]] = field(default_factory=list)
 
 
 @dataclass(frozen=True)
@@ -738,6 +739,7 @@ class BacktestTradeRow:
     sl_mode: str
     size_mode: str
     size_multiplier: float
+    management_events: tuple[dict[str, Any], ...] = ()
 
 
 STRATEGY_METADATA_FILES = (
@@ -3658,6 +3660,60 @@ def dynamic_take_profit_price(
     return None
 
 
+def management_event_id(open_trade: OpenTrade, event_type: str, event_time: int, price: float) -> str:
+    return f"{open_trade.signal_time}:{open_trade.entry_index}:{event_type}:{event_time}:{price:.10f}"
+
+
+def append_management_event(
+    open_trade: OpenTrade,
+    event_type: str,
+    event_time: int,
+    price: float,
+    previous_price: float,
+    reason: str,
+    label: str | None = None,
+) -> None:
+    event: dict[str, Any] = {
+        "createdAt": iso_time(event_time),
+        "entryPrice": open_trade.entry_price,
+        "id": management_event_id(open_trade, event_type, event_time, price),
+        "previousPrice": previous_price,
+        "price": price,
+        "reason": reason,
+        "stopLossPrice": open_trade.stop_loss if event_type != "edit_sl" else price,
+        "takeProfitPrice": open_trade.take_profit if event_type != "edit_tp" else price,
+        "time": iso_time(event_time),
+        "type": event_type,
+    }
+    if label:
+        event["label"] = label
+    open_trade.management_events.append(event)
+
+
+def dynamic_stop_reason(strategy: BacktestStrategy, candidate_stop: float, open_trade: OpenTrade, asset: AssetConfig) -> tuple[str, str | None]:
+    tolerance = max(abs(asset.tick_size), 1e-12) * 0.5
+    if abs(candidate_stop - open_trade.entry_price) <= tolerance:
+        return "Move SL to Break Even after price moved at least 1R in favor.", "Break Even"
+    mode = strategy.dynamic_stop_loss_policy.mode if strategy.dynamic_stop_loss_policy else ""
+    if mode == "trail_prior_bar":
+        return "Trail SL using the prior completed bar.", None
+    if mode == "trail_hourly_pivot":
+        return "Trail SL using the latest confirmed hourly pivot.", None
+    return "Dynamic stop-loss policy adjusted the stop.", None
+
+
+def dynamic_take_profit_reason(strategy: BacktestStrategy) -> str:
+    mode = strategy.dynamic_take_profit_policy.mode if strategy.dynamic_take_profit_policy else ""
+    if mode == "trail_prior_bar":
+        return "Trail TP using the prior completed bar."
+    if mode == "trail_hourly_extreme":
+        return "Trail TP using the latest confirmed hourly extreme."
+    if mode == "risk_multiple":
+        reward_multiple = strategy.dynamic_take_profit_policy.reward_multiple if strategy.dynamic_take_profit_policy else None
+        return f"Edit TP to maintain {reward_multiple}R against the managed stop." if reward_multiple else "Edit TP against the managed stop."
+    return "Dynamic take-profit policy adjusted the target."
+
+
 def apply_dynamic_trade_management(
     strategy: BacktestStrategy,
     open_trade: OpenTrade,
@@ -3673,15 +3729,21 @@ def apply_dynamic_trade_management(
         candidate_stop = dynamic_stop_loss_price(strategy, strategy.dynamic_stop_loss_policy, open_trade, data, reference_index, asset)
         if candidate_stop is not None and candidate_stop != open_trade.stop_loss:
             if managed_trade_levels_valid(open_trade.side, candidate_stop, open_trade.take_profit, asset.tick_size):
+                previous_stop = open_trade.stop_loss
+                reason, label = dynamic_stop_reason(strategy, candidate_stop, open_trade, asset)
                 open_trade.stop_loss = candidate_stop
                 open_trade.sl_units = signal_units(open_trade.entry_price, candidate_stop, asset.tick_size)
+                append_management_event(open_trade, "edit_sl", int(data.times[index]), candidate_stop, previous_stop, reason, label)
 
     if strategy.dynamic_take_profit_policy is not None:
         candidate_take_profit = dynamic_take_profit_price(strategy, strategy.dynamic_take_profit_policy, open_trade, data, reference_index, asset)
         if candidate_take_profit is not None and candidate_take_profit != open_trade.take_profit:
             if managed_trade_levels_valid(open_trade.side, open_trade.stop_loss, candidate_take_profit, asset.tick_size):
+                previous_take_profit = open_trade.take_profit
+                reason = dynamic_take_profit_reason(strategy)
                 open_trade.take_profit = candidate_take_profit
                 open_trade.tp_units = signal_units(open_trade.entry_price, candidate_take_profit, asset.tick_size)
+                append_management_event(open_trade, "edit_tp", int(data.times[index]), candidate_take_profit, previous_take_profit, reason)
 
 
 def pending_order_touched(order: PendingOrder, data: EnrichedData, index: int) -> bool:
@@ -4769,6 +4831,7 @@ def complete_trade(
         sl_mode=open_trade.sl_mode,
         size_mode=open_trade.size_mode,
         size_multiplier=open_trade.size_multiplier,
+        management_events=tuple(open_trade.management_events),
     )
 
 
@@ -4813,6 +4876,7 @@ def refine_trade_with_execution_data(
     resolved_exit_index = exit_index
     resolved_exit_reason = trade.exit_reason
     for cursor in range(entry_index, exit_index + 1):
+        apply_dynamic_trade_management(strategy, open_trade, execution_data, cursor, asset)
         exit_result = trade_exit(open_trade, execution_data, cursor, asset.tick_size)
         if exit_result is not None:
             resolved_exit_price, resolved_exit_reason = exit_result
@@ -4964,6 +5028,12 @@ def csv_number(value: float) -> str:
     return f"{value:.12f}".rstrip("0").rstrip(".")
 
 
+def csv_management_events(events: tuple[dict[str, Any], ...]) -> str:
+    if not events:
+        return ""
+    return json.dumps(list(events), separators=(",", ":"), sort_keys=True)
+
+
 def write_strategy_backtest_csv(csv_path: Path, trades: list[BacktestTradeRow]) -> None:
     csv_path.parent.mkdir(parents=True, exist_ok=True)
     temp_path = csv_path.with_suffix(f"{csv_path.suffix}.tmp")
@@ -4998,6 +5068,7 @@ def write_strategy_backtest_csv(csv_path: Path, trades: list[BacktestTradeRow]) 
                 "sl_mode",
                 "size_mode",
                 "size_multiplier",
+                "management_events",
             ]
         )
         for trade in trades:
@@ -5030,6 +5101,7 @@ def write_strategy_backtest_csv(csv_path: Path, trades: list[BacktestTradeRow]) 
                     trade.sl_mode,
                     trade.size_mode,
                     csv_number(trade.size_multiplier),
+                    csv_management_events(trade.management_events),
                 ]
             )
     temp_path.replace(csv_path)
@@ -5044,6 +5116,34 @@ def parse_iso_timestamp(value: str) -> int:
 
 def parse_side(value: str) -> int:
     return 1 if value.strip().lower() == "long" else -1
+
+
+def parse_management_events(value: str | None) -> tuple[dict[str, Any], ...]:
+    if not value:
+        return ()
+    try:
+        parsed = json.loads(value)
+    except json.JSONDecodeError:
+        return ()
+    if not isinstance(parsed, list):
+        return ()
+    events: list[dict[str, Any]] = []
+    for event in parsed:
+        if not isinstance(event, dict):
+            continue
+        event_type = event.get("type")
+        event_time = event.get("time")
+        price = event.get("price")
+        if event_type not in {"edit_sl", "edit_tp", "edit_limit"} or not isinstance(event_time, str):
+            continue
+        try:
+            numeric_price = float(price)
+        except (TypeError, ValueError):
+            continue
+        if not maybe_number(numeric_price):
+            continue
+        events.append(dict(event))
+    return tuple(events)
 
 
 def read_strategy_backtest_csv(csv_path: Path) -> list[BacktestTradeRow]:
@@ -5084,6 +5184,7 @@ def read_strategy_backtest_csv(csv_path: Path) -> list[BacktestTradeRow]:
                         sl_mode=str(row.get("sl_mode", "fixed") or "fixed"),
                         size_mode=str(row.get("size_mode", "auto") or "auto"),
                         size_multiplier=float(row.get("size_multiplier", 1) or 1),
+                        management_events=parse_management_events(row.get("management_events")),
                     )
                 )
             except (KeyError, TypeError, ValueError):

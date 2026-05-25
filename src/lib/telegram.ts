@@ -346,6 +346,12 @@ export function formatTelegramManagementMessage(trade: TradeAlert, event: TradeM
   const reason = event.reason ? `Reason: ${escapeHtml(truncate(event.reason, 120))}` : undefined;
   const instrumentLabel = telegramInstrumentLabel(trade);
   const sourceSignal = instrumentLabel !== trade.symbol ? `Signal ${escapeHtml(trade.symbol)}` : undefined;
+  const execution =
+    event.autoTradeStatus || event.autoTradeError
+      ? `${event.autoTradeStatus ? autoTradeStatusLabel(event.autoTradeStatus) : "Auto trade"}${
+          event.autoTradeError ? ` - ${escapeHtml(truncate(event.autoTradeError, 160))}` : ""
+        }`
+      : undefined;
   const lines = [
     telegramTitle(`${instrumentLabel} ${managementEventTitle(event)}`),
     sourceSignal,
@@ -360,7 +366,10 @@ export function formatTelegramManagementMessage(trade: TradeAlert, event: TradeM
     `Entry: <code>${formatTradePrice(event.entryPrice ?? trade.entryPrice)}</code>`,
     `Take Profit: <code>${formatTradePrice(event.takeProfitPrice ?? (event.type === "edit_tp" ? event.price : trade.takeProfitPrice))}</code>`,
     `Stop Loss: <code>${formatTradePrice(event.stopLossPrice ?? (event.type === "edit_sl" ? event.price : trade.stopLossPrice))}</code>`,
-    `Time: ${escapeHtml(formatSignalTime(event.time))}`
+    `Time: ${escapeHtml(formatSignalTime(event.time))}`,
+    execution ? "" : undefined,
+    execution ? `<b>Execution:</b>` : undefined,
+    execution
   ];
   return fitTelegramMessage(joinTelegramLines(lines));
 }

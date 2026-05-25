@@ -14,6 +14,7 @@ import { createPortal } from "react-dom";
 import { useAutoTradeAdminMode } from "@/components/auto-trading/use-auto-trade-account-mode";
 import TradePriceChart, { TRADE_CHART_TIMEFRAMES, type TradeChartBar, type TradeChartTimeframe } from "@/components/trades/trade-price-chart";
 import LocalDateTime from "@/components/ui/local-date-time";
+import type { TradeManagementEvent } from "@/lib/types";
 
 export type TradeHistoryRow = {
   id: string;
@@ -43,6 +44,7 @@ export type TradeHistoryRow = {
   exitPrice: number;
   targetPrice: number;
   stopPrice: number;
+  managementEvents?: TradeManagementEvent[];
   signalTimeLabel: string;
   entryTimeLabel: string;
   exitTimeLabel: string;
@@ -286,6 +288,35 @@ type MiniChartPoint = {
   x: number;
 };
 
+type ManagedTradeLevels = {
+  entryPrice: number;
+  stopPrice: number;
+  targetPrice: number;
+};
+
+type MiniLevelSegment = {
+  label?: string;
+  tone: "tp" | "sl" | "entry" | "limit";
+  value: number;
+  x1: number;
+  x2: number;
+  y: number;
+};
+
+type MiniLevelConnector = {
+  tone: "tp" | "sl";
+  x: number;
+  y1: number;
+  y2: number;
+};
+
+type MiniManagementMarker = {
+  label: string;
+  tone: "tp" | "sl" | "limit";
+  x: number;
+  y: number;
+};
+
 const CALENDAR_DOW_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 function dateKeyUTC(value: string | undefined): string {
@@ -393,6 +424,56 @@ function sessionLabel(value: string): string {
   if (hour >= 0 && hour < 9) return "London";
   if (hour >= 5 && hour < 14) return "New York";
   return "Sydney";
+}
+
+function eventPrice(event: TradeManagementEvent, type: TradeManagementEvent["type"]): number | null {
+  const value =
+    type === "edit_sl"
+      ? event.stopLossPrice ?? event.price
+      : type === "edit_tp"
+        ? event.takeProfitPrice ?? event.price
+        : event.entryPrice ?? event.price;
+  return Number.isFinite(value) ? value : null;
+}
+
+function orderedManagementEvents(trade: TradeHistoryRow): TradeManagementEvent[] {
+  return [...(trade.managementEvents ?? [])]
+    .filter((event) => Number.isFinite(event.price) && Number.isFinite(Date.parse(event.time)))
+    .sort((left, right) => Date.parse(left.time) - Date.parse(right.time));
+}
+
+function managedTradeLevelsAt(trade: TradeHistoryRow, timeMs: number): ManagedTradeLevels {
+  const levels: ManagedTradeLevels = {
+    entryPrice: trade.entryPrice,
+    stopPrice: trade.stopPrice,
+    targetPrice: trade.targetPrice
+  };
+
+  for (const event of orderedManagementEvents(trade)) {
+    const eventMs = Date.parse(event.time);
+    if (!Number.isFinite(eventMs) || eventMs > timeMs) break;
+    if (event.type === "edit_sl") levels.stopPrice = eventPrice(event, "edit_sl") ?? levels.stopPrice;
+    if (event.type === "edit_tp") levels.targetPrice = eventPrice(event, "edit_tp") ?? levels.targetPrice;
+    if (event.type === "edit_limit") levels.entryPrice = eventPrice(event, "edit_limit") ?? levels.entryPrice;
+  }
+
+  return levels;
+}
+
+function managedLevelPrices(trade: TradeHistoryRow): number[] {
+  const prices = [trade.entryPrice, trade.exitPrice, trade.targetPrice, trade.stopPrice];
+  for (const event of orderedManagementEvents(trade)) {
+    const value = eventPrice(event, event.type);
+    if (value != null) prices.push(value);
+  }
+  return prices.filter((value) => Number.isFinite(value));
+}
+
+function managementMarkerLabel(event: TradeManagementEvent): string {
+  if (event.label) return event.label;
+  if (event.type === "edit_sl") return "SL";
+  if (event.type === "edit_tp") return "TP";
+  return "Limit";
 }
 
 function buildMiniChartPoints(trade: TradeHistoryRow, bars: ChartBar[]): MiniChartPoint[] {
@@ -516,13 +597,14 @@ export function BacktestTradeMiniChart({
     const margins = width < 640 ? { top: 22, right: 16, bottom: 42, left: 58 } : { top: 24, right: 34, bottom: 46, left: 76 };
     const plotWidth = width - margins.left - margins.right;
     const plotHeight = height - margins.top - margins.bottom;
-    const plannedUpper = direction === 1 ? trade.targetPrice : trade.stopPrice;
-    const plannedLower = direction === 1 ? trade.stopPrice : trade.targetPrice;
+    const managedPrices = managedLevelPrices(trade);
+    const plannedUpper = direction === 1 ? Math.max(...managedPrices) : Math.max(...managedPrices);
+    const plannedLower = direction === 1 ? Math.min(...managedPrices) : Math.min(...managedPrices);
     let low = plannedLower;
     let high = plannedUpper;
     if (!Number.isFinite(low) || !Number.isFinite(high) || high <= low) {
-      low = Math.min(trade.stopPrice, trade.targetPrice, trade.entryPrice, trade.exitPrice);
-      high = Math.max(trade.stopPrice, trade.targetPrice, trade.entryPrice, trade.exitPrice);
+      low = Math.min(...managedPrices);
+      high = Math.max(...managedPrices);
     }
     if (!Number.isFinite(low) || !Number.isFinite(high) || high <= low) {
       low = Math.min(trade.entryPrice, trade.exitPrice);
@@ -598,11 +680,58 @@ export function BacktestTradeMiniChart({
     const entryY = scaleY(trade.entryPrice);
     const areaPath = `${linePath} L ${points[points.length - 1]!.xCoord.toFixed(2)} ${entryY.toFixed(2)} L ${points[0]!.xCoord.toFixed(2)} ${entryY.toFixed(2)} Z`;
     const gridTicks = [0, 0.25, 0.5, 0.75, 1].map((ratio) => yMax - (yMax - yMin) * ratio);
-    const levels = [
-      { label: "TP", tone: "tp", value: trade.targetPrice },
-      { label: "Entry", tone: "entry", value: trade.entryPrice },
-      { label: "SL", tone: "sl", value: trade.stopPrice }
-    ].filter((level) => Number.isFinite(level.value));
+    const eventX = (time: string) => {
+      const eventMs = Date.parse(time);
+      if (!Number.isFinite(eventMs)) return null;
+      const entryMs = Date.parse(trade.entryTime);
+      const safeEntryMs = Number.isFinite(entryMs) ? entryMs : data[0]?.timeMs ?? eventMs;
+      return clamp((eventMs - safeEntryMs) / 60_000, 0, xMax);
+    };
+    const buildManagedSegments = (type: "edit_tp" | "edit_sl", initialValue: number, tone: "tp" | "sl") => {
+      const segments: MiniLevelSegment[] = [];
+      const connectors: MiniLevelConnector[] = [];
+      const markers: MiniManagementMarker[] = [];
+      let currentValue = initialValue;
+      let currentX = 0;
+      for (const event of orderedManagementEvents(trade).filter((candidate) => candidate.type === type)) {
+        const nextValue = eventPrice(event, type);
+        const x = eventX(event.time);
+        if (nextValue == null || x == null) continue;
+        if (x > currentX) {
+          segments.push({ tone, value: currentValue, x1: scaleX(currentX), x2: scaleX(x), y: scaleY(currentValue) });
+        }
+        connectors.push({ tone, x: scaleX(x), y1: scaleY(currentValue), y2: scaleY(nextValue) });
+        markers.push({ label: managementMarkerLabel(event), tone, x: scaleX(x), y: scaleY(nextValue) });
+        currentValue = nextValue;
+        currentX = x;
+      }
+      segments.push({ label: type === "edit_tp" ? "TP" : "SL", tone, value: currentValue, x1: scaleX(currentX), x2: scaleX(xMax), y: scaleY(currentValue) });
+      return { connectors, markers, segments };
+    };
+    const targetLevel = buildManagedSegments("edit_tp", trade.targetPrice, "tp");
+    const stopLevel = buildManagedSegments("edit_sl", trade.stopPrice, "sl");
+    const levelSegments = [...targetLevel.segments, ...stopLevel.segments];
+    const levelConnectors = [...targetLevel.connectors, ...stopLevel.connectors];
+    const managementMarkers = [...targetLevel.markers, ...stopLevel.markers];
+    const entryLevel: MiniLevelSegment = {
+      label: trade.entryType === "limit" ? "Limit Entry" : "Entry",
+      tone: "entry",
+      value: trade.entryPrice,
+      x1: scaleX(0),
+      x2: scaleX(xMax),
+      y: scaleY(trade.entryPrice)
+    };
+    const limitEntryLine: MiniLevelSegment | null =
+      trade.entryType === "limit"
+        ? {
+            label: "Limit",
+            tone: "limit",
+            value: trade.entryPrice,
+            x1: scaleX(0),
+            x2: scaleX(Math.max(1, Math.min(xMax, xMax * 0.18))),
+            y: scaleY(trade.entryPrice)
+          }
+        : null;
     const xTicks = [
       { label: "Entry", value: 0 },
       { label: formatMinutesCompact(xMax / 2), value: xMax / 2 },
@@ -616,10 +745,14 @@ export function BacktestTradeMiniChart({
       entryY,
       gridTicks,
       height,
-      levels,
+      entryLevel,
+      levelConnectors,
+      levelSegments,
+      limitEntryLine,
       linePath,
       maeIndex,
       margins,
+      managementMarkers,
       mfeIndex,
       plotHeight,
       plotWidth,
@@ -631,7 +764,20 @@ export function BacktestTradeMiniChart({
       xMax,
       xTicks
     };
-  }, [chartWidth, data, direction, dollarsPerPoint, entryPrice, trade.entryPrice, trade.exitPrice, trade.stopPrice, trade.targetPrice]);
+  }, [
+    chartWidth,
+    data,
+    direction,
+    dollarsPerPoint,
+    entryPrice,
+    trade.entryPrice,
+    trade.entryTime,
+    trade.entryType,
+    trade.exitPrice,
+    trade.managementEvents,
+    trade.stopPrice,
+    trade.targetPrice
+  ]);
 
   if (status === "loading") {
     return <div className="backtest-trade-mini-empty">Loading price movement...</div>;
@@ -649,8 +795,9 @@ export function BacktestTradeMiniChart({
   const tooltipSide = activeX > chart.width * 0.68 ? "left" : "right";
   const tooltipTop = clamp(activeY, 44, chart.height - 52);
   const tooltipTopRatio = tooltipTop / chart.height;
-  const targetGapDollars = (trade.targetPrice - activePoint.price) * direction * dollarsPerPoint;
-  const stopBufferDollars = (activePoint.price - trade.stopPrice) * direction * dollarsPerPoint;
+  const activeLevels = managedTradeLevelsAt(trade, activePoint.timeMs);
+  const targetGapDollars = (activeLevels.targetPrice - activePoint.price) * direction * dollarsPerPoint;
+  const stopBufferDollars = (activePoint.price - activeLevels.stopPrice) * direction * dollarsPerPoint;
   const isStillOpen = trade.exitReasonLabel.trim().toLowerCase().includes("still open");
   const isTradeWinner = trade.pnlDollars >= 0;
   const chartTone = isStillOpen ? "neutral" : isTradeWinner ? "up" : "down";
@@ -711,26 +858,19 @@ export function BacktestTradeMiniChart({
         </defs>
         <rect x="0" y="0" width={plot.width} height={plot.height} className="backtest-trade-mini-bg" />
 
-        {Number.isFinite(trade.targetPrice) ? (
-          <rect
-            x={plot.margins.left}
-            y={Math.min(plot.scaleY(trade.targetPrice), plot.entryY)}
-            width={plot.plotWidth}
-            height={Math.abs(plot.entryY - plot.scaleY(trade.targetPrice))}
-            className="backtest-trade-mini-zone tp"
-            fill={`url(#${chartId}-tp-zone)`}
-          />
-        ) : null}
-        {Number.isFinite(trade.stopPrice) ? (
-          <rect
-            x={plot.margins.left}
-            y={Math.min(plot.scaleY(trade.stopPrice), plot.entryY)}
-            width={plot.plotWidth}
-            height={Math.abs(plot.entryY - plot.scaleY(trade.stopPrice))}
-            className="backtest-trade-mini-zone sl"
-            fill={`url(#${chartId}-sl-zone)`}
-          />
-        ) : null}
+        {plot.levelSegments.map((segment, index) =>
+          segment.tone === "entry" || segment.tone === "limit" ? null : (
+            <rect
+              key={`zone-${segment.tone}-${index}`}
+              x={Math.min(segment.x1, segment.x2)}
+              y={Math.min(segment.y, plot.entryY)}
+              width={Math.abs(segment.x2 - segment.x1)}
+              height={Math.abs(plot.entryY - segment.y)}
+              className={`backtest-trade-mini-zone ${segment.tone}`}
+              fill={`url(#${chartId}-${segment.tone === "tp" ? "tp" : "sl"}-zone)`}
+            />
+          )
+        )}
 
         {plot.gridTicks.map((value, index) => {
           const y = plot.scaleY(value);
@@ -767,23 +907,70 @@ export function BacktestTradeMiniChart({
           );
         })}
 
-        {plot.levels.map((level) => {
-          const y = plot.scaleY(level.value);
-          return (
-            <g key={`${level.tone}-${level.value}`}>
-              <line
-                x1={plot.margins.left}
-                x2={plot.width - plot.margins.right}
-                y1={y}
-                y2={y}
-                className={`backtest-trade-mini-level ${level.tone}`}
-              />
-              <text x={plot.margins.left + 8} y={y - 7} className={`backtest-trade-mini-level-label ${level.tone}`}>
-                {level.label}
+        <g>
+          <line
+            x1={plot.entryLevel.x1}
+            x2={plot.entryLevel.x2}
+            y1={plot.entryLevel.y}
+            y2={plot.entryLevel.y}
+            className="backtest-trade-mini-level entry"
+          />
+          <text x={plot.margins.left + 8} y={plot.entryLevel.y - 7} className="backtest-trade-mini-level-label entry">
+            {plot.entryLevel.label}
+          </text>
+        </g>
+
+        {plot.limitEntryLine ? (
+          <g>
+            <line
+              x1={plot.limitEntryLine.x1}
+              x2={plot.limitEntryLine.x2}
+              y1={plot.limitEntryLine.y}
+              y2={plot.limitEntryLine.y}
+              className="backtest-trade-mini-level limit"
+            />
+            <text x={plot.limitEntryLine.x2 + 6} y={plot.limitEntryLine.y + 14} className="backtest-trade-mini-level-label limit">
+              {plot.limitEntryLine.label}
+            </text>
+          </g>
+        ) : null}
+
+        {plot.levelSegments.map((segment, index) => (
+          <g key={`level-${segment.tone}-${index}-${segment.value}`}>
+            <line
+              x1={segment.x1}
+              x2={segment.x2}
+              y1={segment.y}
+              y2={segment.y}
+              className={`backtest-trade-mini-level ${segment.tone}`}
+            />
+            {segment.label ? (
+              <text x={Math.min(segment.x1 + 8, plot.width - plot.margins.right - 48)} y={segment.y - 7} className={`backtest-trade-mini-level-label ${segment.tone}`}>
+                {segment.label}
               </text>
-            </g>
-          );
-        })}
+            ) : null}
+          </g>
+        ))}
+
+        {plot.levelConnectors.map((connector, index) => (
+          <line
+            key={`connector-${connector.tone}-${index}`}
+            x1={connector.x}
+            x2={connector.x}
+            y1={connector.y1}
+            y2={connector.y2}
+            className={`backtest-trade-mini-level ${connector.tone} connector`}
+          />
+        ))}
+
+        {plot.managementMarkers.map((marker, index) => (
+          <g key={`management-marker-${marker.tone}-${index}`} className={`backtest-trade-mini-managed-marker ${marker.tone}`}>
+            <circle cx={marker.x} cy={marker.y} r="4" />
+            <text x={marker.x + 7} y={marker.y - 7}>
+              {marker.label}
+            </text>
+          </g>
+        ))}
 
         {plot.points.map((point, index) => {
           const highY = plot.scaleY(point.high);
@@ -926,11 +1113,11 @@ export function BacktestTradeMiniChart({
                 </span>
                 <span>
                   <small>TP</small>
-                  <strong className="up">{trade.targetPriceLabel}</strong>
+                  <strong className="up">{formatChartPrice(activeLevels.targetPrice)}</strong>
                 </span>
                 <span>
                   <small>SL</small>
-                  <strong className="down">{trade.stopPriceLabel}</strong>
+                  <strong className="down">{formatChartPrice(activeLevels.stopPrice)}</strong>
                 </span>
               </div>
             </>

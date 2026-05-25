@@ -3720,6 +3720,17 @@ html[data-theme="light"] .themeDarkLabel {
   stroke: rgba(255, 255, 255, 0.44);
 }
 
+.backtest-trade-mini-level.limit {
+  stroke: rgba(251, 191, 36, 0.88);
+  stroke-dasharray: 2 5;
+  stroke-width: 1.6;
+}
+
+.backtest-trade-mini-level.connector {
+  stroke-dasharray: 2 4;
+  stroke-width: 1;
+}
+
 .backtest-trade-mini-level-label {
   font-size: 10px;
 }
@@ -3734,6 +3745,37 @@ html[data-theme="light"] .themeDarkLabel {
 
 .backtest-trade-mini-level-label.entry {
   fill: rgba(255, 255, 255, 0.64);
+}
+
+.backtest-trade-mini-level-label.limit {
+  fill: rgba(251, 191, 36, 0.96);
+}
+
+.backtest-trade-mini-managed-marker circle {
+  fill: #080808;
+  stroke-width: 1.8;
+}
+
+.backtest-trade-mini-managed-marker.tp circle {
+  stroke: rgba(52, 211, 153, 0.96);
+}
+
+.backtest-trade-mini-managed-marker.sl circle {
+  stroke: rgba(248, 113, 113, 0.96);
+}
+
+.backtest-trade-mini-managed-marker.limit circle {
+  stroke: rgba(251, 191, 36, 0.96);
+}
+
+.backtest-trade-mini-managed-marker text {
+  fill: rgba(255, 255, 255, 0.78);
+  font-size: 10px;
+  font-weight: 900;
+  paint-order: stroke;
+  stroke: rgba(8, 8, 8, 0.86);
+  stroke-linejoin: round;
+  stroke-width: 3px;
 }
 
 .backtest-trade-mini-zone {
@@ -7689,9 +7731,26 @@ html[data-theme="light"] .backtest-trade-mini-level.entry {
   stroke: rgba(15, 23, 42, 0.36);
 }
 
+html[data-theme="light"] .backtest-trade-mini-level.limit {
+  stroke: rgba(217, 119, 6, 0.86);
+}
+
 html[data-theme="light"] .backtest-trade-mini-level-label.entry,
 html[data-theme="light"] .backtest-trade-mini-marker.exit text {
   fill: rgba(15, 23, 42, 0.62);
+}
+
+html[data-theme="light"] .backtest-trade-mini-level-label.limit {
+  fill: rgba(180, 83, 9, 0.88);
+}
+
+html[data-theme="light"] .backtest-trade-mini-managed-marker circle {
+  fill: #ffffff;
+}
+
+html[data-theme="light"] .backtest-trade-mini-managed-marker text {
+  fill: rgba(15, 23, 42, 0.7);
+  stroke: rgba(255, 255, 255, 0.9);
 }
 
 html[data-theme="light"] .backtest-trade-mini-marker circle,

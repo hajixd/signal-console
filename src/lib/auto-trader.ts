@@ -10,10 +10,10 @@ import {
 import { executeMatchTraderAutoTrade, matchTraderConfigured } from "@/lib/matchtrader-auto-trader";
 import { getAutoTradeConnection } from "@/lib/auto-trade-connections";
 import { getLatestStoredProjectXConnection } from "@/lib/projectx-connections";
-import { executeProjectXAutoTrade, type ProjectXAutoTradeResult } from "@/lib/projectx-auto-trader";
+import { executeProjectXAutoTrade, executeProjectXManagementTrade, type ProjectXAutoTradeResult } from "@/lib/projectx-auto-trader";
 import { executeTradeLockerAutoTrade, tradeLockerConfigured } from "@/lib/tradelocker-auto-trader";
 import { executeTradovateAutoTrade, tradovateConfigured } from "@/lib/tradovate-auto-trader";
-import type { AutoTradeOrderSummary, TradeAlert } from "@/lib/types";
+import type { AutoTradeOrderSummary, TradeAlert, TradeManagementEvent } from "@/lib/types";
 
 export type AutoTradeExecutionResult = ProjectXAutoTradeResult & {
   providerId?: AutoTradeProviderId;
@@ -22,6 +22,7 @@ export type AutoTradeExecutionResult = ProjectXAutoTradeResult & {
 
 type AutoTradeConnector = {
   execute: (trade: TradeAlert) => Promise<ProjectXAutoTradeResult>;
+  executeManagement?: (trade: TradeAlert, event: TradeManagementEvent) => Promise<ProjectXAutoTradeResult>;
   hasConnection?: () => Promise<boolean>;
   isConfigured: () => boolean;
   providerId: AutoTradeProviderId;
@@ -49,6 +50,7 @@ function unsafeLimitOrderGuard(trade: TradeAlert): AutoTradeExecutionResult | nu
 const AUTO_TRADE_CONNECTORS: AutoTradeConnector[] = [
   {
     execute: executeProjectXAutoTrade,
+    executeManagement: executeProjectXManagementTrade,
     hasConnection: hasStoredProjectXConnection,
     isConfigured: () => Boolean(process.env.PROJECTX_AUTO_TRADE_CONNECTION_ID?.trim()),
     providerId: "projectx"
@@ -150,4 +152,27 @@ export async function executeAutoTrade(trade: TradeAlert): Promise<AutoTradeExec
     error: `No live ${market} connector is connected yet. Add a live connector adapter, then this router will execute those signals.`,
     providerName: `${market === "futures" ? "Futures" : "Forex"} execution router`
   });
+}
+
+export async function executeAutoTradeManagement(trade: TradeAlert, event: TradeManagementEvent): Promise<AutoTradeExecutionResult> {
+  const providerId = (trade.autoTradeProviderId ?? process.env.AUTO_TRADE_FUTURES_PROVIDER ?? "projectx").trim() as AutoTradeProviderId;
+  const connector = AUTO_TRADE_CONNECTORS.find((candidate) => candidate.providerId === providerId) ?? AUTO_TRADE_CONNECTORS[0];
+  const provider = connector ? autoTradeProviderById(connector.providerId) : undefined;
+  const providerName = provider?.label ?? providerId;
+
+  if (!connector?.executeManagement) {
+    return result("skipped", {
+      error: `${providerName} does not support managed TP/SL modification in this app yet.`,
+      providerId,
+      providerName
+    });
+  }
+
+  const execution = await connector.executeManagement(trade, event);
+  return {
+    ...execution,
+    providerId: connector.providerId,
+    providerName,
+    orders: annotateOrders(execution.orders, connector.providerId, providerName)
+  };
 }

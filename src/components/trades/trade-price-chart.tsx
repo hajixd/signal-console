@@ -26,6 +26,7 @@ import {
 } from "lightweight-charts";
 import type { CanvasRenderingTarget2D } from "fancy-canvas";
 import { resolveFirstTradeBracketHit } from "@/lib/trade-bracket-truth";
+import type { TradeManagementEvent } from "@/lib/types";
 
 export type TradeChartBar = {
   index: number;
@@ -70,6 +71,7 @@ type TradeChartTrade = {
   exitPrice: number;
   targetPrice: number;
   stopPrice: number;
+  managementEvents?: TradeManagementEvent[];
   targetDollars?: number;
   riskDollars?: number;
   dollarsPerPricePoint?: number;
@@ -488,6 +490,7 @@ function firstBracketExitCandle(
   fallbackExitCandle: MappedCandle | null
 ): MappedCandle | null {
   if (!entryCandle || !fallbackExitCandle || !candles.length) return fallbackExitCandle;
+  if (trade.managementEvents?.length) return fallbackExitCandle;
 
   const hit = resolveFirstTradeBracketHit(
     {
@@ -598,8 +601,27 @@ function tradeVisualTheme(isLight: boolean): TradeVisualTheme {
   };
 }
 
-function tradeMarkerList(_snapshot: TradeVisualSnapshot | null): SeriesMarker<Time>[] {
-  return [];
+function tradeMarkerList(snapshot: TradeVisualSnapshot | null): SeriesMarker<Time>[] {
+  if (!snapshot?.currentReplayCandle) return [];
+  const currentMs = timeToMs(snapshot.currentReplayTime ?? snapshot.currentReplayCandle.time);
+  if (currentMs == null) return [];
+
+  return orderedTradeManagementEvents(snapshot.trade)
+    .filter((event) => Date.parse(event.time) <= currentMs)
+    .map((event): SeriesMarker<Time> | null => {
+      const timestamp = timestampFromTime(event.time);
+      if (timestamp == null) return null;
+      const kind: ManagedLevelKind = event.type === "edit_sl" ? "stop" : event.type === "edit_tp" ? "target" : "limit";
+      const label = event.label ?? (event.type === "edit_sl" ? "SL" : event.type === "edit_tp" ? "TP" : "Limit");
+      return {
+        color: kind === "stop" ? "#ff4c68" : kind === "target" ? "#35c971" : "#fbbf24",
+        position: event.type === "edit_sl" ? "belowBar" : "aboveBar",
+        shape: "circle",
+        text: label,
+        time: timestamp
+      };
+    })
+    .filter((marker): marker is SeriesMarker<Time> => Boolean(marker));
 }
 
 function emptyOverlayData(series: TradeOverlaySeries): void {
@@ -681,6 +703,110 @@ function overlayLineData(startTime: Time, endTime: Time, price: number) {
   ];
 }
 
+type ManagedLevelKind = "target" | "stop" | "limit";
+
+type ManagedChartLevels = {
+  entryPrice: number;
+  stopPrice: number;
+  targetPrice: number;
+};
+
+function timeToMs(time: Time | null | undefined): number | null {
+  if (time == null) return null;
+  if (typeof time === "number") return Number(time) * 1000;
+  if (typeof time === "string") {
+    const parsed = Date.parse(time);
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+  return Date.UTC(time.year, time.month - 1, time.day);
+}
+
+function chartTimeFromMs(ms: number): UTCTimestamp {
+  return Math.floor(ms / 1000) as UTCTimestamp;
+}
+
+function orderedTradeManagementEvents(trade: TradeChartTrade): TradeManagementEvent[] {
+  return [...(trade.managementEvents ?? [])]
+    .filter((event) => Number.isFinite(event.price) && Number.isFinite(Date.parse(event.time)))
+    .sort((left, right) => Date.parse(left.time) - Date.parse(right.time));
+}
+
+function managementEventPrice(event: TradeManagementEvent, kind: ManagedLevelKind): number | null {
+  const value =
+    kind === "stop"
+      ? event.stopLossPrice ?? event.price
+      : kind === "target"
+        ? event.takeProfitPrice ?? event.price
+        : event.entryPrice ?? event.price;
+  return Number.isFinite(value) ? value : null;
+}
+
+function managedChartLevelsAtTime(trade: TradeChartTrade, time: Time | null | undefined): ManagedChartLevels {
+  const levels: ManagedChartLevels = {
+    entryPrice: trade.entryPrice,
+    stopPrice: trade.stopPrice,
+    targetPrice: trade.targetPrice
+  };
+  const cutoffMs = timeToMs(time);
+  if (cutoffMs == null) return levels;
+
+  for (const event of orderedTradeManagementEvents(trade)) {
+    const eventMs = Date.parse(event.time);
+    if (!Number.isFinite(eventMs) || eventMs > cutoffMs) break;
+    if (event.type === "edit_sl") levels.stopPrice = managementEventPrice(event, "stop") ?? levels.stopPrice;
+    if (event.type === "edit_tp") levels.targetPrice = managementEventPrice(event, "target") ?? levels.targetPrice;
+    if (event.type === "edit_limit") levels.entryPrice = managementEventPrice(event, "limit") ?? levels.entryPrice;
+  }
+
+  return levels;
+}
+
+function managedLevelPrices(trade: TradeChartTrade): number[] {
+  const prices = [trade.entryPrice, trade.exitPrice, trade.targetPrice, trade.stopPrice];
+  for (const event of orderedTradeManagementEvents(trade)) {
+    const kind: ManagedLevelKind = event.type === "edit_sl" ? "stop" : event.type === "edit_tp" ? "target" : "limit";
+    const price = managementEventPrice(event, kind);
+    if (price != null) prices.push(price);
+  }
+  return prices.filter((value) => Number.isFinite(value));
+}
+
+function managedLevelLineData(trade: TradeChartTrade, kind: ManagedLevelKind, startTime: Time, endTime: Time) {
+  const startMs = timeToMs(startTime);
+  const endMs = timeToMs(endTime);
+  const initialValue = kind === "stop" ? trade.stopPrice : kind === "target" ? trade.targetPrice : trade.entryPrice;
+  if (startMs == null || endMs == null || endMs <= startMs) return [{ time: startTime, value: initialValue }];
+
+  const relevantEvents = orderedTradeManagementEvents(trade).filter((event) => {
+    if (kind === "stop") return event.type === "edit_sl";
+    if (kind === "target") return event.type === "edit_tp";
+    return event.type === "edit_limit";
+  });
+  const data: Array<{ time: Time; value: number }> = [{ time: chartTimeFromMs(startMs), value: initialValue }];
+  let currentValue = initialValue;
+  let lastMs = startMs;
+
+  for (const event of relevantEvents) {
+    const eventMs = Date.parse(event.time);
+    const nextValue = managementEventPrice(event, kind);
+    if (!Number.isFinite(eventMs) || nextValue == null || eventMs < startMs || eventMs > endMs) continue;
+    const stepMs = Math.max(lastMs + 1000, Math.min(eventMs, endMs));
+    if (stepMs > lastMs) data.push({ time: chartTimeFromMs(stepMs), value: currentValue });
+    const adjustedMs = Math.max(stepMs + 1000, Math.min(eventMs + 1000, endMs));
+    currentValue = nextValue;
+    if (adjustedMs > stepMs) {
+      data.push({ time: chartTimeFromMs(adjustedMs), value: currentValue });
+      lastMs = adjustedMs;
+    } else {
+      data[data.length - 1] = { time: chartTimeFromMs(stepMs), value: currentValue };
+      lastMs = stepMs;
+    }
+  }
+
+  if (endMs > lastMs) data.push({ time: chartTimeFromMs(endMs), value: currentValue });
+  return data;
+}
+
 function applyTradeOverlay(series: TradeOverlaySeries, snapshot: TradeVisualSnapshot): void {
   const limitOrderSignal =
     snapshot.trade.entryType === "limit" &&
@@ -723,14 +849,13 @@ function applyTradeOverlay(series: TradeOverlaySeries, snapshot: TradeVisualSnap
 
   const startTime = snapshot.entryCandle.time as Time;
   const pathEndTime = pathEndCandle.time as Time;
-  const areaEndCandle = snapshot.exitCandle ?? pathEndCandle;
-  const areaEndTime = areaEndCandle.time as Time;
+  const areaEndTime = (exitRevealed ? pathEndCandle.time : snapshot.currentReplayTime ?? pathEndCandle.time) as Time;
 
-  series.profitZone.setData(overlayLineData(startTime, areaEndTime, snapshot.trade.targetPrice));
-  series.lossZone.setData(overlayLineData(startTime, areaEndTime, snapshot.trade.stopPrice));
-  series.entryLine.setData(overlayLineData(startTime, areaEndTime, snapshot.trade.entryPrice));
-  series.targetLine.setData(overlayLineData(startTime, areaEndTime, snapshot.trade.targetPrice));
-  series.stopLine.setData(overlayLineData(startTime, areaEndTime, snapshot.trade.stopPrice));
+  series.profitZone.setData(managedLevelLineData(snapshot.trade, "target", startTime, areaEndTime));
+  series.lossZone.setData(managedLevelLineData(snapshot.trade, "stop", startTime, areaEndTime));
+  series.entryLine.setData(managedLevelLineData(snapshot.trade, "limit", startTime, areaEndTime));
+  series.targetLine.setData(managedLevelLineData(snapshot.trade, "target", startTime, areaEndTime));
+  series.stopLine.setData(managedLevelLineData(snapshot.trade, "stop", startTime, areaEndTime));
   series.pathLine.setData(
     isAscendingTime(startTime, pathEndTime)
       ? [
@@ -888,8 +1013,9 @@ function tradeDomOverlayGeometry(
   const areaEndCandleForTime = replayCandleForTime(candles, areaEndTime) ?? areaEndCandle;
   const areaEndX = chartXForTime(chart, candles, areaEndTime, dataTimeframe);
   const areaX2 = areaEndX == null ? markerX : chartCandleRightEdgeX(chart, candles, areaEndCandleForTime, areaEndX);
-  const yTarget = series.priceToCoordinate(snapshot.trade.targetPrice);
-  const yStop = series.priceToCoordinate(snapshot.trade.stopPrice);
+  const activeLevels = managedChartLevelsAtTime(snapshot.trade, endTime);
+  const yTarget = series.priceToCoordinate(activeLevels.targetPrice);
+  const yStop = series.priceToCoordinate(activeLevels.stopPrice);
   const yPathEnd = series.priceToCoordinate(pathEndPrice);
   const yExit = series.priceToCoordinate(snapshot.trade.exitPrice);
   const markerY = exitRevealed ? yExit : yPathEnd;
@@ -2944,7 +3070,7 @@ export default function TradePriceChart({
     const logicalRange = tradeLogicalRange(mappedCandles, entryCandle, exitCandle);
     const priceRange = tradePriceRange(
       mappedCandles,
-      [trade.entryPrice, trade.exitPrice, trade.targetPrice, trade.stopPrice],
+      managedLevelPrices(trade),
       logicalRange
     );
     lockedLogicalRangeRef.current = logicalRange;
@@ -3019,6 +3145,7 @@ export default function TradePriceChart({
     trade.entryPrice,
     trade.exitPrice,
     trade.id,
+    trade.managementEvents,
     trade.modelName,
     trade.pnlLabel,
     trade.phase,

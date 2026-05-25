@@ -74,6 +74,7 @@ export type NotificationStatus = "sent" | "skipped" | "failed";
 
 export type TradeManagementEvent = {
   autoTradeError?: string;
+  autoTradeOrders?: AutoTradeOrderSummary[];
   autoTradeStatus?: "disabled" | "dry_run" | "failed" | "placed" | "skipped";
   createdAt: string;
   discordError?: string;

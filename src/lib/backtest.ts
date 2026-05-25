@@ -4,6 +4,7 @@ import { recommendedSizeMultiplier } from "@/lib/instruments";
 import { readProjectText, readProjectTextIfExists } from "@/lib/project-assets";
 import type { StrategyDefinition } from "@/lib/strategy-definition";
 import { STRATEGY_DEFINITIONS } from "@/lib/strategy-loader";
+import type { TradeManagementEvent } from "@/lib/types";
 
 export type StrategyKey = string;
 export type BacktestPriceMode = "fixed" | "custom";
@@ -83,6 +84,7 @@ export type BacktestTrade = {
   assetKey: string;
   strategyId: string;
   sizeMultiplierHint?: number;
+  managementEvents?: TradeManagementEvent[];
 };
 
 export type BacktestAggregate = {
@@ -227,6 +229,31 @@ function optionalNumeric(value: string | undefined): number | undefined {
   if (/^inf(?:inity)?$/i.test(value)) return Infinity;
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : undefined;
+}
+
+function parseManagementEvents(value: string | undefined): TradeManagementEvent[] | undefined {
+  if (!value) return undefined;
+  try {
+    const parsed = JSON.parse(value) as unknown;
+    if (!Array.isArray(parsed)) return undefined;
+    const events = parsed
+      .map((event) => {
+        if (!event || typeof event !== "object") return null;
+        const candidate = event as Partial<TradeManagementEvent>;
+        if (!candidate.id || !candidate.time || !candidate.type) return null;
+        if (!["edit_sl", "edit_tp", "edit_limit"].includes(candidate.type)) return null;
+        if (typeof candidate.price !== "number" || !Number.isFinite(candidate.price)) return null;
+        return {
+          ...candidate,
+          createdAt: candidate.createdAt || candidate.time
+        } as TradeManagementEvent;
+      })
+      .filter((event): event is TradeManagementEvent => Boolean(event))
+      .sort((left, right) => Date.parse(left.time) - Date.parse(right.time));
+    return events.length ? events : undefined;
+  } catch {
+    return undefined;
+  }
 }
 
 function priceMode(value: string | undefined): BacktestPriceMode | undefined {
@@ -394,7 +421,8 @@ function backtestTradeFromRow(row: CsvRow, strategy: StrategyDefinition): Backte
     barsHeld: Math.max(1, numeric(row.bars_held) || numeric(row.exit_index) - numeric(row.entry_index) + 1),
     assetKey,
     strategyId: row.strategy_id || strategy.id,
-    sizeMultiplierHint: optionalNumeric(row.size_multiplier) ?? strategy.defaults?.sizeMultiplier
+    sizeMultiplierHint: optionalNumeric(row.size_multiplier) ?? strategy.defaults?.sizeMultiplier,
+    managementEvents: parseManagementEvents(row.management_events)
   };
 }
 
