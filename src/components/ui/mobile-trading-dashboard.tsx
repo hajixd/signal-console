@@ -174,19 +174,35 @@ function latestRowTime(rows: TradeHistoryRow[]): string | undefined {
     .sort((left, right) => Date.parse(right) - Date.parse(left))[0];
 }
 
+const PACIFIC_TIME_ZONE = "America/Los_Angeles";
+const PACIFIC_DATE_KEY_FORMATTER = new Intl.DateTimeFormat("en-US", {
+  day: "2-digit",
+  month: "2-digit",
+  timeZone: PACIFIC_TIME_ZONE,
+  year: "numeric"
+});
+
+function mobilePacificDateKey(value: string | undefined): string {
+  const date = value ? new Date(value) : null;
+  if (!date || !Number.isFinite(date.getTime())) return "";
+  const parts = PACIFIC_DATE_KEY_FORMATTER.formatToParts(date);
+  const year = parts.find((part) => part.type === "year")?.value;
+  const month = parts.find((part) => part.type === "month")?.value;
+  const day = parts.find((part) => part.type === "day")?.value;
+  return year && month && day ? `${year}-${month}-${day}` : "";
+}
+
 function mobileHistoryMonthKey(row: TradeHistoryRow): string {
   const time = row.exitTime || row.entryTime;
-  const date = time ? new Date(time) : null;
-  if (!date || !Number.isFinite(date.getTime())) return "unknown";
-  return date.toISOString().slice(0, 7);
+  return mobilePacificDateKey(time).slice(0, 7) || "unknown";
 }
 
 function mobileHistoryMonthLabel(monthKey: string): string {
   const [year, month] = monthKey.split("-").map((value) => Number(value));
   if (!Number.isFinite(year) || !Number.isFinite(month)) return "Unknown month";
-  return new Date(Date.UTC(year, month - 1, 1)).toLocaleString(undefined, {
+  return new Date(Date.UTC(year, month - 1, 15, 12)).toLocaleString(undefined, {
     month: "long",
-    timeZone: "UTC",
+    timeZone: PACIFIC_TIME_ZONE,
     year: "numeric"
   });
 }

@@ -294,6 +294,9 @@ function sideLabel(side: "long" | "short"): string {
 }
 
 function tradeSourceTimeframe(trade: BacktestTrade): TradeChartTimeframe {
+  if (trade.executionTimeframe && TRADE_CHART_TIMEFRAME_VALUES.has(trade.executionTimeframe as TradeChartTimeframe)) {
+    return trade.executionTimeframe as TradeChartTimeframe;
+  }
   return timeframeFromVariant(trade.variantId, "exec_tf") ?? timeframeFromVariant(trade.variantId, "tf") ?? "15m";
 }
 
@@ -1251,6 +1254,18 @@ function tradeRiskDollars(trade: BacktestTrade, sizeMultiplier = 1): number {
   return Math.abs(netRiskUnits * dollarPerUnit(trade.symbol, trade.entryPrice) * tradeSizeMultiplier(trade, sizeMultiplier));
 }
 
+function boundedBacktestTradeDollarPnl(trade: BacktestTrade, sizeMultiplier = 1): number {
+  const rawPnlDollars = tradeDollarPnl(trade, sizeMultiplier);
+  if (trade.managementEvents?.length) return rawPnlDollars;
+  return boundedTradeDollarPnl(rawPnlDollars, tradeTargetDollars(trade, sizeMultiplier), tradeRiskDollars(trade, sizeMultiplier));
+}
+
+function boundedBacktestTradeRMultiple(trade: BacktestTrade, sizeMultiplier = 1): number {
+  if (trade.managementEvents?.length) return trade.rMultiple;
+  const riskDollars = tradeRiskDollars(trade, sizeMultiplier);
+  return riskDollars > 0 ? boundedBacktestTradeDollarPnl(trade, sizeMultiplier) / riskDollars : trade.rMultiple;
+}
+
 function recentStrategyTrades(trades: BacktestTrade[]): BacktestTrade[] {
   return [...trades]
     .sort((left, right) => Date.parse(right.entryTime) - Date.parse(left.entryTime))
@@ -1674,23 +1689,26 @@ export default async function Home({ searchParams }: HomeProps) {
       .map((option) => datasetStatus?.assetCoverage?.[option.assetKey]?.lastBarAt)
       .filter((value): value is string => Boolean(value))
       .sort((left, right) => Date.parse(right) - Date.parse(left))[0];
-  const selectedBasketTrades = selectedBacktestTrades.map((trade) => ({
+  const selectedBasketTrades = selectedBacktestTrades.map((trade) => {
+    const sizeMultiplier = optionByKey.get(trade.datasetId)?.sizeMultiplier ?? 1;
+    return {
     key: trade.datasetId,
     signalTime: trade.signalTime,
     entryTime: trade.entryTime,
     exitTime: trade.exitTime,
     barsHeld: trade.barsHeld,
-    basePnlDollars: tradeDollarPnl(trade, optionByKey.get(trade.datasetId)?.sizeMultiplier ?? 1),
-    baseRiskDollars: tradeRiskDollars(trade, optionByKey.get(trade.datasetId)?.sizeMultiplier ?? 1),
-    baseTargetDollars: tradeTargetDollars(trade, optionByKey.get(trade.datasetId)?.sizeMultiplier ?? 1),
-    rMultiple: trade.rMultiple,
+    basePnlDollars: boundedBacktestTradeDollarPnl(trade, sizeMultiplier),
+    baseRiskDollars: tradeRiskDollars(trade, sizeMultiplier),
+    baseTargetDollars: tradeTargetDollars(trade, sizeMultiplier),
+    rMultiple: boundedBacktestTradeRMultiple(trade, sizeMultiplier),
     symbol: trade.symbol,
     market: trade.market,
     phase: trade.phase,
     label: trade.label,
     side: trade.side,
     exitReason: trade.exitReason
-  }));
+    };
+  });
   const visibleStoredBacktestHistoryTrades = historyBacktestTrades;
   const historyTradeBarsBySymbol = await loadHistoryBarsBySymbol(visibleStoredBacktestHistoryTrades);
   const storedBacktestHistoryRows: TradeHistoryRow[] = visibleStoredBacktestHistoryTrades.map((trade, index) => {
@@ -2142,11 +2160,14 @@ export default async function Home({ searchParams }: HomeProps) {
         ]
       : [])
   ];
-  const challengeReplayTrades = selectedBacktestTrades.map((trade) => ({
+  const challengeReplayTrades = selectedBacktestTrades.map((trade) => {
+    const sizeMultiplier = optionByKey.get(trade.datasetId)?.sizeMultiplier ?? 1;
+    return {
       key: trade.datasetId,
       entryTime: trade.entryTime,
-      pnlDollars: tradeDollarPnl(trade, optionByKey.get(trade.datasetId)?.sizeMultiplier ?? 1)
-    }));
+      pnlDollars: boundedBacktestTradeDollarPnl(trade, sizeMultiplier)
+    };
+  });
   const challengeReplaySeed = `trading-bot:${activeMarket}:${selectedKeys.join("|")}`;
   const challengeHistoricalSessions = challengeSessionCount(challengeReplayTrades);
   const telegramConfigured = Boolean(process.env.TELEGRAM_BOT_TOKEN && (process.env.TELEGRAM_GROUP_CHAT_ID || process.env.TELEGRAM_CHAT_ID));

@@ -81,6 +81,15 @@ const DATABENTO_CHUNK_DAYS = 365;
 const TWELVE_5M_CHUNK_DAYS = 17;
 const TWELVE_1M_CHUNK_DAYS = 3;
 const TWELVE_INTRADAY_HISTORY_FLOOR_SECONDS = Math.floor(Date.parse("2022-01-01T00:00:00Z") / 1000);
+const PACIFIC_TIME_ZONE = "America/Los_Angeles";
+const WEEKEND_CLOSED_MARKETS = new Set<Market>(["futures", "forex", "gold_spot"]);
+const PACIFIC_PARTS_FORMATTER = new Intl.DateTimeFormat("en-US", {
+  hour: "2-digit",
+  hour12: false,
+  minute: "2-digit",
+  timeZone: PACIFIC_TIME_ZONE,
+  weekday: "short"
+});
 
 function parseArgs(argv: string[]): CliOptions {
   const options: CliOptions = {
@@ -160,6 +169,20 @@ function normalizeDatabentoPrice(value: string): number {
   const numeric = Number(value);
   if (!Number.isFinite(numeric)) return Number.NaN;
   return Math.abs(numeric) > 1_000_000 ? numeric / 1_000_000_000 : numeric;
+}
+
+function marketIsOpenAt(asset: AssetDefinition, seconds: number): boolean {
+  if (!WEEKEND_CLOSED_MARKETS.has(asset.market)) return true;
+  const parts = PACIFIC_PARTS_FORMATTER.formatToParts(new Date(seconds * 1000));
+  const weekday = parts.find((part) => part.type === "weekday")?.value;
+  const hour = Number(parts.find((part) => part.type === "hour")?.value);
+  const minute = Number(parts.find((part) => part.type === "minute")?.value);
+  if (!weekday || !Number.isFinite(hour) || !Number.isFinite(minute)) return true;
+  const minutes = hour * 60 + minute;
+  if (weekday === "Sat") return false;
+  if (weekday === "Sun") return minutes >= 14 * 60;
+  if (weekday === "Fri") return minutes < 14 * 60;
+  return true;
 }
 
 function toCsvRow(bar: Bar): string {
@@ -302,7 +325,7 @@ class TwelveDataKeyPool {
   }
 }
 
-function parseDatabentoCsvBars(text: string, closedStartSeconds: number): Bar[] {
+function parseDatabentoCsvBars(asset: AssetDefinition, text: string, closedStartSeconds: number): Bar[] {
   const bars: Bar[] = [];
   const lines = text.split(/\r?\n/);
   for (let index = 1; index < lines.length; index += 1) {
@@ -319,7 +342,7 @@ function parseDatabentoCsvBars(text: string, closedStartSeconds: number): Bar[] 
     const low = normalizeDatabentoPrice(columns[6]!);
     const close = normalizeDatabentoPrice(columns[7]!);
     const volume = Number(columns[8]!);
-    if (!Number.isFinite(seconds) || seconds > closedStartSeconds) continue;
+    if (!Number.isFinite(seconds) || seconds > closedStartSeconds || !marketIsOpenAt(asset, seconds)) continue;
     if ([open, high, low, close, volume].some((value) => !Number.isFinite(value))) continue;
 
     bars.push({ time: seconds, open, high, low, close, volume });
@@ -327,7 +350,7 @@ function parseDatabentoCsvBars(text: string, closedStartSeconds: number): Bar[] 
   return bars;
 }
 
-function parseTwelveBars(values: TwelveDataResponse["values"], closedStartSeconds: number): Bar[] {
+function parseTwelveBars(asset: AssetDefinition, values: TwelveDataResponse["values"], closedStartSeconds: number): Bar[] {
   if (!values?.length) return [];
 
   return values
@@ -339,7 +362,7 @@ function parseTwelveBars(values: TwelveDataResponse["values"], closedStartSecond
       const low = Number(value.low);
       const close = Number(value.close);
       const volume = Number(value.volume ?? 0);
-      if (!Number.isFinite(seconds) || seconds > closedStartSeconds) return null;
+      if (!Number.isFinite(seconds) || seconds > closedStartSeconds || !marketIsOpenAt(asset, seconds)) return null;
       if ([open, high, low, close, volume].some((item) => !Number.isFinite(item))) return null;
       return { time: seconds, open, high, low, close, volume };
     })
@@ -440,7 +463,7 @@ async function downloadDatabentoAsset(asset: AssetDefinition, startSeconds: numb
         throw error;
       }
 
-      const bars = parseDatabentoCsvBars(text, minuteClosedCutoff);
+      const bars = parseDatabentoCsvBars(asset, text, minuteClosedCutoff);
       for (const bar of bars) {
         if (minuteWriter && bar.time <= minuteClosedCutoff) {
           await minuteWriter.writeBar(bar);
@@ -473,6 +496,7 @@ async function downloadDatabentoAsset(asset: AssetDefinition, startSeconds: numb
 
 async function fetchTwelveDataBars(
   keyPool: TwelveDataKeyPool,
+  asset: AssetDefinition,
   symbol: string,
   interval: "1min" | "5min",
   startSeconds: number,
@@ -509,7 +533,7 @@ async function fetchTwelveDataBars(
       throw new Error(`TwelveData ${response.status}: ${raw.message ?? raw.status ?? "Unknown error"}`);
     }
 
-    return parseTwelveBars(raw.values, closedStartSeconds);
+    return parseTwelveBars(asset, raw.values, closedStartSeconds);
   }
 }
 
@@ -535,6 +559,7 @@ async function downloadTwelveTimeframe(
       chunkCount += 1;
       const bars = await fetchTwelveDataBars(
         keyPool,
+        asset,
         asset.twelveDataSymbol ?? asset.symbol,
         interval,
         cursor,

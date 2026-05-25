@@ -318,48 +318,59 @@ type MiniManagementMarker = {
 };
 
 const CALENDAR_DOW_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const PACIFIC_TIME_ZONE = "America/Los_Angeles";
+const PACIFIC_DATE_KEY_FORMATTER = new Intl.DateTimeFormat("en-US", {
+  day: "2-digit",
+  month: "2-digit",
+  timeZone: PACIFIC_TIME_ZONE,
+  year: "numeric"
+});
 
-function dateKeyUTC(value: string | undefined): string {
-  const date = value ? new Date(value) : null;
+function pacificDateKey(value: string | Date | undefined): string {
+  const date = value instanceof Date ? value : value ? new Date(value) : null;
   if (!date || !Number.isFinite(date.getTime())) return "";
-  return date.toISOString().slice(0, 10);
+  const parts = PACIFIC_DATE_KEY_FORMATTER.formatToParts(date);
+  const year = parts.find((part) => part.type === "year")?.value;
+  const month = parts.find((part) => part.type === "month")?.value;
+  const day = parts.find((part) => part.type === "day")?.value;
+  return year && month && day ? `${year}-${month}-${day}` : "";
 }
 
-function monthKeyUTC(value: string | undefined): string {
-  const key = dateKeyUTC(value);
-  return key ? key.slice(0, 7) : new Date().toISOString().slice(0, 7);
+function pacificMonthKey(value: string | Date | undefined): string {
+  const key = pacificDateKey(value);
+  return key ? key.slice(0, 7) : pacificDateKey(new Date()).slice(0, 7);
 }
 
 function shiftMonthKey(monthKey: string, delta: number): string {
   const [year, month] = monthKey.split("-").map((value) => Number(value));
-  if (!Number.isFinite(year) || !Number.isFinite(month)) return new Date().toISOString().slice(0, 7);
+  if (!Number.isFinite(year) || !Number.isFinite(month)) return pacificMonthKey(new Date());
   return new Date(Date.UTC(year, month - 1 + delta, 1)).toISOString().slice(0, 7);
 }
 
 function monthLabel(monthKey: string): string {
   const [year, month] = monthKey.split("-").map((value) => Number(value));
   if (!Number.isFinite(year) || !Number.isFinite(month)) return monthKey;
-  return new Date(Date.UTC(year, month - 1, 1)).toLocaleString(undefined, {
+  return new Date(Date.UTC(year, month - 1, 15, 12)).toLocaleString(undefined, {
     month: "long",
-    timeZone: "UTC",
+    timeZone: PACIFIC_TIME_ZONE,
     year: "numeric"
   });
 }
 
 function calendarDateLabel(dateKey: string): string {
   if (!dateKey) return "Select a day";
-  return new Date(`${dateKey}T00:00:00Z`).toLocaleDateString(undefined, {
+  return new Date(`${dateKey}T12:00:00Z`).toLocaleDateString(undefined, {
     day: "numeric",
     month: "short",
-    timeZone: "UTC",
+    timeZone: PACIFIC_TIME_ZONE,
     year: "numeric"
   });
 }
 
 function weekdayLabel(dateKey: string): string {
   if (!dateKey) return "";
-  return new Date(`${dateKey}T00:00:00Z`).toLocaleDateString(undefined, {
-    timeZone: "UTC",
+  return new Date(`${dateKey}T12:00:00Z`).toLocaleDateString(undefined, {
+    timeZone: PACIFIC_TIME_ZONE,
     weekday: "short"
   });
 }
@@ -410,7 +421,7 @@ function formatCalendarDateTime(value: string): string {
     hour12: true,
     minute: "2-digit",
     month: "short",
-    timeZone: "UTC",
+    timeZone: PACIFIC_TIME_ZONE,
     year: "numeric"
   });
 }
@@ -1135,15 +1146,15 @@ export function BacktestTradeMiniChart({
 
 export function TradeHistoryCalendar({ rows }: TradeHistoryProps) {
   const isRestricted = !useAutoTradeAdminMode();
-  const [selectedMonthKey, setSelectedMonthKey] = useState(() => monthKeyUTC(rows[0]?.entryTime));
-  const [selectedDateKey, setSelectedDateKey] = useState(() => dateKeyUTC(rows[0]?.entryTime));
+  const [selectedMonthKey, setSelectedMonthKey] = useState(() => pacificMonthKey(rows[0]?.entryTime));
+  const [selectedDateKey, setSelectedDateKey] = useState(() => pacificDateKey(rows[0]?.entryTime));
   const [expandedTradeId, setExpandedTradeId] = useState<string | null>(null);
   const [chartStates, setChartStates] = useState<Record<string, CalendarChartState>>({});
   const chartStatesRef = useRef<Record<string, CalendarChartState>>({});
   const activityByDay = useMemo(() => {
     const activity = new Map<string, CalendarActivity>();
     for (const trade of rows) {
-      const key = dateKeyUTC(trade.entryTime);
+      const key = pacificDateKey(trade.entryTime);
       if (!key) continue;
       const current = activity.get(key) ?? { count: 0, pnl: 0, wins: 0, items: [] };
       current.count += 1;
@@ -1161,7 +1172,7 @@ export function TradeHistoryCalendar({ rows }: TradeHistoryProps) {
     const latest = [...activityByDay.keys()].sort((left, right) => right.localeCompare(left))[0];
     return latest ?? "";
   }, [activityByDay]);
-  const activeMonthKey = selectedMonthKey || (latestDateKey ? latestDateKey.slice(0, 7) : new Date().toISOString().slice(0, 7));
+  const activeMonthKey = selectedMonthKey || (latestDateKey ? latestDateKey.slice(0, 7) : pacificMonthKey(new Date()));
   const calendarGrid = useMemo(() => buildCalendarGrid(activeMonthKey, activityByDay), [activeMonthKey, activityByDay]);
   const selectedDayTrades = useMemo(
     () => (selectedDateKey ? activityByDay.get(selectedDateKey)?.items ?? [] : []),

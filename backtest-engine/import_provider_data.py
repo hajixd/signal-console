@@ -15,6 +15,7 @@ from typing import Any
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
+from zoneinfo import ZoneInfo
 
 from runner import prepare_data
 
@@ -27,6 +28,8 @@ DEFAULT_START = datetime(2020, 1, 1, tzinfo=UTC)
 DATABENTO_WINDOW = timedelta(days=120)
 TWELVE_DATA_WINDOW = timedelta(days=50)
 TWELVE_DATA_CALLS_PER_MINUTE = 7
+PACIFIC_TZ = ZoneInfo("America/Los_Angeles")
+WEEKEND_CLOSED_MARKETS = {"forex", "futures", "gold_spot", "crypto"}
 
 
 @dataclass(frozen=True)
@@ -153,6 +156,22 @@ def csv_number(value: float) -> str:
 
 def floor_to_15m(epoch_seconds: int) -> int:
     return epoch_seconds - (epoch_seconds % 900)
+
+
+def market_is_open_at(asset: AssetConfig, timestamp: int) -> bool:
+    if asset.market not in WEEKEND_CLOSED_MARKETS:
+        return True
+
+    local = datetime.fromtimestamp(int(timestamp), tz=PACIFIC_TZ)
+    weekday = local.weekday()
+    minutes = local.hour * 60 + local.minute
+    if weekday == 5:
+        return False
+    if weekday == 6:
+        return minutes >= 14 * 60
+    if weekday == 4:
+        return minutes < 14 * 60
+    return True
 
 
 def closed_15m_cutoff() -> int:
@@ -287,6 +306,8 @@ def fetch_databento_15m(asset: AssetConfig, start: datetime, end: datetime) -> l
                         bucket = floor_to_15m(event_seconds)
                         if bucket + 900 > closed_15m_cutoff():
                             continue
+                        if not market_is_open_at(asset, bucket):
+                            continue
                         open_ = normalize_numeric(item["open"])
                         high = normalize_numeric(item["high"])
                         low = normalize_numeric(item["low"])
@@ -400,6 +421,8 @@ def fetch_twelvedata_15m(asset: AssetConfig, start: datetime, end: datetime) -> 
             opened_at = datetime.fromisoformat(raw_dt).replace(tzinfo=UTC)
             timestamp = int(opened_at.timestamp())
             if timestamp + 900 > closed_15m_cutoff():
+                continue
+            if not market_is_open_at(asset, timestamp):
                 continue
             open_ = float(raw_bar["open"])
             high = float(raw_bar["high"])

@@ -84,6 +84,7 @@ export type BacktestTrade = {
   assetKey: string;
   strategyId: string;
   sizeMultiplierHint?: number;
+  executionTimeframe?: string;
   managementEvents?: TradeManagementEvent[];
 };
 
@@ -422,6 +423,7 @@ function backtestTradeFromRow(row: CsvRow, strategy: StrategyDefinition): Backte
     assetKey,
     strategyId: row.strategy_id || strategy.id,
     sizeMultiplierHint: optionalNumeric(row.size_multiplier) ?? strategy.defaults?.sizeMultiplier,
+    executionTimeframe: (row.execution_timeframe ?? "").trim() || undefined,
     managementEvents: parseManagementEvents(row.management_events)
   };
 }
