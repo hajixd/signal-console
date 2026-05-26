@@ -206,7 +206,11 @@ export default function AutoTradeAccountGate() {
             <div className="autoTradeChoiceGrid">
               <button
                 className="autoTradeChoiceCard"
-                onClick={() => grantAccountMode("Admin")}
+                onClick={() => {
+                  setAccountEntryMode("Admin");
+                  setAdminCodeInput("");
+                  setAccountAccessError("");
+                }}
                 type="button"
               >
                 Admin
