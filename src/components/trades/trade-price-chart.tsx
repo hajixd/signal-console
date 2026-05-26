@@ -483,22 +483,28 @@ function candleIndex(candles: MappedCandle[], candle: MappedCandle | null): numb
   return found >= 0 ? found : 0;
 }
 
+function candleAtOrAfterEntry(candles: MappedCandle[], entryCandle: MappedCandle | null, candidate: MappedCandle | null): MappedCandle | null {
+  if (!entryCandle || !candidate) return candidate ?? entryCandle;
+  return candleIndex(candles, candidate) < candleIndex(candles, entryCandle) ? entryCandle : candidate;
+}
+
 function firstBracketExitCandle(
   candles: MappedCandle[],
   trade: TradeChartTrade,
   entryCandle: MappedCandle | null,
   fallbackExitCandle: MappedCandle | null
 ): MappedCandle | null {
-  if (!entryCandle || !fallbackExitCandle || !candles.length) return fallbackExitCandle;
-  if (trade.managementEvents?.length) return fallbackExitCandle;
+  const safeFallbackExitCandle = candleAtOrAfterEntry(candles, entryCandle, fallbackExitCandle);
+  if (!entryCandle || !safeFallbackExitCandle || !candles.length) return safeFallbackExitCandle;
+  if (trade.managementEvents?.length) return safeFallbackExitCandle;
 
   const hit = resolveFirstTradeBracketHit(
     {
       entryIndex: entryCandle.source.index,
       entryPrice: trade.entryPrice,
       entryTime: entryCandle.source.time,
-      exitIndex: fallbackExitCandle.source.index,
-      exitTime: fallbackExitCandle.source.time,
+      exitIndex: safeFallbackExitCandle.source.index,
+      exitTime: safeFallbackExitCandle.source.time,
       side: trade.side,
       stopPrice: trade.stopPrice,
       targetPrice: trade.targetPrice
@@ -506,7 +512,7 @@ function firstBracketExitCandle(
     candles.map((candle) => candle.source)
   );
 
-  return hit ? candles[hit.position] ?? fallbackExitCandle : fallbackExitCandle;
+  return candleAtOrAfterEntry(candles, entryCandle, hit ? candles[hit.position] ?? safeFallbackExitCandle : safeFallbackExitCandle);
 }
 
 function tradeLogicalRange(candles: MappedCandle[], entryCandle: MappedCandle | null, exitCandle: MappedCandle | null): NumberRange {
