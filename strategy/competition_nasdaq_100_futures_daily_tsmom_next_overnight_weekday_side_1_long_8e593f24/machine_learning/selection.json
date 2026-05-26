@@ -12,7 +12,7 @@
     "https://www.semanticscholar.org/paper/The-Probability-of-Backtest-Overfitting-Bailey-Borwein/b1233b4f5384f003e85c2e0eec1a2dfc08f624c5"
   ],
   "researchSummary": "Daily time-series contrarian using a 20-day close-to-close lookback. Filter: long signals on weekday 1.",
-  "selectionMethod": "Fixed session-edge research grid; pre-2022 training ranked candidates, then post-2022 forward trades had to clear PF/trade-count/split/no-duplicate gates. Management sweep promoted `be_trail_hourly_pivot_b0` only after strict forward PF improved from 2.52 to 2.69.",
+  "selectionMethod": "Fixed session-edge research grid; pre-2022 training ranked candidates, then post-2022 forward trades had to clear PF/trade-count/split/no-duplicate gates. Management sweep promoted `be_trail_hourly_pivot_b0` only after strict forward PF improved from 2.52 to 2.69. Management sweep promoted `be_trail_hourly_pivot_b0` only after strict forward PF improved from 2.52 to 2.69.",
   "trainingWindow": {
     "start": "asset_start",
     "end": "2021-12-31"

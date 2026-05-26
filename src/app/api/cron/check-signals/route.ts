@@ -9,6 +9,7 @@ import { activeRules, evaluateRecentSignals } from "@/lib/live-signals";
 import { cronWeekendPause, marketOpenForSignal } from "@/lib/market-schedule";
 import { claimTrade, getTrades, saveTrade } from "@/lib/storage";
 import { sendTradeManagementNotification, sendTradeNotification, sendTradeOutcomeNotification } from "@/lib/notifications";
+import { enrichProjectXTradeOutcome } from "@/lib/projectx-auto-trader";
 import { DEFAULT_STRATEGY_TIMEFRAME, timeframeFromVariant, type DataTimeframe } from "@/lib/timeframes";
 import { TOPSTEP_100K_ACCOUNT, reviewTopstepSignal, withTopstepGuardNote } from "@/lib/topstep";
 import type { Bar, CronResult, StrategyRule, TradeAlert, TradeManagementEvent } from "@/lib/types";
@@ -669,7 +670,7 @@ async function notifyTradeLifecycles(result: CronResult, barsByAssetKey: Map<str
         continue;
       }
 
-      const updatedTrade: TradeAlert = {
+      const updatedTrade: TradeAlert = await enrichProjectXTradeOutcome({
         ...tradeWithManagementEvents,
         lifecycleNotifiedAt: new Date().toISOString(),
         lifecyclePnlDollars: evaluation.hit.pnlDollars,
@@ -677,7 +678,7 @@ async function notifyTradeLifecycles(result: CronResult, barsByAssetKey: Map<str
         lifecycleRMultiple: evaluation.hit.rMultiple,
         lifecycleStatus: evaluation.hit.status,
         lifecycleTime: evaluation.hit.time
-      };
+      });
       const notification = await sendTradeOutcomeNotification(updatedTrade);
       await saveTrade({
         ...updatedTrade,

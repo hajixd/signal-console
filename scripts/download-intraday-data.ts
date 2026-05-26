@@ -51,6 +51,7 @@ type AssetDownloadSummary = {
 type CliOptions = {
   assetKeys?: Set<string>;
   fullTwelveOneMinute: boolean;
+  skipFiveMinute: boolean;
   twelveOneMinuteRecentDays: number;
   skipOneMinute: boolean;
 };
@@ -94,6 +95,7 @@ const PACIFIC_PARTS_FORMATTER = new Intl.DateTimeFormat("en-US", {
 function parseArgs(argv: string[]): CliOptions {
   const options: CliOptions = {
     fullTwelveOneMinute: false,
+    skipFiveMinute: false,
     twelveOneMinuteRecentDays: 30,
     skipOneMinute: false
   };
@@ -117,6 +119,11 @@ function parseArgs(argv: string[]): CliOptions {
 
     if (arg === "--skip-1m") {
       options.skipOneMinute = true;
+      continue;
+    }
+
+    if (arg === "--skip-5m") {
+      options.skipFiveMinute = true;
       continue;
     }
 
@@ -610,15 +617,19 @@ async function downloadTwelveDataAsset(
     errors: []
   };
 
-  try {
-    const fiveMinuteResult = await downloadTwelveTimeframe(keyPool, asset, "5min", startSeconds, fiveMinuteEndSeconds);
-    summary.files["5m"] = fiveMinuteResult.coverage;
-    if (fiveMinuteResult.error) {
-      summary.errors.push(`5m failed: ${fiveMinuteResult.error}`);
+  if (options.skipFiveMinute) {
+    summary.notes.push("Skipped 5m download by request.");
+  } else {
+    try {
+      const fiveMinuteResult = await downloadTwelveTimeframe(keyPool, asset, "5min", startSeconds, fiveMinuteEndSeconds);
+      summary.files["5m"] = fiveMinuteResult.coverage;
+      if (fiveMinuteResult.error) {
+        summary.errors.push(`5m failed: ${fiveMinuteResult.error}`);
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      summary.errors.push(`5m failed: ${message}`);
     }
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    summary.errors.push(`5m failed: ${message}`);
   }
 
   if (options.skipOneMinute) {
@@ -723,6 +734,7 @@ async function main(): Promise<void> {
     options: {
       assetKeys: options.assetKeys ? [...options.assetKeys] : undefined,
       fullTwelveOneMinute: options.fullTwelveOneMinute,
+      skipFiveMinute: options.skipFiveMinute,
       twelveOneMinuteRecentDays: options.twelveOneMinuteRecentDays,
       skipOneMinute: options.skipOneMinute
     },

@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import { assetForKey, assetForSymbol, assetLookupSymbolForSymbol } from "@/lib/assets";
 import { scaledAutoTradeSize } from "@/lib/auto-trade-utils";
 import {
-  getLatestStoredProjectXConnection,
+  getStoredProjectXConnections,
   saveStoredProjectXConnection,
   type StoredProjectXConnection
 } from "@/lib/projectx-connections";
@@ -13,13 +13,15 @@ import {
   searchProjectXOpenOrders,
   searchProjectXAccounts,
   searchProjectXContracts,
+  searchProjectXTrades,
   validateProjectXSession,
   type ProjectXAccount,
   type ProjectXContract,
   type ProjectXOpenOrder,
   type ProjectXOrderSide,
   type ProjectXOrderType,
-  type ProjectXPlaceOrderRequest
+  type ProjectXPlaceOrderRequest,
+  type ProjectXTrade
 } from "@/lib/projectx";
 import type { AutoTradeOrderSummary, TradeAlert, TradeManagementEvent } from "@/lib/types";
 
@@ -42,7 +44,7 @@ const CONTRACT_SEARCH_OVERRIDES: Record<string, string> = {
   "6A": "M6A",
   "6B": "M6B",
   "6C": "6C",
-  "6E": "E7",
+  "6E": "M6E",
   "6J": "6J",
   "6M": "6M",
   "6N": "6N",
@@ -68,7 +70,7 @@ const CONTRACT_SEARCH_OVERRIDES: Record<string, string> = {
   MNQ: "MNQ",
   MNG: "MNG",
   MYM: "MYM",
-  NG: "QG",
+  NG: "MNG",
   NKD: "NKD",
   NQ: "MNQ",
   PL: "PL",
@@ -92,6 +94,9 @@ const CONTRACT_SEARCH_OVERRIDES: Record<string, string> = {
   ZW: "ZW"
 };
 const FUTURES_MONTH_CODES = "FGHJKMNQUVXZ";
+const NO_ACTIVE_AUTO_TRADE_ACCOUNTS = "no active auto-trade accounts";
+const PROJECTX_TRADE_RESULT_LOOKBACK_MS = 5 * 60_000;
+const PROJECTX_TRADE_RESULT_LOOKAHEAD_MS = 15 * 60_000;
 
 function envFlag(name: string, fallback: boolean): boolean {
   const value = process.env[name]?.trim().toLowerCase();
@@ -165,14 +170,6 @@ function wholeNumber(value: number | undefined, label: string): number {
   return rounded;
 }
 
-function signedWholeNumber(value: number, label: string): number {
-  const rounded = Math.round(value);
-  if (!Number.isFinite(value) || Math.abs(value - rounded) > 1e-6 || rounded === 0) {
-    throw new Error(`${label} must be a non-zero whole number for ProjectX orders.`);
-  }
-  return rounded;
-}
-
 function positiveNumber(value: number | undefined, label: string): number {
   if (typeof value !== "number" || !Number.isFinite(value) || value <= 0) {
     throw new Error(`${label} must be a positive number.`);
@@ -236,13 +233,13 @@ export function contractSearchTextsForTrade(trade: Pick<TradeAlert, "assetKey" |
   return uniqueSearchTexts([
     overrides[symbol],
     assetSymbol ? overrides[assetSymbol] : undefined,
-    symbol.length > 2 ? symbol : undefined,
     contractRoot,
     contractRoot ? CONTRACT_SEARCH_OVERRIDES[contractRoot] : undefined,
     usableSizeRoot,
     CONTRACT_SEARCH_OVERRIDES[symbol],
     assetSymbol ? CONTRACT_SEARCH_OVERRIDES[assetSymbol] : undefined,
     assetSymbol ? assetLookupSymbolForSymbol(assetSymbol) : undefined,
+    symbol.length > 2 ? symbol : undefined,
     assetSymbol,
     assetLookupSymbolForSymbol(symbol),
     symbol
@@ -262,8 +259,8 @@ export function projectXBracketTicksForTrade(
   const stopLossTicks = wholeNumber(Math.abs(trade.slUnits), "Stop-loss ticks");
   const takeProfitTicks = wholeNumber(Math.abs(trade.tpUnits), "Take-profit ticks");
   return {
-    stopLossTicks: signedWholeNumber(-direction * stopLossTicks, "Signed stop-loss ticks"),
-    takeProfitTicks: signedWholeNumber(direction * takeProfitTicks, "Signed take-profit ticks")
+    stopLossTicks,
+    takeProfitTicks
   };
 }
 
@@ -297,15 +294,96 @@ async function projectXContractForTrade(
   return { contract: null, searchTexts };
 }
 
-function tradeableAccounts(connection: StoredProjectXConnection): ProjectXAccount[] {
-  const configuredAccountId = positiveIntegerEnv("PROJECTX_AUTO_TRADE_ACCOUNT_ID");
+type ProjectXConnectionRefresh = {
+  connection: StoredProjectXConnection;
+  error?: string;
+};
+
+type ProjectXAccountTarget = {
+  account: ProjectXAccount;
+  accountConnectionId: string;
+  accountGroupName?: string;
+  token: string;
+};
+
+function activeAccounts(connection: StoredProjectXConnection): ProjectXAccount[] {
   const pausedAccountIds = new Set(connection.pausedAccountIds);
-  const accounts = connection.accounts.filter((account) => account.canTrade && account.isVisible && !pausedAccountIds.has(account.id));
-  if (configuredAccountId) {
-    const configuredAccount = accounts.find((account) => account.id === configuredAccountId);
-    return configuredAccount ? [configuredAccount] : [];
+  return connection.accounts.filter((account) => account.canTrade && account.isVisible && !pausedAccountIds.has(account.id));
+}
+
+function connectionGroupName(connection: StoredProjectXConnection): string | undefined {
+  return connection.displayName?.trim() || connection.userName?.trim() || undefined;
+}
+
+function orderedConnections(connections: StoredProjectXConnection[]): StoredProjectXConnection[] {
+  const preferredId = process.env.PROJECTX_AUTO_TRADE_CONNECTION_ID?.trim();
+  if (!preferredId) return connections;
+  return [...connections].sort((left, right) => {
+    if (left.id === preferredId) return -1;
+    if (right.id === preferredId) return 1;
+    return 0;
+  });
+}
+
+function tradeableAccountTargets(refreshes: ProjectXConnectionRefresh[]): ProjectXAccountTarget[] {
+  const configuredAccountId = positiveIntegerEnv("PROJECTX_AUTO_TRADE_ACCOUNT_ID");
+  const seenAccountIds = new Set<number>();
+  const targets: ProjectXAccountTarget[] = [];
+
+  for (const { connection, error } of refreshes) {
+    if (error) continue;
+    for (const account of activeAccounts(connection)) {
+      if (configuredAccountId && account.id !== configuredAccountId) continue;
+      if (seenAccountIds.has(account.id)) continue;
+      seenAccountIds.add(account.id);
+      targets.push({
+        account,
+        accountConnectionId: connection.id,
+        accountGroupName: connectionGroupName(connection),
+        token: connection.token
+      });
+    }
   }
-  return accounts;
+
+  return targets;
+}
+
+function failedRefreshOrders(
+  refreshes: ProjectXConnectionRefresh[],
+  existingAccountIds: Set<number>,
+  fields: Pick<AutoTradeOrderSummary, "contractId" | "contractName"> = {}
+): AutoTradeOrderSummary[] {
+  const configuredAccountId = positiveIntegerEnv("PROJECTX_AUTO_TRADE_ACCOUNT_ID");
+  const failedOrders: AutoTradeOrderSummary[] = [];
+
+  for (const { connection, error } of refreshes) {
+    if (!error) continue;
+    for (const account of activeAccounts(connection)) {
+      if (configuredAccountId && account.id !== configuredAccountId) continue;
+      if (existingAccountIds.has(account.id)) continue;
+      existingAccountIds.add(account.id);
+      failedOrders.push({
+        accountConnectionId: connection.id,
+        accountGroupName: connectionGroupName(connection),
+        accountId: account.id,
+        accountBalance: account.balance,
+        accountName: account.name,
+        ...fields,
+        error: `ProjectX connection refresh failed: ${error}`,
+        status: "failed"
+      });
+    }
+  }
+
+  return failedOrders;
+}
+
+function connectionForOrder(refreshes: ProjectXConnectionRefresh[], order: AutoTradeOrderSummary): ProjectXConnectionRefresh | undefined {
+  if (order.accountConnectionId) {
+    return refreshes.find((refresh) => refresh.connection.id === order.accountConnectionId);
+  }
+
+  return refreshes.find((refresh) => refresh.connection.accounts.some((account) => account.id === order.accountId));
 }
 
 function summarizeOrders(
@@ -358,23 +436,37 @@ function positionBracketFallbackRequest(request: ProjectXPlaceOrderRequest): Pro
   };
 }
 
-async function refreshedConnection(): Promise<StoredProjectXConnection | null> {
-  const connection = await getLatestStoredProjectXConnection(process.env.PROJECTX_AUTO_TRADE_CONNECTION_ID?.trim());
-  if (!connection) return null;
-
-  const refreshedToken = await validateProjectXSession(connection.token);
-  const activeToken = refreshedToken ?? connection.token;
-  const accounts = await searchProjectXAccounts(activeToken, true);
-  return saveStoredProjectXConnection({
-    accessCodeHash: connection.accessCodeHash,
-    accounts,
-    autoTradePaused: connection.autoTradePaused,
-    connectedAt: connection.connectedAt,
-    id: connection.id,
-    pausedAccountIds: connection.pausedAccountIds,
-    token: activeToken,
-    userName: connection.userName
-  });
+async function refreshedConnections(): Promise<ProjectXConnectionRefresh[]> {
+  const connections = orderedConnections(await getStoredProjectXConnections());
+  return Promise.all(
+    connections.map(async (connection): Promise<ProjectXConnectionRefresh> => {
+      try {
+        const refreshedToken = await validateProjectXSession(connection.token);
+        const activeToken = refreshedToken ?? connection.token;
+        const accounts = await searchProjectXAccounts(activeToken, true);
+        const visibleAccounts = accounts.filter((account) => !(connection.removedAccountIds ?? []).includes(account.id));
+        return {
+          connection: await saveStoredProjectXConnection({
+            accessCodeHash: connection.accessCodeHash,
+            accounts: visibleAccounts,
+            autoTradePaused: connection.autoTradePaused,
+            connectedAt: connection.connectedAt,
+            displayName: connection.displayName,
+            id: connection.id,
+            pausedAccountIds: connection.pausedAccountIds,
+            removedAccountIds: connection.removedAccountIds,
+            token: activeToken,
+            userName: connection.userName
+          })
+        };
+      } catch (error) {
+        return {
+          connection,
+          error: readableProjectXError(error)
+        };
+      }
+    })
+  );
 }
 
 function eventManagementPrice(event: TradeManagementEvent): number {
@@ -488,6 +580,123 @@ function managementModifyPayload(
   };
 }
 
+function finiteNumber(value: unknown): number | undefined {
+  return typeof value === "number" && Number.isFinite(value) ? value : undefined;
+}
+
+function projectXTradeNetPnl(trade: ProjectXTrade): { fees: number; gross: number; net: number } | null {
+  const gross = finiteNumber(trade.profitAndLoss);
+  if (gross === undefined) return null;
+  const fees = finiteNumber(trade.fees) ?? 0;
+  return {
+    fees,
+    gross,
+    net: gross - fees
+  };
+}
+
+function projectXTradeResultWindow(trade: TradeAlert): { endTimestamp: string; startTimestamp: string } {
+  const startMs = Date.parse(trade.autoTradeCheckedAt ?? trade.signalTime);
+  const endMs = Date.parse(trade.lifecycleTime ?? "");
+  const now = Date.now();
+  return {
+    startTimestamp: new Date((Number.isFinite(startMs) ? startMs : now) - PROJECTX_TRADE_RESULT_LOOKBACK_MS).toISOString(),
+    endTimestamp: new Date((Number.isFinite(endMs) ? endMs : now) + PROJECTX_TRADE_RESULT_LOOKAHEAD_MS).toISOString()
+  };
+}
+
+function matchingProjectXClosedTrade(
+  trades: ProjectXTrade[],
+  order: AutoTradeOrderSummary,
+  lifecycleTime: string | undefined
+): ProjectXTrade | null {
+  const lifecycleMs = Date.parse(lifecycleTime ?? "");
+  const candidates = trades.filter((trade) => {
+    if (trade.voided) return false;
+    if (projectXTradeNetPnl(trade) === null) return false;
+    if (order.contractId && trade.contractId !== order.contractId) return false;
+    if (typeof order.size === "number" && Number.isFinite(order.size) && typeof trade.size === "number" && Math.round(trade.size) !== Math.round(order.size)) {
+      return false;
+    }
+    return true;
+  });
+
+  if (!candidates.length) return null;
+  return [...candidates].sort((left, right) => {
+    const leftTime = Date.parse(left.creationTimestamp ?? "");
+    const rightTime = Date.parse(right.creationTimestamp ?? "");
+    if (Number.isFinite(lifecycleMs)) {
+      const leftDistance = Number.isFinite(leftTime) ? Math.abs(leftTime - lifecycleMs) : Number.POSITIVE_INFINITY;
+      const rightDistance = Number.isFinite(rightTime) ? Math.abs(rightTime - lifecycleMs) : Number.POSITIVE_INFINITY;
+      return leftDistance - rightDistance;
+    }
+    return (Number.isFinite(rightTime) ? rightTime : 0) - (Number.isFinite(leftTime) ? leftTime : 0);
+  })[0] ?? null;
+}
+
+function orderHasProjectXResult(order: AutoTradeOrderSummary): boolean {
+  return typeof order.netPnlDollars === "number" && Number.isFinite(order.netPnlDollars);
+}
+
+export async function enrichProjectXTradeOutcome(trade: TradeAlert): Promise<TradeAlert> {
+  const orders = trade.autoTradeOrders;
+  if (!orders?.some((order) => order.status === "placed")) return trade;
+
+  const connectionRefreshes = await refreshedConnections();
+  if (!connectionRefreshes.length) {
+    const resultCheckedAt = new Date().toISOString();
+    return {
+      ...trade,
+      autoTradeOrders: orders.map((order) =>
+        order.status === "placed" ? { ...order, resultCheckedAt, resultError: "ProjectX connection not found." } : order
+      )
+    };
+  }
+
+  const window = projectXTradeResultWindow(trade);
+  const resultCheckedAt = new Date().toISOString();
+  const enrichedOrders = await Promise.all(
+    orders.map(async (order): Promise<AutoTradeOrderSummary> => {
+      if (order.status !== "placed") return order;
+      const sourceConnection = connectionForOrder(connectionRefreshes, order);
+      if (!sourceConnection) return { ...order, resultCheckedAt, resultError: "ProjectX connection not found." };
+      if (sourceConnection.error) return { ...order, resultCheckedAt, resultError: `ProjectX connection refresh failed: ${sourceConnection.error}` };
+
+      try {
+        const accountTrades = await searchProjectXTrades(sourceConnection.connection.token, {
+          accountId: order.accountId,
+          ...window
+        });
+        const resultTrade = matchingProjectXClosedTrade(accountTrades, order, trade.lifecycleTime);
+        const pnl = resultTrade ? projectXTradeNetPnl(resultTrade) : null;
+        if (!resultTrade || !pnl) return { ...order, resultCheckedAt, resultError: "Topstep result pending." };
+        return {
+          ...order,
+          feesDollars: pnl.fees,
+          grossPnlDollars: pnl.gross,
+          netPnlDollars: pnl.net,
+          resultCheckedAt,
+          resultError: undefined,
+          resultTradeId: resultTrade.id
+        };
+      } catch (error) {
+        return { ...order, resultCheckedAt, resultError: readableProjectXError(error) };
+      }
+    })
+  );
+
+  const placedOrders = enrichedOrders.filter((order) => order.status === "placed");
+  const resultOrders = placedOrders.filter(orderHasProjectXResult);
+  const allPlacedOrdersResolved = placedOrders.length > 0 && resultOrders.length === placedOrders.length;
+  const netPnl = resultOrders.reduce((sum, order) => sum + (order.netPnlDollars ?? 0), 0);
+
+  return {
+    ...trade,
+    autoTradeOrders: enrichedOrders,
+    lifecyclePnlDollars: allPlacedOrdersResolved ? netPnl : trade.lifecyclePnlDollars
+  };
+}
+
 export async function executeProjectXManagementTrade(trade: TradeAlert, event: TradeManagementEvent): Promise<ProjectXAutoTradeResult> {
   if (!projectXAutoTradingEnabled()) {
     return result("disabled", { error: "PROJECTX_AUTO_TRADE_ENABLED is disabled." });
@@ -498,13 +707,13 @@ export async function executeProjectXManagementTrade(trade: TradeAlert, event: T
   }
 
   try {
-    const connection = await refreshedConnection();
-    if (!connection) return result("skipped", { error: "No TopstepX ProjectX connection is available." });
-
     const sourceOrders = managementSourceOrders(trade, event);
     if (!sourceOrders.length) {
       return result("skipped", { error: "No placed ProjectX order metadata was stored for this trade." });
     }
+
+    const connectionRefreshes = await refreshedConnections();
+    if (!connectionRefreshes.length) return result("skipped", { error: "No TopstepX ProjectX connection is available." });
 
     const orders: AutoTradeOrderSummary[] = [];
     for (const sourceOrder of sourceOrders) {
@@ -517,10 +726,28 @@ export async function executeProjectXManagementTrade(trade: TradeAlert, event: T
         continue;
       }
 
+      const sourceConnection = connectionForOrder(connectionRefreshes, sourceOrder);
+      if (!sourceConnection) {
+        orders.push({
+          ...sourceOrder,
+          error: "ProjectX connection for this account is no longer active.",
+          status: "failed"
+        });
+        continue;
+      }
+      if (sourceConnection.error) {
+        orders.push({
+          ...sourceOrder,
+          error: `ProjectX connection refresh failed: ${sourceConnection.error}`,
+          status: "failed"
+        });
+        continue;
+      }
+
       if (event.type === "edit_limit" && sourceOrder.orderId) {
         try {
           await modifyProjectXOrder(
-            connection.token,
+            sourceConnection.connection.token,
             managementModifyPayload(sourceOrder.accountId, sourceOrder.orderId, sourceOrder.size, event)
           );
           orders.push({ ...sourceOrder, status: "placed" });
@@ -530,7 +757,7 @@ export async function executeProjectXManagementTrade(trade: TradeAlert, event: T
         continue;
       }
 
-      const openOrders = await searchProjectXOpenOrders(connection.token, sourceOrder.accountId);
+      const openOrders = await searchProjectXOpenOrders(sourceConnection.connection.token, sourceOrder.accountId);
       const matches = matchingOpenOrders(trade, event, sourceOrder, openOrders);
       if (matches.length !== 1) {
         orders.push({
@@ -552,7 +779,7 @@ export async function executeProjectXManagementTrade(trade: TradeAlert, event: T
 
       try {
         await modifyProjectXOrder(
-          connection.token,
+          sourceConnection.connection.token,
           managementModifyPayload(sourceOrder.accountId, orderId, match.size ?? sourceOrder.size, event)
         );
         orders.push({
@@ -591,19 +818,22 @@ export async function executeProjectXAutoTrade(trade: TradeAlert): Promise<Proje
   }
 
   try {
-    const connection = await refreshedConnection();
-    if (!connection) return result("skipped", { error: "No TopstepX ProjectX connection is available." });
+    const connectionRefreshes = await refreshedConnections();
+    if (!connectionRefreshes.length) return result("skipped", { error: NO_ACTIVE_AUTO_TRADE_ACCOUNTS });
 
-    const accounts = tradeableAccounts(connection);
-    if (!accounts.length) {
+    const accountTargets = tradeableAccountTargets(connectionRefreshes);
+    const failedConnectionOrders = failedRefreshOrders(
+      connectionRefreshes,
+      new Set(accountTargets.map((target) => target.account.id))
+    );
+    if (!accountTargets.length) {
+      if (failedConnectionOrders.length) return result("failed", summarizeOrders(failedConnectionOrders));
       return result("skipped", {
-        error: positiveIntegerEnv("PROJECTX_AUTO_TRADE_ACCOUNT_ID")
-          ? "Configured PROJECTX_AUTO_TRADE_ACCOUNT_ID was not found or is paused."
-          : "No connected unpaused ProjectX accounts are available."
+        error: positiveIntegerEnv("PROJECTX_AUTO_TRADE_ACCOUNT_ID") ? "Configured PROJECTX_AUTO_TRADE_ACCOUNT_ID was not found or is paused." : NO_ACTIVE_AUTO_TRADE_ACCOUNTS
       });
     }
 
-    const contractLookup = await projectXContractForTrade(connection.token, trade);
+    const contractLookup = await projectXContractForTrade(accountTargets[0]!.token, trade);
     const contract = contractLookup.contract;
     if (!contract) return result("failed", { error: `No ProjectX contract found for ${contractLookup.searchTexts.join(", ")}.` });
 
@@ -611,13 +841,23 @@ export async function executeProjectXAutoTrade(trade: TradeAlert): Promise<Proje
     const { stopLossTicks, takeProfitTicks } = projectXBracketTicksForTrade(trade);
     const entryType: ProjectXOrderType = trade.entryType === "limit" ? 1 : 2;
     const side: ProjectXOrderSide = trade.side === "long" ? 0 : 1;
-    const orders: AutoTradeOrderSummary[] = [];
+    const contractFields = { contractId: contract.id, contractName: contract.name };
+    const orders: AutoTradeOrderSummary[] = [
+      ...failedRefreshOrders(
+        connectionRefreshes,
+        new Set(accountTargets.map((target) => target.account.id)),
+        contractFields
+      )
+    ];
 
-    for (const account of accounts) {
+    for (const target of accountTargets) {
+      const account = target.account;
       const size = projectXOrderSizeForAccount(trade, account, baseSize);
       const customTag = customTagForTrade(trade, account.id);
       if (size <= 0) {
         orders.push({
+          accountConnectionId: target.accountConnectionId,
+          accountGroupName: target.accountGroupName,
           accountId: account.id,
           accountBalance: account.balance,
           accountName: account.name,
@@ -655,6 +895,8 @@ export async function executeProjectXAutoTrade(trade: TradeAlert): Promise<Proje
 
       if (dryRunEnabled()) {
         orders.push({
+          accountConnectionId: target.accountConnectionId,
+          accountGroupName: target.accountGroupName,
           accountId: account.id,
           accountBalance: account.balance,
           accountName: account.name,
@@ -668,8 +910,10 @@ export async function executeProjectXAutoTrade(trade: TradeAlert): Promise<Proje
       }
 
       try {
-        const order = await placeProjectXOrder(connection.token, request);
+        const order = await placeProjectXOrder(target.token, request);
         orders.push({
+          accountConnectionId: target.accountConnectionId,
+          accountGroupName: target.accountGroupName,
           accountId: account.id,
           accountBalance: account.balance,
           accountName: account.name,
@@ -685,8 +929,10 @@ export async function executeProjectXAutoTrade(trade: TradeAlert): Promise<Proje
         if (isPositionBracketConflict(rawMessage) && positionBracketFallbackEnabled()) {
           const fallbackRequest = positionBracketFallbackRequest(request);
           try {
-            const fallbackOrder = await placeProjectXOrder(connection.token, fallbackRequest);
+            const fallbackOrder = await placeProjectXOrder(target.token, fallbackRequest);
             orders.push({
+              accountConnectionId: target.accountConnectionId,
+              accountGroupName: target.accountGroupName,
               accountId: account.id,
               accountBalance: account.balance,
               accountName: account.name,
@@ -703,6 +949,8 @@ export async function executeProjectXAutoTrade(trade: TradeAlert): Promise<Proje
           } catch (fallbackError) {
             const message = `${projectXOrderErrorMessage(rawMessage)} Fallback failed: ${readableProjectXError(fallbackError)}`;
             orders.push({
+              accountConnectionId: target.accountConnectionId,
+              accountGroupName: target.accountGroupName,
               accountId: account.id,
               accountBalance: account.balance,
               accountName: account.name,
@@ -718,6 +966,8 @@ export async function executeProjectXAutoTrade(trade: TradeAlert): Promise<Proje
         }
         const message = projectXOrderErrorMessage(rawMessage);
         orders.push({
+          accountConnectionId: target.accountConnectionId,
+          accountGroupName: target.accountGroupName,
           accountId: account.id,
           accountBalance: account.balance,
           accountName: account.name,
@@ -733,7 +983,6 @@ export async function executeProjectXAutoTrade(trade: TradeAlert): Promise<Proje
 
     const placedOrders = orders.filter((order) => order.status === "placed");
     const actionableOrders = orders.filter((order) => order.status !== "skipped");
-    const contractFields = { accountName: connection.userName, contractId: contract.id, contractName: contract.name };
     if (!actionableOrders.length) return result("skipped", summarizeOrders(orders, contractFields));
     if (dryRunEnabled()) return result("dry_run", summarizeOrders(orders, contractFields));
     if (placedOrders.length) return result("placed", summarizeOrders(orders, contractFields));

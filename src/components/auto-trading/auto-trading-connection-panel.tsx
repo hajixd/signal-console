@@ -476,7 +476,7 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
   }, [pendingProjectXFolderAction, projectXAccountFolders]);
 
   function requestProjectXFolder(folder: ProjectXConnectionSummary) {
-    if (unlockedProjectXFolderIds.includes(folder.id)) {
+    if (accountMode === "Admin" || unlockedProjectXFolderIds.includes(folder.id)) {
       setPendingProjectXFolder(null);
       setPendingProjectXFolderAction(null);
       setActiveProjectXFolderId(folder.id);
@@ -1167,12 +1167,7 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
             </form>
           ) : projectXAccountFolders.length === 0 && visibleSavedConnections.length === 0 ? (
             <div className="topstepAccountEmpty">
-              <strong>No {marketLabel.toLowerCase()} auto-trade accounts connected</strong>
-              <span>
-                {canManageAutoTrade
-                  ? `Use Add Account to pick a ${marketLabel.toLowerCase()} connector. Accounts from the other market stay hidden here.`
-                  : "Choose account mode to add accounts. Accounts from the other market stay hidden here."}
-              </span>
+              <strong>No accounts connected</strong>
             </div>
           ) : pendingProjectXFolder ? (
             <form className="autoTradeFolderGate" onClick={() => folderCodeInputRef.current?.focus()} onSubmit={handleUnlockProjectXFolder}>

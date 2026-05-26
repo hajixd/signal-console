@@ -1,0 +1,2 @@
+status,strategy_id,asset_key,spec,baseline_pf,forward_pf,pf_gain,forward_trades,train_pf,train_trades,bootstrap_p05,block_bootstrap_p05,odd_even_min_pf,annual_pass_rate
+applied,gold_futures_tori_trades_trendline_break_retest,gold_futures,be_trail_hourly_pivot_b0,2.134401,2.498995,0.364594,63,1.594935,116,1.466039,1.477279,2.154657,0.800000

@@ -8,15 +8,23 @@ export type BacktestSizeMode = "auto" | "custom";
 
 export type AutoTradeOrderSummary = {
   accountBalance?: number;
+  accountConnectionId?: string;
+  accountGroupName?: string;
   accountId: number;
   accountName?: string;
   contractId?: string;
   contractName?: string;
   customTag?: string;
   error?: string;
+  feesDollars?: number;
+  grossPnlDollars?: number;
+  netPnlDollars?: number;
   orderId?: number;
   providerId?: string;
   providerName?: string;
+  resultCheckedAt?: string;
+  resultError?: string;
+  resultTradeId?: number;
   size?: number;
   status: "dry_run" | "failed" | "placed" | "skipped";
 };

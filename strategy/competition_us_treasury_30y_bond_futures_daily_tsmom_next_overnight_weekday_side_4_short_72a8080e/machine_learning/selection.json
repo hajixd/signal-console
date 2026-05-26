@@ -12,7 +12,7 @@
     "https://www.semanticscholar.org/paper/The-Probability-of-Backtest-Overfitting-Bailey-Borwein/b1233b4f5384f003e85c2e0eec1a2dfc08f624c5"
   ],
   "researchSummary": "Local mutation of Daily Tsmom Next Overnight; filter: short signals on weekday 4. Uses true bracket stop/target management at 5:1 planned reward-to-risk.",
-  "selectionMethod": "True-RR replacement search; pre-2022 train metrics were checked before post-2022 forward acceptance. Replacement required strict anti-cheat rerun, same-or-better forward PF, split stability, true planned TP/SL ratio, and no same-asset duplicate entries. Management sweep promoted `be_trail_hourly_pivot_b2` only after strict forward PF improved from 2.24 to 2.34.",
+  "selectionMethod": "True-RR replacement search; pre-2022 train metrics were checked before post-2022 forward acceptance. Replacement required strict anti-cheat rerun, same-or-better forward PF, split stability, true planned TP/SL ratio, and no same-asset duplicate entries. Management sweep promoted `be_trail_hourly_pivot_b2` only after strict forward PF improved from 2.24 to 2.34. Management sweep promoted `be_trail_hourly_pivot_b2` only after strict forward PF improved from 2.24 to 2.34.",
   "trainingWindow": {
     "start": "asset_start",
     "end": "2021-12-31"

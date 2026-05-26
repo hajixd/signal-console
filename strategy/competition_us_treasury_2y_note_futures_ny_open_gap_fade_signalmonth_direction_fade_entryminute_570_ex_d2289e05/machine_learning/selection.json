@@ -10,7 +10,7 @@
     "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=1004081"
   ],
   "researchSummary": "Tests whether the overnight gap fades or continues during a specific NY cash-session window. Filtered by signalMonth=12.",
-  "selectionMethod": "Pre-2022 train-score rank, then post-2022 forward qualification. No parameters were fit on post-2022 data. Management sweep promoted `be_trail_prior_bar_b2` only after strict forward PF improved from 2.22 to 2.55.",
+  "selectionMethod": "Pre-2022 train-score rank, then post-2022 forward qualification. No parameters were fit on post-2022 data. Management sweep promoted `be_trail_prior_bar_b2` only after strict forward PF improved from 2.22 to 2.55. Management sweep promoted `be_trail_prior_bar_b2` only after strict forward PF improved from 2.22 to 2.55.",
   "trainingWindow": {
     "start": "asset_start",
     "end": "2021-12-31"

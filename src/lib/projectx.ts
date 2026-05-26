@@ -90,6 +90,20 @@ export type ProjectXOpenOrder = {
   updateTimestamp?: string;
 };
 
+export type ProjectXTrade = {
+  id?: number;
+  accountId?: number;
+  contractId?: string;
+  creationTimestamp?: string;
+  fees?: number | null;
+  orderId?: number;
+  price?: number;
+  profitAndLoss?: number | null;
+  side?: ProjectXOrderSide;
+  size?: number;
+  voided?: boolean;
+};
+
 export type ProjectXModifyOrderRequest = {
   accountId: number;
   limitPrice?: number | null;
@@ -128,6 +142,10 @@ type ProjectXPlaceOrderResponse = ProjectXBaseResponse & {
 
 type ProjectXOrderSearchOpenResponse = ProjectXBaseResponse & {
   orders?: ProjectXOpenOrder[];
+};
+
+type ProjectXTradeSearchResponse = ProjectXBaseResponse & {
+  trades?: ProjectXTrade[];
 };
 
 type ProjectXModifyOrderResponse = ProjectXBaseResponse;
@@ -245,6 +263,14 @@ export async function placeProjectXOrder(token: string, request: ProjectXPlaceOr
 export async function searchProjectXOpenOrders(token: string, accountId: number): Promise<ProjectXOpenOrder[]> {
   const response = await projectXPost<ProjectXOrderSearchOpenResponse>("/api/Order/searchOpen", { accountId }, token);
   return response.orders ?? [];
+}
+
+export async function searchProjectXTrades(
+  token: string,
+  request: { accountId: number; endTimestamp?: string; startTimestamp: string }
+): Promise<ProjectXTrade[]> {
+  const response = await projectXPost<ProjectXTradeSearchResponse>("/api/Trade/search", request, token);
+  return response.trades ?? [];
 }
 
 export async function modifyProjectXOrder(token: string, request: ProjectXModifyOrderRequest): Promise<void> {

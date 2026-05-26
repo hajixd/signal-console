@@ -95,8 +95,7 @@ const LOCAL_RUNTIME_ROOT = process.env.VERCEL === "1" ? path.join(tmpdir(), "sig
 const LOCAL_WEEKLY_SUMMARY_PATH = path.join(LOCAL_RUNTIME_ROOT, "signal-console-weekly-summaries.json");
 const LOCAL_DAILY_SUMMARY_PATH = path.join(LOCAL_RUNTIME_ROOT, "signal-console-daily-summaries.json");
 const SUMMARY_MARKETS: AutoTradeMarket[] = ["forex", "futures"];
-const MAX_TRADE_LINES = 14;
-const SUMMARY_SEPARATOR = "-------------------------------------------------------";
+const MAX_TRADE_LINES = 8;
 
 function escapeHtml(value: string): string {
   return value
@@ -121,6 +120,7 @@ function formatMoney(value: number, signed = false): string {
 }
 
 function formatNumber(value: number, digits = 2): string {
+  if (!Number.isFinite(value)) return "inf";
   if (!Number.isFinite(value)) return "∞";
   return new Intl.NumberFormat("en-US", {
     maximumFractionDigits: digits,
@@ -137,7 +137,7 @@ function formatPct(value: number): string {
 }
 
 function summaryTitle(title: string): string {
-  return `${SUMMARY_SEPARATOR}\n<b>${escapeHtml(title)}</b>\n${SUMMARY_SEPARATOR}`;
+  return `<b>${escapeHtml(title)}</b>`;
 }
 
 function weeklyMarkerKey(market: AutoTradeMarket, weekKey: string): string {
@@ -333,6 +333,11 @@ function tradeRiskDollars(trade: TradeAlert): number {
 }
 
 function tradePnl(trade: TradeAlert): number | undefined {
+  const placedOrders = (trade.autoTradeOrders ?? []).filter((order) => order.status === "placed");
+  const orderPnl = placedOrders
+    .map((order) => order.netPnlDollars)
+    .filter((value): value is number => typeof value === "number" && Number.isFinite(value));
+  if (placedOrders.length > 0 && orderPnl.length === placedOrders.length) return orderPnl.reduce((sum, value) => sum + value, 0);
   return typeof trade.lifecyclePnlDollars === "number" && Number.isFinite(trade.lifecyclePnlDollars)
     ? trade.lifecyclePnlDollars
     : undefined;
@@ -395,8 +400,8 @@ function symbolBreakdownLines(trades: TradeAlert[]): string[] {
 
   return [...groups.entries()]
     .sort((left, right) => Math.abs(right[1].net) - Math.abs(left[1].net) || right[1].total - left[1].total)
-    .slice(0, 6)
-    .map(([symbol, group]) => `- ${symbol}: ${formatMoney(group.net, true)} | ${group.closed}/${group.total} closed`);
+    .slice(0, 4)
+    .map(([symbol, group]) => `${symbol} ${formatMoney(group.net, true)} (${group.closed}/${group.total})`);
 }
 
 function executionSummaryLines(trades: TradeAlert[]): string[] {
@@ -407,7 +412,7 @@ function executionSummaryLines(trades: TradeAlert[]): string[] {
   }
   return [...counts.entries()]
     .sort((left, right) => right[1] - left[1] || left[0].localeCompare(right[0]))
-    .map(([label, count]) => `- ${count} ${label}`);
+    .map(([label, count]) => `${count} ${label}`);
 }
 
 function formatTradeSummaryMessage(
@@ -444,26 +449,17 @@ function formatTradeSummaryMessage(
   const hiddenTradeCount = Math.max(0, trades.length - tradeLines.length);
   const symbolLines = symbolBreakdownLines(trades);
   const executionLines = executionSummaryLines(trades);
+  const executionSummary = executionLines.length ? executionLines.join(", ") : "none";
+  const symbolSummary = symbolLines.length ? symbolLines.join(", ") : undefined;
   const lines = [
     summaryTitle(`${marketTitle(market)} ${fields.title}`),
-    `Period: <b>${escapeHtml(fields.dateLabel)}</b>`,
-    `${escapeHtml(formatPacificTime(fields.windowStart))} to ${escapeHtml(formatPacificTime(fields.windowEnd))}`,
-    "",
-    `<b>Results:</b>`,
-    `Trades: <b>${trades.length}</b> | Closed: <b>${closedTrades.length}</b> | Open: <b>${openTrades.length}</b>`,
-    `Net P/L: <b>${formatMoney(netPnl, true)}</b>`,
-    `Win Rate: <b>${formatPct(winRate)}</b> | PF: <b>${formatNumber(profitFactor)}</b>`,
-    `Avg Win: <b>${formatMoney(averageWin, true)}</b> | Avg Loss: <b>${formatMoney(averageLoss, true)}</b>`,
-    `Outcomes: ${takeProfits} TP | ${stopLosses} SL | ${maxBars} Max Bars`,
-    openTrades.length ? `Open Risk: ${formatMoney(openRisk)}` : undefined,
-    "",
-    `<b>Execution:</b>`,
-    ...(executionLines.length ? executionLines.map(escapeHtml) : ["No executions recorded"]),
-    symbolLines.length ? "" : undefined,
-    symbolLines.length ? `<b>By Symbol:</b>` : undefined,
-    ...symbolLines.map(escapeHtml),
-    "",
-    `<b>Trades:</b>`,
+    `<b>${escapeHtml(fields.dateLabel)}</b>`,
+    `Trades ${trades.length} | Closed ${closedTrades.length} | Open ${openTrades.length} | Net <b>${formatMoney(netPnl, true)}</b>`,
+    `WR ${formatPct(winRate)} | PF ${formatNumber(profitFactor)} | Avg ${formatMoney(averageWin, true)}/${formatMoney(averageLoss, true)}`,
+    `TP/SL/MB ${takeProfits}/${stopLosses}/${maxBars}${openTrades.length ? ` | Open risk ${formatMoney(openRisk)}` : ""}`,
+    `Exec ${escapeHtml(executionSummary)}`,
+    symbolSummary ? `Symbols ${escapeHtml(symbolSummary)}` : undefined,
+    `<b>Recent:</b>`,
     ...(tradeLines.length ? tradeLines.map(escapeHtml) : [fields.emptyTradeText]),
     hiddenTradeCount ? `...and ${hiddenTradeCount} more.` : undefined
   ];
@@ -476,8 +472,8 @@ export function formatWeeklySummaryMessage(market: AutoTradeMarket, window: Week
     market,
     {
       dateLabel: `Week ending ${window.weekKey}`,
-      emptyTradeText: "No trades were alerted for this market this week.",
-      title: "Weekly Summary",
+      emptyTradeText: "No trades this week.",
+      title: "Weekly",
       windowEnd: window.end,
       windowStart: window.start
     },
@@ -490,8 +486,8 @@ export function formatDailySummaryMessage(market: AutoTradeMarket, window: Daily
     market,
     {
       dateLabel: `Trading day ${window.tradingDateKey}`,
-      emptyTradeText: "No trades were alerted for this market today.",
-      title: "Daily Summary",
+      emptyTradeText: "No trades today.",
+      title: "Daily",
       windowEnd: window.end,
       windowStart: window.start
     },

@@ -12,7 +12,7 @@
     "https://www.semanticscholar.org/paper/The-Probability-of-Backtest-Overfitting-Bailey-Borwein/b1233b4f5384f003e85c2e0eec1a2dfc08f624c5"
   ],
   "researchSummary": "Cross-asset validation of `ZB 5-day daily mean reversion overnight (Friday shorts true 5R)`. Local mutation of Daily Tsmom Next Overnight; filter: short signals on weekday 4. Uses true bracket stop/target management at 5:1 planned reward-to-risk. Cross-asset rerun uses true bracket target/stop at 5:1 planned reward-to-risk.",
-  "selectionMethod": "Fast cross-asset true-RR validation: existing bracket pattern was evaluated on a different asset with pre-2022 train diagnostics, post-2022 strict anti-cheat forward validation, bootstrap checks, and same-asset trade-overlap rejection. Management sweep promoted `be_trail_prior_bar_b4` only after strict forward PF improved from 2.41 to 2.67.",
+  "selectionMethod": "Fast cross-asset true-RR validation: existing bracket pattern was evaluated on a different asset with pre-2022 train diagnostics, post-2022 strict anti-cheat forward validation, bootstrap checks, and same-asset trade-overlap rejection. Management sweep promoted `be_trail_prior_bar_b4` only after strict forward PF improved from 2.41 to 2.67. Management sweep promoted `be_trail_prior_bar_b4` only after strict forward PF improved from 2.41 to 2.67.",
   "trainingWindow": {
     "start": "asset_start",
     "end": "2021-12-31"

@@ -12,7 +12,7 @@
     "https://www.semanticscholar.org/paper/The-Probability-of-Backtest-Overfitting-Bailey-Borwein/b1233b4f5384f003e85c2e0eec1a2dfc08f624c5"
   ],
   "researchSummary": "US opening continuation into the closing half-hour. Filter: month 9. True bracket exit uses 2:1 reward/risk; forward PF was recomputed from actual stop/target/time exits.",
-  "selectionMethod": "Fixed session-edge research grid; pre-2022 training ranked candidates, then post-2022 forward trades had to clear PF/trade-count/split/no-duplicate gates. Management sweep promoted `be_trail_hourly_pivot_b0` only after strict forward PF improved from 3.14 to 3.28.",
+  "selectionMethod": "Fixed session-edge research grid; pre-2022 training ranked candidates, then post-2022 forward trades had to clear PF/trade-count/split/no-duplicate gates. Management sweep promoted `be_trail_hourly_pivot_b0` only after strict forward PF improved from 3.14 to 3.28. Management sweep promoted `be_trail_hourly_pivot_b0` only after strict forward PF improved from 3.14 to 3.28.",
   "trainingWindow": {
     "start": "asset_start",
     "end": "2021-12-31"

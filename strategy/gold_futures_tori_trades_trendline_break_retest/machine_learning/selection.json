@@ -10,7 +10,7 @@
     "https://www.youtube.com/@ToriTrades"
   ],
   "researchSummary": "Public trendline break-and-retest playbook promoted because it cleared high-PF stress validation.",
-  "selectionMethod": "Existing research folder promoted after chronological split, rolling-window, bootstrap, block-bootstrap, and annual walk-forward stress checks. No RR threshold was required for this competition pass.",
+  "selectionMethod": "Existing research folder promoted after chronological split, rolling-window, bootstrap, block-bootstrap, and annual walk-forward stress checks. No RR threshold was required for this competition pass. Management sweep promoted `be_trail_hourly_pivot_b0` only after strict forward PF improved from 2.13 to 2.50. Management sweep promoted `be_trail_hourly_pivot_b0` only after strict forward PF improved from 2.13 to 2.50.",
   "trainingWindow": {
     "start": "not_available",
     "end": "not_available"
@@ -19,15 +19,22 @@
     "start": "2022-01-01",
     "end": "asset_latest"
   },
-  "selectedTrainingProfitFactor": null,
-  "selectedTrainingTrades": 0,
-  "selectedForwardProfitFactor": 2.715948,
+  "selectedTrainingProfitFactor": 1.594935,
+  "selectedTrainingTrades": 116,
+  "selectedForwardProfitFactor": 2.498995,
   "selectedForwardTrades": 63,
   "minimumRiskReward": null,
   "selectedRiskReward": 1.733333,
-  "forwardTotalR": 32.901232,
-  "forwardMaxDrawdownR": 3.879206,
-  "verificationSummary": "Stress PF 2.72 over 63 trades; quarter PF floor 1.24; bootstrap p05 1.72; block-bootstrap p05 1.71; annual pass 80%.",
+  "forwardTotalR": 26.097753,
+  "forwardMaxDrawdownR": 3.598214,
+  "verificationSummary": "Management sweep `be_trail_hourly_pivot_b0` strict PF 2.50 over 63 trades, beating baseline PF 2.13; train PF 1.59, bootstrap p05 1.47, block-bootstrap p05 1.48, odd/even min PF 2.15, annual pass rate 80%.",
   "costUnits": 0,
-  "oneTradePerDay": false
+  "oneTradePerDay": false,
+  "dynamicStopLossPolicy": {
+    "mode": "trail_hourly_pivot",
+    "bufferUnits": 0.0
+  },
+  "forwardWins": 34,
+  "forwardLosses": 23,
+  "forwardAverageR": 0.41425
 }

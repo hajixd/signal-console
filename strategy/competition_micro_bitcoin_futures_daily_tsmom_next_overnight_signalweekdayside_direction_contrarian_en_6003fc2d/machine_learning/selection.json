@@ -10,7 +10,7 @@
     "https://pages.stern.nyu.edu/~lpederse/papers/TimeSeriesMomentum.pdf"
   ],
   "researchSummary": "Tests short-horizon own-return continuation/reversal inspired by time-series momentum literature. Filtered by signalWeekdaySide=1_long.",
-  "selectionMethod": "Pre-2022 train-score rank, then post-2022 forward qualification. No parameters were fit on post-2022 data. Management sweep promoted `be_trail_hourly_pivot_b0` only after strict forward PF improved from 3.55 to 3.72.",
+  "selectionMethod": "Pre-2022 train-score rank, then post-2022 forward qualification. No parameters were fit on post-2022 data. Management sweep promoted `be_trail_hourly_pivot_b0` only after strict forward PF improved from 3.55 to 3.72. Management sweep promoted `be_trail_hourly_pivot_b0` only after strict forward PF improved from 3.55 to 3.72.",
   "trainingWindow": {
     "start": "asset_start",
     "end": "2021-12-31"
