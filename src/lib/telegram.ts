@@ -5,7 +5,7 @@ import { dollarPerUnit, instrumentSizeLabel } from "./instruments";
 const TELEGRAM_MAX_TEXT_LENGTH = 3900;
 const TELEGRAM_SEND_TIMEOUT_MS = 10_000;
 const TELEGRAM_FALLBACK_TIME_ZONE = "America/Los_Angeles";
-const NO_ACTIVE_AUTO_TRADE_ACCOUNTS = "no active auto-trade accounts";
+const NO_ACTIVE_AUTO_TRADE_ACCOUNTS = "No accounts were enabled for auto-trade on this signal.";
 const FUNDED_ACCOUNT_SIZE_PATTERN = /\b(50|100|150|200|250|300)\s*k(?:\s*tc)?\b/i;
 
 function formatPrice(value: number): string {
