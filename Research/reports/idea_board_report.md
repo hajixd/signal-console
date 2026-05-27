@@ -1,6 +1,6 @@
 # Idea Board Report
 
-Generated: 2026-05-27T00:01:20.687438+00:00
+Generated: 2026-05-27T16:01:11.503606+00:00
 
 ## I Backtested 1,178,668 Opening Range Breakout Trades. Here's the Data.
 
