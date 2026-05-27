@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import { assetForKey, assetForSymbol, assetLookupSymbolForSymbol } from "@/lib/assets";
+import { buildAutoTradeTestTrade } from "@/lib/auto-trade-test";
 import { scaledAutoTradeSize } from "@/lib/auto-trade-utils";
 import {
   getStoredProjectXConnections,
@@ -803,6 +804,153 @@ export async function executeProjectXManagementTrade(trade: TradeAlert, event: T
     if (orders.some((order) => order.status === "dry_run")) return result("dry_run", summarizeOrders(orders));
     if (placedOrders.length) return result("placed", summarizeOrders(orders));
     return result("failed", summarizeOrders(orders));
+  } catch (error) {
+    return result("failed", { error: readableProjectXError(error) });
+  }
+}
+
+export async function executeProjectXTestTrade(input: { accountId: number; connectionId: string }): Promise<ProjectXAutoTradeResult> {
+  if (!projectXAutoTradingEnabled()) {
+    return result("disabled", { error: "PROJECTX_AUTO_TRADE_ENABLED is disabled." });
+  }
+
+  try {
+    const connectionRefreshes = await refreshedConnections();
+    const targetRefresh = connectionRefreshes.find((refresh) => refresh.connection.id === input.connectionId);
+    if (!targetRefresh) {
+      return result("skipped", { error: "ProjectX account folder is no longer connected." });
+    }
+
+    const account = targetRefresh.connection.accounts.find((item) => item.id === input.accountId);
+    if (!account) {
+      return result("skipped", { error: "ProjectX account was not found in this folder." });
+    }
+
+    const orderBase: Omit<AutoTradeOrderSummary, "status"> = {
+      accountBalance: account.balance,
+      accountConnectionId: targetRefresh.connection.id,
+      accountGroupName: connectionGroupName(targetRefresh.connection),
+      accountId: account.id,
+      accountName: account.name
+    };
+
+    if (targetRefresh.error) {
+      return result("failed", {
+        error: `ProjectX connection refresh failed: ${targetRefresh.error}`,
+        orders: [
+          {
+            ...orderBase,
+            error: `ProjectX connection refresh failed: ${targetRefresh.error}`,
+            status: "failed"
+          }
+        ]
+      });
+    }
+
+    if (!account.canTrade || !account.isVisible) {
+      const error = "ProjectX account is not tradeable or visible.";
+      return result("skipped", { error, orders: [{ ...orderBase, error, status: "skipped" }] });
+    }
+
+    if (new Set(targetRefresh.connection.pausedAccountIds).has(account.id)) {
+      const error = "ProjectX account is paused. Resume it before testing live execution.";
+      return result("skipped", { error, orders: [{ ...orderBase, error, status: "skipped" }] });
+    }
+
+    const trade = await buildAutoTradeTestTrade("futures", "projectx", account.id, { useStoredPrice: false });
+    const contractLookup = await projectXContractForTrade(targetRefresh.connection.token, trade);
+    const contract = contractLookup.contract;
+    if (!contract) return result("failed", { error: `No ProjectX contract found for ${contractLookup.searchTexts.join(", ")}.` });
+
+    const baseSize = positiveNumber(trade.sizeMultiplier ?? 1, "Order size");
+    const size = projectXOrderSizeForAccount(trade, account, baseSize);
+    const customTag = customTagForTrade(trade, account.id);
+    const contractFields = { contractId: contract.id, contractName: contract.name };
+    const summaryBase: Omit<AutoTradeOrderSummary, "status"> = {
+      ...orderBase,
+      ...contractFields,
+      customTag,
+      size
+    };
+
+    if (size <= 0) {
+      const error = "Test order skipped because the account-scaled size is below 1 contract.";
+      return result("skipped", { error, orders: [{ ...summaryBase, error, status: "skipped" }] });
+    }
+
+    const { stopLossTicks, takeProfitTicks } = projectXBracketTicksForTrade(trade);
+    const entryType: ProjectXOrderType = trade.entryType === "limit" ? 1 : 2;
+    const side: ProjectXOrderSide = trade.side === "long" ? 0 : 1;
+    const request: ProjectXPlaceOrderRequest = {
+      accountId: account.id,
+      contractId: contract.id,
+      customTag,
+      limitPrice: entryType === 1 ? trade.entryPrice : null,
+      side,
+      size,
+      stopLossBracket: {
+        ticks: stopLossTicks,
+        type: 4 as ProjectXOrderType
+      },
+      stopPrice: null,
+      takeProfitBracket: {
+        ticks: takeProfitTicks,
+        type: 1 as ProjectXOrderType
+      },
+      trailPrice: null,
+      type: entryType
+    };
+
+    if (dryRunEnabled()) {
+      return result("dry_run", summarizeOrders([{ ...summaryBase, status: "dry_run" }], contractFields));
+    }
+
+    try {
+      const order = await placeProjectXOrder(targetRefresh.connection.token, request);
+      return result(
+        "placed",
+        summarizeOrders(
+          [
+            {
+              ...summaryBase,
+              orderId: order.orderId,
+              status: "placed"
+            }
+          ],
+          contractFields
+        )
+      );
+    } catch (error) {
+      const rawMessage = readableProjectXError(error);
+      if (isPositionBracketConflict(rawMessage) && positionBracketFallbackEnabled()) {
+        const fallbackRequest = positionBracketFallbackRequest(request);
+        try {
+          const fallbackOrder = await placeProjectXOrder(targetRefresh.connection.token, fallbackRequest);
+          return result(
+            "placed",
+            summarizeOrders(
+              [
+                {
+                  ...summaryBase,
+                  customTag: fallbackRequest.customTag ?? undefined,
+                  error:
+                    "Placed via ProjectX Position Brackets fallback. Exit protection is managed by the account-level Position Bracket settings; API TP/SL ticks were not attached.",
+                  orderId: fallbackOrder.orderId,
+                  status: "placed"
+                }
+              ],
+              contractFields
+            )
+          );
+        } catch (fallbackError) {
+          const message = `${projectXOrderErrorMessage(rawMessage)} Fallback failed: ${readableProjectXError(fallbackError)}`;
+          return result("failed", { error: message, orders: [{ ...summaryBase, error: message, status: "failed" }] });
+        }
+      }
+
+      const message = projectXOrderErrorMessage(rawMessage);
+      return result("failed", { error: message, orders: [{ ...summaryBase, error: message, status: "failed" }] });
+    }
   } catch (error) {
     return result("failed", { error: readableProjectXError(error) });
   }

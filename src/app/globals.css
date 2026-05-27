@@ -2462,7 +2462,7 @@ html[data-theme="light"] .themeDarkLabel {
 .topstepAccountControls {
   grid-column: 1 / -1;
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(96px, 1fr));
   align-items: center;
   gap: 0.45rem;
 }
@@ -2489,6 +2489,43 @@ html[data-theme="light"] .themeDarkLabel {
   border-color: rgba(251, 191, 36, 0.5);
   background: rgba(251, 191, 36, 0.14);
   color: #ffffff;
+}
+
+.topstepAccountControls .testButton {
+  border-color: rgba(45, 212, 191, 0.28);
+  background: rgba(45, 212, 191, 0.08);
+  color: #99f6e4;
+}
+
+.topstepAccountControls .testButton:hover:not(:disabled) {
+  border-color: rgba(45, 212, 191, 0.48);
+  background: rgba(45, 212, 191, 0.13);
+  color: #ffffff;
+}
+
+.topstepAccountTestResult {
+  grid-column: 1 / -1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  color: rgba(226, 232, 240, 0.68);
+  font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+  font-size: 0.63rem;
+  font-weight: 800;
+  line-height: 1.35;
+}
+
+.topstepAccountTestResult.placed,
+.topstepAccountTestResult.dry_run {
+  color: #86efac;
+}
+
+.topstepAccountTestResult.failed,
+.topstepAccountTestResult.disabled {
+  color: #fecaca;
+}
+
+.topstepAccountTestResult.skipped {
+  color: #fde68a;
 }
 
 .topstepConnectForm {
@@ -7502,6 +7539,36 @@ html[data-theme="light"] .topstepAccountControls .pauseButton:hover:not(:disable
   border-color: rgba(180, 83, 9, 0.36);
   background: rgba(180, 83, 9, 0.1);
   color: #78350f;
+}
+
+html[data-theme="light"] .topstepAccountControls .testButton {
+  border-color: rgba(13, 148, 136, 0.22);
+  background: rgba(13, 148, 136, 0.06);
+  color: #0f766e;
+}
+
+html[data-theme="light"] .topstepAccountControls .testButton:hover:not(:disabled) {
+  border-color: rgba(13, 148, 136, 0.36);
+  background: rgba(13, 148, 136, 0.1);
+  color: #115e59;
+}
+
+html[data-theme="light"] .topstepAccountTestResult {
+  color: rgba(15, 23, 42, 0.62);
+}
+
+html[data-theme="light"] .topstepAccountTestResult.placed,
+html[data-theme="light"] .topstepAccountTestResult.dry_run {
+  color: #15803d;
+}
+
+html[data-theme="light"] .topstepAccountTestResult.failed,
+html[data-theme="light"] .topstepAccountTestResult.disabled {
+  color: #b91c1c;
+}
+
+html[data-theme="light"] .topstepAccountTestResult.skipped {
+  color: #92400e;
 }
 
 html[data-theme="light"] .backtest-stat-card.tone-up {

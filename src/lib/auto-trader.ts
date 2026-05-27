@@ -1,4 +1,5 @@
 import { autoTradeMarketForSignal, autoTradeProviderById, type AutoTradeProviderId } from "@/lib/auto-trade-platforms";
+import { buildAutoTradeTestTrade } from "@/lib/auto-trade-test";
 import {
   cTraderBridgeConfigured,
   executeCTraderBridgeAutoTrade,
@@ -10,7 +11,7 @@ import {
 import { executeMatchTraderAutoTrade, matchTraderConfigured } from "@/lib/matchtrader-auto-trader";
 import { getAutoTradeConnection } from "@/lib/auto-trade-connections";
 import { getLatestStoredProjectXConnection } from "@/lib/projectx-connections";
-import { executeProjectXAutoTrade, executeProjectXManagementTrade, type ProjectXAutoTradeResult } from "@/lib/projectx-auto-trader";
+import { executeProjectXAutoTrade, executeProjectXManagementTrade, executeProjectXTestTrade, type ProjectXAutoTradeResult } from "@/lib/projectx-auto-trader";
 import { executeTradeLockerAutoTrade, tradeLockerConfigured } from "@/lib/tradelocker-auto-trader";
 import { executeTradovateAutoTrade, tradovateConfigured } from "@/lib/tradovate-auto-trader";
 import type { AutoTradeOrderSummary, TradeAlert, TradeManagementEvent } from "@/lib/types";
@@ -86,6 +87,10 @@ const AUTO_TRADE_CONNECTORS: AutoTradeConnector[] = [
     providerId: "matchtrader"
   }
 ];
+
+function connectorForProvider(providerId: AutoTradeProviderId): AutoTradeConnector | undefined {
+  return AUTO_TRADE_CONNECTORS.find((connector) => connector.providerId === providerId);
+}
 
 function annotateOrders(
   orders: AutoTradeOrderSummary[] | undefined,
@@ -169,6 +174,55 @@ export async function executeAutoTradeManagement(trade: TradeAlert, event: Trade
   }
 
   const execution = await connector.executeManagement(trade, event);
+  return {
+    ...execution,
+    providerId: connector.providerId,
+    providerName,
+    orders: annotateOrders(execution.orders, connector.providerId, providerName)
+  };
+}
+
+export async function executeAutoTradeTest(input: {
+  accountId?: number;
+  connectionId?: string;
+  providerId: AutoTradeProviderId;
+}): Promise<AutoTradeExecutionResult> {
+  const provider = autoTradeProviderById(input.providerId);
+  const providerName = provider?.label ?? input.providerId;
+
+  if (input.providerId === "projectx") {
+    if (!input.connectionId || typeof input.accountId !== "number") {
+      return result("skipped", {
+        error: "Choose a ProjectX account to test.",
+        providerId: input.providerId,
+        providerName
+      });
+    }
+
+    const execution = await executeProjectXTestTrade({
+      accountId: input.accountId,
+      connectionId: input.connectionId
+    });
+    return {
+      ...execution,
+      providerId: input.providerId,
+      providerName,
+      orders: annotateOrders(execution.orders, input.providerId, providerName)
+    };
+  }
+
+  const connector = connectorForProvider(input.providerId);
+  const market = provider?.markets[0];
+  if (!connector || !market) {
+    return result("skipped", {
+      error: `${providerName} cannot be tested by the auto-trade router yet.`,
+      providerId: input.providerId,
+      providerName
+    });
+  }
+
+  const trade = await buildAutoTradeTestTrade(market, input.providerId);
+  const execution = await connector.execute(trade);
   return {
     ...execution,
     providerId: connector.providerId,

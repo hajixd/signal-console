@@ -41,6 +41,34 @@ type SavedAutoTradeConnection = {
   storageMode?: "firebase" | "local";
 };
 
+type AutoTradeTestStatus = "disabled" | "dry_run" | "failed" | "placed" | "skipped";
+
+type AutoTradeTestOrder = {
+  accountId?: number;
+  accountName?: string;
+  contractId?: string;
+  contractName?: string;
+  error?: string;
+  orderId?: number;
+  status?: AutoTradeTestStatus;
+};
+
+type AutoTradeTestResponse = {
+  checkedAt?: string;
+  contractId?: string;
+  contractName?: string;
+  error?: string;
+  orderId?: number;
+  orders?: AutoTradeTestOrder[];
+  providerName?: string;
+  status?: AutoTradeTestStatus;
+};
+
+type AutoTradeTestState = {
+  message: string;
+  status: AutoTradeTestStatus | "running";
+};
+
 type ConnectionField = {
   advanced?: boolean;
   defaultValue?: string;
@@ -258,6 +286,37 @@ async function parseSavedConnections(response: Response): Promise<{ connections:
   return { connections: payload.connections ?? [] };
 }
 
+async function parseAutoTradeTestResponse(response: Response): Promise<AutoTradeTestResponse> {
+  const payload = (await response.json().catch(() => ({}))) as AutoTradeTestResponse;
+  if (!response.ok && !payload.status) throw new Error(payload.error ?? "Auto-trade test failed.");
+  return payload;
+}
+
+function projectXTestKey(connectionId: string, accountId: number): string {
+  return `projectx:${connectionId}:${accountId}`;
+}
+
+function providerTestKey(providerId: AutoTradeProviderId): string {
+  return `provider:${providerId}`;
+}
+
+function autoTradeTestMessage(result: AutoTradeTestResponse): string {
+  const order =
+    result.orders?.find((item) => item.status === "placed") ??
+    result.orders?.find((item) => item.status === "dry_run") ??
+    result.orders?.find((item) => item.error) ??
+    result.orders?.[0];
+  const contract = order?.contractName ?? order?.contractId ?? result.contractName ?? result.contractId ?? "test order";
+  const orderId = order?.orderId ?? result.orderId;
+
+  if (result.status === "placed") return `Placed ${contract}${orderId ? ` #${orderId}` : ""}`;
+  if (result.status === "dry_run") return `Dry run ${contract}`;
+  if (result.status === "disabled") return result.error ?? "Auto-trade is disabled";
+  if (result.status === "skipped") return result.error ?? order?.error ?? "Test skipped";
+  if (result.status === "failed") return result.error ?? order?.error ?? "Test failed";
+  return result.error ?? "Test finished";
+}
+
 type AutoTradingConnectionPanelProps = {
   market: AutoTradeMarket;
 };
@@ -296,6 +355,7 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
   const [isSubmittingFolderAction, setIsSubmittingFolderAction] = useState(false);
   const [unlockedProjectXFolderIds, setUnlockedProjectXFolderIds] = useState<string[]>([]);
   const [reconnectProjectXConnectionId, setReconnectProjectXConnectionId] = useState<string | null>(null);
+  const [autoTradeTests, setAutoTradeTests] = useState<Record<string, AutoTradeTestState>>({});
   const folderCodeInputRef = useRef<HTMLInputElement | null>(null);
   const folderActionCurrentInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -341,6 +401,7 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
   const primaryProviderFields = selectedProviderFields.filter((field) => !field.advanced);
   const advancedProviderFields = selectedProviderFields.filter((field) => field.advanced);
   const canManageAutoTrade = Boolean(accountMode);
+  const canTestAutoTrade = accountMode === "Admin";
 
   useEffect(() => {
     function syncAccountMode() {
@@ -813,6 +874,60 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
     }
   }
 
+  async function runAutoTradeTest(
+    key: string,
+    label: string,
+    payload: { accountId?: number; connectionId?: string; providerId: AutoTradeProviderId }
+  ) {
+    if (!canTestAutoTrade || autoTradeTests[key]?.status === "running") return;
+    const confirmed = window.confirm(`Send a live auto-trade test order with TP and SL to ${label}?`);
+    if (!confirmed) return;
+
+    setAutoTradeTests((current) => ({
+      ...current,
+      [key]: { message: "Testing...", status: "running" }
+    }));
+
+    try {
+      const response = await fetch("/api/auto-trading/test", {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      const result = await parseAutoTradeTestResponse(response);
+      setAutoTradeTests((current) => ({
+        ...current,
+        [key]: {
+          message: autoTradeTestMessage(result),
+          status: result.status ?? (response.ok ? "placed" : "failed")
+        }
+      }));
+    } catch (error) {
+      setAutoTradeTests((current) => ({
+        ...current,
+        [key]: {
+          message: error instanceof Error ? error.message : "Auto-trade test failed.",
+          status: "failed"
+        }
+      }));
+    }
+  }
+
+  function handleProjectXTest(folder: ProjectXConnectionSummary, account: ProjectXAccount) {
+    void runAutoTradeTest(projectXTestKey(folder.id, account.id), `${account.name} (${account.id})`, {
+      accountId: account.id,
+      connectionId: folder.id,
+      providerId: "projectx"
+    });
+  }
+
+  function handleGenericTest(connection: SavedAutoTradeConnection) {
+    void runAutoTradeTest(providerTestKey(connection.id), connection.accountName ?? connection.accountId ?? connection.providerLabel, {
+      providerId: connection.id
+    });
+  }
+
   async function unlockProjectXFolder(code = folderCodeInput) {
     if (!pendingProjectXFolder) return;
     const accessCode = cleanAccessCode(code, FOLDER_UNLOCK_CODE_MAX_LENGTH);
@@ -1245,6 +1360,9 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
                 {activeProjectXFolder.accounts.map((account) => {
                   const folderPausedAccountIds = new Set(activeProjectXFolder.pausedAccountIds ?? activeProjectXFolder.accounts.map((item) => item.id));
                   const accountPaused = folderPausedAccountIds.has(account.id);
+                  const testKey = projectXTestKey(activeProjectXFolder.id, account.id);
+                  const testState = autoTradeTests[testKey];
+                  const isTesting = testState?.status === "running";
                   const connectionStatus = activeProjectXFolder.readable
                     ? accountConnectionStatus(account, accountPaused)
                     : { className: "status failed", dotClassName: "statusDot red", label: "Disconnected" };
@@ -1285,6 +1403,17 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
                           >
                             {isUpdatingPaused ? "Updating..." : activeProjectXFolder.readable ? (accountPaused ? "Play" : "Pause") : "Reconnect"}
                           </button>
+                          {canTestAutoTrade ? (
+                            <button
+                              className="testButton"
+                              type="button"
+                              disabled={isTesting || isDisconnecting || isUpdatingPaused || accountPaused || !activeProjectXFolder.readable}
+                              onClick={() => handleProjectXTest(activeProjectXFolder, account)}
+                              title={accountPaused ? "Resume this account before testing." : "Send a live TP/SL test order."}
+                            >
+                              {isTesting ? "Testing..." : "Test"}
+                            </button>
+                          ) : null}
                           <button
                             className="dangerButton"
                             type="button"
@@ -1293,6 +1422,7 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
                           >
                             Remove Account
                           </button>
+                          {testState ? <small className={`topstepAccountTestResult ${testState.status}`}>{testState.message}</small> : null}
                         </div>
                       ) : null}
                     </div>
@@ -1332,6 +1462,9 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
               {visibleSavedConnections.map((connection) => {
                 const provider = providers.find((item) => item.id === connection.id);
                 const connectionReady = autoTradeProviderFullyFunctioning(connection.id);
+                const testKey = providerTestKey(connection.id);
+                const testState = autoTradeTests[testKey];
+                const isTesting = testState?.status === "running";
                 return (
                   <div className={`topstepAccountRow${connectionReady ? "" : " autoTradeDisabledRow"}`} key={connection.id}>
                     <div className="topstepAccountFields">
@@ -1377,9 +1510,21 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
                         >
                           {isUpdatingPaused ? "Updating..." : connection.paused ? "Play" : "Pause"}
                         </button>
+                        {canTestAutoTrade ? (
+                          <button
+                            className="testButton"
+                            type="button"
+                            disabled={isTesting || isUpdatingPaused || isDisconnecting || connection.paused || !connectionReady}
+                            onClick={() => handleGenericTest(connection)}
+                            title={connection.paused ? "Resume this account before testing." : "Send a live TP/SL test order."}
+                          >
+                            {isTesting ? "Testing..." : "Test"}
+                          </button>
+                        ) : null}
                         <button className="dangerButton" type="button" disabled={isDisconnecting} onClick={() => handleGenericDisconnect(connection.id)}>
                           {isDisconnecting ? "Removing..." : "Remove"}
                         </button>
+                        {testState ? <small className={`topstepAccountTestResult ${testState.status}`}>{testState.message}</small> : null}
                       </div>
                     ) : null}
                   </div>
