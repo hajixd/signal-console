@@ -33,7 +33,7 @@ import {
   aggregateBacktest,
   getBacktestCatalogFreshness,
   getBacktestStats,
-  getBacktestTrades,
+  getBacktestTradesForStrategies,
   getStrategyCatalog,
   type BacktestPriceMode,
   type BacktestSizeMode,
@@ -60,6 +60,8 @@ import type { NotificationStatus, TradeAlert, TradeManagementEvent } from "@/lib
 
 export const dynamic = "force-dynamic";
 const DEFAULT_SELECTED_STRATEGY_COUNT = 1;
+const DEFAULT_HISTORY_ROW_LIMIT = 250;
+const ANALYTICS_TRADE_RENDER_LIMIT = 800;
 const TRADE_CHART_TIMEFRAME_VALUES = new Set<TradeChartTimeframe>(["1m", "5m", "10m", "15m", "30m", "45m", "1h", "4h", "1d"]);
 const HISTORY_LOOKBACK_MS = 365 * 24 * 60 * 60 * 1000;
 const EMPTY_LIVE_CONFIG: LiveConfig = {
@@ -80,6 +82,8 @@ type HomeProps = {
     dailyLoss?: string;
     dailyLock?: string;
     dailyStop?: string;
+    historyLimit?: string;
+    analytics?: string;
   }>;
 };
 
@@ -511,28 +515,29 @@ function strategySizeLabel(symbols: string[], sizeMultiplier: number): string {
   return referenceSymbol ? instrumentSizeLabel(referenceSymbol, sizeMultiplier) : `${fmtNumber(sizeMultiplier)} units`;
 }
 
-function tradeCadence(trades: BacktestTrade[]) {
-  const times = trades.map((trade) => Date.parse(trade.entryTime)).filter((time) => Number.isFinite(time));
-  if (!times.length) {
-    return {
-      tradesPerDay: 0,
-      tradesPerWeek: 0
-    };
-  }
-
-  const start = Math.min(...times);
-  const end = Math.max(...times);
-  const days = Math.max((end - start) / 86_400_000, 1);
-  return {
-    tradesPerDay: trades.length / days,
-    tradesPerWeek: trades.length / (days / 7)
-  };
-}
-
 function numericParam(value: string | undefined, fallback: number, min = 0): number {
   const parsed = Number(value);
   if (!Number.isFinite(parsed)) return fallback;
   return Math.max(min, parsed);
+}
+
+function dashboardHref(
+  params: Awaited<HomeProps["searchParams"]> | undefined,
+  updates: Partial<Record<keyof NonNullable<Awaited<HomeProps["searchParams"]>>, string | null>>
+): string {
+  const nextParams = new URLSearchParams();
+  for (const [key, value] of Object.entries(params ?? {})) {
+    if (typeof value === "string" && value) nextParams.set(key, value);
+  }
+  for (const [key, value] of Object.entries(updates)) {
+    if (typeof value === "string" && value) {
+      nextParams.set(key, value);
+    } else {
+      nextParams.delete(key);
+    }
+  }
+  const query = nextParams.toString();
+  return query ? `/?${query}` : "/";
 }
 
 function challengeRulesFromParams(
@@ -1276,10 +1281,6 @@ function sameRecentDisplay(values: string[]): boolean {
   return values.length < 2 || values[0] === values[1];
 }
 
-function latestStrategyTradeTime(trades: BacktestTrade[]): number {
-  return Math.max(0, ...trades.map((trade) => Date.parse(trade.entryTime)).filter(Number.isFinite));
-}
-
 async function safeRuntimeValue<T>(loader: () => Promise<T>, fallback: T): Promise<T> {
   try {
     return await loader();
@@ -1477,11 +1478,10 @@ function challengeSessionCount(trades: { entryTime: string; pnlDollars: number }
 
 export default async function Home({ searchParams }: HomeProps) {
   const params = await searchParams;
-  const [liveTrades, strategyCatalog, backtestStats, backtestTrades, liveRules, liveConfig, datasetStatus, backtestFreshness] = await Promise.all([
+  const [liveTrades, strategyCatalog, backtestStats, liveRules, liveConfig, datasetStatus, backtestFreshness] = await Promise.all([
     safeRuntimeValue(getTrades, []),
     getStrategyCatalog(),
     getBacktestStats(),
-    getBacktestTrades(),
     allRules(),
     safeRuntimeValue(getLiveConfig, EMPTY_LIVE_CONFIG),
     safeRuntimeValue(async () => (await getDatasetStatus()) ?? defaultDatasetStatus(), defaultDatasetStatus()),
@@ -1526,41 +1526,46 @@ export default async function Home({ searchParams }: HomeProps) {
     statsByStrategy.set(stat.datasetId, bucket);
   }
 
-  const tradesByStrategy = new Map<string, BacktestTrade[]>();
-  for (const trade of backtestTrades) {
-    const bucket = tradesByStrategy.get(trade.datasetId) ?? [];
-    bucket.push(trade);
-    tradesByStrategy.set(trade.datasetId, bucket);
-  }
-
   const allStrategyOptions = strategyCatalog
     .map((entry) => {
       const stats = statsByStrategy.get(entry.key) ?? [];
-      const trades = tradesByStrategy.get(entry.key) ?? [];
-      const aggregate = aggregateBacktest(trades);
-      const cadence = tradeCadence(trades);
+      const stat = stats[0];
+      const aggregate = stat
+        ? {
+            avgR: stat.avgR,
+            losses: stat.losses,
+            profitFactor: stat.profitFactor,
+            totalR: stat.totalR,
+            trades: stat.trades,
+            winRatePct: stat.winRatePct,
+            wins: stat.wins
+          }
+        : aggregateBacktest([]);
       const symbols = uniqueValues(
-        [...stats.map((stat) => stat.symbol), ...trades.map((trade) => trade.symbol)].filter((value): value is string => Boolean(value))
+        [...stats.map((value) => value.symbol), entry.symbol].filter((value): value is string => Boolean(value))
       ).sort();
       const displaySymbols = symbols.length ? symbols : [entry.symbol];
       const markets = uniqueValues(
-        [...stats.map((stat) => stat.market), ...trades.map((trade) => trade.market)]
+        [...stats.map((value) => value.market), entry.market]
           .map((value) => normalizedDashboardMarket(value) ?? value)
           .filter((value): value is string => Boolean(value))
       ).sort();
       const phases = uniqueValues(stats.map((stat) => stat.phase).filter(Boolean)).sort();
-      const logicalKeys = uniqueValues(stats.map((stat) => stat.logicalKey).filter(Boolean)).sort();
-      const baseSizeMultiplier = (stats[0]?.sizeMultiplier ?? 1) * accountMultiplier;
-      const fallbackTargetDollars =
-        averageNumbers(trades.map((trade) => Math.abs(trade.tpUnits * dollarPerUnit(trade.symbol, trade.entryPrice)))) * baseSizeMultiplier;
-      const fallbackRiskDollars =
-        averageNumbers(
-          trades.map((trade) => Math.abs((Math.abs(trade.slUnits) + tradeCostUnits(trade)) * dollarPerUnit(trade.symbol, trade.entryPrice)))
-        ) * baseSizeMultiplier;
+      const logicalKeys = uniqueValues([entry.key, ...stats.map((value) => value.logicalKey).filter(Boolean)]).sort();
+      const baseSizeMultiplier = (stat?.sizeMultiplier ?? 1) * accountMultiplier;
       const liveSupported = entry.liveSupported || logicalKeys.some((key) => liveRuleByKey.has(key));
       const displaySymbol = displaySymbols[0] ?? entry.symbol;
-      const snapshot = strategyTableSnapshot(trades, displaySymbol, baseSizeMultiplier, fallbackTargetDollars, fallbackRiskDollars);
-      const plannedRiskRewardRatio = stats[0]?.riskRewardRatio ?? snapshot.riskRewardRatio;
+      const dollarUnit = dollarPerUnit(displaySymbol);
+      const fallbackTargetDollars = Math.abs((stat?.tpUnits ?? 0) * dollarUnit * baseSizeMultiplier);
+      const fallbackRiskDollars = Math.abs(((stat?.slUnits ?? 0) + (stat?.costUnits ?? 0)) * dollarUnit * baseSizeMultiplier);
+      const snapshot = {
+        ...strategyTableSnapshot([], displaySymbol, baseSizeMultiplier, fallbackTargetDollars, fallbackRiskDollars),
+        rrrMode: stat?.riskRewardRatio ? "fixed" as const : undefined,
+        sizeMode: stat?.sizeMode,
+        slMode: stat?.slMode,
+        tpMode: stat?.tpMode
+      };
+      const plannedRiskRewardRatio = stat?.riskRewardRatio ?? snapshot.riskRewardRatio;
       const targetDollars = adjustedTargetDollarsForRiskReward(
         snapshot.targetDollars,
         snapshot.riskDollars,
@@ -1574,7 +1579,7 @@ export default async function Home({ searchParams }: HomeProps) {
         symbol: displaySymbol,
         timeframeLabel: entry.timeframes.join(", "),
         timeframes: entry.timeframes,
-        variantId: stats[0]?.variantId
+        variantId: stat?.variantId
       });
 
       return {
@@ -1604,7 +1609,7 @@ export default async function Home({ searchParams }: HomeProps) {
         winRatePct: aggregate.winRatePct,
         profitFactor: aggregate.profitFactor,
         trades: aggregate.trades,
-        tradesPerWeek: cadence.tradesPerWeek,
+        tradesPerWeek: stat?.tradesPerWeek ?? 0,
         tpUnits: targetDollars,
         slUnits: snapshot.riskDollars,
         unitLabel: "avg $",
@@ -1619,7 +1624,7 @@ export default async function Home({ searchParams }: HomeProps) {
         sizeMode: snapshot.sizeMode,
         rrrMode: snapshot.rrrMode,
         liveSupported,
-        stat: stats[0]
+        stat
       } satisfies StrategyOption;
     })
     .sort((left, right) => {
@@ -1632,14 +1637,21 @@ export default async function Home({ searchParams }: HomeProps) {
   const allKeys = strategyOptions.map((option) => option.key);
   const persistedLiveEnabledKeys = liveConfig.enabledDatasetIds.filter((key) => allKeys.includes(key));
   const persistedSelectedKeys = liveConfig.dashboardSelectedDatasetIds.filter((key) => allKeys.includes(key));
-  const recentDefaultKeys = [...strategyOptions]
-    .sort((left, right) => latestStrategyTradeTime(tradesByStrategy.get(right.key) ?? []) - latestStrategyTradeTime(tradesByStrategy.get(left.key) ?? []))
-    .slice(0, DEFAULT_SELECTED_STRATEGY_COUNT)
-    .map((option) => option.key);
+  const recentDefaultKeys = strategyOptions.slice(0, DEFAULT_SELECTED_STRATEGY_COUNT).map((option) => option.key);
   const defaultSelectedKeys = persistedSelectedKeys.length ? persistedSelectedKeys : persistedLiveEnabledKeys.length ? persistedLiveEnabledKeys : recentDefaultKeys;
   const selectedKeys = parseStrategySelection(params?.strategies, allKeys, defaultSelectedKeys);
   const selectedKeySet = new Set(selectedKeys);
   const activeMarketKeySet = new Set(allKeys);
+  const selectedStats = backtestStats.filter((stat) => selectedKeySet.has(stat.datasetId));
+  const selectedBacktestTradeCount = selectedStats.reduce((sum, stat) => sum + Math.max(0, stat.trades), 0);
+  const renderDetailedAnalytics = params?.analytics === "full" || selectedBacktestTradeCount <= ANALYTICS_TRADE_RENDER_LIMIT;
+  const selectedBacktestTrades = await getBacktestTradesForStrategies(
+    selectedKeys,
+    renderDetailedAnalytics ? undefined : DEFAULT_HISTORY_ROW_LIMIT
+  );
+  const fullAnalyticsHref = dashboardHref(params, { analytics: "full", historyLimit: "all" });
+  const activeMarketStats = backtestStats.filter((stat) => activeMarketKeySet.has(stat.datasetId));
+  const activeMarketBacktestTradeCount = activeMarketStats.reduce((sum, stat) => sum + Math.max(0, stat.trades), 0);
   const optionByLiveKey = new Map<string, StrategyOption>();
   for (const option of strategyOptions) {
     for (const key of [option.key, option.datasetId, option.logicalKey, ...option.logicalKeys]) {
@@ -1680,16 +1692,15 @@ export default async function Home({ searchParams }: HomeProps) {
   const activeMarketLiveTrades = liveTrades.filter(
     (trade) => Boolean(optionForLiveTrade(trade)) || normalizedDashboardMarket(trade.market) === activeMarket
   );
-  const selectedBacktestTrades = backtestTrades.filter((trade) => selectedKeySet.has(trade.datasetId));
-  const activeMarketBacktestTrades = backtestTrades.filter((trade) => activeMarketKeySet.has(trade.datasetId));
   const historyBacktestTrades = selectedBacktestTrades.filter((trade) => backtestTradeInWindow(trade, historyWindowStartMs, historyWindowEndMs));
+  const historyRowLimit = params?.historyLimit === "all" ? Number.POSITIVE_INFINITY : DEFAULT_HISTORY_ROW_LIMIT;
   const selectedDataEndAt =
     strategyOptions
       .filter((option) => selectedKeySet.has(option.key))
       .map((option) => datasetStatus?.assetCoverage?.[option.assetKey]?.lastBarAt)
       .filter((value): value is string => Boolean(value))
       .sort((left, right) => Date.parse(right) - Date.parse(left))[0];
-  const selectedBasketTrades = selectedBacktestTrades.map((trade) => {
+  const selectedBasketTrades = renderDetailedAnalytics ? selectedBacktestTrades.map((trade) => {
     const sizeMultiplier = optionByKey.get(trade.datasetId)?.sizeMultiplier ?? 1;
     return {
     key: trade.datasetId,
@@ -1708,9 +1719,15 @@ export default async function Home({ searchParams }: HomeProps) {
     side: trade.side,
     exitReason: trade.exitReason
     };
-  });
-  const visibleStoredBacktestHistoryTrades = historyBacktestTrades;
-  const historyTradeBarsBySymbol = await loadHistoryBarsBySymbol(visibleStoredBacktestHistoryTrades);
+  }) : [];
+  const visibleStoredBacktestHistoryTrades = Number.isFinite(historyRowLimit)
+    ? historyBacktestTrades.slice(0, historyRowLimit)
+    : historyBacktestTrades;
+  const shouldResolveHistoryBrackets =
+    params?.historyLimit === "all" || renderDetailedAnalytics || visibleStoredBacktestHistoryTrades.length <= 120;
+  const historyTradeBarsBySymbol = shouldResolveHistoryBrackets
+    ? await loadHistoryBarsBySymbol(visibleStoredBacktestHistoryTrades)
+    : new Map<string, TradeBracketBar[]>();
   const storedBacktestHistoryRows: TradeHistoryRow[] = visibleStoredBacktestHistoryTrades.map((trade, index) => {
     const sizeMultiplier = optionByKey.get(trade.datasetId)?.sizeMultiplier ?? 1;
     const tradeMultiplier = tradeSizeMultiplier(trade, sizeMultiplier);
@@ -1930,7 +1947,7 @@ export default async function Home({ searchParams }: HomeProps) {
     });
   const liveHistoryOpenCount = liveHistoryRows.filter((row) => row.exitReasonLabel === "Still Open").length;
   const liveHistoryClosedCount = liveHistoryRows.length - liveHistoryOpenCount;
-  const historyTotalTradeCount = visibleStoredBacktestHistoryRows.length + liveHistoryRows.length;
+  const historyTotalTradeCount = Math.max(historyBacktestTrades.length, selectedBacktestTradeCount) + liveHistoryRows.length;
   const tradeHistoryRows = [...visibleStoredBacktestHistoryRows, ...liveHistoryRows]
     .sort(
       (left, right) =>
@@ -1942,7 +1959,7 @@ export default async function Home({ searchParams }: HomeProps) {
       ...row,
       indexLabel: fmtNumber(index + 1)
     }));
-  const visibleTradeHistoryRows = tradeHistoryRows;
+  const visibleTradeHistoryRows = Number.isFinite(historyRowLimit) ? tradeHistoryRows.slice(0, historyRowLimit) : tradeHistoryRows;
   const hiddenHistoryTradeCount = Math.max(0, historyTotalTradeCount - visibleTradeHistoryRows.length);
   const historyCountLabel =
     hiddenHistoryTradeCount > 0
@@ -1963,7 +1980,7 @@ export default async function Home({ searchParams }: HomeProps) {
       symbol: option.symbol,
       timeframes: option.timeframeLabel.split(",").map((timeframe) => timeframe.trim()).filter(Boolean)
     })),
-    trades: activeMarketBacktestTrades
+    trades: selectedBacktestTrades
   });
   const coverageEntries = Object.values(datasetStatus?.assetCoverage ?? {});
   const coverageRows = coverageEntries.reduce((sum, coverage) => sum + Math.max(0, coverage.rows), 0);
@@ -1977,9 +1994,9 @@ export default async function Home({ searchParams }: HomeProps) {
   const latestActiveMarketSignalAt = latestLiveTradeAt(activeMarketLiveTrades);
   const signalPausedForStaleData = isSignalDataPauseError(syncStatus.signalTradeCheck?.error);
   const signalAfterMarketMs = syncRunGapMs(syncStatus.marketDataSync, syncStatus.signalTradeCheck);
-  const activeBacktestStrategyCount = uniqueValues(activeMarketBacktestTrades.map((trade) => trade.datasetId).filter(Boolean)).length;
-  const activeBacktestSymbolCount = uniqueValues(activeMarketBacktestTrades.map((trade) => trade.symbol).filter(Boolean)).length;
-  const activeBacktestMarketCount = uniqueValues(activeMarketBacktestTrades.map((trade) => trade.market).filter(Boolean)).length;
+  const activeBacktestStrategyCount = uniqueValues(activeMarketStats.map((stat) => stat.datasetId).filter(Boolean)).length;
+  const activeBacktestSymbolCount = uniqueValues(activeMarketStats.map((stat) => stat.symbol).filter(Boolean)).length;
+  const activeBacktestMarketCount = uniqueValues(activeMarketStats.map((stat) => stat.market).filter(Boolean)).length;
   const marketDataChecks: SyncDetailCheck[] = [
     {
       detail: "Total uploaded market data files tracked by the runtime status document.",
@@ -2112,8 +2129,8 @@ export default async function Home({ searchParams }: HomeProps) {
     {
       detail: "Stored backtest rows belonging to the active market.",
       label: "Active rows",
-      tone: activeMarketBacktestTrades.length ? "good" : "bad",
-      value: fmtNumber(activeMarketBacktestTrades.length)
+      tone: activeMarketBacktestTradeCount ? "good" : "bad",
+      value: fmtNumber(activeMarketBacktestTradeCount)
     },
     {
       detail: "Distinct active-market strategies represented in backtest history.",
@@ -2159,7 +2176,7 @@ export default async function Home({ searchParams }: HomeProps) {
           }
         ]
       : []),
-    ...(!activeMarketBacktestTrades.length
+    ...(!activeMarketBacktestTradeCount
       ? [
           {
             label: "No active-market history",
@@ -2201,7 +2218,7 @@ export default async function Home({ searchParams }: HomeProps) {
       {
         issues: backtestHistoryIssues.map((issue) => issue.label),
         metrics: [
-          { label: "Rows", value: fmtNumber(activeMarketBacktestTrades.length), tone: activeMarketBacktestTrades.length ? "good" : "bad" },
+          { label: "Rows", value: fmtNumber(activeMarketBacktestTradeCount), tone: activeMarketBacktestTradeCount ? "good" : "bad" },
           { label: "Strats", value: fmtNumber(activeBacktestStrategyCount), tone: activeBacktestStrategyCount ? "good" : "warning" },
           { label: "Trades", value: fmtNumber(backtestFreshness.trades), tone: backtestFreshness.trades ? "good" : "bad" },
           { label: "Latest", value: fmtShortDateTime(latestTradeAt) }
@@ -2230,14 +2247,14 @@ export default async function Home({ searchParams }: HomeProps) {
       }
     ]
   };
-  const challengeReplayTrades = selectedBacktestTrades.map((trade) => {
+  const challengeReplayTrades = renderDetailedAnalytics ? selectedBacktestTrades.map((trade) => {
     const sizeMultiplier = optionByKey.get(trade.datasetId)?.sizeMultiplier ?? 1;
     return {
       key: trade.datasetId,
       entryTime: trade.entryTime,
       pnlDollars: boundedBacktestTradeDollarPnl(trade, sizeMultiplier)
     };
-  });
+  }) : [];
   const challengeReplaySeed = `trading-bot:${activeMarket}:${selectedKeys.join("|")}`;
   const challengeHistoricalSessions = challengeSessionCount(challengeReplayTrades);
   const telegramConfigured = Boolean(process.env.TELEGRAM_BOT_TOKEN && (process.env.TELEGRAM_GROUP_CHAT_ID || process.env.TELEGRAM_CHAT_ID));
@@ -2257,13 +2274,13 @@ export default async function Home({ searchParams }: HomeProps) {
       icon: "stats",
       id: "stats",
       label: "Stats",
-      meta: `${fmtNumber(selectedBacktestTrades.length)} trades`
+      meta: `${fmtNumber(selectedBacktestTradeCount || selectedBacktestTrades.length)} trades`
     },
     {
       icon: "replay",
       id: "challenge",
       label: "Replay",
-      meta: `${fmtNumber(challengeReplayTrades.length)} trades`
+      meta: `${fmtNumber(selectedBacktestTradeCount || challengeReplayTrades.length)} trades`
     },
     {
       icon: "history",
@@ -2376,7 +2393,9 @@ export default async function Home({ searchParams }: HomeProps) {
             <div>
               <h2>Strategies</h2>
             </div>
-            <span className="count-pill">{fmtNumber(strategyOptions.length)} strategies / {fmtNumber(selectedBacktestTrades.length)} trades</span>
+            <span className="count-pill">
+              {fmtNumber(strategyOptions.length)} strategies / {fmtNumber(selectedBacktestTradeCount || selectedBacktestTrades.length)} trades
+            </span>
           </div>
 
           <StrategySelector
@@ -2397,18 +2416,26 @@ export default async function Home({ searchParams }: HomeProps) {
             <div>
               <h2>Stats</h2>
             </div>
-            <span className="count-pill">{fmtNumber(selectedBacktestTrades.length)} selected trades</span>
+            <span className="count-pill">{fmtNumber(selectedBacktestTradeCount || selectedBacktestTrades.length)} selected trades</span>
           </div>
 
-          <SelectedStrategyStats
-            customScaleRange={liveConfig.customScaleRanges[activeMarket]}
-            dataEndAt={selectedDataEndAt}
-            defaultExpanded
-            strategies={strategyOptions}
-            toggleable={false}
-            trades={selectedBasketTrades}
-            persistedStrategyEdits={liveConfig.strategyEdits}
-          />
+          {renderDetailedAnalytics ? (
+            <SelectedStrategyStats
+              customScaleRange={liveConfig.customScaleRanges[activeMarket]}
+              dataEndAt={selectedDataEndAt}
+              defaultExpanded
+              strategies={strategyOptions}
+              toggleable={false}
+              trades={selectedBasketTrades}
+              persistedStrategyEdits={liveConfig.strategyEdits}
+            />
+          ) : (
+            <div className="empty-state">
+              <strong>Full analytics are ready</strong>
+              <span>{fmtNumber(selectedBacktestTradeCount)} selected trades are deferred from the first load.</span>
+              <Link className="secondary-action-link" href={`${fullAnalyticsHref}#stats`}>Open full analytics</Link>
+            </div>
+          )}
         </section>
 
         <section className="backtest-card challenge-card" id="challenge">
@@ -2417,21 +2444,30 @@ export default async function Home({ searchParams }: HomeProps) {
               <h2>Prop Firm Challenge Replay</h2>
             </div>
             <span className="count-pill">
-              {fmtNumber(challengeReplayTrades.length)} trades / {fmtNumber(challengeHistoricalSessions)} starts
+              {fmtNumber(selectedBacktestTradeCount || challengeReplayTrades.length)} trades /{" "}
+              {renderDetailedAnalytics ? fmtNumber(challengeHistoricalSessions) : "deferred"} starts
             </span>
           </div>
-          <ChallengeReplay
-            initialRules={challengeRules}
-            loadCachedReplay={loadChallengeReplayCache}
-            persistedRules={Boolean(persistedMarketChallengeRules)}
-            persistCachedReplay={syncChallengeReplayCache}
-            persistRules={persistChallengeRules}
-            seedPrefix={challengeReplaySeed}
-            storageKey={`trading-bot:challenge-rules:v1:${activeMarket}`}
-            strategies={strategyOptions}
-            trades={challengeReplayTrades}
-            persistedStrategyEdits={liveConfig.strategyEdits}
-          />
+          {renderDetailedAnalytics ? (
+            <ChallengeReplay
+              initialRules={challengeRules}
+              loadCachedReplay={loadChallengeReplayCache}
+              persistedRules={Boolean(persistedMarketChallengeRules)}
+              persistCachedReplay={syncChallengeReplayCache}
+              persistRules={persistChallengeRules}
+              seedPrefix={challengeReplaySeed}
+              storageKey={`trading-bot:challenge-rules:v1:${activeMarket}`}
+              strategies={strategyOptions}
+              trades={challengeReplayTrades}
+              persistedStrategyEdits={liveConfig.strategyEdits}
+            />
+          ) : (
+            <div className="empty-state">
+              <strong>Replay is ready</strong>
+              <span>{fmtNumber(selectedBacktestTradeCount)} selected trades are deferred from the first load.</span>
+              <Link className="secondary-action-link" href={`${fullAnalyticsHref}#challenge`}>Open full replay</Link>
+            </div>
+          )}
         </section>
 
         <section className="backtest-card history-card" id="backtest" aria-label="Backtest trade history">
@@ -2729,7 +2765,7 @@ export default async function Home({ searchParams }: HomeProps) {
                 <dd>Not tracked</dd>
                 <dt>Scope</dt>
                 <dd>
-                  {fmtNumber(activeMarketBacktestTrades.length)} active / {fmtNumber(activeBacktestStrategyCount)} strategies /{" "}
+                  {fmtNumber(activeMarketBacktestTradeCount)} active / {fmtNumber(activeBacktestStrategyCount)} strategies /{" "}
                   {fmtNumber(activeBacktestSymbolCount)} symbols
                 </dd>
                 <dt>Stored trades</dt>

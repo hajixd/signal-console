@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import { createReadStream } from "node:fs";
-import { readFile, readdir, stat } from "node:fs/promises";
+import { readFile, readdir, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { buildLocalStrategyCatalog, type StrategyCatalog } from "../src/lib/backtest";
 import { firebaseBucket, hasFirebaseAdmin, storageObjectPath } from "../src/lib/firebase-admin";
@@ -302,6 +302,31 @@ function mergeCatalog(base: StrategyCatalog, update: StrategyCatalog, changedStr
   };
 }
 
+function latestTradeTime(catalog: StrategyCatalog): number {
+  if (!catalog.trades.length) return 0;
+  return Math.max(
+    ...catalog.trades
+      .flatMap((trade) => [trade.signalTime, trade.entryTime, trade.exitTime])
+      .map((value) => Date.parse(value))
+      .filter(Number.isFinite)
+  );
+}
+
+function catalogSummary(manifest: StrategyCatalog & { computedThroughAt?: string; generatedAt?: string }) {
+  const latestTradeMs = latestTradeTime(manifest);
+  const latestTradeAt = latestTradeMs > 0 ? isoFromSeconds(Math.floor(latestTradeMs / 1000)) : undefined;
+  return {
+    catalogVersion: manifest.catalogVersion,
+    ...(manifest.computedThroughAt ? { computedThroughAt: manifest.computedThroughAt } : {}),
+    ...(manifest.computedThroughByStrategy ? { computedThroughByStrategy: manifest.computedThroughByStrategy } : {}),
+    entries: manifest.entries,
+    generatedAt: manifest.generatedAt,
+    ...(latestTradeAt ? { latestTradeAt } : {}),
+    stats: manifest.stats,
+    tradeCount: manifest.trades.length
+  };
+}
+
 async function main(): Promise<void> {
   if (!hasFirebaseAdmin()) {
     throw new Error("Firebase Admin credentials are missing. Set FIREBASE_SERVICE_ACCOUNT_JSON or the split FIREBASE_* variables first.");
@@ -367,7 +392,9 @@ async function main(): Promise<void> {
   const computedThroughAt = computedThroughTimes.length ? isoFromSeconds(Math.min(...computedThroughTimes)) : undefined;
   const generatedAt = new Date().toISOString();
   const manifestRelativePath = "cache/backtest-manifest.json";
+  const summaryRelativePath = "cache/backtest-summary.json";
   const manifestDestination = storageObjectPath(manifestRelativePath);
+  const summaryDestination = storageObjectPath(summaryRelativePath);
   const manifest = {
     catalogVersion: 1,
     ...(computedThroughAt ? { computedThroughAt } : {}),
@@ -375,10 +402,19 @@ async function main(): Promise<void> {
     generatedAt,
     ...catalog
   };
+  const summary = catalogSummary(manifest);
 
   await firebaseBucket()
     .file(manifestDestination)
     .save(JSON.stringify(manifest), {
+      contentType: "application/json",
+      resumable: false
+    });
+
+  await writeFile(path.join(process.cwd(), summaryRelativePath), JSON.stringify(summary));
+  await firebaseBucket()
+    .file(summaryDestination)
+    .save(JSON.stringify(summary), {
       contentType: "application/json",
       resumable: false
     });
@@ -421,12 +457,13 @@ async function main(): Promise<void> {
       },
       lastDataValidityRefreshAt: generatedAt
     },
-    uploadedFilesCount: uploadedFilesCount + 1,
+    uploadedFilesCount: uploadedFilesCount + 2,
     updatedAt: generatedAt
   });
 
   console.log(`uploaded manifest ${manifestDestination}`);
-  console.log(`uploaded files ${uploadedFilesCount + 1}`);
+  console.log(`uploaded summary ${summaryDestination}`);
+  console.log(`uploaded files ${uploadedFilesCount + 2}`);
 }
 
 main().catch((error) => {

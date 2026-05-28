@@ -128,15 +128,24 @@ export type StrategyCatalog = {
   trades: BacktestTrade[];
 };
 
+export type StrategyCatalogSummary = Omit<StrategyCatalog, "trades"> & {
+  latestTradeAt?: string;
+  tradeCount?: number;
+};
+
 type CsvRow = Record<string, string>;
 
 const BACKTEST_MANIFEST_PATH = "cache/backtest-manifest.json";
+const BACKTEST_SUMMARY_PATH = "cache/backtest-summary.json";
 const STRATEGY_ROOT = "strategy";
 const TIMEFRAME_ORDER = ["1m", "5m", "10m", "15m", "30m", "45m", "1h", "4h", "1d", "1w"] as const;
-const CATALOG_CACHE_TTL_MS = 60_000;
+const CATALOG_CACHE_TTL_MS = 5 * 60_000;
+const SELECTED_TRADES_CACHE_TTL_MS = 5 * 60_000;
 const MANIFEST_STALE_AFTER_MS = 7 * 24 * 60 * 60 * 1000;
 
 let catalogCache: { promise: Promise<StrategyCatalog>; loadedAt: number } | null = null;
+let summaryCatalogCache: { promise: Promise<StrategyCatalogSummary>; loadedAt: number } | null = null;
+const selectedTradesCache = new Map<string, { promise: Promise<BacktestTrade[]>; loadedAt: number }>();
 
 function timeframeOrder(value: string): number {
   const index = TIMEFRAME_ORDER.indexOf(value as (typeof TIMEFRAME_ORDER)[number]);
@@ -335,6 +344,14 @@ async function readCsvRows(filePath: string, mode: "auto" | "local" | "remote" =
   }
 }
 
+async function readCsvRowsPreferLocal(filePath: string): Promise<CsvRow[]> {
+  try {
+    return parseCsv(await readProjectText(filePath, "local"));
+  } catch {
+    return readCsvRows(filePath, "auto");
+  }
+}
+
 function aggregateBacktest(trades: BacktestTrade[]): BacktestAggregate {
   const wins = trades.filter((trade) => trade.rMultiple > 0);
   const losses = trades.filter((trade) => trade.rMultiple < 0);
@@ -515,6 +532,35 @@ async function readManifestCatalog(): Promise<StrategyCatalog | null> {
   return null;
 }
 
+async function readSummaryCatalog(): Promise<StrategyCatalogSummary | null> {
+  const raw = await readProjectTextIfExists(BACKTEST_SUMMARY_PATH);
+  if (!raw) return null;
+
+  try {
+    const parsed = JSON.parse(raw) as StrategyCatalogSummary;
+    if (Array.isArray(parsed.entries) && Array.isArray(parsed.stats)) {
+      return parsed;
+    }
+  } catch {
+    return null;
+  }
+
+  return null;
+}
+
+function summaryFromCatalog(catalog: StrategyCatalog): StrategyCatalogSummary {
+  return {
+    catalogVersion: catalog.catalogVersion,
+    computedThroughAt: catalog.computedThroughAt,
+    computedThroughByStrategy: catalog.computedThroughByStrategy,
+    entries: catalog.entries,
+    generatedAt: catalog.generatedAt,
+    latestTradeAt: isoFromMillis(latestTradeTime(catalog)),
+    stats: catalog.stats,
+    tradeCount: catalog.trades.length
+  };
+}
+
 function roundedCatalogNumber(value: number | undefined): string {
   return typeof value === "number" && Number.isFinite(value) ? value.toFixed(6) : "";
 }
@@ -625,6 +671,15 @@ async function buildStrategyCatalog(): Promise<StrategyCatalog> {
   return local && shouldUseLocalCatalog(manifest, local, manifestLatestTradeTime) ? local : manifest;
 }
 
+async function buildStrategySummaryCatalog(): Promise<StrategyCatalogSummary> {
+  if (process.env.BACKTEST_FORCE_LOCAL !== "1") {
+    const summary = await readSummaryCatalog();
+    if (summary) return summary;
+  }
+
+  return summaryFromCatalog(await buildStrategyCatalog());
+}
+
 async function loadStrategyCatalog(): Promise<StrategyCatalog> {
   const now = Date.now();
   if (!catalogCache || now - catalogCache.loadedAt > CATALOG_CACHE_TTL_MS) {
@@ -636,9 +691,41 @@ async function loadStrategyCatalog(): Promise<StrategyCatalog> {
   return catalogCache.promise;
 }
 
+async function loadStrategySummaryCatalog(): Promise<StrategyCatalogSummary> {
+  const now = Date.now();
+  if (!summaryCatalogCache || now - summaryCatalogCache.loadedAt > CATALOG_CACHE_TTL_MS) {
+    summaryCatalogCache = {
+      promise: buildStrategySummaryCatalog(),
+      loadedAt: now
+    };
+  }
+  return summaryCatalogCache.promise;
+}
+
+async function loadBacktestTradesForStrategies(strategyIds: Iterable<string>): Promise<BacktestTrade[]> {
+  const selectedIds = new Set(strategyIds);
+  const strategies = STRATEGY_DEFINITIONS.filter((strategy) => selectedIds.has(strategy.id));
+  const trades: BacktestTrade[] = [];
+
+  for (const strategy of strategies) {
+    const csvPath = path.posix.join(STRATEGY_ROOT, strategy.folder, strategy.backtestFileName);
+    const rows = await readCsvRowsPreferLocal(csvPath);
+    for (const row of rows) {
+      try {
+        const trade = backtestTradeFromRow(row, strategy);
+        if (trade) trades.push(trade);
+      } catch (error) {
+        console.warn(`Skipping malformed backtest row in ${csvPath}: ${error instanceof Error ? error.message : "Unknown error"}`);
+      }
+    }
+  }
+
+  return trades.sort((left, right) => Date.parse(right.entryTime) - Date.parse(left.entryTime));
+}
+
 export async function getStrategyCatalog(): Promise<StrategyCatalogEntry[]> {
   try {
-    return (await loadStrategyCatalog()).entries;
+    return (await loadStrategySummaryCatalog()).entries;
   } catch {
     return [];
   }
@@ -646,10 +733,30 @@ export async function getStrategyCatalog(): Promise<StrategyCatalogEntry[]> {
 
 export async function getBacktestStats(): Promise<BacktestStat[]> {
   try {
-    return (await loadStrategyCatalog()).stats;
+    return (await loadStrategySummaryCatalog()).stats;
   } catch {
     return [];
   }
+}
+
+export async function getBacktestTradesForStrategies(strategyIds: Iterable<string>, limit?: number): Promise<BacktestTrade[]> {
+  const selectedKey = [...new Set(strategyIds)].filter(Boolean).sort().join("\n");
+  const normalizedLimit = typeof limit === "number" && Number.isFinite(limit) && limit > 0 ? Math.floor(limit) : undefined;
+  const key = normalizedLimit ? `${selectedKey}\nlimit=${normalizedLimit}` : selectedKey;
+  if (!selectedKey) return [];
+
+  const now = Date.now();
+  const cached = selectedTradesCache.get(key);
+  if (cached && now - cached.loadedAt <= SELECTED_TRADES_CACHE_TTL_MS) {
+    return cached.promise;
+  }
+
+  const promise = loadBacktestTradesForStrategies(selectedKey.split("\n")).then((trades) => (normalizedLimit ? trades.slice(0, normalizedLimit) : trades));
+  selectedTradesCache.set(key, {
+    promise,
+    loadedAt: now
+  });
+  return promise;
 }
 
 export async function getBacktestTrades(): Promise<BacktestTrade[]> {
@@ -667,12 +774,12 @@ export async function getBacktestCatalogFreshness(): Promise<{
   trades: number;
 }> {
   try {
-    const catalog = await loadStrategyCatalog();
+    const catalog = await loadStrategySummaryCatalog();
     return {
       computedThroughAt: catalog.computedThroughAt,
       generatedAt: catalog.generatedAt,
-      latestTradeAt: isoFromMillis(latestTradeTime(catalog)),
-      trades: catalog.trades.length
+      latestTradeAt: catalog.latestTradeAt,
+      trades: catalog.tradeCount ?? catalog.stats.reduce((sum, stat) => sum + Math.max(0, stat.trades), 0)
     };
   } catch {
     return {
