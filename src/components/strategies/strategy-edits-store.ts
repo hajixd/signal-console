@@ -7,6 +7,8 @@ export type StrategyEditOption = {
   label: string;
   symbol: string;
   phase: string;
+  market?: string;
+  timeframeLabel?: string;
   sizeLabel: string;
   tpUnits: number;
   slUnits: number;
@@ -14,6 +16,11 @@ export type StrategyEditOption = {
   targetDollars: number;
   riskDollars: number;
   riskRewardRatio?: number;
+  profitFactor?: number;
+  trades?: number;
+  tradesPerWeek?: number;
+  winRatePct?: number;
+  liveSupported?: boolean;
 };
 
 export type StrategyEdit = {

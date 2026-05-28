@@ -1953,8 +1953,16 @@ export default async function Home({ searchParams }: HomeProps) {
     : historyCountLabel;
   const latestHistoryTradeAt = tradeHistoryRows[0]?.entryTime ?? latestBacktestTradeAt;
   const dataValidity = analyzeBacktestDataValidity({
+    assetCoverage: datasetStatus?.assetCoverage,
     backtestBehindMarketData,
-    strategyRefs: strategyOptions,
+    strategyRefs: strategyOptions.map((option) => ({
+      assetKey: option.assetKey,
+      datasetId: option.datasetId,
+      key: option.key,
+      sizeMultiplier: option.sizeMultiplier,
+      symbol: option.symbol,
+      timeframes: option.timeframeLabel.split(",").map((timeframe) => timeframe.trim()).filter(Boolean)
+    })),
     trades: activeMarketBacktestTrades
   });
   const coverageEntries = Object.values(datasetStatus?.assetCoverage ?? {});
@@ -2160,6 +2168,68 @@ export default async function Home({ searchParams }: HomeProps) {
         ]
       : [])
   ];
+  const mobileSyncSummary = {
+    detail: `${fmtNumber(coverageEntries.length)} assets / ${fmtNumber(coverageTimeframes.length)} timeframes / ${dataValidity.label}`,
+    headline: dataValidity.tone === "bad" ? "Needs Review" : dataValidity.tone === "warning" ? "Review" : "Current",
+    sections: [
+      {
+        issues: marketDataIssues.map((issue) => issue.label),
+        metrics: [
+          { label: "Assets", value: fmtNumber(coverageEntries.length), tone: coverageEntries.length ? "good" : "bad" },
+          { label: "Rows", value: fmtNumber(coverageRows), tone: coverageRows ? "good" : "bad" },
+          { label: "Frames", value: fmtNumber(coverageTimeframes.length), tone: coverageTimeframes.length ? "good" : "warning" },
+          { label: "Latest", value: fmtShortDateTime(latestMarketDataBarAt) }
+        ],
+        state: marketDataSyncState,
+        status: syncTileLabel(marketDataSyncState),
+        title: "Market Data",
+        updatedAt: syncStatus.lastMarketDataSyncAt ?? legacyDatasetSyncAt
+      },
+      {
+        issues: signalTradeIssues.map((issue) => issue.label),
+        metrics: [
+          { label: "Selected", value: fmtNumber(selectedLiveStrategyCount), tone: selectedLiveStrategyCount ? "good" : "warning" },
+          { label: "Alerts", value: fmtNumber(activeMarketLiveTrades.length) },
+          { label: "Open", value: fmtNumber(openLiveAlertCount) },
+          { label: "Last", value: latestActiveMarketSignalAt ? fmtShortDateTime(latestActiveMarketSignalAt) : "None" }
+        ],
+        state: signalTradeCheckState,
+        status: syncTileLabel(signalTradeCheckState),
+        title: "Signals",
+        updatedAt: syncStatus.lastSignalTradeCheckAt
+      },
+      {
+        issues: backtestHistoryIssues.map((issue) => issue.label),
+        metrics: [
+          { label: "Rows", value: fmtNumber(activeMarketBacktestTrades.length), tone: activeMarketBacktestTrades.length ? "good" : "bad" },
+          { label: "Strats", value: fmtNumber(activeBacktestStrategyCount), tone: activeBacktestStrategyCount ? "good" : "warning" },
+          { label: "Trades", value: fmtNumber(backtestFreshness.trades), tone: backtestFreshness.trades ? "good" : "bad" },
+          { label: "Latest", value: fmtShortDateTime(latestTradeAt) }
+        ],
+        state: backtestBehindMarketData ? "failed" : latestTradeAt ? "success" : "idle",
+        status: backtestBehindMarketData ? "Behind" : latestTradeAt ? "Current" : "Waiting",
+        title: "Backtests",
+        updatedAt: backtestManifestAt
+      },
+      {
+        issues: dataValidity.issues.slice(0, 3).map((issue) => issue.label),
+        metrics: [
+          { label: "Trades", value: fmtNumber(dataValidity.stats.tradesChecked), tone: dataValidity.stats.tradesChecked ? "good" : "bad" },
+          {
+            label: "Frames",
+            value: fmtNumber(dataValidity.stats.coverageTimeframesChecked),
+            tone: dataValidity.stats.missingCoverageTimeframes ? "bad" : dataValidity.stats.staleCoverageTimeframes ? "warning" : "good"
+          },
+          { label: "Missing", value: fmtNumber(dataValidity.stats.missingCoverageTimeframes), tone: dataValidity.stats.missingCoverageTimeframes ? "bad" : "good" },
+          { label: "Stale", value: fmtNumber(dataValidity.stats.staleCoverageTimeframes), tone: dataValidity.stats.staleCoverageTimeframes ? "warning" : "good" }
+        ],
+        state: dataValidityRefreshState,
+        status: dataValidity.label,
+        title: "Review Validity",
+        updatedAt: syncStatus.lastDataValidityRefreshAt
+      }
+    ]
+  };
   const challengeReplayTrades = selectedBacktestTrades.map((trade) => {
     const sizeMultiplier = optionByKey.get(trade.datasetId)?.sizeMultiplier ?? 1;
     return {
@@ -2230,6 +2300,7 @@ export default async function Home({ searchParams }: HomeProps) {
       persistActiveMarket={syncActiveMarket}
       persistTheme={syncTheme}
       strategies={strategyOptions}
+      syncSummary={mobileSyncSummary}
       discordChannelLink={discordChannelLink}
       telegramGroupLink={telegramGroupLink}
     />

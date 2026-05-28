@@ -13869,6 +13869,198 @@ html[data-theme="light"] .tradeReplaySlider input::-webkit-slider-thumb {
     white-space: nowrap;
   }
 
+  .mobile-phone-strategy-summary,
+  .mobile-phone-sync-metrics {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.42rem 0.36rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.07);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+    padding: 0.42rem 0;
+  }
+
+  .mobile-phone-strategy-summary span,
+  .mobile-phone-sync-metrics span {
+    min-width: 0;
+    display: grid;
+    gap: 0.12rem;
+  }
+
+  .mobile-phone-strategy-summary small,
+  .mobile-phone-strategy-pf small,
+  .mobile-phone-sync-metrics small {
+    color: rgba(228, 234, 227, 0.46);
+    font-size: 0.42rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    line-height: 1;
+    text-transform: uppercase;
+  }
+
+  .mobile-phone-strategy-summary strong,
+  .mobile-phone-strategy-pf strong,
+  .mobile-phone-sync-metrics strong {
+    overflow: hidden;
+    color: #f9fcf8;
+    font-size: 0.66rem;
+    line-height: 1;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .mobile-phone-strategy-list,
+  .mobile-phone-sync-list {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    display: grid;
+    align-content: start;
+    gap: 0;
+    scrollbar-width: none;
+  }
+
+  .mobile-phone-strategy-list::-webkit-scrollbar,
+  .mobile-phone-sync-list::-webkit-scrollbar {
+    display: none;
+  }
+
+  .mobile-phone-strategy-row,
+  .mobile-phone-sync-section {
+    position: relative;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    padding: 0.76rem 0;
+    display: grid;
+    gap: 0.46rem;
+  }
+
+  .mobile-phone-strategy-row:first-child,
+  .mobile-phone-sync-section:first-child {
+    border-top: 0;
+  }
+
+  .mobile-phone-strategy-main,
+  .mobile-phone-sync-section-head {
+    min-width: 0;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.72rem;
+  }
+
+  .mobile-phone-strategy-copy,
+  .mobile-phone-sync-section-head > div {
+    min-width: 0;
+    display: grid;
+    gap: 0.16rem;
+  }
+
+  .mobile-phone-strategy-copy strong,
+  .mobile-phone-sync-section-head strong {
+    overflow: hidden;
+    color: #f9fcf8;
+    font-size: 0.74rem;
+    line-height: 1.08;
+    text-overflow: ellipsis;
+  }
+
+  .mobile-phone-strategy-copy span,
+  .mobile-phone-strategy-meta span,
+  .mobile-phone-sync-detail,
+  .mobile-phone-sync-section-head span,
+  .mobile-phone-sync-section-head small {
+    color: rgba(228, 234, 227, 0.6);
+    font-size: 0.54rem;
+    line-height: 1.28;
+  }
+
+  .mobile-phone-strategy-pf {
+    flex: 0 0 auto;
+    min-width: 42px;
+    display: grid;
+    justify-items: end;
+    gap: 0.12rem;
+    text-align: right;
+  }
+
+  .mobile-phone-strategy-meta,
+  .mobile-phone-sync-issues {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem;
+  }
+
+  .mobile-phone-strategy-meta span,
+  .mobile-phone-strategy-live,
+  .mobile-phone-sync-issues span {
+    min-height: 21px;
+    padding: 0 0.42rem;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.012);
+    display: inline-flex;
+    align-items: center;
+    font-size: 0.5rem;
+  }
+
+  .mobile-phone-strategy-live {
+    justify-self: start;
+    border-color: rgba(99, 199, 255, 0.2);
+    background: rgba(99, 199, 255, 0.08);
+    color: #63c7ff;
+    font-size: 0.44rem;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  .mobile-phone-sync-detail {
+    margin: 0;
+    padding-bottom: 0.1rem;
+  }
+
+  .mobile-phone-sync-metrics {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    border: 0;
+    padding: 0;
+  }
+
+  .mobile-phone-sync-metrics span {
+    min-height: 45px;
+    padding: 0.44rem 0.42rem;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    background: rgba(255, 255, 255, 0.02);
+  }
+
+  .mobile-phone-sync-section.sync-state-failed {
+    border-top-color: rgba(255, 145, 152, 0.22);
+  }
+
+  .mobile-phone-sync-section.sync-state-running {
+    border-top-color: rgba(251, 191, 36, 0.22);
+  }
+
+  .mobile-phone-sync-section.sync-state-success {
+    border-top-color: rgba(132, 245, 168, 0.16);
+  }
+
+  .mobile-phone-sync-issues span {
+    border-color: rgba(255, 145, 152, 0.16);
+    background: rgba(255, 145, 152, 0.08);
+    color: #ffb4b8;
+  }
+
+  .mobile-phone-sync-metrics .tone-good strong {
+    color: #84f5a8;
+  }
+
+  .mobile-phone-sync-metrics .tone-warning strong {
+    color: #f8d65f;
+  }
+
+  .mobile-phone-sync-metrics .tone-bad strong {
+    color: #ff9198;
+  }
+
   .mobile-phone-history-rail {
     position: absolute;
     top: 9px;
@@ -14213,7 +14405,7 @@ html[data-theme="light"] .tradeReplaySlider input::-webkit-slider-thumb {
     background: #000;
     box-shadow: none;
     display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(6, minmax(0, 1fr));
     gap: 0.18rem;
     align-self: end;
   }
@@ -14513,7 +14705,12 @@ html[data-theme="light"] .tradeReplaySlider input::-webkit-slider-thumb {
   html[data-theme="light"] .mobile-phone-account-copy strong,
   html[data-theme="light"] .mobile-phone-action-btn strong,
   html[data-theme="light"] .mobile-phone-toggle-copy strong,
-  html[data-theme="light"] .mobile-phone-mode-button {
+  html[data-theme="light"] .mobile-phone-mode-button,
+  html[data-theme="light"] .mobile-phone-strategy-copy strong,
+  html[data-theme="light"] .mobile-phone-strategy-pf strong,
+  html[data-theme="light"] .mobile-phone-strategy-summary strong,
+  html[data-theme="light"] .mobile-phone-sync-section-head strong,
+  html[data-theme="light"] .mobile-phone-sync-metrics strong {
     color: #0f172a;
   }
 
@@ -14527,7 +14724,15 @@ html[data-theme="light"] .tradeReplaySlider input::-webkit-slider-thumb {
   html[data-theme="light"] .mobile-phone-account-copy small,
   html[data-theme="light"] .mobile-phone-action-btn span,
   html[data-theme="light"] .mobile-phone-empty-state p,
-  html[data-theme="light"] .mobile-phone-toggle-copy small {
+  html[data-theme="light"] .mobile-phone-toggle-copy small,
+  html[data-theme="light"] .mobile-phone-strategy-copy span,
+  html[data-theme="light"] .mobile-phone-strategy-meta span,
+  html[data-theme="light"] .mobile-phone-strategy-summary small,
+  html[data-theme="light"] .mobile-phone-strategy-pf small,
+  html[data-theme="light"] .mobile-phone-sync-detail,
+  html[data-theme="light"] .mobile-phone-sync-section-head span,
+  html[data-theme="light"] .mobile-phone-sync-section-head small,
+  html[data-theme="light"] .mobile-phone-sync-metrics small {
     color: rgba(15, 23, 42, 0.58);
   }
 
@@ -14550,7 +14755,10 @@ html[data-theme="light"] .tradeReplaySlider input::-webkit-slider-thumb {
   html[data-theme="light"] .mobile-phone-card-autotrade .topstepConnectionFoot,
   html[data-theme="light"] .mobile-phone-card-autotrade .autoTradeProviderOption,
   html[data-theme="light"] .mobile-phone-card-autotrade .topstepAccountEmpty,
-  html[data-theme="light"] .mobile-phone-card-autotrade .autoTradeFolderGate {
+  html[data-theme="light"] .mobile-phone-card-autotrade .autoTradeFolderGate,
+  html[data-theme="light"] .mobile-phone-strategy-row,
+  html[data-theme="light"] .mobile-phone-sync-section,
+  html[data-theme="light"] .mobile-phone-sync-metrics span {
     border-color: rgba(15, 23, 42, 0.1);
     background: rgba(255, 255, 255, 0.74);
   }
@@ -14574,6 +14782,8 @@ html[data-theme="light"] .tradeReplaySlider input::-webkit-slider-thumb {
   }
 
   html[data-theme="light"] .mobile-phone-history-meta > span,
+  html[data-theme="light"] .mobile-phone-strategy-meta span,
+  html[data-theme="light"] .mobile-phone-strategy-summary,
   html[data-theme="light"] .mobile-phone-mode-button,
   html[data-theme="light"] .mobile-phone-mode-pin input,
   html[data-theme="light"] .mobile-phone-mode-pin button,
@@ -14663,6 +14873,18 @@ html[data-theme="light"] .tradeReplaySlider input::-webkit-slider-thumb {
 
   html[data-theme="light"] .mobile-phone-history-stats strong.neutral {
     color: rgba(15, 23, 42, 0.58);
+  }
+
+  html[data-theme="light"] .mobile-phone-strategy-live {
+    border-color: rgba(37, 99, 235, 0.22);
+    background: rgba(37, 99, 235, 0.08);
+    color: #1d4ed8;
+  }
+
+  html[data-theme="light"] .mobile-phone-sync-issues span {
+    border-color: rgba(220, 38, 38, 0.16);
+    background: rgba(220, 38, 38, 0.08);
+    color: #b91c1c;
   }
 
   html[data-theme="light"] .mobile-phone-card-autotrade .topstepPrimaryActions {

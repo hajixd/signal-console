@@ -1,5 +1,6 @@
 import { dollarPerUnit } from "@/lib/instruments";
 import type { BacktestTrade } from "@/lib/backtest";
+import { isDataTimeframe, timeframeOrder, timeframeSeconds } from "@/lib/timeframes";
 
 export type DataValidityTone = "good" | "warning" | "bad";
 
@@ -19,12 +20,17 @@ export type DataValidityCheck = {
 
 export type DataValidityStats = {
   badIssueCount: number;
+  coverageAssetsChecked: number;
+  coverageTimeframesChecked: number;
   duplicatePct: number;
   duplicateTrades: number;
   earliestEntryAt?: string;
   latestExitAt?: string;
   latestSignalAt?: string;
   marketCount: number;
+  missingCoverageAssets: number;
+  missingCoverageTimeframes: number;
+  staleCoverageTimeframes: number;
   strategyCount: number;
   symbolCount: number;
   totalIssueCount: number;
@@ -43,12 +49,26 @@ export type DataValidityResult = {
 };
 
 export type DataValidityStrategyRef = {
+  assetKey?: string;
   datasetId?: string;
   key: string;
   sizeMultiplier?: number;
+  symbol?: string;
+  timeframes?: string[];
+};
+
+export type DataValidityCoverageRef = {
+  assetKey?: string;
+  firstBarAt?: string;
+  lastBarAt?: string;
+  rows?: number;
+  symbol?: string;
+  timeframes?: string[];
+  updatedAt?: string;
 };
 
 type DataValidityArgs = {
+  assetCoverage?: Record<string, DataValidityCoverageRef | undefined>;
   backtestBehindMarketData: boolean;
   now?: number;
   strategyRefs: DataValidityStrategyRef[];
@@ -122,7 +142,47 @@ function checkValue(count: number): string {
   return count ? `${fmtNumber(count)} flagged` : "Clean";
 }
 
+function sortedTimeframes(values: Iterable<string>): string[] {
+  return [...new Set([...values].filter(Boolean))].sort((left, right) => timeframeOrder(left) - timeframeOrder(right) || left.localeCompare(right));
+}
+
+function coverageByAssetKey(assetCoverage: Record<string, DataValidityCoverageRef | undefined> | undefined): Map<string, DataValidityCoverageRef> {
+  const byAsset = new Map<string, DataValidityCoverageRef>();
+  for (const [key, coverage] of Object.entries(assetCoverage ?? {})) {
+    if (!coverage) continue;
+    const assetKey = coverage.assetKey ?? key;
+    if (!assetKey) continue;
+    byAsset.set(assetKey, coverage);
+  }
+  return byAsset;
+}
+
+function requiredTimeframesByAsset(strategyRefs: DataValidityStrategyRef[]): Map<string, { symbol?: string; timeframes: Set<string> }> {
+  const required = new Map<string, { symbol?: string; timeframes: Set<string> }>();
+  for (const ref of strategyRefs) {
+    if (!ref.assetKey) continue;
+    const entry = required.get(ref.assetKey) ?? { symbol: ref.symbol, timeframes: new Set<string>() };
+    entry.symbol = entry.symbol ?? ref.symbol;
+    for (const timeframe of ref.timeframes?.length ? ref.timeframes : ["15m"]) {
+      if (timeframe) entry.timeframes.add(timeframe);
+    }
+    required.set(ref.assetKey, entry);
+  }
+  return required;
+}
+
+function coverageFreshnessToleranceMs(timeframe: string): number | undefined {
+  if (!isDataTimeframe(timeframe)) return undefined;
+  return Math.max(timeframeSeconds(timeframe) * 3 * 1000, 20 * 60 * 1000);
+}
+
+function addCoverageSample(samples: string[], detail: string) {
+  if (samples.length >= 4) return;
+  samples.push(detail);
+}
+
 export function analyzeBacktestDataValidity({
+  assetCoverage,
   backtestBehindMarketData,
   now = Date.now(),
   strategyRefs,
@@ -138,9 +198,14 @@ export function analyzeBacktestDataValidity({
   if (!trades.length) {
     const stats: DataValidityStats = {
       badIssueCount: 1,
+      coverageAssetsChecked: 0,
+      coverageTimeframesChecked: 0,
       duplicatePct: 0,
       duplicateTrades: 0,
       marketCount: 0,
+      missingCoverageAssets: 0,
+      missingCoverageTimeframes: 0,
+      staleCoverageTimeframes: 0,
       strategyCount: strategyRefs.length,
       symbolCount: 0,
       totalIssueCount: 1,
@@ -284,6 +349,60 @@ export function analyzeBacktestDataValidity({
 
   const duplicateTrades = [...duplicateFingerprints.values()].reduce((sum, count) => sum + Math.max(0, count - 1), 0);
   const duplicatePct = (duplicateTrades / trades.length) * 100;
+  const requiredCoverage = requiredTimeframesByAsset(strategyRefs);
+  const coverageMap = coverageByAssetKey(assetCoverage);
+  const coverageSamples = {
+    missingAssets: [] as string[],
+    missingTimeframes: [] as string[],
+    staleTimeframes: [] as string[]
+  };
+  let coverageTimeframesChecked = 0;
+  let missingCoverageAssets = 0;
+  let missingCoverageTimeframes = 0;
+  let missingSpecificCoverageTimeframes = 0;
+  let staleCoverageTimeframes = 0;
+
+  for (const [assetKey, requirement] of requiredCoverage) {
+    const coverage = coverageMap.get(assetKey);
+    const assetLabel = requirement.symbol ?? coverage?.symbol ?? assetKey;
+    const requiredTimeframes = sortedTimeframes(requirement.timeframes);
+    coverageTimeframesChecked += requiredTimeframes.length;
+
+    if (!coverage) {
+      missingCoverageAssets += 1;
+      missingCoverageTimeframes += requiredTimeframes.length;
+      addCoverageSample(coverageSamples.missingAssets, `${assetLabel}: no coverage metadata for ${requiredTimeframes.join(", ")}`);
+      continue;
+    }
+
+    const coveredTimeframes = new Set(coverage.timeframes ?? []);
+    const lastBarAt = coverage.lastBarAt ? Date.parse(coverage.lastBarAt) : Number.NaN;
+    for (const timeframe of requiredTimeframes) {
+      if (!coveredTimeframes.has(timeframe)) {
+        missingCoverageTimeframes += 1;
+        missingSpecificCoverageTimeframes += 1;
+        addCoverageSample(coverageSamples.missingTimeframes, `${assetLabel}: missing ${timeframe}`);
+        continue;
+      }
+
+      const toleranceMs = coverageFreshnessToleranceMs(timeframe);
+      if (!toleranceMs) continue;
+      if (!Number.isFinite(lastBarAt)) {
+        staleCoverageTimeframes += 1;
+        addCoverageSample(coverageSamples.staleTimeframes, `${assetLabel} ${timeframe}: latest bar timestamp is unavailable`);
+        continue;
+      }
+
+      if (lastBarAt < now - toleranceMs) {
+        const lagHours = (now - lastBarAt) / 3_600_000;
+        addCoverageSample(
+          coverageSamples.staleTimeframes,
+          `${assetLabel} ${timeframe}: latest ${new Date(lastBarAt).toISOString()} (${fmtNumber(lagHours)}h old)`
+        );
+        staleCoverageTimeframes += 1;
+      }
+    }
+  }
 
   pushIssue(issues, invalidTimes, "Invalid timestamps", "bad", sampleDetails.invalidTimes);
   pushIssue(issues, impossibleDurations, "Impossible durations", "bad", sampleDetails.impossibleDurations);
@@ -301,6 +420,9 @@ export function analyzeBacktestDataValidity({
     sampleDetails.duplicateTrades
   );
   pushIssue(issues, backtestBehindMarketData ? 1 : 0, "Backtest behind market data", "warning");
+  pushIssue(issues, missingCoverageAssets, "Missing asset coverage", "bad", coverageSamples.missingAssets);
+  pushIssue(issues, missingSpecificCoverageTimeframes, "Missing asset timeframes", "bad", coverageSamples.missingTimeframes);
+  pushIssue(issues, staleCoverageTimeframes, "Stale asset timeframes", "warning", coverageSamples.staleTimeframes);
 
   const tone = issues.reduce<DataValidityTone>(
     (current, issue) => (dataValidityIssueRank(issue) > dataValidityRank(current) ? issue.tone : current),
@@ -312,12 +434,17 @@ export function analyzeBacktestDataValidity({
   const totalIssueCount = badIssueCount + warningIssueCount;
   const stats: DataValidityStats = {
     badIssueCount,
+    coverageAssetsChecked: requiredCoverage.size,
+    coverageTimeframesChecked,
     duplicatePct,
     duplicateTrades,
     earliestEntryAt: isoFromMillis(earliestEntry),
     latestExitAt: isoFromMillis(latestExit),
     latestSignalAt: isoFromMillis(latestSignal),
     marketCount: markets.size,
+    missingCoverageAssets,
+    missingCoverageTimeframes,
+    staleCoverageTimeframes,
     strategyCount: strategyIds.size,
     symbolCount: symbols.size,
     totalIssueCount,
@@ -385,6 +512,22 @@ export function analyzeBacktestDataValidity({
       label: "Data freshness",
       tone: backtestBehindMarketData ? "warning" : "good",
       value: backtestBehindMarketData ? "Behind" : "Current"
+    },
+    {
+      detail: `Runtime coverage must include every required timeframe for each strategy asset (${fmtNumber(requiredCoverage.size)} assets checked).`,
+      label: "Asset timeframes",
+      tone:
+        missingCoverageAssets || missingCoverageTimeframes
+          ? "bad"
+          : staleCoverageTimeframes
+            ? "warning"
+            : "good",
+      value:
+        missingCoverageAssets || missingCoverageTimeframes
+          ? `${fmtNumber(missingCoverageTimeframes || missingCoverageAssets)} missing`
+          : staleCoverageTimeframes
+            ? `${fmtNumber(staleCoverageTimeframes)} stale`
+            : "Current"
     }
   ];
 

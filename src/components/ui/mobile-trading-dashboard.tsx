@@ -13,6 +13,8 @@ import {
 } from "@/components/auto-trading/auto-trade-account-mode";
 import { useAutoTradeAdminMode } from "@/components/auto-trading/use-auto-trade-account-mode";
 import {
+  effectiveStrategyEdit,
+  type StrategyEditMap,
   type StrategyEditOption,
   type StrategyEditSeedMap,
   useStrategyEdits
@@ -23,7 +25,7 @@ import LocalDateTime, { formatLocalDateTimeParts } from "@/components/ui/local-d
 import { type AutoTradeMarket } from "@/lib/auto-trade-platforms";
 import { type TradeChartBar, type TradeChartTimeframe } from "@/components/trades/trade-price-chart";
 
-type MobileTradingTab = "history" | "alerts" | "autotrade" | "settings";
+type MobileTradingTab = "history" | "alerts" | "strategies" | "sync" | "autotrade" | "settings";
 
 type MobileTradingDashboardProps = {
   activeMarket: AutoTradeMarket;
@@ -39,10 +41,35 @@ type MobileTradingDashboardProps = {
   persistActiveMarket?: (market: AutoTradeMarket) => Promise<void>;
   persistTheme?: (theme: MobileTheme) => Promise<void>;
   strategies: StrategyEditOption[];
+  syncSummary?: MobileSyncSummary;
   telegramGroupLink?: string | null;
 };
 
 type MobileTheme = "dark" | "light";
+type MobileSyncTone = string;
+
+type MobileSyncMetric = {
+  label: string;
+  title?: string;
+  tone?: MobileSyncTone;
+  value: string;
+};
+
+type MobileSyncSection = {
+  issues?: string[];
+  metrics: MobileSyncMetric[];
+  state: string;
+  status: string;
+  title: string;
+  updatedAt?: string;
+};
+
+type MobileSyncSummary = {
+  detail: string;
+  headline: string;
+  sections: MobileSyncSection[];
+};
+
 type CustomScaleRangeSeed = {
   riskCeiling?: unknown;
   riskFloor?: unknown;
@@ -83,9 +110,11 @@ const LEGACY_THEME_STORAGE_KEY = "signal-console-theme";
 const TRADE_CHART_CONTEXT_CANDLES = 240;
 
 const mobileTabs: Array<{ id: MobileTradingTab; label: string }> = [
-  { id: "alerts", label: "Live Alerts" },
+  { id: "alerts", label: "Alerts" },
   { id: "history", label: "History" },
-  { id: "autotrade", label: "Auto-Trade" },
+  { id: "strategies", label: "Strategies" },
+  { id: "sync", label: "Sync" },
+  { id: "autotrade", label: "Auto" },
   { id: "settings", label: "Settings" }
 ];
 
@@ -123,6 +152,22 @@ function formatMobileRatio(value: number): string {
     maximumFractionDigits: 2,
     minimumFractionDigits: 2
   }).format(value);
+}
+
+function formatMobilePercent(value: number | undefined): string {
+  return Number.isFinite(value) ? `${value!.toFixed(0)}%` : "--";
+}
+
+function formatMobileOptionalRatio(value: number | undefined): string {
+  return typeof value === "number" && Number.isFinite(value) ? formatMobileRatio(value) : "--";
+}
+
+function mobileStrategyTone(strategy: StrategyEditOption): "down" | "neutral" | "up" {
+  const profitFactor = strategy.profitFactor;
+  if (typeof profitFactor !== "number" || !Number.isFinite(profitFactor)) return "neutral";
+  if (profitFactor >= 2) return "up";
+  if (profitFactor < 1) return "down";
+  return "neutral";
 }
 
 function mobileHistoryStats(rows: TradeHistoryRow[]): MobileHistoryStats {
@@ -278,6 +323,50 @@ function MobileWorkspaceTabIcon({ tab }: { tab: MobileTradingTab }) {
     );
   }
 
+  if (tab === "strategies") {
+    return (
+      <svg viewBox="0 0 24 24" aria-hidden>
+        <path
+          d="M4.8 6h14.4M4.8 12h14.4M4.8 18h14.4"
+          fill="none"
+          stroke="currentColor"
+          strokeLinecap="round"
+          strokeWidth="1.8"
+        />
+        <path
+          d="M8 4.5v3M14.2 10.5v3M10.6 16.5v3"
+          fill="none"
+          stroke="currentColor"
+          strokeLinecap="round"
+          strokeWidth="1.8"
+        />
+      </svg>
+    );
+  }
+
+  if (tab === "sync") {
+    return (
+      <svg viewBox="0 0 24 24" aria-hidden>
+        <path
+          d="M7.3 7.2a6.7 6.7 0 0 1 9.1-.2L19 9.4M16.7 16.8a6.7 6.7 0 0 1-9.1.2L5 14.6"
+          fill="none"
+          stroke="currentColor"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth="1.8"
+        />
+        <path
+          d="M19 5.7v3.7h-3.7M5 18.3v-3.7h3.7"
+          fill="none"
+          stroke="currentColor"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth="1.8"
+        />
+      </svg>
+    );
+  }
+
   return (
     <svg viewBox="0 0 24 24" aria-hidden>
       <path
@@ -289,6 +378,135 @@ function MobileWorkspaceTabIcon({ tab }: { tab: MobileTradingTab }) {
       />
       <path d="M4.5 4.5h15v15h-15z" fill="none" opacity="0.45" stroke="currentColor" strokeWidth="1.6" />
     </svg>
+  );
+}
+
+function MobileStrategiesPanel({ edits, strategies }: { edits: StrategyEditMap; strategies: StrategyEditOption[] }) {
+  const sortedStrategies = useMemo(
+    () =>
+      [...strategies].sort((left, right) => {
+        const leftPf = Number.isFinite(left.profitFactor) ? left.profitFactor! : -1;
+        const rightPf = Number.isFinite(right.profitFactor) ? right.profitFactor! : -1;
+        return rightPf - leftPf || (right.trades ?? 0) - (left.trades ?? 0) || left.label.localeCompare(right.label);
+      }),
+    [strategies]
+  );
+  const liveCount = strategies.filter((strategy) => strategy.liveSupported).length;
+  const subTwoCount = strategies.filter((strategy) => typeof strategy.profitFactor === "number" && strategy.profitFactor < 2).length;
+  const bestProfitFactor = sortedStrategies.find((strategy) => typeof strategy.profitFactor === "number")?.profitFactor;
+
+  return (
+    <section className="mobile-phone-card mobile-phone-card-strategies">
+      <div className="mobile-phone-card-head">
+        <div className="mobile-phone-card-copy">
+          <span className="mobile-phone-card-kicker">Strategy Set</span>
+          <h2>Strategies</h2>
+        </div>
+        <span className="mobile-phone-count-chip">{strategies.length.toLocaleString("en-US")}</span>
+      </div>
+
+      <div className="mobile-phone-strategy-summary" aria-label="Strategy summary">
+        <span>
+          <small>Live</small>
+          <strong>{liveCount.toLocaleString("en-US")}</strong>
+        </span>
+        <span>
+          <small>Best PF</small>
+          <strong className="up">{formatMobileOptionalRatio(bestProfitFactor)}</strong>
+        </span>
+        <span>
+          <small>PF &lt; 2</small>
+          <strong className={subTwoCount ? "down" : "up"}>{subTwoCount.toLocaleString("en-US")}</strong>
+        </span>
+      </div>
+
+      {sortedStrategies.length === 0 ? (
+        <div className="mobile-phone-empty-state">
+          <span className="mobile-phone-card-kicker">Strategy Set</span>
+          <h2>No strategies</h2>
+        </div>
+      ) : (
+        <div className="mobile-phone-strategy-list">
+          {sortedStrategies.map((strategy) => {
+            const edit = effectiveStrategyEdit(strategy, edits);
+            const riskReward = edit.riskDollars > 0 ? edit.targetDollars / edit.riskDollars : strategy.riskRewardRatio;
+            const tone = mobileStrategyTone(strategy);
+            return (
+              <article className={`mobile-phone-strategy-row tone-${tone}`} key={strategy.key}>
+                <div className="mobile-phone-strategy-main">
+                  <div className="mobile-phone-strategy-copy">
+                    <strong>{strategy.label}</strong>
+                    <span>
+                      {strategy.symbol} | {strategy.timeframeLabel ?? strategy.phase}
+                    </span>
+                  </div>
+                  <div className="mobile-phone-strategy-pf">
+                    <small>PF</small>
+                    <strong className={tone}>{formatMobileOptionalRatio(strategy.profitFactor)}</strong>
+                  </div>
+                </div>
+                <div className="mobile-phone-strategy-meta">
+                  <span>{formatMobilePercent(strategy.winRatePct)} WR</span>
+                  <span>{formatMobileOptionalRatio(riskReward)}R</span>
+                  <span>{(strategy.trades ?? 0).toLocaleString("en-US")} trades</span>
+                  <span>{formatMobileMoney(edit.targetDollars)} / {formatMobileMoney(-edit.riskDollars)}</span>
+                </div>
+                {strategy.liveSupported ? <span className="mobile-phone-strategy-live">Live</span> : null}
+              </article>
+            );
+          })}
+        </div>
+      )}
+    </section>
+  );
+}
+
+function MobileSyncPanel({ summary }: { summary?: MobileSyncSummary }) {
+  return (
+    <section className="mobile-phone-card mobile-phone-card-sync">
+      <div className="mobile-phone-card-head">
+        <div className="mobile-phone-card-copy">
+          <span className="mobile-phone-card-kicker">Runtime</span>
+          <h2>{summary?.headline ?? "Sync"}</h2>
+        </div>
+        <span className="mobile-phone-count-chip">{summary?.sections.length ?? 0}</span>
+      </div>
+
+      <p className="mobile-phone-sync-detail">{summary?.detail ?? "Waiting for sync status."}</p>
+
+      <div className="mobile-phone-sync-list">
+        {(summary?.sections ?? []).map((section) => (
+          <article className={`mobile-phone-sync-section sync-state-${section.state}`} key={section.title}>
+            <div className="mobile-phone-sync-section-head">
+              <div>
+                <strong>{section.title}</strong>
+                <span>{section.status}</span>
+              </div>
+              {section.updatedAt ? (
+                <small>
+                  <LocalDateTime value={section.updatedAt} fallback="Unknown" />
+                </small>
+              ) : null}
+            </div>
+            <div className="mobile-phone-sync-metrics">
+              {section.metrics.map((metric) => (
+                <span className={metric.tone ? `tone-${metric.tone}` : undefined} key={`${section.title}-${metric.label}`} title={metric.title}>
+                  <small>{metric.label}</small>
+                  <strong>{metric.value}</strong>
+                </span>
+              ))}
+            </div>
+            {section.issues?.length ? (
+              <div className="mobile-phone-sync-issues" aria-label={`${section.title} issues`}>
+                {section.issues.map((issue) => (
+                  <span key={issue}>{issue}</span>
+                ))}
+              </div>
+            ) : null}
+          </article>
+        ))}
+      </div>
+    </section>
   );
 }
 
@@ -752,6 +970,7 @@ export default function MobileTradingDashboard({
   persistActiveMarket,
   persistTheme,
   strategies,
+  syncSummary,
   telegramGroupLink
 }: MobileTradingDashboardProps) {
   const [activeTab, setActiveTab] = useState<MobileTradingTab>("alerts");
@@ -778,6 +997,10 @@ export default function MobileTradingDashboard({
   const tabTitle =
     activeTab === "alerts"
       ? "Live Alerts"
+      : activeTab === "strategies"
+        ? "Strategies"
+        : activeTab === "sync"
+          ? "Sync"
       : activeTab === "autotrade"
         ? "Auto-Trade"
         : activeTab === "settings"
@@ -916,6 +1139,10 @@ export default function MobileTradingDashboard({
                 rows={adjustedLiveAlertRows}
                 title="Live Alerts"
               />
+            ) : activeTab === "strategies" ? (
+              <MobileStrategiesPanel edits={edits} strategies={strategies} />
+            ) : activeTab === "sync" ? (
+              <MobileSyncPanel summary={syncSummary} />
             ) : activeTab === "autotrade" ? (
               <section className="mobile-phone-card mobile-phone-card-autotrade">
                 <div className="mobile-phone-social-stack mobile-phone-autotrade-stack">

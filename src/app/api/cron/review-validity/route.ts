@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getBacktestStats, getBacktestTrades, getStrategyCatalog } from "@/lib/backtest";
 import { analyzeBacktestDataValidity } from "@/lib/data-validity";
-import { updateDatasetSyncRunStatus } from "@/lib/live-config";
+import { getDatasetStatus, updateDatasetSyncRunStatus } from "@/lib/live-config";
 import { cronWeekendPause } from "@/lib/market-schedule";
 
 export const dynamic = "force-dynamic";
@@ -62,14 +62,23 @@ export async function GET(request: NextRequest) {
   }).catch((error) => console.error("Failed to mark review validity running", error));
 
   try {
-    const [strategyCatalog, backtestStats, backtestTrades] = await Promise.all([getStrategyCatalog(), getBacktestStats(), getBacktestTrades()]);
+    const [strategyCatalog, backtestStats, backtestTrades, datasetStatus] = await Promise.all([
+      getStrategyCatalog(),
+      getBacktestStats(),
+      getBacktestTrades(),
+      getDatasetStatus()
+    ]);
     const statsByDatasetId = new Map(backtestStats.map((stat) => [stat.datasetId, stat]));
     const strategyRefs = strategyCatalog.map((entry) => ({
+      assetKey: entry.assetKey,
       datasetId: entry.key,
       key: entry.key,
-      sizeMultiplier: statsByDatasetId.get(entry.key)?.sizeMultiplier
+      sizeMultiplier: statsByDatasetId.get(entry.key)?.sizeMultiplier,
+      symbol: entry.symbol,
+      timeframes: entry.timeframes
     }));
     const result = analyzeBacktestDataValidity({
+      assetCoverage: datasetStatus?.assetCoverage,
       backtestBehindMarketData: false,
       strategyRefs,
       trades: backtestTrades

@@ -1262,17 +1262,28 @@ def timeframe_rank(timeframe: str) -> int:
         return len(TIMEFRAME_ORDER)
 
 
+def candle_file_has_rows(csv_path: Path) -> bool:
+    try:
+        return csv_path.exists() and csv_path.stat().st_size > 64
+    except OSError:
+        return False
+
+
 def execution_timeframe_candidates(strategy: BacktestStrategy, asset: AssetConfig, source_timeframe: str) -> list[str]:
     explicit_timeframe = strategy_execution_timeframe(strategy)
     if explicit_timeframe is not None:
-        return [explicit_timeframe]
+        explicit_path = DATA_ROOT / explicit_timeframe / asset.data_file
+        if candle_file_has_rows(explicit_path):
+            return [explicit_timeframe]
 
     source_rank = timeframe_rank(source_timeframe)
     candidates: list[str] = []
     for timeframe in LOWER_TIMEFRAME_EXIT_PREFERENCE:
         if timeframe_rank(timeframe) >= source_rank:
             continue
-        if (DATA_ROOT / timeframe / asset.data_file).exists():
+        if timeframe == explicit_timeframe:
+            continue
+        if candle_file_has_rows(DATA_ROOT / timeframe / asset.data_file):
             candidates.append(timeframe)
     return candidates
 
