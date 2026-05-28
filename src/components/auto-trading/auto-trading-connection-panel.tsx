@@ -404,7 +404,7 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
   const primaryProviderFields = selectedProviderFields.filter((field) => !field.advanced);
   const advancedProviderFields = selectedProviderFields.filter((field) => field.advanced);
   const canManageAutoTrade = Boolean(accountMode);
-  const canTestAutoTrade = accountMode === "Admin";
+  const canTestAutoTrade = Boolean(accountMode);
 
   useEffect(() => {
     function syncAccountMode() {

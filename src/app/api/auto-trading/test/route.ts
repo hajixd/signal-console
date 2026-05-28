@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { isAdminAuthorized } from "@/lib/admin-api";
 import { parseAutoTradeProviderId } from "@/lib/auto-trade-connections";
 import { executeAutoTradeTest } from "@/lib/auto-trader";
 import { checkRateLimit, requestClientKey } from "@/lib/request-throttle";
@@ -23,10 +22,6 @@ function normalizeAccountId(value: unknown): number | undefined {
 }
 
 export async function POST(request: NextRequest) {
-  if (!isAdminAuthorized(request)) {
-    return NextResponse.json({ error: "Admin access required." }, { status: 401 });
-  }
-
   const rateLimit = checkRateLimit(requestClientKey(request, "auto-trade-test"), { limit: 6, windowMs: 60_000 });
   if (!rateLimit.allowed) {
     return NextResponse.json(
