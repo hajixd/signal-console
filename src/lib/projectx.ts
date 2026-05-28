@@ -104,6 +104,16 @@ export type ProjectXTrade = {
   voided?: boolean;
 };
 
+export type ProjectXOpenPosition = {
+  accountId?: number;
+  averagePrice?: number;
+  contractId?: string;
+  creationTimestamp?: string;
+  id?: number;
+  size?: number;
+  type?: number;
+};
+
 export type ProjectXModifyOrderRequest = {
   accountId: number;
   limitPrice?: number | null;
@@ -149,6 +159,10 @@ type ProjectXTradeSearchResponse = ProjectXBaseResponse & {
 };
 
 type ProjectXModifyOrderResponse = ProjectXBaseResponse;
+type ProjectXOpenPositionSearchResponse = ProjectXBaseResponse & {
+  positions?: ProjectXOpenPosition[];
+};
+type ProjectXClosePositionResponse = ProjectXBaseResponse;
 
 export class ProjectXApiError extends Error {
   constructor(
@@ -275,6 +289,15 @@ export async function searchProjectXTrades(
 
 export async function modifyProjectXOrder(token: string, request: ProjectXModifyOrderRequest): Promise<void> {
   await projectXPost<ProjectXModifyOrderResponse>("/api/Order/modify", request, token);
+}
+
+export async function searchProjectXOpenPositions(token: string, accountId: number): Promise<ProjectXOpenPosition[]> {
+  const response = await projectXPost<ProjectXOpenPositionSearchResponse>("/api/Position/searchOpen", { accountId }, token);
+  return response.positions ?? [];
+}
+
+export async function closeProjectXPosition(token: string, request: { accountId: number; contractId: string }): Promise<void> {
+  await projectXPost<ProjectXClosePositionResponse>("/api/Position/closeContract", request, token);
 }
 
 export function readableProjectXError(error: unknown): string {

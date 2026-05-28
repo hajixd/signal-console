@@ -8,10 +8,12 @@ import {
   type StoredProjectXConnection
 } from "@/lib/projectx-connections";
 import {
+  closeProjectXPosition,
   modifyProjectXOrder,
   placeProjectXOrder,
   readableProjectXError,
   searchProjectXOpenOrders,
+  searchProjectXOpenPositions,
   searchProjectXAccounts,
   searchProjectXContracts,
   searchProjectXTrades,
@@ -39,6 +41,8 @@ export type ProjectXAutoTradeResult = {
   orderId?: number;
   orders?: AutoTradeOrderSummary[];
   status: ProjectXAutoTradeStatus;
+  testMessage?: string;
+  testStatus?: "success";
 };
 
 const CONTRACT_SEARCH_OVERRIDES: Record<string, string> = {
@@ -98,6 +102,8 @@ const FUTURES_MONTH_CODES = "FGHJKMNQUVXZ";
 const NO_ACTIVE_AUTO_TRADE_ACCOUNTS = "no active auto-trade accounts";
 const PROJECTX_TRADE_RESULT_LOOKBACK_MS = 5 * 60_000;
 const PROJECTX_TRADE_RESULT_LOOKAHEAD_MS = 15 * 60_000;
+const PROJECTX_TEST_CLOSE_ATTEMPTS = 10;
+const PROJECTX_TEST_CLOSE_WAIT_MS = 650;
 
 function envFlag(name: string, fallback: boolean): boolean {
   const value = process.env[name]?.trim().toLowerCase();
@@ -157,6 +163,10 @@ function result(status: ProjectXAutoTradeStatus, fields: Omit<ProjectXAutoTradeR
     status,
     ...fields
   };
+}
+
+function wait(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 function wholeNumber(value: number | undefined, label: string): number {
@@ -639,6 +649,15 @@ function orderHasProjectXResult(order: AutoTradeOrderSummary): boolean {
   return typeof order.netPnlDollars === "number" && Number.isFinite(order.netPnlDollars);
 }
 
+async function waitForProjectXTestPosition(token: string, accountId: number, contractId: string): Promise<boolean> {
+  for (let attempt = 0; attempt < PROJECTX_TEST_CLOSE_ATTEMPTS; attempt += 1) {
+    const positions = await searchProjectXOpenPositions(token, accountId);
+    if (positions.some((position) => position.contractId === contractId && Math.abs(position.size ?? 0) > 0)) return true;
+    await wait(PROJECTX_TEST_CLOSE_WAIT_MS);
+  }
+  return false;
+}
+
 export async function enrichProjectXTradeOutcome(trade: TradeAlert): Promise<TradeAlert> {
   const orders = trade.autoTradeOrders;
   if (!orders?.some((order) => order.status === "placed")) return trade;
@@ -907,18 +926,43 @@ export async function executeProjectXTestTrade(input: { accountId: number; conne
 
     try {
       const order = await placeProjectXOrder(targetRefresh.connection.token, request);
+      const placedOrder: AutoTradeOrderSummary = {
+        ...summaryBase,
+        orderId: order.orderId,
+        status: "placed"
+      };
+      try {
+        const positionOpened = await waitForProjectXTestPosition(targetRefresh.connection.token, account.id, contract.id);
+        if (!positionOpened) {
+          const closeWarning = "Test order was placed with TP/SL, but no open position was found to close.";
+          return result("failed", {
+            ...summarizeOrders([{ ...placedOrder, error: closeWarning }], contractFields),
+            error: closeWarning
+          });
+        }
+        await closeProjectXPosition(targetRefresh.connection.token, {
+          accountId: account.id,
+          contractId: contract.id
+        });
+      } catch (closeError) {
+        const message = `Test order was placed with TP/SL, but closing it failed: ${readableProjectXError(closeError)}`;
+        return result("failed", {
+          ...summarizeOrders([{ ...placedOrder, error: message }], contractFields),
+          error: message
+        });
+      }
       return result(
         "placed",
-        summarizeOrders(
-          [
-            {
-              ...summaryBase,
-              orderId: order.orderId,
-              status: "placed"
-            }
-          ],
-          contractFields
-        )
+        {
+          ...summarizeOrders(
+            [
+              placedOrder
+            ],
+            contractFields
+          ),
+          testMessage: "Success: opened with TP/SL and closed",
+          testStatus: "success"
+        }
       );
     } catch (error) {
       const rawMessage = readableProjectXError(error);

@@ -2514,6 +2514,7 @@ html[data-theme="light"] .themeDarkLabel {
   line-height: 1.35;
 }
 
+.topstepAccountTestResult.success,
 .topstepAccountTestResult.placed,
 .topstepAccountTestResult.dry_run {
   color: #86efac;
@@ -7557,6 +7558,7 @@ html[data-theme="light"] .topstepAccountTestResult {
   color: rgba(15, 23, 42, 0.62);
 }
 
+html[data-theme="light"] .topstepAccountTestResult.success,
 html[data-theme="light"] .topstepAccountTestResult.placed,
 html[data-theme="light"] .topstepAccountTestResult.dry_run {
   color: #15803d;
@@ -13723,7 +13725,7 @@ html[data-theme="light"] .tradeReplaySlider input::-webkit-slider-thumb {
     border-top: 1px solid rgba(255, 255, 255, 0.08);
   }
 
-  .mobile-phone-history-month-marker {
+  .mobile-phone-history-day-marker {
     display: grid;
     grid-template-columns: 32px auto minmax(0, 1fr);
     align-items: center;
@@ -13737,8 +13739,8 @@ html[data-theme="light"] .tradeReplaySlider input::-webkit-slider-thumb {
     text-transform: uppercase;
   }
 
-  .mobile-phone-history-month-marker::before,
-  .mobile-phone-history-month-marker::after {
+  .mobile-phone-history-day-marker::before,
+  .mobile-phone-history-day-marker::after {
     content: "";
     height: 2px;
     border-radius: 999px;
@@ -13746,7 +13748,7 @@ html[data-theme="light"] .tradeReplaySlider input::-webkit-slider-thumb {
     box-shadow: 0 0 14px rgba(99, 199, 255, 0.24);
   }
 
-  .mobile-phone-history-month-marker::after {
+  .mobile-phone-history-day-marker::after {
     background: linear-gradient(90deg, rgba(99, 199, 255, 0.9), rgba(99, 199, 255, 0.12));
   }
 
@@ -14557,17 +14559,17 @@ html[data-theme="light"] .tradeReplaySlider input::-webkit-slider-thumb {
     border-top-color: rgba(15, 23, 42, 0.1);
   }
 
-  html[data-theme="light"] .mobile-phone-history-month-marker {
+  html[data-theme="light"] .mobile-phone-history-day-marker {
     color: #1d4ed8;
   }
 
-  html[data-theme="light"] .mobile-phone-history-month-marker::before,
-  html[data-theme="light"] .mobile-phone-history-month-marker::after {
+  html[data-theme="light"] .mobile-phone-history-day-marker::before,
+  html[data-theme="light"] .mobile-phone-history-day-marker::after {
     background: linear-gradient(90deg, rgba(37, 99, 235, 0.22), rgba(37, 99, 235, 0.78));
     box-shadow: 0 0 12px rgba(37, 99, 235, 0.12);
   }
 
-  html[data-theme="light"] .mobile-phone-history-month-marker::after {
+  html[data-theme="light"] .mobile-phone-history-day-marker::after {
     background: linear-gradient(90deg, rgba(37, 99, 235, 0.78), rgba(37, 99, 235, 0.1));
   }
 

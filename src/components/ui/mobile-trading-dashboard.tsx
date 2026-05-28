@@ -192,17 +192,19 @@ function mobilePacificDateKey(value: string | undefined): string {
   return year && month && day ? `${year}-${month}-${day}` : "";
 }
 
-function mobileHistoryMonthKey(row: TradeHistoryRow): string {
+function mobileHistoryDayKey(row: TradeHistoryRow): string {
   const time = row.exitTime || row.entryTime;
-  return mobilePacificDateKey(time).slice(0, 7) || "unknown";
+  return mobilePacificDateKey(time) || "unknown";
 }
 
-function mobileHistoryMonthLabel(monthKey: string): string {
-  const [year, month] = monthKey.split("-").map((value) => Number(value));
-  if (!Number.isFinite(year) || !Number.isFinite(month)) return "Unknown month";
-  return new Date(Date.UTC(year, month - 1, 15, 12)).toLocaleString(undefined, {
-    month: "long",
+function mobileHistoryDayLabel(dayKey: string): string {
+  const [year, month, day] = dayKey.split("-").map((value) => Number(value));
+  if (!Number.isFinite(year) || !Number.isFinite(month) || !Number.isFinite(day)) return "Unknown day";
+  return new Date(Date.UTC(year, month - 1, day, 12)).toLocaleString(undefined, {
+    day: "numeric",
+    month: "short",
     timeZone: PACIFIC_TIME_ZONE,
+    weekday: "short",
     year: "numeric"
   });
 }
@@ -334,8 +336,12 @@ function MobileHistoryStatsStrip({ stats }: { stats: MobileHistoryStats }) {
         <strong>{stats.winRate}</strong>
       </span>
       <span>
-        <small>PF</small>
+        <small>Profit Factor</small>
         <strong>{stats.profitFactor}</strong>
+      </span>
+      <span>
+        <small>Net PnL</small>
+        <strong className={stats.netPnlTone}>{stats.netPnl}</strong>
       </span>
       <span>
         <small>Avg Win</small>
@@ -348,10 +354,6 @@ function MobileHistoryStatsStrip({ stats }: { stats: MobileHistoryStats }) {
       <span>
         <small>Avg Trade</small>
         <strong className={stats.averageTradeTone}>{stats.averageTrade}</strong>
-      </span>
-      <span>
-        <small>Net PnL</small>
-        <strong className={stats.netPnlTone}>{stats.netPnl}</strong>
       </span>
     </div>
   );
@@ -392,15 +394,15 @@ function MobileHistoryList({
           <MobileHistoryStatsStrip stats={stats} />
           <div className="mobile-phone-history-list">
             {rows.map((row, index) => {
-              const monthKey = mobileHistoryMonthKey(row);
-              const previousMonthKey = index > 0 ? mobileHistoryMonthKey(rows[index - 1]!) : "";
-              const showMonthMarker = monthKey !== previousMonthKey;
+              const dayKey = mobileHistoryDayKey(row);
+              const previousDayKey = index > 0 ? mobileHistoryDayKey(rows[index - 1]!) : "";
+              const showDayMarker = dayKey !== previousDayKey;
 
               return (
                 <Fragment key={row.id}>
-                  {showMonthMarker ? (
-                    <div className="mobile-phone-history-month-marker">
-                      <span>{mobileHistoryMonthLabel(monthKey)}</span>
+                  {showDayMarker ? (
+                    <div className="mobile-phone-history-day-marker">
+                      <span>{mobileHistoryDayLabel(dayKey)}</span>
                     </div>
                   ) : null}
                   <button className="mobile-phone-history-row" onClick={() => onTradeSelect(row)} type="button">

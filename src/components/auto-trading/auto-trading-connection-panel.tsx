@@ -41,7 +41,7 @@ type SavedAutoTradeConnection = {
   storageMode?: "firebase" | "local";
 };
 
-type AutoTradeTestStatus = "disabled" | "dry_run" | "failed" | "placed" | "skipped";
+type AutoTradeTestStatus = "disabled" | "dry_run" | "failed" | "placed" | "skipped" | "success";
 
 type AutoTradeTestOrder = {
   accountId?: number;
@@ -62,6 +62,8 @@ type AutoTradeTestResponse = {
   orders?: AutoTradeTestOrder[];
   providerName?: string;
   status?: AutoTradeTestStatus;
+  testMessage?: string;
+  testStatus?: "success";
 };
 
 type AutoTradeTestState = {
@@ -309,6 +311,7 @@ function autoTradeTestMessage(result: AutoTradeTestResponse): string {
   const contract = order?.contractName ?? order?.contractId ?? result.contractName ?? result.contractId ?? "test order";
   const orderId = order?.orderId ?? result.orderId;
 
+  if (result.testStatus === "success") return `${result.testMessage ?? "Success: opened with TP/SL and closed"}${orderId ? ` #${orderId}` : ""}`;
   if (result.status === "placed") return `Placed ${contract}${orderId ? ` #${orderId}` : ""}`;
   if (result.status === "dry_run") return `Dry run ${contract}`;
   if (result.status === "disabled") return result.error ?? "Auto-trade is disabled";
@@ -900,7 +903,7 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
         ...current,
         [key]: {
           message: autoTradeTestMessage(result),
-          status: result.status ?? (response.ok ? "placed" : "failed")
+          status: result.testStatus === "success" ? "success" : result.status ?? (response.ok ? "placed" : "failed")
         }
       }));
     } catch (error) {
