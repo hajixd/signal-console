@@ -257,8 +257,8 @@ export function projectXBracketTicksForTrade(
     throw new Error(`Invalid ${trade.side} ProjectX bracket geometry: TP/SL must be on the correct side of entry.`);
   }
 
-  const stopLossTicks = wholeNumber(Math.abs(trade.slUnits), "Stop-loss ticks");
-  const takeProfitTicks = wholeNumber(Math.abs(trade.tpUnits), "Take-profit ticks");
+  const stopLossTicks = wholeNumber(Math.abs(trade.slUnits), "Stop-loss ticks") * -direction;
+  const takeProfitTicks = wholeNumber(Math.abs(trade.tpUnits), "Take-profit ticks") * direction;
   return {
     stopLossTicks,
     takeProfitTicks

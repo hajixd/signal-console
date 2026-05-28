@@ -6,7 +6,7 @@ const TELEGRAM_MAX_TEXT_LENGTH = 3900;
 const TELEGRAM_SEND_TIMEOUT_MS = 10_000;
 const TELEGRAM_SEPARATOR = "-------------------------------------------------------";
 const TELEGRAM_FALLBACK_TIME_ZONE = "America/Los_Angeles";
-const NO_LOGINS_MESSAGE = "No Logins";
+const NO_ACCOUNTS_MESSAGE = "No Accounts";
 const FUNDED_ACCOUNT_SIZE_PATTERN = /\b(50|100|150|200|250|300)\s*k(?:\s*tc)?\b/i;
 
 function formatPrice(value: number): string {
@@ -271,9 +271,16 @@ function accountExecutionRow(order: NonNullable<TradeAlert["autoTradeOrders"]>[n
 
 function isNoLoginMessage(value: string | undefined): boolean {
   if (!value) return false;
-  return /no .*?(logins?|accounts?|connections?|connected|active auto-trade|projectx|topstepx|tradovate)|missing tradovate credentials/i.test(
-    value
-  );
+  return [
+    /no\s+(?:active\s+auto-trade\s+)?accounts?/i,
+    /no\s+live\s+(?:futures|forex)\s+connector\s+is\s+connected/i,
+    /no\s+(?:topstepx\s+)?projectx\s+connection\s+is\s+available/i,
+    /could\s+not\s+discover\s+an?\s+account/i,
+    /connection\s+for\s+this\s+account\s+is\s+no\s+longer\s+active/i,
+    /account\s+(?:folder\s+is\s+no\s+longer\s+connected|was\s+not\s+found)/i,
+    /configured\s+projectx_auto_trade_account_id\s+was\s+not\s+found\s+or\s+is\s+paused/i,
+    /missing\s+.+\s+(?:credentials|bridge\s+settings)/i
+  ].some((pattern) => pattern.test(value));
 }
 
 function isNoLoginOrder(order: NonNullable<TradeAlert["autoTradeOrders"]>[number]): boolean {
@@ -284,7 +291,7 @@ function executionLines(trade: TradeAlert): string[] {
   if (trade.autoTradeOrders?.length) {
     const actionableOrders = trade.autoTradeOrders.filter((order) => order.status !== "skipped" || !isNoLoginOrder(order));
     if (!actionableOrders.length) {
-      return [NO_LOGINS_MESSAGE];
+      return [NO_ACCOUNTS_MESSAGE];
     }
 
     const groups = new Map<string, string[]>();
@@ -294,13 +301,13 @@ function executionLines(trade: TradeAlert): string[] {
       lines.push(row.line);
       groups.set(row.name, lines);
     }
-    return [...groups.entries()].flatMap(([name, lines]) => [name, ...lines]);
+    return [...groups.entries()].flatMap(([name, lines], index) => (index === 0 ? [name, ...lines] : ["", name, ...lines]));
   }
 
   if (!trade.autoTradeStatus && !trade.autoTradeError) return [];
 
   if (isNoLoginMessage(trade.autoTradeError)) {
-    return [NO_LOGINS_MESSAGE];
+    return [NO_ACCOUNTS_MESSAGE];
   }
 
   return [
@@ -350,6 +357,7 @@ export function formatTelegramMessage(trade: TradeAlert): string {
   const sourceSignal = instrumentLabel !== trade.symbol ? `Signal ${escapeHtml(trade.symbol)}` : undefined;
   const lines = [
     telegramTitle(`${instrumentLabel} Trade`),
+    "",
     sourceSignal,
     `Direction: <b>${side}</b>`,
     `Units: <b>${escapeHtml(telegramSizeLabel(trade, instrumentLabel, sizeMultiplier))}</b>`,
@@ -363,6 +371,7 @@ export function formatTelegramMessage(trade: TradeAlert): string {
     execution.length ? "" : undefined,
     execution.length ? `<b>Execution:</b>` : undefined,
     execution.length ? execution.map(escapeHtml).join("\n") : undefined,
+    execution.length ? "" : undefined,
     `Signal: ${escapeHtml(formatSignalTime(trade.signalTime))}`
   ];
   return fitTelegramMessage(joinTelegramLines(lines));
@@ -386,6 +395,7 @@ export function formatTelegramOutcomeMessage(trade: TradeAlert): string {
   const riskDollars = Math.abs(trade.slUnits * dollarUnit * sizeMultiplier);
   const lines = [
     telegramTitle(`${instrumentLabel} ${title}`),
+    "",
     sourceSignal,
     `Direction: <b>${side}</b>`,
     "",
@@ -424,7 +434,7 @@ export function formatTelegramManagementMessage(trade: TradeAlert, event: TradeM
   const riskDollars = Math.abs(trade.slUnits * dollarUnit * sizeMultiplier);
   const execution =
     isNoLoginMessage(event.autoTradeError)
-      ? NO_LOGINS_MESSAGE
+      ? NO_ACCOUNTS_MESSAGE
       : event.autoTradeStatus || event.autoTradeError
       ? `${event.autoTradeStatus ? autoTradeStatusLabel(event.autoTradeStatus) : "Auto trade"}${
           event.autoTradeError ? ` - ${escapeHtml(truncate(event.autoTradeError, 160))}` : ""
@@ -432,6 +442,7 @@ export function formatTelegramManagementMessage(trade: TradeAlert, event: TradeM
       : undefined;
   const lines = [
     telegramTitle(`${instrumentLabel} ${managementEventTitle(event)}`),
+    "",
     sourceSignal,
     `Direction: <b>${side}</b>`,
     "",
