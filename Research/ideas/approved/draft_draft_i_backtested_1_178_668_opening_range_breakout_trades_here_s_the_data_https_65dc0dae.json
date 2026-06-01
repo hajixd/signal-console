@@ -1,11 +1,6 @@
 {
-  "assetKeys": [
-    "sp_500_futures",
-    "natural_gas_futures",
-    "silver_futures",
-    "micro_ether_futures"
-  ],
-  "createdAt": "2026-05-29T16:01:03.227433+00:00",
+  "assetKeys": [],
+  "createdAt": "2026-06-01T00:00:59.281904+00:00",
   "engines": [
     "range_break"
   ],

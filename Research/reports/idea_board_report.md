@@ -1,12 +1,12 @@
 # Idea Board Report
 
-Generated: 2026-05-29T16:01:05.037831+00:00
+Generated: 2026-06-01T00:01:01.227681+00:00
 
 ## I Backtested 1,178,668 Opening Range Breakout Trades. Here's the Data.
 
 - Idea ID: `draft_draft_i_backtested_1_178_668_opening_range_breakout_trades_here_s_the_data_https_65dc0dae`
 - Timeframes: 1m, 5m, 15m
-- Assets: sp_500_futures, natural_gas_futures, silver_futures, micro_ether_futures
+- Assets: n/a
 - Engines: range_break
 - Overall: Draft idea extracted from source text matching engines: range_break.
 - Setup: Test the described source behavior with explicit rule-code.
