@@ -2,7 +2,7 @@
 
 # Research Candidate Report
 
-Generated: 2026-06-01T06:02:15.208104+00:00
+Generated: 2026-06-02T06:01:07.632959+00:00
 
 Backtested strategies: 1
 Qualified strategies: 0
