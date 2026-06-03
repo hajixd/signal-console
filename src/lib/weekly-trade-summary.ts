@@ -19,9 +19,12 @@ import { getTrades } from "@/lib/storage";
 import type { NotificationStatus, TradeAlert } from "@/lib/types";
 
 type TradeSummaryMarker = {
+  claimedAt?: string;
+  completedAt?: string;
   discordError?: string;
   discordStatus?: NotificationStatus;
   key: string;
+  markerStatus?: "claimed" | "completed";
   market: AutoTradeMarket;
   period: "daily" | "weekly";
   sentAt: string;
@@ -161,25 +164,6 @@ async function writeLocalMarkers(filePath: string, markers: Record<string, Trade
   await writeFile(filePath, JSON.stringify(markers, null, 2));
 }
 
-async function getMarker(collection: string, localPath: string, key: string): Promise<TradeSummaryMarker | null> {
-  if (hasFirebaseAdmin()) {
-    try {
-      const snapshot = await withFirebaseTimeout(
-        firebaseDb()
-          .collection(collection)
-          .doc(key)
-          .get(),
-        "Firebase trade summary marker read"
-      );
-      return snapshot.exists ? (snapshot.data() as TradeSummaryMarker) : null;
-    } catch (error) {
-      if (!firebaseLocalFallbackEnabled()) throw error;
-    }
-  }
-
-  return (await readLocalMarkers(localPath))[key] ?? null;
-}
-
 async function saveMarker(collection: string, localPath: string, marker: TradeSummaryMarker): Promise<void> {
   const payload = omitUndefinedDeep(marker);
   if (hasFirebaseAdmin()) {
@@ -196,8 +180,13 @@ async function saveMarker(collection: string, localPath: string, marker: TradeSu
       );
       return;
     } catch (error) {
+      if (process.env.VERCEL === "1") throw error;
       if (!firebaseLocalFallbackEnabled()) throw error;
     }
+  }
+
+  if (process.env.VERCEL === "1") {
+    throw new Error("Firebase Admin is required for production trade summary markers.");
   }
 
   const markers = await readLocalMarkers(localPath);
@@ -205,6 +194,57 @@ async function saveMarker(collection: string, localPath: string, marker: TradeSu
     ...markers,
     [marker.key]: marker
   });
+}
+
+async function claimMarker(collection: string, localPath: string, marker: TradeSummaryMarker): Promise<TradeSummaryMarker | null> {
+  const claimedMarker: TradeSummaryMarker = {
+    ...marker,
+    claimedAt: marker.sentAt,
+    discordStatus: "skipped",
+    markerStatus: "claimed",
+    telegramStatus: "skipped"
+  };
+
+  if (hasFirebaseAdmin()) {
+    const db = firebaseDb();
+    const doc = db.collection(collection).doc(marker.key);
+    try {
+      return await withFirebaseTimeout(
+        db.runTransaction(async (transaction) => {
+          const existing = await transaction.get(doc);
+          if (existing.exists) return existing.data() as TradeSummaryMarker;
+          transaction.create(doc, {
+            ...omitUndefinedDeep(claimedMarker),
+            updatedAtServer: FieldValue.serverTimestamp()
+          });
+          return null;
+        }),
+        "Firebase trade summary marker claim"
+      );
+    } catch (error) {
+      if (process.env.VERCEL === "1") throw error;
+      if (!firebaseLocalFallbackEnabled()) throw error;
+    }
+  }
+
+  if (process.env.VERCEL === "1") {
+    throw new Error("Firebase Admin is required to claim production trade summary markers.");
+  }
+
+  const markers = await readLocalMarkers(localPath);
+  const existing = markers[marker.key];
+  if (existing) return existing;
+  await writeLocalMarkers(localPath, {
+    ...markers,
+    [marker.key]: claimedMarker
+  });
+  return null;
+}
+
+function markerStatusText(marker: TradeSummaryMarker): string {
+  if (marker.markerStatus === "claimed") return "claimed";
+  const channelStatuses = [marker.telegramStatus, marker.discordStatus].filter((status): status is NotificationStatus => Boolean(status));
+  return channelStatuses.length ? channelStatuses.join("/") : "recorded";
 }
 
 function weeklySummaryDue(value: Date): { due: boolean; reason?: string; weekKey?: string } {
@@ -515,20 +555,28 @@ export async function sendDueWeeklyTradeSummaries(value = new Date()): Promise<W
   };
   if (!due.due || !due.weekKey) return result;
 
-  const trades = await getTrades();
+  let trades: TradeAlert[] | null = null;
   for (const market of SUMMARY_MARKETS) {
     const key = weeklyMarkerKey(market, due.weekKey);
-    const existing = await getMarker(WEEKLY_SUMMARY_COLLECTION, LOCAL_WEEKLY_SUMMARY_PATH, key);
-    if (existing?.telegramStatus === "sent" || existing?.telegramStatus === "skipped") {
+    const existing = await claimMarker(WEEKLY_SUMMARY_COLLECTION, LOCAL_WEEKLY_SUMMARY_PATH, {
+      key,
+      market,
+      period: "weekly",
+      sentAt: value.toISOString(),
+      telegramStatus: "skipped",
+      weekKey: due.weekKey
+    });
+    if (existing) {
       result.skipped.push({
         market,
-        reason: `Weekly ${market} summary already ${existing.telegramStatus} at ${existing.sentAt}.`,
+        reason: `Weekly ${market} summary already ${markerStatusText(existing)} at ${existing.completedAt ?? existing.sentAt}.`,
         weekKey: due.weekKey
       });
       continue;
     }
 
     const window = summaryWindow(market, due.weekKey);
+    trades ??= await getTrades();
     const marketTrades = tradesForWindow(trades, market, window);
     const notification = await sendTextNotification(formatWeeklySummaryMessage(market, window, marketTrades));
     const status = combinedNotificationStatus(notification);
@@ -544,19 +592,20 @@ export async function sendDueWeeklyTradeSummaries(value = new Date()): Promise<W
       weekKey: due.weekKey
     });
 
-    if (status !== "failed") {
-      await saveMarker(WEEKLY_SUMMARY_COLLECTION, LOCAL_WEEKLY_SUMMARY_PATH, {
-        discordError: notification.discord.error,
-        discordStatus: notification.discord.status,
-        key,
-        market,
-        period: "weekly",
-        sentAt: value.toISOString(),
-        telegramError: notification.telegram.error,
-        telegramStatus: notification.telegram.status,
-        weekKey: due.weekKey
-      });
-    }
+    await saveMarker(WEEKLY_SUMMARY_COLLECTION, LOCAL_WEEKLY_SUMMARY_PATH, {
+      claimedAt: value.toISOString(),
+      completedAt: new Date().toISOString(),
+      discordError: notification.discord.error,
+      discordStatus: notification.discord.status,
+      key,
+      markerStatus: "completed",
+      market,
+      period: "weekly",
+      sentAt: value.toISOString(),
+      telegramError: notification.telegram.error,
+      telegramStatus: notification.telegram.status,
+      weekKey: due.weekKey
+    });
   }
 
   return result;
@@ -582,19 +631,27 @@ export async function sendDueDailyTradeSummaries(value = new Date()): Promise<Da
   }
   if (!windows.length) return result;
 
-  const trades = await getTrades();
+  let trades: TradeAlert[] | null = null;
   for (const window of windows) {
     const key = dailyMarkerKey(window.market, window.tradingDateKey);
-    const existing = await getMarker(DAILY_SUMMARY_COLLECTION, LOCAL_DAILY_SUMMARY_PATH, key);
-    if (existing?.telegramStatus === "sent" || existing?.telegramStatus === "skipped") {
+    const existing = await claimMarker(DAILY_SUMMARY_COLLECTION, LOCAL_DAILY_SUMMARY_PATH, {
+      key,
+      market: window.market,
+      period: "daily",
+      sentAt: value.toISOString(),
+      telegramStatus: "skipped",
+      tradingDateKey: window.tradingDateKey
+    });
+    if (existing) {
       result.skipped.push({
         market: window.market,
-        reason: `Daily ${window.market} summary already ${existing.telegramStatus} at ${existing.sentAt}.`,
+        reason: `Daily ${window.market} summary already ${markerStatusText(existing)} at ${existing.completedAt ?? existing.sentAt}.`,
         tradingDateKey: window.tradingDateKey
       });
       continue;
     }
 
+    trades ??= await getTrades();
     const marketTrades = tradesForWindow(trades, window.market, window);
     const notification = await sendTextNotification(formatDailySummaryMessage(window.market, window, marketTrades));
     const status = combinedNotificationStatus(notification);
@@ -610,19 +667,20 @@ export async function sendDueDailyTradeSummaries(value = new Date()): Promise<Da
       tradingDateKey: window.tradingDateKey
     });
 
-    if (status !== "failed") {
-      await saveMarker(DAILY_SUMMARY_COLLECTION, LOCAL_DAILY_SUMMARY_PATH, {
-        discordError: notification.discord.error,
-        discordStatus: notification.discord.status,
-        key,
-        market: window.market,
-        period: "daily",
-        sentAt: value.toISOString(),
-        telegramError: notification.telegram.error,
-        telegramStatus: notification.telegram.status,
-        tradingDateKey: window.tradingDateKey
-      });
-    }
+    await saveMarker(DAILY_SUMMARY_COLLECTION, LOCAL_DAILY_SUMMARY_PATH, {
+      claimedAt: value.toISOString(),
+      completedAt: new Date().toISOString(),
+      discordError: notification.discord.error,
+      discordStatus: notification.discord.status,
+      key,
+      markerStatus: "completed",
+      market: window.market,
+      period: "daily",
+      sentAt: value.toISOString(),
+      telegramError: notification.telegram.error,
+      telegramStatus: notification.telegram.status,
+      tradingDateKey: window.tradingDateKey
+    });
   }
 
   return result;
