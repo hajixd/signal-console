@@ -17,6 +17,7 @@ const nextConfig: NextConfig = {
   },
   outputFileTracingIncludes: {
     "/*": [
+      "./cache/backtest-manifest.json",
       "./cache/backtest-summary.json",
       "./cache/live-data-tails.json",
       "./strategy/**/backtest_trades.csv",

@@ -702,8 +702,30 @@ async function loadStrategySummaryCatalog(): Promise<StrategyCatalogSummary> {
   return summaryCatalogCache.promise;
 }
 
+function selectedStrategyIdSet(strategyIds: Iterable<string>): Set<string> {
+  return new Set([...strategyIds].filter(Boolean));
+}
+
+function sortedTrades(trades: BacktestTrade[]): BacktestTrade[] {
+  return trades.sort((left, right) => Date.parse(right.entryTime) - Date.parse(left.entryTime));
+}
+
+async function expectedTradeCountForStrategies(strategyIds: Set<string>): Promise<number> {
+  const summary = await loadStrategySummaryCatalog();
+  return summary.stats
+    .filter((stat) => strategyIds.has(stat.datasetId))
+    .reduce((sum, stat) => sum + Math.max(0, stat.trades), 0);
+}
+
+async function loadCatalogTradesForStrategies(strategyIds: Set<string>): Promise<BacktestTrade[]> {
+  const catalog = await loadStrategyCatalog();
+  return sortedTrades(catalog.trades.filter((trade) => strategyIds.has(trade.datasetId)));
+}
+
 async function loadBacktestTradesForStrategies(strategyIds: Iterable<string>): Promise<BacktestTrade[]> {
-  const selectedIds = new Set(strategyIds);
+  const selectedIds = selectedStrategyIdSet(strategyIds);
+  if (!selectedIds.size) return [];
+
   const strategies = STRATEGY_DEFINITIONS.filter((strategy) => selectedIds.has(strategy.id));
   const trades: BacktestTrade[] = [];
 
@@ -720,7 +742,14 @@ async function loadBacktestTradesForStrategies(strategyIds: Iterable<string>): P
     }
   }
 
-  return trades.sort((left, right) => Date.parse(right.entryTime) - Date.parse(left.entryTime));
+  const csvTrades = sortedTrades(trades);
+  const expectedTrades = await expectedTradeCountForStrategies(selectedIds).catch(() => 0);
+  if (!csvTrades.length || (expectedTrades > 0 && csvTrades.length < expectedTrades)) {
+    const catalogTrades = await loadCatalogTradesForStrategies(selectedIds).catch(() => []);
+    if (catalogTrades.length >= csvTrades.length) return catalogTrades;
+  }
+
+  return csvTrades;
 }
 
 export async function getStrategyCatalog(): Promise<StrategyCatalogEntry[]> {
