@@ -178,11 +178,12 @@ export async function executeTradeLockerAutoTrade(trade: TradeAlert): Promise<Pr
     .map(([key]) => key);
   if (requiredMissing.length) return result("skipped", { error: `Missing TradeLocker credentials: ${requiredMissing.join(", ")}.` });
 
+  let request: ReturnType<typeof autoTradeRequest> | undefined;
   try {
     const token = await tradeLockerToken(fields);
     const route = await discoverTradeLockerAccount(token, fields);
     if (!route?.accountId || !route.accNum) return result("skipped", { error: "TradeLocker could not discover an account. Add Account ID and Account number in Advanced Settings." });
-    const request = autoTradeRequest("TRADELOCKER", trade, Number(route.accountId) || route.accountId, fields);
+    request = autoTradeRequest("TRADELOCKER", trade, Number(route.accountId) || route.accountId, fields);
     const instrument = await discoverTradeLockerInstrument(token, route, request.symbol, fields);
     if (!instrument?.tradableInstrumentId) return result("skipped", { error: `TradeLocker could not discover instrument ${request.symbol}. Add Instrument ID in Advanced Settings.` });
 
@@ -231,6 +232,6 @@ export async function executeTradeLockerAutoTrade(trade: TradeAlert): Promise<Pr
     });
   } catch (error) {
     const message = readableError(error, "TradeLocker order placement failed.");
-    return result("failed", { error: message });
+    return result("failed", { error: message, orders: request ? [failedOrder(request, message)] : undefined });
   }
 }

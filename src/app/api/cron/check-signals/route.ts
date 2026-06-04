@@ -24,6 +24,7 @@ const DEFAULT_SIGNAL_SCAN_LOOKBACK_HOURS = 26;
 const DEFAULT_SIGNAL_MAX_ACTIONABLE_AGE_MINUTES = 75;
 const DEFAULT_SIGNAL_SCAN_CONCURRENCY = 6;
 const DEFAULT_AUTO_TRADE_DISPATCH_CONCURRENCY = 2;
+const DEFAULT_PROJECTX_LIFECYCLE_RESULT_WAIT_HOURS = 24;
 
 function isAuthorized(request: NextRequest): "ok" | "missing-secret" | "bad-secret" {
   const secret = process.env.CRON_SECRET;
@@ -102,6 +103,23 @@ const NEW_YORK_DAY_FORMATTER = new Intl.DateTimeFormat("en-CA", {
 function lifecycleLookbackMs(): number {
   const hours = Number(process.env.TELEGRAM_TRADE_UPDATE_LOOKBACK_HOURS ?? 72);
   return (Number.isFinite(hours) && hours > 0 ? hours : 72) * 60 * 60_000;
+}
+
+function projectXLifecycleResultWaitMs(): number {
+  const hours = Number(process.env.PROJECTX_LIFECYCLE_RESULT_WAIT_HOURS);
+  return (Number.isFinite(hours) && hours > 0 ? hours : DEFAULT_PROJECTX_LIFECYCLE_RESULT_WAIT_HOURS) * 60 * 60_000;
+}
+
+function shouldDeferProjectXLifecycleNotification(trade: TradeAlert): boolean {
+  const placedProjectXOrders = (trade.autoTradeOrders ?? []).filter(
+    (order) => order.status === "placed" && (Boolean(order.accountConnectionId) || trade.autoTradeProviderId === "projectx")
+  );
+  if (!placedProjectXOrders.length) return false;
+  if (placedProjectXOrders.every((order) => typeof order.netPnlDollars === "number" && Number.isFinite(order.netPnlDollars))) return false;
+
+  const startedAt = Date.parse(trade.autoTradeCheckedAt ?? trade.signalTime);
+  if (!Number.isFinite(startedAt)) return true;
+  return Date.now() - startedAt < projectXLifecycleResultWaitMs();
 }
 
 function repeatSuppressionLookbackMs(): number {
@@ -679,6 +697,13 @@ async function notifyTradeLifecycles(result: CronResult, barsByAssetKey: Map<str
         lifecycleStatus: evaluation.hit.status,
         lifecycleTime: evaluation.hit.time
       });
+      if (shouldDeferProjectXLifecycleNotification(updatedTrade)) {
+        await saveTrade({
+          ...tradeWithManagementEvents,
+          autoTradeOrders: updatedTrade.autoTradeOrders
+        });
+        continue;
+      }
       const notification = await sendTradeOutcomeNotification(updatedTrade);
       await saveTrade({
         ...updatedTrade,

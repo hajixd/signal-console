@@ -119,11 +119,12 @@ export async function executeTradovateAutoTrade(trade: TradeAlert): Promise<Proj
     .map(([key]) => key);
   if (requiredMissing.length) return result("skipped", { error: `Missing Tradovate credentials: ${requiredMissing.join(", ")}.` });
 
+  let request: ReturnType<typeof autoTradeRequest> | undefined;
   try {
     const token = await tradovateToken(fields);
     const account = await discoverTradovateAccount(token, fields);
     if (!account) return result("skipped", { error: "Tradovate could not discover an account. Add Account ID in Advanced Settings." });
-    const request = autoTradeRequest("TRADOVATE", trade, account.accountId, {
+    request = autoTradeRequest("TRADOVATE", trade, account.accountId, {
       ...fields,
       accountSpec: fields?.accountSpec ?? account.accountSpec
     });
@@ -180,6 +181,6 @@ export async function executeTradovateAutoTrade(trade: TradeAlert): Promise<Proj
     });
   } catch (error) {
     const message = readableError(error, "Tradovate order placement failed.");
-    return result("failed", { error: message });
+    return result("failed", { error: message, orders: request ? [failedOrder(request, message)] : undefined });
   }
 }

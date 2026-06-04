@@ -115,6 +115,11 @@ function result(
   };
 }
 
+function readableExecutionError(error: unknown): string {
+  if (error instanceof Error) return error.message;
+  return "Auto-trade execution failed.";
+}
+
 export async function executeAutoTrade(trade: TradeAlert): Promise<AutoTradeExecutionResult> {
   const limitGuard = unsafeLimitOrderGuard(trade);
   if (limitGuard) return limitGuard;
@@ -144,13 +149,21 @@ export async function executeAutoTrade(trade: TradeAlert): Promise<AutoTradeExec
   if (connector) {
     const provider = autoTradeProviderById(connector.providerId);
     const providerName = provider?.label ?? connector.providerId;
-    const execution = await connector.execute(trade);
-    return {
-      ...execution,
-      providerId: connector.providerId,
-      providerName,
-      orders: annotateOrders(execution.orders, connector.providerId, providerName)
-    };
+    try {
+      const execution = await connector.execute(trade);
+      return {
+        ...execution,
+        providerId: connector.providerId,
+        providerName,
+        orders: annotateOrders(execution.orders, connector.providerId, providerName)
+      };
+    } catch (error) {
+      return result("failed", {
+        error: `${providerName} execution failed: ${readableExecutionError(error)}`,
+        providerId: connector.providerId,
+        providerName
+      });
+    }
   }
 
   return result("skipped", {
@@ -173,13 +186,21 @@ export async function executeAutoTradeManagement(trade: TradeAlert, event: Trade
     });
   }
 
-  const execution = await connector.executeManagement(trade, event);
-  return {
-    ...execution,
-    providerId: connector.providerId,
-    providerName,
-    orders: annotateOrders(execution.orders, connector.providerId, providerName)
-  };
+  try {
+    const execution = await connector.executeManagement(trade, event);
+    return {
+      ...execution,
+      providerId: connector.providerId,
+      providerName,
+      orders: annotateOrders(execution.orders, connector.providerId, providerName)
+    };
+  } catch (error) {
+    return result("failed", {
+      error: `${providerName} management execution failed: ${readableExecutionError(error)}`,
+      providerId,
+      providerName
+    });
+  }
 }
 
 export async function executeAutoTradeTest(input: {
@@ -222,11 +243,19 @@ export async function executeAutoTradeTest(input: {
   }
 
   const trade = await buildAutoTradeTestTrade(market, input.providerId);
-  const execution = await connector.execute(trade);
-  return {
-    ...execution,
-    providerId: connector.providerId,
-    providerName,
-    orders: annotateOrders(execution.orders, connector.providerId, providerName)
-  };
+  try {
+    const execution = await connector.execute(trade);
+    return {
+      ...execution,
+      providerId: connector.providerId,
+      providerName,
+      orders: annotateOrders(execution.orders, connector.providerId, providerName)
+    };
+  } catch (error) {
+    return result("failed", {
+      error: `${providerName} test execution failed: ${readableExecutionError(error)}`,
+      providerId: connector.providerId,
+      providerName
+    });
+  }
 }

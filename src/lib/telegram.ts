@@ -114,6 +114,12 @@ function formatOrderSize(value: number | undefined): string | undefined {
   return new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 }).format(value);
 }
 
+function formatUnits(value: number | undefined): string | undefined {
+  if (typeof value !== "number" || !Number.isFinite(value)) return undefined;
+  const formatted = formatOrderSize(value);
+  return `${formatted} unit${Math.abs(value - 1) < 1e-9 ? "" : "s"}`;
+}
+
 function formatTradePrice(value: number): string {
   return `${formatPrice(value)}$`;
 }
@@ -164,7 +170,7 @@ function telegramSizeLabel(trade: TradeAlert, instrumentLabel: string, fallbackS
 }
 
 function accountOrderLine(order: NonNullable<TradeAlert["autoTradeOrders"]>[number]): string {
-  const formattedSize = formatOrderSize(order.size);
+  const formattedSize = formatUnits(order.size);
   const parts = [
     orderStatusLabel(order.status),
     typeof order.accountBalance === "number" && Number.isFinite(order.accountBalance) ? `Balance ${formatMoney(order.accountBalance)}` : undefined,
@@ -241,9 +247,12 @@ function possessiveAccountsLabel(value: string | undefined): string | undefined 
 }
 
 function accountExecutionRow(order: NonNullable<TradeAlert["autoTradeOrders"]>[number]): { line: string; name: string } {
-  const formattedSize = formatOrderSize(order.size);
+  const formattedSize = formatUnits(order.size);
   const account = executionAccountParts(order.accountName, order.accountId);
-  const accountLabel = account.size ? `${account.size} account` : `Account ${order.accountId}`;
+  const accountLabel = [
+    `Account ${order.accountId}`,
+    typeof order.accountBalance === "number" && Number.isFinite(order.accountBalance) ? `Balance ${formatMoney(order.accountBalance)}` : undefined
+  ].filter((part): part is string => Boolean(part)).join(" | ");
   if (typeof order.netPnlDollars === "number" && Number.isFinite(order.netPnlDollars)) {
     return {
       name: possessiveAccountsLabel(order.accountGroupName) ?? `${account.name}:`,
@@ -257,8 +266,8 @@ function accountExecutionRow(order: NonNullable<TradeAlert["autoTradeOrders"]>[n
     };
   }
   const details = [
-    account.size ?? `Account ${order.accountId}`,
-    formattedSize ? `x${formattedSize}` : undefined,
+    accountLabel,
+    formattedSize,
     order.status === "placed" ? undefined : orderStatusLabel(order.status),
     order.error ? truncate(order.error, 80) : undefined
   ].filter((part): part is string => Boolean(part));

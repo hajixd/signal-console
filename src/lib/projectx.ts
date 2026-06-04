@@ -90,6 +90,12 @@ export type ProjectXOpenOrder = {
   updateTimestamp?: string;
 };
 
+export type ProjectXOrder = ProjectXOpenOrder & {
+  fillVolume?: number | null;
+  filledPrice?: number | null;
+  symbolId?: string;
+};
+
 export type ProjectXTrade = {
   id?: number;
   accountId?: number;
@@ -150,8 +156,16 @@ type ProjectXPlaceOrderResponse = ProjectXBaseResponse & {
   orderId?: number;
 };
 
+type ProjectXAvailableContractsResponse = ProjectXBaseResponse & {
+  contracts?: ProjectXContract[];
+};
+
 type ProjectXOrderSearchOpenResponse = ProjectXBaseResponse & {
   orders?: ProjectXOpenOrder[];
+};
+
+type ProjectXOrderSearchResponse = ProjectXBaseResponse & {
+  orders?: ProjectXOrder[];
 };
 
 type ProjectXTradeSearchResponse = ProjectXBaseResponse & {
@@ -183,6 +197,30 @@ function projectXUrl(path: string): string {
   return `${apiBaseUrl()}${path.startsWith("/") ? path : `/${path}`}`;
 }
 
+function projectXRetryAttempts(): number {
+  const configured = Number(process.env.PROJECTX_API_RETRY_ATTEMPTS);
+  return Number.isInteger(configured) && configured > 0 ? Math.min(configured, 4) : 2;
+}
+
+function projectXRetryDelayMs(attemptIndex: number): number {
+  const configured = Number(process.env.PROJECTX_API_RETRY_DELAY_MS);
+  const baseDelay = Number.isFinite(configured) && configured >= 0 ? Math.min(configured, 2_000) : 250;
+  return baseDelay * (attemptIndex + 1);
+}
+
+function wait(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function retryableStatus(status?: number): boolean {
+  return status === 408 || status === 429 || (typeof status === "number" && status >= 500);
+}
+
+function retryableProjectXError(error: unknown): boolean {
+  if (error instanceof ProjectXApiError) return retryableStatus(error.status);
+  return error instanceof TypeError;
+}
+
 function projectXErrorMessage(response: ProjectXBaseResponse, fallback: string): string {
   const message = response.errorMessage?.trim();
   if (message) return message;
@@ -198,7 +236,15 @@ function assertSuccess(response: ProjectXBaseResponse, fallback: string): void {
 
 async function parseProjectXResponse<T extends ProjectXBaseResponse>(response: Response, fallback: string): Promise<T> {
   const raw = await response.text();
-  const parsed = raw ? (JSON.parse(raw) as T) : ({} as T);
+  let parsed: T;
+  try {
+    parsed = raw ? (JSON.parse(raw) as T) : ({} as T);
+  } catch (error) {
+    if (!response.ok) {
+      throw new ProjectXApiError(`${fallback} (${response.status}; unreadable response)`, response.status);
+    }
+    throw error;
+  }
 
   if (!response.ok) {
     throw new ProjectXApiError(projectXErrorMessage(parsed, fallback), response.status, parsed.errorCode);
@@ -208,7 +254,7 @@ async function parseProjectXResponse<T extends ProjectXBaseResponse>(response: R
   return parsed;
 }
 
-async function projectXPost<T extends ProjectXBaseResponse>(path: string, body?: unknown, token?: string): Promise<T> {
+async function projectXPostOnce<T extends ProjectXBaseResponse>(path: string, body?: unknown, token?: string): Promise<T> {
   const response = await fetch(projectXUrl(path), {
     method: "POST",
     cache: "no-store",
@@ -221,6 +267,22 @@ async function projectXPost<T extends ProjectXBaseResponse>(path: string, body?:
   });
 
   return parseProjectXResponse<T>(response, `ProjectX request failed for ${path}`);
+}
+
+async function projectXPost<T extends ProjectXBaseResponse>(path: string, body?: unknown, token?: string): Promise<T> {
+  const attempts = projectXRetryAttempts();
+  let lastError: unknown;
+  for (let attempt = 0; attempt < attempts; attempt += 1) {
+    try {
+      return await projectXPostOnce<T>(path, body, token);
+    } catch (error) {
+      lastError = error;
+      if (attempt >= attempts - 1 || !retryableProjectXError(error)) throw error;
+      await wait(projectXRetryDelayMs(attempt));
+    }
+  }
+
+  throw lastError;
 }
 
 export async function loginProjectXApiKey(userName: string, apiKey: string): Promise<string> {
@@ -266,6 +328,18 @@ export async function searchProjectXContracts(token: string, searchText: string,
   return response.contracts ?? [];
 }
 
+export async function listProjectXAvailableContracts(token: string, live = false): Promise<ProjectXContract[]> {
+  const response = await projectXPost<ProjectXAvailableContractsResponse>(
+    "/api/Contract/available",
+    {
+      live
+    },
+    token
+  );
+
+  return response.contracts ?? [];
+}
+
 export async function placeProjectXOrder(token: string, request: ProjectXPlaceOrderRequest): Promise<ProjectXPlaceOrderResult> {
   const response = await projectXPost<ProjectXPlaceOrderResponse>("/api/Order/place", request, token);
   if (typeof response.orderId !== "number" || !Number.isFinite(response.orderId)) {
@@ -276,6 +350,14 @@ export async function placeProjectXOrder(token: string, request: ProjectXPlaceOr
 
 export async function searchProjectXOpenOrders(token: string, accountId: number): Promise<ProjectXOpenOrder[]> {
   const response = await projectXPost<ProjectXOrderSearchOpenResponse>("/api/Order/searchOpen", { accountId }, token);
+  return response.orders ?? [];
+}
+
+export async function searchProjectXOrders(
+  token: string,
+  request: { accountId: number; endTimestamp?: string; startTimestamp: string }
+): Promise<ProjectXOrder[]> {
+  const response = await projectXPost<ProjectXOrderSearchResponse>("/api/Order/search", request, token);
   return response.orders ?? [];
 }
 

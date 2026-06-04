@@ -1,8 +1,9 @@
 import { createHash } from "node:crypto";
 import { appendFile, mkdir, open, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
 import path from "node:path";
 import { assetForKey, type AssetDefinition } from "@/lib/assets";
-import { firebaseBucket, hasFirebaseAdmin, storageObjectPath } from "@/lib/firebase-admin";
+import { firebaseBucket, firebaseLocalFallbackEnabled, hasFirebaseAdmin, storageObjectPath } from "@/lib/firebase-admin";
 import { defaultDatasetStatus, getDatasetStatus, saveDatasetStatus, type DatasetAssetCoverage } from "@/lib/live-config";
 import { fetchMarketSourceBars } from "@/lib/market-data";
 import {
@@ -132,10 +133,65 @@ async function mapWithConcurrency<T, R>(
 }
 
 function localProjectPath(relativePath: string): string {
+  const root = process.env.VERCEL === "1" ? path.join(tmpdir(), "signal-console") : /*turbopackIgnore: true*/ process.cwd();
   return path.join(
-    /*turbopackIgnore: true*/ process.cwd(),
+    root,
     ...relativePath.replace(/\\/g, "/").split("/").filter(Boolean)
   );
+}
+
+function localMarketDataStorageEnabled(): boolean {
+  if (process.env.VERCEL !== "1") return true;
+  return ["1", "true", "yes", "on"].includes(process.env.MARKET_DATA_ALLOW_EPHEMERAL_VERCEL_STORAGE?.trim().toLowerCase() ?? "");
+}
+
+function enabledEnvFlag(name: string): boolean {
+  return ["1", "true", "yes", "on"].includes(process.env[name]?.trim().toLowerCase() ?? "");
+}
+
+function marketDataRemoteStorageEnabled(): boolean {
+  if (hasFirebaseAdmin()) return true;
+  if (process.env.VERCEL !== "1") return false;
+  return !enabledEnvFlag("PROJECT_STORAGE_FORCE_LOCAL") && !enabledEnvFlag("BACKTEST_FORCE_LOCAL");
+}
+
+function marketDataStorageUnavailableMessage(relativePath: string): string {
+  return [
+    "Firebase Admin/Storage is required for market data sync on Vercel.",
+    `Refusing to write ${relativePath} to ephemeral local storage.`,
+    "Set FIREBASE_SERVICE_ACCOUNT_JSON or FIREBASE_PROJECT_ID/FIREBASE_CLIENT_EMAIL/FIREBASE_PRIVATE_KEY in Vercel,",
+    "and make sure PROJECT_STORAGE_FORCE_LOCAL/BACKTEST_FORCE_LOCAL are not enabled."
+  ].join(" ");
+}
+
+function requireLocalMarketDataStorage(relativePath: string): void {
+  if (localMarketDataStorageEnabled()) return;
+  throw new Error(marketDataStorageUnavailableMessage(relativePath));
+}
+
+function storageErrorCode(error: unknown): number | string | undefined {
+  if (!error || typeof error !== "object") return undefined;
+  const candidate = error as { code?: number | string; status?: number | string };
+  return candidate.code ?? candidate.status;
+}
+
+function isStorageNotFoundError(error: unknown): boolean {
+  const code = storageErrorCode(error);
+  if (code === 404 || code === "404") return true;
+  const message = error instanceof Error ? error.message : "";
+  return /\b404\b|not found|no such object/i.test(message);
+}
+
+function marketDataStorageError(error: unknown, relativePath: string): Error {
+  if (
+    process.env.VERCEL === "1" &&
+    !localMarketDataStorageEnabled() &&
+    error instanceof Error &&
+    /Firebase Admin is not configured/i.test(error.message)
+  ) {
+    return new Error(marketDataStorageUnavailableMessage(relativePath));
+  }
+  return error instanceof Error ? error : new Error("Unknown market data storage error");
 }
 
 function csvNumber(value: number): string {
@@ -483,12 +539,14 @@ async function fetchOneMinuteBars(asset: AssetDefinition): Promise<CsvBar[]> {
 }
 
 async function writeLocalText(relativePath: string, text: string): Promise<void> {
+  requireLocalMarketDataStorage(relativePath);
   const filePath = localProjectPath(relativePath);
   await mkdir(path.dirname(filePath), { recursive: true });
   await writeFile(filePath, text, "utf8");
 }
 
 async function appendLocalText(relativePath: string, text: string): Promise<void> {
+  requireLocalMarketDataStorage(relativePath);
   const filePath = localProjectPath(relativePath);
   await mkdir(path.dirname(filePath), { recursive: true });
   await appendFile(filePath, text, "utf8");
@@ -585,9 +643,8 @@ async function localCsvState(relativePath: string, coverage: DatasetAssetCoverag
 }
 
 async function remoteCsvState(relativePath: string, coverage: DatasetAssetCoverage | undefined): Promise<StoredCsvState> {
-  const file = firebaseBucket().file(storageObjectPath(relativePath));
-
   try {
+    const file = firebaseBucket().file(storageObjectPath(relativePath));
     const [metadata] = await file.getMetadata();
     const size = Number(metadata.size ?? 0);
     if (!Number.isFinite(size) || size <= 0) return { endsWithNewline: true, exists: false, rows: coverage?.rows };
@@ -607,13 +664,17 @@ async function remoteCsvState(relativePath: string, coverage: DatasetAssetCovera
       rows: coverage?.rows,
       tailBars: parseCsvTailBars(tailText)
     };
-  } catch {
-    return localCsvState(relativePath, coverage);
+  } catch (error) {
+    if (isStorageNotFoundError(error)) return { endsWithNewline: true, exists: false, rows: coverage?.rows };
+    if (firebaseLocalFallbackEnabled()) return localCsvState(relativePath, coverage);
+    throw marketDataStorageError(error, relativePath);
   }
 }
 
 async function storedCsvState(relativePath: string, coverage: DatasetAssetCoverage | undefined): Promise<StoredCsvState> {
-  return hasFirebaseAdmin() ? remoteCsvState(relativePath, coverage) : localCsvState(relativePath, coverage);
+  if (marketDataRemoteStorageEnabled()) return remoteCsvState(relativePath, coverage);
+  if (!localMarketDataStorageEnabled()) throw new Error(marketDataStorageUnavailableMessage(relativePath));
+  return localCsvState(relativePath, coverage);
 }
 
 function remoteTempObjectPath(relativePath: string, label: string): string {
@@ -671,9 +732,13 @@ async function appendStoredCsvRows(relativePath: string, bars: CsvBar[], existin
   const prefix = existing.exists && !existing.endsWithNewline ? "\n" : "";
   const text = `${prefix}${serializeCsvDataLines(bars)}`;
 
-  if (hasFirebaseAdmin()) {
-    await appendRemoteText(relativePath, text, existing);
-    return;
+  if (marketDataRemoteStorageEnabled()) {
+    try {
+      await appendRemoteText(relativePath, text, existing);
+      return;
+    } catch (error) {
+      if (!firebaseLocalFallbackEnabled()) throw marketDataStorageError(error, relativePath);
+    }
   }
 
   if (!existing.exists) {
