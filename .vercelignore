@@ -7,6 +7,11 @@ node_modules
 backtest-engine/__pycache__
 backtest-engine/research
 data
+Research/backups
+Research/promotions
+Research/scripts
+Research/sources
+Research/strategies
 strategy/**/backtest_trades.csv
 strategy/research_summary.csv
 strategy/tuning_summary.csv

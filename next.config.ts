@@ -11,6 +11,11 @@ const nextConfig: NextConfig = {
       "./cache/**",
       "./data/**",
       "./docs/**",
+      "./Research/backups/**",
+      "./Research/promotions/**",
+      "./Research/scripts/**",
+      "./Research/sources/**",
+      "./Research/strategies/**",
       "./strategy/research_summary.csv",
       "./strategy/tuning_summary.csv"
     ]
