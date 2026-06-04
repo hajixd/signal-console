@@ -1,2 +1,2 @@
-strategy_id,asset_key,market,engine,profit_factor,trades,total_r,qualified,status
-rs_asia_range_london_break_australian_dollar_futures_range_break_fe62c419,australian_dollar_futures,futures,range_break,0.927663,745,-16.127465,False,cached
+strategy_id,asset_key,market,engine,profit_factor,trades,total_r,qualified,status,error
+rs_asia_range_london_break_australian_dollar_futures_range_break_fe62c419,australian_dollar_futures,futures,range_break,0.927663,745,-16.127465,False,cached,
