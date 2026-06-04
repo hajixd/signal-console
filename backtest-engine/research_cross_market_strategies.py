@@ -13,6 +13,8 @@ import runner
 REPORT_DIR = runner.PROJECT_ROOT / "backtest-engine" / "research"
 RESULTS_CSV = REPORT_DIR / "cross_market_results.csv"
 BEST_CSV = REPORT_DIR / "cross_market_best.csv"
+EXECUTION_TIMEFRAME = "1m"
+EXECUTION_CACHE_LIMIT = 2
 
 
 def clean_variant_id(variant_id: str) -> str:
@@ -194,6 +196,8 @@ def run_strategy(
     strategy: runner.BacktestStrategy,
     asset: runner.AssetConfig,
     enriched_cache: dict[str, runner.EnrichedData],
+    execution_cache: dict[str, runner.EnrichedData] | None = None,
+    execution_cache_order: list[str] | None = None,
 ) -> list[runner.BacktestTradeRow]:
     if asset.key not in enriched_cache:
         candle_path = runner.DATA_ROOT / "15m" / asset.data_file
@@ -201,12 +205,33 @@ def run_strategy(
             raise FileNotFoundError(f"Missing 15m candle file: {candle_path}. Run prepare-data first.")
         frame = runner.load_candle_csv(candle_path)
         enriched_cache[asset.key] = runner.build_enriched_data(frame, asset)
+    execution_data: list[tuple[str, runner.EnrichedData]] = []
+    execution_path = runner.DATA_ROOT / EXECUTION_TIMEFRAME / asset.data_file
+    if runner.candle_file_has_rows(execution_path):
+        if execution_cache is None:
+            execution_cache = {}
+        if execution_cache_order is None:
+            execution_cache_order = []
+        if asset.key not in execution_cache:
+            execution_frame = runner.load_candle_csv(execution_path)
+            execution_cache[asset.key] = runner.build_enriched_data(execution_frame, asset)
+            execution_cache_order.append(asset.key)
+            while len(execution_cache_order) > EXECUTION_CACHE_LIMIT:
+                stale_key = execution_cache_order.pop(0)
+                if stale_key != asset.key:
+                    execution_cache.pop(stale_key, None)
+        execution_data.append((EXECUTION_TIMEFRAME, execution_cache[asset.key]))
     return runner.run_single_strategy(
         strategy,
         asset,
         enriched_cache[asset.key],
         start_ts=runner.BACKTEST_START_TS,
+        execution_data=execution_data,
     )
+
+
+def execution_data_available(asset: runner.AssetConfig) -> bool:
+    return runner.candle_file_has_rows(runner.DATA_ROOT / EXECUTION_TIMEFRAME / asset.data_file)
 
 
 def write_rows_csv(path: Path, rows: list[dict[str, object]]) -> None:
@@ -214,8 +239,13 @@ def write_rows_csv(path: Path, rows: list[dict[str, object]]) -> None:
     if not rows:
         path.write_text("", encoding="utf-8")
         return
+    fieldnames: list[str] = []
+    for row in rows:
+        for key in row.keys():
+            if key not in fieldnames:
+                fieldnames.append(key)
     with path.open("w", newline="", encoding="utf-8") as handle:
-        writer = csv.DictWriter(handle, fieldnames=list(rows[0].keys()))
+        writer = csv.DictWriter(handle, fieldnames=fieldnames, extrasaction="ignore")
         writer.writeheader()
         writer.writerows(rows)
 
@@ -288,6 +318,8 @@ def main() -> None:
     all_forex_strategies = [strategy for strategy in strategies if assets[strategy.asset_key].market == "forex"]
     all_futures_strategies = [strategy for strategy in strategies if assets[strategy.asset_key].market == "futures"]
     enriched_cache: dict[str, runner.EnrichedData] = {}
+    execution_cache: dict[str, runner.EnrichedData] = {}
+    execution_cache_order: list[str] = []
     rows: list[dict[str, object]] = []
     experiment_sets: list[tuple[list[runner.BacktestStrategy], list[runner.AssetConfig]]] = []
     forex_strategy_count = 0
@@ -390,14 +422,14 @@ def main() -> None:
             f"{base.id} on {target_asset.key}"
         )
         direct_strategy = clone_strategy(base, target_asset, invert_signal=base.invert_signal)
-        direct_trades = run_strategy(direct_strategy, target_asset, enriched_cache)
+        direct_trades = run_strategy(direct_strategy, target_asset, enriched_cache, execution_cache, execution_cache_order)
         direct_metrics = metrics(direct_trades)
 
         opposite_tested = float(direct_metrics["pf"]) < 1.0
         opposite_metrics: dict[str, float | int] | None = None
         if opposite_tested:
             opposite_strategy = clone_strategy(base, target_asset, invert_signal=not base.invert_signal)
-            opposite_trades = run_strategy(opposite_strategy, target_asset, enriched_cache)
+            opposite_trades = run_strategy(opposite_strategy, target_asset, enriched_cache, execution_cache, execution_cache_order)
             opposite_metrics = metrics(opposite_trades)
 
         best_metrics = direct_metrics
@@ -418,6 +450,7 @@ def main() -> None:
             "target_market": target_asset.market,
             "phase": base.phase,
             "variant_id": clean_variant_id(base.variant_id),
+            "execution_timeframe": EXECUTION_TIMEFRAME if execution_data_available(target_asset) else "",
             "direct_pf": float(direct_metrics["pf"]),
             "direct_trades": int(direct_metrics["trades"]),
             "direct_win_rate_pct": float(direct_metrics["win_rate_pct"]),

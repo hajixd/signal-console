@@ -686,6 +686,45 @@ def write_result_folder(root: Path, spec: dict[str, Any], trades: list[dict[str,
     write_trades(folder / "backtest_trades.csv", trades)
 
 
+def rejected_error_metric() -> dict[str, Any]:
+    return {
+        "profit_factor": 0.0,
+        "trades": 0,
+        "wins": 0,
+        "losses": 0,
+        "win_rate_pct": 0.0,
+        "total_r": 0.0,
+        "max_drawdown_r": 0.0,
+    }
+
+
+def result_summary_row(spec: dict[str, Any], metric: dict[str, Any], qualified: bool, status: str, error: str = "") -> dict[str, Any]:
+    profit_factor = float(metric.get("profit_factor", 0) or 0)
+    return {
+        "strategy_id": str(spec.get("strategyId", "")),
+        "asset_key": spec.get("assetKey"),
+        "market": spec.get("market"),
+        "engine": spec.get("engine"),
+        "profit_factor": "inf" if math.isinf(profit_factor) else round(profit_factor, 6),
+        "trades": metric.get("trades", 0),
+        "total_r": round(float(metric.get("total_r", 0) or 0), 6),
+        "qualified": qualified,
+        "status": status,
+        "error": error,
+    }
+
+
+def write_rejected_error(spec: dict[str, Any], message: str) -> dict[str, Any]:
+    metric = rejected_error_metric()
+    error_spec = {
+        **spec,
+        "backtestError": message,
+    }
+    write_result_folder(BACKTESTED_ROOT, error_spec, [], metric, False)
+    write_result_folder(REJECTED_ROOT, error_spec, [], metric, False)
+    return result_summary_row(error_spec, metric, False, "error", message)
+
+
 def process_spec(spec_path: str, min_pf: float, min_trades: int, overwrite: bool) -> dict[str, Any]:
     spec_file = Path(spec_path)
     spec = read_json(spec_file)
@@ -693,22 +732,17 @@ def process_spec(spec_path: str, min_pf: float, min_trades: int, overwrite: bool
     if (BACKTESTED_ROOT / strategy_id / "strategy.json").exists() and not overwrite:
         payload = read_json(BACKTESTED_ROOT / strategy_id / "strategy.json")
         metric = payload.get("metrics", {})
-        return {
-            "strategy_id": strategy_id,
-            "asset_key": spec.get("assetKey"),
-            "market": spec.get("market"),
-            "engine": spec.get("engine"),
-            "profit_factor": metric.get("profit_factor", 0),
-            "trades": metric.get("trades", 0),
-            "total_r": metric.get("total_r", 0),
-            "qualified": (QUALIFIED_ROOT / strategy_id / "strategy.json").exists(),
-            "status": "cached",
-        }
-    data = load_data_for_spec(spec)
+        qualified = (QUALIFIED_ROOT / strategy_id / "strategy.json").exists()
+        return result_summary_row(spec, metric, qualified, "cached", str(payload.get("backtestError", "")))
     handler = ENGINE_HANDLERS.get(str(spec["engine"]))
     if handler is None:
-        raise ValueError(f"Unsupported engine {spec['engine']} in {spec_path}")
-    trades = handler(spec, data)
+        return write_rejected_error(spec, f"Unsupported engine {spec['engine']} in {spec_path}")
+    try:
+        data = load_data_for_spec(spec)
+        trades = handler(spec, data)
+    except Exception as error:
+        message = f"{type(error).__name__}: {error}"
+        return write_rejected_error(spec, message)
     metric = metrics(trades)
     qualified = float(metric["profit_factor"]) > min_pf and int(metric["trades"]) > min_trades and float(metric["total_r"]) > 0
     write_result_folder(BACKTESTED_ROOT, spec, trades, metric, qualified)
@@ -716,17 +750,7 @@ def process_spec(spec_path: str, min_pf: float, min_trades: int, overwrite: bool
         write_result_folder(QUALIFIED_ROOT, spec, trades, metric, qualified)
     else:
         write_result_folder(REJECTED_ROOT, spec, trades, metric, qualified)
-    return {
-        "strategy_id": strategy_id,
-        "asset_key": spec.get("assetKey"),
-        "market": spec.get("market"),
-        "engine": spec.get("engine"),
-        "profit_factor": "inf" if math.isinf(float(metric["profit_factor"])) else round(float(metric["profit_factor"]), 6),
-        "trades": metric["trades"],
-        "total_r": round(float(metric["total_r"]), 6),
-        "qualified": qualified,
-        "status": "backtested",
-    }
+    return result_summary_row(spec, metric, qualified, "backtested")
 
 
 def process_spec_worker(args: tuple[str, float, int, bool]) -> dict[str, Any]:
