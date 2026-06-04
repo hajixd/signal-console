@@ -143,6 +143,7 @@ function toConnectionSummary(value: StoredProjectXConnectionPayload | null | und
   const removedAccountIds = normalizeAccountIds(value.removedAccountIds);
   const autoTradePaused = value.autoTradePaused !== false;
   const pausedAccountIds = normalizePausedAccountIds(value.pausedAccountIds, accounts, autoTradePaused);
+  const status = value.status === "expired" ? "expired" : "connected";
   return {
     accounts,
     autoTradePaused: accounts.length > 0 && pausedAccountIds.length === accounts.length,
@@ -150,9 +151,9 @@ function toConnectionSummary(value: StoredProjectXConnectionPayload | null | und
     displayName: typeof value.displayName === "string" ? value.displayName : undefined,
     id: value.id,
     pausedAccountIds,
-    readable: Boolean(safeToStoredConnection(value)),
+    readable: status === "connected" && Boolean(safeToStoredConnection(value)),
     removedAccountIds,
-    status: value.status === "expired" ? "expired" : "connected",
+    status,
     updatedAt: typeof value.updatedAt === "string" ? value.updatedAt : new Date(0).toISOString(),
     userName: typeof value.userName === "string" ? value.userName : undefined
   };
@@ -227,14 +228,17 @@ export async function getStoredProjectXConnectionSummaries(): Promise<ProjectXCo
     try {
       const snapshot = await withFirebaseTimeout(firebaseDb().collection(PROJECTX_CONNECTION_COLLECTION).get(), "Firebase ProjectX summaries list");
       return snapshot.docs
-        .map((doc) => toConnectionSummary(doc.data() as StoredProjectXConnectionPayload | undefined))
-        .filter((connection): connection is ProjectXConnectionSummary => connection !== null && connection.status === "connected")
+        .map((doc) => {
+          const payload = doc.data() as StoredProjectXConnectionPayload | undefined;
+          return toConnectionSummary(payload ? { ...payload, id: payload.id ?? doc.id } : undefined);
+        })
+        .filter((connection): connection is ProjectXConnectionSummary => connection !== null)
         .sort(newestSummaryFirst);
     } catch {
       const connections = await readLocalConnections();
       return Object.values(connections)
         .map((connection) => toConnectionSummary(connection))
-        .filter((connection): connection is ProjectXConnectionSummary => connection !== null && connection.status === "connected")
+        .filter((connection): connection is ProjectXConnectionSummary => connection !== null)
         .sort(newestSummaryFirst);
     }
   }
@@ -242,7 +246,7 @@ export async function getStoredProjectXConnectionSummaries(): Promise<ProjectXCo
   const connections = await readLocalConnections();
   return Object.values(connections)
     .map((connection) => toConnectionSummary(connection))
-    .filter((connection): connection is ProjectXConnectionSummary => connection !== null && connection.status === "connected")
+    .filter((connection): connection is ProjectXConnectionSummary => connection !== null)
     .sort(newestSummaryFirst);
 }
 
@@ -264,6 +268,7 @@ export async function saveStoredProjectXConnection(input: {
   id: string;
   pausedAccountIds?: number[];
   removedAccountIds?: number[];
+  status?: "connected" | "expired";
   token: string;
   userName?: string;
 }): Promise<StoredProjectXConnection> {
@@ -283,7 +288,7 @@ export async function saveStoredProjectXConnection(input: {
     lastCheckedAt: now,
     pausedAccountIds,
     removedAccountIds,
-    status: "connected",
+    status: input.status ?? "connected",
     tradeableAccountCount: accounts.filter((account) => account.canTrade).length,
     updatedAt: now
   };
@@ -320,6 +325,54 @@ export async function saveStoredProjectXConnection(input: {
   return toStoredConnection(payload)!;
 }
 
+export async function markStoredProjectXConnectionExpired(id: string): Promise<ProjectXConnectionSummary | null> {
+  const now = new Date().toISOString();
+
+  if (hasFirebaseAdmin()) {
+    try {
+      const ref = firebaseDb().collection(PROJECTX_CONNECTION_COLLECTION).doc(id);
+      const snapshot = await withFirebaseTimeout(ref.get(), "Firebase ProjectX connection read");
+      const storedPayload = snapshot.data() as StoredProjectXConnectionPayload | undefined;
+      if (!storedPayload) return null;
+      const payload: StoredProjectXConnectionPayload = {
+        ...storedPayload,
+        id: storedPayload.id ?? id,
+        lastCheckedAt: now,
+        status: "expired",
+        updatedAt: now
+      };
+
+      await withFirebaseTimeout(
+        ref.set(
+          omitUndefinedDeep({
+            lastCheckedAt: now,
+            status: "expired",
+            updatedAt: now,
+            updatedAtServer: FieldValue.serverTimestamp()
+          }),
+          { merge: true }
+        ),
+        "Firebase ProjectX connection expire"
+      );
+      return toConnectionSummary(payload);
+    } catch (error) {
+      if (!firebaseLocalFallbackEnabled()) throw error;
+    }
+  }
+
+  const connections = await readLocalConnections();
+  const connection = connections[id];
+  if (!connection) return null;
+  connections[id] = {
+    ...connection,
+    lastCheckedAt: now,
+    status: "expired",
+    updatedAt: now
+  };
+  await writeLocalConnections(connections);
+  return toConnectionSummary(connections[id]);
+}
+
 export async function setStoredProjectXConnectionPaused(id: string, autoTradePaused: boolean, accountId?: number): Promise<StoredProjectXConnection | null> {
   const connection = await getStoredProjectXConnection(id);
   if (!connection) return null;
@@ -347,6 +400,7 @@ export async function setStoredProjectXConnectionPaused(id: string, autoTradePau
     id,
     pausedAccountIds: [...pausedAccountIds],
     removedAccountIds: connection.removedAccountIds,
+    status: connection.status,
     token: connection.token,
     userName: connection.userName
   });
@@ -366,6 +420,7 @@ export async function removeStoredProjectXConnectionAccount(id: string, accountI
     id,
     pausedAccountIds: connection.pausedAccountIds?.filter((id) => id !== accountId),
     removedAccountIds,
+    status: connection.status,
     token: connection.token,
     userName: connection.userName
   });
@@ -380,7 +435,7 @@ export async function setStoredProjectXConnectionAccessCode(id: string, accessCo
       const ref = firebaseDb().collection(PROJECTX_CONNECTION_COLLECTION).doc(id);
       const snapshot = await withFirebaseTimeout(ref.get(), "Firebase ProjectX connection read");
       const payload = snapshot.data() as StoredProjectXConnectionPayload | undefined;
-      if (!payload || payload.status !== "connected") return false;
+      if (!payload) return false;
 
       await withFirebaseTimeout(
         ref.set(
@@ -401,7 +456,7 @@ export async function setStoredProjectXConnectionAccessCode(id: string, accessCo
 
   const connections = await readLocalConnections();
   const connection = connections[id];
-  if (!connection || connection.status !== "connected") return false;
+  if (!connection) return false;
   connections[id] = {
     ...connection,
     accessCodeHash,
@@ -417,7 +472,7 @@ export async function verifyStoredProjectXConnectionAccessCode(id: string, acces
         .then((snapshot) => snapshot.data() as StoredProjectXConnectionPayload | undefined)
         .catch(async () => (await readLocalConnections())[id])
     : (await readLocalConnections())[id];
-  if (!payload || payload.status !== "connected") return false;
+  if (!payload) return false;
   return verifyAccessCode(accessCode, typeof payload.accessCodeHash === "string" ? payload.accessCodeHash : undefined);
 }
 

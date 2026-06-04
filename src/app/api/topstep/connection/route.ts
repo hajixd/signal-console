@@ -7,12 +7,14 @@ import {
   getLatestStoredProjectXConnection,
   getStoredProjectXConnectionSummaries,
   getStoredProjectXConnection,
+  markStoredProjectXConnectionExpired,
   projectXConnectionStoreMode,
   saveStoredProjectXConnection,
   removeStoredProjectXConnectionAccount,
   setStoredProjectXConnectionAccessCode,
   setStoredProjectXConnectionPaused,
-  verifyStoredProjectXConnectionAccessCode
+  verifyStoredProjectXConnectionAccessCode,
+  type StoredProjectXConnection
 } from "@/lib/projectx-connections";
 import {
   loginProjectXApiKey,
@@ -94,7 +96,7 @@ async function visibleConnectionIdFromRequest(request: NextRequest): Promise<str
   if (cookieConnectionId) {
     try {
       const connection = await getStoredProjectXConnection(cookieConnectionId);
-      if (connection?.status === "connected") return cookieConnectionId;
+      if (connection) return cookieConnectionId;
     } catch {
       // If the cookie points at an unreadable/deleted connection, fall back to the shared Firebase connection.
     }
@@ -144,6 +146,21 @@ async function withConnectionSummaries(status: ProjectXConnectionStatus): Promis
   };
 }
 
+async function reconnectRequiredStatus(connection: StoredProjectXConnection, error?: string): Promise<ProjectXConnectionStatus> {
+  return {
+    accounts: connection.accounts,
+    autoTradePaused: connection.autoTradePaused,
+    checkedAt: new Date().toISOString(),
+    connected: false,
+    connections: await getStoredProjectXConnectionSummaries(),
+    displayName: connection.displayName,
+    error: error ? `Reconnect this ProjectX account folder. ${error}` : "Reconnect this ProjectX account folder.",
+    pausedAccountIds: connection.pausedAccountIds,
+    persisted: true,
+    userName: connection.userName
+  };
+}
+
 async function connectedStatus(connectionId: string): Promise<{ status: ProjectXConnectionStatus; refreshedToken?: string }> {
   const connection = await getStoredProjectXConnection(connectionId);
   if (!connection) {
@@ -157,9 +174,41 @@ async function connectedStatus(connectionId: string): Promise<{ status: ProjectX
     };
   }
 
-  const refreshedToken = await validateProjectXSession(connection.token);
-  const activeToken = refreshedToken ?? connection.token;
-  const accounts = await searchProjectXAccounts(activeToken, true);
+  if (connection.status !== "connected") {
+    return {
+      status: await reconnectRequiredStatus(connection)
+    };
+  }
+
+  let refreshedToken: string | undefined;
+  try {
+    refreshedToken = await validateProjectXSession(connection.token);
+  } catch (error) {
+    await markStoredProjectXConnectionExpired(connectionId).catch(() => null);
+    return {
+      status: await reconnectRequiredStatus(connection, readableProjectXError(error))
+    };
+  }
+
+  let activeToken = refreshedToken ?? connection.token;
+  let accounts;
+  try {
+    accounts = await searchProjectXAccounts(activeToken, true);
+  } catch (accountError) {
+    if (activeToken === connection.token) throw accountError;
+    try {
+      activeToken = connection.token;
+      accounts = await searchProjectXAccounts(connection.token, true);
+    } catch (storedTokenError) {
+      await markStoredProjectXConnectionExpired(connectionId).catch(() => null);
+      return {
+        status: await reconnectRequiredStatus(
+          connection,
+          `${readableProjectXError(accountError)}; stored-token fallback failed: ${readableProjectXError(storedTokenError)}`
+        )
+      };
+    }
+  }
   const visibleAccounts = accounts.filter((account) => !(connection.removedAccountIds ?? []).includes(account.id));
   const savedConnection = await saveStoredProjectXConnection({
     accessCodeHash: connection.accessCodeHash,
@@ -211,7 +260,7 @@ export async function GET(request: NextRequest) {
       error: readableProjectXError(error),
       persisted: false
     });
-    clearConnectionCookie(response);
+    setConnectionCookie(response, connectionId);
     return response;
   }
 }

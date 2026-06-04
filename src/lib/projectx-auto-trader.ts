@@ -5,6 +5,7 @@ import { scaledAutoTradeSize } from "@/lib/auto-trade-utils";
 import { dollarPerUnit } from "@/lib/instruments";
 import {
   getStoredProjectXConnections,
+  markStoredProjectXConnectionExpired,
   saveStoredProjectXConnection,
   type StoredProjectXConnection
 } from "@/lib/projectx-connections";
@@ -793,13 +794,13 @@ async function projectXPretradeRiskAdjustment(
     if (safeSize < plannedSize) {
       return {
         size: safeSize,
-        note: `Reduced from ${unitsLabel(plannedSize)} to ${unitsLabel(safeSize)} before placement because current ProjectX exposure leaves only ${unitsLabel(safeSize)} available under the Topstep ${accountSize}K position cap.`
+        note: `Placed with ${unitsLabel(safeSize)} because this account needs to have less units under the Topstep ${accountSize}K position cap; planned size was ${unitsLabel(plannedSize)} and current ProjectX exposure leaves ${unitsLabel(safeSize)} available.`
       };
     }
   } catch (error) {
     return {
       size: plannedSize,
-      note: `ProjectX preflight exposure lookup failed; proceeding with adaptive retries: ${readableProjectXError(error)}`
+      note: `ProjectX preflight exposure lookup failed; trying fallback order sizes: ${readableProjectXError(error)}`
     };
   }
 
@@ -1064,7 +1065,7 @@ async function placeProjectXOrderWithAdaptiveFallback(
     try {
       const order = await placeProjectXOrderWithTagRecovery(token, attemptRequest);
       const retryNote = lastSizeError
-        ? `Reduced from ${unitsLabel(originalSize)} to ${unitsLabel(attemptSize)} after ProjectX size/margin rejection: ${lastSizeError}`
+        ? `Placed with ${unitsLabel(attemptSize)} after ProjectX said this account needs to have less units; planned size was ${unitsLabel(originalSize)}. ${lastSizeError}`
         : preAdjustmentNote;
       return {
         ...attemptSummary,
@@ -1092,7 +1093,7 @@ async function placeProjectXOrderWithAdaptiveFallback(
         try {
           const fallbackOrder = await placeProjectXOrderWithTagRecovery(token, fallbackRequest);
           const retryNote = lastSizeError
-            ? `Reduced from ${unitsLabel(originalSize)} to ${unitsLabel(attemptSize)} after ProjectX size/margin rejection. Placed via Position Brackets fallback; API TP/SL ticks were not attached. Previous rejection: ${lastSizeError}`
+            ? `Placed with ${unitsLabel(attemptSize)} after ProjectX said this account needs to have less units; planned size was ${unitsLabel(originalSize)}. Placed via Position Brackets fallback; API TP/SL ticks were not attached. Previous rejection: ${lastSizeError}`
             : "Placed via ProjectX Position Brackets fallback. Exit protection is managed by the account-level Position Bracket settings; API TP/SL ticks were not attached.";
           return {
             ...fallbackSummary,
@@ -1155,8 +1156,8 @@ async function placeProjectXOrderWithAdaptiveFallback(
     ...summaryBase,
     customTag: customTagForAttempt(request.customTag ?? "", lastAttemptSize, originalSize),
     error: lastSizeError
-      ? `ProjectX rejected every adaptive size from ${unitsLabel(originalSize)} down to ${unitsLabel(lastAttemptSize)}: ${lastSizeError}`
-      : "ProjectX order placement failed after adaptive size retries.",
+      ? `ProjectX rejected every fallback order size from ${unitsLabel(originalSize)} through ${unitsLabel(lastAttemptSize)}; this account may need to have less units: ${lastSizeError}`
+      : "ProjectX order placement failed after fallback order-size attempts.",
     size: lastAttemptSize,
     status: "failed"
   };
@@ -1206,6 +1207,9 @@ async function refreshedConnections(): Promise<ProjectXConnectionRefresh[]> {
         };
       } catch (error) {
         const accountError = readableProjectXError(error);
+        if (validateError) {
+          await markStoredProjectXConnectionExpired(connection.id).catch(() => null);
+        }
         return {
           connection,
           error: validateError
@@ -1863,14 +1867,14 @@ export async function executeProjectXAutoTrade(trade: TradeAlert): Promise<Proje
           if (recentFailure.size <= 1) {
             orders.push({
               ...orderBase,
-              error: `Skipped because this account recently had a ProjectX size/margin rejection at 1 unit: ${recentFailure.reason}`,
+              error: `Skipped because this account recently needed to have less units at 1 unit: ${recentFailure.reason}`,
               size: 1,
               status: "skipped"
             });
             continue;
           }
           size = Math.max(1, Math.min(size, recentFailure.size - 1));
-          adjustmentNote = `Started at ${unitsLabel(size)} instead of ${unitsLabel(originalSize)} because this account recently had a ProjectX size/margin rejection at ${unitsLabel(recentFailure.size)}: ${recentFailure.reason}`;
+          adjustmentNote = `Started with ${unitsLabel(size)} instead of ${unitsLabel(originalSize)} because this account recently needed to have less units at ${unitsLabel(recentFailure.size)}: ${recentFailure.reason}`;
         }
 
         const preflight = await projectXPretradeRiskAdjustment(group.token, target, contract, trade, side, size);

@@ -274,6 +274,10 @@ function folderDisplayName(folder: ProjectXConnectionSummary): string {
   return folder.displayName?.trim() || loginNameFallback(folder.userName) || "ProjectX account";
 }
 
+function projectXFolderNeedsReconnect(folder: ProjectXConnectionSummary): boolean {
+  return folder.status !== "connected" || !folder.readable;
+}
+
 async function parseConnectionResponse(response: Response): Promise<ProjectXConnectionStatus> {
   const payload = (await response.json().catch(() => EMPTY_STATUS)) as ProjectXConnectionStatus;
   if (!response.ok) {
@@ -1366,9 +1370,10 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
                   const testKey = projectXTestKey(activeProjectXFolder.id, account.id);
                   const testState = autoTradeTests[testKey];
                   const isTesting = testState?.status === "running";
-                  const connectionStatus = activeProjectXFolder.readable
-                    ? accountConnectionStatus(account, accountPaused)
-                    : { className: "status failed", dotClassName: "statusDot red", label: "Disconnected" };
+                  const needsReconnect = projectXFolderNeedsReconnect(activeProjectXFolder);
+                  const connectionStatus = needsReconnect
+                    ? { className: "status failed", dotClassName: "statusDot red", label: "Reconnect" }
+                    : accountConnectionStatus(account, accountPaused);
                   return (
                     <div className="topstepAccountRow isNested" key={`projectx-${account.id}`}>
                       <div className="topstepAccountFields">
@@ -1395,24 +1400,30 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
                       {canManageAutoTrade ? (
                         <div className="topstepAccountControls">
                           <button
-                            className={accountPaused ? "playButton" : "pauseButton"}
+                            className={needsReconnect ? "testButton" : accountPaused ? "playButton" : "pauseButton"}
                             type="button"
                             disabled={isUpdatingPaused || isDisconnecting}
                             onClick={() =>
-                              activeProjectXFolder.readable
-                                ? handleAutoTradePaused(account.id, !accountPaused, activeProjectXFolder.id)
-                                : handleProjectXReconnect(activeProjectXFolder.id, activeProjectXFolder.userName, folderDisplayName(activeProjectXFolder))
+                              needsReconnect
+                                ? handleProjectXReconnect(activeProjectXFolder.id, activeProjectXFolder.userName, folderDisplayName(activeProjectXFolder))
+                                : handleAutoTradePaused(account.id, !accountPaused, activeProjectXFolder.id)
                             }
                           >
-                            {isUpdatingPaused ? "Updating..." : activeProjectXFolder.readable ? (accountPaused ? "Play" : "Pause") : "Reconnect"}
+                            {isUpdatingPaused ? "Updating..." : needsReconnect ? "Reconnect" : accountPaused ? "Play" : "Pause"}
                           </button>
                           {canTestAutoTrade ? (
                             <button
                               className="testButton"
                               type="button"
-                              disabled={isTesting || isDisconnecting || isUpdatingPaused || accountPaused || !activeProjectXFolder.readable}
+                              disabled={isTesting || isDisconnecting || isUpdatingPaused || accountPaused || needsReconnect}
                               onClick={() => handleProjectXTest(activeProjectXFolder, account)}
-                              title={accountPaused ? "Resume this account before testing." : "Send a live TP/SL test order."}
+                              title={
+                                needsReconnect
+                                  ? "Reconnect this ProjectX account before testing."
+                                  : accountPaused
+                                    ? "Resume this account before testing."
+                                    : "Send a live TP/SL test order."
+                              }
                             >
                               {isTesting ? "Testing..." : "Test"}
                             </button>
