@@ -3,6 +3,12 @@ import { getBacktestStats, getBacktestTrades, getStrategyCatalog } from "@/lib/b
 import { analyzeBacktestDataValidity } from "@/lib/data-validity";
 import { getDatasetStatus, updateDatasetSyncRunStatus } from "@/lib/live-config";
 import { cronWeekendPause } from "@/lib/market-schedule";
+import {
+  marketDataRefreshErrorSummary,
+  refreshMarketDataForAssetKeys,
+  saveMarketDataRefreshStatus,
+  type MarketDataRefreshSummary
+} from "@/lib/market-data-refresh";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -25,6 +31,61 @@ function failureSummary(result: ReturnType<typeof analyzeBacktestDataValidity>):
     .slice(0, 4)
     .map((issue) => `${issue.label}: ${issue.count}`)
     .join("; ");
+}
+
+type StrategyCoverageRef = {
+  assetKey?: string;
+  symbol?: string;
+  timeframes?: string[];
+};
+
+type AssetCoverageRef = NonNullable<Awaited<ReturnType<typeof getDatasetStatus>>>["assetCoverage"];
+
+function requiredCoverageByAsset(strategyRefs: StrategyCoverageRef[]): Map<string, Set<string>> {
+  const required = new Map<string, Set<string>>();
+  for (const ref of strategyRefs) {
+    if (!ref.assetKey) continue;
+    const timeframes = required.get(ref.assetKey) ?? new Set<string>();
+    for (const timeframe of ref.timeframes?.length ? ref.timeframes : ["15m"]) {
+      if (timeframe) timeframes.add(timeframe);
+    }
+    required.set(ref.assetKey, timeframes);
+  }
+  return required;
+}
+
+function coverageRepairAssetKeys(strategyRefs: StrategyCoverageRef[], assetCoverage: AssetCoverageRef | undefined): string[] {
+  const required = requiredCoverageByAsset(strategyRefs);
+  const repairKeys: string[] = [];
+  for (const [assetKey, timeframes] of required) {
+    const coverage = assetCoverage?.[assetKey];
+    if (!coverage) {
+      repairKeys.push(assetKey);
+      continue;
+    }
+    const coveredTimeframes = new Set(coverage.timeframes ?? []);
+    if ([...timeframes].some((timeframe) => !coveredTimeframes.has(timeframe))) {
+      repairKeys.push(assetKey);
+    }
+  }
+  return repairKeys;
+}
+
+function mergeRefreshCoverage(
+  assetCoverage: AssetCoverageRef | undefined,
+  summary: MarketDataRefreshSummary
+): AssetCoverageRef {
+  const merged = {
+    ...(assetCoverage ?? {})
+  };
+  for (const asset of summary.assets) {
+    const { appendedRows, assetKey, durationMs, uploadedFiles, ...coverage } = asset;
+    void appendedRows;
+    void durationMs;
+    void uploadedFiles;
+    merged[assetKey] = coverage;
+  }
+  return merged;
 }
 
 export async function GET(request: NextRequest) {
@@ -77,8 +138,24 @@ export async function GET(request: NextRequest) {
       symbol: entry.symbol,
       timeframes: entry.timeframes
     }));
+    let assetCoverage = datasetStatus?.assetCoverage;
+    let coverageRepair: MarketDataRefreshSummary | undefined;
+    let coverageRepairError: string | undefined;
+    const repairAssetKeys = coverageRepairAssetKeys(strategyRefs, assetCoverage);
+    if (repairAssetKeys.length) {
+      try {
+        const repairResult = await refreshMarketDataForAssetKeys(repairAssetKeys, { saveStatus: false });
+        coverageRepair = repairResult.summary;
+        assetCoverage = mergeRefreshCoverage(assetCoverage, repairResult.summary);
+        if (repairResult.summary.assets.length) {
+          await saveMarketDataRefreshStatus(repairResult.summary);
+        }
+      } catch (error) {
+        coverageRepairError = errorMessage(error);
+      }
+    }
     const result = analyzeBacktestDataValidity({
-      assetCoverage: datasetStatus?.assetCoverage,
+      assetCoverage,
       backtestBehindMarketData: false,
       strategyRefs,
       trades: backtestTrades
@@ -86,7 +163,13 @@ export async function GET(request: NextRequest) {
     const durationMs = Date.now() - startedAt;
     const finishedAt = new Date().toISOString();
     const failed = result.tone === "bad";
-    const error = failureSummary(result);
+    const coverageRefreshError =
+      coverageRepairError ??
+      (coverageRepair?.errors.length ? marketDataRefreshErrorSummary(coverageRepair) : undefined);
+    const error = [
+      failureSummary(result),
+      coverageRefreshError ? `Coverage refresh: ${coverageRefreshError}` : undefined
+    ].filter(Boolean).join("; ") || undefined;
 
     await updateDatasetSyncRunStatus("dataValidityRefresh", {
       durationMs,
@@ -101,6 +184,8 @@ export async function GET(request: NextRequest) {
       badIssues: result.stats.badIssueCount,
       durationMs,
       issues: result.issues.length,
+      refreshedCoverageAssets: coverageRepair?.assets.length ?? 0,
+      refreshCoverageErrors: coverageRepair?.errors.length ?? (coverageRepairError ? 1 : 0),
       status: result.label,
       tone: result.tone,
       tradesChecked: result.stats.tradesChecked,
@@ -108,6 +193,8 @@ export async function GET(request: NextRequest) {
     });
 
     return NextResponse.json({
+      coverageRepair,
+      coverageRepairError,
       ok: !failed,
       result,
       route: "/api/cron/review-validity"

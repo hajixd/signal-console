@@ -96,6 +96,7 @@ export type MarketDataRefreshResult = {
 };
 
 export type MarketDataRefreshOptions = {
+  allowApiOnlyStorageFallback?: boolean;
   minExistingRows?: number;
   saveStatus?: boolean;
 };
@@ -192,6 +193,35 @@ function marketDataStorageError(error: unknown, relativePath: string): Error {
     return new Error(marketDataStorageUnavailableMessage(relativePath));
   }
   return error instanceof Error ? error : new Error("Unknown market data storage error");
+}
+
+function readableErrorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : "Unknown error";
+}
+
+function apiOnlyStorageFallbackEnabled(options: MarketDataRefreshOptions): boolean {
+  return options.allowApiOnlyStorageFallback !== false;
+}
+
+function isMarketDataStorageAccessError(error: unknown): boolean {
+  const message = readableErrorMessage(error);
+  return /billing account|owning project is disabled|firebase|firestore|storage|bucket|no such object|invalid.*symlink/i.test(message);
+}
+
+function emptyCsvState(): StoredCsvState {
+  return {
+    endsWithNewline: true,
+    exists: false,
+    rows: 0,
+    tailBars: []
+  };
+}
+
+function emptyTimeframeStates(): Record<(typeof REFRESH_TIMEFRAMES)[number], StoredCsvState> {
+  return Object.fromEntries(REFRESH_TIMEFRAMES.map((timeframe) => [timeframe, emptyCsvState()])) as Record<
+    (typeof REFRESH_TIMEFRAMES)[number],
+    StoredCsvState
+  >;
 }
 
 function csvNumber(value: number): string {
@@ -893,6 +923,23 @@ function uniqueAssetRules(rules: StrategyRule[]): StrategyRule[] {
   return [...byAssetKey.values()];
 }
 
+export function marketDataRefreshErrorSummary(summary: Pick<MarketDataRefreshSummary, "errors">): string | undefined {
+  if (!summary.errors.length) return undefined;
+  const groups = new Map<string, string[]>();
+  for (const error of summary.errors) {
+    const symbols = groups.get(error.message) ?? [];
+    symbols.push(error.symbol);
+    groups.set(error.message, symbols);
+  }
+  return [...groups.entries()]
+    .map(([message, symbols]) => {
+      const visibleSymbols = symbols.slice(0, 12).join(", ");
+      const suffix = symbols.length > 12 ? `, +${symbols.length - 12} more` : "";
+      return `${symbols.length} asset${symbols.length === 1 ? "" : "s"} (${visibleSymbols}${suffix}): ${message}`;
+    })
+    .join("; ");
+}
+
 type AssetRefreshOutcome =
   | {
       asset: MarketDataRefreshAsset;
@@ -930,6 +977,14 @@ export async function refreshMarketDataForRules(rules: StrategyRule[]): Promise<
   return refreshMarketDataForRulesWithOptions(rules);
 }
 
+export async function refreshMarketDataForAssetKeys(
+  assetKeys: string[],
+  options: MarketDataRefreshOptions = {}
+): Promise<MarketDataRefreshResult> {
+  const rules = [...new Set(assetKeys)].map((assetKey) => ({ assetKey }) as StrategyRule);
+  return refreshMarketDataForRulesWithOptions(rules, options);
+}
+
 export async function refreshMarketDataForRulesWithOptions(
   rules: StrategyRule[],
   options: MarketDataRefreshOptions = {}
@@ -952,7 +1007,15 @@ export async function refreshMarketDataForRulesWithOptions(
     const assetStartedAt = Date.now();
     const asset = assetForKey(rule.assetKey);
     try {
-      const states = await readTimeframeStates(asset, assetCoverage[asset.key]);
+      let states: Record<(typeof REFRESH_TIMEFRAMES)[number], StoredCsvState>;
+      let storageFallbackReason: string | undefined;
+      try {
+        states = await readTimeframeStates(asset, assetCoverage[asset.key]);
+      } catch (error) {
+        if (!apiOnlyStorageFallbackEnabled(options) || !isMarketDataStorageAccessError(error)) throw error;
+        storageFallbackReason = readableErrorMessage(error);
+        states = emptyTimeframeStates();
+      }
 
       if (allTimeframesCurrent(states)) {
         const coverage = appendedCoverage(asset, assetCoverage[asset.key], [], refreshedAt);
@@ -991,19 +1054,30 @@ export async function refreshMarketDataForRulesWithOptions(
         });
       }
 
-      await Promise.all(
-        uploads.map((upload) =>
-          upload.appendedBars.length
-            ? appendStoredCsvRows(`data/${upload.timeframe}/${asset.dataFile}`, upload.appendedBars, upload.existing)
-            : Promise.resolve()
-        )
-      );
-
+      let persistedUploads = true;
+      if (storageFallbackReason) {
+        persistedUploads = false;
+      } else {
+        try {
+          await Promise.all(
+            uploads.map((upload) =>
+              upload.appendedBars.length
+                ? appendStoredCsvRows(`data/${upload.timeframe}/${asset.dataFile}`, upload.appendedBars, upload.existing)
+                : Promise.resolve()
+            )
+          );
+        } catch (error) {
+          if (!apiOnlyStorageFallbackEnabled(options) || !isMarketDataStorageAccessError(error)) throw error;
+          storageFallbackReason = readableErrorMessage(error);
+          persistedUploads = false;
+        }
+      }
       const coverage = appendedCoverage(asset, assetCoverage[asset.key], uploads, refreshedAt);
       return {
         asset: {
           ...coverage,
-          durationMs: Date.now() - assetStartedAt
+          durationMs: Date.now() - assetStartedAt,
+          uploadedFiles: persistedUploads ? coverage.uploadedFiles : 0
         },
         assetKey: asset.key,
         barsByTimeframe: barsByTimeframeFromStates(states, uploads),
