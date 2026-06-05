@@ -11,6 +11,10 @@
     "start": "next start",
     "typecheck": "tsc --noEmit",
     "simple:import": "node --env-file=.env.local --import tsx scripts/import-simple-strategies.ts",
+    "r2:sync": "node --env-file=.env.local --import tsx scripts/r2-sync.ts",
+    "storage:check": "node --env-file=.env.local --import tsx scripts/storage-provider-check.ts",
+    "storage:migrate": "node --env-file=.env.local --import tsx scripts/migrate-firebase-to-turso-r2.ts",
+    "turso:migrate": "node --env-file=.env.local --import tsx scripts/turso-migrate.ts",
     "firebase:pull": "node --env-file=.env.local --import tsx scripts/firebase-pull.ts",
     "firebase:sync": "node --env-file=.env.local --import tsx scripts/firebase-sync.ts",
     "firebase:live-config": "node --env-file=.env.local --import tsx scripts/save-live-config.ts",
@@ -26,6 +30,9 @@
     "import:legacy": "python backtest-engine/runner.py prepare-data --source ..\\signal-console\\data"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1061.0",
+    "@aws-sdk/lib-storage": "^3.1062.0",
+    "@libsql/client": "^0.17.3",
     "firebase-admin": "^13.6.0",
     "lightweight-charts": "^5.1.0",
     "next": "16.2.6",
