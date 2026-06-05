@@ -78,7 +78,7 @@ export default function TopstepConnectionPanel() {
   const [hiddenMockAccountIds, setHiddenMockAccountIds] = useState<Set<number>>(new Set());
   const [mockPausedAccountIds, setMockPausedAccountIds] = useState<Set<number>>(new Set(MOCK_ACCOUNTS.map((account) => account.id)));
 
-  const storageLabel = status.storageMode === "firebase" ? "Firebase" : "local dev storage";
+  const storageLabel = status.storageMode === "turso" ? "Turso" : status.storageMode === "firebase" ? "Firebase" : "local dev storage";
   const displayUserName = status.userName || userName || "--";
   const pausedAccountIds = new Set(status.pausedAccountIds ?? status.accounts.map((account) => account.id));
   const visibleAccounts = status.accounts.length ? status.accounts : MOCK_ACCOUNTS.filter((account) => !hiddenMockAccountIds.has(account.id));

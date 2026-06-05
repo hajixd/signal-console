@@ -2,6 +2,7 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { firebaseDb, firebaseLocalFallbackEnabled, hasFirebaseAdmin, withFirebaseTimeout } from "@/lib/firebase-admin";
 import { omitUndefinedDeep } from "@/lib/firestore-utils";
+import { createTursoDocument, getTursoDocument, listTursoDocuments, saveTursoDocument, tursoConfigured } from "@/lib/turso";
 import type { TradeAlert } from "./types";
 
 const TRADE_COLLECTION = "signalConsoleAlerts";
@@ -37,6 +38,16 @@ function normalizeTrade(value: unknown): TradeAlert | null {
 }
 
 export async function getTrades(): Promise<TradeAlert[]> {
+  if (tursoConfigured()) {
+    try {
+      return (await listTursoDocuments(TRADE_COLLECTION, 500))
+        .map((doc) => normalizeTrade({ ...doc.payload, id: doc.payload.id ?? doc.id }))
+        .filter((trade): trade is TradeAlert => Boolean(trade));
+    } catch {
+      // Fall back to Firebase/local storage below.
+    }
+  }
+
   if (hasFirebaseAdmin()) {
     try {
       const snapshot = await withFirebaseTimeout(
@@ -59,6 +70,14 @@ export async function getTrades(): Promise<TradeAlert[]> {
 }
 
 export async function hasTrade(id: string): Promise<boolean> {
+  if (tursoConfigured()) {
+    try {
+      return Boolean(await getTursoDocument(TRADE_COLLECTION, id));
+    } catch {
+      // Fall back to Firebase/local storage below.
+    }
+  }
+
   if (hasFirebaseAdmin()) {
     try {
       return (await withFirebaseTimeout(firebaseDb().collection(TRADE_COLLECTION).doc(id).get(), "Firebase trade lookup")).exists;
@@ -82,6 +101,19 @@ function tradePayload(trade: TradeAlert): TradeAlert & { createdAtMillis: number
 
 export async function claimTrade(trade: TradeAlert): Promise<boolean> {
   const payload = tradePayload(trade);
+
+  if (tursoConfigured()) {
+    try {
+      return createTursoDocument({
+        collection: TRADE_COLLECTION,
+        id: trade.id,
+        payload,
+        sortTimeMillis: Date.parse(trade.signalTime) || Date.now()
+      });
+    } catch {
+      // Fall back to Firebase/local storage below.
+    }
+  }
 
   if (hasFirebaseAdmin()) {
     try {
@@ -109,6 +141,20 @@ export async function claimTrade(trade: TradeAlert): Promise<boolean> {
 export async function saveTrade(trade: TradeAlert): Promise<void> {
   const payload = tradePayload(trade);
 
+  if (tursoConfigured()) {
+    try {
+      await saveTursoDocument({
+        collection: TRADE_COLLECTION,
+        id: trade.id,
+        payload,
+        sortTimeMillis: Date.parse(trade.signalTime) || Date.now()
+      });
+      return;
+    } catch {
+      // Fall back to Firebase/local storage below.
+    }
+  }
+
   if (hasFirebaseAdmin()) {
     try {
       await withFirebaseTimeout(
@@ -127,6 +173,7 @@ export async function saveTrade(trade: TradeAlert): Promise<void> {
   await writeLocal([payload, ...trades.filter((item) => item.id !== trade.id)].slice(0, 500));
 }
 
-export function storageMode(): "firebase" | "local" {
+export function storageMode(): "firebase" | "local" | "turso" {
+  if (tursoConfigured()) return "turso";
   return hasFirebaseAdmin() ? "firebase" : "local";
 }

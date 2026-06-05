@@ -4,6 +4,8 @@ import path from "node:path";
 import { FieldValue } from "firebase-admin/firestore";
 import { firebaseDb, firebaseLocalFallbackEnabled, hasFirebaseAdmin, storageObjectPath, withFirebaseTimeout } from "@/lib/firebase-admin";
 import { omitUndefinedDeep } from "@/lib/firestore-utils";
+import { r2Configured, r2ObjectKey } from "@/lib/r2";
+import { getTursoDocument, saveTursoDocument, tursoConfigured } from "@/lib/turso";
 import type { CronResult } from "@/lib/types";
 
 const LIVE_CONFIG_CACHE_TTL_MS = 30_000;
@@ -422,7 +424,20 @@ async function readLiveConfigFromFirestore(): Promise<LiveConfig> {
   return normalizeLiveConfig(snapshot.data() as Partial<LiveConfig> | undefined);
 }
 
+async function readLiveConfigFromTurso(): Promise<LiveConfig> {
+  const doc = await getTursoDocument(LIVE_CONFIG_COLLECTION, "default");
+  return normalizeLiveConfig(doc?.payload as Partial<LiveConfig> | undefined);
+}
+
 async function readLiveConfigFromStorage(): Promise<LiveConfig> {
+  if (tursoConfigured()) {
+    try {
+      return await readLiveConfigFromTurso();
+    } catch {
+      // Fall back to Firebase/local storage below.
+    }
+  }
+
   if (hasFirebaseAdmin()) {
     try {
       return await withFirebaseTimeout(readLiveConfigFromFirestore(), "Firebase live config read");
@@ -442,7 +457,20 @@ async function readDatasetStatusFromFirestore(): Promise<DatasetStatus | null> {
   return normalizeDatasetStatus(snapshot.data() as Partial<DatasetStatus> | undefined);
 }
 
+async function readDatasetStatusFromTurso(): Promise<DatasetStatus | null> {
+  const doc = await getTursoDocument(DATASET_STATUS_COLLECTION, "runtime");
+  return normalizeDatasetStatus(doc?.payload as Partial<DatasetStatus> | undefined);
+}
+
 async function readDatasetStatusFromStorage(): Promise<DatasetStatus | null> {
+  if (tursoConfigured()) {
+    try {
+      return await readDatasetStatusFromTurso();
+    } catch {
+      // Fall back to Firebase/local storage below.
+    }
+  }
+
   if (hasFirebaseAdmin()) {
     try {
       return await withFirebaseTimeout(readDatasetStatusFromFirestore(), "Firebase dataset status read");
@@ -470,6 +498,23 @@ export async function saveLiveConfig(config: LiveConfig): Promise<LiveConfig> {
     updatedAt: new Date().toISOString()
   });
   const firestorePayload = omitUndefinedDeep(normalized);
+
+  if (tursoConfigured()) {
+    try {
+      await saveTursoDocument({
+        collection: LIVE_CONFIG_COLLECTION,
+        id: "default",
+        payload: firestorePayload
+      });
+      liveConfigCache = {
+        loadedAt: Date.now(),
+        value: Promise.resolve(normalized)
+      };
+      return normalized;
+    } catch {
+      // Fall back to Firebase/local storage below.
+    }
+  }
 
   if (hasFirebaseAdmin()) {
     try {
@@ -517,6 +562,24 @@ export async function saveDatasetStatus(status: DatasetStatus): Promise<DatasetS
     updatedAt: new Date().toISOString()
   };
   const firestorePayload = omitUndefinedDeep(normalized);
+
+  if (tursoConfigured()) {
+    try {
+      await saveTursoDocument({
+        collection: DATASET_STATUS_COLLECTION,
+        id: "runtime",
+        payload: firestorePayload,
+        sortTimeMillis: Date.parse(normalized.updatedAt ?? normalized.lastSyncAt)
+      });
+      datasetStatusCache = {
+        loadedAt: Date.now(),
+        value: Promise.resolve(normalized)
+      };
+      return normalized;
+    } catch {
+      // Fall back to Firebase/local storage below.
+    }
+  }
 
   if (hasFirebaseAdmin()) {
     try {
@@ -619,6 +682,20 @@ export async function saveCronRun(result: CronResult): Promise<void> {
   };
   const safePayload = omitUndefinedDeep(payload);
 
+  if (tursoConfigured()) {
+    try {
+      await saveTursoDocument({
+        collection: CRON_RUN_COLLECTION,
+        id: result.checkedAt.replace(/[^0-9A-Za-z_-]/g, "_"),
+        payload: safePayload,
+        sortTimeMillis: Date.parse(payload.createdAt)
+      });
+      return;
+    } catch {
+      // Fall back to Firebase/local storage below.
+    }
+  }
+
   if (hasFirebaseAdmin()) {
     await firebaseDb()
       .collection(CRON_RUN_COLLECTION)
@@ -636,12 +713,16 @@ export async function saveCronRun(result: CronResult): Promise<void> {
 }
 
 export function defaultDatasetStatus(): DatasetStatus {
+  const backtestManifestPath = r2Configured() ? r2ObjectKey("cache/backtest-manifest.json") : storageObjectPath("cache/backtest-manifest.json");
+  const dataPrefix = r2Configured() ? r2ObjectKey("data") : storageObjectPath("data");
+  const strategyPrefix = r2Configured() ? r2ObjectKey("strategy") : storageObjectPath("strategy");
+
   return {
     assetCoverage: {},
-    backtestManifestPath: storageObjectPath("cache/backtest-manifest.json"),
-    dataPrefix: storageObjectPath("data"),
+    backtestManifestPath,
+    dataPrefix,
     lastSyncAt: new Date(0).toISOString(),
-    strategyPrefix: storageObjectPath("strategy"),
+    strategyPrefix,
     sync: {},
     uploadedFilesCount: 0
   };

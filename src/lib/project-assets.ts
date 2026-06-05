@@ -1,6 +1,7 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { firebaseBucket, hasFirebaseAdmin, storageObjectPath, withFirebaseTimeout } from "@/lib/firebase-admin";
+import { r2Configured, r2GetText, r2ObjectKey } from "@/lib/r2";
 
 const REMOTE_TEXT_CACHE_TTL_MS = 60_000;
 const remoteTextCache = new Map<string, { loadedAt: number; text: string }>();
@@ -53,6 +54,25 @@ async function readRemoteText(relativePath: string): Promise<string> {
 export async function readProjectText(relativePath: string, mode: AssetReadMode = "auto"): Promise<string> {
   const normalized = relativePath.replace(/\\/g, "/");
 
+  if (mode !== "local" && r2Configured()) {
+    const objectPath = r2ObjectKey(normalized);
+    const cached = remoteTextCache.get(objectPath);
+    const now = Date.now();
+    if (cached && now - cached.loadedAt < REMOTE_TEXT_CACHE_TTL_MS) {
+      return cached.text;
+    }
+    try {
+      const text = await r2GetText(normalized);
+      if (text !== null) {
+        remoteTextCache.set(objectPath, { loadedAt: now, text });
+        return text;
+      }
+      if (mode === "remote") throw new Error(`Missing remote project asset: ${normalized}`);
+    } catch (error) {
+      if (mode === "remote" && !hasFirebaseAdmin()) throw error;
+    }
+  }
+
   if (mode !== "local" && hasFirebaseAdmin()) {
     try {
       return await readRemoteText(normalized);
@@ -79,6 +99,7 @@ export async function readProjectTextIfExists(relativePath: string, mode: AssetR
   }
 }
 
-export function projectAssetMode(): "firebase" | "local" {
+export function projectAssetMode(): "firebase" | "local" | "r2" {
+  if (r2Configured()) return "r2";
   return hasFirebaseAdmin() ? "firebase" : "local";
 }

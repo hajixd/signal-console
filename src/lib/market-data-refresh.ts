@@ -6,6 +6,7 @@ import { assetForKey, type AssetDefinition } from "@/lib/assets";
 import { firebaseBucket, firebaseLocalFallbackEnabled, hasFirebaseAdmin, storageObjectPath } from "@/lib/firebase-admin";
 import { defaultDatasetStatus, getDatasetStatus, saveDatasetStatus, type DatasetAssetCoverage } from "@/lib/live-config";
 import { fetchMarketSourceBars } from "@/lib/market-data";
+import { r2AppendText, r2Configured, r2GetTailText, r2HeadObject, r2PutText } from "@/lib/r2";
 import {
   DEFAULT_STRATEGY_TIMEFRAME,
   DERIVED_FROM_FIVE_MINUTE_TIMEFRAMES,
@@ -151,6 +152,7 @@ function enabledEnvFlag(name: string): boolean {
 }
 
 function marketDataRemoteStorageEnabled(): boolean {
+  if (r2Configured()) return true;
   if (hasFirebaseAdmin()) return true;
   if (process.env.VERCEL !== "1") return false;
   return !enabledEnvFlag("PROJECT_STORAGE_FORCE_LOCAL") && !enabledEnvFlag("BACKTEST_FORCE_LOCAL");
@@ -158,9 +160,9 @@ function marketDataRemoteStorageEnabled(): boolean {
 
 function marketDataStorageUnavailableMessage(relativePath: string): string {
   return [
-    "Firebase Admin/Storage is required for market data sync on Vercel.",
+    "R2 or Firebase Admin/Storage is required for market data sync on Vercel.",
     `Refusing to write ${relativePath} to ephemeral local storage.`,
-    "Set FIREBASE_SERVICE_ACCOUNT_JSON or FIREBASE_PROJECT_ID/FIREBASE_CLIENT_EMAIL/FIREBASE_PRIVATE_KEY in Vercel,",
+    "Set R2_BUCKET/R2_ENDPOINT/R2_ACCESS_KEY_ID/R2_SECRET_ACCESS_KEY or Firebase Admin credentials in Vercel,",
     "and make sure PROJECT_STORAGE_FORCE_LOCAL/BACKTEST_FORCE_LOCAL are not enabled."
   ].join(" ");
 }
@@ -188,7 +190,7 @@ function marketDataStorageError(error: unknown, relativePath: string): Error {
     process.env.VERCEL === "1" &&
     !localMarketDataStorageEnabled() &&
     error instanceof Error &&
-    /Firebase Admin is not configured/i.test(error.message)
+    /(Firebase Admin|R2) is not configured/i.test(error.message)
   ) {
     return new Error(marketDataStorageUnavailableMessage(relativePath));
   }
@@ -673,6 +675,27 @@ async function localCsvState(relativePath: string, coverage: DatasetAssetCoverag
 }
 
 async function remoteCsvState(relativePath: string, coverage: DatasetAssetCoverage | undefined): Promise<StoredCsvState> {
+  if (r2Configured()) {
+    try {
+      const metadata = await r2HeadObject(relativePath);
+      const size = Number(metadata?.contentLength ?? 0);
+      if (!Number.isFinite(size) || size <= 0) return { endsWithNewline: true, exists: false, rows: coverage?.rows };
+
+      const tailText = (await r2GetTailText(relativePath, 65536)) ?? "";
+      return {
+        endsWithNewline: tailText.endsWith("\n"),
+        exists: true,
+        firstBarTime: secondsFromIso(coverage?.firstBarAt ?? "") ?? undefined,
+        lastBarTime: lastDataTimestamp(tailText),
+        rows: coverage?.rows,
+        tailBars: parseCsvTailBars(tailText)
+      };
+    } catch (error) {
+      if (firebaseLocalFallbackEnabled()) return localCsvState(relativePath, coverage);
+      throw marketDataStorageError(error, relativePath);
+    }
+  }
+
   try {
     const file = firebaseBucket().file(storageObjectPath(relativePath));
     const [metadata] = await file.getMetadata();
@@ -713,6 +736,11 @@ function remoteTempObjectPath(relativePath: string, label: string): string {
 }
 
 async function saveRemoteText(relativePath: string, text: string): Promise<void> {
+  if (r2Configured()) {
+    await r2PutText(relativePath, text, "text/csv; charset=utf-8");
+    return;
+  }
+
   const md5Hash = createHash("md5").update(text).digest("base64");
   await firebaseBucket().file(storageObjectPath(relativePath)).save(text, {
     contentType: "text/csv; charset=utf-8",
@@ -725,6 +753,15 @@ async function saveRemoteText(relativePath: string, text: string): Promise<void>
 }
 
 async function appendRemoteText(relativePath: string, text: string, existing: StoredCsvState): Promise<void> {
+  if (r2Configured()) {
+    if (!existing.exists) {
+      await r2PutText(relativePath, `time,open,high,low,close,volume\n${text}`, "text/csv; charset=utf-8");
+      return;
+    }
+    await r2AppendText(relativePath, text, "text/csv; charset=utf-8");
+    return;
+  }
+
   if (!existing.exists) {
     await saveRemoteText(relativePath, `time,open,high,low,close,volume\n${text}`);
     return;

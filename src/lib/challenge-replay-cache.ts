@@ -3,6 +3,7 @@ import path from "node:path";
 import { FieldValue } from "firebase-admin/firestore";
 import { firebaseDb, hasFirebaseAdmin } from "@/lib/firebase-admin";
 import { omitUndefinedDeep } from "@/lib/firestore-utils";
+import { getTursoDocument, saveTursoDocument, tursoConfigured } from "@/lib/turso";
 import type { ChallengeReplaySummary } from "@/lib/challenge";
 
 const CHALLENGE_REPLAY_CACHE_COLLECTION = "signalConsoleChallengeReplayCache";
@@ -83,6 +84,16 @@ async function writeLocalCache(entries: Record<string, ChallengeReplayCacheEntry
 export async function getCachedChallengeReplay(key: string): Promise<ChallengeReplaySummary | null> {
   if (!validCacheKey(key)) return null;
 
+  if (tursoConfigured()) {
+    try {
+      const doc = await getTursoDocument(CHALLENGE_REPLAY_CACHE_COLLECTION, key);
+      const entry = normalizeEntry(key, doc?.payload);
+      if (entry) return entry.summary;
+    } catch {
+      // Fall back to Firebase/local storage below.
+    }
+  }
+
   if (hasFirebaseAdmin()) {
     const snapshot = await firebaseDb().collection(CHALLENGE_REPLAY_CACHE_COLLECTION).doc(key).get();
     const entry = normalizeEntry(key, snapshot.data());
@@ -104,6 +115,20 @@ export async function saveCachedChallengeReplay(key: string, summary: ChallengeR
     updatedAt: now
   };
   const payload = omitUndefinedDeep(entry);
+
+  if (tursoConfigured()) {
+    try {
+      await saveTursoDocument({
+        collection: CHALLENGE_REPLAY_CACHE_COLLECTION,
+        id: key,
+        payload,
+        sortTimeMillis: Date.parse(entry.updatedAt)
+      });
+      return;
+    } catch {
+      // Fall back to Firebase/local storage below.
+    }
+  }
 
   if (hasFirebaseAdmin()) {
     await firebaseDb()

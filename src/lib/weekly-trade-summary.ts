@@ -5,6 +5,7 @@ import { FieldValue } from "firebase-admin/firestore";
 import { autoTradeMarketForSignal, type AutoTradeMarket } from "@/lib/auto-trade-platforms";
 import { firebaseDb, firebaseLocalFallbackEnabled, hasFirebaseAdmin, withFirebaseTimeout } from "@/lib/firebase-admin";
 import { omitUndefinedDeep } from "@/lib/firestore-utils";
+import { createTursoDocument, getTursoDocument, saveTursoDocument, tursoConfigured } from "@/lib/turso";
 import {
   addCalendarDays,
   formatLocalDateKey,
@@ -166,6 +167,20 @@ async function writeLocalMarkers(filePath: string, markers: Record<string, Trade
 
 async function saveMarker(collection: string, localPath: string, marker: TradeSummaryMarker): Promise<void> {
   const payload = omitUndefinedDeep(marker);
+  if (tursoConfigured()) {
+    try {
+      await saveTursoDocument({
+        collection,
+        id: marker.key,
+        payload,
+        sortTimeMillis: Date.parse(marker.sentAt)
+      });
+      return;
+    } catch {
+      // Fall back to Firebase/local storage below.
+    }
+  }
+
   if (hasFirebaseAdmin()) {
     try {
       await withFirebaseTimeout(
@@ -204,6 +219,22 @@ async function claimMarker(collection: string, localPath: string, marker: TradeS
     markerStatus: "claimed",
     telegramStatus: "skipped"
   };
+
+  if (tursoConfigured()) {
+    try {
+      const created = await createTursoDocument({
+        collection,
+        id: marker.key,
+        payload: omitUndefinedDeep(claimedMarker),
+        sortTimeMillis: Date.parse(marker.sentAt)
+      });
+      if (created) return null;
+      const existing = await getTursoDocument(collection, marker.key);
+      return existing?.payload as TradeSummaryMarker | null;
+    } catch {
+      // Fall back to Firebase/local storage below.
+    }
+  }
 
   if (hasFirebaseAdmin()) {
     const db = firebaseDb();

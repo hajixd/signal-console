@@ -38,7 +38,7 @@ type SavedAutoTradeConnection = {
   id: AutoTradeProviderId;
   paused: boolean;
   providerLabel: string;
-  storageMode?: "firebase" | "local";
+  storageMode?: "firebase" | "local" | "turso";
 };
 
 type AutoTradeTestStatus = "disabled" | "dry_run" | "failed" | "placed" | "skipped" | "success";
@@ -375,7 +375,7 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
   const selectedFirmReady = firmHasFullyFunctioningPath(selectedFirm, providers);
   const selectedProviderReady = autoTradeProviderFullyFunctioning(selectedProvider.id);
   const canConnectSelectedProvider = selectedProviderReady && selectedProvider.id === "projectx" && selectedProvider.status === "live" && market === "futures";
-  const storageLabel = status.storageMode === "firebase" ? "Firebase" : "local dev storage";
+  const storageLabel = status.storageMode === "turso" ? "Turso" : status.storageMode === "firebase" ? "Firebase" : "local dev storage";
   const displayUserName = status.userName || userName || "--";
   const visibleAccounts = market === "futures" ? status.accounts : [];
   const projectXAccountFolders = useMemo<ProjectXConnectionSummary[]>(

@@ -6,6 +6,7 @@ import { hashAccessCode, verifyAccessCode } from "@/lib/account-access-code";
 import { autoTradeProviderById, type AutoTradeProviderId } from "@/lib/auto-trade-platforms";
 import { firebaseDb, firebaseLocalFallbackEnabled, hasFirebaseAdmin, withFirebaseTimeout } from "@/lib/firebase-admin";
 import { omitUndefinedDeep } from "@/lib/firestore-utils";
+import { deleteTursoDocument, getTursoDocument, listTursoDocuments, saveTursoDocument, tursoConfigured } from "@/lib/turso";
 
 const COLLECTION = "autoTradeConnections";
 const LOCAL_PATH = path.join(process.cwd(), ".local", "auto-trade-connections.json");
@@ -31,6 +32,8 @@ export type AutoTradeConnection = {
 type StoredAutoTradeConnection = Omit<AutoTradeConnection, "fields"> & {
   encryptedFields: string;
 };
+
+type AutoTradeConnectionStoreMode = "firebase" | "local" | "turso";
 
 function encryptionSecret(): string {
   const secret = process.env.AUTO_TRADE_CONNECTION_SECRET ?? process.env.PROJECTX_CONNECTION_SECRET ?? process.env.APP_ADMIN_SECRET ?? process.env.CRON_SECRET;
@@ -116,11 +119,41 @@ async function writeLocal(connections: Record<string, StoredAutoTradeConnection>
   await writeFile(LOCAL_PATH, JSON.stringify(connections, null, 2));
 }
 
-export function autoTradeConnectionStoreMode(): "firebase" | "local" {
+async function readTursoConnection(providerId: AutoTradeProviderId): Promise<AutoTradeConnection | null> {
+  const doc = await getTursoDocument(COLLECTION, providerId);
+  return toConnection(doc?.payload as StoredAutoTradeConnection | undefined);
+}
+
+async function listTursoConnections(): Promise<AutoTradeConnection[]> {
+  return (await listTursoDocuments(COLLECTION, 100))
+    .map((doc) => safeToConnection({ ...doc.payload, id: doc.payload.id ?? doc.id } as StoredAutoTradeConnection))
+    .filter((connection): connection is AutoTradeConnection => Boolean(connection));
+}
+
+async function saveTursoConnection(payload: StoredAutoTradeConnection): Promise<void> {
+  await saveTursoDocument({
+    collection: COLLECTION,
+    id: payload.id,
+    payload,
+    sortTimeMillis: Date.parse(payload.updatedAt)
+  });
+}
+
+export function autoTradeConnectionStoreMode(): AutoTradeConnectionStoreMode {
+  if (tursoConfigured()) return "turso";
   return hasFirebaseAdmin() ? "firebase" : "local";
 }
 
 export async function getAutoTradeConnection(providerId: AutoTradeProviderId): Promise<AutoTradeConnection | null> {
+  if (tursoConfigured()) {
+    try {
+      const connection = await readTursoConnection(providerId);
+      if (connection) return connection;
+    } catch {
+      // Fall back to Firebase/local storage below.
+    }
+  }
+
   if (hasFirebaseAdmin()) {
     try {
       const snapshot = await withFirebaseTimeout(firebaseDb().collection(COLLECTION).doc(providerId).get(), "Firebase auto-trade connection read");
@@ -133,6 +166,15 @@ export async function getAutoTradeConnection(providerId: AutoTradeProviderId): P
 }
 
 export async function listAutoTradeConnections(): Promise<AutoTradeConnection[]> {
+  if (tursoConfigured()) {
+    try {
+      const connections = await listTursoConnections();
+      if (connections.length) return connections;
+    } catch {
+      // Fall back to Firebase/local storage below.
+    }
+  }
+
   if (hasFirebaseAdmin()) {
     try {
       const snapshot = await withFirebaseTimeout(firebaseDb().collection(COLLECTION).get(), "Firebase auto-trade connections list");
@@ -181,7 +223,17 @@ export async function saveAutoTradeConnection(input: {
     updatedAt: now
   };
 
-  if (hasFirebaseAdmin()) {
+  let persistedToPrimary = false;
+  if (tursoConfigured()) {
+    try {
+      await saveTursoConnection(payload);
+      persistedToPrimary = true;
+    } catch (error) {
+      if (!hasFirebaseAdmin() && !firebaseLocalFallbackEnabled()) throw error;
+    }
+  }
+
+  if (!persistedToPrimary && hasFirebaseAdmin()) {
     try {
       await withFirebaseTimeout(
         firebaseDb()
@@ -196,7 +248,7 @@ export async function saveAutoTradeConnection(input: {
       connections[input.providerId] = payload;
       await writeLocal(connections);
     }
-  } else {
+  } else if (!persistedToPrimary) {
     const connections = await readLocal();
     connections[input.providerId] = payload;
     await writeLocal(connections);
@@ -238,7 +290,17 @@ async function persistPaused(connection: AutoTradeConnection): Promise<AutoTrade
     status: "connected",
     updatedAt: new Date().toISOString()
   };
-  if (hasFirebaseAdmin()) {
+  let persistedToPrimary = false;
+  if (tursoConfigured()) {
+    try {
+      await saveTursoConnection(payload);
+      persistedToPrimary = true;
+    } catch (error) {
+      if (!hasFirebaseAdmin() && !firebaseLocalFallbackEnabled()) throw error;
+    }
+  }
+
+  if (!persistedToPrimary && hasFirebaseAdmin()) {
     try {
       await withFirebaseTimeout(
         firebaseDb()
@@ -253,7 +315,7 @@ async function persistPaused(connection: AutoTradeConnection): Promise<AutoTrade
       connections[connection.id] = payload;
       await writeLocal(connections);
     }
-  } else {
+  } else if (!persistedToPrimary) {
     const connections = await readLocal();
     connections[connection.id] = payload;
     await writeLocal(connections);
@@ -262,6 +324,15 @@ async function persistPaused(connection: AutoTradeConnection): Promise<AutoTrade
 }
 
 export async function deleteAutoTradeConnection(providerId: AutoTradeProviderId): Promise<void> {
+  if (tursoConfigured()) {
+    try {
+      await deleteTursoDocument(COLLECTION, providerId);
+      return;
+    } catch {
+      // Fall back to Firebase/local storage below.
+    }
+  }
+
   if (hasFirebaseAdmin()) {
     try {
       await withFirebaseTimeout(firebaseDb().collection(COLLECTION).doc(providerId).delete(), "Firebase auto-trade connection delete");
@@ -276,7 +347,17 @@ export async function deleteAutoTradeConnection(providerId: AutoTradeProviderId)
 }
 
 export async function verifyAutoTradeConnectionAccessCode(providerId: AutoTradeProviderId, accessCode: string): Promise<boolean> {
-  const payload = hasFirebaseAdmin()
+  const payload = tursoConfigured()
+    ? await getTursoDocument(COLLECTION, providerId)
+        .then((doc) => doc?.payload as StoredAutoTradeConnection | undefined)
+        .catch(async () =>
+          hasFirebaseAdmin()
+            ? await withFirebaseTimeout(firebaseDb().collection(COLLECTION).doc(providerId).get(), "Firebase auto-trade access-code read")
+                .then((snapshot) => snapshot.data() as StoredAutoTradeConnection | undefined)
+                .catch(async () => (await readLocal())[providerId])
+            : (await readLocal())[providerId]
+        )
+    : hasFirebaseAdmin()
     ? await withFirebaseTimeout(firebaseDb().collection(COLLECTION).doc(providerId).get(), "Firebase auto-trade access-code read")
         .then((snapshot) => snapshot.data() as StoredAutoTradeConnection | undefined)
         .catch(async () => (await readLocal())[providerId])

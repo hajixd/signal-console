@@ -1,6 +1,7 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { firebaseBucket, hasFirebaseAdmin, storageObjectPath, withFirebaseTimeout } from "@/lib/firebase-admin";
+import { r2Configured, r2GetText, r2ObjectKey } from "@/lib/r2";
 
 const REMOTE_TEXT_CACHE_TTL_MS = 60_000;
 const remoteTextCache = new Map<string, { loadedAt: number; text: string }>();
@@ -44,6 +45,24 @@ async function readRemoteText(relativeDataPath: string): Promise<string> {
 }
 
 export async function readDataText(relativeDataPath: string): Promise<string> {
+  if (r2Configured()) {
+    const objectPath = `data/${normalizeDataPath(relativeDataPath)}`;
+    const cached = remoteTextCache.get(r2ObjectKey(objectPath));
+    const now = Date.now();
+    if (cached && now - cached.loadedAt < REMOTE_TEXT_CACHE_TTL_MS) {
+      return cached.text;
+    }
+    try {
+      const text = await r2GetText(objectPath);
+      if (text !== null) {
+        remoteTextCache.set(r2ObjectKey(objectPath), { loadedAt: now, text });
+        return text;
+      }
+    } catch {
+      // Fall back to Firebase/local storage below.
+    }
+  }
+
   if (hasFirebaseAdmin()) {
     try {
       return await readRemoteText(relativeDataPath);

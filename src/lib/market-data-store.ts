@@ -3,6 +3,7 @@ import path from "node:path";
 import { assetForKey } from "@/lib/assets";
 import { firebaseBucket, hasFirebaseAdmin, storageObjectPath } from "@/lib/firebase-admin";
 import { fetchMarketBars } from "@/lib/market-data";
+import { r2Configured, r2GetTailText, r2GetText } from "@/lib/r2";
 import {
   closedBarStartSeconds,
   DEFAULT_STRATEGY_TIMEFRAME,
@@ -60,6 +61,15 @@ async function readRemoteTail(relativePath: string, byteCount: number): Promise<
 }
 
 async function readDataTail(relativePath: string, byteCount: number): Promise<string> {
+  if (r2Configured()) {
+    try {
+      const text = await r2GetTailText(`data/${relativePath.replace(/^data\/+/, "")}`, byteCount);
+      if (text !== null) return text;
+    } catch {
+      // Fall back to Firebase/local storage below.
+    }
+  }
+
   if (hasFirebaseAdmin()) {
     try {
       return await readRemoteTail(relativePath, byteCount);
@@ -152,7 +162,10 @@ async function readLiveDataTailCache(): Promise<LiveDataTailCache | null> {
   if (!liveDataTailCache) {
     liveDataTailCache = (async () => {
       let raw: string | null = null;
-      if (hasFirebaseAdmin()) {
+      if (r2Configured()) {
+        raw = await r2GetText(LIVE_DATA_TAILS_PATH).catch(() => null);
+      }
+      if (!raw && hasFirebaseAdmin()) {
         try {
           const [buffer] = await firebaseBucket().file(storageObjectPath(LIVE_DATA_TAILS_PATH)).download();
           raw = buffer.toString("utf8");

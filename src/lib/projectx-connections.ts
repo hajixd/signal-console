@@ -5,6 +5,7 @@ import { FieldValue } from "firebase-admin/firestore";
 import { hashAccessCode, verifyAccessCode } from "@/lib/account-access-code";
 import { firebaseDb, firebaseLocalFallbackEnabled, hasFirebaseAdmin, withFirebaseTimeout } from "@/lib/firebase-admin";
 import { omitUndefinedDeep } from "@/lib/firestore-utils";
+import { deleteTursoDocument, getTursoDocument, listTursoDocuments, saveTursoDocument, tursoConfigured } from "@/lib/turso";
 import type { ProjectXAccount, ProjectXConnectionSummary } from "@/lib/projectx";
 
 const PROJECTX_CONNECTION_COLLECTION = "topstepProjectXConnections";
@@ -12,7 +13,7 @@ const PROJECTX_CONNECTION_LOCAL_PATH = path.join(process.cwd(), ".local", "topst
 const TOKEN_CIPHER_VERSION = "v1";
 const TOKEN_CIPHER_ALGORITHM = "aes-256-gcm";
 
-export type ProjectXConnectionStoreMode = "firebase" | "local";
+export type ProjectXConnectionStoreMode = "firebase" | "local" | "turso";
 
 type StoredProjectXConnectionPayload = {
   accessCodeHash?: string;
@@ -181,10 +182,51 @@ async function writeLocalConnections(connections: Record<string, StoredProjectXC
 }
 
 export function projectXConnectionStoreMode(): ProjectXConnectionStoreMode {
+  if (tursoConfigured()) return "turso";
   return hasFirebaseAdmin() ? "firebase" : "local";
 }
 
+function tursoPayload(doc: Awaited<ReturnType<typeof getTursoDocument>>): StoredProjectXConnectionPayload | undefined {
+  return doc ? ({ ...doc.payload, id: doc.payload.id ?? doc.id } as StoredProjectXConnectionPayload) : undefined;
+}
+
+async function readTursoConnection(id: string): Promise<StoredProjectXConnection | null> {
+  return toStoredConnection(tursoPayload(await getTursoDocument(PROJECTX_CONNECTION_COLLECTION, id)));
+}
+
+async function listTursoConnections(): Promise<StoredProjectXConnection[]> {
+  return (await listTursoDocuments(PROJECTX_CONNECTION_COLLECTION, 100))
+    .map((doc) => safeToStoredConnection(tursoPayload(doc)))
+    .filter((connection): connection is StoredProjectXConnection => connection !== null && connection.status === "connected")
+    .sort(newestConnectionFirst);
+}
+
+async function listTursoSummaries(): Promise<ProjectXConnectionSummary[]> {
+  return (await listTursoDocuments(PROJECTX_CONNECTION_COLLECTION, 100))
+    .map((doc) => toConnectionSummary(tursoPayload(doc)))
+    .filter((connection): connection is ProjectXConnectionSummary => connection !== null)
+    .sort(newestSummaryFirst);
+}
+
+async function saveTursoConnection(payload: StoredProjectXConnectionPayload): Promise<void> {
+  await saveTursoDocument({
+    collection: PROJECTX_CONNECTION_COLLECTION,
+    id: payload.id,
+    payload,
+    sortTimeMillis: Date.parse(payload.updatedAt)
+  });
+}
+
 export async function getStoredProjectXConnection(id: string): Promise<StoredProjectXConnection | null> {
+  if (tursoConfigured()) {
+    try {
+      const connection = await readTursoConnection(id);
+      if (connection) return connection;
+    } catch {
+      // Fall back to Firebase/local storage below.
+    }
+  }
+
   if (hasFirebaseAdmin()) {
     try {
       const snapshot = await withFirebaseTimeout(firebaseDb().collection(PROJECTX_CONNECTION_COLLECTION).doc(id).get(), "Firebase ProjectX connection read");
@@ -200,6 +242,15 @@ export async function getStoredProjectXConnection(id: string): Promise<StoredPro
 }
 
 export async function getStoredProjectXConnections(): Promise<StoredProjectXConnection[]> {
+  if (tursoConfigured()) {
+    try {
+      const connections = await listTursoConnections();
+      if (connections.length) return connections;
+    } catch {
+      // Fall back to Firebase/local storage below.
+    }
+  }
+
   if (hasFirebaseAdmin()) {
     try {
       const snapshot = await withFirebaseTimeout(firebaseDb().collection(PROJECTX_CONNECTION_COLLECTION).get(), "Firebase ProjectX connections list");
@@ -224,6 +275,15 @@ export async function getStoredProjectXConnections(): Promise<StoredProjectXConn
 }
 
 export async function getStoredProjectXConnectionSummaries(): Promise<ProjectXConnectionSummary[]> {
+  if (tursoConfigured()) {
+    try {
+      const summaries = await listTursoSummaries();
+      if (summaries.length) return summaries;
+    } catch {
+      // Fall back to Firebase/local storage below.
+    }
+  }
+
   if (hasFirebaseAdmin()) {
     try {
       const snapshot = await withFirebaseTimeout(firebaseDb().collection(PROJECTX_CONNECTION_COLLECTION).get(), "Firebase ProjectX summaries list");
@@ -295,7 +355,17 @@ export async function saveStoredProjectXConnection(input: {
 
   if (input.userName) payload.userName = input.userName;
 
-  if (hasFirebaseAdmin()) {
+  let persistedToPrimary = false;
+  if (tursoConfigured()) {
+    try {
+      await saveTursoConnection(payload);
+      persistedToPrimary = true;
+    } catch (error) {
+      if (!hasFirebaseAdmin() && !firebaseLocalFallbackEnabled()) throw error;
+    }
+  }
+
+  if (!persistedToPrimary && hasFirebaseAdmin()) {
     try {
       await withFirebaseTimeout(
         firebaseDb()
@@ -316,7 +386,7 @@ export async function saveStoredProjectXConnection(input: {
       connections[input.id] = payload;
       await writeLocalConnections(connections);
     }
-  } else {
+  } else if (!persistedToPrimary) {
     const connections = await readLocalConnections();
     connections[input.id] = payload;
     await writeLocalConnections(connections);
@@ -327,6 +397,25 @@ export async function saveStoredProjectXConnection(input: {
 
 export async function markStoredProjectXConnectionExpired(id: string): Promise<ProjectXConnectionSummary | null> {
   const now = new Date().toISOString();
+
+  if (tursoConfigured()) {
+    try {
+      const storedPayload = tursoPayload(await getTursoDocument(PROJECTX_CONNECTION_COLLECTION, id));
+      if (storedPayload) {
+        const payload: StoredProjectXConnectionPayload = {
+          ...storedPayload,
+          id: storedPayload.id ?? id,
+          lastCheckedAt: now,
+          status: "expired",
+          updatedAt: now
+        };
+        await saveTursoConnection(payload);
+        return toConnectionSummary(payload);
+      }
+    } catch {
+      // Fall back to Firebase/local storage below.
+    }
+  }
 
   if (hasFirebaseAdmin()) {
     try {
@@ -430,6 +519,22 @@ export async function setStoredProjectXConnectionAccessCode(id: string, accessCo
   const accessCodeHash = hashAccessCode(accessCode);
   const updatedAt = new Date().toISOString();
 
+  if (tursoConfigured()) {
+    try {
+      const payload = tursoPayload(await getTursoDocument(PROJECTX_CONNECTION_COLLECTION, id));
+      if (payload) {
+        await saveTursoConnection({
+          ...payload,
+          accessCodeHash,
+          updatedAt
+        });
+        return true;
+      }
+    } catch {
+      // Fall back to Firebase/local storage below.
+    }
+  }
+
   if (hasFirebaseAdmin()) {
     try {
       const ref = firebaseDb().collection(PROJECTX_CONNECTION_COLLECTION).doc(id);
@@ -467,7 +572,17 @@ export async function setStoredProjectXConnectionAccessCode(id: string, accessCo
 }
 
 export async function verifyStoredProjectXConnectionAccessCode(id: string, accessCode: string): Promise<boolean> {
-  const payload = hasFirebaseAdmin()
+  const payload = tursoConfigured()
+    ? await getTursoDocument(PROJECTX_CONNECTION_COLLECTION, id)
+        .then((doc) => tursoPayload(doc))
+        .catch(async () =>
+          hasFirebaseAdmin()
+            ? await withFirebaseTimeout(firebaseDb().collection(PROJECTX_CONNECTION_COLLECTION).doc(id).get(), "Firebase ProjectX access-code read")
+                .then((snapshot) => snapshot.data() as StoredProjectXConnectionPayload | undefined)
+                .catch(async () => (await readLocalConnections())[id])
+            : (await readLocalConnections())[id]
+        )
+    : hasFirebaseAdmin()
     ? await withFirebaseTimeout(firebaseDb().collection(PROJECTX_CONNECTION_COLLECTION).doc(id).get(), "Firebase ProjectX access-code read")
         .then((snapshot) => snapshot.data() as StoredProjectXConnectionPayload | undefined)
         .catch(async () => (await readLocalConnections())[id])
@@ -477,6 +592,15 @@ export async function verifyStoredProjectXConnectionAccessCode(id: string, acces
 }
 
 export async function deleteStoredProjectXConnection(id: string): Promise<void> {
+  if (tursoConfigured()) {
+    try {
+      await deleteTursoDocument(PROJECTX_CONNECTION_COLLECTION, id);
+      return;
+    } catch {
+      // Fall back to Firebase/local storage below.
+    }
+  }
+
   if (hasFirebaseAdmin()) {
     try {
       await withFirebaseTimeout(firebaseDb().collection(PROJECTX_CONNECTION_COLLECTION).doc(id).delete(), "Firebase ProjectX connection delete");

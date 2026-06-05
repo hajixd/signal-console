@@ -138,6 +138,47 @@ export async function saveTursoDocument(input: {
   );
 }
 
+function isConstraintError(error: unknown): boolean {
+  const record = error as { code?: string; message?: string };
+  return (
+    record?.code === "SQLITE_CONSTRAINT" ||
+    record?.code === "SQLITE_CONSTRAINT_PRIMARYKEY" ||
+    /constraint|unique/i.test(record?.message ?? "")
+  );
+}
+
+export async function createTursoDocument(input: {
+  collection: string;
+  id: string;
+  payload: Record<string, unknown>;
+  sortTimeMillis?: number;
+}): Promise<boolean> {
+  const now = new Date().toISOString();
+  try {
+    await withTursoTimeout(
+      tursoClient().execute({
+        args: [
+          input.collection,
+          input.id,
+          JSON.stringify(input.payload),
+          typeof input.sortTimeMillis === "number" && Number.isFinite(input.sortTimeMillis) ? Math.round(input.sortTimeMillis) : null,
+          now,
+          now
+        ],
+        sql: [
+          "INSERT INTO app_documents (collection, id, payload_json, sort_time_millis, created_at, updated_at)",
+          "VALUES (?, ?, ?, ?, ?, ?)"
+        ].join(" ")
+      }),
+      `Turso document create ${input.collection}/${input.id}`
+    );
+    return true;
+  } catch (error) {
+    if (isConstraintError(error)) return false;
+    throw error;
+  }
+}
+
 export async function deleteTursoDocument(collection: string, id: string): Promise<void> {
   await withTursoTimeout(
     tursoClient().execute({

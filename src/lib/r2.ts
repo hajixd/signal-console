@@ -1,10 +1,15 @@
 import {
+  AbortMultipartUploadCommand,
+  CompleteMultipartUploadCommand,
+  CreateMultipartUploadCommand,
   DeleteObjectCommand,
   GetObjectCommand,
   HeadBucketCommand,
   HeadObjectCommand,
   ListObjectsV2Command,
   PutObjectCommand,
+  UploadPartCommand,
+  UploadPartCopyCommand,
   type PutObjectCommandInput,
   S3Client,
   type GetObjectCommandOutput
@@ -12,6 +17,7 @@ import {
 import { Upload } from "@aws-sdk/lib-storage";
 
 const DEFAULT_R2_TIMEOUT_MS = 20_000;
+const MIN_MULTIPART_PART_BYTES = 5 * 1024 * 1024;
 const MULTIPART_UPLOAD_THRESHOLD_BYTES = 64 * 1024 * 1024;
 
 let cachedClient: S3Client | null = null;
@@ -133,6 +139,30 @@ export async function r2GetText(relativePath: string): Promise<string | null> {
   }
 }
 
+export async function r2GetTextRange(
+  relativePath: string,
+  range: { end?: number; start?: number; suffixBytes?: number }
+): Promise<string | null> {
+  try {
+    const rangeHeader =
+      typeof range.suffixBytes === "number"
+        ? `bytes=-${Math.max(0, Math.round(range.suffixBytes))}`
+        : `bytes=${Math.max(0, Math.round(range.start ?? 0))}-${typeof range.end === "number" ? Math.max(0, Math.round(range.end)) : ""}`;
+    const result = await withR2Timeout(
+      r2Client().send(new GetObjectCommand({ Bucket: r2BucketName(), Key: r2ObjectKey(relativePath), Range: rangeHeader })),
+      `R2 object range read ${relativePath}`
+    );
+    return bodyToText(result.Body);
+  } catch (error) {
+    if (isNotFoundError(error)) return null;
+    throw error;
+  }
+}
+
+export async function r2GetTailText(relativePath: string, byteCount: number): Promise<string | null> {
+  return r2GetTextRange(relativePath, { suffixBytes: Math.max(1, Math.round(byteCount)) });
+}
+
 export async function r2PutText(relativePath: string, body: string, contentType = "application/json; charset=utf-8"): Promise<void> {
   await r2PutObject(relativePath, body, { contentType });
 }
@@ -167,6 +197,89 @@ export async function r2PutObject(
     r2Client().send(new PutObjectCommand(params)),
     `R2 object write ${relativePath}`
   );
+}
+
+function copySourceForKey(key: string): string {
+  return `${r2BucketName()}/${key.split("/").map(encodeURIComponent).join("/")}`;
+}
+
+export async function r2AppendText(relativePath: string, text: string, contentType = "text/plain; charset=utf-8"): Promise<void> {
+  if (!text) return;
+  const existing = await r2HeadObject(relativePath);
+  if (!existing?.contentLength) {
+    await r2PutText(relativePath, text, contentType);
+    return;
+  }
+
+  if (existing.contentLength < MIN_MULTIPART_PART_BYTES) {
+    const current = await r2GetText(relativePath);
+    await r2PutText(relativePath, `${current ?? ""}${text}`, contentType);
+    return;
+  }
+
+  const bucket = r2BucketName();
+  const key = r2ObjectKey(relativePath);
+  const upload = await withR2Timeout(
+    r2Client().send(
+      new CreateMultipartUploadCommand({
+        Bucket: bucket,
+        ContentType: contentType,
+        Key: key
+      })
+    ),
+    `R2 append multipart create ${relativePath}`
+  );
+  if (!upload.UploadId) throw new Error(`R2 multipart upload failed to start for ${relativePath}`);
+
+  try {
+    const copied = await withR2Timeout(
+      r2Client().send(
+        new UploadPartCopyCommand({
+          Bucket: bucket,
+          CopySource: copySourceForKey(key),
+          CopySourceRange: `bytes=0-${existing.contentLength - 1}`,
+          Key: key,
+          PartNumber: 1,
+          UploadId: upload.UploadId
+        })
+      ),
+      `R2 append multipart copy ${relativePath}`
+    );
+    const appended = await withR2Timeout(
+      r2Client().send(
+        new UploadPartCommand({
+          Body: text,
+          Bucket: bucket,
+          Key: key,
+          PartNumber: 2,
+          UploadId: upload.UploadId
+        })
+      ),
+      `R2 append multipart upload ${relativePath}`
+    );
+    await withR2Timeout(
+      r2Client().send(
+        new CompleteMultipartUploadCommand({
+          Bucket: bucket,
+          Key: key,
+          MultipartUpload: {
+            Parts: [
+              { ETag: copied.CopyPartResult?.ETag, PartNumber: 1 },
+              { ETag: appended.ETag, PartNumber: 2 }
+            ]
+          },
+          UploadId: upload.UploadId
+        })
+      ),
+      `R2 append multipart complete ${relativePath}`
+    );
+  } catch (error) {
+    await withR2Timeout(
+      r2Client().send(new AbortMultipartUploadCommand({ Bucket: bucket, Key: key, UploadId: upload.UploadId })),
+      `R2 append multipart abort ${relativePath}`
+    ).catch(() => undefined);
+    throw error;
+  }
 }
 
 export async function r2DeleteObject(relativePath: string): Promise<void> {

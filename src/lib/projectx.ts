@@ -19,7 +19,7 @@ export type ProjectXConnectionStatus = {
   persisted?: boolean;
   refreshed?: boolean;
   pausedAccountIds?: number[];
-  storageMode?: "firebase" | "local";
+  storageMode?: "firebase" | "local" | "turso";
   userName?: string;
 };
 
