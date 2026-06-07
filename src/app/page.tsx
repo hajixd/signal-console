@@ -532,6 +532,7 @@ function challengeRulesFromParams(
 }
 
 type SyncTileState = "idle" | "running" | "success" | "failed";
+type SyncTileVisualState = SyncTileState | "warning";
 
 function syncTileState(
   run: { startedAt?: string; state?: string } | undefined,
@@ -661,6 +662,11 @@ function syncTileErrorText(state: SyncTileState, run: SyncTileRun | undefined): 
   return run.error.length > 220 ? `${run.error.slice(0, 217)}...` : run.error;
 }
 
+function dataValiditySyncTileVisualState(state: SyncTileState, tone: DataValidityTone): SyncTileVisualState {
+  if (state === "running" || state === "failed") return state;
+  return tone === "good" ? "success" : "warning";
+}
+
 function SyncTileStatus({
   lastSuccessfulAt,
   run,
@@ -705,7 +711,7 @@ function DataValidityBox({
   run?: SyncTileRun;
   state: SyncTileState;
 }) {
-  const syncStateClass = state === "running" ? "running" : dataValidity.tone === "good" ? "success" : dataValidity.tone === "bad" ? "failed" : "running";
+  const syncStateClass = dataValiditySyncTileVisualState(state, dataValidity.tone);
   return (
     <div
       className={`dataset-sync-tile dataValidityBox sync-state-${syncStateClass} ${className} ${dataValidityClass(dataValidity.tone)}`.trim()}
@@ -2208,7 +2214,7 @@ export default async function Home({ searchParams }: HomeProps) {
           { label: "Missing", value: fmtNumber(dataValidity.stats.missingCoverageTimeframes), tone: dataValidity.stats.missingCoverageTimeframes ? "bad" : "good" },
           { label: "Stale", value: fmtNumber(dataValidity.stats.staleCoverageTimeframes), tone: dataValidity.stats.staleCoverageTimeframes ? "warning" : "good" }
         ],
-        state: dataValidityRefreshState,
+        state: dataValiditySyncTileVisualState(dataValidityRefreshState, dataValidity.tone),
         status: dataValidity.label,
         title: "Review Validity",
         updatedAt: syncStatus.lastDataValidityRefreshAt

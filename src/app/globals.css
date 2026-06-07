@@ -825,21 +825,21 @@ html[data-theme="light"] .themeDarkLabel {
 }
 
 .dataValidityBox.warning {
-  border-color: rgba(245, 158, 11, 0.46);
-  background: rgba(245, 158, 11, 0.105);
+  border-color: rgba(249, 115, 22, 0.48);
+  background: rgba(249, 115, 22, 0.105);
 }
 
 .dataValidityBox.warning strong {
-  color: #fde68a;
+  color: #fed7aa;
 }
 
 .dataValidityBox.bad {
-  border-color: rgba(248, 113, 113, 0.48);
-  background: rgba(248, 113, 113, 0.105);
+  border-color: rgba(249, 115, 22, 0.52);
+  background: rgba(249, 115, 22, 0.12);
 }
 
 .dataValidityBox.bad strong {
-  color: #fecaca;
+  color: #fed7aa;
 }
 
 .dataValidityBox .sync-tile-times dd {
@@ -7224,21 +7224,21 @@ html[data-theme="light"] .dataValidityBox.good strong {
 }
 
 html[data-theme="light"] .dataValidityBox.warning {
-  border-color: rgba(217, 119, 6, 0.32);
-  background: #fffbeb;
+  border-color: rgba(234, 88, 12, 0.32);
+  background: #fff7ed;
 }
 
 html[data-theme="light"] .dataValidityBox.warning strong {
-  color: #92400e;
+  color: #c2410c;
 }
 
 html[data-theme="light"] .dataValidityBox.bad {
-  border-color: rgba(220, 38, 38, 0.28);
-  background: #fef2f2;
+  border-color: rgba(234, 88, 12, 0.34);
+  background: #fff7ed;
 }
 
 html[data-theme="light"] .dataValidityBox.bad strong {
-  color: #b91c1c;
+  color: #c2410c;
 }
 
 html[data-theme="light"] .dataValidityCheck {
@@ -9703,6 +9703,11 @@ html[data-theme="light"] .tradeCandlestickPanel {
   background: linear-gradient(135deg, rgba(52, 211, 153, 0.12), rgba(96, 165, 250, 0.035));
 }
 
+.dataset-sync-tile.sync-state-warning {
+  border-color: rgba(249, 115, 22, 0.42);
+  background: linear-gradient(135deg, rgba(249, 115, 22, 0.16), rgba(154, 52, 18, 0.08));
+}
+
 .dataset-sync-tile.sync-state-failed {
   border-color: rgba(248, 113, 113, 0.36);
   background: linear-gradient(135deg, rgba(248, 113, 113, 0.15), rgba(127, 29, 29, 0.08));
@@ -9734,6 +9739,10 @@ html[data-theme="light"] .tradeCandlestickPanel {
 
 .dataset-sync-tile.sync-state-success .sync-tile-name {
   color: rgba(167, 243, 208, 0.86);
+}
+
+.dataset-sync-tile.sync-state-warning .sync-tile-name {
+  color: rgba(253, 186, 116, 0.92);
 }
 
 .dataset-sync-tile.sync-state-failed .sync-tile-name {
@@ -9819,6 +9828,16 @@ html[data-theme="light"] .tradeCandlestickPanel {
 .dataset-sync-tile.sync-state-success .sync-tile-times dd,
 .dataset-sync-tile.sync-state-success .sync-tile-times dd span {
   color: #d1fae5;
+}
+
+.dataset-sync-tile.sync-state-warning .sync-tile-times dt {
+  color: rgba(253, 186, 116, 0.64);
+}
+
+.dataset-sync-tile.sync-state-warning .sync-tile-times dd,
+.dataset-sync-tile.sync-state-warning .sync-tile-times dd span,
+.dataset-sync-tile.sync-state-warning .sync-tile-times dd strong {
+  color: #fed7aa;
 }
 
 .dataset-sync-tile.sync-state-failed .sync-tile-times dt {
@@ -10216,6 +10235,11 @@ html[data-theme="light"] .dataset-sync-tile.sync-state-success {
   background: linear-gradient(135deg, #ecfdf5, rgba(239, 246, 255, 0.74));
 }
 
+html[data-theme="light"] .dataset-sync-tile.sync-state-warning {
+  border-color: rgba(234, 88, 12, 0.3);
+  background: linear-gradient(135deg, #fff7ed, rgba(255, 237, 213, 0.72));
+}
+
 html[data-theme="light"] .dataset-sync-tile.sync-state-failed {
   border-color: rgba(220, 38, 38, 0.26);
   background: linear-gradient(135deg, #fef2f2, rgba(255, 241, 242, 0.72));
@@ -10239,6 +10263,10 @@ html[data-theme="light"] .dataset-sync-tile.sync-state-idle .sync-tile-name {
 
 html[data-theme="light"] .dataset-sync-tile.sync-state-success .sync-tile-name {
   color: #16a34a;
+}
+
+html[data-theme="light"] .dataset-sync-tile.sync-state-warning .sync-tile-name {
+  color: #ea580c;
 }
 
 html[data-theme="light"] .dataset-sync-tile.sync-state-failed .sync-tile-name {
@@ -10268,6 +10296,13 @@ html[data-theme="light"] .dataset-sync-tile.sync-state-success .sync-tile-times 
 html[data-theme="light"] .dataset-sync-tile.sync-state-success .sync-tile-times dd,
 html[data-theme="light"] .dataset-sync-tile.sync-state-success .sync-tile-times dd span {
   color: #15803d;
+}
+
+html[data-theme="light"] .dataset-sync-tile.sync-state-warning .sync-tile-times dt,
+html[data-theme="light"] .dataset-sync-tile.sync-state-warning .sync-tile-times dd,
+html[data-theme="light"] .dataset-sync-tile.sync-state-warning .sync-tile-times dd span,
+html[data-theme="light"] .dataset-sync-tile.sync-state-warning .sync-tile-times dd strong {
+  color: #9a3412;
 }
 
 html[data-theme="light"] .dataset-sync-tile.sync-state-failed .sync-tile-times dt,
@@ -14055,6 +14090,10 @@ html[data-theme="light"] .tradeReplaySlider input::-webkit-slider-thumb {
 
   .mobile-phone-sync-section.sync-state-running {
     border-top-color: rgba(251, 191, 36, 0.22);
+  }
+
+  .mobile-phone-sync-section.sync-state-warning {
+    border-top-color: rgba(251, 146, 60, 0.24);
   }
 
   .mobile-phone-sync-section.sync-state-success {
