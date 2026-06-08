@@ -1,0 +1,30 @@
+{
+  "generatedAt": "2026-06-08T00:09:32.239281+00:00",
+  "loaded_futures_rows": 72,
+  "raw_pf_rr_stress_candidates": 20,
+  "selected": 13,
+  "duplicates": 2,
+  "watch_rejections": 5,
+  "selectedStrategyIds": [
+    "competition_copper_futures_london_first30_last30_reversal_month_1_xasset_rr_5_d91f5efb",
+    "competition_gold_futures_us_first30_last30_reversal_signalmonth_month_10_xasset_rr_5_5519d329",
+    "competition_silver_futures_us_first30_last30_reversal_signalmonth_xasset_rr_5_6a54acc6",
+    "competition_dow_jones_futures_us_first30_last30_momentum_signalmonth_month_3_xasset_rr_5_3d9679eb",
+    "competition_dow_jones_futures_daily_tsmom_next_overnight_weekday_side_1_long_xasset_rr_4_373963bd",
+    "competition_silver_futures_daily_tsmom_next_overnight_weekday_side_4_long_xasset_rr_5_e11e58c1",
+    "competition_australian_dollar_futures_london_first30_ny_open_momentum_weekday_side_0_short_xasset_rr_5_4fbf7cea",
+    "competition_canadian_dollar_futures_london_first30_ny_open_momentum_weekday_side_0_short_xasset_rr_5_b5089070",
+    "competition_british_pound_futures_us_first30_last30_reversal_signalmonth_xasset_rr_5_5f0cb0e3",
+    "competition_copper_futures_us_first30_last30_reversal_weekday_side_0_long_xasset_rr_5_412871d7",
+    "competition_us_treasury_30y_bond_futures_daily_tsmom_next_overnight_weekday_side_4_short_72a8080e",
+    "competition_us_treasury_10y_note_futures_daily_tsmom_next_overnight_weekday_side_4_short_xasset_rr_5_105476cf",
+    "nasdaq_100_futures_round_hundred_rejection_15m"
+  ],
+  "thresholds": {
+    "minProfitFactor": 2.0,
+    "minPlannedRiskReward": 2.0,
+    "minTrades": 40,
+    "duplicateContainment": 0.8,
+    "nearOverlapMinutes": 15
+  }
+}
