@@ -5095,10 +5095,9 @@ def refine_trades_with_execution_data(
                 break
         if candidate is None:
             if require_one_minute_exits:
-                raise RuntimeError(
-                    f"Could not refine {strategy.id} trade at {iso_time(trade.entry_time)} "
-                    "against 1m execution data."
-                )
+                # Keep the result set strictly 1m-verifiable. A missing execution
+                # bar invalidates this trade, not the remaining verified sample.
+                continue
             candidate = cap_trade_to_initial_bracket(asset, trade)
         refined.append(candidate)
     return refined

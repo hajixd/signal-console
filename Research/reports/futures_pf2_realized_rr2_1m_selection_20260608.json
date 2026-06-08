@@ -1,19 +1,31 @@
 {
-  "generatedAt": "2026-06-08T01:40:11.278Z",
+  "generatedAt": "2026-06-08T07:12:24.164Z",
   "criteria": {
     "market": "futures",
     "minProfitFactor": 2,
     "minRealizedRiskRewardRatio": 2,
-    "minTrades": 40,
+    "minTradesForLive": 40,
+    "rawCandidateMinTrades": 30,
     "requiredExecutionTimeframe": "1m",
-    "duplicateContainmentThreshold": 0.8
+    "duplicateWindowMinutes": 15,
+    "duplicateContainmentThreshold": 0.8,
+    "validation": [
+      "chronological half PF > 1",
+      "chronological quarter PF > 1",
+      "rolling 20-trade PF lower quartile > 1",
+      "ordinary bootstrap PF p05 > 1",
+      "5-trade block bootstrap PF p05 > 0.9",
+      "calendar-year walk-forward pass rate >= 60%",
+      "same-asset same-side near-duplicate containment < 80%"
+    ]
   },
+  "rawCandidates": 13,
   "selected": 10,
   "selectedStrategyIds": [
     "competition_copper_futures_london_first30_last30_reversal_month_1_xasset_rr_5_d91f5efb",
     "competition_dow_jones_futures_us_first30_last30_momentum_signalmonth_month_3_xasset_rr_5_3d9679eb",
-    "competition_silver_futures_us_first30_last30_reversal_signalmonth_xasset_rr_5_6a54acc6",
     "competition_dow_jones_futures_daily_tsmom_next_overnight_signalweekdayside_direction_momentum_entrymin_c2a8817b",
+    "competition_silver_futures_daily_tsmom_next_overnight_weekday_side_4_long_xasset_rr_5_e11e58c1",
     "competition_us_treasury_5y_note_futures_daily_tsmom_next_overnight_weekday_side_4_short_xasset_rr_5_2d6cdfee",
     "competition_australian_dollar_futures_london_first30_ny_open_momentum_weekday_side_0_short_xasset_rr_5_4fbf7cea",
     "competition_canadian_dollar_futures_london_first30_ny_open_momentum_weekday_side_0_short_xasset_rr_5_b5089070",
@@ -32,9 +44,19 @@
       "avgWinR": 0.6857399776974878,
       "avgLossR": 0.2927346970714334,
       "realizedRiskRewardRatio": 2.3425305731016675,
+      "minHalfPf": 2.381427292779095,
+      "minQuarterPf": 1.1800006090585675,
+      "rolling20PfP25": 1.7723062728316104,
+      "bootstrapPfP05": 1.8005365881346165,
+      "blockBootstrapPfP05": 1.895932761227896,
+      "annualWindows": 5,
+      "annualPassRate": 1,
+      "worstAnnualPf": 1.2142792471944448,
       "executionTimeframes": {
         "1m": 77
-      }
+      },
+      "status": "selected",
+      "failedChecks": []
     },
     {
       "id": "competition_dow_jones_futures_us_first30_last30_momentum_signalmonth_month_3_xasset_rr_5_3d9679eb",
@@ -46,23 +68,19 @@
       "avgWinR": 1.462653589833389,
       "avgLossR": 0.6971326013229584,
       "realizedRiskRewardRatio": 2.098099539539093,
+      "minHalfPf": 2.0421117862023572,
+      "minQuarterPf": 1.0653897739916272,
+      "rolling20PfP25": 1.9745571643214126,
+      "bootstrapPfP05": 1.8800672239478566,
+      "blockBootstrapPfP05": 1.4975047288665126,
+      "annualWindows": 5,
+      "annualPassRate": 1,
+      "worstAnnualPf": 1.2101633060262984,
       "executionTimeframes": {
         "1m": 61
-      }
-    },
-    {
-      "id": "competition_silver_futures_us_first30_last30_reversal_signalmonth_xasset_rr_5_6a54acc6",
-      "symbol": "SI",
-      "label": "SI cross-asset US opening-range reversal into the close (December filter) true 5R",
-      "trades": 58,
-      "profitFactor": 2.989476691866564,
-      "winRatePct": 55.172413793103445,
-      "avgWinR": 0.5405773429250312,
-      "avgLossR": 0.2630207216939091,
-      "realizedRiskRewardRatio": 2.0552652256582626,
-      "executionTimeframes": {
-        "1m": 58
-      }
+      },
+      "status": "selected",
+      "failedChecks": []
     },
     {
       "id": "competition_dow_jones_futures_daily_tsmom_next_overnight_signalweekdayside_direction_momentum_entrymin_c2a8817b",
@@ -74,9 +92,43 @@
       "avgWinR": 2.1702155196963613,
       "avgLossR": 0.8960671006922188,
       "realizedRiskRewardRatio": 2.4219341587475456,
+      "minHalfPf": 1.8477279823820296,
+      "minQuarterPf": 1.5768517460359153,
+      "rolling20PfP25": 1.4480049124273178,
+      "bootstrapPfP05": 1.611413491244914,
+      "blockBootstrapPfP05": 1.567319736847333,
+      "annualWindows": 5,
+      "annualPassRate": 1,
+      "worstAnnualPf": 1.4992967369912051,
       "executionTimeframes": {
         "1m": 90
-      }
+      },
+      "status": "selected",
+      "failedChecks": []
+    },
+    {
+      "id": "competition_silver_futures_daily_tsmom_next_overnight_weekday_side_4_long_xasset_rr_5_e11e58c1",
+      "symbol": "SI",
+      "label": "SI cross-asset 20-day daily momentum overnight (Friday longs) true 5R",
+      "trades": 126,
+      "profitFactor": 2.5747191433569965,
+      "winRatePct": 46.03174603174603,
+      "avgWinR": 0.9906301708886381,
+      "avgLossR": 0.35421678170517457,
+      "realizedRiskRewardRatio": 2.7966776901981167,
+      "minHalfPf": 2.159935998090722,
+      "minQuarterPf": 1.332271322151585,
+      "rolling20PfP25": 1.5985364993197584,
+      "bootstrapPfP05": 1.6782728070875776,
+      "blockBootstrapPfP05": 1.6815261296860027,
+      "annualWindows": 5,
+      "annualPassRate": 1,
+      "worstAnnualPf": 1.7726330685059484,
+      "executionTimeframes": {
+        "1m": 126
+      },
+      "status": "selected",
+      "failedChecks": []
     },
     {
       "id": "competition_us_treasury_5y_note_futures_daily_tsmom_next_overnight_weekday_side_4_short_xasset_rr_5_2d6cdfee",
@@ -88,9 +140,19 @@
       "avgWinR": 2.0195343393043337,
       "avgLossR": 0.789451042267689,
       "realizedRiskRewardRatio": 2.558150197006827,
+      "minHalfPf": 1.9368178591446803,
+      "minQuarterPf": 1.6868420513106244,
+      "rolling20PfP25": 1.876034096518827,
+      "bootstrapPfP05": 1.6002277375569194,
+      "blockBootstrapPfP05": 1.6759929558774436,
+      "annualWindows": 5,
+      "annualPassRate": 1,
+      "worstAnnualPf": 1.5084841773849365,
       "executionTimeframes": {
         "1m": 93
-      }
+      },
+      "status": "selected",
+      "failedChecks": []
     },
     {
       "id": "competition_australian_dollar_futures_london_first30_ny_open_momentum_weekday_side_0_short_xasset_rr_5_4fbf7cea",
@@ -102,9 +164,19 @@
       "avgWinR": 2.1189897447105417,
       "avgLossR": 0.9125396001281062,
       "realizedRiskRewardRatio": 2.322079769922389,
+      "minHalfPf": 2.1337835067246007,
+      "minQuarterPf": 1.6403492185577375,
+      "rolling20PfP25": 2.2933104567614575,
+      "bootstrapPfP05": 1.6026624815828638,
+      "blockBootstrapPfP05": 1.685885853592843,
+      "annualWindows": 5,
+      "annualPassRate": 0.8,
+      "worstAnnualPf": 0.6504641934001751,
       "executionTimeframes": {
         "1m": 95
-      }
+      },
+      "status": "selected",
+      "failedChecks": []
     },
     {
       "id": "competition_canadian_dollar_futures_london_first30_ny_open_momentum_weekday_side_0_short_xasset_rr_5_b5089070",
@@ -116,9 +188,19 @@
       "avgWinR": 3.0101545573874047,
       "avgLossR": 1.003817620926426,
       "realizedRiskRewardRatio": 2.99870663219612,
+      "minHalfPf": 2.273522049179007,
+      "minQuarterPf": 1.360158708349475,
+      "rolling20PfP25": 1.9003254949130888,
+      "bootstrapPfP05": 1.5765432177550216,
+      "blockBootstrapPfP05": 1.7828964327347152,
+      "annualWindows": 5,
+      "annualPassRate": 0.8,
+      "worstAnnualPf": 0.07726284618463872,
       "executionTimeframes": {
         "1m": 98
-      }
+      },
+      "status": "selected",
+      "failedChecks": []
     },
     {
       "id": "competition_us_treasury_2y_note_futures_daily_tsmom_next_overnight_weekday_side_4_short_xasset_rr_5_027092c6",
@@ -130,9 +212,19 @@
       "avgWinR": 2.011063976892182,
       "avgLossR": 0.908392306548318,
       "realizedRiskRewardRatio": 2.2138716525834115,
+      "minHalfPf": 1.901934058904545,
+      "minQuarterPf": 1.7156618437800477,
+      "rolling20PfP25": 1.687868861455807,
+      "bootstrapPfP05": 1.4056187017562363,
+      "blockBootstrapPfP05": 1.460794392650912,
+      "annualWindows": 5,
+      "annualPassRate": 1,
+      "worstAnnualPf": 1.5414612409504653,
       "executionTimeframes": {
         "1m": 90
-      }
+      },
+      "status": "selected",
+      "failedChecks": []
     },
     {
       "id": "competition_us_treasury_10y_note_futures_daily_tsmom_next_overnight_weekday_side_4_short_xasset_rr_5_105476cf",
@@ -144,9 +236,19 @@
       "avgWinR": 1.8415429471591913,
       "avgLossR": 0.8968584982113592,
       "realizedRiskRewardRatio": 2.0533260830240825,
+      "minHalfPf": 1.598437185772251,
+      "minQuarterPf": 1.408592437845931,
+      "rolling20PfP25": 1.5215786306611527,
+      "bootstrapPfP05": 1.4377294172091233,
+      "blockBootstrapPfP05": 1.4152755867678093,
+      "annualWindows": 5,
+      "annualPassRate": 1,
+      "worstAnnualPf": 1.1843367586048175,
       "executionTimeframes": {
         "1m": 90
-      }
+      },
+      "status": "selected",
+      "failedChecks": []
     },
     {
       "id": "nasdaq_100_futures_round_hundred_rejection_15m",
@@ -158,31 +260,109 @@
       "avgWinR": 2.3743782408033334,
       "avgLossR": 0.9744572158365172,
       "realizedRiskRewardRatio": 2.436616202554426,
+      "minHalfPf": 1.4872644439842744,
+      "minQuarterPf": 1.3333333333333333,
+      "rolling20PfP25": 1.6664029942892356,
+      "bootstrapPfP05": 1.2043928806046362,
+      "blockBootstrapPfP05": 1.2135453609534252,
+      "annualWindows": 4,
+      "annualPassRate": 0.75,
+      "worstAnnualPf": 0.75,
       "executionTimeframes": {
         "1m": 53
-      }
+      },
+      "status": "selected",
+      "failedChecks": []
     }
   ],
-  "rejectedNotes": [
+  "watchlist": [
     {
-      "id": "competition_gold_futures_daily_tsmom_next_overnight_weekday_side_3_long_648d544b",
-      "reason": "Strict 1m refinement dropped PF to 1.13 and realized R:R to 1.02."
+      "id": "competition_japanese_yen_futures_london_first30_ny_open_reversal_month_9_6d9e482f",
+      "symbol": "6J",
+      "label": "6J London opening-range reversal into New York (August true 5R)",
+      "trades": 31,
+      "profitFactor": 3.076281001651163,
+      "winRatePct": 45.16129032258064,
+      "avgWinR": 3.3474026407340003,
+      "avgLossR": 0.896109466652647,
+      "realizedRiskRewardRatio": 3.735484073433555,
+      "minHalfPf": 2.0358365919729167,
+      "minQuarterPf": 1.8679524285159455,
+      "rolling20PfP25": 3.1923651106001683,
+      "bootstrapPfP05": 1.463247000409239,
+      "blockBootstrapPfP05": 2.2904471866068556,
+      "annualWindows": 4,
+      "annualPassRate": 1,
+      "worstAnnualPf": 2.065955155260132,
+      "executionTimeframes": {
+        "1m": 31
+      },
+      "status": "watch",
+      "failedChecks": [
+        "minTrades"
+      ]
     },
     {
-      "id": "competition_micro_bitcoin_futures_daily_tsmom_next_overnight_signalweekdayside_direction_contrarian_en_6003fc2d",
-      "reason": "Strict 1m refinement dropped PF to 1.42 and realized R:R to 1.00."
-    },
-    {
-      "id": "competition_micro_bitcoin_futures_daily_tsmom_next_rth_weekday_side_2_short_4be5774f",
-      "reason": "Could not refine at least one entry against 1m data; preserved old CSV and excluded."
-    },
-    {
-      "id": "competition_silver_futures_daily_tsmom_next_overnight_weekday_side_4_long_xasset_rr_5_e11e58c1",
-      "reason": "Could not refine at least one entry against 1m data; preserved old CSV and excluded."
+      "id": "competition_silver_futures_us_first30_last30_reversal_signalmonth_xasset_rr_5_6a54acc6",
+      "symbol": "SI",
+      "label": "SI cross-asset US opening-range reversal into the close (December filter) true 5R",
+      "trades": 58,
+      "profitFactor": 2.989476691866564,
+      "winRatePct": 55.172413793103445,
+      "avgWinR": 0.5405773429250312,
+      "avgLossR": 0.2630207216939091,
+      "realizedRiskRewardRatio": 2.0552652256582626,
+      "minHalfPf": 1.9351942701953155,
+      "minQuarterPf": 0.975384366359571,
+      "rolling20PfP25": 2.7898595770704433,
+      "bootstrapPfP05": 1.6846952302028508,
+      "blockBootstrapPfP05": 2.1726265441668313,
+      "annualWindows": 4,
+      "annualPassRate": 0.75,
+      "worstAnnualPf": 0.9879242861418408,
+      "executionTimeframes": {
+        "1m": 58
+      },
+      "status": "watch",
+      "failedChecks": [
+        "quarterPf"
+      ]
     },
     {
       "id": "competition_dow_jones_futures_daily_tsmom_next_overnight_weekday_side_1_long_xasset_rr_4_373963bd",
-      "reason": "Duplicate of competition_dow_jones_futures_daily_tsmom_next_overnight_signalweekdayside_direction_momentum_entrymin_c2a8817b with 100% trade overlap."
+      "symbol": "YM",
+      "label": "YM cross-asset 20-day daily mean reversion overnight (Tuesday longs) true 4R",
+      "trades": 90,
+      "profitFactor": 2.7246759285909885,
+      "winRatePct": 40,
+      "avgWinR": 2.1702155196963613,
+      "avgLossR": 0.8960671006922188,
+      "realizedRiskRewardRatio": 2.4219341587475456,
+      "minHalfPf": 1.8477279823820296,
+      "minQuarterPf": 1.5768517460359153,
+      "rolling20PfP25": 1.4480049124273178,
+      "bootstrapPfP05": 1.7468031042241183,
+      "blockBootstrapPfP05": 1.6049206148042328,
+      "annualWindows": 5,
+      "annualPassRate": 1,
+      "worstAnnualPf": 1.4992967369912051,
+      "executionTimeframes": {
+        "1m": 90
+      },
+      "status": "watch",
+      "failedChecks": [
+        "noNearDuplicate"
+      ],
+      "duplicateOf": "competition_dow_jones_futures_daily_tsmom_next_overnight_signalweekdayside_direction_momentum_entrymin_c2a8817b"
+    }
+  ],
+  "nearDuplicatePairs": [
+    {
+      "leftStrategyId": "competition_dow_jones_futures_daily_tsmom_next_overnight_signalweekdayside_direction_momentum_entrymin_c2a8817b",
+      "rightStrategyId": "competition_dow_jones_futures_daily_tsmom_next_overnight_weekday_side_1_long_xasset_rr_4_373963bd",
+      "count": 90,
+      "leftContainment": 1,
+      "rightContainment": 1
     }
   ]
 }

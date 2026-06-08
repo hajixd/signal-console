@@ -2,7 +2,6 @@
 
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
-import { createPortal } from "react-dom";
 import { useAutoTradeAdminMode } from "@/components/auto-trading/use-auto-trade-account-mode";
 import { clearSavedAccountMode } from "@/components/auto-trading/auto-trade-account-mode";
 import {
@@ -140,7 +139,7 @@ function writeClientLiveSelection(storageKey: string, selectedKeys: string[]): v
       window.localStorage.removeItem(storageKey);
     }
   } catch {
-    // Local storage is best-effort; Firebase remains the durable copy.
+    // Local storage is best-effort; server storage remains the durable copy.
   }
 }
 
@@ -651,9 +650,7 @@ export default function StrategySelector({
   const [isCustomScaleOpen, setIsCustomScaleOpen] = useState(false);
   const [isCustomSelectionOpen, setIsCustomSelectionOpen] = useState(false);
   const customScaleRangeKey = customScaleRangeStorageKey(market);
-  const [customScaleRange, setCustomScaleRange] = useState<CustomScaleRangeInput>(() =>
-    loadClientCustomScaleRange(customScaleRangeKey, persistedCustomScaleRange)
-  );
+  const [customScaleRange, setCustomScaleRange] = useState<CustomScaleRangeInput>(EMPTY_CUSTOM_SCALE_RANGE);
   const [customScaleError, setCustomScaleError] = useState("");
   const [customScaleResult, setCustomScaleResult] = useState<CustomScaleResult | null>(null);
   const [customSelection, setCustomSelection] = useState<CustomSelectionInput>(EMPTY_CUSTOM_SELECTION);
@@ -864,6 +861,19 @@ export default function StrategySelector({
 
   useEffect(() => {
     const pendingCustomScaleRangeSignature = pendingCustomScaleRangeSignatureRef.current;
+    if (editControlsDisabled) {
+      try {
+        window.localStorage.removeItem(customScaleRangeKey);
+      } catch {
+        // Best effort cleanup for locked strategy sizing.
+      }
+      pendingCustomScaleRangeSignatureRef.current = "";
+      setIsCustomScaleLoaded(true);
+      setCustomScaleRange(EMPTY_CUSTOM_SCALE_RANGE);
+      setCustomScaleError("");
+      setCustomScaleResult(null);
+      return;
+    }
     if (pendingCustomScaleRangeSignature && persistedCustomScaleRangeSignature !== pendingCustomScaleRangeSignature) return;
     if (isCustomScaleOpen && currentCustomScaleRangeSignature !== persistedCustomScaleRangeSignature) return;
 
@@ -889,6 +899,7 @@ export default function StrategySelector({
   }, [customScaleRange, customScaleRangeKey, isCustomScaleLoaded]);
 
   useEffect(() => {
+    if (editControlsDisabled) return;
     if (!isCustomScaleLoaded) return;
     if (currentCustomScaleRangeSignature === persistedCustomScaleRangeSignature) {
       lastSyncedCustomScaleRangeRef.current = currentCustomScaleRangeSignature;
@@ -992,6 +1003,7 @@ export default function StrategySelector({
   }, [optimisticSelectedKeys, optimisticSelectionSignature, persistLiveSelection, persistedLiveSelectionSignature, router, strategyScopeKeys, strategyScopeSignature]);
 
   useEffect(() => {
+    if (editControlsDisabled) return;
     if (!isLoaded) return;
     if (currentEditSignature === persistedEditsSignature) {
       lastSyncedEditsRef.current = currentEditSignature;
@@ -1143,10 +1155,6 @@ export default function StrategySelector({
 
   function sortButtonClass(column: SortColumn): string {
     return sortColumn === column ? "basketSortButton isActive" : "basketSortButton";
-  }
-
-  function openEditor(strategy: StrategyOption) {
-    void strategy;
   }
 
   function closeEditor() {
@@ -1501,256 +1509,6 @@ export default function StrategySelector({
         ) : null}
       </div>
 
-      {!isRestricted && activeStrategy && draft ? createPortal((
-        <div className="strategyModalBackdrop" role="presentation" onMouseDown={closeEditor}>
-          <form
-            className="strategyModal"
-            aria-label={`${activeStrategy.symbol} strategy settings`}
-            aria-modal="true"
-            role="dialog"
-            onSubmit={(event) => {
-              event.preventDefault();
-              saveEditor();
-            }}
-            onMouseDown={(event) => event.stopPropagation()}
-          >
-            <div className="strategyModalHead">
-              <div>
-                <span>{activeStrategy.symbol}</span>
-                <strong>{draft.modelName}</strong>
-              </div>
-              <button type="button" onClick={closeEditor}>
-                Close
-              </button>
-            </div>
-
-            <div className="strategyModalGrid">
-              <div className="fieldControl wide">
-                <span>Model</span>
-                <strong className="lockedField">{draft.modelName}</strong>
-              </div>
-              <label className="fieldControl">
-                <span>Scale</span>
-                <input
-                  type="number"
-                  min="0.01"
-                  step="0.01"
-                  value={roundControlValue(scaleForContracts(activeStrategy, draft.contracts))}
-                  onChange={(event) => updateScale(Number(event.target.value))}
-                />
-              </label>
-              <div className="fieldControl">
-                <span>Unit name</span>
-                <strong className="lockedField">{draft.sizeName}</strong>
-              </div>
-              <div className="fieldControl wide">
-                <span>Quick scale</span>
-                <div className="scaleButtons" aria-label="Quick strategy scale multipliers">
-                  <button type="button" onClick={() => scaleContracts(0.5)}>
-                    0.5x
-                  </button>
-                  <button type="button" onClick={() => scaleContracts(2)}>
-                    2x
-                  </button>
-                  <button type="button" onClick={() => scaleContracts(4)}>
-                    4x
-                  </button>
-                </div>
-              </div>
-              <label className="fieldControl">
-                <span>Take Profit {activeStrategy.unitLabel}</span>
-                <input type="number" min="0" step="0.01" value={draft.tpUnits} onChange={(event) => updateUnits("tpUnits", Number(event.target.value))} />
-              </label>
-              <label className="fieldControl">
-                <span>Take Profit $</span>
-                <input type="number" min="0" step="0.01" value={draft.targetDollars} onChange={(event) => updateDollars("targetDollars", Number(event.target.value))} />
-              </label>
-              <label className="fieldControl">
-                <span>Stop Loss {activeStrategy.unitLabel}</span>
-                <input type="number" min="0" step="0.01" value={draft.slUnits} onChange={(event) => updateUnits("slUnits", Number(event.target.value))} />
-              </label>
-              <label className="fieldControl">
-                <span>Stop Loss $</span>
-                <input type="number" min="0" step="0.01" value={draft.riskDollars} onChange={(event) => updateDollars("riskDollars", Number(event.target.value))} />
-              </label>
-            </div>
-
-            <div className="strategyModalSummary">
-              <span>Scale: {formatScaleRatio(scaleForContracts(activeStrategy, draft.contracts))} ({formatSizeLabel(draft.contracts, draft.sizeName)})</span>
-              <span>
-                Take Profit / Stop Loss: {formatMoney(draft.targetDollars)} / {formatMoney(draft.riskDollars)}
-              </span>
-            </div>
-
-            <div className="strategyModalActions">
-              <button type="button" onClick={resetActiveStrategy}>
-                Reset
-              </button>
-              <button type="submit">Save</button>
-            </div>
-          </form>
-        </div>
-      ), document.body) : null}
-
-      {!isRestricted && isCustomScaleOpen ? createPortal((
-        <div className="strategyModalBackdrop" role="presentation" onMouseDown={closeCustomScale}>
-          <form
-            className="strategyModal customScaleModal"
-            aria-label="Custom Unit range scale"
-            aria-modal="true"
-            role="dialog"
-            onSubmit={(event) => {
-              event.preventDefault();
-              submitCustomScaleRange();
-            }}
-            onMouseDown={(event) => event.stopPropagation()}
-          >
-            <div className="strategyModalHead">
-              <div>
-                <span>All scale</span>
-                <strong>Custom Unit range</strong>
-              </div>
-              <button type="button" onClick={closeCustomScale}>
-                Close
-              </button>
-            </div>
-
-            <div className="strategyModalGrid">
-              <label className="fieldControl">
-                <span>Take Profit floor $</span>
-                <input
-                  type="text"
-                  inputMode="decimal"
-                  value={customScaleRange.targetFloor}
-                  onChange={(event) => updateCustomScaleRange("targetFloor", event.target.value)}
-                  autoFocus
-                />
-              </label>
-              <label className="fieldControl">
-                <span>Take Profit ceiling $</span>
-                <input
-                  type="text"
-                  inputMode="decimal"
-                  value={customScaleRange.targetCeiling}
-                  onChange={(event) => updateCustomScaleRange("targetCeiling", event.target.value)}
-                />
-              </label>
-              <label className="fieldControl">
-                <span>Stop Loss floor $</span>
-                <input
-                  type="text"
-                  inputMode="decimal"
-                  value={customScaleRange.riskFloor}
-                  onChange={(event) => updateCustomScaleRange("riskFloor", event.target.value)}
-                />
-              </label>
-              <label className="fieldControl">
-                <span>Stop Loss ceiling $</span>
-                <input
-                  type="text"
-                  inputMode="decimal"
-                  value={customScaleRange.riskCeiling}
-                  onChange={(event) => updateCustomScaleRange("riskCeiling", event.target.value)}
-                />
-              </label>
-            </div>
-
-            {customScaleError ? <div className="customScaleNotice isError">{customScaleError}</div> : null}
-            {customScaleResult ? (
-              <div className={`customScaleNotice${customScaleResult.closest ? " isWarning" : ""}`}>
-                <span>{formatNumber(customScaleResult.applied)} adjusted</span>
-                <span>{formatNumber(customScaleResult.unchanged)} already inside</span>
-                <span>{formatNumber(customScaleResult.closest)} closest fit</span>
-                <span>{formatNumber(customScaleResult.total)} total</span>
-              </div>
-            ) : null}
-
-            <div className="strategyModalActions">
-              <button
-                type="button"
-                onClick={() => {
-                  setCustomScaleRange(EMPTY_CUSTOM_SCALE_RANGE);
-                  setCustomScaleError("");
-                  setCustomScaleResult(null);
-                }}
-              >
-                Clear
-              </button>
-              <button type="submit">Apply</button>
-            </div>
-          </form>
-        </div>
-      ), document.body) : null}
-
-      {!isRestricted && isCustomSelectionOpen ? createPortal((
-        <div className="strategyModalBackdrop" role="presentation" onMouseDown={closeCustomSelection}>
-          <form
-            className="strategyModal customScaleModal"
-            aria-label="Custom Selection"
-            aria-modal="true"
-            role="dialog"
-            onSubmit={(event) => {
-              event.preventDefault();
-              submitCustomSelection();
-            }}
-            onMouseDown={(event) => event.stopPropagation()}
-          >
-            <div className="strategyModalHead">
-              <div>
-                <span>Strategy selection</span>
-                <strong>Custom Selection</strong>
-              </div>
-              <button type="button" onClick={closeCustomSelection}>
-                Close
-              </button>
-            </div>
-
-            <div className="strategyModalGrid">
-              <label className="fieldControl">
-                <span>Minimum PF</span>
-                <input
-                  type="text"
-                  inputMode="decimal"
-                  value={customSelection.minProfitFactor}
-                  onChange={(event) => updateCustomSelection("minProfitFactor", event.target.value)}
-                  autoFocus
-                />
-              </label>
-              <label className="fieldControl">
-                <span>Minimum win rate %</span>
-                <input
-                  type="text"
-                  inputMode="decimal"
-                  value={customSelection.minWinRate}
-                  onChange={(event) => updateCustomSelection("minWinRate", event.target.value)}
-                />
-              </label>
-            </div>
-
-            {customSelectionError ? <div className="customScaleNotice isError">{customSelectionError}</div> : null}
-            {customSelectionResult ? (
-              <div className={`customScaleNotice${customSelectionResult.selected ? "" : " isWarning"}`}>
-                <span>{formatNumber(customSelectionResult.selected)} selected</span>
-                <span>{formatNumber(customSelectionResult.total)} scanned</span>
-              </div>
-            ) : null}
-
-            <div className="strategyModalActions">
-              <button
-                type="button"
-                onClick={() => {
-                  setCustomSelection(EMPTY_CUSTOM_SELECTION);
-                  setCustomSelectionError("");
-                  setCustomSelectionResult(null);
-                }}
-              >
-                Clear
-              </button>
-              <button type="submit">Select</button>
-            </div>
-          </form>
-        </div>
-      ), document.body) : null}
     </div>
   );
 }

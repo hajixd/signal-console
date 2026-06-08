@@ -209,20 +209,17 @@ function normalizeStrategyEdits(strategies: StrategyEditOption[], edits: Strateg
 }
 
 export function readStoredStrategyEdits(strategies: StrategyEditOption[]): StrategyEditMap {
+  void strategies;
   try {
-    const raw = window.localStorage.getItem(STRATEGY_EDITS_STORAGE_KEY);
-    return normalizeStrategyEdits(strategies, raw ? (JSON.parse(raw) as StrategyEditSeedMap) : {});
+    window.localStorage.removeItem(STRATEGY_EDITS_STORAGE_KEY);
   } catch {
-    return {};
+    // Strategy level editing is locked; local cleanup is best-effort.
   }
+  return {};
 }
 
 export function loadClientStrategyEdits(strategies: StrategyEditOption[], initialEdits: StrategyEditSeedMap = {}): StrategyEditMap {
-  const normalizedInitial = normalizeStrategyEdits(strategies, initialEdits);
-  if (Object.keys(normalizedInitial).length > 0) {
-    return normalizedInitial;
-  }
-
+  void initialEdits;
   return readStoredStrategyEdits(strategies);
 }
 
@@ -231,22 +228,20 @@ export function emitStrategyEditsChanged(edits: StrategyEditMap): void {
 }
 
 export function useStrategyEdits(strategies: StrategyEditOption[], initialEdits: StrategyEditSeedMap = {}): StrategyEditMap {
-  const normalizedInitialEdits = useMemo(() => normalizeStrategyEdits(strategies, initialEdits), [initialEdits, strategies]);
-  const [edits, setEdits] = useState<StrategyEditMap>(normalizedInitialEdits);
+  void initialEdits;
+  const emptyEdits = useMemo<StrategyEditMap>(() => ({}), []);
+  const [edits, setEdits] = useState<StrategyEditMap>(emptyEdits);
 
   useEffect(() => {
-    setEdits(loadClientStrategyEdits(strategies, initialEdits));
+    setEdits(readStoredStrategyEdits(strategies));
 
     const onEditsChanged = (event: Event) => {
-      const detail =
-        event instanceof CustomEvent && event.detail
-          ? (event.detail as StrategyEditSeedMap)
-          : readStoredStrategyEdits(strategies);
-      setEdits(normalizeStrategyEdits(strategies, detail));
+      void event;
+      setEdits({});
     };
     const onStorage = (event: StorageEvent) => {
       if (event.key === STRATEGY_EDITS_STORAGE_KEY) {
-        setEdits(readStoredStrategyEdits(strategies));
+        setEdits({});
       }
     };
 
@@ -256,7 +251,7 @@ export function useStrategyEdits(strategies: StrategyEditOption[], initialEdits:
       window.removeEventListener(STRATEGY_EDITS_CHANGE_EVENT, onEditsChanged);
       window.removeEventListener("storage", onStorage);
     };
-  }, [initialEdits, strategies]);
+  }, [strategies]);
 
   return edits;
 }
