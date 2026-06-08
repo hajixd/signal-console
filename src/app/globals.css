@@ -11998,12 +11998,12 @@ html[data-theme="light"] .tradeReplaySlider input {
     font-size: 7px;
   }
 
-  .basketListRow > span[data-label="Avg Win"]::before {
-    content: "Win R";
+  .basketListRow > span[data-label="Average Win"]::before {
+    content: "Avg Win";
   }
 
-  .basketListRow > span[data-label="Avg Loss"]::before {
-    content: "Loss R";
+  .basketListRow > span[data-label="Average Loss"]::before {
+    content: "Avg Loss";
   }
 
   .basketListRow > span[data-label="Avg R:R"]::before {
@@ -12029,12 +12029,12 @@ html[data-theme="light"] .tradeReplaySlider input {
     grid-row: 3;
   }
 
-  .basketListRow > span[data-label="Avg Win"] {
+  .basketListRow > span[data-label="Average Win"] {
     grid-column: 4;
     grid-row: 3;
   }
 
-  .basketListRow > span[data-label="Avg Loss"] {
+  .basketListRow > span[data-label="Average Loss"] {
     grid-column: 1;
     grid-row: 4;
   }

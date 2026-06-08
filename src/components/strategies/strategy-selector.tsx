@@ -1,6 +1,7 @@
 "use client";
 
 import { usePathname, useRouter } from "next/navigation";
+import { createPortal } from "react-dom";
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useAutoTradeAdminMode } from "@/components/auto-trading/use-auto-trade-account-mode";
 import { clearSavedAccountMode } from "@/components/auto-trading/auto-trade-account-mode";
@@ -700,7 +701,8 @@ export default function StrategySelector({
   const latestEditSignatureRef = useRef<string>(currentEditSignature);
   const editSyncTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const editSyncRunRef = useRef(0);
-  const editControlsDisabled = true;
+  const rowEditControlsDisabled = true;
+  const customUnitControlsDisabled = isRestricted;
   const selectionControlsDisabled = isRestricted;
   const canShowSavedSelection = optimisticSelectedKeys.length === 0 && scopedPersistedLiveKeys.length > 0;
   const savingSelectionKeySet = useMemo(() => new Set(savingSelectionKeys), [savingSelectionKeys]);
@@ -868,11 +870,11 @@ export default function StrategySelector({
 
   useEffect(() => {
     const pendingCustomScaleRangeSignature = pendingCustomScaleRangeSignatureRef.current;
-    if (editControlsDisabled) {
+    if (customUnitControlsDisabled) {
       try {
         window.localStorage.removeItem(customScaleRangeKey);
       } catch {
-        // Best effort cleanup for locked strategy sizing.
+        // Best effort cleanup when the admin-only unit tool is unavailable.
       }
       pendingCustomScaleRangeSignatureRef.current = "";
       setIsCustomScaleLoaded(true);
@@ -893,7 +895,7 @@ export default function StrategySelector({
     setCustomScaleError("");
     setCustomScaleResult(null);
     setIsCustomScaleLoaded(true);
-  }, [currentCustomScaleRangeSignature, customScaleRangeKey, isCustomScaleOpen, persistedCustomScaleRange, persistedCustomScaleRangeSignature]);
+  }, [currentCustomScaleRangeSignature, customScaleRangeKey, customUnitControlsDisabled, isCustomScaleOpen, persistedCustomScaleRange, persistedCustomScaleRangeSignature]);
 
   useEffect(() => {
     if (!isCustomScaleLoaded) return;
@@ -906,7 +908,7 @@ export default function StrategySelector({
   }, [customScaleRange, customScaleRangeKey, isCustomScaleLoaded]);
 
   useEffect(() => {
-    if (editControlsDisabled) return;
+    if (customUnitControlsDisabled) return;
     if (!isCustomScaleLoaded) return;
     if (currentCustomScaleRangeSignature === persistedCustomScaleRangeSignature) {
       lastSyncedCustomScaleRangeRef.current = currentCustomScaleRangeSignature;
@@ -952,6 +954,7 @@ export default function StrategySelector({
   }, [
     currentCustomScaleRangeSignature,
     customScaleRange,
+    customUnitControlsDisabled,
     isCustomScaleLoaded,
     market,
     persistCustomScaleRange,
@@ -1010,7 +1013,7 @@ export default function StrategySelector({
   }, [optimisticSelectedKeys, optimisticSelectionSignature, persistLiveSelection, persistedLiveSelectionSignature, router, strategyScopeKeys, strategyScopeSignature]);
 
   useEffect(() => {
-    if (editControlsDisabled) return;
+    if (isRestricted) return;
     if (!isLoaded) return;
     if (currentEditSignature === persistedEditsSignature) {
       lastSyncedEditsRef.current = currentEditSignature;
@@ -1110,7 +1113,7 @@ export default function StrategySelector({
   }
 
   function currentEdit(strategy: StrategyOption): StrategyEdit {
-    return defaultEdit(strategy);
+    return edits[strategy.key] ? normalizeEdit(strategy, edits[strategy.key]) : defaultEdit(strategy);
   }
 
   const visibleStrategies = strategies.filter((strategy) => strategyMatchesSearch(strategy, currentEdit(strategy), normalizedSearchQuery));
@@ -1170,7 +1173,7 @@ export default function StrategySelector({
   }
 
   function saveEditor() {
-    if (editControlsDisabled) return;
+    if (rowEditControlsDisabled) return;
     if (!activeStrategy || !draft) return;
     const normalized = normalizeEdit(activeStrategy, draft);
     setEdits((current) => {
@@ -1186,7 +1189,7 @@ export default function StrategySelector({
   }
 
   function resetActiveStrategy() {
-    if (editControlsDisabled) return;
+    if (rowEditControlsDisabled) return;
     if (!activeStrategy) return;
     setEdits((current) => {
       const next = { ...current };
@@ -1197,13 +1200,13 @@ export default function StrategySelector({
   }
 
   function resetAllEdits() {
-    if (editControlsDisabled) return;
+    if (rowEditControlsDisabled) return;
     setEdits({});
     if (activeStrategy) setDraft(defaultEdit(activeStrategy));
   }
 
   function scaleAllContracts(multiplier: number) {
-    if (editControlsDisabled) return;
+    if (rowEditControlsDisabled) return;
     setEdits((current) => {
       const next: StrategyEditMap = { ...current };
       for (const strategy of strategies) {
@@ -1221,7 +1224,7 @@ export default function StrategySelector({
   }
 
   function openCustomScale() {
-    if (editControlsDisabled) return;
+    if (customUnitControlsDisabled) return;
     setCustomScaleError("");
     setCustomScaleResult(null);
     setIsCustomScaleOpen(true);
@@ -1380,8 +1383,21 @@ export default function StrategySelector({
       <div className="pickerHeader">
         <span>Strategies</span>
         <div className="pickerActions strategyReadOnlySummary">
+          <button
+            type="button"
+            disabled={customUnitControlsDisabled || isSavingEdits || isSavingCustomScaleRange}
+            onClick={openCustomScale}
+          >
+            Custom Unit
+          </button>
+          <button
+            type="button"
+            disabled={selectionControlsDisabled || isSavingSelection}
+            onClick={openCustomSelection}
+          >
+            Custom Selection
+          </button>
           <span>{formatNumber(optimisticSelectedKeys.length)} live</span>
-          <span>Levels locked</span>
         </div>
       </div>
 
@@ -1455,9 +1471,9 @@ export default function StrategySelector({
 
         {sortedStrategies.map((strategy) => {
           const checked = selected.has(strategy.key);
-          const custom = false;
           const isSavingSelection = savingSelectionKeySet.has(strategy.key);
           const effective = currentEdit(strategy);
+          const custom = !isDefaultEdit(strategy, effective);
           const hasBacktestTrades = strategy.trades > 0;
           const hasFiniteProfitFactor = hasBacktestTrades && Number.isFinite(strategy.profitFactor);
           const displayedModelName = isRestricted ? "Admin only" : effective.modelName;
@@ -1515,6 +1531,166 @@ export default function StrategySelector({
           <div className="basketListEmpty">No strategies match that search.</div>
         ) : null}
       </div>
+
+      {!isRestricted && isCustomScaleOpen ? createPortal((
+        <div className="strategyModalBackdrop" role="presentation" onMouseDown={closeCustomScale}>
+          <form
+            className="strategyModal customScaleModal"
+            aria-label="Custom Unit range scale"
+            aria-modal="true"
+            role="dialog"
+            onSubmit={(event) => {
+              event.preventDefault();
+              submitCustomScaleRange();
+            }}
+            onMouseDown={(event) => event.stopPropagation()}
+          >
+            <div className="strategyModalHead">
+              <div>
+                <span>All scale</span>
+                <strong>Custom Unit range</strong>
+              </div>
+              <button type="button" onClick={closeCustomScale}>
+                Close
+              </button>
+            </div>
+
+            <div className="strategyModalGrid">
+              <label className="fieldControl">
+                <span>Target floor $</span>
+                <input
+                  type="text"
+                  inputMode="decimal"
+                  value={customScaleRange.targetFloor}
+                  onChange={(event) => updateCustomScaleRange("targetFloor", event.target.value)}
+                  autoFocus
+                />
+              </label>
+              <label className="fieldControl">
+                <span>Target ceiling $</span>
+                <input
+                  type="text"
+                  inputMode="decimal"
+                  value={customScaleRange.targetCeiling}
+                  onChange={(event) => updateCustomScaleRange("targetCeiling", event.target.value)}
+                />
+              </label>
+              <label className="fieldControl">
+                <span>Risk floor $</span>
+                <input
+                  type="text"
+                  inputMode="decimal"
+                  value={customScaleRange.riskFloor}
+                  onChange={(event) => updateCustomScaleRange("riskFloor", event.target.value)}
+                />
+              </label>
+              <label className="fieldControl">
+                <span>Risk ceiling $</span>
+                <input
+                  type="text"
+                  inputMode="decimal"
+                  value={customScaleRange.riskCeiling}
+                  onChange={(event) => updateCustomScaleRange("riskCeiling", event.target.value)}
+                />
+              </label>
+            </div>
+
+            {customScaleError ? <div className="customScaleNotice isError">{customScaleError}</div> : null}
+            {customScaleResult ? (
+              <div className={`customScaleNotice${customScaleResult.closest ? " isWarning" : ""}`}>
+                <span>{formatNumber(customScaleResult.applied)} adjusted</span>
+                <span>{formatNumber(customScaleResult.unchanged)} already inside</span>
+                <span>{formatNumber(customScaleResult.closest)} closest fit</span>
+                <span>{formatNumber(customScaleResult.total)} total</span>
+              </div>
+            ) : null}
+
+            <div className="strategyModalActions">
+              <button
+                type="button"
+                onClick={() => {
+                  setCustomScaleRange(EMPTY_CUSTOM_SCALE_RANGE);
+                  setCustomScaleError("");
+                  setCustomScaleResult(null);
+                }}
+              >
+                Clear
+              </button>
+              <button type="submit">Apply</button>
+            </div>
+          </form>
+        </div>
+      ), document.body) : null}
+
+      {!isRestricted && isCustomSelectionOpen ? createPortal((
+        <div className="strategyModalBackdrop" role="presentation" onMouseDown={closeCustomSelection}>
+          <form
+            className="strategyModal customScaleModal"
+            aria-label="Custom Selection"
+            aria-modal="true"
+            role="dialog"
+            onSubmit={(event) => {
+              event.preventDefault();
+              submitCustomSelection();
+            }}
+            onMouseDown={(event) => event.stopPropagation()}
+          >
+            <div className="strategyModalHead">
+              <div>
+                <span>Strategy selection</span>
+                <strong>Custom Selection</strong>
+              </div>
+              <button type="button" onClick={closeCustomSelection}>
+                Close
+              </button>
+            </div>
+
+            <div className="strategyModalGrid">
+              <label className="fieldControl">
+                <span>Minimum PF</span>
+                <input
+                  type="text"
+                  inputMode="decimal"
+                  value={customSelection.minProfitFactor}
+                  onChange={(event) => updateCustomSelection("minProfitFactor", event.target.value)}
+                  autoFocus
+                />
+              </label>
+              <label className="fieldControl">
+                <span>Minimum win rate %</span>
+                <input
+                  type="text"
+                  inputMode="decimal"
+                  value={customSelection.minWinRate}
+                  onChange={(event) => updateCustomSelection("minWinRate", event.target.value)}
+                />
+              </label>
+            </div>
+
+            {customSelectionError ? <div className="customScaleNotice isError">{customSelectionError}</div> : null}
+            {customSelectionResult ? (
+              <div className={`customScaleNotice${customSelectionResult.selected ? "" : " isWarning"}`}>
+                <span>{formatNumber(customSelectionResult.selected)} selected</span>
+                <span>{formatNumber(customSelectionResult.total)} scanned</span>
+              </div>
+            ) : null}
+
+            <div className="strategyModalActions">
+              <button
+                type="button"
+                onClick={() => {
+                  setCustomSelection(EMPTY_CUSTOM_SELECTION);
+                  setCustomSelectionError("");
+                  setCustomSelectionResult(null);
+                }}
+              >
+                Clear
+              </button>
+              <button type="submit">Select</button>
+            </div>
+          </form>
+        </div>
+      ), document.body) : null}
 
     </div>
   );
