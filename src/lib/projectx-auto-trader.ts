@@ -110,8 +110,9 @@ const NO_ACTIVE_AUTO_TRADE_ACCOUNTS = "no active auto-trade accounts";
 const PROJECTX_TRADE_RESULT_LOOKBACK_MS = 5 * 60_000;
 const PROJECTX_TRADE_RESULT_LOOKAHEAD_MS = 15 * 60_000;
 const PROJECTX_TRADE_RESULT_MAX_LOOKAHEAD_HOURS = 24;
-const PROJECTX_TEST_CLOSE_ATTEMPTS = 10;
-const PROJECTX_TEST_CLOSE_WAIT_MS = 650;
+const PROJECTX_TEST_POSITION_OPEN_ATTEMPTS = 10;
+const PROJECTX_TEST_POSITION_CLOSE_ATTEMPTS = 24;
+const PROJECTX_TEST_POSITION_WAIT_MS = 750;
 const PROJECTX_PAST_FAILURE_SIZE_LOOKBACK_HOURS = 24;
 const PROJECTX_DUPLICATE_ORDER_LOOKBACK_HOURS = 48;
 const PROJECTX_CHICAGO_FORMATTER = new Intl.DateTimeFormat("en-US", {
@@ -1412,13 +1413,58 @@ function projectXResolvedLifecycleFields(
   };
 }
 
+function projectXOpenPositionMatches(position: ProjectXOpenPosition, contractId: string): boolean {
+  return position.contractId === contractId && Math.abs(position.size ?? 0) > 0;
+}
+
+async function projectXTestPositionIsOpen(token: string, accountId: number, contractId: string): Promise<boolean> {
+  const positions = await searchProjectXOpenPositions(token, accountId);
+  return positions.some((position) => projectXOpenPositionMatches(position, contractId));
+}
+
 async function waitForProjectXTestPosition(token: string, accountId: number, contractId: string): Promise<boolean> {
-  for (let attempt = 0; attempt < PROJECTX_TEST_CLOSE_ATTEMPTS; attempt += 1) {
-    const positions = await searchProjectXOpenPositions(token, accountId);
-    if (positions.some((position) => position.contractId === contractId && Math.abs(position.size ?? 0) > 0)) return true;
-    await wait(PROJECTX_TEST_CLOSE_WAIT_MS);
+  for (let attempt = 0; attempt < PROJECTX_TEST_POSITION_OPEN_ATTEMPTS; attempt += 1) {
+    if (await projectXTestPositionIsOpen(token, accountId, contractId)) return true;
+    await wait(PROJECTX_TEST_POSITION_WAIT_MS);
   }
   return false;
+}
+
+async function closeAndVerifyProjectXTestPosition(
+  token: string,
+  accountId: number,
+  contractId: string
+): Promise<{ closed: boolean; error?: string }> {
+  let lastCloseError: string | undefined;
+
+  for (let attempt = 0; attempt < PROJECTX_TEST_POSITION_CLOSE_ATTEMPTS; attempt += 1) {
+    if (!(await projectXTestPositionIsOpen(token, accountId, contractId))) {
+      return { closed: true };
+    }
+
+    try {
+      await closeProjectXPosition(token, { accountId, contractId });
+      lastCloseError = undefined;
+    } catch (error) {
+      lastCloseError = readableProjectXError(error);
+    }
+
+    await wait(PROJECTX_TEST_POSITION_WAIT_MS);
+  }
+
+  if (!(await projectXTestPositionIsOpen(token, accountId, contractId))) {
+    return { closed: true };
+  }
+
+  return {
+    closed: false,
+    error: lastCloseError
+  };
+}
+
+function projectXTestAssetLabel(trade: TradeAlert, contract: ProjectXContract): string {
+  const contractLabel = contract.name || contract.id;
+  return contractLabel === trade.symbol ? contractLabel : `${contractLabel} (${trade.symbol})`;
 }
 
 export async function enrichProjectXTradeOutcome(trade: TradeAlert): Promise<TradeAlert> {
@@ -1675,6 +1721,12 @@ export async function executeProjectXTestTrade(input: { accountId: number; conne
     }
 
     const contractFields = { contractId: contract.id, contractName: contract.name };
+    const assetLabel = projectXTestAssetLabel(trade, contract);
+    if (await projectXTestPositionIsOpen(targetRefresh.connection.token, account.id, contract.id)) {
+      const error = `A ${assetLabel} position is already open in ProjectX. Close it before running the test so the test close cannot touch an existing position.`;
+      return result("skipped", { error, orders: [{ ...orderBase, ...contractFields, error, status: "skipped" }] });
+    }
+
     let baseSize: number;
     try {
       baseSize = positiveNumber(trade.sizeMultiplier ?? 1, "Order size");
@@ -1743,18 +1795,26 @@ export async function executeProjectXTestTrade(input: { accountId: number; conne
     try {
       const positionOpened = await waitForProjectXTestPosition(targetRefresh.connection.token, account.id, contract.id);
       if (!positionOpened) {
-        const closeWarning = "Test order was placed with TP/SL, but no open position was found to close.";
+        const closeWarning = `Test order was placed for ${assetLabel}, but no open position was found to close.`;
         return result("failed", {
           ...summarizeOrders([{ ...placedOrder, error: closeWarning }], contractFields),
           error: closeWarning
         });
       }
-      await closeProjectXPosition(targetRefresh.connection.token, {
-        accountId: account.id,
-        contractId: contract.id
-      });
+
+      const closeResult = await closeAndVerifyProjectXTestPosition(targetRefresh.connection.token, account.id, contract.id);
+      if (!closeResult.closed) {
+        const closeWarning = [
+          `Test order was placed for ${assetLabel}, but ProjectX still reports an open position after close retries.`,
+          closeResult.error ? `Last close error: ${closeResult.error}` : undefined
+        ].filter(Boolean).join(" ");
+        return result("failed", {
+          ...summarizeOrders([{ ...placedOrder, error: closeWarning }], contractFields),
+          error: closeWarning
+        });
+      }
     } catch (closeError) {
-      const message = `Test order was placed with TP/SL, but closing it failed: ${readableProjectXError(closeError)}`;
+      const message = `Test order was placed for ${assetLabel}, but closing it failed: ${readableProjectXError(closeError)}`;
       return result("failed", {
         ...summarizeOrders([{ ...placedOrder, error: message }], contractFields),
         error: message
@@ -1763,7 +1823,7 @@ export async function executeProjectXTestTrade(input: { accountId: number; conne
 
     return result("placed", {
       ...summarizeOrders([placedOrder], contractFields),
-      testMessage: "Success: opened with TP/SL and closed",
+      testMessage: `Success: opened ${assetLabel} with TP/SL and confirmed it closed`,
       testStatus: "success"
     });
   } catch (error) {
