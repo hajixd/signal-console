@@ -308,6 +308,14 @@ function displayAverageLossLabel(value: number, hasBacktestTrades: boolean): str
   return formatMoney(-Math.abs(value));
 }
 
+function scaledAverageWinDollars(strategy: StrategyOption, edit: StrategyEdit): number {
+  return strategy.avgWinDollars * scaleForContracts(strategy, edit.contracts);
+}
+
+function scaledAverageLossDollars(strategy: StrategyOption, edit: StrategyEdit): number {
+  return strategy.avgLossDollars * scaleForContracts(strategy, edit.contracts);
+}
+
 function roundControlValue(value: number): number {
   return Math.round(value * 100) / 100;
 }
@@ -1134,8 +1142,8 @@ export default function StrategySelector({
     if (sortColumn === "profitFactor") comparison = compareNumber(sortableProfitFactor(left), sortableProfitFactor(right));
     if (sortColumn === "winRate") comparison = left.winRatePct - right.winRatePct;
     if (sortColumn === "trades") comparison = left.trades - right.trades;
-    if (sortColumn === "target") comparison = left.avgWinDollars - right.avgWinDollars;
-    if (sortColumn === "risk") comparison = left.avgLossDollars - right.avgLossDollars;
+    if (sortColumn === "target") comparison = scaledAverageWinDollars(left, leftEdit) - scaledAverageWinDollars(right, rightEdit);
+    if (sortColumn === "risk") comparison = scaledAverageLossDollars(left, leftEdit) - scaledAverageLossDollars(right, rightEdit);
     if (sortColumn === "rrr") comparison = (left.realizedRiskRewardRatio ?? 0) - (right.realizedRiskRewardRatio ?? 0);
     if (sortColumn === "size") comparison = leftEdit.contracts - rightEdit.contracts;
     if (sortColumn === "scale") comparison = scaleForContracts(left, leftEdit.contracts) - scaleForContracts(right, rightEdit.contracts);
@@ -1477,6 +1485,8 @@ export default function StrategySelector({
           const hasBacktestTrades = strategy.trades > 0;
           const hasFiniteProfitFactor = hasBacktestTrades && Number.isFinite(strategy.profitFactor);
           const displayedModelName = isRestricted ? "Admin only" : effective.modelName;
+          const effectiveAverageWinDollars = scaledAverageWinDollars(strategy, effective);
+          const effectiveAverageLossDollars = scaledAverageLossDollars(strategy, effective);
           const plannedRiskRewardRatio = riskRewardRatio(effective.targetDollars, effective.riskDollars);
           return (
             <div
@@ -1501,8 +1511,8 @@ export default function StrategySelector({
               </span>
               <span data-label="Win">{hasBacktestTrades ? formatPct(strategy.winRatePct) : "--"}</span>
               <span data-label="Trades">{formatNumber(strategy.trades)}</span>
-              <span data-label="Average Win">{displayAverageWinLabel(strategy.avgWinDollars, hasBacktestTrades)}</span>
-              <span data-label="Average Loss">{displayAverageLossLabel(strategy.avgLossDollars, hasBacktestTrades)}</span>
+              <span data-label="Average Win">{displayAverageWinLabel(effectiveAverageWinDollars, hasBacktestTrades)}</span>
+              <span data-label="Average Loss">{displayAverageLossLabel(effectiveAverageLossDollars, hasBacktestTrades)}</span>
               <span
                 data-label="Avg R:R"
                 title={plannedRiskRewardRatio !== undefined ? `Planned initial RR: ${formatNumber(plannedRiskRewardRatio)}` : undefined}

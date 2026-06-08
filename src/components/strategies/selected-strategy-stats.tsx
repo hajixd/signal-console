@@ -3,6 +3,7 @@
 import { useState, type ReactNode } from "react";
 import {
   strategyContractScale,
+  strategyHasContractEdit,
   type StrategyEditOption,
   type StrategyEditSeedMap,
   useStrategyEdits
@@ -1053,11 +1054,10 @@ export default function SelectedStrategyStats({
   const parsedCustomScaleRange = parseCustomScaleRange(customScaleRange);
   const selectedTradeSnapshots = makeTradeSnapshots(trades, strategyByKey, (trade) => {
     const strategy = strategyByKey.get(trade.key);
-    return parsedCustomScaleRange
-      ? customRangeScaleForTrade(trade, parsedCustomScaleRange)
-      : strategy
-        ? strategyContractScale(strategy, edits)
-        : 1;
+    if (!strategy) return parsedCustomScaleRange ? customRangeScaleForTrade(trade, parsedCustomScaleRange) : 1;
+    const editScale = strategyContractScale(strategy, edits);
+    if (strategyHasContractEdit(strategy, edits)) return editScale;
+    return parsedCustomScaleRange ? customRangeScaleForTrade(trade, parsedCustomScaleRange) : editScale;
   });
   const selectedDollarAggregate = aggregateDollars(selectedTradeSnapshots);
   const stats = selectedDollarAggregate;

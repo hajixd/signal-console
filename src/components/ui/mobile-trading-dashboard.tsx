@@ -13,6 +13,8 @@ import {
 } from "@/components/auto-trading/auto-trade-account-mode";
 import { useAutoTradeAdminMode } from "@/components/auto-trading/use-auto-trade-account-mode";
 import {
+  strategyContractScale,
+  type StrategyEditMap,
   type StrategyEditOption,
   type StrategyEditSeedMap,
   useStrategyEdits
@@ -385,7 +387,7 @@ function MobileWorkspaceTabIcon({ tab }: { tab: MobileTradingTab }) {
   );
 }
 
-function MobileStrategiesPanel({ strategies }: { strategies: StrategyEditOption[] }) {
+function MobileStrategiesPanel({ edits, strategies }: { edits: StrategyEditMap; strategies: StrategyEditOption[] }) {
   const sortedStrategies = useMemo(
     () =>
       [...strategies].sort((left, right) => {
@@ -434,6 +436,9 @@ function MobileStrategiesPanel({ strategies }: { strategies: StrategyEditOption[
           {sortedStrategies.map((strategy) => {
             const avgRiskReward = strategy.realizedRiskRewardRatio ?? strategy.riskRewardRatio;
             const hasBacktestTrades = (strategy.trades ?? 0) > 0;
+            const contractScale = strategyContractScale(strategy, edits);
+            const avgWinDollars = typeof strategy.avgWinDollars === "number" ? strategy.avgWinDollars * contractScale : undefined;
+            const avgLossDollars = typeof strategy.avgLossDollars === "number" ? strategy.avgLossDollars * contractScale : undefined;
             const tone = mobileStrategyTone(strategy);
             return (
               <article className={`mobile-phone-strategy-row tone-${tone}`} key={strategy.key}>
@@ -454,8 +459,8 @@ function MobileStrategiesPanel({ strategies }: { strategies: StrategyEditOption[
                   <span>{formatMobileOptionalRatio(avgRiskReward)} avg R:R</span>
                   <span>{(strategy.trades ?? 0).toLocaleString("en-US")} trades</span>
                   <span>
-                    {formatMobileAverageMoney(hasBacktestTrades ? strategy.avgWinDollars : undefined, "win")} /{" "}
-                    {formatMobileAverageMoney(hasBacktestTrades ? strategy.avgLossDollars : undefined, "loss")}
+                    {formatMobileAverageMoney(hasBacktestTrades ? avgWinDollars : undefined, "win")} /{" "}
+                    {formatMobileAverageMoney(hasBacktestTrades ? avgLossDollars : undefined, "loss")}
                   </span>
                 </div>
                 {strategy.liveSupported ? <span className="mobile-phone-strategy-live">Live</span> : null}
@@ -1147,7 +1152,7 @@ export default function MobileTradingDashboard({
                 title="Live Alerts"
               />
             ) : activeTab === "strategies" ? (
-              <MobileStrategiesPanel strategies={strategies} />
+              <MobileStrategiesPanel edits={edits} strategies={strategies} />
             ) : activeTab === "sync" ? (
               <MobileSyncPanel summary={syncSummary} />
             ) : activeTab === "autotrade" ? (

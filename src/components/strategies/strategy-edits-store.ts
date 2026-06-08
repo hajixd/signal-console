@@ -210,19 +210,29 @@ function normalizeStrategyEdits(strategies: StrategyEditOption[], edits: Strateg
   return normalized;
 }
 
+function isStrategyEditSeedMap(value: unknown): value is StrategyEditSeedMap {
+  return Boolean(value && typeof value === "object" && !Array.isArray(value));
+}
+
 export function readStoredStrategyEdits(strategies: StrategyEditOption[]): StrategyEditMap {
-  void strategies;
   try {
-    window.localStorage.removeItem(STRATEGY_EDITS_STORAGE_KEY);
+    const raw = window.localStorage.getItem(STRATEGY_EDITS_STORAGE_KEY);
+    if (!raw) return {};
+    const parsed: unknown = JSON.parse(raw);
+    return isStrategyEditSeedMap(parsed) ? normalizeStrategyEdits(strategies, parsed) : {};
   } catch {
-    // Strategy level editing is locked; local cleanup is best-effort.
+    // Local storage can be unavailable or stale; persisted server edits still hydrate separately.
+    return {};
   }
-  return {};
 }
 
 export function loadClientStrategyEdits(strategies: StrategyEditOption[], initialEdits: StrategyEditSeedMap = {}): StrategyEditMap {
-  void initialEdits;
-  return readStoredStrategyEdits(strategies);
+  const initial = normalizeStrategyEdits(strategies, initialEdits);
+  if (typeof window === "undefined") return initial;
+  return {
+    ...initial,
+    ...readStoredStrategyEdits(strategies)
+  };
 }
 
 export function emitStrategyEditsChanged(edits: StrategyEditMap): void {
@@ -230,20 +240,22 @@ export function emitStrategyEditsChanged(edits: StrategyEditMap): void {
 }
 
 export function useStrategyEdits(strategies: StrategyEditOption[], initialEdits: StrategyEditSeedMap = {}): StrategyEditMap {
-  void initialEdits;
-  const emptyEdits = useMemo<StrategyEditMap>(() => ({}), []);
-  const [edits, setEdits] = useState<StrategyEditMap>(emptyEdits);
+  const initialStrategyEdits = useMemo(() => normalizeStrategyEdits(strategies, initialEdits), [initialEdits, strategies]);
+  const [edits, setEdits] = useState<StrategyEditMap>(initialStrategyEdits);
 
   useEffect(() => {
-    setEdits(readStoredStrategyEdits(strategies));
+    setEdits(loadClientStrategyEdits(strategies, initialEdits));
 
     const onEditsChanged = (event: Event) => {
-      void event;
-      setEdits({});
+      if (event instanceof CustomEvent && isStrategyEditSeedMap(event.detail)) {
+        setEdits(normalizeStrategyEdits(strategies, event.detail));
+        return;
+      }
+      setEdits(loadClientStrategyEdits(strategies, initialEdits));
     };
     const onStorage = (event: StorageEvent) => {
       if (event.key === STRATEGY_EDITS_STORAGE_KEY) {
-        setEdits({});
+        setEdits(loadClientStrategyEdits(strategies, initialEdits));
       }
     };
 
@@ -253,7 +265,7 @@ export function useStrategyEdits(strategies: StrategyEditOption[], initialEdits:
       window.removeEventListener(STRATEGY_EDITS_CHANGE_EVENT, onEditsChanged);
       window.removeEventListener("storage", onStorage);
     };
-  }, [strategies]);
+  }, [initialEdits, strategies]);
 
   return edits;
 }

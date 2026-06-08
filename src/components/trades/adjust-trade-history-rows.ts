@@ -2,6 +2,7 @@
 
 import {
   strategyContractScale,
+  strategyHasContractEdit,
   type StrategyEditMap,
   type StrategyEditOption
 } from "@/components/strategies/strategy-edits-store";
@@ -45,7 +46,8 @@ export function adjustTradeHistoryRows(
     if (row.lockedSize) return row;
     if (!strategy) return row;
 
-    const scale = customRange ? rowCustomRangeScale(row, customRange) : strategyContractScale(strategy, edits);
+    const editScale = strategyContractScale(strategy, edits);
+    const scale = strategyHasContractEdit(strategy, edits) ? editScale : customRange ? rowCustomRangeScale(row, customRange) : editScale;
     const pnlDollars = row.pnlDollars * scale;
     const targetDollars = row.targetDollars * scale;
     const riskDollars = row.riskDollars * scale;
