@@ -5104,6 +5104,26 @@ def refine_trades_with_execution_data(
     return refined
 
 
+def execution_overlap_window(
+    source_data: EnrichedData,
+    execution_data: list[tuple[str, EnrichedData]],
+    start_ts: int,
+    end_ts: int | None,
+) -> tuple[int, int | None]:
+    if not execution_data:
+        return start_ts, end_ts
+
+    starts = [int(dataset.times[0]) for _, dataset in execution_data if dataset.times.shape[0]]
+    ends = [int(dataset.times[-1]) for _, dataset in execution_data if dataset.times.shape[0]]
+    if not starts or not ends:
+        return start_ts, end_ts
+
+    effective_start_ts = max(start_ts, max(starts), int(source_data.times[0]))
+    execution_end_exclusive = min(ends) + 1
+    effective_end_ts = min(end_ts, execution_end_exclusive) if end_ts is not None else execution_end_exclusive
+    return effective_start_ts, effective_end_ts
+
+
 def run_single_strategy(
     strategy: BacktestStrategy,
     asset: AssetConfig,
@@ -5126,13 +5146,18 @@ def run_single_strategy(
     loop_start_index = 0
     if start_ts > BACKTEST_START_TS:
         loop_start_index = max(0, int(np.searchsorted(data.times, start_ts, side="left")) - 1)
+    loop_end_index = data.times.shape[0]
+    if end_ts is not None:
+        loop_end_index = min(loop_end_index, max(0, int(np.searchsorted(data.times, end_ts, side="left"))))
+    if loop_start_index >= loop_end_index:
+        return []
     competition_candidate_indexes = (
         competition_signal_candidate_indexes(strategy, data, loop_start_index)
         if strategy.phase == "competition_session_edge"
         else None
     )
 
-    for index in range(loop_start_index, data.times.shape[0]):
+    for index in range(loop_start_index, loop_end_index):
         if open_trade is not None:
             apply_dynamic_trade_management(strategy, open_trade, data, index, asset)
             exit_result = trade_exit(open_trade, data, index, asset.tick_size)
@@ -5174,7 +5199,7 @@ def run_single_strategy(
                         open_trade = None
                 pending_order = None
 
-        if open_trade is not None or pending_order is not None or index >= data.times.shape[0] - 1:
+        if open_trade is not None or pending_order is not None or index >= data.times.shape[0] - 1 or index >= loop_end_index - 1:
             continue
 
         if strategy.phase != "competition_session_edge":
@@ -5216,7 +5241,7 @@ def run_single_strategy(
         last_entry_day = int(data.ny_days[open_trade.entry_index])
 
     if open_trade is not None:
-        final_index = data.times.shape[0] - 1
+        final_index = min(data.times.shape[0] - 1, max(loop_start_index, loop_end_index - 1))
         trades.append(complete_trade(strategy, asset, data, open_trade, final_index, float(data.close[final_index]), "end"))
 
     return refine_trades_with_execution_data(
@@ -5574,6 +5599,7 @@ def run_backtests(
     for strategy in strategies:
         output_path = STRATEGY_ROOT / strategy.folder / "backtest_trades.csv"
         strategy_start = perf_counter()
+        timeframe = ""
         try:
             asset = assets[strategy.asset_key]
             timeframe = strategy_timeframe(strategy)
@@ -5642,17 +5668,25 @@ def run_backtests(
                 ):
                     break
 
+            effective_start_ts, effective_end_ts = execution_overlap_window(
+                enriched_cache[cache_key],
+                execution_data,
+                effective_start_ts,
+                end_ts,
+            )
             if timings:
                 tail_skip_index = max(0, int(np.searchsorted(enriched_cache[cache_key].times, effective_start_ts, side="left")) - 1)
                 if tail_skip_index:
                     print(f"  tail window skips {tail_skip_index} historical bar(s)")
+                if effective_end_ts is not None:
+                    print(f"  strict 1m overlap {iso_time(effective_start_ts)} to {iso_time(effective_end_ts)}")
                 print(f"  running {strategy.id}")
             trades = run_single_strategy(
                 strategy,
                 asset,
                 enriched_cache[cache_key],
                 start_ts=effective_start_ts,
-                end_ts=end_ts,
+                end_ts=effective_end_ts,
                 strict_anti_cheat=strict_anti_cheat,
                 execution_data=execution_data,
                 source_timeframe=timeframe,
@@ -5684,9 +5718,14 @@ def run_backtests(
                 else:
                     print(f"Computed {len(trades)} backtest trades for {strategy.id}")
         except Exception as exc:
+            message = str(exc)
+            strict_one_minute_failure = write_output and timeframe != "1m" and ("1m" in message or "refine" in message)
             preserved_output = write_output and output_path.exists()
-            print(f"Skipped {strategy.id}: {exc}")
-            if preserved_output:
+            print(f"Skipped {strategy.id}: {message}")
+            if strict_one_minute_failure:
+                write_strategy_backtest_csv(output_path, [])
+                print(f"Cleared stale backtest output at {output_path}")
+            elif preserved_output:
                 print(f"Preserved existing backtest output at {output_path}")
 
     if timings:
@@ -5746,12 +5785,18 @@ def audit_anti_cheat(
             loaded_execution = execution_cache[execution_cache_key]
             if loaded_execution.times.shape[0] and loaded_execution.times[0] <= effective_start_ts and loaded_execution.times[-1] >= data.times[-1]:
                 break
+        effective_start_ts, effective_end_ts = execution_overlap_window(
+            data,
+            execution_data,
+            start_ts if start_ts is not None else BACKTEST_START_TS,
+            end_ts,
+        )
         fast_trades = run_single_strategy(
             strategy,
             asset,
             data,
-            start_ts=start_ts if start_ts is not None else BACKTEST_START_TS,
-            end_ts=end_ts,
+            start_ts=effective_start_ts,
+            end_ts=effective_end_ts,
             strict_anti_cheat=False,
             execution_data=execution_data,
             source_timeframe=timeframe,
@@ -5761,8 +5806,8 @@ def audit_anti_cheat(
             strategy,
             asset,
             data,
-            start_ts=start_ts if start_ts is not None else BACKTEST_START_TS,
-            end_ts=end_ts,
+            start_ts=effective_start_ts,
+            end_ts=effective_end_ts,
             strict_anti_cheat=True,
             execution_data=execution_data,
             source_timeframe=timeframe,

@@ -530,6 +530,39 @@ function backtestStatFromTrades(strategy: StrategyDefinition, trades: BacktestTr
   };
 }
 
+function statHasRealizedPayoffFields(stat: BacktestStat): boolean {
+  if (!stat.trades) return true;
+  return Number.isFinite(stat.avgWinR) && Number.isFinite(stat.avgLossR);
+}
+
+function catalogStatsHaveRealizedPayoffFields(stats: BacktestStat[]): boolean {
+  return stats.every(statHasRealizedPayoffFields);
+}
+
+function backfillCatalogRealizedPayoffStats(catalog: StrategyCatalog): StrategyCatalog {
+  if (catalogStatsHaveRealizedPayoffFields(catalog.stats) || !catalog.trades.length) return catalog;
+
+  const strategiesById = new Map(STRATEGY_DEFINITIONS.map((strategy) => [strategy.id, strategy]));
+  const tradesByStrategy = new Map<string, BacktestTrade[]>();
+  for (const trade of catalog.trades) {
+    const bucket = tradesByStrategy.get(trade.datasetId) ?? [];
+    bucket.push(trade);
+    tradesByStrategy.set(trade.datasetId, bucket);
+  }
+
+  let changed = false;
+  const stats = catalog.stats.map((stat) => {
+    if (statHasRealizedPayoffFields(stat)) return stat;
+    const strategy = strategiesById.get(stat.datasetId);
+    const trades = tradesByStrategy.get(stat.datasetId);
+    if (!strategy || !trades?.length) return stat;
+    changed = true;
+    return backtestStatFromTrades(strategy, trades);
+  });
+
+  return changed ? { ...catalog, stats } : catalog;
+}
+
 async function readManifestCatalog(): Promise<StrategyCatalog | null> {
   const raw = await readProjectTextIfExists(BACKTEST_MANIFEST_PATH);
   if (!raw) return null;
@@ -537,7 +570,8 @@ async function readManifestCatalog(): Promise<StrategyCatalog | null> {
   try {
     const parsed = JSON.parse(raw) as StrategyCatalog;
     if (Array.isArray(parsed.entries) && Array.isArray(parsed.stats) && Array.isArray(parsed.trades)) {
-      return parsed;
+      const catalog = backfillCatalogRealizedPayoffStats(parsed);
+      return catalogStatsHaveRealizedPayoffFields(catalog.stats) ? catalog : null;
     }
   } catch {
     return null;
@@ -553,7 +587,7 @@ async function readSummaryCatalog(): Promise<StrategyCatalogSummary | null> {
   try {
     const parsed = JSON.parse(raw) as StrategyCatalogSummary;
     if (Array.isArray(parsed.entries) && Array.isArray(parsed.stats)) {
-      return parsed;
+      return catalogStatsHaveRealizedPayoffFields(parsed.stats) ? parsed : null;
     }
   } catch {
     return null;

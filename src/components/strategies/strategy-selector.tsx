@@ -287,6 +287,15 @@ function displayRiskRewardLabel(value: number | undefined, hasBacktestTrades: bo
   return Number.isFinite(value) ? formatNumber(value ?? 0) : "--";
 }
 
+function displayProfitFactorLabel(value: number, hasBacktestTrades: boolean): string {
+  if (!hasBacktestTrades || !Number.isFinite(value)) return "--";
+  return formatNumber(value);
+}
+
+function sortableProfitFactor(strategy: Pick<StrategyOption, "profitFactor" | "trades">): number {
+  return strategy.trades > 0 && Number.isFinite(strategy.profitFactor) ? strategy.profitFactor : -Infinity;
+}
+
 function displayRMultipleLabel(value: number, hasBacktestTrades: boolean): string {
   if (!hasBacktestTrades || !Number.isFinite(value)) return "--";
   return `${formatNumber(value)}R`;
@@ -601,6 +610,11 @@ function compareText(left: string, right: string): number {
   });
 }
 
+function compareNumber(left: number, right: number): number {
+  if (left === right) return 0;
+  return left < right ? -1 : 1;
+}
+
 function defaultSortDirection(column: SortColumn): SortDirection {
   if (column === "ticker" || column === "model") return "asc";
   return "desc";
@@ -683,7 +697,7 @@ export default function StrategySelector({
   const editSyncTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const editSyncRunRef = useRef(0);
   const editControlsDisabled = true;
-  const selectionControlsDisabled = true;
+  const selectionControlsDisabled = isRestricted;
   const canShowSavedSelection = optimisticSelectedKeys.length === 0 && scopedPersistedLiveKeys.length > 0;
   const savingSelectionKeySet = useMemo(() => new Set(savingSelectionKeys), [savingSelectionKeys]);
   const isStrategyLoading =
@@ -1095,7 +1109,7 @@ export default function StrategySelector({
 
     if (sortColumn === "ticker") comparison = compareText(left.symbol, right.symbol);
     if (sortColumn === "model") comparison = compareText(leftEdit.modelName, rightEdit.modelName);
-    if (sortColumn === "profitFactor") comparison = left.profitFactor - right.profitFactor;
+    if (sortColumn === "profitFactor") comparison = compareNumber(sortableProfitFactor(left), sortableProfitFactor(right));
     if (sortColumn === "winRate") comparison = left.winRatePct - right.winRatePct;
     if (sortColumn === "trades") comparison = left.trades - right.trades;
     if (sortColumn === "target") comparison = left.avgWinR - right.avgWinR;
@@ -1287,6 +1301,7 @@ export default function StrategySelector({
       .filter(
         (strategy) =>
           strategy.trades > 0 &&
+          Number.isFinite(strategy.profitFactor) &&
           strategy.profitFactor >= criteria.minProfitFactor &&
           strategy.winRatePct >= criteria.minWinRate
       )
@@ -1351,7 +1366,7 @@ export default function StrategySelector({
         <span>Strategies</span>
         <div className="pickerActions strategyReadOnlySummary">
           <span>{formatNumber(optimisticSelectedKeys.length)} live</span>
-          <span>Read-only</span>
+          <span>Levels locked</span>
         </div>
       </div>
 
@@ -1429,6 +1444,7 @@ export default function StrategySelector({
           const isSavingSelection = savingSelectionKeySet.has(strategy.key);
           const effective = currentEdit(strategy);
           const hasBacktestTrades = strategy.trades > 0;
+          const hasFiniteProfitFactor = hasBacktestTrades && Number.isFinite(strategy.profitFactor);
           const displayedModelName = isRestricted ? "Admin only" : effective.modelName;
           const plannedRiskRewardRatio = riskRewardRatio(effective.targetDollars, effective.riskDollars);
           return (
@@ -1449,8 +1465,8 @@ export default function StrategySelector({
                     : `${formatMarket(strategy.market)} / ${strategy.timeframeLabel} / ${strategy.liveSupported ? "live-ready" : "backtest only"}${custom ? " / custom unit" : ""}`}
                 </span>
               </div>
-              <span className={hasBacktestTrades ? (strategy.profitFactor >= 1 ? "up" : "down") : "neutral"} data-label="PF">
-                {hasBacktestTrades ? formatNumber(strategy.profitFactor) : "--"}
+              <span className={hasFiniteProfitFactor ? (strategy.profitFactor >= 1 ? "up" : "down") : "neutral"} data-label="PF">
+                {displayProfitFactorLabel(strategy.profitFactor, hasBacktestTrades)}
               </span>
               <span data-label="Win">{hasBacktestTrades ? formatPct(strategy.winRatePct) : "--"}</span>
               <span data-label="Trades">{formatNumber(strategy.trades)}</span>
@@ -1464,9 +1480,19 @@ export default function StrategySelector({
               </span>
               <span data-label="Unit/contract size">{displaySizeLabel(strategy, effective.contracts, effective.sizeName)}</span>
               <span data-label="Scale">{formatScaleRatio(scaleForContracts(strategy, effective.contracts))}</span>
-              <span className={`strategyStatusChip ${checked ? "isOn" : "isOff"}`} data-label="Enabled">
+              <button
+                className={`strategyStatusChip ${checked ? "isOn" : "isOff"}`}
+                data-label="Enabled"
+                disabled={selectionControlsDisabled || isSavingSelection}
+                type="button"
+                aria-pressed={checked}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  toggleStrategy(strategy.key);
+                }}
+              >
                 {checked ? "On" : "Off"}
-              </span>
+              </button>
             </div>
           );
         })}

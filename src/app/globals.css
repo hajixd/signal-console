@@ -1451,6 +1451,7 @@ html[data-theme="light"] .themeDarkLabel {
 }
 
 .strategyStatusChip {
+  appearance: none;
   min-height: 24px;
   display: inline-flex;
   align-items: center;
@@ -1464,6 +1465,11 @@ html[data-theme="light"] .themeDarkLabel {
   font-size: 0.58rem;
   font-weight: 900;
   text-transform: uppercase;
+  cursor: pointer;
+}
+
+.strategyStatusChip:disabled {
+  cursor: default;
 }
 
 .strategyStatusChip.isOn {

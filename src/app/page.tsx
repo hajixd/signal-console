@@ -133,6 +133,10 @@ type StrategyOption = {
   stat?: BacktestStat;
 };
 
+function sortableStrategyProfitFactor(strategy: Pick<StrategyOption, "profitFactor" | "trades">): number {
+  return strategy.trades > 0 && Number.isFinite(strategy.profitFactor) ? strategy.profitFactor : -Infinity;
+}
+
 function fmtPrice(value: number): string {
   return new Intl.NumberFormat("en-US", {
     maximumFractionDigits: 5
@@ -1622,7 +1626,10 @@ export default async function Home({ searchParams }: HomeProps) {
     .sort((left, right) => {
       if (left.liveSupported !== right.liveSupported) return left.liveSupported ? -1 : 1;
       if (left.trades === 0 || right.trades === 0) return left.trades === right.trades ? 0 : left.trades ? -1 : 1;
-      return right.profitFactor - left.profitFactor;
+      const leftProfitFactor = sortableStrategyProfitFactor(left);
+      const rightProfitFactor = sortableStrategyProfitFactor(right);
+      if (leftProfitFactor === rightProfitFactor) return 0;
+      return rightProfitFactor > leftProfitFactor ? 1 : -1;
     });
   const strategyOptions = allStrategyOptions.filter((option) => strategyVisibleInMarket(option.market, activeMarket));
   const optionByKey = new Map(strategyOptions.map((option) => [option.key, option]));
