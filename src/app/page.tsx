@@ -44,11 +44,18 @@ import { assetDisplayNameForSymbol, assetForSymbol, assetLookupSymbolForSymbol }
 import { DEFAULT_CHALLENGE_RULES, type ChallengeRules } from "@/lib/challenge";
 import { analyzeBacktestDataValidity, dataValidityClass, type DataValidityResult, type DataValidityTone } from "@/lib/data-validity";
 import { dollarPerUnit, instrumentSizeLabel, instrumentUnitLabel, recommendedSizeMultiplier } from "@/lib/instruments";
-import { defaultDatasetStatus, getDatasetStatus, getLiveConfig, type DatasetStatus, type LiveConfig } from "@/lib/live-config";
+import {
+  defaultDatasetStatus,
+  getDatasetStatus,
+  getLiveConfig,
+  saveLiveConfig,
+  type DatasetStatus,
+  type LiveConfig,
+  type LiveMarket
+} from "@/lib/live-config";
 import { allRules } from "@/lib/live-signals";
 import { fetchStoredAssetBars } from "@/lib/market-data-store";
 import { readDataText } from "@/lib/project-data";
-import { parseStrategySelection } from "@/lib/strategy-selection";
 import { getTrades } from "@/lib/storage";
 import { discordChannelInviteLink, discordConfigured as discordIsConfigured } from "@/lib/discord";
 import { telegramGroupInviteLink } from "@/lib/telegram";
@@ -67,13 +74,13 @@ const EMPTY_LIVE_CONFIG: LiveConfig = {
   dashboardSettings: {},
   dashboardSelectedDatasetIds: [],
   enabledDatasetIds: [],
+  selectedDatasetIdsByMarket: {},
   strategyEdits: {}
 };
 
 type HomeProps = {
   searchParams?: Promise<{
     market?: string;
-    strategies?: string;
     accountSize?: string;
     profitTarget?: string;
     maxLoss?: string;
@@ -94,6 +101,7 @@ const MARKET_TABS: Array<{ key: MarketTabKey; label: string }> = [
   { key: "forex", label: "Forex" },
   { key: "futures", label: "Futures" }
 ];
+const LIVE_MARKET_SELECTION_KEYS: readonly LiveMarket[] = ["forex", "futures", "gold_spot"];
 
 type StrategyOption = {
   assetKey: string;
@@ -505,6 +513,70 @@ function averageNumbers(values: number[]): number {
 
 function uniqueValues<T>(values: T[]): T[] {
   return [...new Set(values)];
+}
+
+function scopeSelectionKeys(keys: string[], allKeys: string[]): string[] {
+  const selected = new Set(keys);
+  return allKeys.filter((key) => selected.has(key));
+}
+
+function selectionScopeKeysByMarket(strategies: StrategyOption[]): Record<MarketTabKey, string[]> {
+  return {
+    forex: strategies.filter((strategy) => normalizedDashboardMarket(strategy.market) === "forex").map((strategy) => strategy.key),
+    futures: strategies.filter((strategy) => normalizedDashboardMarket(strategy.market) === "futures").map((strategy) => strategy.key)
+  };
+}
+
+function selectionArrayByMarket(config: LiveConfig, activeMarket: MarketTabKey): string[] | undefined {
+  return Object.prototype.hasOwnProperty.call(config.selectedDatasetIdsByMarket, activeMarket)
+    ? config.selectedDatasetIdsByMarket[activeMarket] ?? []
+    : undefined;
+}
+
+function flattenSelectedDatasetIdsByMarket(selectedByMarket: LiveConfig["selectedDatasetIdsByMarket"]): string[] {
+  return uniqueValues(LIVE_MARKET_SELECTION_KEYS.flatMap((market) => selectedByMarket[market] ?? []));
+}
+
+async function ensurePersistedMarketSelection(
+  liveConfig: LiveConfig,
+  activeMarket: MarketTabKey,
+  allKeysByMarket: Record<MarketTabKey, string[]>,
+  defaultKeys: string[]
+): Promise<LiveConfig> {
+  if (selectionArrayByMarket(liveConfig, activeMarket) !== undefined) return liveConfig;
+
+  const legacySelectedKeys = liveConfig.dashboardSelectedDatasetIds.length
+    ? liveConfig.dashboardSelectedDatasetIds
+    : liveConfig.enabledDatasetIds;
+  const selectedDatasetIdsByMarket: LiveConfig["selectedDatasetIdsByMarket"] = {
+    ...liveConfig.selectedDatasetIdsByMarket
+  };
+  let changed = false;
+
+  for (const { key: market } of MARKET_TABS) {
+    if (selectionArrayByMarket(liveConfig, market) !== undefined) continue;
+    const selectedKeys = scopeSelectionKeys(legacySelectedKeys, allKeysByMarket[market]);
+    if (!selectedKeys.length && market !== activeMarket) continue;
+
+    selectedDatasetIdsByMarket[market] = selectedKeys.length ? selectedKeys : scopeSelectionKeys(defaultKeys, allKeysByMarket[market]);
+    changed = true;
+  }
+
+  if (!changed) return liveConfig;
+
+  const flattenedSelection = flattenSelectedDatasetIdsByMarket(selectedDatasetIdsByMarket);
+
+  try {
+    return await saveLiveConfig({
+      ...liveConfig,
+      dashboardSelectedDatasetIds: flattenedSelection,
+      enabledDatasetIds: flattenedSelection,
+      selectedDatasetIdsByMarket
+    });
+  } catch (error) {
+    console.error("Failed to seed shared strategy selection", error);
+    return liveConfig;
+  }
 }
 
 function assetLabel(symbols: string[]): string {
@@ -1470,7 +1542,7 @@ function challengeSessionCount(trades: { entryTime: string; pnlDollars: number }
 
 export default async function Home({ searchParams }: HomeProps) {
   const params = await searchParams;
-  const [liveTrades, strategyCatalog, backtestStats, liveRules, liveConfig, datasetStatus, backtestFreshness] = await Promise.all([
+  const [liveTrades, strategyCatalog, backtestStats, liveRules, initialLiveConfig, datasetStatus, backtestFreshness] = await Promise.all([
     safeRuntimeValue(getTrades, []),
     getStrategyCatalog(),
     getBacktestStats(),
@@ -1479,6 +1551,7 @@ export default async function Home({ searchParams }: HomeProps) {
     safeRuntimeValue(async () => (await getDatasetStatus()) ?? defaultDatasetStatus(), defaultDatasetStatus()),
     getBacktestCatalogFreshness()
   ]);
+  let liveConfig = initialLiveConfig;
   const activeMarket = parseMarketTab(params?.market, liveConfig.dashboardSettings.activeMarket);
   const persistedMarketChallengeRules = liveConfig.dashboardSettings.challengeRulesByMarket?.[activeMarket];
   const persistedChallengeRulesSource = persistedMarketChallengeRules ?? liveConfig.dashboardSettings.challengeRules;
@@ -1639,14 +1712,23 @@ export default async function Home({ searchParams }: HomeProps) {
       if (leftProfitFactor === rightProfitFactor) return 0;
       return rightProfitFactor > leftProfitFactor ? 1 : -1;
     });
+  const selectionKeysByMarket = selectionScopeKeysByMarket(allStrategyOptions);
   const strategyOptions = allStrategyOptions.filter((option) => strategyVisibleInMarket(option.market, activeMarket));
   const optionByKey = new Map(strategyOptions.map((option) => [option.key, option]));
   const allKeys = strategyOptions.map((option) => option.key);
-  const persistedLiveEnabledKeys = liveConfig.enabledDatasetIds.filter((key) => allKeys.includes(key));
-  const persistedSelectedKeys = liveConfig.dashboardSelectedDatasetIds.filter((key) => allKeys.includes(key));
   const recentDefaultKeys = strategyOptions.slice(0, DEFAULT_SELECTED_STRATEGY_COUNT).map((option) => option.key);
-  const defaultSelectedKeys = persistedSelectedKeys.length ? persistedSelectedKeys : persistedLiveEnabledKeys.length ? persistedLiveEnabledKeys : recentDefaultKeys;
-  const selectedKeys = parseStrategySelection(params?.strategies, allKeys, defaultSelectedKeys);
+  liveConfig = await ensurePersistedMarketSelection(liveConfig, activeMarket, selectionKeysByMarket, recentDefaultKeys);
+  const marketSelectedKeys = selectionArrayByMarket(liveConfig, activeMarket);
+  const persistedLiveEnabledKeys = scopeSelectionKeys(liveConfig.enabledDatasetIds, allKeys);
+  const persistedSelectedKeys = scopeSelectionKeys(liveConfig.dashboardSelectedDatasetIds, allKeys);
+  const selectedKeys =
+    marketSelectedKeys !== undefined
+      ? scopeSelectionKeys(marketSelectedKeys, allKeys)
+      : persistedSelectedKeys.length
+        ? persistedSelectedKeys
+        : persistedLiveEnabledKeys.length
+          ? persistedLiveEnabledKeys
+          : recentDefaultKeys;
   const selectedKeySet = new Set(selectedKeys);
   const activeMarketKeySet = new Set(allKeys);
   const selectedStats = backtestStats.filter((stat) => selectedKeySet.has(stat.datasetId));
@@ -2400,7 +2482,6 @@ export default async function Home({ searchParams }: HomeProps) {
             market={activeMarket}
             strategies={strategyOptions}
             selectedKeys={selectedKeys}
-            persistedLiveKeys={persistedLiveEnabledKeys}
             persistedCustomScaleRange={liveConfig.customScaleRanges[activeMarket] ?? {}}
             persistedStrategyEdits={liveConfig.strategyEdits}
             persistLiveSelection={syncLiveSelection}

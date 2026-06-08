@@ -14,11 +14,6 @@ import {
   type StrategyEditSeedMap
 } from "@/components/strategies/strategy-edits-store";
 import { emitDashboardLoading } from "@/components/ui/dashboard-loading";
-import {
-  ALL_STRATEGIES_SELECTION_PARAM,
-  NO_STRATEGIES_SELECTION_PARAM,
-  selectionIncludesEveryKey
-} from "@/lib/strategy-selection";
 
 type StrategyOption = {
   key: string;
@@ -58,10 +53,9 @@ type StrategySelectorProps = {
   market: MarketKey;
   strategies: StrategyOption[];
   selectedKeys: string[];
-  persistedLiveKeys: string[];
   persistedCustomScaleRange: CustomScaleRangeSeed;
   persistedStrategyEdits: StrategyEditSeedMap;
-  persistLiveSelection: (selectedKeys: string[], scopeKeys?: string[]) => Promise<void>;
+  persistLiveSelection: (market: MarketKey, selectedKeys: string[], scopeKeys?: string[]) => Promise<void>;
   persistCustomScaleRange: (market: MarketKey, range: CustomScaleRangeSeed) => Promise<void>;
   persistStrategyEdits: (edits: StrategyEditSeedMap, scopeKeys?: string[]) => Promise<void>;
 };
@@ -107,7 +101,6 @@ type CustomSelectionResult = {
 
 const STORAGE_KEY = STRATEGY_EDITS_STORAGE_KEY;
 const CUSTOM_SCALE_RANGE_STORAGE_KEY_PREFIX = "trading-bot-custom-scale-range";
-const LIVE_SELECTION_STORAGE_KEY_PREFIX = "trading-bot:live-selection:v1";
 const STRATEGY_SIZES_PARAM = "strategySizes";
 const EDIT_RENDER_DELAY_MS = 650;
 const SELECTION_SYNC_DELAY_MS = 650;
@@ -128,22 +121,6 @@ function isCustomScaleRangeInput(value: unknown): value is Partial<CustomScaleRa
 
 function customScaleRangeStorageKey(market: MarketKey): string {
   return `${CUSTOM_SCALE_RANGE_STORAGE_KEY_PREFIX}:${market}`;
-}
-
-function liveSelectionStorageKey(market: MarketKey): string {
-  return `${LIVE_SELECTION_STORAGE_KEY_PREFIX}:${market}`;
-}
-
-function writeClientLiveSelection(storageKey: string, selectedKeys: string[]): void {
-  try {
-    if (selectedKeys.length) {
-      window.localStorage.setItem(storageKey, JSON.stringify(selectedKeys));
-    } else {
-      window.localStorage.removeItem(storageKey);
-    }
-  } catch {
-    // Local storage is best-effort; server storage remains the durable copy.
-  }
 }
 
 function normalizeCustomScaleRangeInput(value: CustomScaleRangeSeed | null | undefined): CustomScaleRangeInput {
@@ -639,7 +616,6 @@ export default function StrategySelector({
   market,
   strategies,
   selectedKeys,
-  persistedLiveKeys,
   persistedCustomScaleRange,
   persistedStrategyEdits,
   persistLiveSelection,
@@ -673,21 +649,15 @@ export default function StrategySelector({
   const [customSelectionError, setCustomSelectionError] = useState("");
   const [customSelectionResult, setCustomSelectionResult] = useState<CustomSelectionResult | null>(null);
   const [selectionError, setSelectionError] = useState("");
-  const liveSelectionKey = liveSelectionStorageKey(market);
   const selected = new Set(optimisticSelectedKeys);
   const activeStrategy = strategies.find((strategy) => strategy.key === activeKey);
   const hasEdits = Object.keys(edits).length > 0;
   const normalizedSearchQuery = isRestricted ? "" : searchQuery.trim().toLowerCase();
   const orderByKey = new Map(strategies.map((strategy, index) => [strategy.key, index]));
   const strategyScopeKeys = useMemo(() => strategies.map((strategy) => strategy.key), [strategies]);
-  const scopedPersistedLiveKeys = useMemo(() => {
-    const persisted = new Set(persistedLiveKeys);
-    return strategyScopeKeys.filter((key) => persisted.has(key));
-  }, [persistedLiveKeys, strategyScopeKeys]);
   const strategyScopeSignature = strategyScopeKeys.join("|");
   const selectionSignature = selectedKeys.join("|");
   const optimisticSelectionSignature = optimisticSelectedKeys.join("|");
-  const persistedLiveSelectionSignature = persistedLiveKeys.join("|");
   const persistedCustomScaleRangeInput = normalizeCustomScaleRangeInput(persistedCustomScaleRange);
   const persistedCustomScaleRangeSignature = customScaleRangeSignature(persistedCustomScaleRangeInput);
   const currentCustomScaleRangeSignature = customScaleRangeSignature(customScaleRange);
@@ -712,7 +682,6 @@ export default function StrategySelector({
   const rowEditControlsDisabled = true;
   const customUnitControlsDisabled = isRestricted;
   const selectionControlsDisabled = isRestricted;
-  const canShowSavedSelection = optimisticSelectedKeys.length === 0 && scopedPersistedLiveKeys.length > 0;
   const savingSelectionKeySet = useMemo(() => new Set(savingSelectionKeys), [savingSelectionKeys]);
   const isStrategyLoading =
     savingSelectionKeys.length > 0 || isSavingSelection || isSavingEdits || isSavingCustomScaleRange;
@@ -731,32 +700,15 @@ export default function StrategySelector({
           ? "Saving custom unit range"
           : "Updating strategies";
 
-  function replaceRouteSelection(nextKeys: string[]) {
+  function refreshSharedSelection() {
     const params = new URLSearchParams(window.location.search);
-    if (selectionIncludesEveryKey(nextKeys, strategyScopeKeys)) {
-      params.set("strategies", ALL_STRATEGIES_SELECTION_PARAM);
-    } else if (nextKeys.length) {
-      params.set("strategies", nextKeys.join(","));
-    } else {
-      params.set("strategies", NO_STRATEGIES_SELECTION_PARAM);
-    }
-    const query = params.toString();
-    router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
-  }
-
-  function showSavedSelection() {
-    const params = new URLSearchParams(window.location.search);
+    const hadStrategiesParam = params.has("strategies");
     params.delete("strategies");
     const query = params.toString();
-    const restoredSignature = scopedPersistedLiveKeys.join("|");
-
-    setSelectionError("");
-    pendingSelectionSignatureRef.current = "";
-    latestSelectionSignatureRef.current = restoredSignature;
-    setSavingSelectionKeys([]);
-    setSelectionProgress(0);
-    setOptimisticSelectedKeys(scopedPersistedLiveKeys);
-    router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
+    if (hadStrategiesParam) {
+      router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
+    }
+    router.refresh();
   }
 
   function restoreServerSelectionAfterSyncFailure(error: unknown) {
@@ -807,26 +759,18 @@ export default function StrategySelector({
 
   useEffect(() => {
     const pendingSelectionSignature = pendingSelectionSignatureRef.current;
-    if (
-      pendingSelectionSignature &&
-      selectionSignature !== pendingSelectionSignature &&
-      persistedLiveSelectionSignature !== pendingSelectionSignature
-    ) {
+    if (pendingSelectionSignature && selectionSignature !== pendingSelectionSignature) {
       return;
     }
 
-    if (pendingSelectionSignature && (selectionSignature === pendingSelectionSignature || persistedLiveSelectionSignature === pendingSelectionSignature)) {
+    if (pendingSelectionSignature && selectionSignature === pendingSelectionSignature) {
       pendingSelectionSignatureRef.current = "";
       setSavingSelectionKeys([]);
       setSelectionProgress(0);
     }
 
-    setOptimisticSelectedKeys(
-      pendingSelectionSignature && persistedLiveSelectionSignature === pendingSelectionSignature
-        ? persistedLiveKeys
-        : selectedKeys
-    );
-  }, [persistedLiveKeys, persistedLiveSelectionSignature, selectionSignature, selectedKeys]);
+    setOptimisticSelectedKeys(selectedKeys);
+  }, [selectionSignature, selectedKeys]);
 
   useEffect(() => {
     return () => {
@@ -870,11 +814,6 @@ export default function StrategySelector({
     }
     emitStrategyEditsChanged(edits);
   }, [edits, isLoaded]);
-
-  useEffect(() => {
-    if (isRestricted) return;
-    writeClientLiveSelection(liveSelectionKey, optimisticSelectedKeys);
-  }, [isRestricted, liveSelectionKey, optimisticSelectedKeys]);
 
   useEffect(() => {
     const pendingCustomScaleRangeSignature = pendingCustomScaleRangeSignatureRef.current;
@@ -970,7 +909,14 @@ export default function StrategySelector({
   ]);
 
   useEffect(() => {
-    if (optimisticSelectionSignature === persistedLiveSelectionSignature) {
+    if (selectionControlsDisabled) {
+      if (selectionSyncTimerRef.current) {
+        clearTimeout(selectionSyncTimerRef.current);
+        selectionSyncTimerRef.current = null;
+      }
+      return;
+    }
+    if (optimisticSelectionSignature === selectionSignature) {
       lastSyncedSelectionRef.current = optimisticSelectionSignature;
       pendingSelectionSignatureRef.current = "";
       setSavingSelectionKeys([]);
@@ -996,11 +942,11 @@ export default function StrategySelector({
 
       startSavingSelection(async () => {
         try {
-          await persistLiveSelection(selectedKeysToSync, strategyScopeKeys);
+          await persistLiveSelection(market, selectedKeysToSync, strategyScopeKeys);
           if (selectionSyncRunRef.current === syncRun && latestSelectionSignatureRef.current === signatureToSync) {
             setSelectionProgress(0.78);
             setSelectionError("");
-            replaceRouteSelection(selectedKeysToSync);
+            refreshSharedSelection();
           }
         } catch (error) {
           console.error("Failed to sync live strategy selection", error);
@@ -1018,7 +964,18 @@ export default function StrategySelector({
         selectionSyncTimerRef.current = null;
       }
     };
-  }, [optimisticSelectedKeys, optimisticSelectionSignature, persistLiveSelection, persistedLiveSelectionSignature, router, strategyScopeKeys, strategyScopeSignature]);
+  }, [
+    market,
+    optimisticSelectedKeys,
+    optimisticSelectionSignature,
+    pathname,
+    persistLiveSelection,
+    router,
+    selectionControlsDisabled,
+    selectionSignature,
+    strategyScopeKeys,
+    strategyScopeSignature
+  ]);
 
   useEffect(() => {
     if (isRestricted) return;

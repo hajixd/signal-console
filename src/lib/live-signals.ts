@@ -241,7 +241,27 @@ export async function activeRules(): Promise<StrategyRule[]> {
   const rules = uniqueRules(
     stats.map((stat) => statToRule(stat, config.strategyEdits, config.customScaleRanges)).filter((rule): rule is StrategyRule => Boolean(rule))
   );
-  const selectedDatasetIds = config.enabledDatasetIds.length ? config.enabledDatasetIds : config.dashboardSelectedDatasetIds;
+  const selectedDatasetIdsByMarket = config.selectedDatasetIdsByMarket ?? {};
+  const configuredMarkets = new Set(
+    (["forex", "futures", "gold_spot"] as const)
+      .filter((market) => Object.prototype.hasOwnProperty.call(selectedDatasetIdsByMarket, market))
+      .map((market) => (market === "gold_spot" ? "forex" : market))
+  );
+  const legacySelectedDatasetIds = config.enabledDatasetIds.length ? config.enabledDatasetIds : config.dashboardSelectedDatasetIds;
+  const selectedDatasetIds = configuredMarkets.size
+    ? [
+        ...new Set([
+          ...(selectedDatasetIdsByMarket.forex ?? []),
+          ...(selectedDatasetIdsByMarket.futures ?? []),
+          ...(selectedDatasetIdsByMarket.gold_spot ?? []),
+          ...legacySelectedDatasetIds.filter((datasetId) => {
+            const rule = rules.find((item) => item.datasetId === datasetId);
+            const market = rule?.market === "gold_spot" ? "forex" : rule?.market;
+            return market === "forex" || market === "futures" ? !configuredMarkets.has(market) : false;
+          })
+        ])
+      ]
+    : legacySelectedDatasetIds;
   if (!selectedDatasetIds.length) return [];
 
   const enabled = new Set(selectedDatasetIds);

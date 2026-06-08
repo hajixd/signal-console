@@ -36,6 +36,25 @@ function sameSelection(left: string[], right: string[]): boolean {
   return left.every((value, index) => value === right[index]);
 }
 
+function sameMarketSelection(
+  left: Partial<Record<LiveMarket, string[]>>,
+  right: Partial<Record<LiveMarket, string[]>>
+): boolean {
+  return (["forex", "futures", "gold_spot"] as const).every((market) => {
+    const leftHasMarket = Object.prototype.hasOwnProperty.call(left, market);
+    const rightHasMarket = Object.prototype.hasOwnProperty.call(right, market);
+    return leftHasMarket === rightHasMarket && sameSelection(left[market] ?? [], right[market] ?? []);
+  });
+}
+
+function flattenedMarketSelections(selectedByMarket: Partial<Record<LiveMarket, string[]>>): string[] {
+  return normalizeSelectedKeys([
+    ...(selectedByMarket.forex ?? []),
+    ...(selectedByMarket.futures ?? []),
+    ...(selectedByMarket.gold_spot ?? [])
+  ]);
+}
+
 function normalizePositiveNumber(value: unknown): number | undefined {
   const numeric = Number(value);
   return Number.isFinite(numeric) && numeric > 0 ? Math.round(numeric * 100) / 100 : undefined;
@@ -160,29 +179,38 @@ function challengeRulesSignature(rules: SavedChallengeRules | undefined): string
   );
 }
 
-export async function syncLiveSelection(selectedKeys: string[], scopeKeys?: string[]): Promise<void> {
+export async function syncLiveSelection(market: string, selectedKeys: string[], scopeKeys?: string[]): Promise<void> {
   await assertServerActionAdminAuthorized();
-  const normalized = normalizeSelectedKeys(selectedKeys);
-  const normalizedScope = scopeKeys ? new Set(normalizeSelectedKeys(scopeKeys)) : null;
+  const normalizedMarket = normalizeMarket(market);
+  if (!normalizedMarket) return;
+
+  const normalizedScope = normalizeStrategyScopeKeys(scopeKeys);
+  const normalized = normalizeSelectedKeys(selectedKeys).filter((key) => !normalizedScope || normalizedScope.has(key));
   const existing = await getLiveConfig();
-  const nextEnabledDatasetIds = normalizedScope
-    ? [...existing.enabledDatasetIds.filter((key) => !normalizedScope.has(key)), ...normalized]
-    : normalized;
-  const nextDashboardSelectedDatasetIds = normalizedScope
-    ? [...existing.dashboardSelectedDatasetIds.filter((key) => !normalizedScope.has(key)), ...normalized]
-    : normalized;
+  const nextSelectedDatasetIdsByMarket = {
+    ...existing.selectedDatasetIdsByMarket,
+    [normalizedMarket]: normalized
+  };
+  const legacySelection = existing.enabledDatasetIds.length ? existing.enabledDatasetIds : existing.dashboardSelectedDatasetIds;
+  const preservedLegacySelection = normalizedScope ? legacySelection.filter((key) => !normalizedScope.has(key)) : [];
+  const flattenedSelection = normalizeSelectedKeys([
+    ...preservedLegacySelection,
+    ...flattenedMarketSelections(nextSelectedDatasetIdsByMarket)
+  ]);
 
   if (
-    sameSelection(existing.enabledDatasetIds, nextEnabledDatasetIds) &&
-    sameSelection(existing.dashboardSelectedDatasetIds, nextDashboardSelectedDatasetIds)
+    sameMarketSelection(existing.selectedDatasetIdsByMarket, nextSelectedDatasetIdsByMarket) &&
+    sameSelection(existing.enabledDatasetIds, flattenedSelection) &&
+    sameSelection(existing.dashboardSelectedDatasetIds, flattenedSelection)
   ) {
     return;
   }
 
   await saveLiveConfig({
     ...existing,
-    enabledDatasetIds: nextEnabledDatasetIds,
-    dashboardSelectedDatasetIds: nextDashboardSelectedDatasetIds
+    dashboardSelectedDatasetIds: flattenedSelection,
+    enabledDatasetIds: flattenedSelection,
+    selectedDatasetIdsByMarket: nextSelectedDatasetIdsByMarket
   });
 }
 

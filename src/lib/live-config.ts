@@ -70,6 +70,7 @@ export type LiveConfig = {
   dashboardSettings: SavedDashboardSettings;
   dashboardSelectedDatasetIds: string[];
   enabledDatasetIds: string[];
+  selectedDatasetIdsByMarket: Partial<Record<LiveMarket, string[]>>;
   strategyEdits: Record<string, SavedStrategyEdit>;
   updatedAt?: string;
 };
@@ -124,6 +125,20 @@ export type DatasetAssetCoverage = {
 
 function normalizedStringArray(value: unknown): string[] {
   return Array.isArray(value) ? value.filter((item): item is string => typeof item === "string" && item.trim().length > 0) : [];
+}
+
+function normalizedStringArrayByMarket(value: unknown): Partial<Record<LiveMarket, string[]>> {
+  if (!value || typeof value !== "object") return {};
+  const source = value as Partial<Record<LiveMarket, unknown>>;
+  const selectedByMarket: Partial<Record<LiveMarket, string[]>> = {};
+
+  for (const market of ["forex", "futures", "gold_spot"] as const) {
+    if (Object.prototype.hasOwnProperty.call(source, market)) {
+      selectedByMarket[market] = normalizedStringArray(source[market]);
+    }
+  }
+
+  return selectedByMarket;
 }
 
 function normalizedMarket(value: unknown): LiveMarket | undefined {
@@ -251,6 +266,7 @@ function normalizeLiveConfig(value: Partial<LiveConfig> | null | undefined): Liv
     dashboardSettings: normalizedDashboardSettings(value?.dashboardSettings),
     dashboardSelectedDatasetIds: normalizedStringArray(value?.dashboardSelectedDatasetIds),
     enabledDatasetIds: normalizedStringArray(value?.enabledDatasetIds),
+    selectedDatasetIdsByMarket: normalizedStringArrayByMarket(value?.selectedDatasetIdsByMarket),
     strategyEdits: normalizedStrategyEdits(value?.strategyEdits),
     updatedAt: typeof value?.updatedAt === "string" ? value.updatedAt : undefined
   };

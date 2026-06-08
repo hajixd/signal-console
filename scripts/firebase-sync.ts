@@ -431,6 +431,7 @@ async function main(): Promise<void> {
     dashboardSelectedDatasetIds:
       existingConfig.dashboardSelectedDatasetIds.length > 0 ? existingConfig.dashboardSelectedDatasetIds : dashboardDefault,
     enabledDatasetIds: existingConfig.enabledDatasetIds.length > 0 ? existingConfig.enabledDatasetIds : liveDatasetIds,
+    selectedDatasetIdsByMarket: existingConfig.selectedDatasetIdsByMarket,
     strategyEdits: existingConfig.strategyEdits
   });
 

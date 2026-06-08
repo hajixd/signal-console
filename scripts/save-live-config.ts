@@ -30,6 +30,7 @@ async function main(): Promise<void> {
     dashboardSettings: existing.dashboardSettings,
     enabledDatasetIds,
     dashboardSelectedDatasetIds,
+    selectedDatasetIdsByMarket: existing.selectedDatasetIdsByMarket,
     strategyEdits: existing.strategyEdits
   });
 
