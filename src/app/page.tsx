@@ -113,6 +113,8 @@ type StrategyOption = {
   profitFactor: number;
   trades: number;
   tradesPerWeek: number;
+  avgWinDollars: number;
+  avgLossDollars: number;
   avgWinR: number;
   avgLossR: number;
   realizedRiskRewardRatio?: number;
@@ -1523,6 +1525,8 @@ export default async function Home({ searchParams }: HomeProps) {
       const aggregate = stat
         ? {
             avgR: stat.avgR,
+            avgWinDollars: stat.avgWinDollars,
+            avgLossDollars: stat.avgLossDollars,
             avgLossR: stat.avgLossR,
             avgWinR: stat.avgWinR,
             losses: stat.losses,
@@ -1534,6 +1538,8 @@ export default async function Home({ searchParams }: HomeProps) {
             wins: stat.wins
           }
         : aggregateBacktest([]);
+      const avgWinDollars = aggregate.avgWinDollars * accountMultiplier;
+      const avgLossDollars = aggregate.avgLossDollars * accountMultiplier;
       const symbols = uniqueValues(
         [...stats.map((value) => value.symbol), entry.symbol].filter((value): value is string => Boolean(value))
       ).sort();
@@ -1603,6 +1609,8 @@ export default async function Home({ searchParams }: HomeProps) {
         profitFactor: aggregate.profitFactor,
         trades: aggregate.trades,
         tradesPerWeek: stat?.tradesPerWeek ?? 0,
+        avgWinDollars,
+        avgLossDollars,
         avgWinR: aggregate.avgWinR,
         avgLossR: aggregate.avgLossR,
         realizedRiskRewardRatio: aggregate.realizedRiskRewardRatio,

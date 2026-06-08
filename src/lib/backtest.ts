@@ -1,6 +1,6 @@
 import path from "node:path";
 import { assetForKey, assetForSymbol, isMarket, type Market } from "@/lib/assets";
-import { recommendedSizeMultiplier } from "@/lib/instruments";
+import { dollarPerUnit, recommendedSizeMultiplier } from "@/lib/instruments";
 import { readProjectText, readProjectTextIfExists } from "@/lib/project-assets";
 import type { StrategyDefinition } from "@/lib/strategy-definition";
 import { STRATEGY_DEFINITIONS } from "@/lib/strategy-loader";
@@ -30,6 +30,8 @@ export type BacktestStat = {
   profitFactor: number;
   totalR: number;
   avgR: number;
+  avgWinDollars: number;
+  avgLossDollars: number;
   avgWinR: number;
   avgLossR: number;
   realizedRiskRewardRatio?: number;
@@ -99,6 +101,8 @@ export type BacktestAggregate = {
   profitFactor: number;
   totalR: number;
   avgR: number;
+  avgWinDollars: number;
+  avgLossDollars: number;
   avgWinR: number;
   avgLossR: number;
   realizedRiskRewardRatio?: number;
@@ -358,11 +362,32 @@ async function readCsvRowsPreferLocal(filePath: string): Promise<CsvRow[]> {
   }
 }
 
-export function aggregateBacktest(trades: BacktestTrade[]): BacktestAggregate {
+function tradeSizeMultiplier(trade: BacktestTrade, fallback = 1): number {
+  return trade.sizeMultiplierHint ?? fallback;
+}
+
+function tradeRiskDollars(trade: BacktestTrade, fallbackSizeMultiplier = 1): number {
+  const riskUnits = Math.abs(trade.slUnits) + Math.abs(trade.costUnits);
+  return Math.abs(riskUnits * dollarPerUnit(trade.symbol, trade.entryPrice) * tradeSizeMultiplier(trade, fallbackSizeMultiplier));
+}
+
+function tradePnlDollars(trade: BacktestTrade, fallbackSizeMultiplier = 1): number {
+  const riskDollars = tradeRiskDollars(trade, fallbackSizeMultiplier);
+  if (riskDollars > 0 && Number.isFinite(trade.rMultiple)) {
+    return trade.rMultiple * riskDollars;
+  }
+  return trade.netUnits * dollarPerUnit(trade.symbol, trade.entryPrice) * tradeSizeMultiplier(trade, fallbackSizeMultiplier);
+}
+
+export function aggregateBacktest(trades: BacktestTrade[], fallbackSizeMultiplier = 1): BacktestAggregate {
   const wins = trades.filter((trade) => trade.rMultiple > 0);
   const losses = trades.filter((trade) => trade.rMultiple < 0);
   const grossWins = wins.reduce((sum, trade) => sum + trade.rMultiple, 0);
   const grossLosses = Math.abs(losses.reduce((sum, trade) => sum + trade.rMultiple, 0));
+  const grossWinDollars = wins.reduce((sum, trade) => sum + Math.max(0, tradePnlDollars(trade, fallbackSizeMultiplier)), 0);
+  const grossLossDollars = Math.abs(
+    losses.reduce((sum, trade) => sum + Math.min(0, tradePnlDollars(trade, fallbackSizeMultiplier)), 0)
+  );
   const totalR = trades.reduce((sum, trade) => sum + trade.rMultiple, 0);
   const avgWinR = wins.length ? grossWins / wins.length : 0;
   const avgLossR = losses.length ? grossLosses / losses.length : 0;
@@ -374,6 +399,8 @@ export function aggregateBacktest(trades: BacktestTrade[]): BacktestAggregate {
     profitFactor: grossLosses ? grossWins / grossLosses : grossWins ? Infinity : 0,
     totalR,
     avgR: trades.length ? totalR / trades.length : 0,
+    avgWinDollars: wins.length ? grossWinDollars / wins.length : 0,
+    avgLossDollars: losses.length ? grossLossDollars / losses.length : 0,
     avgWinR,
     avgLossR,
     realizedRiskRewardRatio: avgLossR > 0 ? avgWinR / avgLossR : undefined
@@ -458,10 +485,20 @@ function backtestTradeFromRow(row: CsvRow, strategy: StrategyDefinition): Backte
 
 function backtestStatFromTrades(strategy: StrategyDefinition, trades: BacktestTrade[]): BacktestStat {
   const first = trades[0]!;
-  const aggregate = aggregateBacktest(trades);
   const cadence = tradeCadence(trades);
   const asset = first.assetKey ? assetForKey(first.assetKey) : assetForSymbol(first.symbol);
   const sizeMultiplierHint = average(trades.map((trade) => trade.sizeMultiplierHint).filter((value): value is number => value !== undefined));
+  const tpUnits = average(trades.map((trade) => trade.tpUnits));
+  const slUnits = average(trades.map((trade) => trade.slUnits));
+  const sizeMultiplier =
+    sizeMultiplierHint ??
+    strategy.defaults?.sizeMultiplier ??
+    recommendedSizeMultiplier({
+      symbol: first.symbol,
+      tpUnits,
+      slUnits
+    });
+  const aggregate = aggregateBacktest(trades, sizeMultiplier);
   const signalAtrMult = variantNumber(first.variantId, "sig", "signal_atr_mult") ?? strategy.defaults?.signalAtrMult;
   const recentSignalLookback = variantNumber(first.variantId, "lookback") ?? strategy.defaults?.recentSignalLookback;
   const absCloseEma200AtrMax =
@@ -474,8 +511,6 @@ function backtestStatFromTrades(strategy: StrategyDefinition, trades: BacktestTr
   const slMode: BacktestPriceMode =
     trades.some((trade) => trade.slMode === "custom") || hasMeaningfulVariation(trades.map((trade) => trade.slUnits)) ? "custom" : "fixed";
   const sizeModeValue: BacktestSizeMode = trades.some((trade) => trade.sizeMode === "custom") ? "custom" : "auto";
-  const tpUnits = average(trades.map((trade) => trade.tpUnits));
-  const slUnits = average(trades.map((trade) => trade.slUnits));
   const riskRewardRatio = plannedRiskReward(strategy, first.variantId, trades) ?? ratioFromUnits(tpUnits, slUnits);
 
   return {
@@ -490,14 +525,7 @@ function backtestStatFromTrades(strategy: StrategyDefinition, trades: BacktestTr
     source: first.source || strategy.defaults?.source,
     variantId: first.variantId,
     modelName: strategy.label,
-    sizeMultiplier:
-      sizeMultiplierHint ??
-      strategy.defaults?.sizeMultiplier ??
-      recommendedSizeMultiplier({
-        symbol: first.symbol,
-        tpUnits,
-        slUnits
-      }),
+    sizeMultiplier,
     trades: aggregate.trades,
     wins: aggregate.wins,
     losses: aggregate.losses,
@@ -505,6 +533,8 @@ function backtestStatFromTrades(strategy: StrategyDefinition, trades: BacktestTr
     profitFactor: aggregate.profitFactor,
     totalR: aggregate.totalR,
     avgR: aggregate.avgR,
+    avgWinDollars: aggregate.avgWinDollars,
+    avgLossDollars: aggregate.avgLossDollars,
     avgWinR: aggregate.avgWinR,
     avgLossR: aggregate.avgLossR,
     realizedRiskRewardRatio: aggregate.realizedRiskRewardRatio,
@@ -532,7 +562,7 @@ function backtestStatFromTrades(strategy: StrategyDefinition, trades: BacktestTr
 
 function statHasRealizedPayoffFields(stat: BacktestStat): boolean {
   if (!stat.trades) return true;
-  return Number.isFinite(stat.avgWinR) && Number.isFinite(stat.avgLossR);
+  return Number.isFinite(stat.avgWinR) && Number.isFinite(stat.avgLossR) && Number.isFinite(stat.avgWinDollars) && Number.isFinite(stat.avgLossDollars);
 }
 
 function catalogStatsHaveRealizedPayoffFields(stats: BacktestStat[]): boolean {
@@ -626,6 +656,8 @@ function catalogHasCurrentStrategyDrift(manifest: StrategyCatalog, local: Strate
     if (!manifestStat) return true;
     if ((manifestStat.variantId ?? "") !== (localStat.variantId ?? "")) return true;
     if (roundedCatalogNumber(manifestStat.profitFactor) !== roundedCatalogNumber(localStat.profitFactor)) return true;
+    if (roundedCatalogNumber(manifestStat.avgWinDollars) !== roundedCatalogNumber(localStat.avgWinDollars)) return true;
+    if (roundedCatalogNumber(manifestStat.avgLossDollars) !== roundedCatalogNumber(localStat.avgLossDollars)) return true;
     if (roundedCatalogNumber(manifestStat.avgWinR) !== roundedCatalogNumber(localStat.avgWinR)) return true;
     if (roundedCatalogNumber(manifestStat.avgLossR) !== roundedCatalogNumber(localStat.avgLossR)) return true;
     if (roundedCatalogNumber(manifestStat.realizedRiskRewardRatio) !== roundedCatalogNumber(localStat.realizedRiskRewardRatio)) return true;

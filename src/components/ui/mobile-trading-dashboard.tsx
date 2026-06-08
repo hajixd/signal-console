@@ -160,6 +160,12 @@ function formatMobileOptionalRatio(value: number | undefined): string {
   return typeof value === "number" && Number.isFinite(value) ? formatMobileRatio(value) : "--";
 }
 
+function formatMobileAverageMoney(value: number | undefined, sign: "loss" | "win"): string {
+  if (typeof value !== "number" || !Number.isFinite(value)) return "--";
+  const dollars = sign === "loss" ? -Math.abs(value) : Math.abs(value);
+  return formatMobileMoney(dollars);
+}
+
 function mobileStrategyTone(strategy: StrategyEditOption): "down" | "neutral" | "up" {
   const profitFactor = strategy.profitFactor;
   if (typeof profitFactor !== "number" || !Number.isFinite(profitFactor)) return "neutral";
@@ -427,6 +433,7 @@ function MobileStrategiesPanel({ strategies }: { strategies: StrategyEditOption[
         <div className="mobile-phone-strategy-list">
           {sortedStrategies.map((strategy) => {
             const avgRiskReward = strategy.realizedRiskRewardRatio ?? strategy.riskRewardRatio;
+            const hasBacktestTrades = (strategy.trades ?? 0) > 0;
             const tone = mobileStrategyTone(strategy);
             return (
               <article className={`mobile-phone-strategy-row tone-${tone}`} key={strategy.key}>
@@ -446,7 +453,10 @@ function MobileStrategiesPanel({ strategies }: { strategies: StrategyEditOption[
                   <span>{formatMobilePercent(strategy.winRatePct)} WR</span>
                   <span>{formatMobileOptionalRatio(avgRiskReward)} avg R:R</span>
                   <span>{(strategy.trades ?? 0).toLocaleString("en-US")} trades</span>
-                  <span>{formatMobileOptionalRatio(strategy.avgWinR)} / {formatMobileOptionalRatio(strategy.avgLossR)} R</span>
+                  <span>
+                    {formatMobileAverageMoney(hasBacktestTrades ? strategy.avgWinDollars : undefined, "win")} /{" "}
+                    {formatMobileAverageMoney(hasBacktestTrades ? strategy.avgLossDollars : undefined, "loss")}
+                  </span>
                 </div>
                 {strategy.liveSupported ? <span className="mobile-phone-strategy-live">Live</span> : null}
               </article>
@@ -559,11 +569,11 @@ function MobileHistoryStatsStrip({ stats }: { stats: MobileHistoryStats }) {
         <strong className={stats.netPnlTone}>{stats.netPnl}</strong>
       </span>
       <span>
-        <small>Avg Win</small>
+        <small>Average Win</small>
         <strong className="up">{stats.averageWin}</strong>
       </span>
       <span>
-        <small>Avg Loss</small>
+        <small>Average Loss</small>
         <strong className="down">{stats.averageLoss}</strong>
       </span>
       <span>

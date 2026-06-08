@@ -31,6 +31,8 @@ type StrategyOption = {
   profitFactor: number;
   trades: number;
   tradesPerWeek: number;
+  avgWinDollars: number;
+  avgLossDollars: number;
   avgWinR: number;
   avgLossR: number;
   realizedRiskRewardRatio?: number;
@@ -295,9 +297,14 @@ function sortableProfitFactor(strategy: Pick<StrategyOption, "profitFactor" | "t
   return strategy.trades > 0 && Number.isFinite(strategy.profitFactor) ? strategy.profitFactor : -Infinity;
 }
 
-function displayRMultipleLabel(value: number, hasBacktestTrades: boolean): string {
+function displayAverageWinLabel(value: number, hasBacktestTrades: boolean): string {
   if (!hasBacktestTrades || !Number.isFinite(value)) return "--";
-  return `${formatNumber(value)}R`;
+  return formatMoney(Math.abs(value));
+}
+
+function displayAverageLossLabel(value: number, hasBacktestTrades: boolean): string {
+  if (!hasBacktestTrades || !Number.isFinite(value)) return "--";
+  return formatMoney(-Math.abs(value));
 }
 
 function roundControlValue(value: number): number {
@@ -1124,8 +1131,8 @@ export default function StrategySelector({
     if (sortColumn === "profitFactor") comparison = compareNumber(sortableProfitFactor(left), sortableProfitFactor(right));
     if (sortColumn === "winRate") comparison = left.winRatePct - right.winRatePct;
     if (sortColumn === "trades") comparison = left.trades - right.trades;
-    if (sortColumn === "target") comparison = left.avgWinR - right.avgWinR;
-    if (sortColumn === "risk") comparison = left.avgLossR - right.avgLossR;
+    if (sortColumn === "target") comparison = left.avgWinDollars - right.avgWinDollars;
+    if (sortColumn === "risk") comparison = left.avgLossDollars - right.avgLossDollars;
     if (sortColumn === "rrr") comparison = (left.realizedRiskRewardRatio ?? 0) - (right.realizedRiskRewardRatio ?? 0);
     if (sortColumn === "size") comparison = leftEdit.contracts - rightEdit.contracts;
     if (sortColumn === "scale") comparison = scaleForContracts(left, leftEdit.contracts) - scaleForContracts(right, rightEdit.contracts);
@@ -1421,11 +1428,11 @@ export default function StrategySelector({
             <strong>{sortIndicator("trades")}</strong>
           </button>
           <button className={sortButtonClass("target")} type="button" onClick={() => toggleSort("target")} disabled={isRestricted}>
-            <span>Avg Win</span>
+            <span>Average Win</span>
             <strong>{sortIndicator("target")}</strong>
           </button>
           <button className={sortButtonClass("risk")} type="button" onClick={() => toggleSort("risk")} disabled={isRestricted}>
-            <span>Avg Loss</span>
+            <span>Average Loss</span>
             <strong>{sortIndicator("risk")}</strong>
           </button>
           <button className={sortButtonClass("rrr")} type="button" onClick={() => toggleSort("rrr")} disabled={isRestricted}>
@@ -1478,8 +1485,8 @@ export default function StrategySelector({
               </span>
               <span data-label="Win">{hasBacktestTrades ? formatPct(strategy.winRatePct) : "--"}</span>
               <span data-label="Trades">{formatNumber(strategy.trades)}</span>
-              <span data-label="Avg Win">{displayRMultipleLabel(strategy.avgWinR, hasBacktestTrades)}</span>
-              <span data-label="Avg Loss">{displayRMultipleLabel(strategy.avgLossR, hasBacktestTrades)}</span>
+              <span data-label="Average Win">{displayAverageWinLabel(strategy.avgWinDollars, hasBacktestTrades)}</span>
+              <span data-label="Average Loss">{displayAverageLossLabel(strategy.avgLossDollars, hasBacktestTrades)}</span>
               <span
                 data-label="Avg R:R"
                 title={plannedRiskRewardRatio !== undefined ? `Planned initial RR: ${formatNumber(plannedRiskRewardRatio)}` : undefined}
