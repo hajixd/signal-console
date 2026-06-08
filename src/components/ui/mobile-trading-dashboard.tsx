@@ -13,8 +13,6 @@ import {
 } from "@/components/auto-trading/auto-trade-account-mode";
 import { useAutoTradeAdminMode } from "@/components/auto-trading/use-auto-trade-account-mode";
 import {
-  effectiveStrategyEdit,
-  type StrategyEditMap,
   type StrategyEditOption,
   type StrategyEditSeedMap,
   useStrategyEdits
@@ -381,7 +379,7 @@ function MobileWorkspaceTabIcon({ tab }: { tab: MobileTradingTab }) {
   );
 }
 
-function MobileStrategiesPanel({ edits, strategies }: { edits: StrategyEditMap; strategies: StrategyEditOption[] }) {
+function MobileStrategiesPanel({ strategies }: { strategies: StrategyEditOption[] }) {
   const sortedStrategies = useMemo(
     () =>
       [...strategies].sort((left, right) => {
@@ -428,8 +426,7 @@ function MobileStrategiesPanel({ edits, strategies }: { edits: StrategyEditMap; 
       ) : (
         <div className="mobile-phone-strategy-list">
           {sortedStrategies.map((strategy) => {
-            const edit = effectiveStrategyEdit(strategy, edits);
-            const riskReward = edit.riskDollars > 0 ? edit.targetDollars / edit.riskDollars : strategy.riskRewardRatio;
+            const avgRiskReward = strategy.realizedRiskRewardRatio ?? strategy.riskRewardRatio;
             const tone = mobileStrategyTone(strategy);
             return (
               <article className={`mobile-phone-strategy-row tone-${tone}`} key={strategy.key}>
@@ -447,9 +444,9 @@ function MobileStrategiesPanel({ edits, strategies }: { edits: StrategyEditMap; 
                 </div>
                 <div className="mobile-phone-strategy-meta">
                   <span>{formatMobilePercent(strategy.winRatePct)} WR</span>
-                  <span>{formatMobileOptionalRatio(riskReward)}R</span>
+                  <span>{formatMobileOptionalRatio(avgRiskReward)} avg R:R</span>
                   <span>{(strategy.trades ?? 0).toLocaleString("en-US")} trades</span>
-                  <span>{formatMobileMoney(edit.targetDollars)} / {formatMobileMoney(-edit.riskDollars)}</span>
+                  <span>{formatMobileOptionalRatio(strategy.avgWinR)} / {formatMobileOptionalRatio(strategy.avgLossR)} R</span>
                 </div>
                 {strategy.liveSupported ? <span className="mobile-phone-strategy-live">Live</span> : null}
               </article>
@@ -1140,7 +1137,7 @@ export default function MobileTradingDashboard({
                 title="Live Alerts"
               />
             ) : activeTab === "strategies" ? (
-              <MobileStrategiesPanel edits={edits} strategies={strategies} />
+              <MobileStrategiesPanel strategies={strategies} />
             ) : activeTab === "sync" ? (
               <MobileSyncPanel summary={syncSummary} />
             ) : activeTab === "autotrade" ? (

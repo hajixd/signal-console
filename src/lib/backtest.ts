@@ -30,6 +30,9 @@ export type BacktestStat = {
   profitFactor: number;
   totalR: number;
   avgR: number;
+  avgWinR: number;
+  avgLossR: number;
+  realizedRiskRewardRatio?: number;
   maxDrawdownR: number;
   tradesPerDay: number;
   tradesPerWeek: number;
@@ -96,6 +99,9 @@ export type BacktestAggregate = {
   profitFactor: number;
   totalR: number;
   avgR: number;
+  avgWinR: number;
+  avgLossR: number;
+  realizedRiskRewardRatio?: number;
 };
 
 export type StrategyCatalogEntry = {
@@ -352,12 +358,14 @@ async function readCsvRowsPreferLocal(filePath: string): Promise<CsvRow[]> {
   }
 }
 
-function aggregateBacktest(trades: BacktestTrade[]): BacktestAggregate {
+export function aggregateBacktest(trades: BacktestTrade[]): BacktestAggregate {
   const wins = trades.filter((trade) => trade.rMultiple > 0);
   const losses = trades.filter((trade) => trade.rMultiple < 0);
   const grossWins = wins.reduce((sum, trade) => sum + trade.rMultiple, 0);
   const grossLosses = Math.abs(losses.reduce((sum, trade) => sum + trade.rMultiple, 0));
   const totalR = trades.reduce((sum, trade) => sum + trade.rMultiple, 0);
+  const avgWinR = wins.length ? grossWins / wins.length : 0;
+  const avgLossR = losses.length ? grossLosses / losses.length : 0;
   return {
     trades: trades.length,
     wins: wins.length,
@@ -365,7 +373,10 @@ function aggregateBacktest(trades: BacktestTrade[]): BacktestAggregate {
     winRatePct: trades.length ? (wins.length / trades.length) * 100 : 0,
     profitFactor: grossLosses ? grossWins / grossLosses : grossWins ? Infinity : 0,
     totalR,
-    avgR: trades.length ? totalR / trades.length : 0
+    avgR: trades.length ? totalR / trades.length : 0,
+    avgWinR,
+    avgLossR,
+    realizedRiskRewardRatio: avgLossR > 0 ? avgWinR / avgLossR : undefined
   };
 }
 
@@ -494,6 +505,9 @@ function backtestStatFromTrades(strategy: StrategyDefinition, trades: BacktestTr
     profitFactor: aggregate.profitFactor,
     totalR: aggregate.totalR,
     avgR: aggregate.avgR,
+    avgWinR: aggregate.avgWinR,
+    avgLossR: aggregate.avgLossR,
+    realizedRiskRewardRatio: aggregate.realizedRiskRewardRatio,
     maxDrawdownR: maxDrawdownR(trades),
     tradesPerDay: cadence.tradesPerDay,
     tradesPerWeek: cadence.tradesPerWeek,
@@ -577,6 +591,10 @@ function catalogHasCurrentStrategyDrift(manifest: StrategyCatalog, local: Strate
     const manifestStat = manifestStats.get(localStat.datasetId);
     if (!manifestStat) return true;
     if ((manifestStat.variantId ?? "") !== (localStat.variantId ?? "")) return true;
+    if (roundedCatalogNumber(manifestStat.profitFactor) !== roundedCatalogNumber(localStat.profitFactor)) return true;
+    if (roundedCatalogNumber(manifestStat.avgWinR) !== roundedCatalogNumber(localStat.avgWinR)) return true;
+    if (roundedCatalogNumber(manifestStat.avgLossR) !== roundedCatalogNumber(localStat.avgLossR)) return true;
+    if (roundedCatalogNumber(manifestStat.realizedRiskRewardRatio) !== roundedCatalogNumber(localStat.realizedRiskRewardRatio)) return true;
     if (roundedCatalogNumber(catalogStatRiskReward(manifestStat)) !== roundedCatalogNumber(catalogStatRiskReward(localStat))) return true;
     if (roundedCatalogNumber(manifestStat.tpUnits) !== roundedCatalogNumber(localStat.tpUnits)) return true;
     if (roundedCatalogNumber(manifestStat.slUnits) !== roundedCatalogNumber(localStat.slUnits)) return true;
@@ -816,5 +834,3 @@ export async function getBacktestCatalogFreshness(): Promise<{
     };
   }
 }
-
-export { aggregateBacktest };

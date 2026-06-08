@@ -15,6 +15,9 @@ export type StrategyEditOption = {
   dollarPerUnit: number;
   targetDollars: number;
   riskDollars: number;
+  avgWinR?: number;
+  avgLossR?: number;
+  realizedRiskRewardRatio?: number;
   riskRewardRatio?: number;
   profitFactor?: number;
   trades?: number;

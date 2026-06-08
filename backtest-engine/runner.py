@@ -37,7 +37,7 @@ TIMEFRAME_EVERY = {
     "1w": "1w",
 }
 TIMEFRAME_ORDER = ["1m", "5m", "10m", "15m", "30m", "45m", "1h", "4h", "1d", "1w"]
-LOWER_TIMEFRAME_EXIT_PREFERENCE = ["1m", "5m"]
+LOWER_TIMEFRAME_EXIT_PREFERENCE = ["1m"]
 WEEKEND_CLOSED_MARKETS = {"forex", "futures", "gold_spot", "crypto"}
 
 EXIT_REASON = {
@@ -1250,7 +1250,7 @@ def strategy_execution_timeframe(strategy: BacktestStrategy) -> str | None:
     timeframe = variant_value(strategy.variant_id, "exec_tf")
     if timeframe is None:
         return None
-    if timeframe not in {"1m", "5m"}:
+    if timeframe != "1m":
         raise ValueError(f"Unsupported execution timeframe '{timeframe}' for {strategy.id}")
     return timeframe
 
@@ -1270,6 +1270,9 @@ def candle_file_has_rows(csv_path: Path) -> bool:
 
 
 def execution_timeframe_candidates(strategy: BacktestStrategy, asset: AssetConfig, source_timeframe: str) -> list[str]:
+    if source_timeframe == "1m":
+        return []
+
     explicit_timeframe = strategy_execution_timeframe(strategy)
     if explicit_timeframe is not None:
         explicit_path = DATA_ROOT / explicit_timeframe / asset.data_file
@@ -1289,8 +1292,27 @@ def execution_timeframe_candidates(strategy: BacktestStrategy, asset: AssetConfi
 
 
 def best_execution_timeframe(strategy: BacktestStrategy, asset: AssetConfig, source_timeframe: str) -> str | None:
+    if source_timeframe == "1m":
+        return "1m"
     candidates = execution_timeframe_candidates(strategy, asset, source_timeframe)
     return candidates[0] if candidates else None
+
+
+def require_one_minute_execution_candidates(
+    strategy: BacktestStrategy,
+    asset: AssetConfig,
+    source_timeframe: str,
+    candidates: list[str],
+) -> None:
+    if source_timeframe == "1m":
+        return
+    if "1m" in candidates:
+        return
+    one_minute_path = DATA_ROOT / "1m" / asset.data_file
+    raise FileNotFoundError(
+        f"Missing 1m execution candle file for {strategy.id}: {one_minute_path}. "
+        f"{source_timeframe} strategies must refine exits on 1m data."
+    )
 
 
 def rolling_mean(values: np.ndarray, length: int) -> np.ndarray:
@@ -5055,8 +5077,14 @@ def refine_trades_with_execution_data(
     source_data: EnrichedData,
     execution_data: list[tuple[str, EnrichedData]] | None,
     trades: list[BacktestTradeRow],
+    source_timeframe: str = "",
+    require_one_minute_exits: bool = False,
 ) -> list[BacktestTradeRow]:
     if not execution_data:
+        if source_timeframe == "1m":
+            return [replace(trade, execution_timeframe="1m") for trade in trades]
+        if require_one_minute_exits:
+            raise RuntimeError(f"Missing 1m execution data for {strategy.id}; refusing to write unrefined exits.")
         return [cap_trade_to_initial_bracket(asset, trade) for trade in trades]
     refined: list[BacktestTradeRow] = []
     for trade in trades:
@@ -5065,7 +5093,14 @@ def refine_trades_with_execution_data(
             candidate = refine_trade_with_execution_data(strategy, asset, source_data, dataset, trade, execution_timeframe)
             if candidate is not None:
                 break
-        refined.append(candidate if candidate is not None else cap_trade_to_initial_bracket(asset, trade))
+        if candidate is None:
+            if require_one_minute_exits:
+                raise RuntimeError(
+                    f"Could not refine {strategy.id} trade at {iso_time(trade.entry_time)} "
+                    "against 1m execution data."
+                )
+            candidate = cap_trade_to_initial_bracket(asset, trade)
+        refined.append(candidate)
     return refined
 
 
@@ -5077,6 +5112,8 @@ def run_single_strategy(
     end_ts: int | None = None,
     strict_anti_cheat: bool = True,
     execution_data: list[tuple[str, EnrichedData]] | None = None,
+    source_timeframe: str = "",
+    require_one_minute_exits: bool = False,
 ) -> list[BacktestTradeRow]:
     config = runtime_config(strategy.variant_id)
     max_bars = max(1, config.max_bars)
@@ -5182,7 +5219,15 @@ def run_single_strategy(
         final_index = data.times.shape[0] - 1
         trades.append(complete_trade(strategy, asset, data, open_trade, final_index, float(data.close[final_index]), "end"))
 
-    return refine_trades_with_execution_data(strategy, asset, data, execution_data, trades)
+    return refine_trades_with_execution_data(
+        strategy,
+        asset,
+        data,
+        execution_data,
+        trades,
+        source_timeframe=source_timeframe,
+        require_one_minute_exits=require_one_minute_exits,
+    )
 
 
 def iso_time(timestamp: int) -> str:
@@ -5534,6 +5579,7 @@ def run_backtests(
             timeframe = strategy_timeframe(strategy)
             cache_key = (asset.key, timeframe)
             execution_timeframes = execution_timeframe_candidates(strategy, asset, timeframe)
+            require_one_minute_execution_candidates(strategy, asset, timeframe, execution_timeframes)
             existing_trades = read_strategy_backtest_csv(output_path) if incremental and output_path.exists() else []
             effective_start_ts = start_ts if start_ts is not None else BACKTEST_START_TS
             state_start_ts = incremental_start_state.get((asset.key, timeframe))
@@ -5563,7 +5609,6 @@ def run_backtests(
                 if timings:
                     print(f"  enriched {asset.key} {timeframe}")
             execution_data: list[tuple[str, EnrichedData]] = []
-            explicit_execution_timeframe = strategy_execution_timeframe(strategy)
             for execution_timeframe in execution_timeframes:
                 execution_cache_key = (asset.key, execution_timeframe)
                 if execution_cache_key not in execution_cache:
@@ -5571,7 +5616,7 @@ def run_backtests(
                     if not execution_path.exists():
                         raise FileNotFoundError(
                             f"Missing {execution_timeframe} execution candle file: {execution_path}. "
-                            "Run/import that timeframe before using exec_tf."
+                            "Run/import 1m data before writing higher-timeframe backtests."
                         )
                     if timings:
                         print(f"  loading execution {execution_path}")
@@ -5579,11 +5624,7 @@ def run_backtests(
                         execution_frame = load_candle_csv(execution_path)
                         execution_cache[execution_cache_key] = build_enriched_data(execution_frame, asset)
                     except MemoryError:
-                        if explicit_execution_timeframe == execution_timeframe:
-                            raise
-                        if timings:
-                            print(f"  skipped {asset.key} execution {execution_timeframe}: not enough memory; trying next candidate")
-                        continue
+                        raise
                     execution_cache_order.append(execution_cache_key)
                     while len(execution_cache_order) > 2:
                         stale_key = execution_cache_order.pop(0)
@@ -5614,6 +5655,8 @@ def run_backtests(
                 end_ts=end_ts,
                 strict_anti_cheat=strict_anti_cheat,
                 execution_data=execution_data,
+                source_timeframe=timeframe,
+                require_one_minute_exits=timeframe != "1m",
             )
             if write_output:
                 output_trades = (
@@ -5681,8 +5724,8 @@ def audit_anti_cheat(
 
         data = enriched_cache[cache_key]
         execution_timeframes = execution_timeframe_candidates(strategy, asset, timeframe)
+        require_one_minute_execution_candidates(strategy, asset, timeframe, execution_timeframes)
         execution_data: list[tuple[str, EnrichedData]] = []
-        explicit_execution_timeframe = strategy_execution_timeframe(strategy)
         for execution_timeframe in execution_timeframes:
             execution_cache_key = (asset.key, execution_timeframe)
             if execution_cache_key not in execution_cache:
@@ -5692,9 +5735,7 @@ def audit_anti_cheat(
                 try:
                     execution_cache[execution_cache_key] = build_enriched_data(load_candle_csv(execution_path), asset)
                 except MemoryError:
-                    if explicit_execution_timeframe == execution_timeframe:
-                        raise
-                    continue
+                    raise
                 execution_cache_order.append(execution_cache_key)
                 while len(execution_cache_order) > 2:
                     stale_key = execution_cache_order.pop(0)
@@ -5713,6 +5754,8 @@ def audit_anti_cheat(
             end_ts=end_ts,
             strict_anti_cheat=False,
             execution_data=execution_data,
+            source_timeframe=timeframe,
+            require_one_minute_exits=timeframe != "1m",
         )
         strict_trades = run_single_strategy(
             strategy,
@@ -5722,6 +5765,8 @@ def audit_anti_cheat(
             end_ts=end_ts,
             strict_anti_cheat=True,
             execution_data=execution_data,
+            source_timeframe=timeframe,
+            require_one_minute_exits=timeframe != "1m",
         )
         drifted, reason = anti_cheat_drift(fast_trades, strict_trades)
         if drifted:

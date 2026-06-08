@@ -32,6 +32,9 @@ type StrategyOption = {
   profitFactor: number;
   trades: number;
   tradesPerWeek: number;
+  avgWinR: number;
+  avgLossR: number;
+  realizedRiskRewardRatio?: number;
   tpUnits: number;
   slUnits: number;
   unitLabel: string;
@@ -282,6 +285,11 @@ function editRiskRewardRatio(edit: Pick<StrategyEdit, "targetDollars" | "riskDol
 function displayRiskRewardLabel(value: number | undefined, hasBacktestTrades: boolean): string {
   if (!hasBacktestTrades) return "--";
   return Number.isFinite(value) ? formatNumber(value ?? 0) : "--";
+}
+
+function displayRMultipleLabel(value: number, hasBacktestTrades: boolean): string {
+  if (!hasBacktestTrades || !Number.isFinite(value)) return "--";
+  return `${formatNumber(value)}R`;
 }
 
 function roundControlValue(value: number): number {
@@ -674,8 +682,8 @@ export default function StrategySelector({
   const latestEditSignatureRef = useRef<string>(currentEditSignature);
   const editSyncTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const editSyncRunRef = useRef(0);
-  const editControlsDisabled = isSavingEdits || isRestricted;
-  const selectionControlsDisabled = isRestricted;
+  const editControlsDisabled = true;
+  const selectionControlsDisabled = true;
   const canShowSavedSelection = optimisticSelectedKeys.length === 0 && scopedPersistedLiveKeys.length > 0;
   const savingSelectionKeySet = useMemo(() => new Set(savingSelectionKeys), [savingSelectionKeys]);
   const isStrategyLoading =
@@ -1069,12 +1077,15 @@ export default function StrategySelector({
   }
 
   function currentEdit(strategy: StrategyOption): StrategyEdit {
-    return edits[strategy.key] ? normalizeEdit(strategy, edits[strategy.key]) : defaultEdit(strategy);
+    return defaultEdit(strategy);
   }
 
   const visibleStrategies = strategies.filter((strategy) => strategyMatchesSearch(strategy, currentEdit(strategy), normalizedSearchQuery));
   const sortedStrategies = [...visibleStrategies].sort((left, right) => {
     if (!sortColumn) {
+      const leftEnabled = selected.has(left.key);
+      const rightEnabled = selected.has(right.key);
+      if (leftEnabled !== rightEnabled) return leftEnabled ? -1 : 1;
       return (orderByKey.get(left.key) ?? 0) - (orderByKey.get(right.key) ?? 0);
     }
 
@@ -1087,9 +1098,9 @@ export default function StrategySelector({
     if (sortColumn === "profitFactor") comparison = left.profitFactor - right.profitFactor;
     if (sortColumn === "winRate") comparison = left.winRatePct - right.winRatePct;
     if (sortColumn === "trades") comparison = left.trades - right.trades;
-    if (sortColumn === "target") comparison = leftEdit.targetDollars - rightEdit.targetDollars;
-    if (sortColumn === "risk") comparison = leftEdit.riskDollars - rightEdit.riskDollars;
-    if (sortColumn === "rrr") comparison = (riskRewardRatio(leftEdit.targetDollars, leftEdit.riskDollars) ?? 0) - (riskRewardRatio(rightEdit.targetDollars, rightEdit.riskDollars) ?? 0);
+    if (sortColumn === "target") comparison = left.avgWinR - right.avgWinR;
+    if (sortColumn === "risk") comparison = left.avgLossR - right.avgLossR;
+    if (sortColumn === "rrr") comparison = (left.realizedRiskRewardRatio ?? 0) - (right.realizedRiskRewardRatio ?? 0);
     if (sortColumn === "size") comparison = leftEdit.contracts - rightEdit.contracts;
     if (sortColumn === "scale") comparison = scaleForContracts(left, leftEdit.contracts) - scaleForContracts(right, rightEdit.contracts);
     if (sortColumn === "enabled") comparison = Number(selected.has(left.key)) - Number(selected.has(right.key));
@@ -1121,9 +1132,7 @@ export default function StrategySelector({
   }
 
   function openEditor(strategy: StrategyOption) {
-    if (isRestricted) return;
-    setActiveKey(strategy.key);
-    setDraft(currentEdit(strategy));
+    void strategy;
   }
 
   function closeEditor() {
@@ -1340,21 +1349,9 @@ export default function StrategySelector({
     <div className={`strategyPicker${isRestricted ? " adminOnlyRestrictedSurface" : ""}`} aria-disabled={isRestricted}>
       <div className="pickerHeader">
         <span>Strategies</span>
-        <div className="pickerActions">
-          {canShowSavedSelection ? (
-            <button type="button" onClick={showSavedSelection}>
-              Show Saved
-            </button>
-          ) : null}
-          <button type="button" onClick={openCustomSelection} disabled={selectionControlsDisabled || strategies.length === 0}>
-            Custom Selection
-          </button>
-          <button type="button" onClick={() => navigate([])} disabled={selectionControlsDisabled || optimisticSelectedKeys.length === 0}>
-            Clear
-          </button>
-          <button type="button" onClick={resetAllEdits} disabled={editControlsDisabled || !hasEdits}>
-            Reset edits
-          </button>
+        <div className="pickerActions strategyReadOnlySummary">
+          <span>{formatNumber(optimisticSelectedKeys.length)} live</span>
+          <span>Read-only</span>
         </div>
       </div>
 
@@ -1371,23 +1368,6 @@ export default function StrategySelector({
             }}
           />
         </label>
-        <div className="bulkScale">
-          <span>All scale</span>
-          <div className="scaleButtons" aria-label="Scale all strategy rows">
-            <button type="button" onClick={() => scaleAllContracts(0.5)} disabled={editControlsDisabled || strategies.length === 0}>
-              0.5x
-            </button>
-            <button type="button" onClick={() => scaleAllContracts(2)} disabled={editControlsDisabled || strategies.length === 0}>
-              2x
-            </button>
-            <button type="button" onClick={() => scaleAllContracts(4)} disabled={editControlsDisabled || strategies.length === 0}>
-              4x
-            </button>
-            <button type="button" onClick={openCustomScale} disabled={editControlsDisabled || strategies.length === 0}>
-              Custom Unit
-            </button>
-          </div>
-        </div>
         <span className="strategySearchCount">
           {formatNumber(visibleStrategies.length)} / {formatNumber(strategies.length)}
         </span>
@@ -1418,15 +1398,15 @@ export default function StrategySelector({
             <strong>{sortIndicator("trades")}</strong>
           </button>
           <button className={sortButtonClass("target")} type="button" onClick={() => toggleSort("target")} disabled={isRestricted}>
-            <span>Take Profit</span>
+            <span>Avg Win</span>
             <strong>{sortIndicator("target")}</strong>
           </button>
           <button className={sortButtonClass("risk")} type="button" onClick={() => toggleSort("risk")} disabled={isRestricted}>
-            <span>Stop Loss</span>
+            <span>Avg Loss</span>
             <strong>{sortIndicator("risk")}</strong>
           </button>
           <button className={sortButtonClass("rrr")} type="button" onClick={() => toggleSort("rrr")} disabled={isRestricted}>
-            <span>RRR</span>
+            <span>Avg R:R</span>
             <strong>{sortIndicator("rrr")}</strong>
           </button>
           <button className={sortButtonClass("size")} type="button" onClick={() => toggleSort("size")} disabled={isRestricted}>
@@ -1445,27 +1425,18 @@ export default function StrategySelector({
 
         {sortedStrategies.map((strategy) => {
           const checked = selected.has(strategy.key);
-          const custom = Boolean(edits[strategy.key]);
+          const custom = false;
           const isSavingSelection = savingSelectionKeySet.has(strategy.key);
           const effective = currentEdit(strategy);
-          const effectiveRiskRewardRatio = riskRewardRatio(effective.targetDollars, effective.riskDollars);
           const hasBacktestTrades = strategy.trades > 0;
           const displayedModelName = isRestricted ? "Admin only" : effective.modelName;
+          const plannedRiskRewardRatio = riskRewardRatio(effective.targetDollars, effective.riskDollars);
           return (
             <div
               className={`basketListRow ${checked ? "isEnabled" : "isDisabled"} ${custom ? "hasCustom" : ""} ${isSavingSelection ? "isSavingSelection" : ""}${isRestricted ? " isAccessRestricted" : ""}`}
-              role={isRestricted ? "listitem" : "button"}
-              tabIndex={isRestricted ? -1 : 0}
+              role="listitem"
               aria-disabled={isRestricted}
               key={strategy.key}
-              onClick={isRestricted ? undefined : () => openEditor(strategy)}
-              onKeyDown={(event) => {
-                if (isRestricted) return;
-                if (event.key === "Enter" || event.key === " ") {
-                  event.preventDefault();
-                  openEditor(strategy);
-                }
-              }}
             >
               <span className="basketTicker" data-label="Assets">
                 {strategy.symbol}
@@ -1483,25 +1454,19 @@ export default function StrategySelector({
               </span>
               <span data-label="Win">{hasBacktestTrades ? formatPct(strategy.winRatePct) : "--"}</span>
               <span data-label="Trades">{formatNumber(strategy.trades)}</span>
-              <span data-label="Take Profit">{displayTargetLabel(effective.targetDollars)}</span>
-              <span data-label="Stop Loss">{displayRiskLabel(effective.riskDollars)}</span>
-              <span data-label="RRR">{displayRiskRewardLabel(effectiveRiskRewardRatio, hasBacktestTrades)}</span>
+              <span data-label="Avg Win">{displayRMultipleLabel(strategy.avgWinR, hasBacktestTrades)}</span>
+              <span data-label="Avg Loss">{displayRMultipleLabel(strategy.avgLossR, hasBacktestTrades)}</span>
+              <span
+                data-label="Avg R:R"
+                title={plannedRiskRewardRatio !== undefined ? `Planned initial RR: ${formatNumber(plannedRiskRewardRatio)}` : undefined}
+              >
+                {displayRiskRewardLabel(strategy.realizedRiskRewardRatio, hasBacktestTrades)}
+              </span>
               <span data-label="Unit/contract size">{displaySizeLabel(strategy, effective.contracts, effective.sizeName)}</span>
               <span data-label="Scale">{formatScaleRatio(scaleForContracts(strategy, effective.contracts))}</span>
-              <label
-                className={`strategyToggle${selectionControlsDisabled ? " isLocked" : ""}`}
-                data-label="Enabled"
-                onClick={selectionControlsDisabled ? undefined : (event) => event.stopPropagation()}
-              >
-                <input
-                  type="checkbox"
-                  checked={checked}
-                  aria-busy={isSavingSelection}
-                  disabled={selectionControlsDisabled || isSavingSelection}
-                  onChange={() => toggleStrategy(strategy.key)}
-                />
-                <span>{isSavingSelection ? "Saving" : checked ? "On" : "Off"}</span>
-              </label>
+              <span className={`strategyStatusChip ${checked ? "isOn" : "isOff"}`} data-label="Enabled">
+                {checked ? "On" : "Off"}
+              </span>
             </div>
           );
         })}

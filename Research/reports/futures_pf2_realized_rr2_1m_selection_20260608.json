@@ -1,0 +1,188 @@
+{
+  "generatedAt": "2026-06-08T01:40:11.278Z",
+  "criteria": {
+    "market": "futures",
+    "minProfitFactor": 2,
+    "minRealizedRiskRewardRatio": 2,
+    "minTrades": 40,
+    "requiredExecutionTimeframe": "1m",
+    "duplicateContainmentThreshold": 0.8
+  },
+  "selected": 10,
+  "selectedStrategyIds": [
+    "competition_copper_futures_london_first30_last30_reversal_month_1_xasset_rr_5_d91f5efb",
+    "competition_dow_jones_futures_us_first30_last30_momentum_signalmonth_month_3_xasset_rr_5_3d9679eb",
+    "competition_silver_futures_us_first30_last30_reversal_signalmonth_xasset_rr_5_6a54acc6",
+    "competition_dow_jones_futures_daily_tsmom_next_overnight_signalweekdayside_direction_momentum_entrymin_c2a8817b",
+    "competition_us_treasury_5y_note_futures_daily_tsmom_next_overnight_weekday_side_4_short_xasset_rr_5_2d6cdfee",
+    "competition_australian_dollar_futures_london_first30_ny_open_momentum_weekday_side_0_short_xasset_rr_5_4fbf7cea",
+    "competition_canadian_dollar_futures_london_first30_ny_open_momentum_weekday_side_0_short_xasset_rr_5_b5089070",
+    "competition_us_treasury_2y_note_futures_daily_tsmom_next_overnight_weekday_side_4_short_xasset_rr_5_027092c6",
+    "competition_us_treasury_10y_note_futures_daily_tsmom_next_overnight_weekday_side_4_short_xasset_rr_5_105476cf",
+    "nasdaq_100_futures_round_hundred_rejection_15m"
+  ],
+  "selectedStrategies": [
+    {
+      "id": "competition_copper_futures_london_first30_last30_reversal_month_1_xasset_rr_5_d91f5efb",
+      "symbol": "HG",
+      "label": "HG cross-asset London opening-range reversal into the US close (January filter) true 5R",
+      "trades": 77,
+      "profitFactor": 3.201458449905612,
+      "winRatePct": 53.246753246753244,
+      "avgWinR": 0.6857399776974878,
+      "avgLossR": 0.2927346970714334,
+      "realizedRiskRewardRatio": 2.3425305731016675,
+      "executionTimeframes": {
+        "1m": 77
+      }
+    },
+    {
+      "id": "competition_dow_jones_futures_us_first30_last30_momentum_signalmonth_month_3_xasset_rr_5_3d9679eb",
+      "symbol": "YM",
+      "label": "YM cross-asset cross-asset USDCAD March US first30 last30 momentum true 5R true 5R",
+      "trades": 61,
+      "profitFactor": 3.1471493093086393,
+      "winRatePct": 59.01639344262295,
+      "avgWinR": 1.462653589833389,
+      "avgLossR": 0.6971326013229584,
+      "realizedRiskRewardRatio": 2.098099539539093,
+      "executionTimeframes": {
+        "1m": 61
+      }
+    },
+    {
+      "id": "competition_silver_futures_us_first30_last30_reversal_signalmonth_xasset_rr_5_6a54acc6",
+      "symbol": "SI",
+      "label": "SI cross-asset US opening-range reversal into the close (December filter) true 5R",
+      "trades": 58,
+      "profitFactor": 2.989476691866564,
+      "winRatePct": 55.172413793103445,
+      "avgWinR": 0.5405773429250312,
+      "avgLossR": 0.2630207216939091,
+      "realizedRiskRewardRatio": 2.0552652256582626,
+      "executionTimeframes": {
+        "1m": 58
+      }
+    },
+    {
+      "id": "competition_dow_jones_futures_daily_tsmom_next_overnight_signalweekdayside_direction_momentum_entrymin_c2a8817b",
+      "symbol": "YM",
+      "label": "YM 20-day daily mean reversion overnight (Tuesday longs true 4R)",
+      "trades": 90,
+      "profitFactor": 2.7246759285909885,
+      "winRatePct": 40,
+      "avgWinR": 2.1702155196963613,
+      "avgLossR": 0.8960671006922188,
+      "realizedRiskRewardRatio": 2.4219341587475456,
+      "executionTimeframes": {
+        "1m": 90
+      }
+    },
+    {
+      "id": "competition_us_treasury_5y_note_futures_daily_tsmom_next_overnight_weekday_side_4_short_xasset_rr_5_2d6cdfee",
+      "symbol": "ZF",
+      "label": "ZF cross-asset 5-day daily mean reversion overnight (Friday shorts true 5R) true 5R",
+      "trades": 93,
+      "profitFactor": 2.387606850539705,
+      "winRatePct": 45.16129032258064,
+      "avgWinR": 2.0195343393043337,
+      "avgLossR": 0.789451042267689,
+      "realizedRiskRewardRatio": 2.558150197006827,
+      "executionTimeframes": {
+        "1m": 93
+      }
+    },
+    {
+      "id": "competition_australian_dollar_futures_london_first30_ny_open_momentum_weekday_side_0_short_xasset_rr_5_4fbf7cea",
+      "symbol": "6A",
+      "label": "6A cross-asset cross-asset London opening-range continuation into New York (Monday shorts) true 5R true 5R",
+      "trades": 95,
+      "profitFactor": 2.3714857224739294,
+      "winRatePct": 50.526315789473685,
+      "avgWinR": 2.1189897447105417,
+      "avgLossR": 0.9125396001281062,
+      "realizedRiskRewardRatio": 2.322079769922389,
+      "executionTimeframes": {
+        "1m": 95
+      }
+    },
+    {
+      "id": "competition_canadian_dollar_futures_london_first30_ny_open_momentum_weekday_side_0_short_xasset_rr_5_b5089070",
+      "symbol": "6C",
+      "label": "6C cross-asset cross-asset London opening-range continuation into New York (Monday shorts) true 5R true 5R",
+      "trades": 98,
+      "profitFactor": 2.3323273805969826,
+      "winRatePct": 42.857142857142854,
+      "avgWinR": 3.0101545573874047,
+      "avgLossR": 1.003817620926426,
+      "realizedRiskRewardRatio": 2.99870663219612,
+      "executionTimeframes": {
+        "1m": 98
+      }
+    },
+    {
+      "id": "competition_us_treasury_2y_note_futures_daily_tsmom_next_overnight_weekday_side_4_short_xasset_rr_5_027092c6",
+      "symbol": "ZT",
+      "label": "ZT cross-asset 5-day daily mean reversion overnight (Friday shorts true 5R) true 5R",
+      "trades": 90,
+      "profitFactor": 2.213871652583412,
+      "winRatePct": 48.888888888888886,
+      "avgWinR": 2.011063976892182,
+      "avgLossR": 0.908392306548318,
+      "realizedRiskRewardRatio": 2.2138716525834115,
+      "executionTimeframes": {
+        "1m": 90
+      }
+    },
+    {
+      "id": "competition_us_treasury_10y_note_futures_daily_tsmom_next_overnight_weekday_side_4_short_xasset_rr_5_105476cf",
+      "symbol": "ZN",
+      "label": "ZN cross-asset 5-day daily mean reversion overnight (Friday shorts true 5R) true 5R",
+      "trades": 90,
+      "profitFactor": 2.211274243256704,
+      "winRatePct": 46.666666666666664,
+      "avgWinR": 1.8415429471591913,
+      "avgLossR": 0.8968584982113592,
+      "realizedRiskRewardRatio": 2.0533260830240825,
+      "executionTimeframes": {
+        "1m": 90
+      }
+    },
+    {
+      "id": "nasdaq_100_futures_round_hundred_rejection_15m",
+      "symbol": "NQ",
+      "label": "NQ Round Hundred Rejection 15m",
+      "trades": 53,
+      "profitFactor": 2.0165099607346972,
+      "winRatePct": 45.28301886792453,
+      "avgWinR": 2.3743782408033334,
+      "avgLossR": 0.9744572158365172,
+      "realizedRiskRewardRatio": 2.436616202554426,
+      "executionTimeframes": {
+        "1m": 53
+      }
+    }
+  ],
+  "rejectedNotes": [
+    {
+      "id": "competition_gold_futures_daily_tsmom_next_overnight_weekday_side_3_long_648d544b",
+      "reason": "Strict 1m refinement dropped PF to 1.13 and realized R:R to 1.02."
+    },
+    {
+      "id": "competition_micro_bitcoin_futures_daily_tsmom_next_overnight_signalweekdayside_direction_contrarian_en_6003fc2d",
+      "reason": "Strict 1m refinement dropped PF to 1.42 and realized R:R to 1.00."
+    },
+    {
+      "id": "competition_micro_bitcoin_futures_daily_tsmom_next_rth_weekday_side_2_short_4be5774f",
+      "reason": "Could not refine at least one entry against 1m data; preserved old CSV and excluded."
+    },
+    {
+      "id": "competition_silver_futures_daily_tsmom_next_overnight_weekday_side_4_long_xasset_rr_5_e11e58c1",
+      "reason": "Could not refine at least one entry against 1m data; preserved old CSV and excluded."
+    },
+    {
+      "id": "competition_dow_jones_futures_daily_tsmom_next_overnight_weekday_side_1_long_xasset_rr_4_373963bd",
+      "reason": "Duplicate of competition_dow_jones_futures_daily_tsmom_next_overnight_signalweekdayside_direction_momentum_entrymin_c2a8817b with 100% trade overlap."
+    }
+  ]
+}
