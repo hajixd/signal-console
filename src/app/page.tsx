@@ -220,13 +220,6 @@ function latestDatasetCoverageAt(datasetStatus: DatasetStatus | null | undefined
   return latestIsoTime(Object.values(datasetStatus?.assetCoverage ?? {}).map((coverage) => coverage.lastBarAt));
 }
 
-function fmtPct(value: number): string {
-  return `${new Intl.NumberFormat("en-US", {
-    minimumFractionDigits: 1,
-    maximumFractionDigits: 1
-  }).format(value)}%`;
-}
-
 function fmtMoney(value: number, signed = false): string {
   const formatter = new Intl.NumberFormat("en-US", {
     style: "currency",
@@ -912,13 +905,6 @@ function liveTradeExitReasonLabel(trade: TradeAlert): string {
   return isClosedLifecycleStatus(trade.lifecycleStatus) ? fmtExitReason(trade.lifecycleStatus) : "--";
 }
 
-function liveTradeExitStatusClass(trade: TradeAlert): string {
-  if (trade.lifecycleStatus === "take_profit") return "sent";
-  if (trade.lifecycleStatus === "stop_loss") return "failed";
-  if (trade.lifecycleStatus === "max_bars") return "skipped";
-  return "skipped";
-}
-
 function isManagementLiveTradeEvent(event: LiveTradeEvent): event is LiveTradeEvent & { managementEvent: TradeManagementEvent } {
   return Boolean(event.managementEvent);
 }
@@ -1062,10 +1048,6 @@ function liveTradeEventStopLossPrice(trade: TradeAlert, event: LiveTradeEvent): 
   return trade.stopLossPrice;
 }
 
-function liveTradeEventTargetDollars(trade: TradeAlert, event: LiveTradeEvent): number {
-  return Math.abs(liveTradeEventTpUnits(trade, event) * dollarPerUnit(trade.symbol, liveTradeEventEntryPrice(trade, event)) * liveTradeEventSizeMultiplier(trade, event));
-}
-
 function liveTradeEventRiskDollars(trade: TradeAlert, event: LiveTradeEvent): number {
   return Math.abs(liveTradeEventSlUnits(trade, event) * dollarPerUnit(trade.symbol, liveTradeEventEntryPrice(trade, event)) * liveTradeEventSizeMultiplier(trade, event));
 }
@@ -1106,6 +1088,42 @@ function liveTradeEventAutoTradeStatusLabel(trade: TradeAlert, event: LiveTradeE
   if (status === "placed") return "placed";
   if (status === "dry_run") return "dry run";
   return status;
+}
+
+function liveTradeExitLine(trade: TradeAlert): string {
+  if (!liveTradeClosed(trade)) return "Open";
+  return `${liveTradeExitReasonLabel(trade)} ${fmtDollarPrice(finiteNumberOr(trade.lifecyclePrice, trade.entryPrice))}`;
+}
+
+function liveTradeEventPriceLine(trade: TradeAlert, event: LiveTradeEvent): string {
+  if (event.kind === "exit") return liveTradeExitLine(trade);
+  if (isManagementLiveTradeEvent(event)) return event.title;
+  return `TP ${fmtPrice(liveTradeEventTakeProfitPrice(trade, event))} / SL ${fmtPrice(liveTradeEventStopLossPrice(trade, event))}`;
+}
+
+function liveTradePnlOrRiskLabel(trade: TradeAlert, sizeMultiplier: number): string {
+  if (typeof trade.lifecyclePnlDollars === "number" && Number.isFinite(trade.lifecyclePnlDollars)) {
+    return fmtMoney(trade.lifecyclePnlDollars, true);
+  }
+  if (trade.lifecycleStatus === "take_profit") return fmtMoney(alertTargetDollarsWithSize(trade, sizeMultiplier), true);
+  if (trade.lifecycleStatus === "stop_loss") return fmtMoney(-alertRiskDollarsWithSize(trade, sizeMultiplier), true);
+  return `Risk ${fmtMoney(-alertRiskDollarsWithSize(trade, sizeMultiplier), true)}`;
+}
+
+function liveTradePnlToneClass(trade: TradeAlert): string {
+  if (typeof trade.lifecyclePnlDollars === "number" && Number.isFinite(trade.lifecyclePnlDollars)) return resultClass(trade.lifecyclePnlDollars);
+  if (trade.lifecycleStatus === "take_profit") return "up";
+  if (trade.lifecycleStatus === "stop_loss") return "down";
+  return "neutral";
+}
+
+function liveTradeEventPnlOrRiskLabel(trade: TradeAlert, event: LiveTradeEvent): string {
+  if (event.kind === "exit") return liveTradePnlOrRiskLabel(trade, liveTradeEventSizeMultiplier(trade, event));
+  return `Risk ${fmtMoney(-liveTradeEventRiskDollars(trade, event), true)}`;
+}
+
+function liveTradeEventPnlToneClass(trade: TradeAlert, event: LiveTradeEvent): string {
+  return event.kind === "exit" ? liveTradePnlToneClass(trade) : "neutral";
 }
 
 function tradeDollarPnl(trade: BacktestTrade, sizeMultiplier = 1): number {
@@ -2470,49 +2488,33 @@ export default async function Home({ searchParams }: HomeProps) {
             <div className="terminal-table-wrap live">
               <table className="terminal-table live-alert-table">
                 <colgroup>
-                  <col className="live-col-index" />
-                  <col className="live-col-ticker" />
-                  <col className="live-col-model" />
+                  <col className="live-col-signal" />
+                  <col className="live-col-contract" />
                   <col className="live-col-event" />
-                  <col className="live-col-direction" />
                   <col className="live-col-price" />
                   <col className="live-col-size" />
-                  <col className="live-col-price" />
-                  <col className="live-col-price" />
-                  <col className="live-col-price" />
                   <col className="live-col-money" />
-                  <col className="live-col-money" />
-                  <col className="live-col-odds" />
                   <col className="live-col-status" />
-                  <col className="live-col-status" />
-                  <col className="live-col-status" />
+                  <col className="live-col-delivery" />
                 </colgroup>
                 <thead>
                   <tr>
-                    <th className="cronTradeHeaderCell" colSpan={16}>
+                    <th className="cronTradeHeaderCell" colSpan={8}>
                       <span className="cronTradeHeaderGrid">
-                        <span>#</span>
-                        <span>Ticker</span>
-                        <span>Model</span>
+                        <span>Signal</span>
+                        <span>Contract</span>
                         <span>Event</span>
-                        <span>Direction</span>
-                        <span>Entry</span>
+                        <span>Price</span>
                         <span>Size</span>
-                        <span>Exit</span>
-                        <span>Take Profit</span>
-                        <span>Stop Loss</span>
-                        <span>Target $</span>
-                        <span>Risk $</span>
-                        <span>Odds</span>
+                        <span>P&L / Risk</span>
                         <span>Auto Trade</span>
-                        <span>Telegram</span>
-                        <span>Discord</span>
+                        <span>Sent</span>
                       </span>
                     </th>
                   </tr>
                 </thead>
                 <tbody>
-                  {selectedLiveTrades.map((trade, index) => {
+                  {selectedLiveTrades.map((trade) => {
                     const option = optionForLiveTrade(trade);
                     const events = liveTradeEvents(trade);
                     const displaySymbol = liveTradeDisplaySymbol(trade);
@@ -2521,45 +2523,34 @@ export default async function Home({ searchParams }: HomeProps) {
                     const summarySizeMultiplier = liveTradeOrderSizeMultiplier(trade) ?? (trade.sizeMultiplier ?? 1);
                     return (
                       <tr className={liveRowClass(trade)} key={trade.id}>
-                        <td className="cronTradeCell" colSpan={16}>
+                        <td className="cronTradeCell" colSpan={8}>
                           <details className="cronTradeDetails">
                             <summary className="cronTradeSummary" aria-label={`Expand ${displaySymbol} cron events for ${fmtDate(trade.signalTime)}`}>
-                              <span data-label="#">{fmtNumber(index + 1)}</span>
-                              <span className="ticker-cell" data-label="Ticker" title={symbolTitle}>{displaySymbol}</span>
-                              <span className="main-cell" data-label="Model">
+                              <span className="main-cell" data-label="Signal">
                                 <span>{modelLabel}</span>
                                 <small><LocalDateTime value={trade.signalTime} /></small>
+                              </span>
+                              <span className="main-cell" data-label="Contract" title={symbolTitle}>
+                                <span className="ticker-cell">{displaySymbol}</span>
+                                <small className={sideClass(trade.side)}>{sideLabel(trade.side)}</small>
                               </span>
                               <span className="event-cell" data-label="Event">
                                 <span className="eventPill neutral">{fmtNumber(events.length)} events</span>
                               </span>
-                              <span data-label="Direction">
-                                <span className={sideClass(trade.side)}>{sideLabel(trade.side)}</span>
+                              <span className="main-cell" data-label="Price">
+                                <span>{fmtDollarPrice(trade.entryPrice)}</span>
+                                <small>{liveTradeExitLine(trade)}</small>
                               </span>
-                              <span data-label="Entry">{fmtDollarPrice(trade.entryPrice)}</span>
                               <span data-label="Size">{liveTradeOrderSizeLabel(trade, displaySymbol, summarySizeMultiplier)}</span>
-                              <span className="exit-cell" data-label="Exit">
-                                {liveTradeClosed(trade) ? (
-                                  <>
-                                    <span className={`status ${liveTradeExitStatusClass(trade)}`}>{liveTradeExitReasonLabel(trade)}</span>
-                                  </>
-                                ) : (
-                                  <span className="status skipped">Still Open</span>
-                                )}
-                              </span>
-                              <span data-label="Take Profit">{fmtPrice(trade.takeProfitPrice)}</span>
-                              <span data-label="Stop Loss">{fmtPrice(trade.stopLossPrice)}</span>
-                              <span data-label="Target $">{fmtMoney(alertTargetDollarsWithSize(trade, summarySizeMultiplier))}</span>
-                              <span data-label="Risk $">{fmtMoney(alertRiskDollarsWithSize(trade, summarySizeMultiplier))}</span>
-                              <span data-label="Odds">{fmtPct(trade.estimatedWinRatePct)}</span>
+                              <span className={`cronMoneyCell ${liveTradePnlToneClass(trade)}`} data-label="P&L / Risk">{liveTradePnlOrRiskLabel(trade, summarySizeMultiplier)}</span>
                               <span data-label="Auto Trade" title={trade.autoTradeError ?? trade.autoTradeProviderName ?? trade.autoTradeContractName ?? trade.autoTradeContractId ?? undefined}>
                                 <span className={`status ${autoTradeStatusClass(trade)}`}>{autoTradeStatusLabel(trade)}</span>
                               </span>
-                              <span data-label="Telegram">
-                                <span className={`status ${trade.telegramStatus}`}>{trade.telegramStatus}</span>
-                              </span>
-                              <span data-label="Discord">
-                                <span className={`status ${trade.discordStatus ?? "skipped"}`}>{trade.discordStatus ?? "skipped"}</span>
+                              <span data-label="Sent">
+                                <span className="cronDeliveryStack">
+                                  <span className={`status ${trade.telegramStatus}`}>TG {trade.telegramStatus}</span>
+                                  <span className={`status ${trade.discordStatus ?? "skipped"}`}>DC {trade.discordStatus ?? "skipped"}</span>
+                                </span>
                               </span>
                             </summary>
                             <div className="cronTradeEventPanel" aria-label={`${displaySymbol} cron event details`}>
@@ -2567,42 +2558,31 @@ export default async function Home({ searchParams }: HomeProps) {
                                 const eventDisplaySymbol = liveTradeEventDisplaySymbol(trade, event);
                                 return (
                                 <div className="cronTradeEventRow" key={`${trade.id}-${event.kind}-${eventIndex}`}>
-                                  <span data-label="#">{`${fmtNumber(index + 1)}.${fmtNumber(eventIndex + 1)}`}</span>
-                                  <span
-                                    className="ticker-cell"
-                                    data-label="Ticker"
-                                    title={eventDisplaySymbol !== trade.symbol ? `Signal ${trade.symbol}` : undefined}
-                                  >
-                                    {eventDisplaySymbol}
-                                  </span>
-                                  <span className="main-cell" data-label="Model">
+                                  <span className="main-cell" data-label="Signal">
                                     <span>{modelLabel}</span>
                                     <small><LocalDateTime value={liveTradeEventTime(trade, event)} /></small>
+                                  </span>
+                                  <span
+                                    className="main-cell"
+                                    data-label="Contract"
+                                    title={eventDisplaySymbol !== trade.symbol ? `Signal ${trade.symbol}` : undefined}
+                                  >
+                                    <span className="ticker-cell">{eventDisplaySymbol}</span>
+                                    <small className={sideClass(trade.side)}>{sideLabel(trade.side)}</small>
                                   </span>
                                   <span className="event-cell" data-label="Event">
                                     <span className={`eventPill ${event.className}`} title={event.title}>
                                       {event.label}
                                     </span>
                                   </span>
-                                  <span data-label="Direction">
-                                    <span className={sideClass(trade.side)}>{sideLabel(trade.side)}</span>
+                                  <span className="main-cell" data-label="Price">
+                                    <span>{fmtDollarPrice(liveTradeEventEntryPrice(trade, event))}</span>
+                                    <small>{liveTradeEventPriceLine(trade, event)}</small>
                                   </span>
-                                  <span data-label="Entry">{fmtDollarPrice(liveTradeEventEntryPrice(trade, event))}</span>
                                   <span data-label="Size">{liveTradeEventSizeLabel(trade, event)}</span>
-                                  <span className="exit-cell" data-label="Exit">
-                                    {event.kind === "exit" && liveTradeClosed(trade) ? (
-                                      <>
-                                        <span className={`status ${liveTradeExitStatusClass(trade)}`}>{liveTradeExitReasonLabel(trade)}</span>
-                                      </>
-                                    ) : (
-                                      <span className="status skipped">Still Open</span>
-                                    )}
+                                  <span className={`cronMoneyCell ${liveTradeEventPnlToneClass(trade, event)}`} data-label="P&L / Risk">
+                                    {liveTradeEventPnlOrRiskLabel(trade, event)}
                                   </span>
-                                  <span data-label="Take Profit">{fmtPrice(liveTradeEventTakeProfitPrice(trade, event))}</span>
-                                  <span data-label="Stop Loss">{fmtPrice(liveTradeEventStopLossPrice(trade, event))}</span>
-                                  <span data-label="Target $">{fmtMoney(liveTradeEventTargetDollars(trade, event))}</span>
-                                  <span data-label="Risk $">{fmtMoney(liveTradeEventRiskDollars(trade, event))}</span>
-                                  <span data-label="Odds">{fmtPct(trade.estimatedWinRatePct)}</span>
                                   <span
                                     data-label="Auto Trade"
                                     title={liveTradeEventAutoTradeError(trade, event) ?? trade.autoTradeProviderName ?? trade.autoTradeContractName ?? trade.autoTradeContractId ?? undefined}
@@ -2611,11 +2591,11 @@ export default async function Home({ searchParams }: HomeProps) {
                                       {liveTradeEventAutoTradeStatusLabel(trade, event)}
                                     </span>
                                   </span>
-                                  <span data-label="Telegram">
-                                    <span className={`status ${liveTradeEventTelegramStatus(trade, event)}`}>{liveTradeEventTelegramStatus(trade, event)}</span>
-                                  </span>
-                                  <span data-label="Discord">
-                                    <span className={`status ${liveTradeEventDiscordStatus(trade, event)}`}>{liveTradeEventDiscordStatus(trade, event)}</span>
+                                  <span data-label="Sent">
+                                    <span className="cronDeliveryStack">
+                                      <span className={`status ${liveTradeEventTelegramStatus(trade, event)}`}>TG {liveTradeEventTelegramStatus(trade, event)}</span>
+                                      <span className={`status ${liveTradeEventDiscordStatus(trade, event)}`}>DC {liveTradeEventDiscordStatus(trade, event)}</span>
+                                    </span>
                                   </span>
                                 </div>
                               );

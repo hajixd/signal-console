@@ -17,7 +17,15 @@ import {
   type AutoTradeProvider,
   type AutoTradeProviderId
 } from "@/lib/auto-trade-platforms";
-import type { ProjectXAccount, ProjectXConnectionStatus, ProjectXConnectionSummary } from "@/lib/projectx";
+import type {
+  ProjectXAccount,
+  ProjectXConnectionStatus,
+  ProjectXConnectionSummary,
+  ProjectXOpenOrder,
+  ProjectXOpenPosition,
+  ProjectXOrder,
+  ProjectXTrade
+} from "@/lib/projectx";
 
 const EMPTY_STATUS: ProjectXConnectionStatus = {
   accounts: [],
@@ -69,6 +77,24 @@ type AutoTradeTestResponse = {
 type AutoTradeTestState = {
   message: string;
   status: AutoTradeTestStatus | "running";
+};
+
+type ProjectXAccountDetails = {
+  account: ProjectXAccount;
+  checkedAt?: string;
+  historyDays?: number;
+  historyEnd?: string;
+  historyStart?: string;
+  openOrders: ProjectXOpenOrder[];
+  openPositions: ProjectXOpenPosition[];
+  orders: ProjectXOrder[];
+  trades: ProjectXTrade[];
+};
+
+type ProjectXAccountDetailsState = {
+  details?: ProjectXAccountDetails;
+  error?: string;
+  status: "failed" | "loaded" | "loading";
 };
 
 type ConnectionField = {
@@ -209,13 +235,15 @@ function defaultConnectionFields(providerId: AutoTradeProviderId): Record<string
   );
 }
 
-function fmtMoney(value: number | undefined): string {
+function fmtMoney(value: number | undefined, signed = false): string {
   if (typeof value !== "number" || !Number.isFinite(value)) return "--";
-  return new Intl.NumberFormat("en-US", {
+  const formatted = new Intl.NumberFormat("en-US", {
     style: "currency",
     currency: "USD",
-    maximumFractionDigits: 0
+    minimumFractionDigits: Math.abs(value) < 100 ? 2 : 0,
+    maximumFractionDigits: Math.abs(value) < 100 ? 2 : 0
   }).format(value);
+  return signed && value > 0 ? `+${formatted}` : formatted;
 }
 
 function fmtTime(value: string | undefined): string {
@@ -228,6 +256,64 @@ function fmtTime(value: string | undefined): string {
     year: "numeric",
     timeZoneName: "short"
   }).format(new Date(value));
+}
+
+function fmtShortTime(value: string | undefined): string {
+  if (!value) return "--";
+  const parsed = Date.parse(value);
+  if (!Number.isFinite(parsed)) return "--";
+  return new Intl.DateTimeFormat(undefined, {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit"
+  }).format(new Date(parsed));
+}
+
+function fmtNumber(value: number | undefined | null, digits = 2): string {
+  if (typeof value !== "number" || !Number.isFinite(value)) return "--";
+  return new Intl.NumberFormat("en-US", {
+    minimumFractionDigits: Number.isInteger(value) ? 0 : Math.min(2, digits),
+    maximumFractionDigits: digits
+  }).format(value);
+}
+
+function fmtProjectXSide(side: number | undefined): string {
+  if (side === 0) return "Buy";
+  if (side === 1) return "Sell";
+  return "--";
+}
+
+function fmtProjectXPositionType(type: number | undefined): string {
+  if (type === 1) return "Long";
+  if (type === 2) return "Short";
+  return "--";
+}
+
+function fmtProjectXOrderType(type: number | undefined): string {
+  if (type === 1) return "Limit";
+  if (type === 2) return "Market";
+  if (type === 4) return "Stop";
+  if (type === 5) return "Trail";
+  if (type === 6) return "Join bid";
+  if (type === 7) return "Join ask";
+  return "--";
+}
+
+function projectXAccountDetailKey(connectionId: string, accountId: number): string {
+  return `${connectionId}:${accountId}`;
+}
+
+function projectXTradeNetPnl(trade: ProjectXTrade): number | undefined {
+  if (typeof trade.profitAndLoss !== "number" || !Number.isFinite(trade.profitAndLoss)) return undefined;
+  const fees = typeof trade.fees === "number" && Number.isFinite(trade.fees) ? trade.fees : 0;
+  return trade.profitAndLoss - fees;
+}
+
+function projectXNetPnl(trades: ProjectXTrade[]): number | undefined {
+  const pnls = trades.map(projectXTradeNetPnl).filter((value): value is number => typeof value === "number" && Number.isFinite(value));
+  if (!pnls.length) return undefined;
+  return pnls.reduce((sum, value) => sum + value, 0);
 }
 
 function firstProviderId(providers: AutoTradeProvider[]): AutoTradeProviderId {
@@ -298,6 +384,22 @@ async function parseAutoTradeTestResponse(response: Response): Promise<AutoTrade
   return payload;
 }
 
+async function parseProjectXAccountDetailsResponse(response: Response): Promise<ProjectXAccountDetails> {
+  const payload = (await response.json().catch(() => ({}))) as Partial<ProjectXAccountDetails> & { error?: string };
+  if (!response.ok) throw new Error(payload.error ?? "ProjectX account details failed.");
+  return {
+    account: payload.account!,
+    checkedAt: payload.checkedAt,
+    historyDays: payload.historyDays,
+    historyEnd: payload.historyEnd,
+    historyStart: payload.historyStart,
+    openOrders: payload.openOrders ?? [],
+    openPositions: payload.openPositions ?? [],
+    orders: payload.orders ?? [],
+    trades: payload.trades ?? []
+  };
+}
+
 function projectXTestKey(connectionId: string, accountId: number): string {
   return `projectx:${connectionId}:${accountId}`;
 }
@@ -322,6 +424,168 @@ function autoTradeTestMessage(result: AutoTradeTestResponse): string {
   if (result.status === "skipped") return result.error ?? order?.error ?? "Test skipped";
   if (result.status === "failed") return result.error ?? order?.error ?? "Test failed";
   return result.error ?? "Test finished";
+}
+
+function ProjectXDetailMetric({ label, value, tone }: { label: string; value: string; tone?: "down" | "neutral" | "up" }) {
+  return (
+    <div className="topstepAccountDetailMetric">
+      <span>{label}</span>
+      <strong className={tone ? `tone-${tone}` : undefined}>{value}</strong>
+    </div>
+  );
+}
+
+function ProjectXEmptyDetailRow({ label }: { label: string }) {
+  return <div className="topstepAccountDetailEmpty">{label}</div>;
+}
+
+function ProjectXAccountDetailPanel({ account, state }: { account: ProjectXAccount; state?: ProjectXAccountDetailsState }) {
+  if (!state || state.status === "loading") {
+    return (
+      <div className="topstepAccountDetailPanel">
+        <div className="topstepAccountDetailHead">
+          <div>
+            <span>Account details</span>
+            <strong>{account.name}</strong>
+          </div>
+          <small>Loading ProjectX activity...</small>
+        </div>
+      </div>
+    );
+  }
+
+  if (state.status === "failed") {
+    return (
+      <div className="topstepAccountDetailPanel">
+        <div className="topstepAccountDetailHead">
+          <div>
+            <span>Account details</span>
+            <strong>{account.name}</strong>
+          </div>
+          <small className="topstepAccountDetailError">{state.error ?? "Could not load account details."}</small>
+        </div>
+      </div>
+    );
+  }
+
+  const details = state.details!;
+  const closedTrades = details.trades.filter((trade) => projectXTradeNetPnl(trade) !== undefined);
+  const netPnl = projectXNetPnl(details.trades);
+  const netTone = netPnl === undefined ? "neutral" : netPnl > 0 ? "up" : netPnl < 0 ? "down" : "neutral";
+
+  return (
+    <div className="topstepAccountDetailPanel">
+      <div className="topstepAccountDetailHead">
+        <div>
+          <span>Account details</span>
+          <strong>{details.account.name}</strong>
+        </div>
+        <small>
+          {fmtNumber(details.historyDays, 0)}d history / updated {fmtShortTime(details.checkedAt)}
+        </small>
+      </div>
+
+      <div className="topstepAccountDetailMetrics" aria-label={`${details.account.name} ProjectX summary`}>
+        <ProjectXDetailMetric label="Balance" value={fmtMoney(details.account.balance)} />
+        <ProjectXDetailMetric label="Open positions" value={fmtNumber(details.openPositions.length, 0)} />
+        <ProjectXDetailMetric label="Open orders" value={fmtNumber(details.openOrders.length, 0)} />
+        <ProjectXDetailMetric label="Closed P&L" value={fmtMoney(netPnl, true)} tone={netTone} />
+      </div>
+
+      <div className="topstepAccountDetailGrid">
+        <section className="topstepAccountDetailSection">
+          <div className="topstepAccountDetailSectionHead">
+            <span>Open Positions</span>
+            <strong>{fmtNumber(details.openPositions.length, 0)}</strong>
+          </div>
+          <div className="topstepAccountDetailList">
+            {details.openPositions.length ? (
+              details.openPositions.map((position) => (
+                <div className="topstepAccountDetailRow" key={`position-${position.id ?? position.contractId}`}>
+                  <strong>{position.contractId ?? "--"}</strong>
+                  <span>{fmtProjectXPositionType(position.type)}</span>
+                  <span>{fmtNumber(position.size, 0)} @ {fmtNumber(position.averagePrice, 5)}</span>
+                  <small>{fmtShortTime(position.creationTimestamp)}</small>
+                </div>
+              ))
+            ) : (
+              <ProjectXEmptyDetailRow label="No open positions" />
+            )}
+          </div>
+        </section>
+
+        <section className="topstepAccountDetailSection">
+          <div className="topstepAccountDetailSectionHead">
+            <span>Open Orders</span>
+            <strong>{fmtNumber(details.openOrders.length, 0)}</strong>
+          </div>
+          <div className="topstepAccountDetailList">
+            {details.openOrders.length ? (
+              details.openOrders.map((order) => (
+                <div className="topstepAccountDetailRow" key={`open-order-${order.orderId ?? order.id}`}>
+                  <strong>#{order.orderId ?? order.id ?? "--"}</strong>
+                  <span>{order.contractId ?? "--"}</span>
+                  <span>{fmtProjectXSide(order.side)} / {fmtProjectXOrderType(order.type)}</span>
+                  <small>{fmtNumber(order.size, 0)} @ {fmtNumber(order.limitPrice ?? order.stopPrice, 5)}</small>
+                </div>
+              ))
+            ) : (
+              <ProjectXEmptyDetailRow label="No open orders" />
+            )}
+          </div>
+        </section>
+
+        <section className="topstepAccountDetailSection">
+          <div className="topstepAccountDetailSectionHead">
+            <span>Recent Trades</span>
+            <strong>{fmtNumber(details.trades.length, 0)}</strong>
+          </div>
+          <div className="topstepAccountDetailList">
+            {details.trades.length ? (
+              details.trades.slice(0, 8).map((trade) => {
+                const pnl = projectXTradeNetPnl(trade);
+                const tone = pnl === undefined ? "neutral" : pnl > 0 ? "up" : pnl < 0 ? "down" : "neutral";
+                return (
+                  <div className="topstepAccountDetailRow" key={`trade-${trade.id ?? trade.orderId}`}>
+                    <strong>{trade.contractId ?? "--"}</strong>
+                    <span>{fmtProjectXSide(trade.side)} x {fmtNumber(trade.size, 0)}</span>
+                    <span className={`tone-${tone}`}>{fmtMoney(pnl, true)}</span>
+                    <small>{fmtShortTime(trade.creationTimestamp)}</small>
+                  </div>
+                );
+              })
+            ) : (
+              <ProjectXEmptyDetailRow label="No recent trades" />
+            )}
+          </div>
+          {closedTrades.length !== details.trades.length ? (
+            <small className="topstepAccountDetailNote">{fmtNumber(details.trades.length - closedTrades.length, 0)} half-turn trades excluded from P&L.</small>
+          ) : null}
+        </section>
+
+        <section className="topstepAccountDetailSection">
+          <div className="topstepAccountDetailSectionHead">
+            <span>Recent Orders</span>
+            <strong>{fmtNumber(details.orders.length, 0)}</strong>
+          </div>
+          <div className="topstepAccountDetailList">
+            {details.orders.length ? (
+              details.orders.slice(0, 8).map((order) => (
+                <div className="topstepAccountDetailRow" key={`order-${order.orderId ?? order.id}`}>
+                  <strong>#{order.orderId ?? order.id ?? "--"}</strong>
+                  <span>{order.contractId ?? order.symbolId ?? "--"}</span>
+                  <span>{fmtProjectXSide(order.side)} / {fmtProjectXOrderType(order.type)}</span>
+                  <small>{fmtNumber(order.fillVolume ?? order.size, 0)} @ {fmtNumber(order.filledPrice ?? order.limitPrice ?? order.stopPrice, 5)}</small>
+                </div>
+              ))
+            ) : (
+              <ProjectXEmptyDetailRow label="No recent orders" />
+            )}
+          </div>
+        </section>
+      </div>
+    </div>
+  );
 }
 
 type AutoTradingConnectionPanelProps = {
@@ -361,8 +625,11 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
   const [folderActionError, setFolderActionError] = useState("");
   const [isSubmittingFolderAction, setIsSubmittingFolderAction] = useState(false);
   const [unlockedProjectXFolderIds, setUnlockedProjectXFolderIds] = useState<string[]>([]);
+  const [unlockedProjectXFolderCodes, setUnlockedProjectXFolderCodes] = useState<Record<string, string>>({});
   const [reconnectProjectXConnectionId, setReconnectProjectXConnectionId] = useState<string | null>(null);
   const [autoTradeTests, setAutoTradeTests] = useState<Record<string, AutoTradeTestState>>({});
+  const [selectedProjectXAccountKey, setSelectedProjectXAccountKey] = useState<string | null>(null);
+  const [projectXAccountDetails, setProjectXAccountDetails] = useState<Record<string, ProjectXAccountDetailsState>>({});
   const folderCodeInputRef = useRef<HTMLInputElement | null>(null);
   const folderActionCurrentInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -427,7 +694,10 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
         setFolderActionNewCode("");
         setFolderActionError("");
         setUnlockedProjectXFolderIds([]);
+        setUnlockedProjectXFolderCodes({});
         setAccountDisplayName("");
+        setSelectedProjectXAccountKey(null);
+        setProjectXAccountDetails({});
       }
     }
 
@@ -466,9 +736,12 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
     setFolderActionNewCode("");
     setFolderActionError("");
     setUnlockedProjectXFolderIds([]);
+    setUnlockedProjectXFolderCodes({});
     setProjectXAccessCode("");
     setGenericAccessCode("");
     setAccountDisplayName("");
+    setSelectedProjectXAccountKey(null);
+    setProjectXAccountDetails({});
     setSelectedFirmId(firstPropFirmId(market));
     setGenericFields(defaultConnectionFields(firstProviderId(providers)));
     setShowAdvancedFields(false);
@@ -533,6 +806,12 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
       setFolderAccessError("");
     }
   }, [pendingProjectXFolder, projectXAccountFolders]);
+
+  useEffect(() => {
+    if (selectedProjectXAccountKey && !projectXAccountFolders.some((folder) => folder.accounts.some((account) => projectXAccountDetailKey(folder.id, account.id) === selectedProjectXAccountKey))) {
+      setSelectedProjectXAccountKey(null);
+    }
+  }, [projectXAccountFolders, selectedProjectXAccountKey]);
 
   useEffect(() => {
     if (pendingProjectXFolderAction && !projectXAccountFolders.some((folder) => folder.id === pendingProjectXFolderAction.folder.id)) {
@@ -669,6 +948,9 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
       setPendingProjectXFolderAction(null);
       setFolderContextMenu(null);
       setUnlockedProjectXFolderIds([]);
+      setUnlockedProjectXFolderCodes({});
+      setSelectedProjectXAccountKey(null);
+      setProjectXAccountDetails({});
       setIsAddingAccount(false);
     } catch (error) {
       setStatus({
@@ -728,6 +1010,16 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
       setActiveProjectXFolderId(null);
       setPendingProjectXFolder(null);
       setUnlockedProjectXFolderIds((current) => (connectionId ? current.filter((id) => id !== connectionId) : []));
+      setUnlockedProjectXFolderCodes((current) => {
+        if (!connectionId) return {};
+        const { [connectionId]: _removed, ...remaining } = current;
+        return remaining;
+      });
+      setSelectedProjectXAccountKey(null);
+      setProjectXAccountDetails((current) => {
+        if (!connectionId) return {};
+        return Object.fromEntries(Object.entries(current).filter(([key]) => !key.startsWith(`${connectionId}:`)));
+      });
     } catch (error) {
       setStatus((current) => ({
         ...current,
@@ -772,6 +1064,7 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
         const nextStatus = await parseConnectionResponse(response);
         setStatus(nextStatus);
         setUnlockedProjectXFolderIds((current) => (current.includes(folder.id) ? current : [...current, folder.id]));
+        setUnlockedProjectXFolderCodes((current) => ({ ...current, [folder.id]: newCode }));
         setActiveProjectXFolderId(folder.id);
       } else {
         const params = new URLSearchParams({ accessCode: currentCode, connectionId: folder.id });
@@ -782,9 +1075,23 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
         if (action === "remove-account") {
           setActiveProjectXFolderId(folder.id);
           setUnlockedProjectXFolderIds((current) => (current.includes(folder.id) ? current : [...current, folder.id]));
+          setProjectXAccountDetails((current) => {
+            if (!pendingProjectXFolderAction.account) return current;
+            const { [projectXAccountDetailKey(folder.id, pendingProjectXFolderAction.account.id)]: _removed, ...remaining } = current;
+            return remaining;
+          });
+          if (pendingProjectXFolderAction.account && selectedProjectXAccountKey === projectXAccountDetailKey(folder.id, pendingProjectXFolderAction.account.id)) {
+            setSelectedProjectXAccountKey(null);
+          }
         } else {
           setActiveProjectXFolderId(null);
           setUnlockedProjectXFolderIds((current) => current.filter((id) => id !== folder.id));
+          setUnlockedProjectXFolderCodes((current) => {
+            const { [folder.id]: _removed, ...remaining } = current;
+            return remaining;
+          });
+          setProjectXAccountDetails((current) => Object.fromEntries(Object.entries(current).filter(([key]) => !key.startsWith(`${folder.id}:`))));
+          setSelectedProjectXAccountKey(null);
         }
       }
 
@@ -856,6 +1163,8 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
     setPendingProjectXFolder(null);
     setPendingProjectXFolderAction(null);
     setFolderContextMenu(null);
+    setSelectedProjectXAccountKey(null);
+    setProjectXAccountDetails((current) => Object.fromEntries(Object.entries(current).filter(([key]) => !key.startsWith(`${connectionId}:`))));
     setIsAddingAccount(true);
   }
 
@@ -929,6 +1238,49 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
     });
   }
 
+  async function handleProjectXAccountDetails(folder: ProjectXConnectionSummary, account: ProjectXAccount) {
+    if (projectXFolderNeedsReconnect(folder)) return;
+
+    const key = projectXAccountDetailKey(folder.id, account.id);
+    setSelectedProjectXAccountKey(key);
+    setProjectXAccountDetails((current) => ({
+      ...current,
+      [key]: {
+        details: current[key]?.details,
+        status: "loading"
+      }
+    }));
+
+    try {
+      const params = new URLSearchParams({
+        accountId: String(account.id),
+        connectionId: folder.id
+      });
+      const accessCode = unlockedProjectXFolderCodes[folder.id];
+      if (accessCode) params.set("accessCode", accessCode);
+      const response = await fetch(`/api/topstep/account?${params.toString()}`, {
+        cache: "no-store",
+        credentials: "same-origin"
+      });
+      const details = await parseProjectXAccountDetailsResponse(response);
+      setProjectXAccountDetails((current) => ({
+        ...current,
+        [key]: {
+          details,
+          status: "loaded"
+        }
+      }));
+    } catch (error) {
+      setProjectXAccountDetails((current) => ({
+        ...current,
+        [key]: {
+          error: error instanceof Error ? error.message : "ProjectX account details failed.",
+          status: "failed"
+        }
+      }));
+    }
+  }
+
   function handleGenericTest(connection: SavedAutoTradeConnection) {
     void runAutoTradeTest(providerTestKey(connection.id), connection.accountName ?? connection.accountId ?? connection.providerLabel, {
       providerId: connection.id
@@ -958,6 +1310,7 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
       }
 
       setUnlockedProjectXFolderIds((current) => (current.includes(pendingProjectXFolder.id) ? current : [...current, pendingProjectXFolder.id]));
+      setUnlockedProjectXFolderCodes((current) => ({ ...current, [pendingProjectXFolder.id]: accessCode }));
       setActiveProjectXFolderId(pendingProjectXFolder.id);
       setPendingProjectXFolder(null);
       setFolderCodeInput("");
@@ -1374,29 +1727,38 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
                   const connectionStatus = needsReconnect
                     ? { className: "status failed", dotClassName: "statusDot red", label: "Reconnect" }
                     : accountConnectionStatus(account, accountPaused);
+                  const detailKey = projectXAccountDetailKey(activeProjectXFolder.id, account.id);
+                  const detailState = projectXAccountDetails[detailKey];
+                  const detailSelected = selectedProjectXAccountKey === detailKey;
                   return (
-                    <div className="topstepAccountRow isNested" key={`projectx-${account.id}`}>
-                      <div className="topstepAccountFields">
-                        <div>
+                    <div className={`topstepAccountRow isNested topstepAccountRowInteractive${detailSelected ? " isSelected" : ""}`} key={`projectx-${account.id}`}>
+                      <button
+                        aria-expanded={detailSelected}
+                        className="topstepAccountFields topstepAccountFieldsButton"
+                        onClick={() => void handleProjectXAccountDetails(activeProjectXFolder, account)}
+                        title="View ProjectX trade history, orders, and open positions"
+                        type="button"
+                      >
+                        <span className="topstepAccountField">
                           <span>Account number</span>
                           <strong>{account.id}</strong>
-                        </div>
-                        <div>
+                        </span>
+                        <span className="topstepAccountField">
                           <span>Account name</span>
                           <strong>{account.name}</strong>
-                        </div>
-                        <div>
+                        </span>
+                        <span className="topstepAccountField">
                           <span>Balance</span>
                           <strong>{fmtMoney(account.balance)}</strong>
-                        </div>
-                        <div>
+                        </span>
+                        <span className="topstepAccountField">
                           <span>Status</span>
                           <strong className={`topstepStatusValue ${connectionStatus.className}`}>
                             <span aria-hidden="true" className={connectionStatus.dotClassName} />
                             {connectionStatus.label}
                           </strong>
-                        </div>
-                      </div>
+                        </span>
+                      </button>
                       {canManageAutoTrade ? (
                         <div className="topstepAccountControls">
                           <button
@@ -1439,6 +1801,7 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
                           {testState ? <small className={`topstepAccountTestResult ${testState.status}`}>{testState.message}</small> : null}
                         </div>
                       ) : null}
+                      {detailSelected ? <ProjectXAccountDetailPanel account={account} state={detailState} /> : null}
                     </div>
                   );
                 })}
