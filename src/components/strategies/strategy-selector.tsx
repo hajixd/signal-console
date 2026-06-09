@@ -678,6 +678,8 @@ export default function StrategySelector({
   const pendingSelectionSignatureRef = useRef<string>("");
   const latestSelectionSignatureRef = useRef<string>(optimisticSelectionSignature);
   const selectionSyncRunRef = useRef(0);
+  const userChangedSelectionRef = useRef(false);
+  const didAutoRestoreSavedSelectionRef = useRef(false);
   const lastServerSelectedKeysRef = useRef(selectedKeys);
   const lastSyncedCustomScaleRangeRef = useRef<string>("");
   const pendingCustomScaleRangeSignatureRef = useRef<string>("");
@@ -767,6 +769,28 @@ export default function StrategySelector({
   useEffect(() => {
     latestCustomScaleRangeSignatureRef.current = currentCustomScaleRangeSignature;
   }, [currentCustomScaleRangeSignature]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (didAutoRestoreSavedSelectionRef.current || userChangedSelectionRef.current) return;
+    if (optimisticSelectedKeys.length > 0 || persistedLiveKeys.length === 0) return;
+
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("strategies") !== NO_STRATEGIES_SELECTION_PARAM) return;
+
+    params.delete("strategies");
+    const query = params.toString();
+
+    didAutoRestoreSavedSelectionRef.current = true;
+    lastSyncedSelectionRef.current = optimisticSelectionSignature;
+    pendingSelectionSignatureRef.current = "";
+    latestSelectionSignatureRef.current = persistedLiveSelectionSignature;
+    setSavingSelectionKeys([]);
+    setSelectionProgress(0);
+    setSelectionError("");
+    setOptimisticSelectedKeys(persistedLiveKeys);
+    router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
+  }, [optimisticSelectedKeys.length, optimisticSelectionSignature, pathname, persistedLiveKeys, persistedLiveSelectionSignature, router]);
 
   useEffect(() => {
     const pendingSelectionSignature = pendingSelectionSignatureRef.current;
@@ -1045,6 +1069,7 @@ export default function StrategySelector({
 
   function navigate(nextKeys: string[]) {
     if (selectionControlsDisabled) return;
+    userChangedSelectionRef.current = true;
     const nextScopedKeys = strategyScopeKeys.filter((key) => nextKeys.includes(key));
     const currentKeySet = new Set(optimisticSelectedKeys);
     const nextKeySet = new Set(nextScopedKeys);

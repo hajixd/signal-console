@@ -1632,7 +1632,7 @@ export default async function Home({ searchParams }: HomeProps) {
   const persistedLiveEnabledKeys = liveConfig.enabledDatasetIds.filter((key) => allKeys.includes(key));
   const persistedSelectedKeys = liveConfig.dashboardSelectedDatasetIds.filter((key) => allKeys.includes(key));
   const recentDefaultKeys = strategyOptions.slice(0, DEFAULT_SELECTED_STRATEGY_COUNT).map((option) => option.key);
-  const defaultSelectedKeys = persistedSelectedKeys.length ? persistedSelectedKeys : persistedLiveEnabledKeys.length ? persistedLiveEnabledKeys : recentDefaultKeys;
+  const defaultSelectedKeys = persistedLiveEnabledKeys.length ? persistedLiveEnabledKeys : persistedSelectedKeys.length ? persistedSelectedKeys : recentDefaultKeys;
   const selectedKeys = parseStrategySelection(params?.strategies, allKeys, defaultSelectedKeys);
   const selectedKeySet = new Set(selectedKeys);
   const activeMarketKeySet = new Set(allKeys);
