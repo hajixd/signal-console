@@ -1,0 +1,39 @@
+{
+  "strategyId": "competition_natural_gas_futures_daily_tsmom_next_overnight_weekday_side_4_long_xasset_rr_5_d44e0dd2",
+  "label": "NG cross-asset 20-day daily momentum overnight (Friday longs) true 5R",
+  "folder": "competition_natural_gas_futures_daily_tsmom_next_overnight_weekday_side_4_long_xasset_rr_5_d44e0dd2",
+  "assetKey": "natural_gas_futures",
+  "phase": "competition_session_edge",
+  "variantId": "competition_session_edge|family=daily_tsmom_next_overnight_weekday_side_4_long|direction=momentum|entry=945|exit=945|lookback=20|signal_weekday_side=4_long|risk_reward=5|managed_exit=bracket",
+  "source": "cross_asset_true_rr_search_2026_05",
+  "sourceUrls": [
+    "https://w4.stern.nyu.edu/facdir/lpederse/papers/TimeSeriesMomentum.pdf",
+    "https://www.sciencedirect.com/science/article/abs/pii/S0304405X18301351",
+    "https://www.semanticscholar.org/paper/The-Probability-of-Backtest-Overfitting-Bailey-Borwein/b1233b4f5384f003e85c2e0eec1a2dfc08f624c5"
+  ],
+  "researchSummary": "Cross-asset validation of `SI cross-asset 20-day daily momentum overnight (Friday longs) true 5R`. Cross-asset validation of `EURJPY 20-day daily momentum overnight (Friday longs)`. Daily time-series momentum using a 20-day close-to-close lookback. Filter: long signals on weekday 4. Cross-asset rerun uses true bracket target/stop at 5:1 planned reward-to-risk. Cross-asset rerun uses true bracket target/stop at 5:1 planned reward-to-risk.",
+  "selectionMethod": "Fast cross-asset true-RR validation: existing bracket pattern was evaluated on a different asset with pre-2022 train diagnostics, post-2022 strict anti-cheat forward validation, bootstrap checks, and same-asset trade-overlap rejection.",
+  "trainingWindow": {
+    "start": "asset_start",
+    "end": "2021-12-31"
+  },
+  "forwardWindow": {
+    "start": "2022-01-01",
+    "end": "asset_latest"
+  },
+  "selectedTrainingProfitFactor": 2.299273,
+  "selectedTrainingTrades": 262,
+  "selectedForwardProfitFactor": 2.547374,
+  "selectedForwardTrades": 117,
+  "selectedForwardRealizedRiskReward": 3.196705,
+  "minimumRiskReward": 2,
+  "selectedRiskReward": 4.991811,
+  "forwardWins": 51,
+  "forwardLosses": 64,
+  "forwardTotalR": 94.65245,
+  "forwardAverageR": 0.808995,
+  "forwardMaxDrawdownR": 7.02006,
+  "verificationSummary": "Cross-asset strict PF 2.55 over 117 trades; average planned RR 4.99, min planned RR 4.72; realized average win/loss RR 3.20; bootstrap p05 1.85, block-bootstrap p05 1.89, odd/even min PF 1.91, annual pass rate 80%.",
+  "costUnits": 0.0,
+  "oneTradePerDay": false
+}

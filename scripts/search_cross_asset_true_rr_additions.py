@@ -82,6 +82,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--min-train-pf", type=float, default=0.50)
     parser.add_argument("--min-train-trades", type=int, default=10)
     parser.add_argument("--min-avg-rr", type=float, default=2.0)
+    parser.add_argument("--min-realized-rr", type=float, default=0.0)
     parser.add_argument("--min-split-pf", type=float, default=0.0)
     parser.add_argument("--min-split-trades", type=int, default=0)
     parser.add_argument("--min-bootstrap-p05", type=float, default=0.70)
@@ -396,6 +397,14 @@ def planned_rr(trades: list[runner.BacktestTradeRow]) -> tuple[float, float]:
     return sum(ratios) / len(ratios), min(ratios)
 
 
+def realized_rr(trades: list[runner.BacktestTradeRow]) -> float:
+    wins = [float(trade.r_multiple) for trade in trades if float(trade.r_multiple) > 0]
+    losses = [abs(float(trade.r_multiple)) for trade in trades if float(trade.r_multiple) < 0]
+    if not wins or not losses:
+        return 0.0
+    return (sum(wins) / len(wins)) / (sum(losses) / len(losses))
+
+
 def symbol_label(asset: runner.AssetConfig) -> str:
     return asset.symbol.upper().replace("/", "")
 
@@ -413,9 +422,11 @@ def strategy_id_for(asset: runner.AssetConfig, spec: Spec) -> str:
 
 def build_strategy(asset: runner.AssetConfig, spec: Spec) -> runner.BacktestStrategy:
     strategy_id = strategy_id_for(asset, spec)
+    label = re.sub(r"\bcross-asset\s+cross-asset\b", "cross-asset", spec.label)
+    label = re.sub(r"( true \d+(?:\.\d+)?R)(?: true \d+(?:\.\d+)?R)+", r"\1", label)
     return runner.BacktestStrategy(
         id=strategy_id,
-        label=f"{symbol_label(asset)} cross-asset {spec.label}",
+        label=f"{symbol_label(asset)} cross-asset {label}",
         folder=strategy_id,
         asset_key=asset.key,
         phase="competition_session_edge",
@@ -435,9 +446,58 @@ def qualifies(metrics: Metrics, args: argparse.Namespace) -> bool:
     )
 
 
+def load_strategy_data(
+    asset: runner.AssetConfig,
+    strategy: runner.BacktestStrategy,
+    source_cache: dict[str, runner.EnrichedData],
+    execution_cache: dict[str, runner.EnrichedData],
+) -> tuple[str, runner.EnrichedData, list[tuple[str, runner.EnrichedData]]]:
+    source_timeframe = runner.strategy_timeframe(strategy)
+    if source_timeframe not in source_cache:
+        source_cache[source_timeframe] = runner.build_enriched_data(
+            runner.load_candle_csv(runner.DATA_ROOT / source_timeframe / asset.data_file),
+            asset,
+        )
+    execution_timeframes = runner.execution_timeframe_candidates(strategy, asset, source_timeframe)
+    runner.require_one_minute_execution_candidates(strategy, asset, source_timeframe, execution_timeframes)
+    execution_data: list[tuple[str, runner.EnrichedData]] = []
+    for execution_timeframe in execution_timeframes:
+        if execution_timeframe not in execution_cache:
+            execution_cache[execution_timeframe] = runner.build_enriched_data(
+                runner.load_candle_csv(runner.DATA_ROOT / execution_timeframe / asset.data_file),
+                asset,
+            )
+        execution_data.append((execution_timeframe, execution_cache[execution_timeframe]))
+    return source_timeframe, source_cache[source_timeframe], execution_data
+
+
+def run_with_one_minute_exits(
+    strategy: runner.BacktestStrategy,
+    asset: runner.AssetConfig,
+    data: runner.EnrichedData,
+    execution_data: list[tuple[str, runner.EnrichedData]],
+    source_timeframe: str,
+    start_ts: int,
+    end_ts: int | None,
+) -> list[runner.BacktestTradeRow]:
+    effective_start_ts, effective_end_ts = runner.execution_overlap_window(data, execution_data, start_ts, end_ts)
+    return runner.run_single_strategy(
+        strategy,
+        asset,
+        data,
+        start_ts=effective_start_ts,
+        end_ts=effective_end_ts,
+        strict_anti_cheat=True,
+        execution_data=execution_data,
+        source_timeframe=source_timeframe,
+        require_one_minute_exits=source_timeframe != "1m",
+    )
+
+
 def worker_scan(asset_key: str, specs: list[Spec], args: argparse.Namespace, full_existing: set[tuple[str, str]], base_existing: set[tuple[str, str]]) -> list[Candidate]:
     asset = runner.load_asset_by_key()[asset_key]
-    data = runner.build_enriched_data(runner.load_candle_csv(runner.DATA_ROOT / "15m" / asset.data_file), asset)
+    source_cache: dict[str, runner.EnrichedData] = {}
+    execution_cache: dict[str, runner.EnrichedData] = {}
     candidates: list[Candidate] = []
     for spec in specs:
         if (asset.key, canonical_variant(spec.variant_id, include_rr=True)) in full_existing:
@@ -446,8 +506,11 @@ def worker_scan(asset_key: str, specs: list[Spec], args: argparse.Namespace, ful
             continue
         strategy = build_strategy(asset, spec)
         try:
-            forward_trades = runner.run_single_strategy(strategy, asset, data, FORWARD_START_TS, None, strict_anti_cheat=True)
-        except ValueError:
+            source_timeframe, data, execution_data = load_strategy_data(asset, strategy, source_cache, execution_cache)
+            forward_trades = run_with_one_minute_exits(
+                strategy, asset, data, execution_data, source_timeframe, FORWARD_START_TS, None
+            )
+        except (FileNotFoundError, RuntimeError, ValueError):
             continue
         forward = metrics_for(forward_trades)
         if not qualifies(forward, args):
@@ -455,9 +518,13 @@ def worker_scan(asset_key: str, specs: list[Spec], args: argparse.Namespace, ful
         avg_rr, min_rr = planned_rr(forward_trades)
         if avg_rr <= args.min_avg_rr or min_rr <= args.min_avg_rr:
             continue
+        if realized_rr(forward_trades) < args.min_realized_rr:
+            continue
         try:
-            train_trades = runner.run_single_strategy(strategy, asset, data, 0, FORWARD_START_TS, strict_anti_cheat=True)
-        except ValueError:
+            train_trades = run_with_one_minute_exits(
+                strategy, asset, data, execution_data, source_timeframe, 0, FORWARD_START_TS
+            )
+        except (FileNotFoundError, RuntimeError, ValueError):
             continue
         train = metrics_for(train_trades)
         if train.trades < args.min_train_trades or train.profit_factor < args.min_train_pf:
@@ -615,6 +682,7 @@ def materialize(candidate: Candidate) -> None:
         "selectedTrainingTrades": candidate.train.trades,
         "selectedForwardProfitFactor": json_metric(candidate.forward.profit_factor),
         "selectedForwardTrades": candidate.forward.trades,
+        "selectedForwardRealizedRiskReward": round(realized_rr(candidate.trades), 6),
         "minimumRiskReward": 2,
         "selectedRiskReward": round(candidate.avg_rr, 6),
         "forwardWins": candidate.forward.wins,
@@ -625,6 +693,7 @@ def materialize(candidate: Candidate) -> None:
         "verificationSummary": (
             f"Cross-asset strict PF {candidate.forward.profit_factor:.2f} over {candidate.forward.trades} trades; "
             f"average planned RR {candidate.avg_rr:.2f}, min planned RR {candidate.min_rr:.2f}; "
+            f"realized average win/loss RR {realized_rr(candidate.trades):.2f}; "
             f"bootstrap p05 {candidate.bootstrap_p05:.2f}, block-bootstrap p05 {candidate.block_bootstrap_p05:.2f}, "
             f"odd/even min PF {candidate.odd_even_min_pf:.2f}, annual pass rate {candidate.annual_pass_rate:.0%}."
         ),
@@ -666,6 +735,7 @@ def write_report(candidates: list[Candidate], market: str, dry_run: bool, report
                 "forward_trades",
                 "avg_rr",
                 "min_rr",
+                "realized_rr",
                 "train_pf",
                 "train_trades",
                 "bootstrap_p05",
@@ -686,6 +756,7 @@ def write_report(candidates: list[Candidate], market: str, dry_run: bool, report
                     "forward_trades": candidate.forward.trades,
                     "avg_rr": f"{candidate.avg_rr:.6f}",
                     "min_rr": f"{candidate.min_rr:.6f}",
+                    "realized_rr": f"{realized_rr(candidate.trades):.6f}",
                     "train_pf": f"{candidate.train.profit_factor:.6f}",
                     "train_trades": candidate.train.trades,
                     "bootstrap_p05": f"{candidate.bootstrap_p05:.6f}",
@@ -702,13 +773,14 @@ def write_report(candidates: list[Candidate], market: str, dry_run: bool, report
         f"- Status: {'dry run' if dry_run else 'applied'}",
         f"- Qualified additions: {len(candidates)}",
         "",
-        "| Strategy | Asset | PF | Trades | Avg RR | Train PF | Bootstrap p05 | Block p05 | Odd/Even PF | Variant |",
-        "| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |",
+        "| Strategy | Asset | PF | Trades | Planned RR | Realized RR | Train PF | Bootstrap p05 | Block p05 | Odd/Even PF | Variant |",
+        "| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |",
     ]
     for candidate in candidates:
         lines.append(
             f"| `{candidate.strategy.id}` | {candidate.asset.key} | {candidate.forward.profit_factor:.3f} | "
-            f"{candidate.forward.trades} | {candidate.avg_rr:.2f} | {candidate.train.profit_factor:.3f} | "
+            f"{candidate.forward.trades} | {candidate.avg_rr:.2f} | {realized_rr(candidate.trades):.2f} | "
+            f"{candidate.train.profit_factor:.3f} | "
             f"{candidate.bootstrap_p05:.3f} | {candidate.block_bootstrap_p05:.3f} | "
             f"{candidate.odd_even_min_pf:.3f} | `{candidate.strategy.variant_id}` |"
         )

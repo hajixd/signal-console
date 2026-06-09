@@ -399,15 +399,21 @@ def run_competition_candidate(
     start_ts: int,
     end_ts: int | None,
     strict: bool = False,
+    execution_data: list[tuple[str, runner.EnrichedData]] | None = None,
+    source_timeframe: str = "15m",
 ) -> list[runner.BacktestTradeRow]:
     if strict:
+        effective_start_ts, effective_end_ts = runner.execution_overlap_window(data, execution_data or [], start_ts, end_ts)
         return runner.run_single_strategy(
             strategy,
             asset,
             data,
-            start_ts=start_ts,
-            end_ts=end_ts,
+            start_ts=effective_start_ts,
+            end_ts=effective_end_ts,
             strict_anti_cheat=True,
+            execution_data=execution_data,
+            source_timeframe=source_timeframe,
+            require_one_minute_exits=source_timeframe != "1m",
         )
     return runner.run_competition_session_edge_strategy(strategy, asset, data, start_ts, end_ts)
 
@@ -514,6 +520,22 @@ def research_asset(
     near: dict[str, list[tuple[str, int]]],
 ) -> list[Candidate]:
     data = load_asset_data(asset)
+    execution_cache: dict[str, runner.EnrichedData] = {}
+
+    def strict_execution_args(strategy: runner.BacktestStrategy) -> tuple[str, list[tuple[str, runner.EnrichedData]]]:
+        source_timeframe = runner.strategy_timeframe(strategy)
+        execution_timeframes = runner.execution_timeframe_candidates(strategy, asset, source_timeframe)
+        runner.require_one_minute_execution_candidates(strategy, asset, source_timeframe, execution_timeframes)
+        execution_data: list[tuple[str, runner.EnrichedData]] = []
+        for execution_timeframe in execution_timeframes:
+            if execution_timeframe not in execution_cache:
+                execution_cache[execution_timeframe] = runner.build_enriched_data(
+                    runner.load_candle_csv(runner.DATA_ROOT / execution_timeframe / asset.data_file),
+                    asset,
+                )
+            execution_data.append((execution_timeframe, execution_cache[execution_timeframe]))
+        return source_timeframe, execution_data
+
     ranked: list[tuple[float, runner.BacktestStrategy, VariantSpec, Metrics | None, Metrics, list[runner.BacktestTradeRow]]] = []
 
     for spec in specs:
@@ -561,6 +583,10 @@ def research_asset(
     for candidate in candidates:
         if len(selected) >= args.max_add_per_asset:
             break
+        try:
+            source_timeframe, execution_data = strict_execution_args(candidate.strategy)
+        except (FileNotFoundError, RuntimeError, ValueError):
+            continue
         strict_train_trades = run_competition_candidate(
             candidate.strategy,
             asset,
@@ -568,6 +594,8 @@ def research_asset(
             start_ts=0,
             end_ts=FORWARD_START_TS,
             strict=True,
+            execution_data=execution_data,
+            source_timeframe=source_timeframe,
         )
         strict_forward_trades = run_competition_candidate(
             candidate.strategy,
@@ -576,6 +604,8 @@ def research_asset(
             start_ts=FORWARD_START_TS,
             end_ts=None,
             strict=True,
+            execution_data=execution_data,
+            source_timeframe=source_timeframe,
         )
         strict_train = metrics_for(strict_train_trades)
         strict_forward = metrics_for(strict_forward_trades)

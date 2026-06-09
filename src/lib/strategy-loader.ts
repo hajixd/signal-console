@@ -149,6 +149,8 @@ import strategy146 from "@strategy/competition_gbp_jpy_london_first30_ny_open_re
 import strategy147 from "@strategy/competition_gbp_jpy_london_first30_ny_open_reversal_signalweekdayside_direction_opposite_entryminute_4_61184239/strategy";
 import strategy148 from "@strategy/competition_gbp_jpy_london_first30_ny_open_reversal_signalweekdayside_direction_opposite_entryminute_4_f28a94ed/strategy";
 import strategy149 from "@strategy/gold_futures_tori_trades_trendline_break_retest/strategy";
+import strategy150 from "@strategy/competition_natural_gas_futures_daily_tsmom_next_overnight_weekday_side_4_long_xasset_rr_5_d44e0dd2/strategy";
+import strategy151 from "@strategy/competition_copper_futures_daily_tsmom_next_overnight_weekday_side_4_long_xasset_rr_5_d7674d0c/strategy";
 import type { StrategyDefinition } from "@/lib/strategy-definition";
 
 export type { StrategyDefinition, StrategySignal } from "@/lib/strategy-definition";
@@ -303,5 +305,7 @@ export const STRATEGY_DEFINITIONS: StrategyDefinition[] = [
   strategy146,
   strategy147,
   strategy148,
-  strategy149
+  strategy149,
+  strategy150,
+  strategy151
 ];

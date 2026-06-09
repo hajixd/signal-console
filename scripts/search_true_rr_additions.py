@@ -242,6 +242,37 @@ def qualifies(metrics: Metrics, min_pf: float, min_trades: int, args: argparse.N
 
 def research_asset(asset: runner.AssetConfig, specs: list[Spec], existing: set[tuple[str, str]], args: argparse.Namespace) -> list[Candidate]:
     data = load_data(asset)
+    execution_cache: dict[str, runner.EnrichedData] = {}
+
+    def execution_data_for(strategy: runner.BacktestStrategy) -> tuple[str, list[tuple[str, runner.EnrichedData]]]:
+        source_timeframe = runner.strategy_timeframe(strategy)
+        execution_timeframes = runner.execution_timeframe_candidates(strategy, asset, source_timeframe)
+        runner.require_one_minute_execution_candidates(strategy, asset, source_timeframe, execution_timeframes)
+        execution_data: list[tuple[str, runner.EnrichedData]] = []
+        for execution_timeframe in execution_timeframes:
+            if execution_timeframe not in execution_cache:
+                execution_cache[execution_timeframe] = runner.build_enriched_data(
+                    runner.load_candle_csv(runner.DATA_ROOT / execution_timeframe / asset.data_file),
+                    asset,
+                )
+            execution_data.append((execution_timeframe, execution_cache[execution_timeframe]))
+        return source_timeframe, execution_data
+
+    def run_strict(strategy: runner.BacktestStrategy, start_ts: int, end_ts: int | None) -> list[runner.BacktestTradeRow]:
+        source_timeframe, execution_data = execution_data_for(strategy)
+        effective_start_ts, effective_end_ts = runner.execution_overlap_window(data, execution_data, start_ts, end_ts)
+        return runner.run_single_strategy(
+            strategy,
+            asset,
+            data,
+            start_ts=effective_start_ts,
+            end_ts=effective_end_ts,
+            strict_anti_cheat=True,
+            execution_data=execution_data,
+            source_timeframe=source_timeframe,
+            require_one_minute_exits=source_timeframe != "1m",
+        )
+
     fast_rows: list[tuple[float, runner.BacktestStrategy, Spec, Metrics]] = []
     for spec in specs:
         if (asset.key, canonical_variant(spec.variant_id)) in existing:
@@ -264,11 +295,14 @@ def research_asset(asset: runner.AssetConfig, specs: list[Spec], existing: set[t
         base = canonical_variant(spec.variant_id, include_exit=False)
         if base in used_base:
             continue
-        train_trades = runner.run_single_strategy(strategy, asset, data, 0, FORWARD_START_TS, strict_anti_cheat=True)
+        try:
+            train_trades = run_strict(strategy, 0, FORWARD_START_TS)
+        except (FileNotFoundError, RuntimeError, ValueError):
+            continue
         train = metrics_for(train_trades)
         if train.trades < args.min_train_trades or train.profit_factor < args.min_train_pf:
             continue
-        strict_trades = runner.run_single_strategy(strategy, asset, data, FORWARD_START_TS, None, strict_anti_cheat=True)
+        strict_trades = run_strict(strategy, FORWARD_START_TS, None)
         forward = metrics_for(strict_trades)
         rr = planned_rr(strict_trades)
         if not qualifies(forward, args.min_forward_pf, args.min_forward_trades, args) or rr < 1.95:

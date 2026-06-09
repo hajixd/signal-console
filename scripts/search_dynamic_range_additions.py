@@ -463,6 +463,49 @@ def candidate_score(forward: Metrics, train: Metrics, avg_rr: float, bootstrap_p
     )
 
 
+def execution_data_for(
+    strategy: runner.BacktestStrategy,
+    asset: runner.AssetConfig,
+    data: runner.EnrichedData,
+    execution_cache: dict[str, runner.EnrichedData],
+) -> tuple[str, list[tuple[str, runner.EnrichedData]]]:
+    source_timeframe = runner.strategy_timeframe(strategy)
+    execution_timeframes = runner.execution_timeframe_candidates(strategy, asset, source_timeframe)
+    runner.require_one_minute_execution_candidates(strategy, asset, source_timeframe, execution_timeframes)
+    execution_data: list[tuple[str, runner.EnrichedData]] = []
+    for execution_timeframe in execution_timeframes:
+        if execution_timeframe not in execution_cache:
+            execution_cache[execution_timeframe] = runner.build_enriched_data(
+                runner.load_candle_csv(runner.DATA_ROOT / execution_timeframe / asset.data_file),
+                asset,
+            )
+        execution_data.append((execution_timeframe, execution_cache[execution_timeframe]))
+    return source_timeframe, execution_data
+
+
+def run_strict_with_one_minute_exits(
+    strategy: runner.BacktestStrategy,
+    asset: runner.AssetConfig,
+    data: runner.EnrichedData,
+    execution_data: list[tuple[str, runner.EnrichedData]],
+    source_timeframe: str,
+    start_ts: int,
+    end_ts: int | None,
+) -> list[runner.BacktestTradeRow]:
+    effective_start_ts, effective_end_ts = runner.execution_overlap_window(data, execution_data, start_ts, end_ts)
+    return runner.run_single_strategy(
+        strategy,
+        asset,
+        data,
+        start_ts=effective_start_ts,
+        end_ts=effective_end_ts,
+        strict_anti_cheat=True,
+        execution_data=execution_data,
+        source_timeframe=source_timeframe,
+        require_one_minute_exits=source_timeframe != "1m",
+    )
+
+
 def research_asset(
     asset: runner.AssetConfig,
     specs: list[Spec],
@@ -472,6 +515,7 @@ def research_asset(
     args: argparse.Namespace,
 ) -> list[Candidate]:
     data = load_asset_data(asset)
+    execution_cache: dict[str, runner.EnrichedData] = {}
     ranked: list[tuple[float, runner.BacktestStrategy, Spec, Metrics, list[runner.BacktestTradeRow], float, float]] = []
     seen_base_keys: set[str] = set()
 
@@ -505,11 +549,19 @@ def research_asset(
     for _score, strategy, spec, _fast, _fast_trades, _fast_avg_rr, _fast_min_rr in ranked:
         if len(selected) >= args.max_add_per_asset:
             break
-        train_trades = runner.run_single_strategy(strategy, asset, data, 0, FORWARD_START_TS, strict_anti_cheat=True)
+        try:
+            source_timeframe, execution_data = execution_data_for(strategy, asset, data, execution_cache)
+            train_trades = run_strict_with_one_minute_exits(
+                strategy, asset, data, execution_data, source_timeframe, 0, FORWARD_START_TS
+            )
+        except (FileNotFoundError, RuntimeError, ValueError):
+            continue
         train = metrics_for(train_trades)
         if train.trades < args.min_train_trades or train.profit_factor < args.min_train_pf:
             continue
-        strict_trades = runner.run_single_strategy(strategy, asset, data, FORWARD_START_TS, None, strict_anti_cheat=True)
+        strict_trades = run_strict_with_one_minute_exits(
+            strategy, asset, data, execution_data, source_timeframe, FORWARD_START_TS, None
+        )
         forward = metrics_for(strict_trades)
         if not qualifies(forward, args.min_forward_pf, args.min_forward_trades):
             continue
