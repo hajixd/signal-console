@@ -11880,12 +11880,12 @@ html[data-theme="light"] .tradeReplaySlider input {
     font-size: 7px;
   }
 
-  .basketListRow > span[data-label="Take Profit"]::before {
-    content: "TP";
+  .basketListRow > span[data-label="Average Win"]::before {
+    content: "Avg Win";
   }
 
-  .basketListRow > span[data-label="Stop Loss"]::before {
-    content: "SL";
+  .basketListRow > span[data-label="Average Loss"]::before {
+    content: "Avg Loss";
   }
 
   .basketListRow > span[data-label="Unit/contract size"]::before {
@@ -11907,17 +11907,17 @@ html[data-theme="light"] .tradeReplaySlider input {
     grid-row: 3;
   }
 
-  .basketListRow > span[data-label="Take Profit"] {
+  .basketListRow > span[data-label="Average Win"] {
     grid-column: 4;
     grid-row: 3;
   }
 
-  .basketListRow > span[data-label="Stop Loss"] {
+  .basketListRow > span[data-label="Average Loss"] {
     grid-column: 1;
     grid-row: 4;
   }
 
-  .basketListRow > span[data-label="RRR"] {
+  .basketListRow > span[data-label="Avg R:R"] {
     grid-column: 2;
     grid-row: 4;
   }

@@ -13,7 +13,7 @@ import {
 } from "@/components/auto-trading/auto-trade-account-mode";
 import { useAutoTradeAdminMode } from "@/components/auto-trading/use-auto-trade-account-mode";
 import {
-  effectiveStrategyEdit,
+  strategyContractScale,
   type StrategyEditMap,
   type StrategyEditOption,
   type StrategyEditSeedMap,
@@ -160,6 +160,12 @@ function formatMobilePercent(value: number | undefined): string {
 
 function formatMobileOptionalRatio(value: number | undefined): string {
   return typeof value === "number" && Number.isFinite(value) ? formatMobileRatio(value) : "--";
+}
+
+function formatMobileAverageMoney(value: number | undefined, sign: "loss" | "win"): string {
+  if (typeof value !== "number" || !Number.isFinite(value)) return "--";
+  const dollars = sign === "loss" ? -Math.abs(value) : Math.abs(value);
+  return formatMobileMoney(dollars);
 }
 
 function mobileStrategyTone(strategy: StrategyEditOption): "down" | "neutral" | "up" {
@@ -428,8 +434,11 @@ function MobileStrategiesPanel({ edits, strategies }: { edits: StrategyEditMap; 
       ) : (
         <div className="mobile-phone-strategy-list">
           {sortedStrategies.map((strategy) => {
-            const edit = effectiveStrategyEdit(strategy, edits);
-            const riskReward = edit.riskDollars > 0 ? edit.targetDollars / edit.riskDollars : strategy.riskRewardRatio;
+            const avgRiskReward = strategy.realizedRiskRewardRatio ?? strategy.riskRewardRatio;
+            const hasBacktestTrades = (strategy.trades ?? 0) > 0;
+            const contractScale = strategyContractScale(strategy, edits);
+            const avgWinDollars = typeof strategy.avgWinDollars === "number" ? strategy.avgWinDollars * contractScale : undefined;
+            const avgLossDollars = typeof strategy.avgLossDollars === "number" ? strategy.avgLossDollars * contractScale : undefined;
             const tone = mobileStrategyTone(strategy);
             return (
               <article className={`mobile-phone-strategy-row tone-${tone}`} key={strategy.key}>
@@ -447,9 +456,12 @@ function MobileStrategiesPanel({ edits, strategies }: { edits: StrategyEditMap; 
                 </div>
                 <div className="mobile-phone-strategy-meta">
                   <span>{formatMobilePercent(strategy.winRatePct)} WR</span>
-                  <span>{formatMobileOptionalRatio(riskReward)}R</span>
+                  <span>{formatMobileOptionalRatio(avgRiskReward)} avg R:R</span>
                   <span>{(strategy.trades ?? 0).toLocaleString("en-US")} trades</span>
-                  <span>{formatMobileMoney(edit.targetDollars)} / {formatMobileMoney(-edit.riskDollars)}</span>
+                  <span>
+                    {formatMobileAverageMoney(hasBacktestTrades ? avgWinDollars : undefined, "win")} /{" "}
+                    {formatMobileAverageMoney(hasBacktestTrades ? avgLossDollars : undefined, "loss")}
+                  </span>
                 </div>
                 {strategy.liveSupported ? <span className="mobile-phone-strategy-live">Live</span> : null}
               </article>

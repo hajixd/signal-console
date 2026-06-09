@@ -32,6 +32,11 @@ type StrategyOption = {
   profitFactor: number;
   trades: number;
   tradesPerWeek: number;
+  avgWinDollars: number;
+  avgLossDollars: number;
+  avgWinR: number;
+  avgLossR: number;
+  realizedRiskRewardRatio?: number;
   tpUnits: number;
   slUnits: number;
   unitLabel: string;
@@ -257,14 +262,6 @@ function formatSizeLabel(contracts: number, sizeName: string): string {
   return `${formatNumber(contracts)} ${sizeName.trim() || "contract"}`;
 }
 
-function displayTargetLabel(value: number): string {
-  return formatMoney(value);
-}
-
-function displayRiskLabel(value: number): string {
-  return formatMoney(value);
-}
-
 function displaySizeLabel(strategy: StrategyOption, contracts: number, sizeName: string): string {
   return formatSizeLabel(contracts, sizeName);
 }
@@ -282,6 +279,28 @@ function editRiskRewardRatio(edit: Pick<StrategyEdit, "targetDollars" | "riskDol
 function displayRiskRewardLabel(value: number | undefined, hasBacktestTrades: boolean): string {
   if (!hasBacktestTrades) return "--";
   return Number.isFinite(value) ? formatNumber(value ?? 0) : "--";
+}
+
+function sortableProfitFactor(strategy: Pick<StrategyOption, "profitFactor" | "trades">): number {
+  return strategy.trades > 0 && Number.isFinite(strategy.profitFactor) ? strategy.profitFactor : -Infinity;
+}
+
+function displayAverageWinLabel(value: number, hasBacktestTrades: boolean): string {
+  if (!hasBacktestTrades || !Number.isFinite(value)) return "--";
+  return formatMoney(Math.abs(value));
+}
+
+function displayAverageLossLabel(value: number, hasBacktestTrades: boolean): string {
+  if (!hasBacktestTrades || !Number.isFinite(value)) return "--";
+  return formatMoney(-Math.abs(value));
+}
+
+function scaledAverageWinDollars(strategy: StrategyOption, edit: StrategyEdit): number {
+  return strategy.avgWinDollars * scaleForContracts(strategy, edit.contracts);
+}
+
+function scaledAverageLossDollars(strategy: StrategyOption, edit: StrategyEdit): number {
+  return strategy.avgLossDollars * scaleForContracts(strategy, edit.contracts);
 }
 
 function roundControlValue(value: number): number {
@@ -645,10 +664,6 @@ export default function StrategySelector({
   const normalizedSearchQuery = isRestricted ? "" : searchQuery.trim().toLowerCase();
   const orderByKey = new Map(strategies.map((strategy, index) => [strategy.key, index]));
   const strategyScopeKeys = useMemo(() => strategies.map((strategy) => strategy.key), [strategies]);
-  const scopedPersistedLiveKeys = useMemo(() => {
-    const persisted = new Set(persistedLiveKeys);
-    return strategyScopeKeys.filter((key) => persisted.has(key));
-  }, [persistedLiveKeys, strategyScopeKeys]);
   const strategyScopeSignature = strategyScopeKeys.join("|");
   const selectionSignature = selectedKeys.join("|");
   const optimisticSelectionSignature = optimisticSelectedKeys.join("|");
@@ -676,7 +691,6 @@ export default function StrategySelector({
   const editSyncRunRef = useRef(0);
   const editControlsDisabled = isSavingEdits || isRestricted;
   const selectionControlsDisabled = isRestricted;
-  const canShowSavedSelection = optimisticSelectedKeys.length === 0 && scopedPersistedLiveKeys.length > 0;
   const savingSelectionKeySet = useMemo(() => new Set(savingSelectionKeys), [savingSelectionKeys]);
   const isStrategyLoading =
     savingSelectionKeys.length > 0 || isSavingSelection || isSavingEdits || isSavingCustomScaleRange;
@@ -705,21 +719,6 @@ export default function StrategySelector({
       params.set("strategies", NO_STRATEGIES_SELECTION_PARAM);
     }
     const query = params.toString();
-    router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
-  }
-
-  function showSavedSelection() {
-    const params = new URLSearchParams(window.location.search);
-    params.delete("strategies");
-    const query = params.toString();
-    const restoredSignature = scopedPersistedLiveKeys.join("|");
-
-    setSelectionError("");
-    pendingSelectionSignatureRef.current = "";
-    latestSelectionSignatureRef.current = restoredSignature;
-    setSavingSelectionKeys([]);
-    setSelectionProgress(0);
-    setOptimisticSelectedKeys(scopedPersistedLiveKeys);
     router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
   }
 
@@ -1084,12 +1083,12 @@ export default function StrategySelector({
 
     if (sortColumn === "ticker") comparison = compareText(left.symbol, right.symbol);
     if (sortColumn === "model") comparison = compareText(leftEdit.modelName, rightEdit.modelName);
-    if (sortColumn === "profitFactor") comparison = left.profitFactor - right.profitFactor;
+    if (sortColumn === "profitFactor") comparison = sortableProfitFactor(left) - sortableProfitFactor(right);
     if (sortColumn === "winRate") comparison = left.winRatePct - right.winRatePct;
     if (sortColumn === "trades") comparison = left.trades - right.trades;
-    if (sortColumn === "target") comparison = leftEdit.targetDollars - rightEdit.targetDollars;
-    if (sortColumn === "risk") comparison = leftEdit.riskDollars - rightEdit.riskDollars;
-    if (sortColumn === "rrr") comparison = (riskRewardRatio(leftEdit.targetDollars, leftEdit.riskDollars) ?? 0) - (riskRewardRatio(rightEdit.targetDollars, rightEdit.riskDollars) ?? 0);
+    if (sortColumn === "target") comparison = scaledAverageWinDollars(left, leftEdit) - scaledAverageWinDollars(right, rightEdit);
+    if (sortColumn === "risk") comparison = scaledAverageLossDollars(left, leftEdit) - scaledAverageLossDollars(right, rightEdit);
+    if (sortColumn === "rrr") comparison = (left.realizedRiskRewardRatio ?? 0) - (right.realizedRiskRewardRatio ?? 0);
     if (sortColumn === "size") comparison = leftEdit.contracts - rightEdit.contracts;
     if (sortColumn === "scale") comparison = scaleForContracts(left, leftEdit.contracts) - scaleForContracts(right, rightEdit.contracts);
     if (sortColumn === "enabled") comparison = Number(selected.has(left.key)) - Number(selected.has(right.key));
@@ -1341,11 +1340,6 @@ export default function StrategySelector({
       <div className="pickerHeader">
         <span>Strategies</span>
         <div className="pickerActions">
-          {canShowSavedSelection ? (
-            <button type="button" onClick={showSavedSelection}>
-              Show Saved
-            </button>
-          ) : null}
           <button type="button" onClick={openCustomSelection} disabled={selectionControlsDisabled || strategies.length === 0}>
             Custom Selection
           </button>
@@ -1418,15 +1412,15 @@ export default function StrategySelector({
             <strong>{sortIndicator("trades")}</strong>
           </button>
           <button className={sortButtonClass("target")} type="button" onClick={() => toggleSort("target")} disabled={isRestricted}>
-            <span>Take Profit</span>
+            <span>Average Win</span>
             <strong>{sortIndicator("target")}</strong>
           </button>
           <button className={sortButtonClass("risk")} type="button" onClick={() => toggleSort("risk")} disabled={isRestricted}>
-            <span>Stop Loss</span>
+            <span>Average Loss</span>
             <strong>{sortIndicator("risk")}</strong>
           </button>
           <button className={sortButtonClass("rrr")} type="button" onClick={() => toggleSort("rrr")} disabled={isRestricted}>
-            <span>RRR</span>
+            <span>Avg R:R</span>
             <strong>{sortIndicator("rrr")}</strong>
           </button>
           <button className={sortButtonClass("size")} type="button" onClick={() => toggleSort("size")} disabled={isRestricted}>
@@ -1448,7 +1442,9 @@ export default function StrategySelector({
           const custom = Boolean(edits[strategy.key]);
           const isSavingSelection = savingSelectionKeySet.has(strategy.key);
           const effective = currentEdit(strategy);
-          const effectiveRiskRewardRatio = riskRewardRatio(effective.targetDollars, effective.riskDollars);
+          const effectiveAverageWinDollars = scaledAverageWinDollars(strategy, effective);
+          const effectiveAverageLossDollars = scaledAverageLossDollars(strategy, effective);
+          const plannedRiskRewardRatio = riskRewardRatio(effective.targetDollars, effective.riskDollars);
           const hasBacktestTrades = strategy.trades > 0;
           const displayedModelName = isRestricted ? "Admin only" : effective.modelName;
           return (
@@ -1483,9 +1479,11 @@ export default function StrategySelector({
               </span>
               <span data-label="Win">{hasBacktestTrades ? formatPct(strategy.winRatePct) : "--"}</span>
               <span data-label="Trades">{formatNumber(strategy.trades)}</span>
-              <span data-label="Take Profit">{displayTargetLabel(effective.targetDollars)}</span>
-              <span data-label="Stop Loss">{displayRiskLabel(effective.riskDollars)}</span>
-              <span data-label="RRR">{displayRiskRewardLabel(effectiveRiskRewardRatio, hasBacktestTrades)}</span>
+              <span data-label="Average Win">{displayAverageWinLabel(effectiveAverageWinDollars, hasBacktestTrades)}</span>
+              <span data-label="Average Loss">{displayAverageLossLabel(effectiveAverageLossDollars, hasBacktestTrades)}</span>
+              <span data-label="Avg R:R" title={plannedRiskRewardRatio !== undefined ? `Planned initial RR: ${formatNumber(plannedRiskRewardRatio)}` : undefined}>
+                {displayRiskRewardLabel(strategy.realizedRiskRewardRatio, hasBacktestTrades)}
+              </span>
               <span data-label="Unit/contract size">{displaySizeLabel(strategy, effective.contracts, effective.sizeName)}</span>
               <span data-label="Scale">{formatScaleRatio(scaleForContracts(strategy, effective.contracts))}</span>
               <label
