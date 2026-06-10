@@ -87,7 +87,9 @@ type MarketTabKey = "forex" | "futures";
 
 type TradeHistoryBarRange = {
   end: number;
+  endTime?: string;
   start: number;
+  startTime?: string;
 };
 
 const MARKET_TABS: Array<{ key: MarketTabKey; label: string }> = [
@@ -295,7 +297,7 @@ function tradeSourceTimeframe(trade: BacktestTrade): TradeChartTimeframe {
   if (trade.executionTimeframe && TRADE_CHART_TIMEFRAME_VALUES.has(trade.executionTimeframe as TradeChartTimeframe)) {
     return trade.executionTimeframe as TradeChartTimeframe;
   }
-  return timeframeFromVariant(trade.variantId, "exec_tf") ?? timeframeFromVariant(trade.variantId, "tf") ?? "15m";
+  return timeframeFromVariant(trade.variantId, "exec_tf") ?? "1m";
 }
 
 function timeframeFromVariant(variantId: string | undefined, key = "tf"): TradeChartTimeframe | null {
@@ -347,6 +349,34 @@ function mergeBarRanges(ranges: TradeHistoryBarRange[]): TradeHistoryBarRange[] 
   return merged;
 }
 
+function mergeBarTimeRanges(ranges: TradeHistoryBarRange[]): Array<{ endMs: number; startMs: number }> {
+  const oneMinuteMs = 60_000;
+  const sorted = ranges
+    .map((range) => {
+      const start = range.startTime ? Date.parse(range.startTime) : Number.NaN;
+      const end = range.endTime ? Date.parse(range.endTime) : Number.NaN;
+      if (!Number.isFinite(start) || !Number.isFinite(end)) return null;
+      return {
+        endMs: Math.max(start, end) + oneMinuteMs,
+        startMs: Math.max(0, Math.min(start, end) - oneMinuteMs)
+      };
+    })
+    .filter((range): range is { endMs: number; startMs: number } => Boolean(range))
+    .sort((left, right) => left.startMs - right.startMs || left.endMs - right.endMs);
+  const merged: Array<{ endMs: number; startMs: number }> = [];
+
+  for (const range of sorted) {
+    const previous = merged[merged.length - 1];
+    if (previous && range.startMs <= previous.endMs + 1) {
+      previous.endMs = Math.max(previous.endMs, range.endMs);
+    } else {
+      merged.push({ ...range });
+    }
+  }
+
+  return merged;
+}
+
 async function localBarsForRanges(relativeDataPath: string, ranges: TradeHistoryBarRange[]): Promise<TradeBracketBar[] | null> {
   try {
     return barsFromHistoryDataText(await readFile(localHistoryDataPath(relativeDataPath), "utf8"), ranges);
@@ -356,9 +386,34 @@ async function localBarsForRanges(relativeDataPath: string, ranges: TradeHistory
 }
 
 function barsFromHistoryDataText(text: string, ranges: TradeHistoryBarRange[]): TradeBracketBar[] {
+  const lines = text.split(/\r?\n/);
+  const timeRanges = mergeBarTimeRanges(ranges);
+  if (timeRanges.length) {
+    const bars: TradeBracketBar[] = [];
+    let rangeIndex = 0;
+
+    for (let dataIndex = 0; dataIndex <= lines.length - 2 && rangeIndex < timeRanges.length; dataIndex += 1) {
+      const line = lines[dataIndex + 1] ?? "";
+      const timestamp = Number(line.split(",", 1)[0]);
+      if (!Number.isFinite(timestamp)) continue;
+      const timestampMs = timestamp * 1000;
+
+      while (rangeIndex < timeRanges.length && timestampMs > timeRanges[rangeIndex]!.endMs) {
+        rangeIndex += 1;
+      }
+      const range = timeRanges[rangeIndex];
+      if (!range) break;
+      if (timestampMs < range.startMs) continue;
+
+      const bar = parseHistoryDataBar(line, dataIndex);
+      if (bar) bars.push(bar);
+    }
+
+    return bars;
+  }
+
   const merged = mergeBarRanges(ranges);
   if (!merged.length) return [];
-  const lines = text.split(/\r?\n/);
   const bars: TradeBracketBar[] = [];
 
   for (const range of merged) {
@@ -405,6 +460,8 @@ async function loadHistoryBarsBySymbol(trades: BacktestTrade[]): Promise<Map<str
     };
     current.ranges.push({
       end: trade.exitIndex,
+      endTime: trade.exitTime,
+      startTime: trade.entryTime,
       start: trade.entryIndex
     });
     rangesBySymbol.set(key, current);
@@ -1913,7 +1970,7 @@ export default async function Home({ searchParams }: HomeProps) {
         signalTime: trade.signalTime,
         entryTime: trade.signalTime,
         exitTime: endTime,
-        sourceTimeframe: timeframeFromVariant(option?.variantId, "tf") ?? "15m",
+        sourceTimeframe: timeframeFromVariant(option?.variantId, "exec_tf") ?? "1m",
         phase: option?.phase,
         variantId: option?.variantId,
         entryType: trade.entryType ?? "market",

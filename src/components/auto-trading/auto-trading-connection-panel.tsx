@@ -21,6 +21,8 @@ import type {
   ProjectXAccount,
   ProjectXConnectionStatus,
   ProjectXConnectionSummary,
+  ProjectXOpenPosition,
+  ProjectXOrder,
   ProjectXTrade
 } from "@/lib/projectx";
 
@@ -82,6 +84,8 @@ type ProjectXAccountDetails = {
   historyDays?: number;
   historyEnd?: string;
   historyStart?: string;
+  openPositions: ProjectXOpenPosition[];
+  orders: ProjectXOrder[];
   trades: ProjectXTrade[];
 };
 
@@ -89,6 +93,29 @@ type ProjectXAccountDetailsState = {
   details?: ProjectXAccountDetails;
   error?: string;
   status: "failed" | "loaded" | "loading";
+};
+
+type ProjectXTone = "down" | "neutral" | "up" | "warn";
+
+type ProjectXTradeHistoryRow = {
+  badgeClass: "buy" | "neutral" | "sell";
+  badgeLabel: string;
+  closedAt?: string;
+  contractId?: string;
+  fees?: number;
+  fills: number;
+  key: string;
+  openedAt?: string;
+  orderIds: number[];
+  priceLine: string;
+  profitAndLoss?: number;
+  resultDetail: string;
+  resultLabel: string;
+  resultTone: ProjectXTone;
+  size?: number;
+  sortTime: number;
+  statusClass: string;
+  statusLabel: string;
 };
 
 type ConnectionField = {
@@ -278,20 +305,404 @@ function fmtProjectXSide(side: number | undefined): string {
   return "--";
 }
 
+function finiteNumber(value: unknown): number | undefined {
+  return typeof value === "number" && Number.isFinite(value) ? value : undefined;
+}
+
 function projectXAccountDetailKey(connectionId: string, accountId: number): string {
   return `${connectionId}:${accountId}`;
 }
 
-function projectXTradeNetPnl(trade: ProjectXTrade): number | undefined {
-  if (typeof trade.profitAndLoss !== "number" || !Number.isFinite(trade.profitAndLoss)) return undefined;
-  const fees = typeof trade.fees === "number" && Number.isFinite(trade.fees) ? trade.fees : 0;
-  return trade.profitAndLoss - fees;
+function projectXOrderId(order: Pick<ProjectXOrder, "id" | "orderId">): number | undefined {
+  return finiteNumber(order.orderId ?? order.id);
 }
 
-function projectXNetPnl(trades: ProjectXTrade[]): number | undefined {
-  const pnls = trades.map(projectXTradeNetPnl).filter((value): value is number => typeof value === "number" && Number.isFinite(value));
+function projectXTradeOrderId(trade: ProjectXTrade): number | undefined {
+  return finiteNumber(trade.orderId);
+}
+
+function projectXTimestampMs(value: string | undefined): number {
+  const parsed = Date.parse(value ?? "");
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function projectXTradeTimeMs(trade: ProjectXTrade): number {
+  return projectXTimestampMs(trade.creationTimestamp);
+}
+
+function projectXOrderTimeMs(order: ProjectXOrder): number {
+  return projectXTimestampMs(order.updateTimestamp ?? order.creationTimestamp);
+}
+
+function projectXEarlierTimestamp(current: string | undefined, next: string | undefined): string | undefined {
+  if (!next) return current;
+  if (!current) return next;
+  return projectXTimestampMs(next) < projectXTimestampMs(current) ? next : current;
+}
+
+function projectXLaterTimestamp(current: string | undefined, next: string | undefined): string | undefined {
+  if (!next) return current;
+  if (!current) return next;
+  return projectXTimestampMs(next) > projectXTimestampMs(current) ? next : current;
+}
+
+function projectXPositionSide(type: number | undefined): { className: "buy" | "neutral" | "sell"; label: string } {
+  if (type === 1) return { className: "buy", label: "Long" };
+  if (type === 2) return { className: "sell", label: "Short" };
+  return { className: "neutral", label: "Open" };
+}
+
+function projectXTradeDirection(entrySide: number | undefined, exitSide: number | undefined): { className: "buy" | "neutral" | "sell"; label: string } {
+  if (entrySide === 0 || (!Number.isFinite(entrySide) && exitSide === 1)) return { className: "buy", label: "Long" };
+  if (entrySide === 1 || (!Number.isFinite(entrySide) && exitSide === 0)) return { className: "sell", label: "Short" };
+  return { className: "neutral", label: "Trade" };
+}
+
+function projectXOrderStatusValue(status: ProjectXOrder["status"]): number | undefined {
+  if (typeof status === "number" && Number.isFinite(status)) return status;
+  if (typeof status !== "string") return undefined;
+  const normalized = status.trim().toLowerCase();
+  if (normalized === "open") return 1;
+  if (normalized === "filled") return 2;
+  if (normalized === "cancelled" || normalized === "canceled") return 3;
+  if (normalized === "expired") return 4;
+  if (normalized === "rejected") return 5;
+  if (normalized === "pending") return 6;
+  return undefined;
+}
+
+function projectXOrderStatusLabel(status: ProjectXOrder["status"]): string {
+  const value = projectXOrderStatusValue(status);
+  if (value === 1) return "Open";
+  if (value === 2) return "Filled";
+  if (value === 3) return "Cancelled";
+  if (value === 4) return "Expired";
+  if (value === 5) return "Rejected";
+  if (value === 6) return "Pending";
+  return typeof status === "string" && status.trim() ? status.trim() : "Unknown";
+}
+
+function projectXOrderIsFilled(order: ProjectXOrder, tradeOrderIds: Set<number>): boolean {
+  const id = projectXOrderId(order);
+  return projectXOrderStatusValue(order.status) === 2 || Boolean(finiteNumber(order.fillVolume)) || (id !== undefined && tradeOrderIds.has(id));
+}
+
+function projectXOrderIsTerminalFailure(order: ProjectXOrder): boolean {
+  const status = projectXOrderStatusValue(order.status);
+  return status === 3 || status === 4 || status === 5;
+}
+
+function projectXOrderBaseTag(order: Pick<ProjectXOrder, "customTag"> | undefined): string | undefined {
+  let tag = order?.customTag?.trim() ?? "";
+  if (!tag) return undefined;
+
+  let changed = true;
+  const suffixPatterns: RegExp[] = [/_pb$/i, /_r[0-9a-z]+$/i, /_u\d+$/i];
+  while (changed) {
+    changed = false;
+    for (const pattern of suffixPatterns) {
+      const nextTag = tag.replace(pattern, "");
+      if (nextTag !== tag) {
+        tag = nextTag;
+        changed = true;
+      }
+    }
+  }
+
+  return tag;
+}
+
+function projectXTradeNetPnl(trade: ProjectXTrade): number | undefined {
+  const profitAndLoss = finiteNumber(trade.profitAndLoss);
+  if (profitAndLoss === undefined) return undefined;
+  const fees = finiteNumber(trade.fees) ?? 0;
+  return profitAndLoss - fees;
+}
+
+function projectXToneForAmount(value: number | undefined): ProjectXTone {
+  if (value === undefined) return "neutral";
+  if (value > 0) return "up";
+  if (value < 0) return "down";
+  return "neutral";
+}
+
+function projectXTradeRange(openedAt: string | undefined, closedAt: string | undefined): string {
+  if (openedAt && closedAt && fmtShortTime(openedAt) !== fmtShortTime(closedAt)) {
+    return `${fmtShortTime(openedAt)} -> ${fmtShortTime(closedAt)}`;
+  }
+  return fmtShortTime(closedAt ?? openedAt);
+}
+
+function projectXOrderLabel(orderIds: number[], fills: number): string {
+  if (fills > 1) return `${fmtNumber(fills, 0)} fills`;
+  if (orderIds.length === 1) return `order #${orderIds[0]}`;
+  if (orderIds.length > 1) return `${fmtNumber(orderIds.length, 0)} orders`;
+  return "ProjectX";
+}
+
+function projectXPriceLine(size: number | undefined, entryPrice: number | undefined, exitPrice: number | undefined): string {
+  const sizeLabel = size !== undefined ? `${fmtNumber(size, 0)} @ ` : "";
+  if (entryPrice !== undefined && exitPrice !== undefined) return `${sizeLabel}${fmtNumber(entryPrice, 5)} -> ${fmtNumber(exitPrice, 5)}`;
+  if (exitPrice !== undefined) return `${sizeLabel}${fmtNumber(exitPrice, 5)}`;
+  if (entryPrice !== undefined) return `${sizeLabel}${fmtNumber(entryPrice, 5)}`;
+  return size !== undefined ? `${fmtNumber(size, 0)} contracts` : "Price unavailable";
+}
+
+function projectXRowsNetPnl(rows: ProjectXTradeHistoryRow[]): number | undefined {
+  const pnls = rows.map((row) => row.profitAndLoss).filter((value): value is number => value !== undefined);
   if (!pnls.length) return undefined;
   return pnls.reduce((sum, value) => sum + value, 0);
+}
+
+function buildProjectXClosedTradeRows(trades: ProjectXTrade[], orders: ProjectXOrder[]): ProjectXTradeHistoryRow[] {
+  type OpenFill = {
+    orderBaseTag?: string;
+    trade: ProjectXTrade;
+  };
+  type Aggregate = {
+    badgeClass: "buy" | "neutral" | "sell";
+    badgeLabel: string;
+    closedAt?: string;
+    contractId?: string;
+    entryPriceSize: number;
+    entryPriceTotal: number;
+    exitPriceSize: number;
+    exitPriceTotal: number;
+    feesTotal: number;
+    fills: number;
+    hasFees: boolean;
+    hasPnl: boolean;
+    hasSize: boolean;
+    key: string;
+    openedAt?: string;
+    orderIdSet: Set<number>;
+    pnlTotal: number;
+    sizeTotal: number;
+    sortTime: number;
+  };
+
+  const orderById = new Map<number, ProjectXOrder>();
+  for (const order of orders) {
+    const id = projectXOrderId(order);
+    if (id !== undefined) orderById.set(id, order);
+  }
+
+  const openFills = new Map<string, OpenFill[]>();
+  const aggregates = new Map<string, Aggregate>();
+  const rows: ProjectXTradeHistoryRow[] = [];
+  const sortedTrades = [...trades].sort((left, right) => projectXTradeTimeMs(left) - projectXTradeTimeMs(right));
+
+  for (const trade of sortedTrades) {
+    const pnl = projectXTradeNetPnl(trade);
+    const orderId = projectXTradeOrderId(trade);
+    const order = orderId !== undefined ? orderById.get(orderId) : undefined;
+    const orderBaseTag = projectXOrderBaseTag(order);
+    const contractKey = trade.contractId ?? "unknown";
+
+    if (trade.voided) {
+      const direction = projectXTradeDirection(trade.side, undefined);
+      const size = finiteNumber(trade.size);
+      rows.push({
+        badgeClass: direction.className,
+        badgeLabel: direction.label === "Trade" ? fmtProjectXSide(trade.side) : direction.label,
+        closedAt: trade.creationTimestamp,
+        contractId: trade.contractId,
+        fees: finiteNumber(trade.fees),
+        fills: 1,
+        key: `voided-${trade.id ?? orderId ?? `${contractKey}-${trade.creationTimestamp}`}`,
+        openedAt: trade.creationTimestamp,
+        orderIds: orderId !== undefined ? [orderId] : [],
+        priceLine: projectXPriceLine(size, finiteNumber(trade.price), undefined),
+        resultDetail: "Voided by ProjectX",
+        resultLabel: "Voided",
+        resultTone: "neutral",
+        size,
+        sortTime: projectXTradeTimeMs(trade),
+        statusClass: "voided",
+        statusLabel: "Voided"
+      });
+      continue;
+    }
+
+    if (pnl === undefined) {
+      const bucket = openFills.get(contractKey) ?? [];
+      bucket.push({ orderBaseTag, trade });
+      openFills.set(contractKey, bucket);
+      continue;
+    }
+
+    const bucket = openFills.get(contractKey) ?? [];
+    let entryIndex = -1;
+    for (let index = bucket.length - 1; index >= 0; index -= 1) {
+      const candidate = bucket[index]?.trade;
+      if (candidate && candidate.side !== trade.side) {
+        entryIndex = index;
+        break;
+      }
+    }
+    const entryFill = entryIndex >= 0 ? bucket.splice(entryIndex, 1)[0] : undefined;
+    if (bucket.length) openFills.set(contractKey, bucket);
+    else openFills.delete(contractKey);
+
+    const entry = entryFill?.trade;
+    const direction = projectXTradeDirection(entry?.side, trade.side);
+    const size = finiteNumber(trade.size) ?? finiteNumber(entry?.size);
+    const fees = finiteNumber(trade.fees) ?? 0;
+    const closeTime = projectXTradeTimeMs(trade);
+    const closeMinute = Math.floor(closeTime / 60_000);
+    const openMinute = entry ? Math.floor(projectXTradeTimeMs(entry) / 60_000) : "outside";
+    const aggregateKey = orderBaseTag ?? entryFill?.orderBaseTag ?? `${contractKey}:${direction.label}:${openMinute}:${closeMinute}`;
+    const key = `trade-${aggregateKey}`;
+    const aggregate =
+      aggregates.get(key) ??
+      ({
+        badgeClass: direction.className,
+        badgeLabel: direction.label,
+        closedAt: trade.creationTimestamp,
+        contractId: trade.contractId ?? entry?.contractId,
+        entryPriceSize: 0,
+        entryPriceTotal: 0,
+        exitPriceSize: 0,
+        exitPriceTotal: 0,
+        feesTotal: 0,
+        fills: 0,
+        hasFees: false,
+        hasPnl: false,
+        hasSize: false,
+        key,
+        openedAt: entry?.creationTimestamp ?? trade.creationTimestamp,
+        orderIdSet: new Set<number>(),
+        pnlTotal: 0,
+        sizeTotal: 0,
+        sortTime: closeTime
+      } satisfies Aggregate);
+
+    aggregate.badgeClass = direction.className;
+    aggregate.badgeLabel = direction.label;
+    aggregate.closedAt = projectXLaterTimestamp(aggregate.closedAt, trade.creationTimestamp);
+    aggregate.contractId = aggregate.contractId ?? trade.contractId ?? entry?.contractId;
+    aggregate.feesTotal += fees;
+    aggregate.fills += 1;
+    aggregate.hasFees = aggregate.hasFees || fees !== 0;
+    aggregate.hasPnl = true;
+    aggregate.openedAt = projectXEarlierTimestamp(aggregate.openedAt, entry?.creationTimestamp ?? trade.creationTimestamp);
+    aggregate.pnlTotal += pnl;
+    aggregate.sortTime = Math.max(aggregate.sortTime, closeTime);
+    if (orderId !== undefined) aggregate.orderIdSet.add(orderId);
+    const entryOrderId = entry ? projectXTradeOrderId(entry) : undefined;
+    if (entryOrderId !== undefined) aggregate.orderIdSet.add(entryOrderId);
+    if (size !== undefined) {
+      aggregate.hasSize = true;
+      aggregate.sizeTotal += size;
+      const entryPrice = finiteNumber(entry?.price);
+      const exitPrice = finiteNumber(trade.price);
+      if (entryPrice !== undefined) {
+        aggregate.entryPriceTotal += entryPrice * size;
+        aggregate.entryPriceSize += size;
+      }
+      if (exitPrice !== undefined) {
+        aggregate.exitPriceTotal += exitPrice * size;
+        aggregate.exitPriceSize += size;
+      }
+    }
+
+    aggregates.set(key, aggregate);
+  }
+
+  const closedRows = [...aggregates.values()].map((aggregate): ProjectXTradeHistoryRow => {
+    const orderIds = [...aggregate.orderIdSet].sort((left, right) => left - right);
+    const size = aggregate.hasSize ? aggregate.sizeTotal : undefined;
+    const entryPrice = aggregate.entryPriceSize > 0 ? aggregate.entryPriceTotal / aggregate.entryPriceSize : undefined;
+    const exitPrice = aggregate.exitPriceSize > 0 ? aggregate.exitPriceTotal / aggregate.exitPriceSize : undefined;
+    const fees = aggregate.hasFees ? aggregate.feesTotal : undefined;
+    const pnl = aggregate.hasPnl ? aggregate.pnlTotal : undefined;
+    return {
+      badgeClass: aggregate.badgeClass,
+      badgeLabel: aggregate.badgeLabel,
+      closedAt: aggregate.closedAt,
+      contractId: aggregate.contractId,
+      fees,
+      fills: aggregate.fills,
+      key: aggregate.key,
+      openedAt: aggregate.openedAt,
+      orderIds,
+      priceLine: projectXPriceLine(size, entryPrice, exitPrice),
+      profitAndLoss: pnl,
+      resultDetail: fees !== undefined ? `fees ${fmtMoney(-Math.abs(fees), true)}` : projectXOrderLabel(orderIds, aggregate.fills),
+      resultLabel: fmtMoney(pnl, true),
+      resultTone: projectXToneForAmount(pnl),
+      size,
+      sortTime: aggregate.sortTime,
+      statusClass: "closed",
+      statusLabel: "Closed"
+    };
+  });
+
+  return [...closedRows, ...rows];
+}
+
+function buildProjectXAttemptRows(orders: ProjectXOrder[], trades: ProjectXTrade[]): ProjectXTradeHistoryRow[] {
+  type AttemptGroup = {
+    hasFill: boolean;
+    key: string;
+    latestOrder?: ProjectXOrder;
+    terminalOrder?: ProjectXOrder;
+  };
+
+  const tradeOrderIds = new Set(
+    trades.map(projectXTradeOrderId).filter((value): value is number => value !== undefined)
+  );
+  const groups = new Map<string, AttemptGroup>();
+
+  for (const order of orders) {
+    const baseTag = projectXOrderBaseTag(order);
+    if (!baseTag?.startsWith("tb_")) continue;
+    const key = `attempt-${baseTag}`;
+    const group = groups.get(key) ?? { hasFill: false, key };
+    group.hasFill = group.hasFill || projectXOrderIsFilled(order, tradeOrderIds);
+    if (!group.latestOrder || projectXOrderTimeMs(order) > projectXOrderTimeMs(group.latestOrder)) group.latestOrder = order;
+    if (projectXOrderIsTerminalFailure(order) && (!group.terminalOrder || projectXOrderTimeMs(order) > projectXOrderTimeMs(group.terminalOrder))) {
+      group.terminalOrder = order;
+    }
+    groups.set(key, group);
+  }
+
+  return [...groups.values()]
+    .filter((group) => !group.hasFill && group.terminalOrder)
+    .map((group) => {
+      const order = group.terminalOrder!;
+      const status = projectXOrderStatusValue(order.status);
+      const statusLabel = projectXOrderStatusLabel(order.status);
+      const orderId = projectXOrderId(order);
+      const price = finiteNumber(order.filledPrice) ?? finiteNumber(order.limitPrice) ?? finiteNumber(order.stopPrice);
+      const size = finiteNumber(order.size);
+      const sideLabel = fmtProjectXSide(order.side);
+      const resultLabel = status === 5 ? "Rejected" : "Did not fill";
+      return {
+        badgeClass: order.side === 0 ? "buy" : order.side === 1 ? "sell" : "neutral",
+        badgeLabel: sideLabel,
+        closedAt: order.updateTimestamp ?? order.creationTimestamp,
+        contractId: order.contractId ?? order.symbolId,
+        fills: 1,
+        key: group.key,
+        openedAt: order.creationTimestamp,
+        orderIds: orderId !== undefined ? [orderId] : [],
+        priceLine: projectXPriceLine(size, price, undefined),
+        resultDetail: status === 5 ? "Order was rejected" : "Order was cancelled or expired",
+        resultLabel,
+        resultTone: status === 5 ? "down" : "warn",
+        size,
+        sortTime: projectXOrderTimeMs(order),
+        statusClass: status === 5 ? "failed" : "warn",
+        statusLabel
+      } satisfies ProjectXTradeHistoryRow;
+    });
+}
+
+function buildProjectXTradeHistoryRows(trades: ProjectXTrade[], orders: ProjectXOrder[]): ProjectXTradeHistoryRow[] {
+  return [...buildProjectXClosedTradeRows(trades, orders), ...buildProjectXAttemptRows(orders, trades)]
+    .sort((left, right) => right.sortTime - left.sortTime)
+    .slice(0, 40);
 }
 
 function firstProviderId(providers: AutoTradeProvider[]): AutoTradeProviderId {
@@ -371,6 +782,8 @@ async function parseProjectXAccountDetailsResponse(response: Response): Promise<
     historyDays: payload.historyDays,
     historyEnd: payload.historyEnd,
     historyStart: payload.historyStart,
+    openPositions: payload.openPositions ?? [],
+    orders: payload.orders ?? [],
     trades: payload.trades ?? []
   };
 }
@@ -411,7 +824,7 @@ function ProjectXAccountDetailPanel({ account, state }: { account: ProjectXAccou
       <div className="topstepAccountDetailPanel">
         <div className="topstepAccountDetailHead">
           <div>
-            <span>Previous trades</span>
+            <span>Account activity</span>
             <strong>{account.name}</strong>
           </div>
           <small>Loading ProjectX activity...</small>
@@ -425,7 +838,7 @@ function ProjectXAccountDetailPanel({ account, state }: { account: ProjectXAccou
       <div className="topstepAccountDetailPanel">
         <div className="topstepAccountDetailHead">
           <div>
-            <span>Previous trades</span>
+            <span>Account activity</span>
             <strong>{account.name}</strong>
           </div>
           <small className="topstepAccountDetailError">{state.error ?? "Could not load account details."}</small>
@@ -435,59 +848,104 @@ function ProjectXAccountDetailPanel({ account, state }: { account: ProjectXAccou
   }
 
   const details = state.details!;
-  const netPnl = projectXNetPnl(details.trades);
-  const netTone = netPnl === undefined ? "neutral" : netPnl > 0 ? "up" : netPnl < 0 ? "down" : "neutral";
-  const excludedTradeCount = details.trades.filter((trade) => projectXTradeNetPnl(trade) === undefined).length;
+  const tradeRows = buildProjectXTradeHistoryRows(details.trades, details.orders);
+  const closedTradeCount = tradeRows.filter((row) => row.profitAndLoss !== undefined).length;
+  const issueCount = tradeRows.filter((row) => row.profitAndLoss === undefined).length;
+  const netPnl = projectXRowsNetPnl(tradeRows);
+  const netTone = projectXToneForAmount(netPnl);
 
   return (
     <div className="topstepAccountDetailPanel">
       <div className="topstepAccountDetailHead">
         <div>
-          <span>Previous trades</span>
+          <span>Account activity</span>
           <strong>{details.account.name}</strong>
         </div>
         <small>
-          {fmtNumber(details.trades.length, 0)} trades / {fmtNumber(details.historyDays, 0)}d / updated {fmtShortTime(details.checkedAt)}
+          {fmtNumber(details.openPositions.length, 0)} open / {fmtNumber(closedTradeCount, 0)} closed / {fmtNumber(details.historyDays, 0)}d / updated {fmtShortTime(details.checkedAt)}
         </small>
       </div>
 
-      <div className="topstepTradeHistorySummary" aria-label={`${details.account.name} ProjectX trade summary`}>
-        <span>Net closed P&L</span>
-        <strong className={`tone-${netTone}`}>{fmtMoney(netPnl, true)}</strong>
-      </div>
+      <section className="topstepAccountActivitySection" aria-label={`${details.account.name} open positions`}>
+        <div className="topstepAccountActivitySectionHead">
+          <span>Open positions</span>
+          <strong>{details.openPositions.length ? `${fmtNumber(details.openPositions.length, 0)} open` : "Flat"}</strong>
+        </div>
+        <div className="topstepOpenPositionList">
+          {details.openPositions.length ? (
+            details.openPositions.map((position) => {
+              const side = projectXPositionSide(position.type);
+              const size = finiteNumber(position.size);
+              const averagePrice = finiteNumber(position.averagePrice);
+              return (
+                <div className="topstepOpenPositionRow" key={`position-${position.id ?? `${position.contractId}-${position.creationTimestamp}`}`}>
+                  <div className="topstepTradeHistoryMain">
+                    <strong>{position.contractId ?? "--"}</strong>
+                    <small>Opened {fmtShortTime(position.creationTimestamp)}</small>
+                  </div>
+                  <div className="topstepTradeHistoryMeta">
+                    <div className="topstepTradePillRow">
+                      <span className={`topstepTradeSide ${side.className}`}>{side.label}</span>
+                      <span className="topstepTradeStatus open">Open</span>
+                    </div>
+                    <span>
+                      {size !== undefined ? `${fmtNumber(size, 0)} contracts` : "Size unavailable"}
+                      {averagePrice !== undefined ? ` @ ${fmtNumber(averagePrice, 5)}` : ""}
+                    </span>
+                  </div>
+                  <div className="topstepTradeHistoryPnl">
+                    <strong className="tone-neutral">Open</strong>
+                    <small>{averagePrice !== undefined ? `avg ${fmtNumber(averagePrice, 5)}` : "avg price"}</small>
+                  </div>
+                </div>
+              );
+            })
+          ) : (
+            <ProjectXEmptyDetailRow label="No open positions" />
+          )}
+        </div>
+      </section>
 
-      <div className="topstepTradeHistoryList">
-        {details.trades.length ? (
-          details.trades.map((trade) => {
-            const pnl = projectXTradeNetPnl(trade);
-            const tone = pnl === undefined ? "neutral" : pnl > 0 ? "up" : pnl < 0 ? "down" : "neutral";
-            return (
-              <div className="topstepTradeHistoryRow" key={`trade-${trade.id ?? trade.orderId ?? `${trade.contractId}-${trade.creationTimestamp}`}`}>
+      <section className="topstepAccountActivitySection" aria-label={`${details.account.name} ProjectX trade history`}>
+        <div className="topstepAccountActivitySectionHead">
+          <span>Previous trades</span>
+          <strong>
+            {fmtNumber(closedTradeCount, 0)} closed{issueCount ? ` / ${fmtNumber(issueCount, 0)} not filled` : ""}
+          </strong>
+        </div>
+        <div className="topstepTradeHistorySummary" aria-label={`${details.account.name} ProjectX trade summary`}>
+          <span>Net closed P&L</span>
+          <strong className={`tone-${netTone}`}>{fmtMoney(netPnl, true)}</strong>
+        </div>
+
+        <div className="topstepTradeHistoryList">
+          {tradeRows.length ? (
+            tradeRows.map((row) => (
+              <div className={`topstepTradeHistoryRow ${row.profitAndLoss === undefined ? "isIssue" : ""}`} key={row.key}>
                 <div className="topstepTradeHistoryMain">
-                  <strong>{trade.contractId ?? "--"}</strong>
+                  <strong>{row.contractId ?? "--"}</strong>
                   <small>
-                    {fmtShortTime(trade.creationTimestamp)}
-                    {trade.orderId ? ` / order #${trade.orderId}` : ""}
+                    {projectXTradeRange(row.openedAt, row.closedAt)} / {projectXOrderLabel(row.orderIds, row.fills)}
                   </small>
                 </div>
                 <div className="topstepTradeHistoryMeta">
-                  <span className={`topstepTradeSide ${trade.side === 0 ? "buy" : trade.side === 1 ? "sell" : "neutral"}`}>
-                    {fmtProjectXSide(trade.side)}
-                  </span>
-                  <span>{fmtNumber(trade.size, 0)} @ {fmtNumber(trade.price, 5)}</span>
+                  <div className="topstepTradePillRow">
+                    <span className={`topstepTradeSide ${row.badgeClass}`}>{row.badgeLabel}</span>
+                    <span className={`topstepTradeStatus ${row.statusClass}`}>{row.statusLabel}</span>
+                  </div>
+                  <span>{row.priceLine}</span>
                 </div>
                 <div className="topstepTradeHistoryPnl">
-                  <strong className={`tone-${tone}`}>{fmtMoney(pnl, true)}</strong>
-                  <small>{typeof trade.fees === "number" && Number.isFinite(trade.fees) ? `fees ${fmtMoney(-Math.abs(trade.fees), true)}` : "net P&L"}</small>
+                  <strong className={`tone-${row.resultTone}`}>{row.resultLabel}</strong>
+                  <small>{row.resultDetail}</small>
                 </div>
               </div>
-            );
-          })
-        ) : (
-          <ProjectXEmptyDetailRow label="No previous trades found" />
-        )}
-      </div>
-      {excludedTradeCount ? <small className="topstepAccountDetailNote">{fmtNumber(excludedTradeCount, 0)} half-turn trades excluded from P&L.</small> : null}
+            ))
+          ) : (
+            <ProjectXEmptyDetailRow label="No previous trades found" />
+          )}
+        </div>
+      </section>
     </div>
   );
 }

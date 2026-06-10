@@ -1185,7 +1185,7 @@ function chartBarsFromMinutes(minutes: number, dataTimeframe: TradeChartTimefram
 }
 
 function chartBarsFromStrategyBars(strategyBars: number, trade: TradeChartTrade, dataTimeframe: TradeChartTimeframe): number {
-  const sourceTimeframe = trade.sourceTimeframe ?? "15m";
+  const sourceTimeframe = trade.sourceTimeframe ?? "1m";
   return Math.max(1, Math.round((strategyBars * timeframeSeconds(sourceTimeframe)) / timeframeSeconds(dataTimeframe)));
 }
 

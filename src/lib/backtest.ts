@@ -175,7 +175,7 @@ function strategyUsesPriorDayStructure(strategy: StrategyDefinition): boolean {
 function strategyTimeframes(strategy: StrategyDefinition): string[] {
   const timeframe = variantText(strategy.defaults?.variantId, "tf");
   const executionTimeframe = variantText(strategy.defaults?.variantId, "exec_tf");
-  const timeframes = new Set<string>([timeframe || "15m"]);
+  const timeframes = new Set<string>(["1m", timeframe || "15m"]);
   if (executionTimeframe) {
     timeframes.add(executionTimeframe);
   }

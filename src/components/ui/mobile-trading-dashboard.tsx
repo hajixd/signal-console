@@ -1084,7 +1084,7 @@ export default function MobileTradingDashboard({
       exitIndex: String(activeTrade.exitIndex),
       entryTime: activeTrade.entryTime,
       exitTime: activeTrade.exitTime,
-      timeframe: activeTrade.sourceTimeframe ?? "15m",
+      timeframe: activeTrade.sourceTimeframe ?? "1m",
       context: String(TRADE_CHART_CONTEXT_CANDLES)
     });
 

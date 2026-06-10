@@ -1209,7 +1209,7 @@ export function TradeHistoryCalendar({ rows }: TradeHistoryProps) {
       exitTime: expandedTrade.exitTime,
       market: expandedTrade.market ?? "",
       symbol: expandedTrade.symbol,
-      timeframe: expandedTrade.sourceTimeframe ?? "15m"
+      timeframe: expandedTrade.sourceTimeframe ?? "1m"
     });
 
     setChartStates((current) => ({
@@ -1337,12 +1337,12 @@ export function TradeHistoryCalendar({ rows }: TradeHistoryProps) {
                         {displayedModelName}
                       </div>
                       <div className="backtest-calendar-trade-inline">
-                        <span className="backtest-calendar-trade-inline-label">Entry ({trade.sourceTimeframe ?? "15m"}):</span>
+                        <span className="backtest-calendar-trade-inline-label">Entry ({trade.sourceTimeframe ?? "1m"}):</span>
                         <span className="backtest-calendar-trade-inline-value">{formatCalendarDateTime(trade.entryTime)}</span>
                         <span className="backtest-calendar-trade-inline-price">@ {formatChartPrice(trade.entryPrice)}</span>
                       </div>
                       <div className="backtest-calendar-trade-inline optional">
-                        <span className="backtest-calendar-trade-inline-label">Exit ({trade.sourceTimeframe ?? "15m"}):</span>
+                        <span className="backtest-calendar-trade-inline-label">Exit ({trade.sourceTimeframe ?? "1m"}):</span>
                         <span className="backtest-calendar-trade-inline-value">{formatCalendarDateTime(trade.exitTime)}</span>
                         <span className="backtest-calendar-trade-inline-price">@ {formatChartPrice(trade.exitPrice)}</span>
                       </div>
@@ -1914,7 +1914,7 @@ function CandleContextMenu({ state }: { state: CandleMenuState }) {
 export default function TradeHistory({ rows }: TradeHistoryProps) {
   const [activeTradeId, setActiveTradeId] = useState<string | null>(null);
   const [chartState, setChartState] = useState<ChartState>({ status: "idle", bars: [] });
-  const [chartTimeframe, setChartTimeframe] = useState<TradeChartTimeframe>("15m");
+  const [chartTimeframe, setChartTimeframe] = useState<TradeChartTimeframe>("1m");
   const isRestricted = !useAutoTradeAdminMode();
   const activeTrade = useMemo(
     () => (activeTradeId ? rows.find((row) => row.id === activeTradeId) ?? null : null),
@@ -1978,7 +1978,7 @@ export default function TradeHistory({ rows }: TradeHistoryProps) {
   const activeDurationLabel = activeDisplayTrade ? `${activeDisplayTrade.durationLabel} / ${activeDisplayTrade.durationDetailLabel}` : "";
 
   function openTrade(trade: TradeHistoryRow) {
-    setChartTimeframe(trade.sourceTimeframe ?? "15m");
+    setChartTimeframe(trade.sourceTimeframe ?? "1m");
     setActiveTradeId(trade.id);
   }
 
@@ -2007,7 +2007,7 @@ export default function TradeHistory({ rows }: TradeHistoryProps) {
     }
 
     const controller = new AbortController();
-    const sourceTimeframe = activeTrade.sourceTimeframe ?? "15m";
+    const sourceTimeframe = activeTrade.sourceTimeframe ?? "1m";
     const chartParams = (timeframeValue: TradeChartTimeframe) =>
       new URLSearchParams({
         symbol: activeTrade.symbol,

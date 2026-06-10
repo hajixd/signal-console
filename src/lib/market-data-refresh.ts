@@ -5,19 +5,19 @@ import path from "node:path";
 import { assetForKey, type AssetDefinition } from "@/lib/assets";
 import { firebaseBucket, firebaseLocalFallbackEnabled, hasFirebaseAdmin, storageObjectPath } from "@/lib/firebase-admin";
 import { defaultDatasetStatus, getDatasetStatus, saveDatasetStatus, type DatasetAssetCoverage } from "@/lib/live-config";
-import { fetchMarketSourceBars } from "@/lib/market-data";
 import { r2AppendText, r2Configured, r2GetTailText, r2HeadObject, r2PutText } from "@/lib/r2";
 import {
+  DATA_TIMEFRAMES,
   DEFAULT_STRATEGY_TIMEFRAME,
-  DERIVED_FROM_FIVE_MINUTE_TIMEFRAMES,
-  LIVE_SOURCE_TIMEFRAME,
   TIMEFRAME_SECONDS,
   closedBarStartSeconds as closedTimeframeBarStartSeconds,
   type DataTimeframe
 } from "@/lib/timeframes";
 import type { Bar, StrategyRule } from "@/lib/types";
 
-const REFRESH_TIMEFRAMES = [LIVE_SOURCE_TIMEFRAME, ...DERIVED_FROM_FIVE_MINUTE_TIMEFRAMES] as const;
+const REFRESH_SOURCE_TIMEFRAME = "1m" as const satisfies DataTimeframe;
+const REFRESH_TIMEFRAMES = DATA_TIMEFRAMES;
+const DERIVED_REFRESH_TIMEFRAMES = DATA_TIMEFRAMES.filter((timeframe) => timeframe !== REFRESH_SOURCE_TIMEFRAME);
 
 const ONE_MINUTE_SECONDS = 60;
 const FIVE_MINUTE_SECONDS = 5 * 60;
@@ -100,6 +100,10 @@ export type MarketDataRefreshOptions = {
   allowApiOnlyStorageFallback?: boolean;
   minExistingRows?: number;
   saveStatus?: boolean;
+};
+
+type OneMinuteFetchOptions = {
+  afterSeconds?: number;
 };
 
 const DEFAULT_MARKET_DATA_REFRESH_CONCURRENCY = 4;
@@ -289,19 +293,6 @@ function normalizeCsvBar(bar: CsvBar): CsvBar | null {
   };
 }
 
-function barFromLiveBar(bar: Bar): CsvBar | null {
-  const seconds = secondsFromIso(bar.time);
-  if (seconds === null) return null;
-  return normalizeCsvBar({
-    time: seconds,
-    open: Number(bar.open),
-    high: Number(bar.high),
-    low: Number(bar.low),
-    close: Number(bar.close),
-    volume: Number(bar.volume ?? 0)
-  });
-}
-
 function liveBarFromCsvBar(bar: CsvBar): Bar {
   return {
     time: new Date(bar.time * 1000).toISOString(),
@@ -455,6 +446,22 @@ function parseTwelveDataBars(values: TwelveDataResponse["values"], intervalSecon
   ).sort((left, right) => left.time - right.time);
 }
 
+function oneMinuteProviderStartDate(options: OneMinuteFetchOptions, fallbackLookbackMs: number): Date {
+  const start = options.afterSeconds ? new Date((options.afterSeconds + ONE_MINUTE_SECONDS) * 1000) : new Date(Date.now() - fallbackLookbackMs);
+  start.setUTCSeconds(0, 0);
+  return start;
+}
+
+function oneMinuteProviderEndDate(): Date {
+  const end = new Date();
+  end.setUTCSeconds(0, 0);
+  return end;
+}
+
+function providerDateParam(value: Date): string {
+  return value.toISOString().replace("T", " ").replace(/\.\d{3}Z$/, "");
+}
+
 async function requestDatabentoBars(apiKey: string, params: URLSearchParams): Promise<Response> {
   return fetch(`https://hist.databento.com/v0/timeseries.get_range?${params.toString()}`, {
     headers: {
@@ -464,15 +471,13 @@ async function requestDatabentoBars(apiKey: string, params: URLSearchParams): Pr
   });
 }
 
-async function fetchDatabentoOneMinuteBars(asset: AssetDefinition): Promise<CsvBar[]> {
+async function fetchDatabentoOneMinuteBars(asset: AssetDefinition, options: OneMinuteFetchOptions = {}): Promise<CsvBar[]> {
   const apiKey = process.env.DATABENTO_API_KEY;
   if (!apiKey) throw new Error("Missing DATABENTO_API_KEY");
   if (!asset.databentoSymbol) throw new Error(`Missing Databento symbol for ${asset.symbol}`);
 
-  const start = new Date(Date.now() - 12 * 24 * 60 * 60 * 1000);
-  const end = new Date();
-  start.setUTCSeconds(0, 0);
-  end.setUTCSeconds(0, 0);
+  const start = oneMinuteProviderStartDate(options, 12 * 24 * 60 * 60 * 1000);
+  const end = oneMinuteProviderEndDate();
   const params = new URLSearchParams({
     dataset: "GLBX.MDP3",
     encoding: "json",
@@ -504,15 +509,20 @@ async function fetchDatabentoOneMinuteBars(asset: AssetDefinition): Promise<CsvB
   return parseDatabentoMinuteBars(await response.text());
 }
 
-async function fetchOandaOneMinuteBars(instrument: string): Promise<CsvBar[]> {
+async function fetchOandaOneMinuteBars(instrument: string, options: OneMinuteFetchOptions = {}): Promise<CsvBar[]> {
   const token = process.env.OANDA_API_TOKEN;
   if (!token) throw new Error("Missing OANDA_API_TOKEN");
   const baseUrl = process.env.OANDA_API_BASE_URL ?? "https://api-fxpractice.oanda.com";
   const params = new URLSearchParams({
-    count: "1500",
     granularity: "M1",
     price: "M"
   });
+  if (options.afterSeconds) {
+    params.set("from", oneMinuteProviderStartDate(options, 0).toISOString());
+    params.set("to", oneMinuteProviderEndDate().toISOString());
+  } else {
+    params.set("count", "1500");
+  }
   const response = await fetch(`${baseUrl}/v3/instruments/${instrument}/candles?${params.toString()}`, {
     headers: {
       Authorization: `Bearer ${token}`
@@ -524,7 +534,7 @@ async function fetchOandaOneMinuteBars(instrument: string): Promise<CsvBar[]> {
   return parseOandaMinuteBars(data.candles);
 }
 
-async function fetchTwelveDataTimeframeBars(symbol: string, interval: "1min" | "5min"): Promise<CsvBar[]> {
+async function fetchTwelveDataTimeframeBars(symbol: string, interval: "1min" | "5min", options: OneMinuteFetchOptions = {}): Promise<CsvBar[]> {
   const keys = (process.env.TWELVEDATA_API_KEYS ?? "").split(",").map((item) => item.trim()).filter(Boolean);
   if (!keys.length) throw new Error("Missing TWELVEDATA_API_KEYS");
   const startIndex = Math.floor(Date.now() / 60_000) % keys.length;
@@ -540,6 +550,10 @@ async function fetchTwelveDataTimeframeBars(symbol: string, interval: "1min" | "
       symbol,
       timezone: "UTC"
     });
+    if (options.afterSeconds) {
+      params.set("start_date", providerDateParam(oneMinuteProviderStartDate(options, 0)));
+      params.set("end_date", providerDateParam(oneMinuteProviderEndDate()));
+    }
     const response = await fetch(`https://api.twelvedata.com/time_series?${params.toString()}`, { cache: "no-store" });
     const raw = await response.text();
 
@@ -562,12 +576,12 @@ async function fetchTwelveDataTimeframeBars(symbol: string, interval: "1min" | "
   throw new Error(`TwelveData ${interval} failed for all API keys: ${failures.join(" | ")}`);
 }
 
-async function fetchOneMinuteBars(asset: AssetDefinition): Promise<CsvBar[]> {
-  if (asset.market === "futures") return fetchDatabentoOneMinuteBars(asset);
+async function fetchOneMinuteBars(asset: AssetDefinition, options: OneMinuteFetchOptions = {}): Promise<CsvBar[]> {
+  if (asset.market === "futures") return fetchDatabentoOneMinuteBars(asset, options);
   if ((asset.market === "forex" || asset.market === "gold_spot") && process.env.OANDA_API_TOKEN) {
-    return fetchOandaOneMinuteBars(asset.oandaSymbol ?? asset.symbol);
+    return fetchOandaOneMinuteBars(asset.oandaSymbol ?? asset.symbol, options);
   }
-  return fetchTwelveDataTimeframeBars(asset.twelveDataSymbol ?? asset.symbol, "1min");
+  return fetchTwelveDataTimeframeBars(asset.twelveDataSymbol ?? asset.symbol, "1min", options);
 }
 
 async function writeLocalText(relativePath: string, text: string): Promise<void> {
@@ -896,7 +910,7 @@ function appendedCoverage(
   uploads: TimeframeUpload[],
   refreshedAt: string
 ): Omit<MarketDataRefreshAsset, "durationMs"> {
-  const sourceUpload = uploads.find((upload) => upload.timeframe === LIVE_SOURCE_TIMEFRAME) ?? uploads[0];
+  const sourceUpload = uploads.find((upload) => upload.timeframe === REFRESH_SOURCE_TIMEFRAME) ?? uploads[0];
   const firstBarTime = existingCoverage?.firstBarAt
     ? secondsFromIso(existingCoverage.firstBarAt) ?? undefined
     : sourceUpload?.existing.firstBarTime ?? sourceUpload?.appendedBars[0]?.time;
@@ -1067,22 +1081,20 @@ export async function refreshMarketDataForRulesWithOptions(
       }
 
       const afterSeconds = refreshStartAfterSeconds(states);
-      const liveBars = await fetchMarketSourceBars(asset, afterSeconds == null ? {} : { afterSeconds });
-
-      const incomingBars = liveBars.map(barFromLiveBar).filter((bar): bar is CsvBar => Boolean(bar));
-      if (!incomingBars.length && !states[LIVE_SOURCE_TIMEFRAME].exists) {
+      const incomingBars = await fetchOneMinuteBars(asset, afterSeconds == null ? {} : { afterSeconds });
+      if (!incomingBars.length && !states[REFRESH_SOURCE_TIMEFRAME].exists) {
         throw new Error("No bars were available to persist.");
       }
 
       const uploads: TimeframeUpload[] = [];
-      const sourceAppendedBars = newBarsAfter(states[LIVE_SOURCE_TIMEFRAME], incomingBars);
+      const sourceAppendedBars = newBarsAfter(states[REFRESH_SOURCE_TIMEFRAME], incomingBars);
       uploads.push({
         appendedBars: sourceAppendedBars,
-        existing: states[LIVE_SOURCE_TIMEFRAME],
-        timeframe: LIVE_SOURCE_TIMEFRAME
+        existing: states[REFRESH_SOURCE_TIMEFRAME],
+        timeframe: REFRESH_SOURCE_TIMEFRAME
       });
 
-      for (const timeframe of DERIVED_FROM_FIVE_MINUTE_TIMEFRAMES) {
+      for (const timeframe of DERIVED_REFRESH_TIMEFRAMES) {
         const appendedBars = aggregateCsvBarsToTimeframe(incomingBars, timeframe, states[timeframe].lastBarTime);
         uploads.push({
           appendedBars,
@@ -1110,6 +1122,7 @@ export async function refreshMarketDataForRulesWithOptions(
         }
       }
       const coverage = appendedCoverage(asset, assetCoverage[asset.key], uploads, refreshedAt);
+      const barsByTimeframe = barsByTimeframeFromStates(states, uploads);
       return {
         asset: {
           ...coverage,
@@ -1117,8 +1130,8 @@ export async function refreshMarketDataForRulesWithOptions(
           uploadedFiles: persistedUploads ? coverage.uploadedFiles : 0
         },
         assetKey: asset.key,
-        barsByTimeframe: barsByTimeframeFromStates(states, uploads),
-        bars: liveBars
+        barsByTimeframe,
+        bars: barsByTimeframe[DEFAULT_STRATEGY_TIMEFRAME] ?? barsByTimeframe[REFRESH_SOURCE_TIMEFRAME]
       };
     } catch (error) {
       return {

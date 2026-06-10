@@ -2850,6 +2850,7 @@ html[data-theme="light"] .themeDarkLabel {
 }
 
 .topstepAccountDetailHead span,
+.topstepAccountActivitySectionHead span,
 .topstepTradeHistorySummary span,
 .topstepTradeHistoryMain small,
 .topstepTradeHistoryPnl small,
@@ -2862,6 +2863,7 @@ html[data-theme="light"] .themeDarkLabel {
 }
 
 .topstepAccountDetailHead strong,
+.topstepAccountActivitySectionHead strong,
 .topstepTradeHistorySummary strong,
 .topstepTradeHistoryMain strong,
 .topstepTradeHistoryPnl strong {
@@ -2879,6 +2881,25 @@ html[data-theme="light"] .themeDarkLabel {
 
 .topstepAccountDetailError {
   color: #fecaca !important;
+}
+
+.topstepAccountActivitySection {
+  min-width: 0;
+  display: grid;
+  gap: 0.46rem;
+}
+
+.topstepAccountActivitySectionHead {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.topstepAccountActivitySectionHead strong {
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 0.68rem;
 }
 
 .topstepTradeHistorySummary {
@@ -2902,7 +2923,14 @@ html[data-theme="light"] .themeDarkLabel {
   gap: 0.42rem;
 }
 
-.topstepTradeHistoryRow {
+.topstepOpenPositionList {
+  min-width: 0;
+  display: grid;
+  gap: 0.42rem;
+}
+
+.topstepTradeHistoryRow,
+.topstepOpenPositionRow {
   min-width: 0;
   display: grid;
   grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr) minmax(86px, 0.65fr);
@@ -2911,6 +2939,16 @@ html[data-theme="light"] .themeDarkLabel {
   border: 1px solid rgba(255, 255, 255, 0.075);
   background: rgba(0, 0, 0, 0.14);
   padding: 0.62rem 0.66rem;
+}
+
+.topstepOpenPositionRow {
+  border-color: rgba(52, 211, 153, 0.14);
+  background: rgba(52, 211, 153, 0.035);
+}
+
+.topstepTradeHistoryRow.isIssue {
+  border-color: rgba(245, 158, 11, 0.16);
+  background: rgba(245, 158, 11, 0.045);
 }
 
 .topstepTradeHistoryMain,
@@ -2943,12 +2981,20 @@ html[data-theme="light"] .themeDarkLabel {
   justify-items: start;
 }
 
-.topstepTradeHistoryMeta > span:not(.topstepTradeSide) {
+.topstepTradeHistoryMeta > span:not(.topstepTradeSide):not(.topstepTradeStatus) {
   color: rgba(255, 255, 255, 0.75);
   font-size: 0.66rem;
   font-weight: 850;
 }
 
+.topstepTradePillRow {
+  min-width: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.32rem;
+}
+
+.topstepTradeStatus,
 .topstepTradeSide {
   display: inline-flex;
   min-height: 20px;
@@ -2962,6 +3008,36 @@ html[data-theme="light"] .themeDarkLabel {
   font-size: 0.56rem;
   font-weight: 950;
   text-transform: uppercase;
+}
+
+.topstepTradeStatus.closed {
+  border-color: rgba(96, 165, 250, 0.22);
+  background: rgba(96, 165, 250, 0.08);
+  color: #93c5fd;
+}
+
+.topstepTradeStatus.open {
+  border-color: rgba(52, 211, 153, 0.22);
+  background: rgba(52, 211, 153, 0.08);
+  color: #34d399;
+}
+
+.topstepTradeStatus.warn {
+  border-color: rgba(245, 158, 11, 0.25);
+  background: rgba(245, 158, 11, 0.08);
+  color: #fbbf24;
+}
+
+.topstepTradeStatus.failed {
+  border-color: rgba(248, 113, 113, 0.24);
+  background: rgba(248, 113, 113, 0.08);
+  color: #fb7185;
+}
+
+.topstepTradeStatus.voided {
+  border-color: rgba(148, 163, 184, 0.18);
+  background: rgba(148, 163, 184, 0.08);
+  color: rgba(226, 232, 240, 0.78);
 }
 
 .topstepTradeSide.buy {
@@ -3011,6 +3087,10 @@ html[data-theme="light"] .themeDarkLabel {
 
 .tone-neutral {
   color: rgba(255, 255, 255, 0.76) !important;
+}
+
+.tone-warn {
+  color: #fbbf24 !important;
 }
 
 .statusDot {
@@ -7708,6 +7788,7 @@ html[data-theme="light"] .topstepAccountDetailPanel {
 }
 
 html[data-theme="light"] .topstepAccountDetailHead strong,
+html[data-theme="light"] .topstepAccountActivitySectionHead strong,
 html[data-theme="light"] .topstepTradeHistorySummary strong,
 html[data-theme="light"] .topstepTradeHistoryMain strong,
 html[data-theme="light"] .topstepTradeHistoryPnl strong {
@@ -7715,6 +7796,7 @@ html[data-theme="light"] .topstepTradeHistoryPnl strong {
 }
 
 html[data-theme="light"] .topstepAccountDetailHead span,
+html[data-theme="light"] .topstepAccountActivitySectionHead span,
 html[data-theme="light"] .topstepTradeHistorySummary span,
 html[data-theme="light"] .topstepTradeHistoryMain small,
 html[data-theme="light"] .topstepTradeHistoryPnl small,
@@ -7729,12 +7811,23 @@ html[data-theme="light"] .topstepAccountDetailEmpty {
 
 html[data-theme="light"] .topstepTradeHistorySummary,
 html[data-theme="light"] .topstepTradeHistoryRow,
+html[data-theme="light"] .topstepOpenPositionRow,
 html[data-theme="light"] .topstepAccountDetailEmpty {
   border-color: rgba(15, 23, 42, 0.08);
   background: #ffffff;
 }
 
-html[data-theme="light"] .topstepTradeHistoryMeta > span:not(.topstepTradeSide) {
+html[data-theme="light"] .topstepOpenPositionRow {
+  border-color: rgba(16, 185, 129, 0.14);
+  background: rgba(16, 185, 129, 0.045);
+}
+
+html[data-theme="light"] .topstepTradeHistoryRow.isIssue {
+  border-color: rgba(217, 119, 6, 0.16);
+  background: rgba(245, 158, 11, 0.055);
+}
+
+html[data-theme="light"] .topstepTradeHistoryMeta > span:not(.topstepTradeSide):not(.topstepTradeStatus) {
   color: rgba(15, 23, 42, 0.72);
 }
 
@@ -7742,7 +7835,41 @@ html[data-theme="light"] .tone-neutral {
   color: rgba(15, 23, 42, 0.72) !important;
 }
 
+html[data-theme="light"] .tone-warn {
+  color: #b45309 !important;
+}
+
 html[data-theme="light"] .topstepTradeSide.neutral {
+  border-color: rgba(100, 116, 139, 0.18);
+  background: rgba(100, 116, 139, 0.08);
+  color: rgba(71, 85, 105, 0.82);
+}
+
+html[data-theme="light"] .topstepTradeStatus.closed {
+  border-color: rgba(37, 99, 235, 0.16);
+  background: rgba(37, 99, 235, 0.07);
+  color: #2563eb;
+}
+
+html[data-theme="light"] .topstepTradeStatus.open {
+  border-color: rgba(16, 185, 129, 0.18);
+  background: rgba(16, 185, 129, 0.08);
+  color: #059669;
+}
+
+html[data-theme="light"] .topstepTradeStatus.warn {
+  border-color: rgba(217, 119, 6, 0.18);
+  background: rgba(245, 158, 11, 0.08);
+  color: #b45309;
+}
+
+html[data-theme="light"] .topstepTradeStatus.failed {
+  border-color: rgba(220, 38, 38, 0.16);
+  background: rgba(220, 38, 38, 0.07);
+  color: #dc2626;
+}
+
+html[data-theme="light"] .topstepTradeStatus.voided {
   border-color: rgba(100, 116, 139, 0.18);
   background: rgba(100, 116, 139, 0.08);
   color: rgba(71, 85, 105, 0.82);
@@ -9078,7 +9205,8 @@ html[data-theme="light"] .strategyToggle input {
     grid-template-columns: 1fr;
   }
 
-  .topstepTradeHistoryRow {
+  .topstepTradeHistoryRow,
+  .topstepOpenPositionRow {
     grid-template-columns: minmax(0, 1fr);
     align-items: stretch;
   }
@@ -11808,7 +11936,8 @@ html[data-theme="light"] .tradeReplaySlider input {
     padding: 6px;
   }
 
-  .topstepTradeHistoryRow {
+  .topstepTradeHistoryRow,
+  .topstepOpenPositionRow {
     gap: 6px;
     padding: 8px;
   }

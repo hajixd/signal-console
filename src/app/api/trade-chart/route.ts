@@ -38,7 +38,7 @@ const TIMEFRAME_SECONDS: Record<(typeof TIMEFRAME_ORDER)[number], number> = {
   "1d": 24 * 60 * 60,
   "1w": 7 * 24 * 60 * 60
 };
-const DEFAULT_TIMEFRAME = "15m";
+const DEFAULT_TIMEFRAME = "1m";
 const DEFAULT_CONTEXT_CANDLES = 240;
 const MAX_CONTEXT_CANDLES = 1000;
 
