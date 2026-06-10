@@ -49,6 +49,7 @@ type AssetDownloadSummary = {
 };
 
 type CliOptions = {
+  append: boolean;
   assetKeys?: Set<string>;
   fullTwelveOneMinute: boolean;
   skipFiveMinute: boolean;
@@ -94,6 +95,7 @@ const PACIFIC_PARTS_FORMATTER = new Intl.DateTimeFormat("en-US", {
 
 function parseArgs(argv: string[]): CliOptions {
   const options: CliOptions = {
+    append: false,
     fullTwelveOneMinute: false,
     skipFiveMinute: false,
     twelveOneMinuteRecentDays: 30,
@@ -114,6 +116,11 @@ function parseArgs(argv: string[]): CliOptions {
 
     if (arg === "--full-twelve-1m") {
       options.fullTwelveOneMinute = true;
+      continue;
+    }
+
+    if (arg === "--append") {
+      options.append = true;
       continue;
     }
 
@@ -156,6 +163,22 @@ function firstTimestampFromExisting15m(asset: AssetDefinition): number | null {
   const [rawTime] = firstDataLine.split(",", 1);
   const parsed = Number(rawTime);
   return Number.isFinite(parsed) ? parsed : null;
+}
+
+function lastTimestampFromExistingFile(timeframe: "1m" | "5m", asset: AssetDefinition): number | null {
+  const filePath = path.join(DATA_ROOT, timeframe, asset.dataFile);
+  if (!existsSync(filePath)) return null;
+
+  const buffer = readFileSync(filePath);
+  const text = buffer.subarray(Math.max(0, buffer.length - 64 * 1024)).toString("utf8");
+  const lines = text.trim().split(/\r?\n/).reverse();
+  for (const line of lines) {
+    if (!line || line.startsWith("time,")) continue;
+    const [rawTime] = line.split(",", 1);
+    const parsed = Number(rawTime);
+    if (Number.isFinite(parsed)) return Math.floor(parsed);
+  }
+  return null;
 }
 
 function floorClosedBarStart(intervalMinutes: number): number {
@@ -208,17 +231,21 @@ class CsvBarWriter {
   readonly targetPath: string;
   readonly tempPath: string;
   private readonly stream;
+  private readonly append: boolean;
   private committed = false;
   private rowCount = 0;
   private firstTime?: number;
   private lastTime?: number;
 
-  constructor(targetPath: string) {
+  constructor(targetPath: string, append = false) {
     this.targetPath = targetPath;
-    this.tempPath = `${targetPath}.tmp`;
+    this.append = append;
+    this.tempPath = append ? targetPath : `${targetPath}.tmp`;
     mkdirSync(path.dirname(targetPath), { recursive: true });
-    this.stream = createWriteStream(this.tempPath, { encoding: "utf8" });
-    this.stream.write("time,open,high,low,close,volume\n");
+    this.stream = createWriteStream(this.tempPath, { encoding: "utf8", flags: append ? "a" : "w" });
+    if (!append || !existsSync(targetPath) || readFileSync(targetPath).length === 0) {
+      this.stream.write("time,open,high,low,close,volume\n");
+    }
   }
 
   async writeBar(bar: Bar): Promise<void> {
@@ -233,6 +260,16 @@ class CsvBarWriter {
   async finalize(complete: boolean): Promise<FileCoverage> {
     this.stream.end();
     await once(this.stream, "finish");
+    if (this.append) {
+      this.committed = true;
+      return {
+        path: path.relative(PROJECT_ROOT, this.targetPath).replace(/\\/g, "/"),
+        rows: this.rowCount,
+        firstTime: this.firstTime ? isoFromSeconds(this.firstTime) : undefined,
+        lastTime: this.lastTime ? isoFromSeconds(this.lastTime) : undefined,
+        complete
+      };
+    }
     if (existsSync(this.targetPath)) {
       rmSync(this.targetPath, { force: true });
     }
@@ -254,7 +291,7 @@ class CsvBarWriter {
     } catch {
       // Best-effort cleanup for interrupted runs.
     }
-    if (existsSync(this.tempPath)) {
+    if (!this.append && existsSync(this.tempPath)) {
       rmSync(this.tempPath, { force: true });
     }
   }
@@ -549,9 +586,10 @@ async function downloadTwelveTimeframe(
   asset: AssetDefinition,
   interval: "1min" | "5min",
   startSeconds: number,
-  endSeconds: number
+  endSeconds: number,
+  append = false
 ): Promise<{ coverage: FileCoverage; error?: string }> {
-  const writer = new CsvBarWriter(path.join(DATA_ROOT, interval === "1min" ? "1m" : "5m", asset.dataFile));
+  const writer = new CsvBarWriter(path.join(DATA_ROOT, interval === "1min" ? "1m" : "5m", asset.dataFile), append);
   const chunkDays = interval === "1min" ? TWELVE_1M_CHUNK_DAYS : TWELVE_5M_CHUNK_DAYS;
   const intervalSeconds = interval === "1min" ? 60 : 5 * 60;
 
@@ -621,7 +659,17 @@ async function downloadTwelveDataAsset(
     summary.notes.push("Skipped 5m download by request.");
   } else {
     try {
-      const fiveMinuteResult = await downloadTwelveTimeframe(keyPool, asset, "5min", startSeconds, fiveMinuteEndSeconds);
+      const fiveMinuteStart = options.append
+        ? Math.max(startSeconds, (lastTimestampFromExistingFile("5m", asset) ?? startSeconds - 5 * 60) + 5 * 60)
+        : startSeconds;
+      const fiveMinuteResult = await downloadTwelveTimeframe(
+        keyPool,
+        asset,
+        "5min",
+        fiveMinuteStart,
+        fiveMinuteEndSeconds,
+        options.append
+      );
       summary.files["5m"] = fiveMinuteResult.coverage;
       if (fiveMinuteResult.error) {
         summary.errors.push(`5m failed: ${fiveMinuteResult.error}`);
@@ -637,7 +685,9 @@ async function downloadTwelveDataAsset(
     return summary;
   }
 
-  const oneMinuteStart = options.fullTwelveOneMinute
+  const oneMinuteStart = options.append
+    ? Math.max(startSeconds, (lastTimestampFromExistingFile("1m", asset) ?? startSeconds - 60) + 60)
+    : options.fullTwelveOneMinute
     ? startSeconds
     : Math.max(startSeconds, oneMinuteEndSeconds - options.twelveOneMinuteRecentDays * 24 * 60 * 60);
   if (!options.fullTwelveOneMinute) {
@@ -645,7 +695,14 @@ async function downloadTwelveDataAsset(
   }
 
   try {
-    const oneMinuteResult = await downloadTwelveTimeframe(keyPool, asset, "1min", oneMinuteStart, oneMinuteEndSeconds);
+    const oneMinuteResult = await downloadTwelveTimeframe(
+      keyPool,
+      asset,
+      "1min",
+      oneMinuteStart,
+      oneMinuteEndSeconds,
+      options.append
+    );
     summary.files["1m"] = oneMinuteResult.coverage;
     if (oneMinuteResult.error) {
       summary.errors.push(`1m failed: ${oneMinuteResult.error}`);
@@ -732,8 +789,9 @@ async function main(): Promise<void> {
   const reportPath = await writeReport({
     generatedAt: new Date().toISOString(),
     options: {
-      assetKeys: options.assetKeys ? [...options.assetKeys] : undefined,
-      fullTwelveOneMinute: options.fullTwelveOneMinute,
+        assetKeys: options.assetKeys ? [...options.assetKeys] : undefined,
+        append: options.append,
+        fullTwelveOneMinute: options.fullTwelveOneMinute,
       skipFiveMinute: options.skipFiveMinute,
       twelveOneMinuteRecentDays: options.twelveOneMinuteRecentDays,
       skipOneMinute: options.skipOneMinute

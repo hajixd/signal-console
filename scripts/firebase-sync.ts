@@ -404,6 +404,7 @@ async function main(): Promise<void> {
   };
   const summary = catalogSummary(manifest);
 
+  await writeFile(path.join(process.cwd(), manifestRelativePath), JSON.stringify(manifest));
   await firebaseBucket()
     .file(manifestDestination)
     .save(JSON.stringify(manifest), {

@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { createReadStream } from "node:fs";
 import { readdir, stat } from "node:fs/promises";
 import path from "node:path";
@@ -97,6 +98,16 @@ function contentType(filePath: string): string {
   return "application/octet-stream";
 }
 
+async function md5Hex(relativePath: string): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const hash = createHash("md5");
+    const stream = createReadStream(path.join(process.cwd(), relativePath));
+    stream.on("data", (chunk) => hash.update(chunk));
+    stream.on("end", () => resolve(hash.digest("hex")));
+    stream.on("error", reject);
+  });
+}
+
 async function walk(root: string, include: (filePath: string) => boolean): Promise<string[]> {
   const absoluteRoot = path.join(process.cwd(), root);
   const results: string[] = [];
@@ -125,7 +136,12 @@ async function uploadPath(relativePath: string): Promise<"skipped" | "uploaded">
 
   if (changedOnlyRequested()) {
     const remote = await r2HeadObject(relativePath);
-    if (remote?.contentLength === info.size) return "skipped";
+    const remoteEtag = remote?.eTag?.replace(/^"|"$/g, "");
+    if (remote?.contentLength === info.size && remoteEtag && !remoteEtag.includes("-")) {
+      const localMd5 = await md5Hex(relativePath);
+      if (remoteEtag.toLowerCase() === localMd5) return "skipped";
+    }
+    if (remote?.contentLength === info.size && (!remoteEtag || remoteEtag.includes("-"))) return "skipped";
   }
 
   await r2PutObject(relativePath, createReadStream(absolutePath), {

@@ -36,8 +36,20 @@ TIMEFRAME_EVERY = {
     "1d": "1d",
     "1w": "1w",
 }
+TIMEFRAME_SECONDS = {
+    "1m": 60,
+    "5m": 5 * 60,
+    "10m": 10 * 60,
+    "15m": 15 * 60,
+    "30m": 30 * 60,
+    "45m": 45 * 60,
+    "1h": 60 * 60,
+    "4h": 4 * 60 * 60,
+    "1d": 24 * 60 * 60,
+    "1w": 7 * 24 * 60 * 60,
+}
 TIMEFRAME_ORDER = ["1m", "5m", "10m", "15m", "30m", "45m", "1h", "4h", "1d", "1w"]
-LOWER_TIMEFRAME_EXIT_PREFERENCE = ["1m", "5m"]
+LOWER_TIMEFRAME_EXIT_PREFERENCE = ["1m"]
 WEEKEND_CLOSED_MARKETS = {"forex", "futures", "gold_spot", "crypto"}
 
 EXIT_REASON = {
@@ -188,6 +200,63 @@ def source_csv_path(asset: AssetConfig, source_dir: Path) -> Path:
     raise FileNotFoundError(f"Missing source file for {asset.symbol} in {source_dir}")
 
 
+def csv_time_from_line(line: str) -> int | None:
+    raw_time = line.strip().split(",", 1)[0]
+    if not raw_time or raw_time == "time":
+        return None
+    try:
+        return int(float(raw_time))
+    except ValueError:
+        return None
+
+
+def candle_csv_time_bounds(csv_path: Path) -> tuple[int, int] | None:
+    if not csv_path.exists() or csv_path.stat().st_size <= 0:
+        return None
+
+    first: int | None = None
+    with csv_path.open("r", encoding="utf-8", newline="") as handle:
+        for line in handle:
+            first = csv_time_from_line(line)
+            if first is not None:
+                break
+
+    last: int | None = None
+    with csv_path.open("rb") as handle:
+        handle.seek(0, 2)
+        size = handle.tell()
+        handle.seek(max(0, size - 65536))
+        tail = handle.read().decode("utf-8", errors="ignore")
+    for line in reversed(tail.strip().splitlines()):
+        last = csv_time_from_line(line)
+        if last is not None:
+            break
+
+    if first is None or last is None:
+        return None
+    return first, last
+
+
+def best_prepare_source_dir(asset: AssetConfig, fallback_dirs: list[Path]) -> Path:
+    one_minute_dir = DATA_ROOT / "1m"
+    one_minute_bounds = candle_csv_time_bounds(one_minute_dir / asset.data_file)
+    fallback_dir = next((candidate for candidate in fallback_dirs if (candidate / asset.data_file).exists()), fallback_dirs[-1])
+    fallback_bounds = candle_csv_time_bounds(fallback_dir / asset.data_file)
+
+    if one_minute_bounds is None:
+        return fallback_dir
+    if fallback_bounds is None:
+        return one_minute_dir
+
+    one_minute_first, one_minute_last = one_minute_bounds
+    fallback_first, fallback_last = fallback_bounds
+    covers_existing_start = one_minute_first <= fallback_first + 60
+    covers_backtest_start = one_minute_first <= BACKTEST_START_TS + 3 * 24 * 60 * 60
+    if one_minute_last >= fallback_last and (covers_existing_start or covers_backtest_start):
+        return one_minute_dir
+    return fallback_dir
+
+
 def normalize_asset_filters(asset_filters: Iterable[str] | None) -> set[str]:
     if not asset_filters:
         return set()
@@ -224,8 +293,8 @@ def prepare_data(source_dir: Path | None = None, asset_filters: Iterable[str] | 
     for asset in selected_assets:
         asset_source_dir = resolved_source_dir
         if asset_source_dir is None:
-            asset_source_dir = five_minute_dir if (five_minute_dir / asset.data_file).exists() else fifteen_minute_dir
-        source_timeframe = "5m" if asset_source_dir.name == "5m" else "15m"
+            asset_source_dir = best_prepare_source_dir(asset, [five_minute_dir, fifteen_minute_dir])
+        source_timeframe = asset_source_dir.name if asset_source_dir.name in {"1m", "5m", "15m"} else "15m"
         source_path = source_csv_path(asset, asset_source_dir)
         base_frame = filter_market_hours_frame(read_legacy_csv(source_path), asset)
         write_candle_csv(DATA_ROOT / source_timeframe / asset.data_file, base_frame)
@@ -4916,6 +4985,20 @@ def source_exit_window_end_time(source_data: EnrichedData, trade: BacktestTradeR
     return trade.exit_time + 1
 
 
+def source_entry_window_end_time(source_data: EnrichedData, trade: BacktestTradeRow) -> int:
+    if 0 <= trade.entry_index < source_data.times.shape[0] - 1:
+        next_time = int(source_data.times[trade.entry_index + 1])
+        if next_time > trade.entry_time:
+            return next_time
+    if 0 < trade.entry_index < source_data.times.shape[0]:
+        previous_time = int(source_data.times[trade.entry_index - 1])
+        interval = trade.entry_time - previous_time
+        if interval > 0:
+            return trade.entry_time + interval
+    source_timeframe = variant_value(trade.variant_id, "tf") or "15m"
+    return trade.entry_time + TIMEFRAME_SECONDS.get(source_timeframe, 60)
+
+
 def parsed_management_event_times(events: tuple[dict[str, Any], ...]) -> list[tuple[int, dict[str, Any]]]:
     parsed: list[tuple[int, dict[str, Any]]] = []
     for event in events:
@@ -4959,7 +5042,8 @@ def refine_trade_with_execution_data(
     entry_index = int(np.searchsorted(execution_data.times, trade.entry_time, side="left"))
     if entry_index < 0 or entry_index >= execution_data.times.shape[0]:
         return None
-    if int(execution_data.times[entry_index]) != trade.entry_time:
+    entry_execution_time = int(execution_data.times[entry_index])
+    if entry_execution_time != trade.entry_time and entry_execution_time >= source_entry_window_end_time(source_data, trade):
         return None
 
     exit_window_end = source_exit_window_end_time(source_data, trade)
@@ -5010,7 +5094,8 @@ def refine_trade_with_execution_data(
             break
 
     if not bracket_hit and trade.exit_reason in {"tp", "tp_gap", "sl", "sl_gap"}:
-        return None
+        resolved_exit_price = float(execution_data.close[resolved_exit_index])
+        resolved_exit_reason = "time_exit"
 
     refined = complete_trade(strategy, asset, execution_data, open_trade, resolved_exit_index, resolved_exit_price, resolved_exit_reason)
     return replace(refined, execution_timeframe=execution_timeframe)
@@ -5056,7 +5141,10 @@ def refine_trades_with_execution_data(
     execution_data: list[tuple[str, EnrichedData]] | None,
     trades: list[BacktestTradeRow],
 ) -> list[BacktestTradeRow]:
+    source_timeframe = strategy_timeframe(strategy)
     if not execution_data:
+        if source_timeframe != "1m":
+            return []
         return [cap_trade_to_initial_bracket(asset, trade) for trade in trades]
     refined: list[BacktestTradeRow] = []
     for trade in trades:
@@ -5065,8 +5153,17 @@ def refine_trades_with_execution_data(
             candidate = refine_trade_with_execution_data(strategy, asset, source_data, dataset, trade, execution_timeframe)
             if candidate is not None:
                 break
-        refined.append(candidate if candidate is not None else cap_trade_to_initial_bracket(asset, trade))
+        if candidate is not None:
+            refined.append(candidate)
+        elif source_timeframe == "1m":
+            refined.append(cap_trade_to_initial_bracket(asset, trade))
     return refined
+
+
+def tag_source_execution_timeframe(trades: list[BacktestTradeRow], timeframe: str) -> list[BacktestTradeRow]:
+    if timeframe != "1m":
+        return trades
+    return [trade if trade.execution_timeframe else replace(trade, execution_timeframe="1m") for trade in trades]
 
 
 def run_single_strategy(
@@ -5615,6 +5712,7 @@ def run_backtests(
                 strict_anti_cheat=strict_anti_cheat,
                 execution_data=execution_data,
             )
+            trades = tag_source_execution_timeframe(trades, timeframe)
             if write_output:
                 output_trades = (
                     merge_incremental_backtest_trades(existing_trades, trades, effective_start_ts)
