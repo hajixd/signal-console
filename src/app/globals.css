@@ -2835,8 +2835,7 @@ html[data-theme="light"] .themeDarkLabel {
   padding-top: 0.68rem;
 }
 
-.topstepAccountDetailHead,
-.topstepAccountDetailSectionHead {
+.topstepAccountDetailHead {
   min-width: 0;
   display: flex;
   align-items: center;
@@ -2851,9 +2850,9 @@ html[data-theme="light"] .themeDarkLabel {
 }
 
 .topstepAccountDetailHead span,
-.topstepAccountDetailSectionHead span,
-.topstepAccountDetailMetric span,
-.topstepAccountDetailRow small,
+.topstepTradeHistorySummary span,
+.topstepTradeHistoryMain small,
+.topstepTradeHistoryPnl small,
 .topstepAccountDetailNote {
   color: var(--text-faint);
   font-size: 0.58rem;
@@ -2863,9 +2862,9 @@ html[data-theme="light"] .themeDarkLabel {
 }
 
 .topstepAccountDetailHead strong,
-.topstepAccountDetailSectionHead strong,
-.topstepAccountDetailMetric strong,
-.topstepAccountDetailRow strong {
+.topstepTradeHistorySummary strong,
+.topstepTradeHistoryMain strong,
+.topstepTradeHistoryPnl strong {
   color: rgba(255, 255, 255, 0.9);
   font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
   font-weight: 950;
@@ -2882,89 +2881,116 @@ html[data-theme="light"] .themeDarkLabel {
   color: #fecaca !important;
 }
 
-.topstepAccountDetailMetrics {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 0.44rem;
-}
-
-.topstepAccountDetailMetric {
+.topstepTradeHistorySummary {
   min-width: 0;
-  display: grid;
-  gap: 0.18rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
   border: 1px solid rgba(255, 255, 255, 0.075);
   background: rgba(255, 255, 255, 0.025);
-  padding: 0.5rem;
+  padding: 0.58rem 0.65rem;
 }
 
-.topstepAccountDetailMetric strong {
-  min-width: 0;
-  overflow: hidden;
-  font-size: 0.72rem;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+.topstepTradeHistorySummary strong {
+  font-size: 0.82rem;
 }
 
-.topstepAccountDetailGrid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.5rem;
-}
-
-.topstepAccountDetailSection {
+.topstepTradeHistoryList {
   min-width: 0;
   display: grid;
-  align-content: start;
   gap: 0.42rem;
+}
+
+.topstepTradeHistoryRow {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr) minmax(86px, 0.65fr);
+  align-items: center;
+  gap: 0.7rem;
   border: 1px solid rgba(255, 255, 255, 0.075);
   background: rgba(0, 0, 0, 0.14);
-  padding: 0.52rem;
+  padding: 0.62rem 0.66rem;
 }
 
-.topstepAccountDetailSectionHead strong {
-  font-size: 0.66rem;
-}
-
-.topstepAccountDetailList {
+.topstepTradeHistoryMain,
+.topstepTradeHistoryMeta,
+.topstepTradeHistoryPnl {
   min-width: 0;
   display: grid;
-  gap: 0.26rem;
+  gap: 0.16rem;
 }
 
-.topstepAccountDetailRow {
-  min-width: 0;
-  display: grid;
-  grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.75fr) minmax(0, 0.9fr) minmax(0, 0.85fr);
-  align-items: center;
-  gap: 0.38rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
-  padding-top: 0.32rem;
-}
-
-.topstepAccountDetailRow:first-child {
-  border-top: 0;
-  padding-top: 0;
-}
-
-.topstepAccountDetailRow strong,
-.topstepAccountDetailRow span,
-.topstepAccountDetailRow small {
+.topstepTradeHistoryMain strong {
   min-width: 0;
   overflow: hidden;
+  font-size: 0.74rem;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.topstepAccountDetailRow span {
+.topstepTradeHistoryMain small,
+.topstepTradeHistoryPnl small {
+  min-width: 0;
+  overflow: hidden;
+  letter-spacing: 0;
+  text-overflow: ellipsis;
+  text-transform: none;
+  white-space: nowrap;
+}
+
+.topstepTradeHistoryMeta {
+  justify-items: start;
+}
+
+.topstepTradeHistoryMeta > span:not(.topstepTradeSide) {
   color: rgba(255, 255, 255, 0.75);
   font-size: 0.66rem;
   font-weight: 850;
 }
 
+.topstepTradeSide {
+  display: inline-flex;
+  min-height: 20px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  background: rgba(148, 163, 184, 0.08);
+  color: rgba(226, 232, 240, 0.78);
+  padding: 0 0.42rem;
+  font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+  font-size: 0.56rem;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.topstepTradeSide.buy {
+  border-color: rgba(52, 211, 153, 0.22);
+  background: rgba(52, 211, 153, 0.08);
+  color: #34d399;
+}
+
+.topstepTradeSide.sell {
+  border-color: rgba(248, 113, 113, 0.22);
+  background: rgba(248, 113, 113, 0.08);
+  color: #fb7185;
+}
+
+.topstepTradeHistoryPnl {
+  justify-items: end;
+  text-align: right;
+}
+
+.topstepTradeHistoryPnl strong {
+  font-size: 0.78rem;
+}
+
 .topstepAccountDetailEmpty {
-  min-height: 40px;
+  min-height: 62px;
   display: grid;
   place-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.075);
+  background: rgba(0, 0, 0, 0.14);
   color: var(--text-faint);
   font-size: 0.64rem;
   font-weight: 850;
@@ -7682,16 +7708,16 @@ html[data-theme="light"] .topstepAccountDetailPanel {
 }
 
 html[data-theme="light"] .topstepAccountDetailHead strong,
-html[data-theme="light"] .topstepAccountDetailSectionHead strong,
-html[data-theme="light"] .topstepAccountDetailMetric strong,
-html[data-theme="light"] .topstepAccountDetailRow strong {
+html[data-theme="light"] .topstepTradeHistorySummary strong,
+html[data-theme="light"] .topstepTradeHistoryMain strong,
+html[data-theme="light"] .topstepTradeHistoryPnl strong {
   color: rgba(15, 23, 42, 0.9);
 }
 
 html[data-theme="light"] .topstepAccountDetailHead span,
-html[data-theme="light"] .topstepAccountDetailSectionHead span,
-html[data-theme="light"] .topstepAccountDetailMetric span,
-html[data-theme="light"] .topstepAccountDetailRow small,
+html[data-theme="light"] .topstepTradeHistorySummary span,
+html[data-theme="light"] .topstepTradeHistoryMain small,
+html[data-theme="light"] .topstepTradeHistoryPnl small,
 html[data-theme="light"] .topstepAccountDetailNote {
   color: rgba(71, 85, 105, 0.62);
 }
@@ -7701,19 +7727,25 @@ html[data-theme="light"] .topstepAccountDetailEmpty {
   color: rgba(71, 85, 105, 0.7);
 }
 
-html[data-theme="light"] .topstepAccountDetailMetric,
-html[data-theme="light"] .topstepAccountDetailSection {
+html[data-theme="light"] .topstepTradeHistorySummary,
+html[data-theme="light"] .topstepTradeHistoryRow,
+html[data-theme="light"] .topstepAccountDetailEmpty {
   border-color: rgba(15, 23, 42, 0.08);
   background: #ffffff;
 }
 
-html[data-theme="light"] .topstepAccountDetailRow {
-  border-top-color: rgba(15, 23, 42, 0.08);
+html[data-theme="light"] .topstepTradeHistoryMeta > span:not(.topstepTradeSide) {
+  color: rgba(15, 23, 42, 0.72);
 }
 
-html[data-theme="light"] .topstepAccountDetailRow span,
 html[data-theme="light"] .tone-neutral {
   color: rgba(15, 23, 42, 0.72) !important;
+}
+
+html[data-theme="light"] .topstepTradeSide.neutral {
+  border-color: rgba(100, 116, 139, 0.18);
+  background: rgba(100, 116, 139, 0.08);
+  color: rgba(71, 85, 105, 0.82);
 }
 
 html[data-theme="light"] .topstepFolderIcon {
@@ -9046,12 +9078,15 @@ html[data-theme="light"] .strategyToggle input {
     grid-template-columns: 1fr;
   }
 
-  .topstepAccountDetailMetrics {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+  .topstepTradeHistoryRow {
+    grid-template-columns: minmax(0, 1fr);
+    align-items: stretch;
   }
 
-  .topstepAccountDetailGrid {
-    grid-template-columns: 1fr;
+  .topstepTradeHistoryMeta,
+  .topstepTradeHistoryPnl {
+    justify-items: start;
+    text-align: left;
   }
 
   .researchFlow {
@@ -11773,13 +11808,12 @@ html[data-theme="light"] .tradeReplaySlider input {
     padding: 6px;
   }
 
-  .topstepAccountDetailMetrics,
-  .topstepAccountDetailRow {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+  .topstepTradeHistoryRow {
+    gap: 6px;
+    padding: 8px;
   }
 
-  .topstepAccountDetailHead,
-  .topstepAccountDetailSectionHead {
+  .topstepAccountDetailHead {
     align-items: flex-start;
     flex-direction: column;
     gap: 3px;

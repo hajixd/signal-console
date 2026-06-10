@@ -4,9 +4,6 @@ import { verifyStoredProjectXConnectionAccessCode, getStoredProjectXConnection, 
 import {
   readableProjectXError,
   searchProjectXAccounts,
-  searchProjectXOpenOrders,
-  searchProjectXOpenPositions,
-  searchProjectXOrders,
   searchProjectXTrades,
   validateProjectXSession
 } from "@/lib/projectx";
@@ -103,12 +100,7 @@ export async function GET(request: NextRequest) {
       endTimestamp: historyEnd.toISOString()
     };
 
-    const [openPositions, openOrders, orders, trades] = await Promise.all([
-      searchProjectXOpenPositions(activeToken, accountId),
-      searchProjectXOpenOrders(activeToken, accountId),
-      searchProjectXOrders(activeToken, historyRequest),
-      searchProjectXTrades(activeToken, historyRequest)
-    ]);
+    const trades = await searchProjectXTrades(activeToken, historyRequest);
 
     return NextResponse.json({
       account,
@@ -116,9 +108,6 @@ export async function GET(request: NextRequest) {
       historyDays,
       historyEnd: historyEnd.toISOString(),
       historyStart: historyStart.toISOString(),
-      openOrders: newestFirst(openOrders).slice(0, 25),
-      openPositions: newestFirst(openPositions).slice(0, 25),
-      orders: newestFirst(orders).slice(0, 40),
       refreshed: Boolean(refreshedToken),
       trades: newestFirst(trades).slice(0, 40)
     });

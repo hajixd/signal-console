@@ -21,9 +21,6 @@ import type {
   ProjectXAccount,
   ProjectXConnectionStatus,
   ProjectXConnectionSummary,
-  ProjectXOpenOrder,
-  ProjectXOpenPosition,
-  ProjectXOrder,
   ProjectXTrade
 } from "@/lib/projectx";
 
@@ -85,9 +82,6 @@ type ProjectXAccountDetails = {
   historyDays?: number;
   historyEnd?: string;
   historyStart?: string;
-  openOrders: ProjectXOpenOrder[];
-  openPositions: ProjectXOpenPosition[];
-  orders: ProjectXOrder[];
   trades: ProjectXTrade[];
 };
 
@@ -284,22 +278,6 @@ function fmtProjectXSide(side: number | undefined): string {
   return "--";
 }
 
-function fmtProjectXPositionType(type: number | undefined): string {
-  if (type === 1) return "Long";
-  if (type === 2) return "Short";
-  return "--";
-}
-
-function fmtProjectXOrderType(type: number | undefined): string {
-  if (type === 1) return "Limit";
-  if (type === 2) return "Market";
-  if (type === 4) return "Stop";
-  if (type === 5) return "Trail";
-  if (type === 6) return "Join bid";
-  if (type === 7) return "Join ask";
-  return "--";
-}
-
 function projectXAccountDetailKey(connectionId: string, accountId: number): string {
   return `${connectionId}:${accountId}`;
 }
@@ -393,9 +371,6 @@ async function parseProjectXAccountDetailsResponse(response: Response): Promise<
     historyDays: payload.historyDays,
     historyEnd: payload.historyEnd,
     historyStart: payload.historyStart,
-    openOrders: payload.openOrders ?? [],
-    openPositions: payload.openPositions ?? [],
-    orders: payload.orders ?? [],
     trades: payload.trades ?? []
   };
 }
@@ -426,15 +401,6 @@ function autoTradeTestMessage(result: AutoTradeTestResponse): string {
   return result.error ?? "Test finished";
 }
 
-function ProjectXDetailMetric({ label, value, tone }: { label: string; value: string; tone?: "down" | "neutral" | "up" }) {
-  return (
-    <div className="topstepAccountDetailMetric">
-      <span>{label}</span>
-      <strong className={tone ? `tone-${tone}` : undefined}>{value}</strong>
-    </div>
-  );
-}
-
 function ProjectXEmptyDetailRow({ label }: { label: string }) {
   return <div className="topstepAccountDetailEmpty">{label}</div>;
 }
@@ -445,7 +411,7 @@ function ProjectXAccountDetailPanel({ account, state }: { account: ProjectXAccou
       <div className="topstepAccountDetailPanel">
         <div className="topstepAccountDetailHead">
           <div>
-            <span>Account details</span>
+            <span>Previous trades</span>
             <strong>{account.name}</strong>
           </div>
           <small>Loading ProjectX activity...</small>
@@ -459,7 +425,7 @@ function ProjectXAccountDetailPanel({ account, state }: { account: ProjectXAccou
       <div className="topstepAccountDetailPanel">
         <div className="topstepAccountDetailHead">
           <div>
-            <span>Account details</span>
+            <span>Previous trades</span>
             <strong>{account.name}</strong>
           </div>
           <small className="topstepAccountDetailError">{state.error ?? "Could not load account details."}</small>
@@ -469,121 +435,59 @@ function ProjectXAccountDetailPanel({ account, state }: { account: ProjectXAccou
   }
 
   const details = state.details!;
-  const closedTrades = details.trades.filter((trade) => projectXTradeNetPnl(trade) !== undefined);
   const netPnl = projectXNetPnl(details.trades);
   const netTone = netPnl === undefined ? "neutral" : netPnl > 0 ? "up" : netPnl < 0 ? "down" : "neutral";
+  const excludedTradeCount = details.trades.filter((trade) => projectXTradeNetPnl(trade) === undefined).length;
 
   return (
     <div className="topstepAccountDetailPanel">
       <div className="topstepAccountDetailHead">
         <div>
-          <span>Account details</span>
+          <span>Previous trades</span>
           <strong>{details.account.name}</strong>
         </div>
         <small>
-          {fmtNumber(details.historyDays, 0)}d history / updated {fmtShortTime(details.checkedAt)}
+          {fmtNumber(details.trades.length, 0)} trades / {fmtNumber(details.historyDays, 0)}d / updated {fmtShortTime(details.checkedAt)}
         </small>
       </div>
 
-      <div className="topstepAccountDetailMetrics" aria-label={`${details.account.name} ProjectX summary`}>
-        <ProjectXDetailMetric label="Balance" value={fmtMoney(details.account.balance)} />
-        <ProjectXDetailMetric label="Open positions" value={fmtNumber(details.openPositions.length, 0)} />
-        <ProjectXDetailMetric label="Open orders" value={fmtNumber(details.openOrders.length, 0)} />
-        <ProjectXDetailMetric label="Closed P&L" value={fmtMoney(netPnl, true)} tone={netTone} />
+      <div className="topstepTradeHistorySummary" aria-label={`${details.account.name} ProjectX trade summary`}>
+        <span>Net closed P&L</span>
+        <strong className={`tone-${netTone}`}>{fmtMoney(netPnl, true)}</strong>
       </div>
 
-      <div className="topstepAccountDetailGrid">
-        <section className="topstepAccountDetailSection">
-          <div className="topstepAccountDetailSectionHead">
-            <span>Open Positions</span>
-            <strong>{fmtNumber(details.openPositions.length, 0)}</strong>
-          </div>
-          <div className="topstepAccountDetailList">
-            {details.openPositions.length ? (
-              details.openPositions.map((position) => (
-                <div className="topstepAccountDetailRow" key={`position-${position.id ?? position.contractId}`}>
-                  <strong>{position.contractId ?? "--"}</strong>
-                  <span>{fmtProjectXPositionType(position.type)}</span>
-                  <span>{fmtNumber(position.size, 0)} @ {fmtNumber(position.averagePrice, 5)}</span>
-                  <small>{fmtShortTime(position.creationTimestamp)}</small>
+      <div className="topstepTradeHistoryList">
+        {details.trades.length ? (
+          details.trades.map((trade) => {
+            const pnl = projectXTradeNetPnl(trade);
+            const tone = pnl === undefined ? "neutral" : pnl > 0 ? "up" : pnl < 0 ? "down" : "neutral";
+            return (
+              <div className="topstepTradeHistoryRow" key={`trade-${trade.id ?? trade.orderId ?? `${trade.contractId}-${trade.creationTimestamp}`}`}>
+                <div className="topstepTradeHistoryMain">
+                  <strong>{trade.contractId ?? "--"}</strong>
+                  <small>
+                    {fmtShortTime(trade.creationTimestamp)}
+                    {trade.orderId ? ` / order #${trade.orderId}` : ""}
+                  </small>
                 </div>
-              ))
-            ) : (
-              <ProjectXEmptyDetailRow label="No open positions" />
-            )}
-          </div>
-        </section>
-
-        <section className="topstepAccountDetailSection">
-          <div className="topstepAccountDetailSectionHead">
-            <span>Open Orders</span>
-            <strong>{fmtNumber(details.openOrders.length, 0)}</strong>
-          </div>
-          <div className="topstepAccountDetailList">
-            {details.openOrders.length ? (
-              details.openOrders.map((order) => (
-                <div className="topstepAccountDetailRow" key={`open-order-${order.orderId ?? order.id}`}>
-                  <strong>#{order.orderId ?? order.id ?? "--"}</strong>
-                  <span>{order.contractId ?? "--"}</span>
-                  <span>{fmtProjectXSide(order.side)} / {fmtProjectXOrderType(order.type)}</span>
-                  <small>{fmtNumber(order.size, 0)} @ {fmtNumber(order.limitPrice ?? order.stopPrice, 5)}</small>
+                <div className="topstepTradeHistoryMeta">
+                  <span className={`topstepTradeSide ${trade.side === 0 ? "buy" : trade.side === 1 ? "sell" : "neutral"}`}>
+                    {fmtProjectXSide(trade.side)}
+                  </span>
+                  <span>{fmtNumber(trade.size, 0)} @ {fmtNumber(trade.price, 5)}</span>
                 </div>
-              ))
-            ) : (
-              <ProjectXEmptyDetailRow label="No open orders" />
-            )}
-          </div>
-        </section>
-
-        <section className="topstepAccountDetailSection">
-          <div className="topstepAccountDetailSectionHead">
-            <span>Recent Trades</span>
-            <strong>{fmtNumber(details.trades.length, 0)}</strong>
-          </div>
-          <div className="topstepAccountDetailList">
-            {details.trades.length ? (
-              details.trades.slice(0, 8).map((trade) => {
-                const pnl = projectXTradeNetPnl(trade);
-                const tone = pnl === undefined ? "neutral" : pnl > 0 ? "up" : pnl < 0 ? "down" : "neutral";
-                return (
-                  <div className="topstepAccountDetailRow" key={`trade-${trade.id ?? trade.orderId}`}>
-                    <strong>{trade.contractId ?? "--"}</strong>
-                    <span>{fmtProjectXSide(trade.side)} x {fmtNumber(trade.size, 0)}</span>
-                    <span className={`tone-${tone}`}>{fmtMoney(pnl, true)}</span>
-                    <small>{fmtShortTime(trade.creationTimestamp)}</small>
-                  </div>
-                );
-              })
-            ) : (
-              <ProjectXEmptyDetailRow label="No recent trades" />
-            )}
-          </div>
-          {closedTrades.length !== details.trades.length ? (
-            <small className="topstepAccountDetailNote">{fmtNumber(details.trades.length - closedTrades.length, 0)} half-turn trades excluded from P&L.</small>
-          ) : null}
-        </section>
-
-        <section className="topstepAccountDetailSection">
-          <div className="topstepAccountDetailSectionHead">
-            <span>Recent Orders</span>
-            <strong>{fmtNumber(details.orders.length, 0)}</strong>
-          </div>
-          <div className="topstepAccountDetailList">
-            {details.orders.length ? (
-              details.orders.slice(0, 8).map((order) => (
-                <div className="topstepAccountDetailRow" key={`order-${order.orderId ?? order.id}`}>
-                  <strong>#{order.orderId ?? order.id ?? "--"}</strong>
-                  <span>{order.contractId ?? order.symbolId ?? "--"}</span>
-                  <span>{fmtProjectXSide(order.side)} / {fmtProjectXOrderType(order.type)}</span>
-                  <small>{fmtNumber(order.fillVolume ?? order.size, 0)} @ {fmtNumber(order.filledPrice ?? order.limitPrice ?? order.stopPrice, 5)}</small>
+                <div className="topstepTradeHistoryPnl">
+                  <strong className={`tone-${tone}`}>{fmtMoney(pnl, true)}</strong>
+                  <small>{typeof trade.fees === "number" && Number.isFinite(trade.fees) ? `fees ${fmtMoney(-Math.abs(trade.fees), true)}` : "net P&L"}</small>
                 </div>
-              ))
-            ) : (
-              <ProjectXEmptyDetailRow label="No recent orders" />
-            )}
-          </div>
-        </section>
+              </div>
+            );
+          })
+        ) : (
+          <ProjectXEmptyDetailRow label="No previous trades found" />
+        )}
       </div>
+      {excludedTradeCount ? <small className="topstepAccountDetailNote">{fmtNumber(excludedTradeCount, 0)} half-turn trades excluded from P&L.</small> : null}
     </div>
   );
 }
