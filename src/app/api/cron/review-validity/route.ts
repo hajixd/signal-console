@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getBacktestStats, getBacktestTrades, getStrategyCatalog } from "@/lib/backtest";
-import { analyzeBacktestDataValidity } from "@/lib/data-validity";
+import { analyzeBacktestDataValidity, coverageFreshnessToleranceMs, marketFreshnessReferenceMs } from "@/lib/data-validity";
 import { getDatasetStatus, updateDatasetSyncRunStatus } from "@/lib/live-config";
 import { cronWeekendPause } from "@/lib/market-schedule";
 import {
@@ -47,30 +47,44 @@ type StrategyCoverageRef = {
 
 type AssetCoverageRef = NonNullable<Awaited<ReturnType<typeof getDatasetStatus>>>["assetCoverage"];
 
-function requiredCoverageByAsset(strategyRefs: StrategyCoverageRef[]): Map<string, Set<string>> {
-  const required = new Map<string, Set<string>>();
+function requiredCoverageByAsset(strategyRefs: StrategyCoverageRef[]): Map<string, { symbol?: string; timeframes: Set<string> }> {
+  const required = new Map<string, { symbol?: string; timeframes: Set<string> }>();
   for (const ref of strategyRefs) {
     if (!ref.assetKey) continue;
-    const timeframes = required.get(ref.assetKey) ?? new Set<string>();
+    const entry = required.get(ref.assetKey) ?? { symbol: ref.symbol, timeframes: new Set<string>() };
+    entry.symbol = entry.symbol ?? ref.symbol;
     for (const timeframe of ref.timeframes?.length ? ref.timeframes : ["15m"]) {
-      if (timeframe) timeframes.add(timeframe);
+      if (timeframe) entry.timeframes.add(timeframe);
     }
-    required.set(ref.assetKey, timeframes);
+    required.set(ref.assetKey, entry);
   }
   return required;
 }
 
 function coverageRepairAssetKeys(strategyRefs: StrategyCoverageRef[], assetCoverage: AssetCoverageRef | undefined): string[] {
   const required = requiredCoverageByAsset(strategyRefs);
+  const now = Date.now();
   const repairKeys: string[] = [];
-  for (const [assetKey, timeframes] of required) {
+  for (const [assetKey, requirement] of required) {
     const coverage = assetCoverage?.[assetKey];
     if (!coverage) {
       repairKeys.push(assetKey);
       continue;
     }
     const coveredTimeframes = new Set(coverage.timeframes ?? []);
-    if ([...timeframes].some((timeframe) => !coveredTimeframes.has(timeframe))) {
+    if ([...requirement.timeframes].some((timeframe) => !coveredTimeframes.has(timeframe))) {
+      repairKeys.push(assetKey);
+      continue;
+    }
+
+    const lastBarAt = coverage.lastBarAt ? Date.parse(coverage.lastBarAt) : Number.NaN;
+    const freshnessReference = marketFreshnessReferenceMs(assetKey, requirement.symbol ?? coverage.symbol, now);
+    const stale = [...requirement.timeframes].some((timeframe) => {
+      const toleranceMs = coverageFreshnessToleranceMs(timeframe);
+      if (!toleranceMs) return false;
+      return !Number.isFinite(lastBarAt) || lastBarAt < freshnessReference - toleranceMs;
+    });
+    if (stale) {
       repairKeys.push(assetKey);
     }
   }

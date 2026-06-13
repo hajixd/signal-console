@@ -173,7 +173,7 @@ function requiredTimeframesByAsset(strategyRefs: DataValidityStrategyRef[]): Map
   return required;
 }
 
-function coverageFreshnessToleranceMs(timeframe: string): number | undefined {
+export function coverageFreshnessToleranceMs(timeframe: string): number | undefined {
   if (!isDataTimeframe(timeframe)) return undefined;
   return Math.max(timeframeSeconds(timeframe) * 3 * 1000, 20 * 60 * 1000);
 }
@@ -186,7 +186,7 @@ function assetMarketForCoverage(assetKey: string): string | undefined {
   }
 }
 
-function marketFreshnessReferenceMs(assetKey: string, symbol: string | undefined, now: number): number {
+export function marketFreshnessReferenceMs(assetKey: string, symbol: string | undefined, now: number): number {
   const market = assetMarketForCoverage(assetKey);
   const context = { assetKey, symbol };
   if (!market) return now;
