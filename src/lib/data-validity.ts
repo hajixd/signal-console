@@ -1,5 +1,7 @@
 import { dollarPerUnit } from "@/lib/instruments";
 import type { BacktestTrade } from "@/lib/backtest";
+import { assetForKey } from "@/lib/assets";
+import { marketOpenForSignal } from "@/lib/market-schedule";
 import { isDataTimeframe, timeframeOrder, timeframeSeconds } from "@/lib/timeframes";
 
 export type DataValidityTone = "good" | "warning" | "bad";
@@ -174,6 +176,31 @@ function requiredTimeframesByAsset(strategyRefs: DataValidityStrategyRef[]): Map
 function coverageFreshnessToleranceMs(timeframe: string): number | undefined {
   if (!isDataTimeframe(timeframe)) return undefined;
   return Math.max(timeframeSeconds(timeframe) * 3 * 1000, 20 * 60 * 1000);
+}
+
+function assetMarketForCoverage(assetKey: string): string | undefined {
+  try {
+    return assetForKey(assetKey).market;
+  } catch {
+    return undefined;
+  }
+}
+
+function marketFreshnessReferenceMs(assetKey: string, symbol: string | undefined, now: number): number {
+  const market = assetMarketForCoverage(assetKey);
+  const context = { assetKey, symbol };
+  if (!market) return now;
+  if (marketOpenForSignal(market, new Date(now), context)?.open ?? false) return now;
+
+  const oneMinuteMs = 60_000;
+  const lookbackLimit = now - 7 * 24 * 60 * 60_000;
+  for (let cursor = now - oneMinuteMs; cursor >= lookbackLimit; cursor -= oneMinuteMs) {
+    if (marketOpenForSignal(market, new Date(cursor), context)?.open ?? false) {
+      return cursor;
+    }
+  }
+
+  return now;
 }
 
 function addCoverageSample(samples: string[], detail: string) {
@@ -377,6 +404,7 @@ export function analyzeBacktestDataValidity({
 
     const coveredTimeframes = new Set(coverage.timeframes ?? []);
     const lastBarAt = coverage.lastBarAt ? Date.parse(coverage.lastBarAt) : Number.NaN;
+    const freshnessReference = marketFreshnessReferenceMs(assetKey, assetLabel, now);
     for (const timeframe of requiredTimeframes) {
       if (!coveredTimeframes.has(timeframe)) {
         missingCoverageTimeframes += 1;
@@ -393,11 +421,11 @@ export function analyzeBacktestDataValidity({
         continue;
       }
 
-      if (lastBarAt < now - toleranceMs) {
-        const lagHours = (now - lastBarAt) / 3_600_000;
+      if (lastBarAt < freshnessReference - toleranceMs) {
+        const lagHours = (freshnessReference - lastBarAt) / 3_600_000;
         addCoverageSample(
           coverageSamples.staleTimeframes,
-          `${assetLabel} ${timeframe}: latest ${new Date(lastBarAt).toISOString()} (${fmtNumber(lagHours)}h old)`
+          `${assetLabel} ${timeframe}: latest ${new Date(lastBarAt).toISOString()} (${fmtNumber(lagHours)}h behind expected market data)`
         );
         staleCoverageTimeframes += 1;
       }

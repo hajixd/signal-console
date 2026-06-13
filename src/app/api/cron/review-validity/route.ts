@@ -15,9 +15,15 @@ export const runtime = "nodejs";
 export const maxDuration = 300;
 
 function isAuthorized(request: NextRequest): "ok" | "missing-secret" | "bad-secret" {
-  const secret = process.env.CRON_SECRET;
-  if (!secret) return process.env.NODE_ENV === "production" ? "missing-secret" : "ok";
-  return request.headers.get("authorization") === `Bearer ${secret}` ? "ok" : "bad-secret";
+  const secrets = [process.env.CRON_SECRET, process.env.APP_ADMIN_SECRET].filter((secret): secret is string => Boolean(secret?.trim()));
+  if (!secrets.length) return process.env.NODE_ENV === "production" ? "missing-secret" : "ok";
+  const authorization = request.headers.get("authorization");
+  return secrets.some((secret) => authorization === `Bearer ${secret}`) ? "ok" : "bad-secret";
+}
+
+function forceRunEnabled(request: NextRequest): boolean {
+  const value = request.nextUrl.searchParams.get("force")?.trim().toLowerCase();
+  return value === "1" || value === "true" || value === "yes";
 }
 
 function errorMessage(error: unknown): string {
@@ -103,8 +109,9 @@ export async function GET(request: NextRequest) {
       route: "/api/cron/review-validity"
     });
   }
+  const forceRun = forceRunEnabled(request);
   const weekendPause = cronWeekendPause();
-  if (weekendPause.paused) {
+  if (weekendPause.paused && !forceRun) {
     return NextResponse.json({
       ok: true,
       route: "/api/cron/review-validity",
