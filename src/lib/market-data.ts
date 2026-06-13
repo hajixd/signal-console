@@ -7,20 +7,8 @@ import {
   timeframeSeconds,
   type DataTimeframe
 } from "@/lib/timeframes";
+import { fetchProjectXMarketDataBars } from "@/lib/projectx-market-data";
 import type { Bar, StrategyRule } from "@/lib/types";
-
-type DatabentoRecord = {
-  hd?: {
-    ts_event?: number | string;
-  };
-  ts_event?: string;
-  time?: string;
-  open?: number | string;
-  high?: number | string;
-  low?: number | string;
-  close?: number | string;
-  volume?: number | string;
-};
 
 type OandaCandle = {
   time?: string;
@@ -48,33 +36,6 @@ type TwelveDataResponse = {
 type MarketBarsOptions = {
   afterSeconds?: number;
 };
-
-function normalizePrice(value: number | string | undefined): number {
-  const numeric = Number(value);
-  if (!Number.isFinite(numeric)) return Number.NaN;
-  return Math.abs(numeric) > 1_000_000 ? numeric / 1_000_000_000 : numeric;
-}
-
-function normalizeVolume(value: number | string | undefined): number {
-  const numeric = Number(value);
-  return Number.isFinite(numeric) ? numeric : 0;
-}
-
-function normalizeDatabentoTime(record: DatabentoRecord): string | null {
-  if (record.time) return record.time;
-  if (record.ts_event) return record.ts_event;
-
-  const raw = record.hd?.ts_event;
-  if (raw == null) return null;
-  try {
-    const rawText = String(raw).trim();
-    const millisecondsText = /^\d+$/.test(rawText) && rawText.length > 13 ? rawText.slice(0, -6) : rawText;
-    const milliseconds = Number(millisecondsText);
-    return Number.isFinite(milliseconds) ? new Date(milliseconds).toISOString() : null;
-  } catch {
-    return null;
-  }
-}
 
 function closedBarCutoff(): number {
   return Date.now() - 75_000;
@@ -119,31 +80,6 @@ function aggregateToTimeframe(
   return filterClosedTimeframeBars([...buckets.values()], timeframe);
 }
 
-function parseDatabentoJson(text: string): Bar[] {
-  const records: Array<{ time: string; open: number; high: number; low: number; close: number; volume: number }> = [];
-  for (const line of text.split(/\r?\n/)) {
-    const trimmed = line.trim();
-    if (!trimmed || trimmed.startsWith("{\"symbol_mapping\"")) continue;
-    try {
-      const item = JSON.parse(trimmed) as DatabentoRecord;
-      const time = normalizeDatabentoTime(item);
-      if (!time) continue;
-
-      const open = normalizePrice(item.open);
-      const high = normalizePrice(item.high);
-      const low = normalizePrice(item.low);
-      const close = normalizePrice(item.close);
-      const volume = normalizeVolume(item.volume);
-      if ([open, high, low, close].some((value) => !Number.isFinite(value))) continue;
-
-      records.push({ time, open, high, low, close, volume });
-    } catch {
-      continue;
-    }
-  }
-  return aggregateToTimeframe(records, LIVE_SOURCE_TIMEFRAME);
-}
-
 export async function fetchMarketBars(rule: StrategyRule, options: MarketBarsOptions = {}): Promise<Bar[]> {
   const asset = assetForKey(rule.assetKey);
   const sourceBars = await fetchMarketSourceBars(asset, options);
@@ -152,18 +88,9 @@ export async function fetchMarketBars(rule: StrategyRule, options: MarketBarsOpt
 }
 
 export async function fetchMarketSourceBars(asset: ReturnType<typeof assetForKey>, options: MarketBarsOptions = {}): Promise<Bar[]> {
-  if (asset.market === "futures") return fetchDatabentoBars(asset.databentoSymbol, asset.symbol, options);
+  if (asset.market === "futures") return fetchProjectXFuturesBars(asset, options);
   if (asset.market !== "crypto" && process.env.OANDA_API_TOKEN) return fetchOandaBars(asset.oandaSymbol ?? asset.symbol, options);
   return fetchTwelveDataBars(asset.twelveDataSymbol ?? asset.symbol, options);
-}
-
-async function requestDatabentoBars(apiKey: string, params: URLSearchParams): Promise<Response> {
-  return fetch(`https://hist.databento.com/v0/timeseries.get_range?${params.toString()}`, {
-    headers: {
-      Authorization: `Basic ${Buffer.from(`${apiKey}:`).toString("base64")}`
-    },
-    cache: "no-store"
-  });
 }
 
 function providerStartDate(options: MarketBarsOptions, fallbackLookbackMs: number, intervalSeconds: number): Date {
@@ -174,43 +101,30 @@ function providerStartDate(options: MarketBarsOptions, fallbackLookbackMs: numbe
   return start;
 }
 
-async function fetchDatabentoBars(databentoSymbol: string | undefined, symbol: string, options: MarketBarsOptions): Promise<Bar[]> {
-  const apiKey = process.env.DATABENTO_API_KEY;
-  if (!apiKey) throw new Error("Missing DATABENTO_API_KEY");
-  if (!databentoSymbol) throw new Error(`Missing Databento symbol for ${symbol}`);
-
+async function fetchProjectXFuturesBars(asset: ReturnType<typeof assetForKey>, options: MarketBarsOptions): Promise<Bar[]> {
   const start = providerStartDate(options, 12 * 24 * 60 * 60 * 1000, timeframeSeconds(LIVE_SOURCE_TIMEFRAME));
   const end = new Date();
   end.setUTCSeconds(0, 0);
-  const params = new URLSearchParams({
-    dataset: "GLBX.MDP3",
-    schema: "ohlcv-1m",
-    stype_in: "continuous",
-    symbols: databentoSymbol,
-    start: start.toISOString(),
-    end: end.toISOString(),
-    encoding: "json"
+
+  const bars = await fetchProjectXMarketDataBars(asset, {
+    endSeconds: Math.floor(end.getTime() / 1000),
+    limit: 20_000,
+    startSeconds: Math.floor(start.getTime() / 1000),
+    unit: 2,
+    unitNumber: 1
   });
 
-  let response = await requestDatabentoBars(apiKey, params);
-  if (!response.ok) {
-    const body = await response.text();
-    const availableEndMatch = body.match(/available up to '([^']+)'/);
-    if (response.status === 422 && availableEndMatch?.[1]) {
-      const retryParams = new URLSearchParams(params);
-      retryParams.set("end", new Date(availableEndMatch[1]).toISOString());
-      response = await requestDatabentoBars(apiKey, retryParams);
-    } else {
-      throw new Error(`Databento ${response.status}: ${body.slice(0, 240)}`);
-    }
-  }
-
-  if (!response.ok) {
-    const body = await response.text();
-    throw new Error(`Databento ${response.status}: ${body.slice(0, 240)}`);
-  }
-
-  return parseDatabentoJson(await response.text());
+  return filterClosedTimeframeBars(
+    bars.map((bar) => ({
+      time: new Date(bar.time * 1000).toISOString(),
+      open: bar.open,
+      high: bar.high,
+      low: bar.low,
+      close: bar.close,
+      volume: bar.volume
+    })),
+    LIVE_SOURCE_TIMEFRAME
+  );
 }
 
 async function fetchTwelveDataBars(symbol: string, options: MarketBarsOptions): Promise<Bar[]> {

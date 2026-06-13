@@ -7,8 +7,7 @@
     "tickSize": 0.0001,
     "dollarPerUnit": 1,
     "sizeLabel": "1 micro FX future",
-    "unitLabel": "ticks",
-    "databentoSymbol": "6A.v.0"
+    "unitLabel": "ticks"
   },
   "british_pound_futures": {
     "symbol": "6B",
@@ -18,8 +17,7 @@
     "tickSize": 0.0001,
     "dollarPerUnit": 0.625,
     "sizeLabel": "1 micro FX future",
-    "unitLabel": "ticks",
-    "databentoSymbol": "6B.v.0"
+    "unitLabel": "ticks"
   },
   "canadian_dollar_futures": {
     "symbol": "6C",
@@ -29,8 +27,7 @@
     "tickSize": 0.00005,
     "dollarPerUnit": 5,
     "sizeLabel": "1 FX future",
-    "unitLabel": "ticks",
-    "databentoSymbol": "6C.v.0"
+    "unitLabel": "ticks"
   },
   "euro_futures": {
     "symbol": "6E",
@@ -40,8 +37,7 @@
     "tickSize": 0.0001,
     "dollarPerUnit": 1.25,
     "sizeLabel": "1 micro FX future",
-    "unitLabel": "ticks",
-    "databentoSymbol": "6E.v.0"
+    "unitLabel": "ticks"
   },
   "japanese_yen_futures": {
     "symbol": "6J",
@@ -51,8 +47,7 @@
     "tickSize": 0.0000005,
     "dollarPerUnit": 6.25,
     "sizeLabel": "1 FX future",
-    "unitLabel": "ticks",
-    "databentoSymbol": "6J.v.0"
+    "unitLabel": "ticks"
   },
   "crude_oil_futures": {
     "symbol": "CL",
@@ -62,8 +57,7 @@
     "tickSize": 0.01,
     "dollarPerUnit": 1,
     "sizeLabel": "1 MCL micro",
-    "unitLabel": "ticks",
-    "databentoSymbol": "CL.v.0"
+    "unitLabel": "ticks"
   },
   "sp_500_futures": {
     "symbol": "ES",
@@ -73,8 +67,7 @@
     "tickSize": 0.25,
     "dollarPerUnit": 1.25,
     "sizeLabel": "1 MES micro",
-    "unitLabel": "ticks",
-    "databentoSymbol": "ES.v.0"
+    "unitLabel": "ticks"
   },
   "gold_futures": {
     "symbol": "GC",
@@ -84,8 +77,7 @@
     "tickSize": 0.1,
     "dollarPerUnit": 1,
     "sizeLabel": "1 MGC micro",
-    "unitLabel": "ticks",
-    "databentoSymbol": "GC.v.0"
+    "unitLabel": "ticks"
   },
   "copper_futures": {
     "symbol": "HG",
@@ -95,8 +87,7 @@
     "tickSize": 0.0005,
     "dollarPerUnit": 1.25,
     "sizeLabel": "1 MHG micro",
-    "unitLabel": "ticks",
-    "databentoSymbol": "HG.v.0"
+    "unitLabel": "ticks"
   },
   "natural_gas_futures": {
     "symbol": "NG",
@@ -106,8 +97,7 @@
     "tickSize": 0.001,
     "dollarPerUnit": 1,
     "sizeLabel": "1 MNG micro",
-    "unitLabel": "ticks",
-    "databentoSymbol": "NG.v.0"
+    "unitLabel": "ticks"
   },
   "nasdaq_100_futures": {
     "symbol": "NQ",
@@ -117,8 +107,7 @@
     "tickSize": 0.25,
     "dollarPerUnit": 0.5,
     "sizeLabel": "1 MNQ micro",
-    "unitLabel": "ticks",
-    "databentoSymbol": "NQ.v.0"
+    "unitLabel": "ticks"
   },
   "russell_2000_futures": {
     "symbol": "RTY",
@@ -128,8 +117,7 @@
     "tickSize": 0.1,
     "dollarPerUnit": 0.5,
     "sizeLabel": "1 M2K micro",
-    "unitLabel": "ticks",
-    "databentoSymbol": "RTY.v.0"
+    "unitLabel": "ticks"
   },
   "silver_futures": {
     "symbol": "SI",
@@ -139,8 +127,7 @@
     "tickSize": 0.005,
     "dollarPerUnit": 5,
     "sizeLabel": "1 SIL micro",
-    "unitLabel": "ticks",
-    "databentoSymbol": "SI.v.0"
+    "unitLabel": "ticks"
   },
   "dow_jones_futures": {
     "symbol": "YM",
@@ -150,8 +137,7 @@
     "tickSize": 1,
     "dollarPerUnit": 0.5,
     "sizeLabel": "1 MYM micro",
-    "unitLabel": "ticks",
-    "databentoSymbol": "YM.v.0"
+    "unitLabel": "ticks"
   },
   "us_treasury_30y_bond_futures": {
     "symbol": "ZB",
@@ -161,8 +147,7 @@
     "tickSize": 0.03125,
     "dollarPerUnit": 31.25,
     "sizeLabel": "1 futures contract",
-    "unitLabel": "ticks",
-    "databentoSymbol": "ZB.v.0"
+    "unitLabel": "ticks"
   },
   "us_treasury_10y_note_futures": {
     "symbol": "ZN",
@@ -172,8 +157,7 @@
     "tickSize": 0.015625,
     "dollarPerUnit": 15.625,
     "sizeLabel": "1 futures contract",
-    "unitLabel": "ticks",
-    "databentoSymbol": "ZN.v.0"
+    "unitLabel": "ticks"
   },
   "corn_futures": {
     "symbol": "ZC",
@@ -183,8 +167,7 @@
     "tickSize": 0.25,
     "dollarPerUnit": 12.5,
     "sizeLabel": "1 futures contract",
-    "unitLabel": "ticks",
-    "databentoSymbol": "ZC.v.0"
+    "unitLabel": "ticks"
   },
   "micro_bitcoin_futures": {
     "symbol": "MBT",
@@ -194,8 +177,7 @@
     "tickSize": 5,
     "dollarPerUnit": 0.5,
     "sizeLabel": "1 MBT micro",
-    "unitLabel": "ticks",
-    "databentoSymbol": "MBT.v.0"
+    "unitLabel": "ticks"
   },
   "micro_ether_futures": {
     "symbol": "MET",
@@ -205,8 +187,7 @@
     "tickSize": 0.5,
     "dollarPerUnit": 0.05,
     "sizeLabel": "1 MET micro",
-    "unitLabel": "ticks",
-    "databentoSymbol": "MET.v.0"
+    "unitLabel": "ticks"
   },
   "new_zealand_dollar_futures": {
     "symbol": "6N",
@@ -216,8 +197,7 @@
     "tickSize": 0.00005,
     "dollarPerUnit": 5,
     "sizeLabel": "1 FX future",
-    "unitLabel": "ticks",
-    "databentoSymbol": "6N.v.0"
+    "unitLabel": "ticks"
   },
   "swiss_franc_futures": {
     "symbol": "6S",
@@ -227,8 +207,7 @@
     "tickSize": 0.00005,
     "dollarPerUnit": 6.25,
     "sizeLabel": "1 FX future",
-    "unitLabel": "ticks",
-    "databentoSymbol": "6S.v.0"
+    "unitLabel": "ticks"
   },
   "us_treasury_2y_note_futures": {
     "symbol": "ZT",
@@ -238,8 +217,7 @@
     "tickSize": 0.00390625,
     "dollarPerUnit": 7.8125,
     "sizeLabel": "1 futures contract",
-    "unitLabel": "ticks",
-    "databentoSymbol": "ZT.v.0"
+    "unitLabel": "ticks"
   },
   "us_treasury_5y_note_futures": {
     "symbol": "ZF",
@@ -249,8 +227,7 @@
     "tickSize": 0.0078125,
     "dollarPerUnit": 7.8125,
     "sizeLabel": "1 futures contract",
-    "unitLabel": "ticks",
-    "databentoSymbol": "ZF.v.0"
+    "unitLabel": "ticks"
   },
   "aud_usd": {
     "symbol": "AUDUSD",

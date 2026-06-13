@@ -176,7 +176,6 @@ function statToRule(
     assetKey: strategy.assetKey,
     market: asset.market,
     symbol: asset.symbol,
-    databentoSymbol: asset.databentoSymbol,
     phase: strategy.phase,
     label: conciseStrategyName({
       assetKey: strategy.assetKey,

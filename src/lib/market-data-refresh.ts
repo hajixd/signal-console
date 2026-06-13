@@ -5,6 +5,7 @@ import path from "node:path";
 import { assetForKey, type AssetDefinition } from "@/lib/assets";
 import { firebaseBucket, firebaseLocalFallbackEnabled, hasFirebaseAdmin, storageObjectPath } from "@/lib/firebase-admin";
 import { defaultDatasetStatus, getDatasetStatus, saveDatasetStatus, type DatasetAssetCoverage } from "@/lib/live-config";
+import { fetchProjectXMarketDataBars } from "@/lib/projectx-market-data";
 import { r2AppendText, r2Configured, r2GetTailText, r2HeadObject, r2PutText } from "@/lib/r2";
 import {
   DATA_TIMEFRAMES,
@@ -29,19 +30,6 @@ type CsvBar = {
   open: number;
   time: number;
   volume: number;
-};
-
-type DatabentoRecord = {
-  close?: number | string;
-  hd?: {
-    ts_event?: number | string;
-  };
-  high?: number | string;
-  low?: number | string;
-  open?: number | string;
-  time?: number | string;
-  ts_event?: number | string;
-  volume?: number | string;
 };
 
 type OandaCandle = {
@@ -244,43 +232,6 @@ function secondsFromIso(value: string): number | null {
   return Number.isFinite(parsed) ? Math.floor(parsed / 1000) : null;
 }
 
-function secondsFromProviderTime(value: number | string | undefined): number | null {
-  if (value == null) return null;
-  const text = String(value).trim();
-  if (!text) return null;
-
-  if (/^\d+$/.test(text)) {
-    const numeric = Number(text);
-    if (!Number.isFinite(numeric)) return null;
-    if (text.length > 16) return Math.floor(numeric / 1_000_000_000);
-    if (text.length > 13) return Math.floor(numeric / 1_000_000);
-    if (text.length > 10) return Math.floor(numeric / 1_000);
-    return Math.floor(numeric);
-  }
-
-  const parsed = Date.parse(text);
-  return Number.isFinite(parsed) ? Math.floor(parsed / 1000) : null;
-}
-
-function databentoRecordSeconds(record: DatabentoRecord): number | null {
-  return (
-    secondsFromProviderTime(record.time) ??
-    secondsFromProviderTime(record.ts_event) ??
-    secondsFromProviderTime(record.hd?.ts_event)
-  );
-}
-
-function normalizeProviderPrice(value: number | string | undefined): number {
-  const numeric = Number(value);
-  if (!Number.isFinite(numeric)) return Number.NaN;
-  return Math.abs(numeric) > 1_000_000 ? numeric / 1_000_000_000 : numeric;
-}
-
-function normalizeProviderVolume(value: number | string | undefined): number {
-  const numeric = Number(value);
-  return Number.isFinite(numeric) ? numeric : 0;
-}
-
 function normalizeCsvBar(bar: CsvBar): CsvBar | null {
   if (![bar.time, bar.open, bar.high, bar.low, bar.close].every(Number.isFinite)) return null;
   return {
@@ -376,34 +327,6 @@ function resampleBars(bars: CsvBar[], seconds: number): CsvBar[] {
   return [...buckets.values()].sort((left, right) => left.time - right.time);
 }
 
-function parseDatabentoMinuteBars(text: string): CsvBar[] {
-  const bars: CsvBar[] = [];
-  for (const line of text.split(/\r?\n/)) {
-    const trimmed = line.trim();
-    if (!trimmed || trimmed.startsWith("{\"symbol_mapping\"")) continue;
-
-    try {
-      const record = JSON.parse(trimmed) as DatabentoRecord;
-      const time = databentoRecordSeconds(record);
-      if (time === null) continue;
-
-      const bar = normalizeCsvBar({
-        time,
-        open: normalizeProviderPrice(record.open),
-        high: normalizeProviderPrice(record.high),
-        low: normalizeProviderPrice(record.low),
-        close: normalizeProviderPrice(record.close),
-        volume: normalizeProviderVolume(record.volume)
-      });
-      if (bar) bars.push(bar);
-    } catch {
-      continue;
-    }
-  }
-
-  return filterClosedBars(bars, ONE_MINUTE_SECONDS).sort((left, right) => left.time - right.time);
-}
-
 function parseOandaMinuteBars(candles: OandaCandle[] | undefined): CsvBar[] {
   if (!candles?.length) return [];
 
@@ -462,51 +385,32 @@ function providerDateParam(value: Date): string {
   return value.toISOString().replace("T", " ").replace(/\.\d{3}Z$/, "");
 }
 
-async function requestDatabentoBars(apiKey: string, params: URLSearchParams): Promise<Response> {
-  return fetch(`https://hist.databento.com/v0/timeseries.get_range?${params.toString()}`, {
-    headers: {
-      Authorization: `Basic ${Buffer.from(`${apiKey}:`).toString("base64")}`
-    },
-    cache: "no-store"
-  });
-}
-
-async function fetchDatabentoOneMinuteBars(asset: AssetDefinition, options: OneMinuteFetchOptions = {}): Promise<CsvBar[]> {
-  const apiKey = process.env.DATABENTO_API_KEY;
-  if (!apiKey) throw new Error("Missing DATABENTO_API_KEY");
-  if (!asset.databentoSymbol) throw new Error(`Missing Databento symbol for ${asset.symbol}`);
-
+async function fetchProjectXOneMinuteBars(asset: AssetDefinition, options: OneMinuteFetchOptions = {}): Promise<CsvBar[]> {
   const start = oneMinuteProviderStartDate(options, 12 * 24 * 60 * 60 * 1000);
   const end = oneMinuteProviderEndDate();
-  const params = new URLSearchParams({
-    dataset: "GLBX.MDP3",
-    encoding: "json",
-    schema: "ohlcv-1m",
-    start: start.toISOString(),
-    stype_in: "continuous",
-    symbols: asset.databentoSymbol,
-    end: end.toISOString()
+  const bars = await fetchProjectXMarketDataBars(asset, {
+    endSeconds: Math.floor(end.getTime() / 1000),
+    limit: 20_000,
+    startSeconds: Math.floor(start.getTime() / 1000),
+    unit: 2,
+    unitNumber: 1
   });
 
-  let response = await requestDatabentoBars(apiKey, params);
-  if (!response.ok) {
-    const body = await response.text();
-    const availableEndMatch = body.match(/available up to '([^']+)'/);
-    if (response.status === 422 && availableEndMatch?.[1]) {
-      const retryParams = new URLSearchParams(params);
-      retryParams.set("end", new Date(availableEndMatch[1]).toISOString());
-      response = await requestDatabentoBars(apiKey, retryParams);
-    } else {
-      throw new Error(`Databento ${response.status}: ${body.slice(0, 240)}`);
-    }
-  }
-
-  if (!response.ok) {
-    const body = await response.text();
-    throw new Error(`Databento ${response.status}: ${body.slice(0, 240)}`);
-  }
-
-  return parseDatabentoMinuteBars(await response.text());
+  return filterClosedBars(
+    bars
+      .map((bar) =>
+        normalizeCsvBar({
+          time: bar.time,
+          open: bar.open,
+          high: bar.high,
+          low: bar.low,
+          close: bar.close,
+          volume: bar.volume
+        })
+      )
+      .filter((bar): bar is CsvBar => Boolean(bar)),
+    ONE_MINUTE_SECONDS
+  ).sort((left, right) => left.time - right.time);
 }
 
 async function fetchOandaOneMinuteBars(instrument: string, options: OneMinuteFetchOptions = {}): Promise<CsvBar[]> {
@@ -577,7 +481,7 @@ async function fetchTwelveDataTimeframeBars(symbol: string, interval: "1min" | "
 }
 
 async function fetchOneMinuteBars(asset: AssetDefinition, options: OneMinuteFetchOptions = {}): Promise<CsvBar[]> {
-  if (asset.market === "futures") return fetchDatabentoOneMinuteBars(asset, options);
+  if (asset.market === "futures") return fetchProjectXOneMinuteBars(asset, options);
   if ((asset.market === "forex" || asset.market === "gold_spot") && process.env.OANDA_API_TOKEN) {
     return fetchOandaOneMinuteBars(asset.oandaSymbol ?? asset.symbol, options);
   }

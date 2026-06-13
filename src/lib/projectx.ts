@@ -47,6 +47,34 @@ export type ProjectXContract = {
   tickValue?: number;
 };
 
+export type ProjectXHistoryBar = {
+  c?: number | string;
+  close?: number | string;
+  h?: number | string;
+  high?: number | string;
+  l?: number | string;
+  low?: number | string;
+  o?: number | string;
+  open?: number | string;
+  t?: string;
+  time?: string;
+  v?: number | string;
+  volume?: number | string;
+};
+
+export type ProjectXHistoryUnit = 1 | 2 | 3 | 4 | 5 | 6;
+
+export type ProjectXRetrieveBarsRequest = {
+  contractId: string;
+  endTime: string;
+  includePartialBar?: boolean;
+  limit?: number;
+  live?: boolean;
+  startTime: string;
+  unit: ProjectXHistoryUnit;
+  unitNumber: number;
+};
+
 export type ProjectXOrderType = 1 | 2 | 4 | 5 | 6 | 7;
 export type ProjectXOrderSide = 0 | 1;
 
@@ -158,6 +186,10 @@ type ProjectXPlaceOrderResponse = ProjectXBaseResponse & {
 
 type ProjectXAvailableContractsResponse = ProjectXBaseResponse & {
   contracts?: ProjectXContract[];
+};
+
+type ProjectXRetrieveBarsResponse = ProjectXBaseResponse & {
+  bars?: ProjectXHistoryBar[];
 };
 
 type ProjectXOrderSearchOpenResponse = ProjectXBaseResponse & {
@@ -338,6 +370,21 @@ export async function listProjectXAvailableContracts(token: string, live = false
   );
 
   return response.contracts ?? [];
+}
+
+export async function retrieveProjectXBars(token: string, request: ProjectXRetrieveBarsRequest): Promise<ProjectXHistoryBar[]> {
+  const response = await projectXPost<ProjectXRetrieveBarsResponse>(
+    "/api/History/retrieveBars",
+    {
+      includePartialBar: false,
+      live: false,
+      ...request,
+      limit: Math.min(Math.max(1, Math.trunc(request.limit ?? 20_000)), 20_000)
+    },
+    token
+  );
+
+  return response.bars ?? [];
 }
 
 export async function placeProjectXOrder(token: string, request: ProjectXPlaceOrderRequest): Promise<ProjectXPlaceOrderResult> {

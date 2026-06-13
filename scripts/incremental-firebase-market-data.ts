@@ -3,17 +3,21 @@ import path from "node:path";
 import assetsJson from "../config/assets.json";
 import { firebaseBucket, hasFirebaseAdmin, storageObjectPath } from "../src/lib/firebase-admin";
 import { defaultDatasetStatus, getDatasetStatus, saveDatasetStatus, type DatasetAssetCoverage } from "../src/lib/live-config";
+import { fetchProjectXMarketDataBars } from "../src/lib/projectx-market-data";
 
 type Market = "futures" | "forex" | "gold_spot" | "crypto";
 
 type AssetDefinition = {
-  databentoSymbol?: string;
+  dollarPerUnit: number;
   dataFile: string;
   key: string;
   market: Market;
   name: string;
+  sizeLabel: string;
   symbol: string;
+  tickSize: number;
   twelveDataSymbol?: string;
+  unitLabel: string;
 };
 
 type Bar = {
@@ -46,7 +50,7 @@ type AssetSyncSummary = {
   assetKey: string;
   errors: string[];
   fetchedRows: number;
-  provider: "databento" | "twelvedata";
+  provider: "projectx" | "twelvedata";
   requestedEnd?: string;
   requestedStart?: string;
   symbol: string;
@@ -68,9 +72,7 @@ const INTERVAL_SECONDS: Record<(typeof DATA_TIMEFRAMES)[number], number> = {
   "1w": 7 * 24 * 60 * 60
 };
 
-const DATABENTO_CHUNK_DAYS = 3;
-const DATABENTO_DATASET = "GLBX.MDP3";
-const DATABENTO_SCHEMA = "ohlcv-1m";
+const PROJECTX_CHUNK_DAYS = 10;
 const DEFAULT_MISSING_LOOKBACK_DAYS = 30;
 const DEFAULT_TAIL_BYTES = 64 * 1024;
 const TWELVE_CHUNK_DAYS = 3;
@@ -193,12 +195,6 @@ function isoFromSeconds(seconds: number | undefined): string | undefined {
 function secondsFromIso(value: string | undefined): number | undefined {
   const parsed = value ? Date.parse(value) : Number.NaN;
   return Number.isFinite(parsed) ? Math.floor(parsed / 1000) : undefined;
-}
-
-function normalizeDatabentoPrice(value: string): number {
-  const numeric = Number(value);
-  if (!Number.isFinite(numeric)) return Number.NaN;
-  return Math.abs(numeric) > 1_000_000 ? numeric / 1_000_000_000 : numeric;
 }
 
 function parseCsvBarLine(line: string): Bar | null {
@@ -391,95 +387,36 @@ function aggregateBars(sourceBars: Bar[], intervalSeconds: number, afterTime: nu
   return [...buckets.values()].sort((left, right) => left.time - right.time);
 }
 
-function parseDatabentoCsvBars(text: string, closedStartSeconds: number): Bar[] {
-  const bars: Bar[] = [];
-  const lines = text.split(/\r?\n/);
-  for (let index = 1; index < lines.length; index += 1) {
-    const line = lines[index]?.trim();
-    if (!line) continue;
-
-    const columns = line.split(",");
-    if (columns.length < 9) continue;
-
-    const time = Math.floor(Number(columns[0]) / 1_000_000_000);
-    const open = normalizeDatabentoPrice(columns[4] ?? "");
-    const high = normalizeDatabentoPrice(columns[5] ?? "");
-    const low = normalizeDatabentoPrice(columns[6] ?? "");
-    const close = normalizeDatabentoPrice(columns[7] ?? "");
-    const volume = Number(columns[8] ?? 0);
-    if (!Number.isFinite(time) || time > closedStartSeconds) continue;
-    if ([open, high, low, close, volume].some((value) => !Number.isFinite(value))) continue;
-    bars.push({ close, high, low, open, time, volume });
-  }
-  return bars;
-}
-
-async function requestDatabentoCsv(asset: AssetDefinition, startSeconds: number, endSeconds: number): Promise<string> {
-  const apiKey = process.env.DATABENTO_API_KEY;
-  if (!apiKey) throw new Error("Missing DATABENTO_API_KEY");
-  if (!asset.databentoSymbol) throw new Error(`Missing Databento symbol for ${asset.symbol}`);
-
-  const params = new URLSearchParams({
-    dataset: DATABENTO_DATASET,
-    encoding: "csv",
-    end: isoFromSeconds(endSeconds) ?? "",
-    schema: DATABENTO_SCHEMA,
-    start: isoFromSeconds(startSeconds) ?? "",
-    stype_in: "continuous",
-    symbols: asset.databentoSymbol
-  });
-  const { response, text } = await fetchTextWithRetries(
-    `https://hist.databento.com/v0/timeseries.get_range?${params.toString()}`,
-    {
-      headers: {
-        Authorization: `Basic ${Buffer.from(`${apiKey}:`).toString("base64")}`
-      }
-    },
-    60_000,
-    2
-  );
-  if (response.ok) return text;
-
-  if (response.status === 422) {
-    let parsed: { detail?: { payload?: { available_end?: string } } } | null = null;
-    try {
-      parsed = JSON.parse(text) as { detail?: { payload?: { available_end?: string } } };
-    } catch {
-      parsed = null;
-    }
-    const availableEnd = parsed?.detail?.payload?.available_end;
-    if (availableEnd) throw new Error(`DATABENTO_AVAILABLE_END:${availableEnd}`);
-  }
-
-  throw new Error(`Databento ${response.status}: ${text.slice(0, 240)}`);
-}
-
-async function fetchDatabentoBars(asset: AssetDefinition, startSeconds: number, endSeconds: number): Promise<Bar[]> {
+async function fetchProjectXBars(asset: AssetDefinition, startSeconds: number, endSeconds: number): Promise<Bar[]> {
   const bars: Bar[] = [];
   let cursor = startSeconds;
-  let effectiveEnd = endSeconds;
 
-  while (cursor <= effectiveEnd) {
-    const chunkEndExclusive = Math.min(addDays(cursor, DATABENTO_CHUNK_DAYS), effectiveEnd + 60);
-    let text: string;
-    try {
-      text = await requestDatabentoCsv(asset, cursor, chunkEndExclusive);
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      if (!message.startsWith("DATABENTO_AVAILABLE_END:")) throw error;
-      const availableSeconds = Math.floor(Date.parse(message.slice("DATABENTO_AVAILABLE_END:".length)) / 1000);
-      if (!Number.isFinite(availableSeconds) || availableSeconds < cursor) break;
-      effectiveEnd = Math.min(effectiveEnd, availableSeconds - 60);
-      continue;
-    }
-
-    const chunkBars = parseDatabentoCsvBars(text, effectiveEnd);
-    bars.push(...chunkBars);
+  while (cursor <= endSeconds) {
+    const chunkEndExclusive = Math.min(addDays(cursor, PROJECTX_CHUNK_DAYS), endSeconds + 60);
+    const chunkBars = await fetchProjectXMarketDataBars(asset, {
+      endSeconds: chunkEndExclusive,
+      limit: 20_000,
+      startSeconds: cursor,
+      unit: 2,
+      unitNumber: 1
+    });
+    bars.push(
+      ...chunkBars
+        .filter((bar) => bar.time <= endSeconds)
+        .map((bar) => ({
+          close: bar.close,
+          high: bar.high,
+          low: bar.low,
+          open: bar.open,
+          time: bar.time,
+          volume: bar.volume
+        }))
+    );
     console.log(
-      `[${asset.symbol}] Databento chunk ${isoFromSeconds(cursor)} to ${isoFromSeconds(chunkEndExclusive)} rows=${chunkBars.length}`
+      `[${asset.symbol}] ProjectX chunk ${isoFromSeconds(cursor)} to ${isoFromSeconds(chunkEndExclusive)} rows=${chunkBars.length}`
     );
     if (chunkEndExclusive <= cursor) break;
-    cursor = chunkEndExclusive;
+    cursor = chunkEndExclusive + 60;
   }
 
   return uniqueSortedBars(bars);
@@ -620,7 +557,7 @@ async function fetchSourceBars(
   startSeconds: number,
   endSeconds: number
 ): Promise<Bar[]> {
-  if (asset.market === "futures") return fetchDatabentoBars(asset, startSeconds, endSeconds);
+  if (asset.market === "futures") return fetchProjectXBars(asset, startSeconds, endSeconds);
   return fetchTwelveBars(keyPool, asset, startSeconds, endSeconds);
 }
 
@@ -679,7 +616,7 @@ async function syncAsset(
   const states = await readAssetStates(asset, options);
   const startSeconds = lowerBoundStart(asset, states, existingCoverage, options);
   const endSeconds = closedBucketStart(INTERVAL_SECONDS[SOURCE_TIMEFRAME]);
-  const provider = asset.market === "futures" ? "databento" : "twelvedata";
+  const provider = asset.market === "futures" ? "projectx" : "twelvedata";
   const summary: AssetSyncSummary = {
     assetKey: asset.key,
     errors: [],

@@ -126,7 +126,6 @@ export type StrategyRule = {
   assetKey: string;
   market: Market;
   symbol: string;
-  databentoSymbol?: string;
   phase: StrategyPhase;
   label: string;
   variantId?: string;

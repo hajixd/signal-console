@@ -1,11 +1,10 @@
 from __future__ import annotations
 
 import argparse
-import base64
 import csv
 import json
 import os
-import re
+import subprocess
 import time
 from collections import deque
 from dataclasses import dataclass
@@ -25,7 +24,7 @@ CONFIG_PATH = PROJECT_ROOT / "config" / "assets.json"
 DATA_15M_ROOT = PROJECT_ROOT / "data" / "15m"
 ENV_FALLBACK_PATH = PROJECT_ROOT / ".env.local"
 DEFAULT_START = datetime(2020, 1, 1, tzinfo=UTC)
-DATABENTO_WINDOW = timedelta(days=120)
+PROJECTX_WINDOW = timedelta(days=120)
 TWELVE_DATA_WINDOW = timedelta(days=50)
 TWELVE_DATA_CALLS_PER_MINUTE = 7
 PACIFIC_TZ = ZoneInfo("America/Los_Angeles")
@@ -39,7 +38,6 @@ class AssetConfig:
     name: str
     market: str
     data_file: str
-    databento_symbol: str | None = None
     twelve_data_symbol: str | None = None
 
 
@@ -124,7 +122,6 @@ def load_assets() -> dict[str, AssetConfig]:
             name=raw["name"],
             market=raw["market"],
             data_file=raw["dataFile"],
-            databento_symbol=raw.get("databentoSymbol"),
             twelve_data_symbol=raw.get("twelveDataSymbol"),
         )
     return assets
@@ -143,19 +140,8 @@ def default_end_date() -> datetime:
     return datetime.now(UTC).replace(second=0, microsecond=0)
 
 
-def normalize_numeric(value: Any) -> float:
-    numeric = float(value)
-    if abs(numeric) > 1_000_000:
-        return numeric / 1_000_000_000
-    return numeric
-
-
 def csv_number(value: float) -> str:
     return f"{value:.10f}".rstrip("0").rstrip(".") or "0"
-
-
-def floor_to_15m(epoch_seconds: int) -> int:
-    return epoch_seconds - (epoch_seconds % 900)
 
 
 def market_is_open_at(asset: AssetConfig, timestamp: int) -> bool:
@@ -247,103 +233,74 @@ def daterange(start: datetime, end: datetime, step: timedelta) -> list[tuple[dat
     return windows
 
 
-def parse_databento_available_end(body: str) -> datetime | None:
-    match = re.search(r"available up to '([^']+)'", body)
-    if not match:
-        return None
-    parsed = datetime.fromisoformat(match.group(1))
-    if parsed.tzinfo is None:
-        parsed = parsed.replace(tzinfo=UTC)
-    return parsed.astimezone(UTC)
+def projectx_bridge_command(asset: AssetConfig, start: datetime, end: datetime) -> list[str]:
+    return [
+        "node",
+        "--env-file=.env.local",
+        "--import",
+        "tsx",
+        "scripts/projectx-fetch-bars.ts",
+        f"--asset={asset.key}",
+        f"--start={start.isoformat().replace('+00:00', 'Z')}",
+        f"--end={end.isoformat().replace('+00:00', 'Z')}",
+        "--unit=2",
+        "--unit-number=15",
+        "--limit=20000",
+    ]
 
 
-def databento_request(api_key: str, params: dict[str, str]) -> Any:
-    request = Request(f"https://hist.databento.com/v0/timeseries.get_range?{urlencode(params)}")
-    encoded = base64.b64encode(f"{api_key}:".encode("utf-8")).decode("ascii")
-    request.add_header("Authorization", f"Basic {encoded}")
-    return urlopen(request, timeout=120)
+def fetch_projectx_window_15m(asset: AssetConfig, start: datetime, end: datetime) -> list[CandleBar]:
+    result = subprocess.run(
+        projectx_bridge_command(asset, start, end),
+        cwd=PROJECT_ROOT,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if result.returncode != 0:
+        detail = (result.stderr or result.stdout or "Unknown ProjectX bridge error").strip()
+        raise RuntimeError(f"ProjectX bridge failed for {asset.key}: {detail[-800:]}")
+
+    try:
+        payload = json.loads(result.stdout or "[]")
+    except json.JSONDecodeError as exc:
+        raise RuntimeError(f"ProjectX bridge returned unreadable JSON for {asset.key}: {result.stdout[:240]}") from exc
+
+    bars: list[CandleBar] = []
+    for raw_bar in payload:
+        try:
+            timestamp = int(raw_bar["time"])
+            if timestamp + 900 > closed_15m_cutoff():
+                continue
+            if not market_is_open_at(asset, timestamp):
+                continue
+            bars.append(
+                CandleBar(
+                    time=timestamp,
+                    open=float(raw_bar["open"]),
+                    high=float(raw_bar["high"]),
+                    low=float(raw_bar["low"]),
+                    close=float(raw_bar["close"]),
+                    volume=float(raw_bar.get("volume", 0) or 0),
+                )
+            )
+        except (KeyError, TypeError, ValueError):
+            continue
+
+    return bars
 
 
-def fetch_databento_15m(asset: AssetConfig, start: datetime, end: datetime) -> list[CandleBar]:
-    api_key = env_value("DATABENTO_API_KEY")
-    if not api_key:
-        raise RuntimeError("Missing DATABENTO_API_KEY")
-    if not asset.databento_symbol:
-        raise RuntimeError(f"Missing Databento symbol for {asset.key}")
-
+def fetch_projectx_15m(asset: AssetConfig, start: datetime, end: datetime) -> list[CandleBar]:
     bars_by_time: dict[int, CandleBar] = {}
-    windows = daterange(start, end, DATABENTO_WINDOW)
+    windows = daterange(start, end, PROJECTX_WINDOW)
 
     for window_start, window_end in windows:
-        effective_end = window_end
-        server_error_attempts = 0
-        while True:
-            params = {
-                "dataset": "GLBX.MDP3",
-                "schema": "ohlcv-1m",
-                "stype_in": "continuous",
-                "symbols": asset.databento_symbol,
-                "start": window_start.isoformat().replace("+00:00", "Z"),
-                "end": effective_end.isoformat().replace("+00:00", "Z"),
-                "encoding": "json",
-            }
-            print(
-                f"[databento] {asset.key}: {window_start.date().isoformat()} -> {effective_end.date().isoformat()}",
-                flush=True,
-            )
-            try:
-                with databento_request(api_key, params) as response:
-                    current_bucket: CandleBar | None = None
-                    for raw_line in response:
-                        line = raw_line.decode("utf-8", "replace").strip()
-                        if not line or line.startswith("{\"symbol_mapping\""):
-                            continue
-                        item = json.loads(line)
-                        raw_time = item.get("hd", {}).get("ts_event")
-                        if raw_time is None:
-                            continue
-                        event_seconds = int(str(raw_time).strip()) // 1_000_000_000
-                        bucket = floor_to_15m(event_seconds)
-                        if bucket + 900 > closed_15m_cutoff():
-                            continue
-                        if not market_is_open_at(asset, bucket):
-                            continue
-                        open_ = normalize_numeric(item["open"])
-                        high = normalize_numeric(item["high"])
-                        low = normalize_numeric(item["low"])
-                        close = normalize_numeric(item["close"])
-                        volume = float(item.get("volume", 0) or 0)
-                        if current_bucket is None or current_bucket.time != bucket:
-                            if current_bucket is not None:
-                                bars_by_time[current_bucket.time] = current_bucket
-                            current_bucket = CandleBar(bucket, open_, high, low, close, volume)
-                            continue
-                        current_bucket.high = max(current_bucket.high, high)
-                        current_bucket.low = min(current_bucket.low, low)
-                        current_bucket.close = close
-                        current_bucket.volume += volume
-                    if current_bucket is not None:
-                        bars_by_time[current_bucket.time] = current_bucket
-                break
-            except HTTPError as exc:
-                body = exc.read().decode("utf-8", "replace")
-                available_end = parse_databento_available_end(body)
-                if exc.code == 422 and available_end and available_end > window_start and available_end < effective_end:
-                    effective_end = available_end
-                    continue
-                if exc.code in {500, 502, 503, 504} and server_error_attempts < 3:
-                    server_error_attempts += 1
-                    wait_seconds = 5 * server_error_attempts
-                    print(
-                        f"[databento] {asset.key}: HTTP {exc.code}; retrying in {wait_seconds}s "
-                        f"({server_error_attempts}/3)",
-                        flush=True,
-                    )
-                    time.sleep(wait_seconds)
-                    continue
-                raise RuntimeError(f"Databento {exc.code} for {asset.key}: {body[:240]}") from exc
-            except URLError as exc:
-                raise RuntimeError(f"Databento request failed for {asset.key}: {exc}") from exc
+        print(
+            f"[projectx] {asset.key}: {window_start.date().isoformat()} -> {window_end.date().isoformat()}",
+            flush=True,
+        )
+        for bar in fetch_projectx_window_15m(asset, window_start, window_end):
+            bars_by_time[bar.time] = bar
 
     return [bars_by_time[timestamp] for timestamp in sorted(bars_by_time)]
 
@@ -436,7 +393,7 @@ def fetch_twelvedata_15m(asset: AssetConfig, start: datetime, end: datetime) -> 
 
 def fetch_asset(asset: AssetConfig, start: datetime, end: datetime) -> list[CandleBar]:
     if asset.market == "futures":
-        return fetch_databento_15m(asset, start, end)
+        return fetch_projectx_15m(asset, start, end)
     if asset.market in {"forex", "gold_spot", "crypto"}:
         return fetch_twelvedata_15m(asset, start, end)
     raise RuntimeError(f"Unsupported market for import: {asset.market}")
@@ -459,7 +416,7 @@ def selected_assets(all_assets: dict[str, AssetConfig], requested: list[str] | N
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Download 15m candles from Databento and Twelve Data")
+    parser = argparse.ArgumentParser(description="Download 15m candles from ProjectX and Twelve Data")
     parser.add_argument("--asset", action="append", help="Asset key to import. Repeat to import multiple assets.")
     parser.add_argument("--all-assets", action="store_true", help="Import every asset in config/assets.json.")
     parser.add_argument("--incremental", action="store_true", help="Start from the existing local CSV tail and merge new bars into it.")

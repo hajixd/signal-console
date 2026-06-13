@@ -2,6 +2,7 @@ import { createWriteStream, existsSync, mkdirSync, readFileSync, renameSync, rmS
 import { mkdir, writeFile } from "node:fs/promises";
 import { once } from "node:events";
 import path from "node:path";
+import { fetchProjectXMarketDataBars } from "../src/lib/projectx-market-data";
 
 type Market = "futures" | "forex" | "gold_spot";
 
@@ -11,7 +12,10 @@ type AssetDefinition = {
   name: string;
   market: Market;
   dataFile: string;
-  databentoSymbol?: string;
+  tickSize: number;
+  dollarPerUnit: number;
+  sizeLabel: string;
+  unitLabel: string;
   twelveDataSymbol?: string;
   oandaSymbol?: string;
 };
@@ -37,7 +41,7 @@ type AssetDownloadSummary = {
   assetKey: string;
   symbol: string;
   market: Market;
-  provider: "databento" | "twelvedata";
+  provider: "projectx" | "twelvedata";
   requestedStart: string;
   requestedEnd: string;
   files: {
@@ -77,9 +81,7 @@ const ASSET_CONFIG_PATH = path.join(PROJECT_ROOT, "config", "assets.json");
 const DATA_ROOT = path.join(PROJECT_ROOT, "data");
 const REPORT_ROOT = path.join(PROJECT_ROOT, ".local", "intraday-downloads");
 
-const DATABENTO_DATASET = "GLBX.MDP3";
-const DATABENTO_SCHEMA = "ohlcv-1m";
-const DATABENTO_CHUNK_DAYS = 365;
+const PROJECTX_CHUNK_DAYS = 10;
 const TWELVE_5M_CHUNK_DAYS = 17;
 const TWELVE_1M_CHUNK_DAYS = 3;
 const TWELVE_INTRADAY_HISTORY_FLOOR_SECONDS = Math.floor(Date.parse("2022-01-01T00:00:00Z") / 1000);
@@ -193,12 +195,6 @@ function isoFromSeconds(seconds: number): string {
 
 function formatTwelveDate(seconds: number): string {
   return isoFromSeconds(seconds).slice(0, 19).replace("T", " ");
-}
-
-function normalizeDatabentoPrice(value: string): number {
-  const numeric = Number(value);
-  if (!Number.isFinite(numeric)) return Number.NaN;
-  return Math.abs(numeric) > 1_000_000 ? numeric / 1_000_000_000 : numeric;
 }
 
 function marketIsOpenAt(asset: AssetDefinition, seconds: number): boolean {
@@ -369,31 +365,6 @@ class TwelveDataKeyPool {
   }
 }
 
-function parseDatabentoCsvBars(asset: AssetDefinition, text: string, closedStartSeconds: number): Bar[] {
-  const bars: Bar[] = [];
-  const lines = text.split(/\r?\n/);
-  for (let index = 1; index < lines.length; index += 1) {
-    const line = lines[index]?.trim();
-    if (!line) continue;
-
-    const columns = line.split(",");
-    if (columns.length < 9) continue;
-
-    const rawTimestamp = columns[0]!;
-    const seconds = Math.floor(Number(rawTimestamp) / 1_000_000_000);
-    const open = normalizeDatabentoPrice(columns[4]!);
-    const high = normalizeDatabentoPrice(columns[5]!);
-    const low = normalizeDatabentoPrice(columns[6]!);
-    const close = normalizeDatabentoPrice(columns[7]!);
-    const volume = Number(columns[8]!);
-    if (!Number.isFinite(seconds) || seconds > closedStartSeconds || !marketIsOpenAt(asset, seconds)) continue;
-    if ([open, high, low, close, volume].some((value) => !Number.isFinite(value))) continue;
-
-    bars.push({ time: seconds, open, high, low, close, volume });
-  }
-  return bars;
-}
-
 function parseTwelveBars(asset: AssetDefinition, values: TwelveDataResponse["values"], closedStartSeconds: number): Bar[] {
   if (!values?.length) return [];
 
@@ -413,57 +384,12 @@ function parseTwelveBars(asset: AssetDefinition, values: TwelveDataResponse["val
     .filter((bar): bar is Bar => Boolean(bar));
 }
 
-async function requestDatabentoCsv(asset: AssetDefinition, startSeconds: number, endSeconds: number): Promise<string> {
-  const apiKey = process.env.DATABENTO_API_KEY;
-  if (!apiKey) {
-    throw new Error("Missing DATABENTO_API_KEY");
-  }
-  if (!asset.databentoSymbol) {
-    throw new Error(`Missing Databento symbol for ${asset.symbol}`);
-  }
-
-  const params = new URLSearchParams({
-    dataset: DATABENTO_DATASET,
-    schema: DATABENTO_SCHEMA,
-    stype_in: "continuous",
-    symbols: asset.databentoSymbol,
-    start: isoFromSeconds(startSeconds),
-    end: isoFromSeconds(endSeconds),
-    encoding: "csv"
-  });
-
-  const response = await fetch(`https://hist.databento.com/v0/timeseries.get_range?${params.toString()}`, {
-    headers: {
-      Authorization: `Basic ${Buffer.from(`${apiKey}:`).toString("base64")}`
-    }
-  });
-
-  const text = await response.text();
-  if (response.ok) return text;
-
-  if (response.status === 422) {
-    let parsed: { detail?: { payload?: { available_end?: string } } } | null = null;
-    try {
-      parsed = JSON.parse(text) as { detail?: { payload?: { available_end?: string } } };
-    } catch {
-      parsed = null;
-    }
-    const availableEnd = parsed?.detail?.payload?.available_end;
-    if (availableEnd) {
-      const error = new Error(`DATABENTO_AVAILABLE_END:${availableEnd}`);
-      throw error;
-    }
-  }
-
-  throw new Error(`Databento ${response.status}: ${text.slice(0, 240)}`);
-}
-
-async function downloadDatabentoAsset(asset: AssetDefinition, startSeconds: number, endSeconds: number, skipOneMinute: boolean): Promise<AssetDownloadSummary> {
+async function downloadProjectXAsset(asset: AssetDefinition, startSeconds: number, endSeconds: number, skipOneMinute: boolean): Promise<AssetDownloadSummary> {
   const summary: AssetDownloadSummary = {
     assetKey: asset.key,
     symbol: asset.symbol,
     market: asset.market,
-    provider: "databento",
+    provider: "projectx",
     requestedStart: isoFromSeconds(startSeconds),
     requestedEnd: isoFromSeconds(endSeconds),
     files: {},
@@ -478,36 +404,19 @@ async function downloadDatabentoAsset(asset: AssetDefinition, startSeconds: numb
   const fiveMinuteAggregator = new FixedIntervalAggregator(5 * 60, fiveMinuteWriter);
 
   let cursor = startSeconds;
-  let effectiveEnd = endSeconds;
   let complete = true;
-  let loggedAvailableEndNote = false;
 
   try {
-    while (cursor <= effectiveEnd) {
-      const chunkEnd = Math.min(addDays(cursor, DATABENTO_CHUNK_DAYS), effectiveEnd + 60);
-      let text: string;
-      try {
-        text = await requestDatabentoCsv(asset, cursor, chunkEnd);
-      } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
-        if (message.startsWith("DATABENTO_AVAILABLE_END:")) {
-          const availableIso = message.slice("DATABENTO_AVAILABLE_END:".length);
-          const availableSeconds = Math.floor(Date.parse(availableIso) / 1000);
-          if (!Number.isFinite(availableSeconds) || availableSeconds < cursor) {
-            throw error;
-          }
-          effectiveEnd = Math.min(effectiveEnd, availableSeconds);
-          summary.requestedEnd = isoFromSeconds(effectiveEnd);
-          if (!loggedAvailableEndNote) {
-            summary.notes.push(`Databento currently available through ${availableIso}.`);
-            loggedAvailableEndNote = true;
-          }
-          continue;
-        }
-        throw error;
-      }
+    while (cursor <= endSeconds) {
+      const chunkEnd = Math.min(addDays(cursor, PROJECTX_CHUNK_DAYS), endSeconds + 60);
+      const bars = (await fetchProjectXMarketDataBars(asset, {
+        endSeconds: chunkEnd,
+        limit: 20_000,
+        startSeconds: cursor,
+        unit: 2,
+        unitNumber: 1
+      })).filter((bar) => bar.time <= minuteClosedCutoff && marketIsOpenAt(asset, bar.time));
 
-      const bars = parseDatabentoCsvBars(asset, text, minuteClosedCutoff);
       for (const bar of bars) {
         if (minuteWriter && bar.time <= minuteClosedCutoff) {
           await minuteWriter.writeBar(bar);
@@ -517,11 +426,12 @@ async function downloadDatabentoAsset(asset: AssetDefinition, startSeconds: numb
         }
       }
 
-      cursor = chunkEnd;
       if (bars.length) {
         const lastTime = bars[bars.length - 1]!.time;
-        console.log(`[${asset.symbol}] Databento processed through ${isoFromSeconds(lastTime)}`);
+        console.log(`[${asset.symbol}] ProjectX processed through ${isoFromSeconds(lastTime)}`);
       }
+      if (chunkEnd <= cursor) break;
+      cursor = chunkEnd + 60;
     }
   } catch (error) {
     complete = false;
@@ -770,7 +680,7 @@ async function main(): Promise<void> {
 
     let summary: AssetDownloadSummary;
     if (asset.market === "futures") {
-      summary = await downloadDatabentoAsset(asset, startSeconds, oneMinuteEndSeconds, options.skipOneMinute);
+      summary = await downloadProjectXAsset(asset, startSeconds, oneMinuteEndSeconds, options.skipOneMinute);
     } else {
       summary = await downloadTwelveDataAsset(keyPool, asset, startSeconds, fiveMinuteEndSeconds, oneMinuteEndSeconds, options);
     }

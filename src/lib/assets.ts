@@ -13,7 +13,6 @@ export type AssetDefinition = {
   dollarPerUnit: number;
   sizeLabel: string;
   unitLabel: string;
-  databentoSymbol?: string;
   twelveDataSymbol?: string;
   oandaSymbol?: string;
 };
