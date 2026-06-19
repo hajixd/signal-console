@@ -94,7 +94,7 @@ export async function getTursoDocument(collection: string, id: string): Promise<
 export async function listTursoDocuments(collection: string, limit = 500): Promise<TursoDocument[]> {
   const result = await withTursoTimeout(
     tursoClient().execute({
-      args: [collection, Math.max(1, Math.min(1000, Math.round(limit)))],
+      args: [collection, Math.max(1, Math.min(5000, Math.round(limit)))],
       sql: [
         "SELECT collection, id, payload_json, sort_time_millis, created_at, updated_at",
         "FROM app_documents",

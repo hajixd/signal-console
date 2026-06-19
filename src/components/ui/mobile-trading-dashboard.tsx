@@ -698,6 +698,8 @@ function MobileMarketModeControl({
 
     const nextParams = new URLSearchParams(searchParams.toString());
     nextParams.set("market", market);
+    nextParams.delete("strategies");
+    nextParams.delete("strategySizes");
     const href = `${pathname}?${nextParams.toString()}`;
     pendingMarketRef.current = market;
     setPendingMarket(market);

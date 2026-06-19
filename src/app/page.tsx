@@ -44,11 +44,19 @@ import { assetDisplayNameForSymbol, assetForSymbol, assetLookupSymbolForSymbol }
 import { DEFAULT_CHALLENGE_RULES, type ChallengeRules } from "@/lib/challenge";
 import { analyzeBacktestDataValidity, dataValidityClass, type DataValidityResult, type DataValidityTone } from "@/lib/data-validity";
 import { dollarPerUnit, instrumentSizeLabel, instrumentUnitLabel, recommendedSizeMultiplier } from "@/lib/instruments";
-import { defaultDatasetStatus, getDatasetStatus, getLiveConfig, type DatasetStatus, type LiveConfig } from "@/lib/live-config";
+import {
+  dashboardSelectedStrategyIdsForMarket,
+  defaultDatasetStatus,
+  enabledStrategyIdsForMarket,
+  getDatasetStatus,
+  getLiveConfig,
+  type DatasetStatus,
+  type LiveConfig
+} from "@/lib/live-config";
 import { allRules } from "@/lib/live-signals";
 import { fetchStoredAssetBars } from "@/lib/market-data-store";
 import { readDataText } from "@/lib/project-data";
-import { parseStrategySelection } from "@/lib/strategy-selection";
+import { parseStrategySelection, selectionIncludesEveryKey } from "@/lib/strategy-selection";
 import { getTrades } from "@/lib/storage";
 import { discordChannelInviteLink, discordConfigured as discordIsConfigured } from "@/lib/discord";
 import { telegramGroupInviteLink } from "@/lib/telegram";
@@ -65,7 +73,13 @@ const HISTORY_LOOKBACK_MS = 365 * 24 * 60 * 60 * 1000;
 const EMPTY_LIVE_CONFIG: LiveConfig = {
   customScaleRanges: {},
   dashboardSettings: {},
+  dashboardSelectedStrategyIdsByMarket: {},
+  dashboardSelectedStrategyIds: [],
+  enabledStrategyIdsByMarket: {},
+  enabledStrategyIds: [],
+  dashboardSelectedDatasetIdsByMarket: {},
   dashboardSelectedDatasetIds: [],
+  enabledDatasetIdsByMarket: {},
   enabledDatasetIds: [],
   strategyEdits: {}
 };
@@ -532,6 +546,10 @@ function strategyVisibleInMarket(strategyMarket: string | undefined, activeMarke
 function normalizedDashboardMarket(value: string | undefined): MarketTabKey | undefined {
   if (value === "gold_spot") return "forex";
   return value === "forex" || value === "futures" ? value : undefined;
+}
+
+function liveAlertDashboardMarket(trade: Pick<TradeAlert, "market" | "symbol">): MarketTabKey | undefined {
+  return normalizedDashboardMarket(trade.market) ?? normalizedDashboardMarket(assetForSymbol(trade.symbol)?.market);
 }
 
 function marketLabel(value: string | undefined): string {
@@ -1562,11 +1580,10 @@ export default async function Home({ searchParams }: HomeProps) {
   const latestTradeAt = latestIsoTime([latestLiveTradeAt(liveTrades), latestBacktestTradeAt]);
   const backtestManifestAt = backtestFreshness.generatedAt;
   const dataEndsAt = backtestFreshness.computedThroughAt ?? latestMarketDataBarAt;
-  const historyWindowEndMs = Number.isFinite(Date.parse(dataEndsAt ?? ""))
-    ? Date.parse(dataEndsAt!)
-    : Number.isFinite(Date.parse(latestTradeAt ?? ""))
-      ? Date.parse(latestTradeAt!)
-      : Date.now();
+  const historyWindowEndAt = latestIsoTime([dataEndsAt, latestTradeAt]);
+  const historyWindowEndMs = Number.isFinite(Date.parse(historyWindowEndAt ?? ""))
+    ? Date.parse(historyWindowEndAt!)
+    : Date.now();
   const historyWindowStartMs = historyWindowEndMs - HISTORY_LOOKBACK_MS;
   const backtestBehindMarketData = false;
   const now = new Date();
@@ -1704,8 +1721,10 @@ export default async function Home({ searchParams }: HomeProps) {
   const strategyOptions = allStrategyOptions.filter((option) => strategyVisibleInMarket(option.market, activeMarket));
   const optionByKey = new Map(strategyOptions.map((option) => [option.key, option]));
   const allKeys = strategyOptions.map((option) => option.key);
-  const persistedLiveEnabledKeys = liveConfig.enabledDatasetIds.filter((key) => allKeys.includes(key));
-  const persistedSelectedKeys = liveConfig.dashboardSelectedDatasetIds.filter((key) => allKeys.includes(key));
+  const persistedLiveEnabledSource = enabledStrategyIdsForMarket(liveConfig, activeMarket);
+  const persistedSelectedSource = dashboardSelectedStrategyIdsForMarket(liveConfig, activeMarket);
+  const persistedLiveEnabledKeys = persistedLiveEnabledSource.filter((key) => allKeys.includes(key));
+  const persistedSelectedKeys = persistedSelectedSource.filter((key) => allKeys.includes(key));
   const recentDefaultKeys = strategyOptions.slice(0, DEFAULT_SELECTED_STRATEGY_COUNT).map((option) => option.key);
   const defaultSelectedKeys = persistedLiveEnabledKeys.length ? persistedLiveEnabledKeys : persistedSelectedKeys.length ? persistedSelectedKeys : recentDefaultKeys;
   const selectedKeys = parseStrategySelection(params?.strategies, allKeys, defaultSelectedKeys);
@@ -1716,6 +1735,9 @@ export default async function Home({ searchParams }: HomeProps) {
   const selectedBacktestTrades = await getBacktestTradesForStrategies(selectedKeys);
   const activeMarketStats = backtestStats.filter((stat) => activeMarketKeySet.has(stat.datasetId));
   const activeMarketBacktestTradeCount = activeMarketStats.reduce((sum, stat) => sum + Math.max(0, stat.trades), 0);
+  const activeMarketBacktestTrades = selectionIncludesEveryKey(selectedKeys, allKeys)
+    ? selectedBacktestTrades
+    : await getBacktestTradesForStrategies(allKeys);
   const optionByLiveKey = new Map<string, StrategyOption>();
   for (const option of strategyOptions) {
     for (const key of [option.key, option.datasetId, option.logicalKey, ...option.logicalKeys]) {
@@ -1739,24 +1761,23 @@ export default async function Home({ searchParams }: HomeProps) {
       .filter((option) => selectedKeySet.has(option.key))
       .flatMap((option) => option.aliases)
   );
-  const selectedLiveTrades = liveTrades.filter(
-    (trade) =>
-      (trade.datasetId && selectedLiveTradeKeys.has(trade.datasetId)) ||
-      (trade.strategyKey && selectedLiveTradeKeys.has(trade.strategyKey)) ||
-      (trade.logicalStrategyKey && selectedLiveTradeKeys.has(trade.logicalStrategyKey)) ||
-      selectedStrategyNames.has(trade.strategy)
+  const liveTradeMatchesSelectedStrategy = (trade: TradeAlert): boolean =>
+    (trade.datasetId && selectedLiveTradeKeys.has(trade.datasetId)) ||
+    (trade.strategyKey && selectedLiveTradeKeys.has(trade.strategyKey)) ||
+    (trade.logicalStrategyKey && selectedLiveTradeKeys.has(trade.logicalStrategyKey)) ||
+    selectedStrategyNames.has(trade.strategy);
+  const activeMarketLiveTrades = liveTrades.filter(
+    (trade) => Boolean(optionForLiveTrade(trade)) || liveAlertDashboardMarket(trade) === activeMarket
   );
-  const selectedLiveEventRows = selectedLiveTrades.flatMap((trade) =>
+  const selectedLiveTrades = activeMarketLiveTrades.filter(liveTradeMatchesSelectedStrategy);
+  const activeMarketLiveEventRows = activeMarketLiveTrades.flatMap((trade) =>
     liveTradeEvents(trade).map((event, eventIndex) => ({
       event,
       eventIndex,
       trade
     }))
   );
-  const activeMarketLiveTrades = liveTrades.filter(
-    (trade) => Boolean(optionForLiveTrade(trade)) || normalizedDashboardMarket(trade.market) === activeMarket
-  );
-  const historyBacktestTrades = selectedBacktestTrades.filter((trade) => backtestTradeInWindow(trade, historyWindowStartMs, historyWindowEndMs));
+  const historyBacktestTrades = activeMarketBacktestTrades.filter((trade) => backtestTradeInWindow(trade, historyWindowStartMs, historyWindowEndMs));
   const selectedDataEndAt =
     strategyOptions
       .filter((option) => selectedKeySet.has(option.key))
@@ -1875,7 +1896,7 @@ export default async function Home({ searchParams }: HomeProps) {
   const visibleStoredBacktestHistoryRows = dedupeTradeHistoryRows(storedBacktestHistoryRows);
   const liveOpenPriceConfigs = new Map<string, LatestLivePriceConfig>();
   for (const trade of activeMarketLiveTrades) {
-    if (!selectedLiveTrades.includes(trade) || liveTradeClosed(trade)) continue;
+    if (liveTradeClosed(trade)) continue;
     const config = liveTradeLatestPriceConfig(trade, optionForLiveTrade(trade));
     if (config) liveOpenPriceConfigs.set(config.key, config);
   }
@@ -1897,7 +1918,6 @@ export default async function Home({ searchParams }: HomeProps) {
     ).filter((entry): entry is readonly [string, LatestLivePrice] => Boolean(entry))
   );
   const liveHistoryRows: TradeHistoryRow[] = activeMarketLiveTrades
-    .filter((trade) => selectedLiveTrades.includes(trade))
     .filter((trade) => timeInWindow(trade.signalTime, historyWindowStartMs, historyWindowEndMs))
     .filter((trade) => {
       const isClosed = liveTradeClosed(trade);
@@ -2149,9 +2169,14 @@ export default async function Home({ searchParams }: HomeProps) {
       value: fmtNumber(closedLiveAlertCount)
     },
     {
-      detail: "Rendered signal lifecycle rows for the currently selected strategies.",
+      detail: "Alerts that match the currently selected strategies.",
+      label: "Selected alerts",
+      value: fmtNumber(selectedLiveTrades.length)
+    },
+    {
+      detail: "Rendered signal lifecycle rows for all active-market alerts.",
       label: "Event rows",
-      value: fmtNumber(selectedLiveEventRows.length)
+      value: fmtNumber(activeMarketLiveEventRows.length)
     },
     {
       detail: "Most recent live alert or lifecycle update for the active market.",
@@ -2352,7 +2377,7 @@ export default async function Home({ searchParams }: HomeProps) {
       icon: "live",
       id: "live",
       label: "Live",
-      meta: `${fmtNumber(selectedLiveTrades.length)} alerts`
+      meta: `${fmtNumber(activeMarketLiveTrades.length)} alerts`
     },
     {
       icon: "sync",
@@ -2436,8 +2461,8 @@ export default async function Home({ searchParams }: HomeProps) {
             </div>
             <div>
               <span>Live</span>
-              <strong>{fmtNumber(selectedLiveTrades.length)}</strong>
-              <small>{fmtNumber(selectedLiveEventRows.length)} events</small>
+              <strong>{fmtNumber(activeMarketLiveTrades.length)}</strong>
+              <small>{fmtNumber(activeMarketLiveEventRows.length)} events</small>
             </div>
             <div>
               <span>Sync</span>
@@ -2529,17 +2554,17 @@ export default async function Home({ searchParams }: HomeProps) {
           <div className="backtest-card-head">
             <div>
               <h2>Cron Executions</h2>
-              <p>Live alerts generated by the selected strategies.</p>
+              <p>Stored live alerts for the active market.</p>
             </div>
             <span className="count-pill">
-              Showing {fmtNumber(selectedLiveEventRows.length)} events / {fmtNumber(selectedLiveTrades.length)} alerts
+              Showing {fmtNumber(activeMarketLiveEventRows.length)} events / {fmtNumber(activeMarketLiveTrades.length)} alerts
             </span>
           </div>
 
-          {selectedLiveTrades.length === 0 ? (
+          {activeMarketLiveTrades.length === 0 ? (
             <div className="empty-state">
               <strong>No live alerts yet</strong>
-              <span>The next selected-strategy cron signal will show up here.</span>
+              <span>The next stored {marketLabel(activeMarket).toLowerCase()} cron signal will show up here.</span>
             </div>
           ) : (
             <div className="terminal-table-wrap live">
@@ -2571,7 +2596,7 @@ export default async function Home({ searchParams }: HomeProps) {
                   </tr>
                 </thead>
                 <tbody>
-                  {selectedLiveTrades.map((trade) => {
+                  {activeMarketLiveTrades.map((trade) => {
                     const option = optionForLiveTrade(trade);
                     const events = liveTradeEvents(trade);
                     const displaySymbol = liveTradeDisplaySymbol(trade);

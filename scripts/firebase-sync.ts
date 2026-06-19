@@ -429,9 +429,16 @@ async function main(): Promise<void> {
   await saveLiveConfig({
     customScaleRanges: existingConfig.customScaleRanges,
     dashboardSettings: existingConfig.dashboardSettings,
+    dashboardSelectedStrategyIdsByMarket: existingConfig.dashboardSelectedStrategyIdsByMarket,
+    dashboardSelectedStrategyIds:
+      existingConfig.dashboardSelectedStrategyIds.length > 0 ? existingConfig.dashboardSelectedStrategyIds : dashboardDefault,
+    dashboardSelectedDatasetIdsByMarket: existingConfig.dashboardSelectedDatasetIdsByMarket,
     dashboardSelectedDatasetIds:
-      existingConfig.dashboardSelectedDatasetIds.length > 0 ? existingConfig.dashboardSelectedDatasetIds : dashboardDefault,
-    enabledDatasetIds: existingConfig.enabledDatasetIds.length > 0 ? existingConfig.enabledDatasetIds : liveDatasetIds,
+      existingConfig.dashboardSelectedStrategyIds.length > 0 ? existingConfig.dashboardSelectedStrategyIds : dashboardDefault,
+    enabledStrategyIdsByMarket: existingConfig.enabledStrategyIdsByMarket,
+    enabledStrategyIds: existingConfig.enabledStrategyIds.length > 0 ? existingConfig.enabledStrategyIds : liveDatasetIds,
+    enabledDatasetIdsByMarket: existingConfig.enabledDatasetIdsByMarket,
+    enabledDatasetIds: existingConfig.enabledStrategyIds.length > 0 ? existingConfig.enabledStrategyIds : liveDatasetIds,
     strategyEdits: existingConfig.strategyEdits
   });
 

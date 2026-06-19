@@ -51,6 +51,8 @@ export default function MarketSwitchTabs({ activeMarket, persistActiveMarket, ta
       tabs.map((tab) => {
         const nextParams = new URLSearchParams(searchParams.toString());
         nextParams.set("market", tab.key);
+        nextParams.delete("strategies");
+        nextParams.delete("strategySizes");
         return [tab.key, `${pathname}?${nextParams.toString()}`];
       })
     ) as Record<MarketSwitchTab["key"], string>;

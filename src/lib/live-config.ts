@@ -35,6 +35,9 @@ export type SavedStrategyEdit = {
 export type LiveMarket = "forex" | "futures" | "gold_spot";
 export type DashboardMarket = "forex" | "futures";
 export type ChallengeRulesMarket = DashboardMarket;
+export type SavedDatasetIdsByMarket = Partial<Record<DashboardMarket, string[]>>;
+export type SavedStrategyIdsByMarket = SavedDatasetIdsByMarket;
+export const DASHBOARD_MARKETS: DashboardMarket[] = ["forex", "futures"];
 
 export type SavedCustomScaleRange = {
   riskCeiling?: string;
@@ -68,7 +71,14 @@ export type SavedDashboardSettings = {
 export type LiveConfig = {
   customScaleRanges: SavedCustomScaleRanges;
   dashboardSettings: SavedDashboardSettings;
+  dashboardSelectedStrategyIdsByMarket: SavedStrategyIdsByMarket;
+  dashboardSelectedStrategyIds: string[];
+  enabledStrategyIdsByMarket: SavedStrategyIdsByMarket;
+  enabledStrategyIds: string[];
+  /** Legacy field names kept so old config documents and scripts continue to work. */
+  dashboardSelectedDatasetIdsByMarket: SavedDatasetIdsByMarket;
   dashboardSelectedDatasetIds: string[];
+  enabledDatasetIdsByMarket: SavedDatasetIdsByMarket;
   enabledDatasetIds: string[];
   strategyEdits: Record<string, SavedStrategyEdit>;
   updatedAt?: string;
@@ -124,6 +134,47 @@ export type DatasetAssetCoverage = {
 
 function normalizedStringArray(value: unknown): string[] {
   return Array.isArray(value) ? value.filter((item): item is string => typeof item === "string" && item.trim().length > 0) : [];
+}
+
+function uniqueStringArray(value: string[]): string[] {
+  return [...new Set(value.map((item) => item.trim()).filter(Boolean))];
+}
+
+function firstNonEmptyStringArray(...values: unknown[]): string[] {
+  for (const value of values) {
+    const normalized = uniqueStringArray(normalizedStringArray(value));
+    if (normalized.length) return normalized;
+  }
+  return [];
+}
+
+function normalizedDatasetIdsByMarket(value: unknown): SavedDatasetIdsByMarket {
+  if (!value || typeof value !== "object") return {};
+  const source = value as Partial<Record<DashboardMarket, unknown>>;
+  const byMarket: SavedDatasetIdsByMarket = {};
+  const forex = uniqueStringArray(normalizedStringArray(source.forex));
+  const futures = uniqueStringArray(normalizedStringArray(source.futures));
+
+  if (forex.length) byMarket.forex = forex;
+  if (futures.length) byMarket.futures = futures;
+
+  return byMarket;
+}
+
+function hasMarketIds(value: SavedDatasetIdsByMarket): boolean {
+  return DASHBOARD_MARKETS.some((market) => (value[market]?.length ?? 0) > 0);
+}
+
+function firstNonEmptyIdsByMarket(...values: unknown[]): SavedDatasetIdsByMarket {
+  for (const value of values) {
+    const normalized = normalizedDatasetIdsByMarket(value);
+    if (hasMarketIds(normalized)) return normalized;
+  }
+  return {};
+}
+
+function flattenIdsByMarket(byMarket: SavedDatasetIdsByMarket): string[] {
+  return uniqueStringArray(DASHBOARD_MARKETS.flatMap((market) => byMarket[market] ?? []));
 }
 
 function normalizedMarket(value: unknown): LiveMarket | undefined {
@@ -246,14 +297,89 @@ function normalizedCustomScaleRanges(value: unknown): SavedCustomScaleRanges {
 }
 
 function normalizeLiveConfig(value: Partial<LiveConfig> | null | undefined): LiveConfig {
+  const enabledStrategyIdsByMarket = firstNonEmptyIdsByMarket(value?.enabledStrategyIdsByMarket, value?.enabledDatasetIdsByMarket);
+  const dashboardSelectedStrategyIdsByMarket = firstNonEmptyIdsByMarket(
+    value?.dashboardSelectedStrategyIdsByMarket,
+    value?.dashboardSelectedDatasetIdsByMarket
+  );
+  const enabledStrategyIds = firstNonEmptyStringArray(value?.enabledStrategyIds, value?.enabledDatasetIds);
+  const dashboardSelectedStrategyIds = firstNonEmptyStringArray(value?.dashboardSelectedStrategyIds, value?.dashboardSelectedDatasetIds);
+
   return {
     customScaleRanges: normalizedCustomScaleRanges(value?.customScaleRanges),
     dashboardSettings: normalizedDashboardSettings(value?.dashboardSettings),
-    dashboardSelectedDatasetIds: normalizedStringArray(value?.dashboardSelectedDatasetIds),
-    enabledDatasetIds: normalizedStringArray(value?.enabledDatasetIds),
+    dashboardSelectedStrategyIdsByMarket,
+    dashboardSelectedStrategyIds,
+    enabledStrategyIdsByMarket,
+    enabledStrategyIds,
+    dashboardSelectedDatasetIdsByMarket: dashboardSelectedStrategyIdsByMarket,
+    dashboardSelectedDatasetIds: dashboardSelectedStrategyIds,
+    enabledDatasetIdsByMarket: enabledStrategyIdsByMarket,
+    enabledDatasetIds: enabledStrategyIds,
     strategyEdits: normalizedStrategyEdits(value?.strategyEdits),
     updatedAt: typeof value?.updatedAt === "string" ? value.updatedAt : undefined
   };
+}
+
+export function enabledStrategyIdsForMarket(config: LiveConfig, market: DashboardMarket): string[] {
+  return config.enabledStrategyIdsByMarket[market] ?? config.enabledStrategyIds;
+}
+
+export function dashboardSelectedStrategyIdsForMarket(config: LiveConfig, market: DashboardMarket): string[] {
+  return config.dashboardSelectedStrategyIdsByMarket[market] ?? config.dashboardSelectedStrategyIds;
+}
+
+export function selectedLiveStrategyIds(config: LiveConfig): string[] {
+  const enabledByMarket = flattenIdsByMarket(config.enabledStrategyIdsByMarket);
+  if (enabledByMarket.length) return enabledByMarket;
+
+  const dashboardSelectedByMarket = flattenIdsByMarket(config.dashboardSelectedStrategyIdsByMarket);
+  if (dashboardSelectedByMarket.length) return dashboardSelectedByMarket;
+
+  return config.enabledStrategyIds.length ? config.enabledStrategyIds : config.dashboardSelectedStrategyIds;
+}
+
+export function withSavedStrategySelection(
+  config: LiveConfig,
+  selectedStrategyIds: string[],
+  options: { market?: DashboardMarket; scopeStrategyIds?: string[] } = {}
+): LiveConfig {
+  const selected = uniqueStringArray(selectedStrategyIds);
+
+  if (options.market) {
+    const enabledStrategyIdsByMarket: SavedStrategyIdsByMarket = {
+      ...config.enabledStrategyIdsByMarket,
+      [options.market]: selected
+    };
+    const dashboardSelectedStrategyIdsByMarket: SavedStrategyIdsByMarket = {
+      ...config.dashboardSelectedStrategyIdsByMarket,
+      [options.market]: selected
+    };
+
+    return normalizeLiveConfig({
+      ...config,
+      dashboardSelectedStrategyIdsByMarket,
+      dashboardSelectedStrategyIds: flattenIdsByMarket(dashboardSelectedStrategyIdsByMarket),
+      enabledStrategyIdsByMarket,
+      enabledStrategyIds: flattenIdsByMarket(enabledStrategyIdsByMarket)
+    });
+  }
+
+  const scope = options.scopeStrategyIds?.length ? new Set(uniqueStringArray(options.scopeStrategyIds)) : null;
+  const enabledStrategyIds = scope
+    ? [...config.enabledStrategyIds.filter((key) => !scope.has(key)), ...selected]
+    : selected;
+  const dashboardSelectedStrategyIds = scope
+    ? [...config.dashboardSelectedStrategyIds.filter((key) => !scope.has(key)), ...selected]
+    : selected;
+
+  return normalizeLiveConfig({
+    ...config,
+    dashboardSelectedStrategyIds,
+    dashboardSelectedStrategyIdsByMarket: normalizedDatasetIdsByMarket({}),
+    enabledStrategyIds,
+    enabledStrategyIdsByMarket: normalizedDatasetIdsByMarket({})
+  });
 }
 
 function normalizeDatasetStatus(value: Partial<DatasetStatus> | null | undefined): DatasetStatus | null {

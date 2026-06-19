@@ -1,13 +1,20 @@
 "use server";
 
-import { getLiveConfig, saveLiveConfig } from "@/lib/live-config";
+import { DASHBOARD_MARKETS, getLiveConfig, saveLiveConfig, withSavedStrategySelection } from "@/lib/live-config";
 import { assertServerActionAdminAuthorized } from "@/lib/admin-api";
 import { getCachedChallengeReplay, saveCachedChallengeReplay } from "@/lib/challenge-replay-cache";
 import type { ChallengeReplaySummary } from "@/lib/challenge";
-import type { ChallengeRulesMarket, LiveMarket, SavedChallengeRules, SavedCustomScaleRange, SavedTheme } from "@/lib/live-config";
+import type { ChallengeRulesMarket, DashboardMarket, LiveConfig, LiveMarket, SavedChallengeRules, SavedCustomScaleRange, SavedDatasetIdsByMarket, SavedTheme } from "@/lib/live-config";
+import { assetForKey } from "@/lib/assets";
 import { STRATEGY_DEFINITIONS } from "@/lib/strategy-loader";
 
 const VALID_STRATEGY_IDS = new Set(STRATEGY_DEFINITIONS.map((strategy) => strategy.id));
+const STRATEGY_MARKET_BY_ID = new Map(
+  STRATEGY_DEFINITIONS.map((strategy) => {
+    const market = assetForKey(strategy.assetKey).market === "futures" ? "futures" : "forex";
+    return [strategy.id, market] as const;
+  })
+);
 
 type PersistedStrategyEdit = {
   contracts?: number;
@@ -46,6 +53,11 @@ function normalizeMarket(value: string): LiveMarket | null {
 }
 
 function normalizeChallengeMarket(value: string): ChallengeRulesMarket | null {
+  if (value === "gold_spot") return "forex";
+  return value === "forex" || value === "futures" ? value : null;
+}
+
+function normalizeDashboardMarket(value: string | undefined): DashboardMarket | null {
   if (value === "gold_spot") return "forex";
   return value === "forex" || value === "futures" ? value : null;
 }
@@ -160,29 +172,84 @@ function challengeRulesSignature(rules: SavedChallengeRules | undefined): string
   );
 }
 
-export async function syncLiveSelection(selectedKeys: string[], scopeKeys?: string[]): Promise<void> {
+function strategyMarket(key: string): DashboardMarket | undefined {
+  return STRATEGY_MARKET_BY_ID.get(key);
+}
+
+function normalizeDatasetIdsByMarket(source: SavedDatasetIdsByMarket | undefined, legacyKeys: string[]): SavedDatasetIdsByMarket {
+  const byMarket: SavedDatasetIdsByMarket = {};
+
+  for (const market of DASHBOARD_MARKETS) {
+    const marketKeys = normalizeSelectedKeys(source?.[market] ?? []);
+    const seededKeys = marketKeys.length
+      ? marketKeys
+      : normalizeSelectedKeys(legacyKeys).filter((key) => strategyMarket(key) === market);
+    if (seededKeys.length) byMarket[market] = seededKeys;
+  }
+
+  return byMarket;
+}
+
+function flattenDatasetIdsByMarket(byMarket: SavedDatasetIdsByMarket): string[] {
+  return [...new Set(DASHBOARD_MARKETS.flatMap((market) => byMarket[market] ?? []))];
+}
+
+function selectionByMarketSignature(byMarket: SavedDatasetIdsByMarket | undefined): string {
+  const source = byMarket ?? {};
+  return JSON.stringify(DASHBOARD_MARKETS.map((market) => [market, source[market] ?? []]));
+}
+
+function liveSelectionUnchanged(
+  existing: Pick<LiveConfig, "dashboardSelectedDatasetIds" | "dashboardSelectedDatasetIdsByMarket" | "enabledDatasetIds" | "enabledDatasetIdsByMarket">,
+  next: Pick<LiveConfig, "dashboardSelectedDatasetIds" | "dashboardSelectedDatasetIdsByMarket" | "enabledDatasetIds" | "enabledDatasetIdsByMarket">
+): boolean {
+  return (
+    sameSelection(existing.enabledDatasetIds, next.enabledDatasetIds) &&
+    sameSelection(existing.dashboardSelectedDatasetIds, next.dashboardSelectedDatasetIds) &&
+    selectionByMarketSignature(existing.enabledDatasetIdsByMarket) === selectionByMarketSignature(next.enabledDatasetIdsByMarket) &&
+    selectionByMarketSignature(existing.dashboardSelectedDatasetIdsByMarket) === selectionByMarketSignature(next.dashboardSelectedDatasetIdsByMarket)
+  );
+}
+
+export async function syncLiveSelection(selectedKeys: string[], scopeKeys?: string[], market?: string): Promise<void> {
   await assertServerActionAdminAuthorized();
   const normalized = normalizeSelectedKeys(selectedKeys);
-  const normalizedScope = scopeKeys ? new Set(normalizeSelectedKeys(scopeKeys)) : null;
+  const normalizedMarket = normalizeDashboardMarket(market);
   const existing = await getLiveConfig();
+
+  if (normalizedMarket) {
+    const nextConfig = withSavedStrategySelection(existing, normalized, { market: normalizedMarket });
+
+    if (liveSelectionUnchanged(existing, nextConfig)) return;
+    await saveLiveConfig(nextConfig);
+    return;
+  }
+
+  const normalizedScope = scopeKeys ? new Set(normalizeSelectedKeys(scopeKeys)) : null;
   const nextEnabledDatasetIds = normalizedScope
     ? [...existing.enabledDatasetIds.filter((key) => !normalizedScope.has(key)), ...normalized]
     : normalized;
   const nextDashboardSelectedDatasetIds = normalizedScope
     ? [...existing.dashboardSelectedDatasetIds.filter((key) => !normalizedScope.has(key)), ...normalized]
     : normalized;
+  const nextEnabledDatasetIdsByMarket = normalizeDatasetIdsByMarket({}, nextEnabledDatasetIds);
+  const nextDashboardSelectedDatasetIdsByMarket = normalizeDatasetIdsByMarket({}, nextDashboardSelectedDatasetIds);
+  const nextConfig = {
+    ...existing,
+    enabledStrategyIds: nextEnabledDatasetIds,
+    enabledStrategyIdsByMarket: nextEnabledDatasetIdsByMarket,
+    enabledDatasetIds: nextEnabledDatasetIds,
+    enabledDatasetIdsByMarket: nextEnabledDatasetIdsByMarket,
+    dashboardSelectedStrategyIds: nextDashboardSelectedDatasetIds,
+    dashboardSelectedStrategyIdsByMarket: nextDashboardSelectedDatasetIdsByMarket,
+    dashboardSelectedDatasetIds: nextDashboardSelectedDatasetIds,
+    dashboardSelectedDatasetIdsByMarket: nextDashboardSelectedDatasetIdsByMarket
+  };
 
-  if (
-    sameSelection(existing.enabledDatasetIds, nextEnabledDatasetIds) &&
-    sameSelection(existing.dashboardSelectedDatasetIds, nextDashboardSelectedDatasetIds)
-  ) {
-    return;
-  }
+  if (liveSelectionUnchanged(existing, nextConfig)) return;
 
   await saveLiveConfig({
-    ...existing,
-    enabledDatasetIds: nextEnabledDatasetIds,
-    dashboardSelectedDatasetIds: nextDashboardSelectedDatasetIds
+    ...nextConfig
   });
 }
 

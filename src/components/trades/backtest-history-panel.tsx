@@ -60,7 +60,7 @@ export default function BacktestHistoryPanel({
             </div>
           </div>
           <p>
-            Stored backtest trades plus live cron executions for the active market. Latest history trade:{" "}
+            Stored backtest trades for all active-market strategies plus live cron executions. Latest history trade:{" "}
             <LocalDateTime value={latestHistoryTradeAt} fallback="unknown" />.
           </p>
         </div>
@@ -72,7 +72,7 @@ export default function BacktestHistoryPanel({
       {rows.length === 0 ? (
         <div className="empty-state">
           <strong>No backtest trades match</strong>
-          <span>No stored backtest trades or live cron executions are available for this market.</span>
+          <span>No stored backtest trades or live cron executions are available for this market yet.</span>
         </div>
       ) : (
         <EditableTradeHistory

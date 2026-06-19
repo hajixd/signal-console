@@ -6,11 +6,20 @@ import { createTursoDocument, getTursoDocument, listTursoDocuments, saveTursoDoc
 import type { TradeAlert } from "./types";
 
 const TRADE_COLLECTION = "signalConsoleAlerts";
+const MAX_STORED_TRADES = 5000;
 const localPath = path.join(process.cwd(), ".local", "trading-bot-alerts.json");
 const legacyLocalPath = path.join(process.cwd(), ".local", "signal-console-alerts.json");
 
 function sortTrades(trades: TradeAlert[]): TradeAlert[] {
   return [...trades].sort((left, right) => Date.parse(right.signalTime) - Date.parse(left.signalTime));
+}
+
+function dedupeSortedTrades(trades: TradeAlert[]): TradeAlert[] {
+  const byId = new Map<string, TradeAlert>();
+  for (const trade of sortTrades(trades)) {
+    if (!byId.has(trade.id)) byId.set(trade.id, trade);
+  }
+  return [...byId.values()].slice(0, MAX_STORED_TRADES);
 }
 
 async function readLocal(): Promise<TradeAlert[]> {
@@ -32,17 +41,72 @@ async function writeLocal(trades: TradeAlert[]): Promise<void> {
   await writeFile(localPath, JSON.stringify(trades, null, 2));
 }
 
-function normalizeTrade(value: unknown): TradeAlert | null {
+function normalizeTrade(value: unknown, fallbackId?: string): TradeAlert | null {
   if (!value || typeof value !== "object") return null;
-  return value as TradeAlert;
+  const record = value as Partial<TradeAlert> & { id?: unknown };
+  const id = typeof record.id === "string" && record.id.trim() ? record.id : fallbackId;
+  if (!id || typeof record.signalTime !== "string" || !record.signalTime.trim()) return null;
+  return {
+    ...record,
+    id
+  } as TradeAlert;
+}
+
+async function getFirestoreTrades(): Promise<TradeAlert[]> {
+  const collection = firebaseDb().collection(TRADE_COLLECTION);
+  const trades: TradeAlert[] = [];
+
+  try {
+    const snapshot = await withFirebaseTimeout(
+      collection.orderBy("signalTimeMillis", "desc").limit(MAX_STORED_TRADES).get(),
+      "Firebase trade history read by signalTimeMillis"
+    );
+    trades.push(
+      ...snapshot.docs
+        .map((doc) => normalizeTrade(doc.data(), doc.id))
+        .filter((trade): trade is TradeAlert => Boolean(trade))
+    );
+  } catch {
+    // Older collections may not have signalTimeMillis on every alert.
+  }
+
+  try {
+    const snapshot = await withFirebaseTimeout(
+      collection.orderBy("signalTime", "desc").limit(MAX_STORED_TRADES).get(),
+      "Firebase trade history read by signalTime"
+    );
+    trades.push(
+      ...snapshot.docs
+        .map((doc) => normalizeTrade(doc.data(), doc.id))
+        .filter((trade): trade is TradeAlert => Boolean(trade))
+    );
+  } catch {
+    // Fall back to an unordered collection read below if both ordered reads fail.
+  }
+
+  if (!trades.length) {
+    const snapshot = await withFirebaseTimeout(
+      collection.limit(MAX_STORED_TRADES).get(),
+      "Firebase trade history read"
+    );
+    trades.push(
+      ...snapshot.docs
+        .map((doc) => normalizeTrade(doc.data(), doc.id))
+        .filter((trade): trade is TradeAlert => Boolean(trade))
+    );
+  }
+
+  return dedupeSortedTrades(trades);
 }
 
 export async function getTrades(): Promise<TradeAlert[]> {
   if (tursoConfigured()) {
     try {
-      return (await listTursoDocuments(TRADE_COLLECTION, 500))
-        .map((doc) => normalizeTrade({ ...doc.payload, id: doc.payload.id ?? doc.id }))
-        .filter((trade): trade is TradeAlert => Boolean(trade));
+      return dedupeSortedTrades(
+        (await listTursoDocuments(TRADE_COLLECTION, MAX_STORED_TRADES))
+          .map((doc) => normalizeTrade({ ...doc.payload, id: doc.payload.id ?? doc.id }, doc.id))
+          .filter((trade): trade is TradeAlert => Boolean(trade))
+      );
     } catch {
       // Fall back to Firebase/local storage below.
     }
@@ -50,23 +114,12 @@ export async function getTrades(): Promise<TradeAlert[]> {
 
   if (hasFirebaseAdmin()) {
     try {
-      const snapshot = await withFirebaseTimeout(
-        firebaseDb()
-          .collection(TRADE_COLLECTION)
-          .orderBy("signalTimeMillis", "desc")
-          .limit(500)
-          .get(),
-        "Firebase trade history read"
-      );
-
-      return snapshot.docs
-        .map((doc) => normalizeTrade(doc.data()))
-        .filter((trade): trade is TradeAlert => Boolean(trade));
+      return await getFirestoreTrades();
     } catch {
-      return sortTrades(await readLocal());
+      return dedupeSortedTrades(await readLocal());
     }
   }
-  return sortTrades(await readLocal());
+  return dedupeSortedTrades(await readLocal());
 }
 
 export async function hasTrade(id: string): Promise<boolean> {
@@ -134,7 +187,7 @@ export async function claimTrade(trade: TradeAlert): Promise<boolean> {
 
   const trades = await readLocal();
   if (trades.some((item) => item.id === trade.id)) return false;
-  await writeLocal([payload, ...trades].slice(0, 500));
+  await writeLocal(dedupeSortedTrades([payload, ...trades]));
   return true;
 }
 
@@ -170,7 +223,7 @@ export async function saveTrade(trade: TradeAlert): Promise<void> {
     }
   }
   const trades = await readLocal();
-  await writeLocal([payload, ...trades.filter((item) => item.id !== trade.id)].slice(0, 500));
+  await writeLocal(dedupeSortedTrades([payload, ...trades.filter((item) => item.id !== trade.id)]));
 }
 
 export function storageMode(): "firebase" | "local" | "turso" {

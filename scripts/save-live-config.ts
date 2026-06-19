@@ -22,14 +22,20 @@ function parseListArg(flag: string): string[] | undefined {
 
 async function main(): Promise<void> {
   const existing = await getLiveConfig();
-  const enabledDatasetIds = parseListArg("--enabled") ?? existing.enabledDatasetIds;
-  const dashboardSelectedDatasetIds = parseListArg("--dashboard") ?? existing.dashboardSelectedDatasetIds;
+  const enabledStrategyIds = parseListArg("--enabled") ?? existing.enabledStrategyIds;
+  const dashboardSelectedStrategyIds = parseListArg("--dashboard") ?? existing.dashboardSelectedStrategyIds;
 
   const saved = await saveLiveConfig({
     customScaleRanges: existing.customScaleRanges,
     dashboardSettings: existing.dashboardSettings,
-    enabledDatasetIds,
-    dashboardSelectedDatasetIds,
+    enabledStrategyIdsByMarket: existing.enabledStrategyIdsByMarket,
+    enabledStrategyIds,
+    enabledDatasetIdsByMarket: existing.enabledDatasetIdsByMarket,
+    enabledDatasetIds: enabledStrategyIds,
+    dashboardSelectedStrategyIdsByMarket: existing.dashboardSelectedStrategyIdsByMarket,
+    dashboardSelectedStrategyIds,
+    dashboardSelectedDatasetIdsByMarket: existing.dashboardSelectedDatasetIdsByMarket,
+    dashboardSelectedDatasetIds: dashboardSelectedStrategyIds,
     strategyEdits: existing.strategyEdits
   });
 

@@ -28,7 +28,29 @@ function parseLiveConfig(value: unknown): LiveConfig {
   return {
     customScaleRanges,
     dashboardSettings,
+    dashboardSelectedStrategyIdsByMarket:
+      payload.dashboardSelectedStrategyIdsByMarket && typeof payload.dashboardSelectedStrategyIdsByMarket === "object"
+        ? (payload.dashboardSelectedStrategyIdsByMarket as LiveConfig["dashboardSelectedStrategyIdsByMarket"])
+        : payload.dashboardSelectedDatasetIdsByMarket && typeof payload.dashboardSelectedDatasetIdsByMarket === "object"
+          ? (payload.dashboardSelectedDatasetIdsByMarket as LiveConfig["dashboardSelectedStrategyIdsByMarket"])
+          : {},
+    dashboardSelectedStrategyIds: parseStringArray(payload.dashboardSelectedStrategyIds ?? payload.dashboardSelectedDatasetIds),
+    enabledStrategyIdsByMarket:
+      payload.enabledStrategyIdsByMarket && typeof payload.enabledStrategyIdsByMarket === "object"
+        ? (payload.enabledStrategyIdsByMarket as LiveConfig["enabledStrategyIdsByMarket"])
+        : payload.enabledDatasetIdsByMarket && typeof payload.enabledDatasetIdsByMarket === "object"
+          ? (payload.enabledDatasetIdsByMarket as LiveConfig["enabledStrategyIdsByMarket"])
+          : {},
+    enabledStrategyIds: parseStringArray(payload.enabledStrategyIds ?? payload.enabledDatasetIds),
+    dashboardSelectedDatasetIdsByMarket:
+      payload.dashboardSelectedDatasetIdsByMarket && typeof payload.dashboardSelectedDatasetIdsByMarket === "object"
+        ? (payload.dashboardSelectedDatasetIdsByMarket as LiveConfig["dashboardSelectedDatasetIdsByMarket"])
+        : {},
     dashboardSelectedDatasetIds: parseStringArray(payload.dashboardSelectedDatasetIds),
+    enabledDatasetIdsByMarket:
+      payload.enabledDatasetIdsByMarket && typeof payload.enabledDatasetIdsByMarket === "object"
+        ? (payload.enabledDatasetIdsByMarket as LiveConfig["enabledDatasetIdsByMarket"])
+        : {},
     enabledDatasetIds: parseStringArray(payload.enabledDatasetIds),
     strategyEdits
   };

@@ -2,7 +2,7 @@ import { enrichBars } from "@/lib/indicators";
 import { assetForKey, defaultTickSize } from "@/lib/assets";
 import { getBacktestStats, type BacktestStat } from "@/lib/backtest";
 import { instrumentSizeLabel, recommendedSizeMultiplier } from "@/lib/instruments";
-import { getLiveConfig, type SavedCustomScaleRanges, type SavedStrategyEdit } from "@/lib/live-config";
+import { getLiveConfig, selectedLiveStrategyIds, type SavedCustomScaleRanges, type SavedStrategyEdit } from "@/lib/live-config";
 import { STRATEGY_DEFINITIONS } from "@/lib/strategy-loader";
 import { conciseStrategyName } from "@/lib/strategy-names";
 import type { StrategySignal } from "@/lib/strategy-definition";
@@ -240,7 +240,7 @@ export async function activeRules(): Promise<StrategyRule[]> {
   const rules = uniqueRules(
     stats.map((stat) => statToRule(stat, config.strategyEdits, config.customScaleRanges)).filter((rule): rule is StrategyRule => Boolean(rule))
   );
-  const selectedDatasetIds = config.enabledDatasetIds.length ? config.enabledDatasetIds : config.dashboardSelectedDatasetIds;
+  const selectedDatasetIds = selectedLiveStrategyIds(config);
   if (!selectedDatasetIds.length) return [];
 
   const enabled = new Set(selectedDatasetIds);

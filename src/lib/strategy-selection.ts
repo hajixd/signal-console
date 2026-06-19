@@ -6,7 +6,8 @@ export function parseStrategySelection(value: string | undefined, allKeys: strin
   if (value === ALL_STRATEGIES_SELECTION_PARAM) return allKeys;
   if (value === NO_STRATEGIES_SELECTION_PARAM) return [];
   if (!value) return defaultKeys.filter((key) => allowed.has(key));
-  return [...new Set(value.split(",").filter((key) => allowed.has(key)))];
+  const parsed = [...new Set(value.split(",").filter((key) => allowed.has(key)))];
+  return parsed.length ? parsed : defaultKeys.filter((key) => allowed.has(key));
 }
 
 export function selectionIncludesEveryKey(selectedKeys: string[], allKeys: string[]): boolean {
