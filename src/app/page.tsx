@@ -42,6 +42,7 @@ import {
   type BacktestTrade
 } from "@/lib/backtest";
 import { assetDisplayNameForSymbol, assetForSymbol, assetLookupSymbolForSymbol } from "@/lib/assets";
+import { plannedAutoTradeSizeForTrade } from "@/lib/auto-trade-utils";
 import { DEFAULT_CHALLENGE_RULES, type ChallengeRules } from "@/lib/challenge";
 import { analyzeBacktestDataValidity, dataValidityClass, type DataValidityResult, type DataValidityTone } from "@/lib/data-validity";
 import { dollarPerUnit, instrumentSizeLabel, instrumentUnitLabel, recommendedSizeMultiplier } from "@/lib/instruments";
@@ -894,7 +895,11 @@ function liveTradeEventDisplaySymbol(trade: TradeAlert, event: LiveTradeEvent): 
 
 function sizedOrders(orders: TradeOrderSummary[] | undefined): TradeOrderSummary[] {
   return (orders ?? []).filter(
-    (order) => order.status !== "skipped" && typeof order.size === "number" && Number.isFinite(order.size) && order.size > 0
+    (order) =>
+      (order.status === "placed" || order.status === "dry_run") &&
+      typeof order.size === "number" &&
+      Number.isFinite(order.size) &&
+      order.size > 0
   );
 }
 
@@ -907,6 +912,10 @@ function orderSizeMultiplier(orders: TradeOrderSummary[] | undefined): number | 
 function liveTradeOrderSizeMultiplier(trade: TradeAlert, event?: LiveTradeEvent): number | undefined {
   if (event?.kind === "limit") return orderSizeMultiplier(trade.limitOrderAutoTradeOrders);
   return orderSizeMultiplier(trade.autoTradeOrders);
+}
+
+function plannedLiveTradeSizeMultiplier(trade: TradeAlert, option?: StrategyOption): number {
+  return plannedAutoTradeSizeForTrade(trade, finiteNumberOr(trade.sizeMultiplier, option?.sizeMultiplier ?? 1));
 }
 
 function contractSizeLabel(contractLabel: string, size: number, accountCount?: number): string {
@@ -1085,11 +1094,7 @@ function liveTradeEventEntryPrice(trade: TradeAlert, event: LiveTradeEvent): num
 function liveTradeEventSizeMultiplier(trade: TradeAlert, event: LiveTradeEvent): number {
   const orderSize = liveTradeOrderSizeMultiplier(trade, event);
   if (orderSize !== undefined) return orderSize;
-  if (event.kind === "limit" || event.kind === "edit_limit") {
-    return trade.sizeMultiplier ?? 1;
-  }
-  if (event.kind === "entry") return trade.sizeMultiplier ?? 1;
-  return trade.sizeMultiplier ?? 1;
+  return plannedLiveTradeSizeMultiplier(trade);
 }
 
 function liveTradeEventSizeLabel(trade: TradeAlert, event: LiveTradeEvent): string {
@@ -1938,7 +1943,7 @@ export default async function Home({ searchParams }: HomeProps) {
       const ruleTickSize = liveRuleByKey.get(ruleKey)?.tickSize;
       const priceUnit = inferredAlertPriceUnit(trade, ruleTickSize);
       const displayContract = liveTradeDisplaySymbol(trade);
-      const sizeMultiplier = liveTradeOrderSizeMultiplier(trade) ?? finiteNumberOr(trade.sizeMultiplier, option?.sizeMultiplier ?? 1);
+      const sizeMultiplier = liveTradeOrderSizeMultiplier(trade) ?? plannedLiveTradeSizeMultiplier(trade, option);
       const targetDollars = alertTargetDollarsWithSize(trade, sizeMultiplier);
       const riskDollars = alertRiskDollarsWithSize(trade, sizeMultiplier);
       const latestOpenPrice =
@@ -2039,8 +2044,7 @@ export default async function Home({ searchParams }: HomeProps) {
     }));
   const liveHistoryOpenCount = visibleLiveHistoryRows.filter((row) => row.exitReasonLabel === "Still Open").length;
   const liveHistoryClosedCount = visibleLiveHistoryRows.length - liveHistoryOpenCount;
-  const selectedLiveBasketTrades = visibleLiveHistoryRows
-    .filter((row) => row.exitReasonLabel !== "Still Open" && selectedLiveTradeKeys.has(row.strategyKey))
+  const activeMarketLiveBasketTrades = visibleLiveHistoryRows
     .map((row) => ({
       key: row.strategyKey,
       lockedSize: true,
@@ -2541,7 +2545,7 @@ export default async function Home({ searchParams }: HomeProps) {
               <h2>Stats</h2>
             </div>
             <span className="count-pill">
-              {fmtNumber(selectedBacktestTradeCount || selectedBacktestTrades.length)} history / {fmtNumber(selectedLiveBasketTrades.length)} live
+              {fmtNumber(selectedBacktestTradeCount || selectedBacktestTrades.length)} history / {fmtNumber(activeMarketLiveBasketTrades.length)} live
             </span>
           </div>
 
@@ -2557,17 +2561,17 @@ export default async function Home({ searchParams }: HomeProps) {
                 persistedStrategyEdits={liveConfig.strategyEdits}
               />
             )}
-            live={selectedLiveBasketTrades.length ? (
+            live={activeMarketLiveBasketTrades.length ? (
               <SelectedStrategyStats
                 defaultExpanded
                 strategies={strategyOptions}
                 toggleable={false}
-                trades={selectedLiveBasketTrades}
+                trades={activeMarketLiveBasketTrades}
               />
             ) : (
               <div className="empty-state">
-                <strong>No closed live trades yet</strong>
-                <span>Live statistics will appear after an executed trade closes.</span>
+                <strong>No live executions yet</strong>
+                <span>Live statistics will appear after an active-market execution is stored.</span>
               </div>
             )}
           />
@@ -2677,7 +2681,7 @@ export default async function Home({ searchParams }: HomeProps) {
                     const displaySymbol = liveTradeDisplaySymbol(trade);
                     const symbolTitle = displaySymbol !== trade.symbol ? `Signal ${trade.symbol}` : undefined;
                     const modelLabel = liveTradeModelLabel(trade, option);
-                    const summarySizeMultiplier = liveTradeOrderSizeMultiplier(trade) ?? (trade.sizeMultiplier ?? 1);
+                    const summarySizeMultiplier = liveTradeOrderSizeMultiplier(trade) ?? plannedLiveTradeSizeMultiplier(trade, option);
                     return (
                       <tr className={liveRowClass(trade)} key={trade.id}>
                         <td className="cronTradeCell" colSpan={8}>

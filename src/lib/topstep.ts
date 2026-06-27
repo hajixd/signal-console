@@ -1,4 +1,5 @@
 import { dollarPerUnit, instrumentSizeLabel } from "./instruments";
+import { plannedAutoTradeSizeForTrade } from "./auto-trade-utils";
 import type { StrategyPhase, StrategyRule, TradeAlert } from "./types";
 
 export const TOPSTEP_100K_ACCOUNT = {
@@ -138,7 +139,7 @@ function minutesUntilFlatten(parts: ChicagoParts): number {
 
 export function topstepAlertDollars(trade: TradeAlert): { targetDollars: number; riskDollars: number } {
   const unitValue = dollarPerUnit(trade.symbol, trade.entryPrice);
-  const sizeMultiplier = trade.sizeMultiplier ?? 1;
+  const sizeMultiplier = plannedAutoTradeSizeForTrade(trade);
   return {
     targetDollars: Math.abs(trade.tpUnits * unitValue * sizeMultiplier),
     riskDollars: Math.abs(trade.slUnits * unitValue * sizeMultiplier)
@@ -156,10 +157,11 @@ export function reviewTopstepSignal(rule: StrategyRule, trade: TradeAlert): Tops
   const minutesLeft = minutesUntilFlatten(parts);
   const { targetDollars, riskDollars } = topstepAlertDollars(trade);
   const reasons: string[] = [];
-  const sizeMultiplier = trade.sizeMultiplier ?? 1;
+  const sizeMultiplier = plannedAutoTradeSizeForTrade(trade);
 
   if (rule.market !== "futures") reasons.push("Topstep Combine only permits futures products");
   if (!clock.allowed && clock.reason) reasons.push(clock.reason);
+  if (sizeMultiplier <= 0) reasons.push("custom unit sizing leaves no executable futures contract under the configured risk ceiling");
   const flattenBufferMinutes = MINUTES_TO_FLATTEN_BY_PHASE[rule.phase] ?? 180;
   if (minutesLeft < flattenBufferMinutes) {
     reasons.push(`too close to ${TOPSTEP_100K_ACCOUNT.flattenTimeCt} for ${rule.phase.replaceAll("_", " ")}`);

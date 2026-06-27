@@ -185,9 +185,23 @@ export function scaledAutoTradeSizeForTrade(
   options: { minSize?: number; wholeNumber?: boolean } = {}
 ): number {
   const customSize = customUnitSizeMultiplierForTrade(trade);
+  const customWholeNumberMinSize = customSize !== null && options.wholeNumber ? (options.minSize ?? 0) : options.minSize;
   return scaledAutoTradeSize(customSize ?? fallbackBaseSize, sources, {
     ...options,
+    minSize: customWholeNumberMinSize,
     wholeNumberRounding: customSize !== null && options.wholeNumber ? "floor" : undefined
+  });
+}
+
+export function plannedAutoTradeSizeForTrade(
+  trade: TradeAlert,
+  fallbackBaseSize = trade.sizeMultiplier ?? 1,
+  sources: AutoTradeAccountSizeSource | Array<AutoTradeAccountSizeSource | undefined> | undefined = undefined
+): number {
+  const wholeNumber = tradeRequiresWholeNumberSize(trade);
+  return scaledAutoTradeSizeForTrade(trade, fallbackBaseSize, sources, {
+    minSize: wholeNumber ? 0 : undefined,
+    wholeNumber
   });
 }
 

@@ -1,4 +1,5 @@
 import type { TradeAlert, TradeManagementEvent } from "./types";
+import { plannedAutoTradeSizeForTrade } from "./auto-trade-utils";
 import { assetLookupSymbolForSymbol } from "./assets";
 import { dollarPerUnit, instrumentSizeLabel } from "./instruments";
 
@@ -148,7 +149,11 @@ function autoTradeNetPnl(orders: TradeAlert["autoTradeOrders"]): number | undefi
 
 function sizedOrders(orders: TradeAlert["autoTradeOrders"]): NonNullable<TradeAlert["autoTradeOrders"]> {
   return (orders ?? []).filter(
-    (order) => order.status !== "skipped" && typeof order.size === "number" && Number.isFinite(order.size) && order.size > 0
+    (order) =>
+      (order.status === "placed" || order.status === "dry_run") &&
+      typeof order.size === "number" &&
+      Number.isFinite(order.size) &&
+      order.size > 0
   );
 }
 
@@ -354,7 +359,7 @@ function telegramTitle(title: string): string {
 
 export function formatTelegramMessage(trade: TradeAlert): string {
   const dollarUnit = dollarPerUnit(trade.symbol, trade.entryPrice);
-  const sizeMultiplier = autoTradeOrderSize(trade.autoTradeOrders) ?? trade.sizeMultiplier ?? 1;
+  const sizeMultiplier = autoTradeOrderSize(trade.autoTradeOrders) ?? plannedAutoTradeSizeForTrade(trade);
   const rawSizeScale = trade.sizeScale;
   const sizeScale = typeof rawSizeScale === "number" && Number.isFinite(rawSizeScale) && rawSizeScale > 0 ? rawSizeScale : undefined;
   const targetDollars = Math.abs(trade.tpUnits * dollarUnit * sizeMultiplier);
@@ -399,7 +404,7 @@ export function formatTelegramOutcomeMessage(trade: TradeAlert): string {
   const sourceSignal = instrumentLabel !== trade.symbol ? `Signal ${escapeHtml(trade.symbol)}` : undefined;
   const execution = executionLines(trade);
   const dollarUnit = dollarPerUnit(trade.symbol, trade.entryPrice);
-  const sizeMultiplier = autoTradeOrderSize(trade.autoTradeOrders) ?? trade.sizeMultiplier ?? 1;
+  const sizeMultiplier = autoTradeOrderSize(trade.autoTradeOrders) ?? plannedAutoTradeSizeForTrade(trade);
   const targetDollars = Math.abs(trade.tpUnits * dollarUnit * sizeMultiplier);
   const riskDollars = Math.abs(trade.slUnits * dollarUnit * sizeMultiplier);
   const lines = [
@@ -438,7 +443,7 @@ export function formatTelegramManagementMessage(trade: TradeAlert, event: TradeM
   const instrumentLabel = telegramInstrumentLabel(trade);
   const sourceSignal = instrumentLabel !== trade.symbol ? `Signal ${escapeHtml(trade.symbol)}` : undefined;
   const dollarUnit = dollarPerUnit(trade.symbol, trade.entryPrice);
-  const sizeMultiplier = autoTradeOrderSize(trade.autoTradeOrders) ?? trade.sizeMultiplier ?? 1;
+  const sizeMultiplier = autoTradeOrderSize(trade.autoTradeOrders) ?? plannedAutoTradeSizeForTrade(trade);
   const targetDollars = Math.abs(trade.tpUnits * dollarUnit * sizeMultiplier);
   const riskDollars = Math.abs(trade.slUnits * dollarUnit * sizeMultiplier);
   const execution =

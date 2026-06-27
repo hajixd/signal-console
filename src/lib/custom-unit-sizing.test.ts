@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { mappedSize } from "@/lib/auto-trade-utils";
+import { mappedSize, plannedAutoTradeSizeForTrade } from "@/lib/auto-trade-utils";
 import { customUnitSizeMultiplierForTrade } from "@/lib/custom-unit-sizing";
 import type { StrategySignal } from "@/lib/strategy-definition";
 import { planTradeAlert } from "@/lib/trade-planner";
@@ -101,6 +101,11 @@ test("planner snapshots the range and sizes each signal independently", () => {
 
 test("uses ceiling-safe whole units after account scaling", () => {
   assert.equal(mappedSize("TRADOVATE", trade(), undefined, { accountName: "50K account" }), 3);
+});
+
+test("planned live execution uses the largest ceiling-safe whole futures size", () => {
+  assert.equal(plannedAutoTradeSizeForTrade(trade()), 6);
+  assert.equal(plannedAutoTradeSizeForTrade(trade({ slUnits: 200, tpUnits: 600 })), 5);
 });
 
 test("custom units override a static provider size map", () => {
