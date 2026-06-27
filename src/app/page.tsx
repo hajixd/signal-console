@@ -42,7 +42,7 @@ import {
   type BacktestTrade
 } from "@/lib/backtest";
 import { assetDisplayNameForSymbol, assetForSymbol, assetLookupSymbolForSymbol } from "@/lib/assets";
-import { plannedRiskSizeMultiplierForTrade } from "@/lib/auto-trade-utils";
+import { executableOrderSizeMultiplier, plannedAutoTradeSizeForTrade } from "@/lib/auto-trade-utils";
 import { DEFAULT_CHALLENGE_RULES, type ChallengeRules } from "@/lib/challenge";
 import { analyzeBacktestDataValidity, dataValidityClass, type DataValidityResult, type DataValidityTone } from "@/lib/data-validity";
 import { dollarPerUnit, instrumentSizeLabel, instrumentUnitLabel, recommendedSizeMultiplier } from "@/lib/instruments";
@@ -894,7 +894,18 @@ function liveTradeEventDisplaySymbol(trade: TradeAlert, event: LiveTradeEvent): 
 }
 
 function plannedLiveTradeSizeMultiplier(trade: TradeAlert, option?: StrategyOption): number {
-  return plannedRiskSizeMultiplierForTrade(trade, finiteNumberOr(trade.sizeMultiplier, option?.sizeMultiplier ?? 1));
+  return plannedAutoTradeSizeForTrade(trade, finiteNumberOr(trade.sizeMultiplier, option?.sizeMultiplier ?? 1));
+}
+
+function liveTradeRealSizeMultiplier(trade: TradeAlert, option?: StrategyOption, event?: LiveTradeEvent): number {
+  const orders =
+    event && isManagementLiveTradeEvent(event)
+      ? event.managementEvent.autoTradeOrders
+      : event?.kind === "limit"
+        ? trade.limitOrderAutoTradeOrders
+        : trade.autoTradeOrders;
+  const orderSize = executableOrderSizeMultiplier(orders);
+  return orderSize ?? plannedLiveTradeSizeMultiplier(trade, option);
 }
 
 function contractSizeLabel(contractLabel: string, size: number, accountCount?: number): string {
@@ -1068,7 +1079,7 @@ function liveTradeEventEntryPrice(trade: TradeAlert, event: LiveTradeEvent): num
 }
 
 function liveTradeEventSizeMultiplier(trade: TradeAlert, event: LiveTradeEvent): number {
-  return plannedLiveTradeSizeMultiplier(trade);
+  return liveTradeRealSizeMultiplier(trade, undefined, event);
 }
 
 function liveTradeEventSizeLabel(trade: TradeAlert, event: LiveTradeEvent): string {
@@ -1746,15 +1757,15 @@ export default async function Home({ searchParams }: HomeProps) {
     (trade.strategyKey && selectedLiveTradeKeys.has(trade.strategyKey)) ||
     (trade.logicalStrategyKey && selectedLiveTradeKeys.has(trade.logicalStrategyKey)) ||
     selectedStrategyNames.has(trade.strategy);
-  const displayCustomScaleRangeForLiveTrade = (trade: TradeAlert) => {
+  const missingSnapshotCustomRangeForLiveTrade = (trade: TradeAlert) => {
+    if (trade.customScaleRange || trade.sizeMode !== "custom") return undefined;
     const tradeMarket = trade.market === "gold_spot" ? "gold_spot" : liveAlertDashboardMarket(trade);
     return tradeMarket ? liveConfig.customScaleRanges[tradeMarket] : undefined;
   };
   const activeMarketLiveTrades = liveTrades.filter(
     (trade) => Boolean(optionForLiveTrade(trade)) || liveAlertDashboardMarket(trade) === activeMarket
   ).map((trade) => {
-    if (trade.customScaleRange) return trade;
-    const customScaleRange = displayCustomScaleRangeForLiveTrade(trade);
+    const customScaleRange = missingSnapshotCustomRangeForLiveTrade(trade);
     return customScaleRange ? { ...trade, customScaleRange } : trade;
   });
   const selectedLiveTrades = activeMarketLiveTrades.filter(liveTradeMatchesSelectedStrategy);
@@ -1925,7 +1936,7 @@ export default async function Home({ searchParams }: HomeProps) {
       const ruleTickSize = liveRuleByKey.get(ruleKey)?.tickSize;
       const priceUnit = inferredAlertPriceUnit(trade, ruleTickSize);
       const displayContract = liveTradeDisplaySymbol(trade);
-      const sizeMultiplier = plannedLiveTradeSizeMultiplier(trade, option);
+      const sizeMultiplier = liveTradeRealSizeMultiplier(trade, option);
       const targetDollars = alertTargetDollarsWithSize(trade, sizeMultiplier);
       const riskDollars = alertRiskDollarsWithSize(trade, sizeMultiplier);
       const latestOpenPrice =
@@ -2663,7 +2674,7 @@ export default async function Home({ searchParams }: HomeProps) {
                     const displaySymbol = liveTradeDisplaySymbol(trade);
                     const symbolTitle = displaySymbol !== trade.symbol ? `Signal ${trade.symbol}` : undefined;
                     const modelLabel = liveTradeModelLabel(trade, option);
-                    const summarySizeMultiplier = plannedLiveTradeSizeMultiplier(trade, option);
+                    const summarySizeMultiplier = liveTradeRealSizeMultiplier(trade, option);
                     return (
                       <tr className={liveRowClass(trade)} key={trade.id}>
                         <td className="cronTradeCell" colSpan={8}>

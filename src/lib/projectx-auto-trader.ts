@@ -1,7 +1,8 @@
 import { createHash } from "node:crypto";
 import { assetForKey, assetForSymbol, assetLookupSymbolForSymbol } from "@/lib/assets";
 import { buildAutoTradeTestTrade } from "@/lib/auto-trade-test";
-import { scaledAutoTradeSizeForTrade } from "@/lib/auto-trade-utils";
+import { autoTradeAccountSizeScale, scaledAutoTradeSizeForTrade } from "@/lib/auto-trade-utils";
+import { customUnitSizeMultiplierForTrade } from "@/lib/custom-unit-sizing";
 import { dollarPerUnit } from "@/lib/instruments";
 import {
   getStoredProjectXConnections,
@@ -256,21 +257,93 @@ function customTagForAttempt(baseTag: string, size: number, originalSize: number
   return `${baseTag}_u${size}`;
 }
 
-function projectXOrderSizeForAccount(trade: TradeAlert, account: ProjectXAccount, fallbackBaseSize: number): number {
-  const isSplitOrder = (trade.orderLeg === "entry" || trade.orderLeg === "limit") && typeof trade.splitOrderTotalSizeMultiplier === "number";
-  const totalBaseSize = isSplitOrder ? trade.splitOrderTotalSizeMultiplier! : fallbackBaseSize;
-  const totalSize = scaledAutoTradeSizeForTrade(trade, totalBaseSize, account, {
+function projectXIsSplitOrder(trade: TradeAlert): boolean {
+  return (trade.orderLeg === "entry" || trade.orderLeg === "limit") && typeof trade.splitOrderTotalSizeMultiplier === "number";
+}
+
+function projectXTotalBaseSize(trade: TradeAlert, fallbackBaseSize: number): number {
+  return projectXIsSplitOrder(trade) ? trade.splitOrderTotalSizeMultiplier! : fallbackBaseSize;
+}
+
+function projectXOrderLegSize(trade: TradeAlert, totalSize: number): number {
+  if (!projectXIsSplitOrder(trade)) return totalSize;
+  if (totalSize <= 0) return 0;
+  const entrySize = Math.ceil(totalSize * 0.5);
+  return trade.orderLeg === "entry" ? entrySize : Math.max(0, totalSize - entrySize);
+}
+
+function projectXTradeUsesCustomSizing(trade: TradeAlert, fallbackBaseSize: number): boolean {
+  return customUnitSizeMultiplierForTrade(trade) !== null || (trade.sizeMode === "custom" && Number.isFinite(fallbackBaseSize) && fallbackBaseSize > 0);
+}
+
+function projectXTotalExecutableSize(trade: TradeAlert, fallbackBaseSize: number, account?: ProjectXAccount): number {
+  return scaledAutoTradeSizeForTrade(trade, projectXTotalBaseSize(trade, fallbackBaseSize), account, {
     minSize: 0,
     wholeNumber: true
   });
+}
 
-  if (isSplitOrder) {
-    if (totalSize <= 0) return 0;
-    const entrySize = Math.ceil(totalSize * 0.5);
-    return trade.orderLeg === "entry" ? entrySize : Math.max(0, totalSize - entrySize);
+function projectXOrderSizeForAccount(trade: TradeAlert, account: ProjectXAccount, fallbackBaseSize: number): number {
+  return projectXOrderLegSize(trade, projectXTotalExecutableSize(trade, fallbackBaseSize, account));
+}
+
+function allocateWholeProjectXSize(totalSize: number, targets: ProjectXAccountTarget[]): Map<number, number> {
+  const wholeTotal = Math.max(0, Math.floor(totalSize));
+  const allocations = new Map<number, number>();
+  if (!targets.length) return allocations;
+
+  const weightedTargets = targets.map((target, index) => {
+    const weight = autoTradeAccountSizeScale(target.account);
+    return {
+      exact: 0,
+      index,
+      remainder: 0,
+      size: 0,
+      target,
+      weight: Number.isFinite(weight) && weight > 0 ? weight : 1
+    };
+  });
+  const totalWeight = weightedTargets.reduce((sum, item) => sum + item.weight, 0) || weightedTargets.length;
+
+  let allocated = 0;
+  for (const item of weightedTargets) {
+    item.exact = (wholeTotal * item.weight) / totalWeight;
+    item.size = Math.floor(item.exact);
+    item.remainder = item.exact - item.size;
+    allocated += item.size;
   }
 
-  return totalSize;
+  let remaining = wholeTotal - allocated;
+  const remainderOrder = [...weightedTargets].sort((left, right) => right.remainder - left.remainder || right.weight - left.weight || left.index - right.index);
+  while (remaining > 0 && remainderOrder.length) {
+    for (const item of remainderOrder) {
+      if (remaining <= 0) break;
+      item.size += 1;
+      remaining -= 1;
+    }
+  }
+
+  for (const item of weightedTargets) {
+    allocations.set(item.target.account.id, item.size);
+  }
+  return allocations;
+}
+
+function projectXOrderSizesForTargets(trade: TradeAlert, targets: ProjectXAccountTarget[], fallbackBaseSize: number): Map<number, number> {
+  const sizes = new Map<number, number>();
+  if (!projectXTradeUsesCustomSizing(trade, fallbackBaseSize) || targets.length <= 1) {
+    for (const target of targets) {
+      sizes.set(target.account.id, projectXOrderSizeForAccount(trade, target.account, fallbackBaseSize));
+    }
+    return sizes;
+  }
+
+  const totalSize = projectXTotalExecutableSize(trade, fallbackBaseSize);
+  const totalAllocations = allocateWholeProjectXSize(totalSize, targets);
+  for (const target of targets) {
+    sizes.set(target.account.id, projectXOrderLegSize(trade, totalAllocations.get(target.account.id) ?? 0));
+  }
+  return sizes;
 }
 
 function projectXPastFailureLookbackMs(): number {
@@ -1821,6 +1894,7 @@ export async function executeProjectXAutoTrade(trade: TradeAlert): Promise<Proje
       return result("failed", summarizeOrders([...orders, ...failedTargetOrders(accountTargets, message)]));
     }
 
+    const plannedOrderSizeByAccountId = projectXOrderSizesForTargets(trade, accountTargets, baseSize);
     const recentTrades = adaptiveSizeFallbackEnabled() ? await getTrades().catch(() => [] as TradeAlert[]) : undefined;
     for (const group of targetGroupsByConnection(accountTargets)) {
       let contractLookup: ProjectXContractLookup;
@@ -1847,7 +1921,7 @@ export async function executeProjectXAutoTrade(trade: TradeAlert): Promise<Proje
       const contractFields = { contractId: contract.id, contractName: contract.name };
       for (const target of group.targets) {
         const account = target.account;
-        const originalSize = projectXOrderSizeForAccount(trade, account, baseSize);
+        const originalSize = plannedOrderSizeByAccountId.get(account.id) ?? projectXOrderSizeForAccount(trade, account, baseSize);
         const customTag = customTagForTrade(trade, account.id);
         const orderBase = {
           ...targetOrderBase(target, contractFields),

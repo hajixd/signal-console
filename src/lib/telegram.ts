@@ -1,5 +1,5 @@
 import type { TradeAlert, TradeManagementEvent } from "./types";
-import { plannedRiskSizeMultiplierForTrade } from "./auto-trade-utils";
+import { realAutoTradeSizeForTrade } from "./auto-trade-utils";
 import { assetLookupSymbolForSymbol } from "./assets";
 import { dollarPerUnit, instrumentSizeLabel } from "./instruments";
 
@@ -340,7 +340,7 @@ function telegramTitle(title: string): string {
 
 export function formatTelegramMessage(trade: TradeAlert): string {
   const dollarUnit = dollarPerUnit(trade.symbol, trade.entryPrice);
-  const sizeMultiplier = plannedRiskSizeMultiplierForTrade(trade);
+  const sizeMultiplier = realAutoTradeSizeForTrade(trade);
   const rawSizeScale = trade.sizeScale;
   const sizeScale = typeof rawSizeScale === "number" && Number.isFinite(rawSizeScale) && rawSizeScale > 0 ? rawSizeScale : undefined;
   const targetDollars = Math.abs(trade.tpUnits * dollarUnit * sizeMultiplier);
@@ -385,7 +385,7 @@ export function formatTelegramOutcomeMessage(trade: TradeAlert): string {
   const sourceSignal = instrumentLabel !== trade.symbol ? `Signal ${escapeHtml(trade.symbol)}` : undefined;
   const execution = executionLines(trade);
   const dollarUnit = dollarPerUnit(trade.symbol, trade.entryPrice);
-  const sizeMultiplier = plannedRiskSizeMultiplierForTrade(trade);
+  const sizeMultiplier = realAutoTradeSizeForTrade(trade);
   const targetDollars = Math.abs(trade.tpUnits * dollarUnit * sizeMultiplier);
   const riskDollars = Math.abs(trade.slUnits * dollarUnit * sizeMultiplier);
   const lines = [
@@ -424,7 +424,7 @@ export function formatTelegramManagementMessage(trade: TradeAlert, event: TradeM
   const instrumentLabel = telegramInstrumentLabel(trade);
   const sourceSignal = instrumentLabel !== trade.symbol ? `Signal ${escapeHtml(trade.symbol)}` : undefined;
   const dollarUnit = dollarPerUnit(trade.symbol, trade.entryPrice);
-  const sizeMultiplier = plannedRiskSizeMultiplierForTrade(trade);
+  const sizeMultiplier = realAutoTradeSizeForTrade(trade, trade.sizeMultiplier ?? 1, event.autoTradeOrders);
   const targetDollars = Math.abs(trade.tpUnits * dollarUnit * sizeMultiplier);
   const riskDollars = Math.abs(trade.slUnits * dollarUnit * sizeMultiplier);
   const execution =

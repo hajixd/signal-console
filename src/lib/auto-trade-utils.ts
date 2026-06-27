@@ -195,24 +195,18 @@ export function scaledAutoTradeSizeForTrade(
   options: { minSize?: number; wholeNumber?: boolean } = {}
 ): number {
   const customSize = customUnitSizeMultiplierForTrade(trade) ?? savedCustomSizeMultiplierForTrade(trade, fallbackBaseSize);
-  const customWholeNumberMinSize = customSize !== null && options.wholeNumber ? (options.minSize ?? 0) : options.minSize;
-  return scaledAutoTradeSize(customSize ?? fallbackBaseSize, sources, {
-    ...options,
-    minSize: customWholeNumberMinSize,
-    wholeNumberRounding: customSize !== null && options.wholeNumber ? "floor" : undefined
-  });
-}
+  if (customSize !== null) {
+    return scaledAutoTradeSize(customSize, undefined, {
+      ...options,
+      minSize: options.wholeNumber ? (options.minSize ?? 0) : options.minSize,
+      wholeNumberRounding: options.wholeNumber ? "floor" : undefined
+    });
+  }
 
-export function plannedRiskSizeMultiplierForTrade(
-  trade: TradeAlert,
-  fallbackBaseSize = trade.sizeMultiplier ?? 1
-): number {
-  return (
-    customUnitSizeMultiplierForTrade(trade) ??
-    savedCustomSizeMultiplierForTrade(trade, fallbackBaseSize) ??
-    positiveFiniteSize(fallbackBaseSize) ??
-    1
-  );
+  return scaledAutoTradeSize(fallbackBaseSize, sources, {
+    ...options,
+    wholeNumberRounding: undefined
+  });
 }
 
 export function plannedAutoTradeSizeForTrade(
@@ -225,6 +219,28 @@ export function plannedAutoTradeSizeForTrade(
     minSize: wholeNumber ? 0 : undefined,
     wholeNumber
   });
+}
+
+export function executableOrderSizeMultiplier(orders: AutoTradeOrderSummary[] | undefined): number | undefined {
+  const sizes = (orders ?? [])
+    .filter(
+      (order) =>
+        (order.status === "placed" || order.status === "dry_run") &&
+        typeof order.size === "number" &&
+        Number.isFinite(order.size) &&
+        order.size > 0
+    )
+    .map((order) => Math.abs(order.size!));
+  if (!sizes.length) return undefined;
+  return sizes.reduce((sum, size) => sum + size, 0);
+}
+
+export function realAutoTradeSizeForTrade(
+  trade: TradeAlert,
+  fallbackBaseSize = trade.sizeMultiplier ?? 1,
+  orders: AutoTradeOrderSummary[] | undefined = trade.autoTradeOrders
+): number {
+  return executableOrderSizeMultiplier(orders) ?? plannedAutoTradeSizeForTrade(trade, fallbackBaseSize);
 }
 
 export function mappedSymbol(prefix: ProviderPrefix, trade: TradeAlert): string {

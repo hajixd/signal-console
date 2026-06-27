@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { executeAutoTrade, executeAutoTradeManagement, type AutoTradeExecutionResult } from "@/lib/auto-trader";
 import { autoTradeMarketForSignal } from "@/lib/auto-trade-platforms";
-import { plannedRiskSizeMultiplierForTrade } from "@/lib/auto-trade-utils";
+import { plannedAutoTradeSizeForTrade } from "@/lib/auto-trade-utils";
 import { dollarPerUnit } from "@/lib/instruments";
 import { assetTimeframeBarsKey } from "@/lib/market-data-refresh";
 import { fetchStoredAssetBars, fetchStoredMarketBars } from "@/lib/market-data-store";
@@ -79,7 +79,7 @@ function isMarketDataStaleError(error: unknown): boolean {
 
 function signalDollars(trade: TradeAlert): { targetDollars: number; riskDollars: number } {
   const unitValue = dollarPerUnit(trade.symbol, trade.entryPrice);
-  const sizeMultiplier = plannedRiskSizeMultiplierForTrade(trade);
+  const sizeMultiplier = plannedAutoTradeSizeForTrade(trade);
   return {
     riskDollars: Math.abs(trade.slUnits * unitValue * sizeMultiplier),
     targetDollars: Math.abs(trade.tpUnits * unitValue * sizeMultiplier)

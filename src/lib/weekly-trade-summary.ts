@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { FieldValue } from "firebase-admin/firestore";
 import { autoTradeMarketForSignal, type AutoTradeMarket } from "@/lib/auto-trade-platforms";
-import { plannedRiskSizeMultiplierForTrade } from "@/lib/auto-trade-utils";
+import { realAutoTradeSizeForTrade } from "@/lib/auto-trade-utils";
 import { firebaseDb, firebaseLocalFallbackEnabled, hasFirebaseAdmin, withFirebaseTimeout } from "@/lib/firebase-admin";
 import { omitUndefinedDeep } from "@/lib/firestore-utils";
 import { createTursoDocument, getTursoDocument, saveTursoDocument, tursoConfigured } from "@/lib/turso";
@@ -393,7 +393,7 @@ function tradeTime(trade: TradeAlert): number {
 }
 
 function tradeRiskDollars(trade: TradeAlert): number {
-  return Math.abs(trade.slUnits * dollarPerUnit(trade.symbol, trade.entryPrice) * plannedRiskSizeMultiplierForTrade(trade));
+  return Math.abs(trade.slUnits * dollarPerUnit(trade.symbol, trade.entryPrice) * realAutoTradeSizeForTrade(trade));
 }
 
 function tradePnl(trade: TradeAlert): number | undefined {

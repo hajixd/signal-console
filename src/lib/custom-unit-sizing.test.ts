@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { mappedSize, plannedAutoTradeSizeForTrade, plannedRiskSizeMultiplierForTrade } from "@/lib/auto-trade-utils";
+import { mappedSize, plannedAutoTradeSizeForTrade, realAutoTradeSizeForTrade } from "@/lib/auto-trade-utils";
 import { customUnitSizeMultiplierForTrade } from "@/lib/custom-unit-sizing";
 import type { StrategySignal } from "@/lib/strategy-definition";
 import { planTradeAlert } from "@/lib/trade-planner";
@@ -99,8 +99,8 @@ test("planner snapshots the range and sizes each signal independently", () => {
   assert.deepEqual(second?.customScaleRange, customScaleRange);
 });
 
-test("uses ceiling-safe whole units after account scaling", () => {
-  assert.equal(mappedSize("TRADOVATE", trade(), undefined, { accountName: "50K account" }), 3);
+test("custom auto trade sizing uses the largest ceiling-safe whole futures size", () => {
+  assert.equal(mappedSize("TRADOVATE", trade(), undefined, { accountName: "50K account" }), 6);
 });
 
 test("planned live execution uses the largest ceiling-safe whole futures size", () => {
@@ -108,19 +108,29 @@ test("planned live execution uses the largest ceiling-safe whole futures size", 
   assert.equal(plannedAutoTradeSizeForTrade(trade({ slUnits: 200, tpUnits: 600 })), 5);
 });
 
-test("planned risk display keeps exact custom range sizing", () => {
-  assert.equal(plannedRiskSizeMultiplierForTrade(trade()), 6.711409);
-});
-
-test("planned risk display keeps saved custom size exact when older trades lack a range snapshot", () => {
+test("planned live execution floors saved custom sizes for older futures trades without a range snapshot", () => {
   const olderLiveTrade = trade({ customScaleRange: undefined, sizeMode: "custom", sizeMultiplier: 24.3902, slUnits: 41, tpUnits: 41 });
 
-  assert.equal(plannedRiskSizeMultiplierForTrade(olderLiveTrade), 24.3902);
   assert.equal(plannedAutoTradeSizeForTrade(olderLiveTrade), 24);
 });
 
+test("real live reporting uses stored execution size before planned size", () => {
+  assert.equal(
+    realAutoTradeSizeForTrade(
+      trade({
+        autoTradeOrders: [
+          { accountId: 1, size: 5, status: "placed" },
+          { accountId: 2, size: 3, status: "dry_run" },
+          { accountId: 3, size: 99, status: "failed" }
+        ]
+      })
+    ),
+    8
+  );
+});
+
 test("custom units override a static provider size map", () => {
-  assert.equal(mappedSize("TRADOVATE", trade(), undefined, { accountName: "50K account", sizeMap: '{"NQ":"20"}' }), 3);
+  assert.equal(mappedSize("TRADOVATE", trade(), undefined, { accountName: "50K account", sizeMap: '{"NQ":"20"}' }), 6);
 });
 
 test("non-custom futures sizing retains existing upward rounding", () => {
