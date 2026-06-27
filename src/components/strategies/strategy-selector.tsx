@@ -112,6 +112,8 @@ const STRATEGY_SIZES_PARAM = "strategySizes";
 const EDIT_RENDER_DELAY_MS = 650;
 const SELECTION_SYNC_DELAY_MS = 650;
 const STRATEGY_EDITING_ENABLED = false;
+const CUSTOM_UNIT_SCALING_ENABLED = true;
+const STRATEGY_EDIT_SYNC_ENABLED = STRATEGY_EDITING_ENABLED || CUSTOM_UNIT_SCALING_ENABLED;
 const EMPTY_CUSTOM_SCALE_RANGE: CustomScaleRangeInput = {
   riskCeiling: "",
   riskFloor: "",
@@ -650,7 +652,7 @@ export default function StrategySelector({
   const [isCustomSelectionOpen, setIsCustomSelectionOpen] = useState(false);
   const customScaleRangeKey = customScaleRangeStorageKey(market);
   const [customScaleRange, setCustomScaleRange] = useState<CustomScaleRangeInput>(() =>
-    STRATEGY_EDITING_ENABLED
+    CUSTOM_UNIT_SCALING_ENABLED
       ? loadClientCustomScaleRange(customScaleRangeKey, persistedCustomScaleRange)
       : normalizeCustomScaleRangeInput(persistedCustomScaleRange)
   );
@@ -695,6 +697,7 @@ export default function StrategySelector({
   const editSyncTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const editSyncRunRef = useRef(0);
   const editControlsDisabled = !STRATEGY_EDITING_ENABLED || isSavingEdits || isRestricted;
+  const customScaleControlsDisabled = !CUSTOM_UNIT_SCALING_ENABLED || isSavingEdits || isSavingCustomScaleRange || isRestricted;
   const selectionControlsDisabled = isRestricted;
   const savingSelectionKeySet = useMemo(() => new Set(savingSelectionKeys), [savingSelectionKeys]);
   const isStrategyLoading =
@@ -822,6 +825,7 @@ export default function StrategySelector({
     return () => {
       if (selectionSyncTimerRef.current) clearTimeout(selectionSyncTimerRef.current);
       if (customScaleSyncTimerRef.current) clearTimeout(customScaleSyncTimerRef.current);
+      if (editSyncTimerRef.current) clearTimeout(editSyncTimerRef.current);
     };
   }, []);
 
@@ -854,7 +858,8 @@ export default function StrategySelector({
   }, [pathname]);
 
   useEffect(() => {
-    if (!STRATEGY_EDITING_ENABLED) return;
+    if (!STRATEGY_EDIT_SYNC_ENABLED) return;
+    if (isRestricted) return;
     if (!isLoaded) return;
     if (Object.keys(edits).length) {
       window.localStorage.setItem(STORAGE_KEY, JSON.stringify(edits));
@@ -862,7 +867,7 @@ export default function StrategySelector({
       window.localStorage.removeItem(STORAGE_KEY);
     }
     emitStrategyEditsChanged(edits);
-  }, [edits, isLoaded]);
+  }, [edits, isLoaded, isRestricted]);
 
   useEffect(() => {
     if (isRestricted) return;
@@ -880,7 +885,7 @@ export default function StrategySelector({
 
     setIsCustomScaleLoaded(false);
     setCustomScaleRange(
-      STRATEGY_EDITING_ENABLED
+      CUSTOM_UNIT_SCALING_ENABLED
         ? loadClientCustomScaleRange(customScaleRangeKey, persistedCustomScaleRange)
         : normalizeCustomScaleRangeInput(persistedCustomScaleRange)
     );
@@ -890,7 +895,8 @@ export default function StrategySelector({
   }, [currentCustomScaleRangeSignature, customScaleRangeKey, isCustomScaleOpen, persistedCustomScaleRange, persistedCustomScaleRangeSignature]);
 
   useEffect(() => {
-    if (!STRATEGY_EDITING_ENABLED) return;
+    if (!CUSTOM_UNIT_SCALING_ENABLED) return;
+    if (isRestricted) return;
     if (!isCustomScaleLoaded) return;
     if (typeof window === "undefined") return;
     if (hasCustomScaleRangeValue(customScaleRange)) {
@@ -898,10 +904,11 @@ export default function StrategySelector({
     } else {
       window.localStorage.removeItem(customScaleRangeKey);
     }
-  }, [customScaleRange, customScaleRangeKey, isCustomScaleLoaded]);
+  }, [customScaleRange, customScaleRangeKey, isCustomScaleLoaded, isRestricted]);
 
   useEffect(() => {
-    if (!STRATEGY_EDITING_ENABLED) return;
+    if (!CUSTOM_UNIT_SCALING_ENABLED) return;
+    if (isRestricted) return;
     if (!isCustomScaleLoaded) return;
     if (currentCustomScaleRangeSignature === persistedCustomScaleRangeSignature) {
       lastSyncedCustomScaleRangeRef.current = currentCustomScaleRangeSignature;
@@ -947,6 +954,7 @@ export default function StrategySelector({
   }, [
     currentCustomScaleRangeSignature,
     customScaleRange,
+    isRestricted,
     isCustomScaleLoaded,
     market,
     persistCustomScaleRange,
@@ -1005,7 +1013,8 @@ export default function StrategySelector({
   }, [market, optimisticSelectedKeys, optimisticSelectionSignature, persistLiveSelection, persistedLiveSelectionSignature, router, strategyScopeKeys, strategyScopeSignature]);
 
   useEffect(() => {
-    if (!STRATEGY_EDITING_ENABLED) return;
+    if (!STRATEGY_EDIT_SYNC_ENABLED) return;
+    if (isRestricted) return;
     if (!isLoaded) return;
     if (currentEditSignature === persistedEditsSignature) {
       lastSyncedEditsRef.current = currentEditSignature;
@@ -1047,7 +1056,7 @@ export default function StrategySelector({
         editSyncTimerRef.current = null;
       }
     };
-  }, [currentEditSignature, edits, isLoaded, persistStrategyEdits, persistedEditsSignature, router, strategyScopeKeys]);
+  }, [currentEditSignature, edits, isLoaded, isRestricted, persistStrategyEdits, persistedEditsSignature, router, strategyScopeKeys]);
 
   useEffect(() => {
     if (!activeKey && !isCustomScaleOpen && !isCustomSelectionOpen) return undefined;
@@ -1220,7 +1229,7 @@ export default function StrategySelector({
   }
 
   function openCustomScale() {
-    if (editControlsDisabled) return;
+    if (customScaleControlsDisabled) return;
     setCustomScaleError("");
     setCustomScaleResult(null);
     setIsCustomScaleOpen(true);
@@ -1405,20 +1414,24 @@ export default function StrategySelector({
             }}
           />
         </label>
-        {STRATEGY_EDITING_ENABLED ? (
+        {CUSTOM_UNIT_SCALING_ENABLED ? (
           <div className="bulkScale">
             <span>All scale</span>
             <div className="scaleButtons" aria-label="Scale all strategy rows">
-              <button type="button" onClick={() => scaleAllContracts(0.5)} disabled={editControlsDisabled || strategies.length === 0}>
-                0.5x
-              </button>
-              <button type="button" onClick={() => scaleAllContracts(2)} disabled={editControlsDisabled || strategies.length === 0}>
-                2x
-              </button>
-              <button type="button" onClick={() => scaleAllContracts(4)} disabled={editControlsDisabled || strategies.length === 0}>
-                4x
-              </button>
-              <button type="button" onClick={openCustomScale} disabled={editControlsDisabled || strategies.length === 0}>
+              {STRATEGY_EDITING_ENABLED ? (
+                <>
+                  <button type="button" onClick={() => scaleAllContracts(0.5)} disabled={editControlsDisabled || strategies.length === 0}>
+                    0.5x
+                  </button>
+                  <button type="button" onClick={() => scaleAllContracts(2)} disabled={editControlsDisabled || strategies.length === 0}>
+                    2x
+                  </button>
+                  <button type="button" onClick={() => scaleAllContracts(4)} disabled={editControlsDisabled || strategies.length === 0}>
+                    4x
+                  </button>
+                </>
+              ) : null}
+              <button type="button" onClick={openCustomScale} disabled={customScaleControlsDisabled || strategies.length === 0}>
                 Custom Unit
               </button>
             </div>
@@ -1641,7 +1654,7 @@ export default function StrategySelector({
         </div>
       ), document.body) : null}
 
-      {STRATEGY_EDITING_ENABLED && !isRestricted && isCustomScaleOpen ? createPortal((
+      {CUSTOM_UNIT_SCALING_ENABLED && !isRestricted && isCustomScaleOpen ? createPortal((
         <div className="strategyModalBackdrop" role="presentation" onMouseDown={closeCustomScale}>
           <form
             className="strategyModal customScaleModal"
