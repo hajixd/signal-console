@@ -2,6 +2,11 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { mappedSize, plannedAutoTradeSizeForTrade, realAutoTradeSizeForTrade } from "@/lib/auto-trade-utils";
 import { customUnitSizeMultiplierForTrade } from "@/lib/custom-unit-sizing";
+import {
+  alertTargetDollarsWithSize,
+  liveClosedTradePnlDollars,
+  liveTradeEventAutoTradeOrders
+} from "@/lib/live-trade-calculations";
 import type { StrategySignal } from "@/lib/strategy-definition";
 import { planTradeAlert } from "@/lib/trade-planner";
 import type { StrategyRule, TradeAlert } from "@/lib/types";
@@ -127,6 +132,33 @@ test("real live reporting uses stored execution size before planned size", () =>
     ),
     8
   );
+});
+
+test("live MBT display uses executed size and bounded bracket dollars", () => {
+  const mbtTrade = trade({
+    autoTradeOrders: [{ accountId: 1, contractName: "MBTM6", size: 5, status: "placed" }],
+    customScaleRange: undefined,
+    entryPrice: 61_090,
+    entryType: "limit",
+    lifecyclePnlDollars: 500,
+    lifecycleRMultiple: 500 / 102.5,
+    lifecycleStatus: "take_profit",
+    market: "futures",
+    side: "short",
+    sizeMode: "custom",
+    sizeMultiplier: 24,
+    slUnits: 41,
+    stopLossPrice: 61_295,
+    symbol: "MBT",
+    takeProfitPrice: 60_885,
+    tpUnits: 41
+  });
+  const limitOrders = liveTradeEventAutoTradeOrders(mbtTrade, "limit");
+  const executedSize = realAutoTradeSizeForTrade(mbtTrade, mbtTrade.sizeMultiplier, limitOrders);
+
+  assert.equal(executedSize, 5);
+  assert.equal(alertTargetDollarsWithSize(mbtTrade, executedSize), 102.5);
+  assert.equal(liveClosedTradePnlDollars(mbtTrade, executedSize), 102.5);
 });
 
 test("custom units override a static provider size map", () => {
