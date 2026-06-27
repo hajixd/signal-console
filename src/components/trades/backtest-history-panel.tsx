@@ -10,13 +10,19 @@ import { type TradeHistoryRow } from "@/components/trades/trade-history";
 import LocalDateTime from "@/components/ui/local-date-time";
 
 type BacktestHistoryPanelProps = {
-  backtestBehindMarketData: boolean;
+  backtestBehindMarketData?: boolean;
   customScaleRange?: CustomScaleRangeSeed;
+  descriptionPrefix?: string;
+  emptyMessage?: string;
+  emptyTitle?: string;
   historySourceLabel: string;
+  latestHistoryTradeLabel?: string;
   latestHistoryTradeAt?: string;
   persistedStrategyEdits?: StrategyEditSeedMap;
   rows: TradeHistoryRow[];
   strategies: StrategyEditOption[];
+  title?: string;
+  viewAriaLabel?: string;
 };
 
 type HistoryViewMode = "list" | "calendar";
@@ -28,13 +34,19 @@ type CustomScaleRangeSeed = {
 };
 
 export default function BacktestHistoryPanel({
-  backtestBehindMarketData,
+  backtestBehindMarketData = false,
   customScaleRange,
+  descriptionPrefix = "Stored historical trades for all active-market strategies.",
+  emptyMessage = "No stored backtest trades are available for this market yet.",
+  emptyTitle = "No backtest trades match",
   historySourceLabel,
+  latestHistoryTradeLabel = "Latest history trade",
   latestHistoryTradeAt,
   persistedStrategyEdits,
   rows,
-  strategies
+  strategies,
+  title = "Backtest History",
+  viewAriaLabel
 }: BacktestHistoryPanelProps) {
   const [view, setView] = useState<HistoryViewMode>("list");
 
@@ -43,8 +55,8 @@ export default function BacktestHistoryPanel({
       <div className="backtest-card-head historyPanelHead">
         <div>
           <div className="historyTitleLine">
-            <h2>Backtest History</h2>
-            <div className="historyViewSwitch" role="tablist" aria-label="Backtest history view">
+            <h2>{title}</h2>
+            <div className="historyViewSwitch" role="tablist" aria-label={viewAriaLabel ?? `${title} view`}>
               {(["list", "calendar"] as const).map((mode) => (
                 <button
                   key={mode}
@@ -60,7 +72,7 @@ export default function BacktestHistoryPanel({
             </div>
           </div>
           <p>
-            Stored historical trades for all active-market strategies. Latest history trade:{" "}
+            {descriptionPrefix} {latestHistoryTradeLabel}:{" "}
             <LocalDateTime value={latestHistoryTradeAt} fallback="unknown" />.
           </p>
         </div>
@@ -71,8 +83,8 @@ export default function BacktestHistoryPanel({
 
       {rows.length === 0 ? (
         <div className="empty-state">
-          <strong>No backtest trades match</strong>
-          <span>No stored backtest trades are available for this market yet.</span>
+          <strong>{emptyTitle}</strong>
+          <span>{emptyMessage}</span>
         </div>
       ) : (
         <EditableTradeHistory

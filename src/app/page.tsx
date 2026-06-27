@@ -2026,9 +2026,20 @@ export default async function Home({ searchParams }: HomeProps) {
         lockedSize: true
       };
     });
-  const liveHistoryOpenCount = liveHistoryRows.filter((row) => row.exitReasonLabel === "Still Open").length;
-  const liveHistoryClosedCount = liveHistoryRows.length - liveHistoryOpenCount;
-  const selectedLiveBasketTrades = liveHistoryRows
+  const visibleLiveHistoryRows = [...liveHistoryRows]
+    .sort(
+      (left, right) =>
+        Date.parse(right.entryTime) - Date.parse(left.entryTime) ||
+        Date.parse(right.exitTime) - Date.parse(left.exitTime) ||
+        right.pnlDollars - left.pnlDollars
+    )
+    .map((row, index) => ({
+      ...row,
+      indexLabel: fmtNumber(index + 1)
+    }));
+  const liveHistoryOpenCount = visibleLiveHistoryRows.filter((row) => row.exitReasonLabel === "Still Open").length;
+  const liveHistoryClosedCount = visibleLiveHistoryRows.length - liveHistoryOpenCount;
+  const selectedLiveBasketTrades = visibleLiveHistoryRows
     .filter((row) => row.exitReasonLabel !== "Still Open" && selectedLiveTradeKeys.has(row.strategyKey))
     .map((row) => ({
       key: row.strategyKey,
@@ -2048,8 +2059,8 @@ export default async function Home({ searchParams }: HomeProps) {
       side: row.side,
       exitReason: row.exitReasonLabel
     }));
-  const historyTotalTradeCount = visibleStoredBacktestHistoryTrades.length + liveHistoryRows.length;
-  const tradeHistoryRows = [...visibleStoredBacktestHistoryRows, ...liveHistoryRows]
+  const historyTotalTradeCount = visibleStoredBacktestHistoryTrades.length + visibleLiveHistoryRows.length;
+  const tradeHistoryRows = [...visibleStoredBacktestHistoryRows, ...visibleLiveHistoryRows]
     .sort(
       (left, right) =>
         Date.parse(right.entryTime) - Date.parse(left.entryTime) ||
@@ -2066,9 +2077,14 @@ export default async function Home({ searchParams }: HomeProps) {
     hiddenHistoryTradeCount > 0
       ? `Showing latest ${fmtNumber(visibleTradeHistoryRows.length)} of ${fmtNumber(historyTotalTradeCount)} trades`
       : `Showing ${fmtNumber(visibleTradeHistoryRows.length)} trades from the past year`;
-  const historySourceLabel = liveHistoryRows.length
+  const historySourceLabel = visibleLiveHistoryRows.length
     ? `${historyCountLabel} / ${fmtNumber(liveHistoryClosedCount)} closed live / ${fmtNumber(liveHistoryOpenCount)} open live`
     : historyCountLabel;
+  const liveHistorySourceLabel =
+    visibleLiveHistoryRows.length > 0
+      ? `Showing ${fmtNumber(visibleLiveHistoryRows.length)} live trades from the past year / ${fmtNumber(liveHistoryClosedCount)} closed / ${fmtNumber(liveHistoryOpenCount)} open`
+      : "Showing 0 live trades from the past year";
+  const latestLiveHistoryTradeAt = visibleLiveHistoryRows[0]?.entryTime ?? latestLiveTradeAt(activeMarketLiveTrades);
   const backtestHistorySourceLabel = `Showing ${fmtNumber(visibleStoredBacktestHistoryRows.length)} historical trades from the past year`;
   const latestBacktestHistoryTradeAt = visibleStoredBacktestHistoryRows[0]?.entryTime ?? latestBacktestTradeAt;
   const latestHistoryTradeAt = tradeHistoryRows[0]?.entryTime ?? latestBacktestTradeAt;
@@ -2394,7 +2410,13 @@ export default async function Home({ searchParams }: HomeProps) {
       icon: "history",
       id: "backtest",
       label: "History",
-      meta: `${fmtNumber(activeMarketLiveTrades.length)} live / ${fmtNumber(visibleStoredBacktestHistoryRows.length)} history`
+      meta: `${fmtNumber(visibleStoredBacktestHistoryRows.length)} rows`
+    },
+    {
+      icon: "live",
+      id: "live",
+      label: "Live",
+      meta: `${fmtNumber(visibleLiveHistoryRows.length)} rows`
     },
     {
       icon: "sync",
@@ -2413,7 +2435,7 @@ export default async function Home({ searchParams }: HomeProps) {
       initialTheme={liveConfig.dashboardSettings.theme}
       latestHistoryTradeAt={latestHistoryTradeAt}
       latestLiveAlertAt={latestActiveMarketSignalAt}
-      liveAlertRows={liveHistoryRows}
+      liveAlertRows={visibleLiveHistoryRows}
       marketLabel={marketLabel(activeMarket)}
       persistedStrategyEdits={liveConfig.strategyEdits}
       persistActiveMarket={syncActiveMarket}
@@ -2574,152 +2596,7 @@ export default async function Home({ searchParams }: HomeProps) {
           />
         </section>
 
-        <div className="historySectionStack" id="backtest">
-        <section className="backtest-card history-card" aria-label="Live trade history">
-          <div className="backtest-card-head">
-            <div>
-              <h2>Live History</h2>
-              <p>Stored live alerts for the active market.</p>
-            </div>
-            <span className="count-pill">
-              Showing {fmtNumber(activeMarketLiveEventRows.length)} events / {fmtNumber(activeMarketLiveTrades.length)} alerts
-            </span>
-          </div>
-
-          {activeMarketLiveTrades.length === 0 ? (
-            <div className="empty-state">
-              <strong>No live alerts yet</strong>
-              <span>The next stored {marketLabel(activeMarket).toLowerCase()} cron signal will show up here.</span>
-            </div>
-          ) : (
-            <div className="terminal-table-wrap live">
-              <table className="terminal-table live-alert-table">
-                <colgroup>
-                  <col className="live-col-signal" />
-                  <col className="live-col-contract" />
-                  <col className="live-col-event" />
-                  <col className="live-col-price" />
-                  <col className="live-col-size" />
-                  <col className="live-col-money" />
-                  <col className="live-col-status" />
-                  <col className="live-col-delivery" />
-                </colgroup>
-                <thead>
-                  <tr>
-                    <th className="cronTradeHeaderCell" colSpan={8}>
-                      <span className="cronTradeHeaderGrid">
-                        <span>Signal</span>
-                        <span>Contract</span>
-                        <span>Event</span>
-                        <span>Price</span>
-                        <span>Size</span>
-                        <span>P&L / Risk</span>
-                        <span>Auto Trade</span>
-                        <span>Sent</span>
-                      </span>
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {activeMarketLiveTrades.map((trade) => {
-                    const option = optionForLiveTrade(trade);
-                    const events = liveTradeEvents(trade);
-                    const displaySymbol = liveTradeDisplaySymbol(trade);
-                    const symbolTitle = displaySymbol !== trade.symbol ? `Signal ${trade.symbol}` : undefined;
-                    const modelLabel = liveTradeModelLabel(trade, option);
-                    const summarySizeMultiplier = liveTradeOrderSizeMultiplier(trade) ?? (trade.sizeMultiplier ?? 1);
-                    return (
-                      <tr className={liveRowClass(trade)} key={trade.id}>
-                        <td className="cronTradeCell" colSpan={8}>
-                          <details className="cronTradeDetails">
-                            <summary className="cronTradeSummary" aria-label={`Expand ${displaySymbol} cron events for ${fmtDate(trade.signalTime)}`}>
-                              <span className="main-cell" data-label="Signal">
-                                <span>{modelLabel}</span>
-                                <small><LocalDateTime value={trade.signalTime} /></small>
-                              </span>
-                              <span className="main-cell" data-label="Contract" title={symbolTitle}>
-                                <span className="ticker-cell">{displaySymbol}</span>
-                                <small className={sideClass(trade.side)}>{sideLabel(trade.side)}</small>
-                              </span>
-                              <span className="event-cell" data-label="Event">
-                                <span className="eventPill neutral">{fmtNumber(events.length)} events</span>
-                              </span>
-                              <span className="main-cell" data-label="Price">
-                                <span>{fmtDollarPrice(trade.entryPrice)}</span>
-                                <small>{liveTradeExitLine(trade)}</small>
-                              </span>
-                              <span data-label="Size">{liveTradeOrderSizeLabel(trade, displaySymbol, summarySizeMultiplier)}</span>
-                              <span className={`cronMoneyCell ${liveTradePnlToneClass(trade)}`} data-label="P&L / Risk">{liveTradePnlOrRiskLabel(trade, summarySizeMultiplier)}</span>
-                              <span data-label="Auto Trade" title={trade.autoTradeError ?? trade.autoTradeProviderName ?? trade.autoTradeContractName ?? trade.autoTradeContractId ?? undefined}>
-                                <span className={`status ${autoTradeStatusClass(trade)}`}>{autoTradeStatusLabel(trade)}</span>
-                              </span>
-                              <span data-label="Sent">
-                                <span className="cronDeliveryStack">
-                                  <span className={`status ${trade.telegramStatus}`}>TG {trade.telegramStatus}</span>
-                                  <span className={`status ${trade.discordStatus ?? "skipped"}`}>DC {trade.discordStatus ?? "skipped"}</span>
-                                </span>
-                              </span>
-                            </summary>
-                            <div className="cronTradeEventPanel" aria-label={`${displaySymbol} cron event details`}>
-                              {events.map((event, eventIndex) => {
-                                const eventDisplaySymbol = liveTradeEventDisplaySymbol(trade, event);
-                                return (
-                                <div className="cronTradeEventRow" key={`${trade.id}-${event.kind}-${eventIndex}`}>
-                                  <span className="main-cell" data-label="Signal">
-                                    <span>{modelLabel}</span>
-                                    <small><LocalDateTime value={liveTradeEventTime(trade, event)} /></small>
-                                  </span>
-                                  <span
-                                    className="main-cell"
-                                    data-label="Contract"
-                                    title={eventDisplaySymbol !== trade.symbol ? `Signal ${trade.symbol}` : undefined}
-                                  >
-                                    <span className="ticker-cell">{eventDisplaySymbol}</span>
-                                    <small className={sideClass(trade.side)}>{sideLabel(trade.side)}</small>
-                                  </span>
-                                  <span className="event-cell" data-label="Event">
-                                    <span className={`eventPill ${event.className}`} title={event.title}>
-                                      {event.label}
-                                    </span>
-                                  </span>
-                                  <span className="main-cell" data-label="Price">
-                                    <span>{fmtDollarPrice(liveTradeEventEntryPrice(trade, event))}</span>
-                                    <small>{liveTradeEventPriceLine(trade, event)}</small>
-                                  </span>
-                                  <span data-label="Size">{liveTradeEventSizeLabel(trade, event)}</span>
-                                  <span className={`cronMoneyCell ${liveTradeEventPnlToneClass(trade, event)}`} data-label="P&L / Risk">
-                                    {liveTradeEventPnlOrRiskLabel(trade, event)}
-                                  </span>
-                                  <span
-                                    data-label="Auto Trade"
-                                    title={liveTradeEventAutoTradeError(trade, event) ?? trade.autoTradeProviderName ?? trade.autoTradeContractName ?? trade.autoTradeContractId ?? undefined}
-                                  >
-                                    <span className={`status ${liveTradeEventAutoTradeStatusClass(trade, event)}`}>
-                                      {liveTradeEventAutoTradeStatusLabel(trade, event)}
-                                    </span>
-                                  </span>
-                                  <span data-label="Sent">
-                                    <span className="cronDeliveryStack">
-                                      <span className={`status ${liveTradeEventTelegramStatus(trade, event)}`}>TG {liveTradeEventTelegramStatus(trade, event)}</span>
-                                      <span className={`status ${liveTradeEventDiscordStatus(trade, event)}`}>DC {liveTradeEventDiscordStatus(trade, event)}</span>
-                                    </span>
-                                  </span>
-                                </div>
-                              );
-                              })}
-                            </div>
-                          </details>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </section>
-
-        <section className="backtest-card history-card" aria-label="Backtest trade history">
+        <section className="backtest-card history-card" id="backtest" aria-label="Backtest trade history">
           <BacktestHistoryPanel
             backtestBehindMarketData={backtestBehindMarketData}
             customScaleRange={liveConfig.customScaleRanges[activeMarket]}
@@ -2730,7 +2607,21 @@ export default async function Home({ searchParams }: HomeProps) {
             persistedStrategyEdits={liveConfig.strategyEdits}
           />
         </section>
-        </div>
+
+        <section className="backtest-card history-card" id="live" aria-label="Live trade history">
+          <BacktestHistoryPanel
+            descriptionPrefix="Stored live trades for all active-market strategies."
+            emptyMessage={`The next stored ${marketLabel(activeMarket).toLowerCase()} cron signal will show up here.`}
+            emptyTitle="No live trades yet"
+            historySourceLabel={liveHistorySourceLabel}
+            latestHistoryTradeAt={latestLiveHistoryTradeAt}
+            latestHistoryTradeLabel="Latest live trade"
+            rows={visibleLiveHistoryRows}
+            strategies={strategyOptions}
+            title="Live History"
+            viewAriaLabel="Live history view"
+          />
+        </section>
 
         <section className="backtest-card sync-card" id="sync">
           <div className="backtest-card-head">
