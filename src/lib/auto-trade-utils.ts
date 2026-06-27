@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import { assetForKey, assetForSymbol, defaultTickSize } from "@/lib/assets";
+import { customUnitSizeMultiplierForTrade } from "@/lib/custom-unit-sizing";
 import type { ProjectXAutoTradeResult, ProjectXAutoTradeStatus } from "@/lib/projectx-auto-trader";
 import type { AutoTradeOrderSummary, TradeAlert } from "@/lib/types";
 
@@ -177,6 +178,19 @@ export function scaledAutoTradeSize(
   return Math.max(options.minSize ?? 0.0001, Number(scaled.toFixed(4)));
 }
 
+export function scaledAutoTradeSizeForTrade(
+  trade: TradeAlert,
+  fallbackBaseSize: number,
+  sources: AutoTradeAccountSizeSource | Array<AutoTradeAccountSizeSource | undefined> | undefined,
+  options: { minSize?: number; wholeNumber?: boolean } = {}
+): number {
+  const customSize = customUnitSizeMultiplierForTrade(trade);
+  return scaledAutoTradeSize(customSize ?? fallbackBaseSize, sources, {
+    ...options,
+    wholeNumberRounding: customSize !== null && options.wholeNumber ? "floor" : undefined
+  });
+}
+
 export function mappedSymbol(prefix: ProviderPrefix, trade: TradeAlert): string {
   const symbol = trade.symbol.trim().toUpperCase();
   return parseEnvMap(`${prefix}_SYMBOL_MAP`)[symbol] ?? symbol;
@@ -193,7 +207,7 @@ export function mappedSize(prefix: ProviderPrefix, trade: TradeAlert, fallback =
     parseMap(fields?.sizeMap)[symbol] ?? parseMap(fields?.lotMap)[symbol] ?? parseEnvMap(`${prefix}_SIZE_MAP`)[symbol] ?? parseEnvMap(`${prefix}_LOT_MAP`)[symbol]
   );
   const size = Number.isFinite(mapped) && mapped > 0 ? mapped : fallback;
-  return scaledAutoTradeSize(Number.isFinite(size) && size > 0 ? size : 1, fields, {
+  return scaledAutoTradeSizeForTrade(trade, Number.isFinite(size) && size > 0 ? size : 1, fields, {
     wholeNumber: tradeRequiresWholeNumberSize(trade)
   });
 }

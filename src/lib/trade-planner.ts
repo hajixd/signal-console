@@ -1,4 +1,5 @@
-import { dollarPerUnit, recommendedSizeMultiplier } from "@/lib/instruments";
+import { customUnitSizeMultiplierForTrade } from "@/lib/custom-unit-sizing";
+import { recommendedSizeMultiplier } from "@/lib/instruments";
 import type { EnrichedBar } from "@/lib/indicators";
 import type { StrategySignal } from "@/lib/strategy-definition";
 import { priorDayRange, roundToTick } from "@/lib/strategy-runtime/helpers";
@@ -33,42 +34,6 @@ function interpolateSizeMultiplier(rule: StrategyRule, confidence: number): numb
   const clipped = Math.min(Math.max(confidence, minConfidence), maxConfidence);
   const pct = (clipped - minConfidence) / (maxConfidence - minConfidence);
   return Number((policy.minMultiplier + (policy.maxMultiplier - policy.minMultiplier) * pct).toFixed(2));
-}
-
-type ParsedCustomScaleRange = {
-  riskCeiling: number;
-  riskFloor: number;
-  targetCeiling: number;
-  targetFloor: number;
-};
-
-function positiveNumber(value: unknown): number | undefined {
-  const numeric = Number(value);
-  return Number.isFinite(numeric) && numeric > 0 ? numeric : undefined;
-}
-
-function parseCustomScaleRange(rule: StrategyRule): ParsedCustomScaleRange | null {
-  const range = rule.customScaleRange;
-  if (!range) return null;
-  const targetFloor = positiveNumber(range.targetFloor);
-  const targetCeiling = positiveNumber(range.targetCeiling);
-  const riskFloor = positiveNumber(range.riskFloor);
-  const riskCeiling = positiveNumber(range.riskCeiling);
-
-  if (!targetFloor || !targetCeiling || !riskFloor || !riskCeiling) return null;
-  if (targetFloor > targetCeiling || riskFloor > riskCeiling) return null;
-  return { riskCeiling, riskFloor, targetCeiling, targetFloor };
-}
-
-function customRangeSizeMultiplier(rule: StrategyRule, tpUnits: number, slUnits: number): number | null {
-  const range = parseCustomScaleRange(rule);
-  const dollarUnit = Math.abs(dollarPerUnit(rule.symbol));
-  const targetAtOne = Math.abs(tpUnits * dollarUnit);
-  const riskAtOne = Math.abs(slUnits * dollarUnit);
-  if (!range || !(targetAtOne > 0) || !(riskAtOne > 0)) return null;
-
-  const scale = Math.min(range.targetCeiling / targetAtOne, range.riskCeiling / riskAtOne);
-  return Number.isFinite(scale) && scale > 0 ? Number(scale.toFixed(4)) : null;
 }
 
 function priorDayExtremes(bars: EnrichedBar[], signalIndex: number): { high: number; low: number } | null {
@@ -202,7 +167,12 @@ export function planTradeAlert(
     sizeMode = finiteNumber(rule.sizeMultiplier) && rule.sizeMultiplier > 0 ? SIZE_MODE_CUSTOM : SIZE_MODE_AUTO;
   }
 
-  const customSizeMultiplier = customRangeSizeMultiplier(rule, tpUnits, slUnits);
+  const customSizeMultiplier = customUnitSizeMultiplierForTrade({
+    customScaleRange: rule.customScaleRange,
+    slUnits,
+    symbol: rule.symbol,
+    tpUnits
+  });
   if (finiteNumber(customSizeMultiplier) && customSizeMultiplier > 0) {
     sizeMultiplier = customSizeMultiplier;
     sizeMode = SIZE_MODE_CUSTOM;
@@ -231,6 +201,7 @@ export function planTradeAlert(
     tpMode,
     slMode,
     sizeMode,
+    customScaleRange: finiteNumber(customSizeMultiplier) ? rule.customScaleRange : undefined,
     unitLabel: rule.unitLabel,
     sizeScale: finiteNumber(rule.sizeScale) && rule.sizeScale > 0 ? rule.sizeScale : undefined,
     sizeMultiplier: sizeMultiplier ?? 1,

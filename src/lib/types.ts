@@ -196,6 +196,7 @@ export type TradeAlert = {
   tpMode?: BacktestPriceMode;
   slMode?: BacktestPriceMode;
   sizeMode?: BacktestSizeMode;
+  customScaleRange?: CustomScaleRange;
   unitLabel: string;
   sizeScale?: number;
   sizeMultiplier?: number;

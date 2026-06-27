@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import { assetForKey, assetForSymbol, assetLookupSymbolForSymbol } from "@/lib/assets";
 import { buildAutoTradeTestTrade } from "@/lib/auto-trade-test";
-import { scaledAutoTradeSize } from "@/lib/auto-trade-utils";
+import { scaledAutoTradeSizeForTrade } from "@/lib/auto-trade-utils";
 import { dollarPerUnit } from "@/lib/instruments";
 import {
   getStoredProjectXConnections,
@@ -257,14 +257,20 @@ function customTagForAttempt(baseTag: string, size: number, originalSize: number
 }
 
 function projectXOrderSizeForAccount(trade: TradeAlert, account: ProjectXAccount, fallbackBaseSize: number): number {
-  if ((trade.orderLeg === "entry" || trade.orderLeg === "limit") && typeof trade.splitOrderTotalSizeMultiplier === "number") {
-    const totalSize = scaledAutoTradeSize(trade.splitOrderTotalSizeMultiplier, account, { minSize: 0, wholeNumber: true });
+  const isSplitOrder = (trade.orderLeg === "entry" || trade.orderLeg === "limit") && typeof trade.splitOrderTotalSizeMultiplier === "number";
+  const totalBaseSize = isSplitOrder ? trade.splitOrderTotalSizeMultiplier! : fallbackBaseSize;
+  const totalSize = scaledAutoTradeSizeForTrade(trade, totalBaseSize, account, {
+    minSize: 0,
+    wholeNumber: true
+  });
+
+  if (isSplitOrder) {
     if (totalSize <= 0) return 0;
     const entrySize = Math.ceil(totalSize * 0.5);
     return trade.orderLeg === "entry" ? entrySize : Math.max(0, totalSize - entrySize);
   }
 
-  return scaledAutoTradeSize(fallbackBaseSize, account, { minSize: 0, wholeNumber: true });
+  return totalSize;
 }
 
 function projectXPastFailureLookbackMs(): number {
