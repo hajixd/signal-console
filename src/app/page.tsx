@@ -6,6 +6,7 @@ import AutoTradeAccountGate from "@/components/auto-trading/auto-trade-account-g
 import AutoTradeAccountModeSwitch from "@/components/auto-trading/auto-trade-account-mode-switch";
 import AutoTradingConnectionDrawer from "@/components/auto-trading/auto-trading-connection-drawer";
 import SelectedStrategyStats from "@/components/strategies/selected-strategy-stats";
+import StrategyStatsTabs from "@/components/strategies/strategy-stats-tabs";
 import StrategySelector from "@/components/strategies/strategy-selector";
 import BacktestHistoryPanel from "@/components/trades/backtest-history-panel";
 import { type TradeHistoryRow } from "@/components/trades/trade-history";
@@ -2027,6 +2028,26 @@ export default async function Home({ searchParams }: HomeProps) {
     });
   const liveHistoryOpenCount = liveHistoryRows.filter((row) => row.exitReasonLabel === "Still Open").length;
   const liveHistoryClosedCount = liveHistoryRows.length - liveHistoryOpenCount;
+  const selectedLiveBasketTrades = liveHistoryRows
+    .filter((row) => row.exitReasonLabel !== "Still Open" && selectedLiveTradeKeys.has(row.strategyKey))
+    .map((row) => ({
+      key: row.strategyKey,
+      lockedSize: true,
+      signalTime: row.signalTime,
+      entryTime: row.entryTime,
+      exitTime: row.exitTime,
+      barsHeld: Math.max(0, row.exitIndex - row.entryIndex),
+      basePnlDollars: row.pnlDollars,
+      baseRiskDollars: row.riskDollars,
+      baseTargetDollars: row.targetDollars,
+      rMultiple: row.riskDollars > 0 ? row.pnlDollars / row.riskDollars : 0,
+      symbol: row.symbol,
+      market: row.market,
+      phase: row.phase,
+      label: row.modelName,
+      side: row.side,
+      exitReason: row.exitReasonLabel
+    }));
   const historyTotalTradeCount = visibleStoredBacktestHistoryTrades.length + liveHistoryRows.length;
   const tradeHistoryRows = [...visibleStoredBacktestHistoryRows, ...liveHistoryRows]
     .sort(
@@ -2048,6 +2069,8 @@ export default async function Home({ searchParams }: HomeProps) {
   const historySourceLabel = liveHistoryRows.length
     ? `${historyCountLabel} / ${fmtNumber(liveHistoryClosedCount)} closed live / ${fmtNumber(liveHistoryOpenCount)} open live`
     : historyCountLabel;
+  const backtestHistorySourceLabel = `Showing ${fmtNumber(visibleStoredBacktestHistoryRows.length)} historical trades from the past year`;
+  const latestBacktestHistoryTradeAt = visibleStoredBacktestHistoryRows[0]?.entryTime ?? latestBacktestTradeAt;
   const latestHistoryTradeAt = tradeHistoryRows[0]?.entryTime ?? latestBacktestTradeAt;
   const dataValidity = analyzeBacktestDataValidity({
     assetCoverage: datasetStatus?.assetCoverage,
@@ -2371,13 +2394,7 @@ export default async function Home({ searchParams }: HomeProps) {
       icon: "history",
       id: "backtest",
       label: "History",
-      meta: `${fmtNumber(visibleTradeHistoryRows.length)} rows`
-    },
-    {
-      icon: "live",
-      id: "live",
-      label: "Live",
-      meta: `${fmtNumber(activeMarketLiveTrades.length)} alerts`
+      meta: `${fmtNumber(activeMarketLiveTrades.length)} live / ${fmtNumber(visibleStoredBacktestHistoryRows.length)} history`
     },
     {
       icon: "sync",
@@ -2501,17 +2518,36 @@ export default async function Home({ searchParams }: HomeProps) {
             <div>
               <h2>Stats</h2>
             </div>
-            <span className="count-pill">{fmtNumber(selectedBacktestTradeCount || selectedBacktestTrades.length)} selected trades</span>
+            <span className="count-pill">
+              {fmtNumber(selectedBacktestTradeCount || selectedBacktestTrades.length)} history / {fmtNumber(selectedLiveBasketTrades.length)} live
+            </span>
           </div>
 
-          <SelectedStrategyStats
-            customScaleRange={liveConfig.customScaleRanges[activeMarket]}
-            dataEndAt={selectedDataEndAt}
-            defaultExpanded
-            strategies={strategyOptions}
-            toggleable={false}
-            trades={selectedBasketTrades}
-            persistedStrategyEdits={liveConfig.strategyEdits}
+          <StrategyStatsTabs
+            history={(
+              <SelectedStrategyStats
+                customScaleRange={liveConfig.customScaleRanges[activeMarket]}
+                dataEndAt={selectedDataEndAt}
+                defaultExpanded
+                strategies={strategyOptions}
+                toggleable={false}
+                trades={selectedBasketTrades}
+                persistedStrategyEdits={liveConfig.strategyEdits}
+              />
+            )}
+            live={selectedLiveBasketTrades.length ? (
+              <SelectedStrategyStats
+                defaultExpanded
+                strategies={strategyOptions}
+                toggleable={false}
+                trades={selectedLiveBasketTrades}
+              />
+            ) : (
+              <div className="empty-state">
+                <strong>No closed live trades yet</strong>
+                <span>Live statistics will appear after an executed trade closes.</span>
+              </div>
+            )}
           />
         </section>
 
@@ -2538,22 +2574,11 @@ export default async function Home({ searchParams }: HomeProps) {
           />
         </section>
 
-        <section className="backtest-card history-card" id="backtest" aria-label="Backtest trade history">
-          <BacktestHistoryPanel
-            backtestBehindMarketData={backtestBehindMarketData}
-            customScaleRange={liveConfig.customScaleRanges[activeMarket]}
-            historySourceLabel={historySourceLabel}
-            latestHistoryTradeAt={latestHistoryTradeAt}
-            rows={visibleTradeHistoryRows}
-            strategies={strategyOptions}
-            persistedStrategyEdits={liveConfig.strategyEdits}
-          />
-        </section>
-
-        <section className="backtest-card history-card" id="live" aria-label="Cron execution history">
+        <div className="historySectionStack" id="backtest">
+        <section className="backtest-card history-card" aria-label="Live trade history">
           <div className="backtest-card-head">
             <div>
-              <h2>Cron Executions</h2>
+              <h2>Live History</h2>
               <p>Stored live alerts for the active market.</p>
             </div>
             <span className="count-pill">
@@ -2693,6 +2718,19 @@ export default async function Home({ searchParams }: HomeProps) {
             </div>
           )}
         </section>
+
+        <section className="backtest-card history-card" aria-label="Backtest trade history">
+          <BacktestHistoryPanel
+            backtestBehindMarketData={backtestBehindMarketData}
+            customScaleRange={liveConfig.customScaleRanges[activeMarket]}
+            historySourceLabel={backtestHistorySourceLabel}
+            latestHistoryTradeAt={latestBacktestHistoryTradeAt}
+            rows={visibleStoredBacktestHistoryRows}
+            strategies={strategyOptions}
+            persistedStrategyEdits={liveConfig.strategyEdits}
+          />
+        </section>
+        </div>
 
         <section className="backtest-card sync-card" id="sync">
           <div className="backtest-card-head">

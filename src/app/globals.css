@@ -730,6 +730,25 @@ html[data-theme="light"] .themeDarkLabel {
   animation: dashboardPanelEnter 130ms ease-out both;
 }
 
+.historySectionStack,
+.statsViewTabs {
+  min-width: 0;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.statsViewPanel {
+  min-width: 0;
+}
+
+.statsViewPanel[hidden] {
+  display: none;
+}
+
+.statsViewPanel:not([hidden]) {
+  animation: dashboardPanelEnter 130ms ease-out both;
+}
+
 @keyframes dashboardPanelEnter {
   from {
     opacity: 0;

@@ -11,6 +11,7 @@ import { LocalDateTimeStack } from "@/components/ui/local-date-time";
 
 type BasketTrade = {
   key: string;
+  lockedSize?: boolean;
   signalTime?: string;
   entryTime: string;
   exitTime: string;
@@ -1052,6 +1053,7 @@ export default function SelectedStrategyStats({
   const strategyByKey = new Map(strategies.map((strategy) => [strategy.key, strategy]));
   const parsedCustomScaleRange = parseCustomScaleRange(customScaleRange);
   const selectedTradeSnapshots = makeTradeSnapshots(trades, strategyByKey, (trade) => {
+    if (trade.lockedSize) return 1;
     const strategy = strategyByKey.get(trade.key);
     return parsedCustomScaleRange
       ? customRangeScaleForTrade(trade, parsedCustomScaleRange)

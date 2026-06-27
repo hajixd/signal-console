@@ -45,6 +45,7 @@ export type StrategyEditSeedMap = Record<string, StrategyEditSeed>;
 
 export const STRATEGY_EDITS_STORAGE_KEY = "trading-bot:strategy-edits:v1";
 export const STRATEGY_EDITS_CHANGE_EVENT = "trading-bot:strategy-edits-changed";
+const EMPTY_STRATEGY_EDIT_SEEDS: StrategyEditSeedMap = {};
 
 function formatNumber(value: number): string {
   if (!Number.isFinite(value)) return "inf";
@@ -219,7 +220,10 @@ export function readStoredStrategyEdits(strategies: StrategyEditOption[]): Strat
   }
 }
 
-export function loadClientStrategyEdits(strategies: StrategyEditOption[], initialEdits: StrategyEditSeedMap = {}): StrategyEditMap {
+export function loadClientStrategyEdits(
+  strategies: StrategyEditOption[],
+  initialEdits: StrategyEditSeedMap = EMPTY_STRATEGY_EDIT_SEEDS
+): StrategyEditMap {
   const normalizedInitial = normalizeStrategyEdits(strategies, initialEdits);
   if (Object.keys(normalizedInitial).length > 0) {
     return normalizedInitial;
@@ -232,7 +236,10 @@ export function emitStrategyEditsChanged(edits: StrategyEditMap): void {
   window.dispatchEvent(new CustomEvent<StrategyEditMap>(STRATEGY_EDITS_CHANGE_EVENT, { detail: edits }));
 }
 
-export function useStrategyEdits(strategies: StrategyEditOption[], initialEdits: StrategyEditSeedMap = {}): StrategyEditMap {
+export function useStrategyEdits(
+  strategies: StrategyEditOption[],
+  initialEdits: StrategyEditSeedMap = EMPTY_STRATEGY_EDIT_SEEDS
+): StrategyEditMap {
   const normalizedInitialEdits = useMemo(() => normalizeStrategyEdits(strategies, initialEdits), [initialEdits, strategies]);
   const [edits, setEdits] = useState<StrategyEditMap>(normalizedInitialEdits);
 
