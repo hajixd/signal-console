@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { FieldValue } from "firebase-admin/firestore";
 import { autoTradeMarketForSignal, type AutoTradeMarket } from "@/lib/auto-trade-platforms";
-import { plannedAutoTradeSizeForTrade } from "@/lib/auto-trade-utils";
+import { plannedRiskSizeMultiplierForTrade } from "@/lib/auto-trade-utils";
 import { firebaseDb, firebaseLocalFallbackEnabled, hasFirebaseAdmin, withFirebaseTimeout } from "@/lib/firebase-admin";
 import { omitUndefinedDeep } from "@/lib/firestore-utils";
 import { createTursoDocument, getTursoDocument, saveTursoDocument, tursoConfigured } from "@/lib/turso";
@@ -392,22 +392,8 @@ function tradeTime(trade: TradeAlert): number {
   return Number.isFinite(parsed) ? parsed : 0;
 }
 
-function orderSize(trade: TradeAlert): number | undefined {
-  const sizes = (trade.autoTradeOrders ?? [])
-    .filter(
-      (order) =>
-        (order.status === "placed" || order.status === "dry_run") &&
-        typeof order.size === "number" &&
-        Number.isFinite(order.size) &&
-        order.size > 0
-    )
-    .map((order) => order.size!);
-  if (!sizes.length) return undefined;
-  return sizes.reduce((sum, size) => sum + size, 0);
-}
-
 function tradeRiskDollars(trade: TradeAlert): number {
-  return Math.abs(trade.slUnits * dollarPerUnit(trade.symbol, trade.entryPrice) * (orderSize(trade) ?? plannedAutoTradeSizeForTrade(trade)));
+  return Math.abs(trade.slUnits * dollarPerUnit(trade.symbol, trade.entryPrice) * plannedRiskSizeMultiplierForTrade(trade));
 }
 
 function tradePnl(trade: TradeAlert): number | undefined {

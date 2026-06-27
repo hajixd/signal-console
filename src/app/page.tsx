@@ -42,7 +42,7 @@ import {
   type BacktestTrade
 } from "@/lib/backtest";
 import { assetDisplayNameForSymbol, assetForSymbol, assetLookupSymbolForSymbol } from "@/lib/assets";
-import { plannedAutoTradeSizeForTrade } from "@/lib/auto-trade-utils";
+import { plannedRiskSizeMultiplierForTrade } from "@/lib/auto-trade-utils";
 import { DEFAULT_CHALLENGE_RULES, type ChallengeRules } from "@/lib/challenge";
 import { analyzeBacktestDataValidity, dataValidityClass, type DataValidityResult, type DataValidityTone } from "@/lib/data-validity";
 import { dollarPerUnit, instrumentSizeLabel, instrumentUnitLabel, recommendedSizeMultiplier } from "@/lib/instruments";
@@ -893,29 +893,8 @@ function liveTradeEventDisplaySymbol(trade: TradeAlert, event: LiveTradeEvent): 
   return liveTradeDisplaySymbol(trade);
 }
 
-function sizedOrders(orders: TradeOrderSummary[] | undefined): TradeOrderSummary[] {
-  return (orders ?? []).filter(
-    (order) =>
-      (order.status === "placed" || order.status === "dry_run") &&
-      typeof order.size === "number" &&
-      Number.isFinite(order.size) &&
-      order.size > 0
-  );
-}
-
-function orderSizeMultiplier(orders: TradeOrderSummary[] | undefined): number | undefined {
-  const sizes = sizedOrders(orders).map((order) => order.size!);
-  if (!sizes.length) return undefined;
-  return sizes.reduce((sum, size) => sum + size, 0);
-}
-
-function liveTradeOrderSizeMultiplier(trade: TradeAlert, event?: LiveTradeEvent): number | undefined {
-  if (event?.kind === "limit") return orderSizeMultiplier(trade.limitOrderAutoTradeOrders);
-  return orderSizeMultiplier(trade.autoTradeOrders);
-}
-
 function plannedLiveTradeSizeMultiplier(trade: TradeAlert, option?: StrategyOption): number {
-  return plannedAutoTradeSizeForTrade(trade, finiteNumberOr(trade.sizeMultiplier, option?.sizeMultiplier ?? 1));
+  return plannedRiskSizeMultiplierForTrade(trade, finiteNumberOr(trade.sizeMultiplier, option?.sizeMultiplier ?? 1));
 }
 
 function contractSizeLabel(contractLabel: string, size: number, accountCount?: number): string {
@@ -923,13 +902,10 @@ function contractSizeLabel(contractLabel: string, size: number, accountCount?: n
   return accountCount && accountCount > 1 ? `${formattedSize} ${contractLabel} / ${fmtNumber(accountCount)} accounts` : `${formattedSize} ${contractLabel}`;
 }
 
-function liveTradeOrderSizeLabel(trade: TradeAlert, contractLabel: string, fallbackSizeMultiplier: number, event?: LiveTradeEvent): string {
-  const orders = event?.kind === "limit" ? trade.limitOrderAutoTradeOrders : trade.autoTradeOrders;
-  const size = orderSizeMultiplier(orders);
-  if (size !== undefined) return contractSizeLabel(contractLabel, size, sizedOrders(orders).length);
-  const fallback = instrumentSizeLabel(trade.symbol, fallbackSizeMultiplier);
+function liveTradePlannedSizeLabel(trade: TradeAlert, contractLabel: string, sizeMultiplier: number): string {
+  const fallback = instrumentSizeLabel(trade.symbol, sizeMultiplier);
   return contractLabel !== trade.symbol && contractLabel !== assetLookupSymbolForSymbol(trade.symbol)
-    ? contractSizeLabel(contractLabel, fallbackSizeMultiplier)
+    ? contractSizeLabel(contractLabel, sizeMultiplier)
     : fallback;
 }
 
@@ -1092,13 +1068,11 @@ function liveTradeEventEntryPrice(trade: TradeAlert, event: LiveTradeEvent): num
 }
 
 function liveTradeEventSizeMultiplier(trade: TradeAlert, event: LiveTradeEvent): number {
-  const orderSize = liveTradeOrderSizeMultiplier(trade, event);
-  if (orderSize !== undefined) return orderSize;
   return plannedLiveTradeSizeMultiplier(trade);
 }
 
 function liveTradeEventSizeLabel(trade: TradeAlert, event: LiveTradeEvent): string {
-  return liveTradeOrderSizeLabel(trade, liveTradeEventDisplaySymbol(trade, event), liveTradeEventSizeMultiplier(trade, event), event);
+  return liveTradePlannedSizeLabel(trade, liveTradeEventDisplaySymbol(trade, event), liveTradeEventSizeMultiplier(trade, event));
 }
 
 function liveTradeEventPriceUnit(trade: TradeAlert, event: LiveTradeEvent): number {
@@ -1772,9 +1746,17 @@ export default async function Home({ searchParams }: HomeProps) {
     (trade.strategyKey && selectedLiveTradeKeys.has(trade.strategyKey)) ||
     (trade.logicalStrategyKey && selectedLiveTradeKeys.has(trade.logicalStrategyKey)) ||
     selectedStrategyNames.has(trade.strategy);
+  const displayCustomScaleRangeForLiveTrade = (trade: TradeAlert) => {
+    const tradeMarket = trade.market === "gold_spot" ? "gold_spot" : liveAlertDashboardMarket(trade);
+    return tradeMarket ? liveConfig.customScaleRanges[tradeMarket] : undefined;
+  };
   const activeMarketLiveTrades = liveTrades.filter(
     (trade) => Boolean(optionForLiveTrade(trade)) || liveAlertDashboardMarket(trade) === activeMarket
-  );
+  ).map((trade) => {
+    if (trade.customScaleRange) return trade;
+    const customScaleRange = displayCustomScaleRangeForLiveTrade(trade);
+    return customScaleRange ? { ...trade, customScaleRange } : trade;
+  });
   const selectedLiveTrades = activeMarketLiveTrades.filter(liveTradeMatchesSelectedStrategy);
   const activeMarketLiveEventRows = activeMarketLiveTrades.flatMap((trade) =>
     liveTradeEvents(trade).map((event, eventIndex) => ({
@@ -1943,7 +1925,7 @@ export default async function Home({ searchParams }: HomeProps) {
       const ruleTickSize = liveRuleByKey.get(ruleKey)?.tickSize;
       const priceUnit = inferredAlertPriceUnit(trade, ruleTickSize);
       const displayContract = liveTradeDisplaySymbol(trade);
-      const sizeMultiplier = liveTradeOrderSizeMultiplier(trade) ?? plannedLiveTradeSizeMultiplier(trade, option);
+      const sizeMultiplier = plannedLiveTradeSizeMultiplier(trade, option);
       const targetDollars = alertTargetDollarsWithSize(trade, sizeMultiplier);
       const riskDollars = alertRiskDollarsWithSize(trade, sizeMultiplier);
       const latestOpenPrice =
@@ -2018,7 +2000,7 @@ export default async function Home({ searchParams }: HomeProps) {
         pnlLabel: fmtMoney(pnlDollars, true),
         rMultipleLabel: riskDollars > 0 ? `${fmtNumber(rMultiple)}R` : "--",
         netUnitsLabel: `${fmtNumber(netUnits)} ${unitLabel}`,
-        sizeLabel: liveTradeOrderSizeLabel(trade, displayContract, sizeMultiplier),
+        sizeLabel: liveTradePlannedSizeLabel(trade, displayContract, sizeMultiplier),
         sizeMultiplier,
         targetRiskLabel: `${fmtMoney(targetDollars)} / ${fmtMoney(-riskDollars)}`,
         targetLabel: fmtMoney(targetDollars),
@@ -2681,7 +2663,7 @@ export default async function Home({ searchParams }: HomeProps) {
                     const displaySymbol = liveTradeDisplaySymbol(trade);
                     const symbolTitle = displaySymbol !== trade.symbol ? `Signal ${trade.symbol}` : undefined;
                     const modelLabel = liveTradeModelLabel(trade, option);
-                    const summarySizeMultiplier = liveTradeOrderSizeMultiplier(trade) ?? plannedLiveTradeSizeMultiplier(trade, option);
+                    const summarySizeMultiplier = plannedLiveTradeSizeMultiplier(trade, option);
                     return (
                       <tr className={liveRowClass(trade)} key={trade.id}>
                         <td className="cronTradeCell" colSpan={8}>
@@ -2702,7 +2684,7 @@ export default async function Home({ searchParams }: HomeProps) {
                                 <span>{fmtDollarPrice(trade.entryPrice)}</span>
                                 <small>{liveTradeExitLine(trade)}</small>
                               </span>
-                              <span data-label="Size">{liveTradeOrderSizeLabel(trade, displaySymbol, summarySizeMultiplier)}</span>
+                              <span data-label="Size">{liveTradePlannedSizeLabel(trade, displaySymbol, summarySizeMultiplier)}</span>
                               <span className={`cronMoneyCell ${liveTradePnlToneClass(trade)}`} data-label="P&L / Risk">{liveTradePnlOrRiskLabel(trade, summarySizeMultiplier)}</span>
                               <span data-label="Auto Trade" title={trade.autoTradeError ?? trade.autoTradeProviderName ?? trade.autoTradeContractName ?? trade.autoTradeContractId ?? undefined}>
                                 <span className={`status ${autoTradeStatusClass(trade)}`}>{autoTradeStatusLabel(trade)}</span>

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { mappedSize, plannedAutoTradeSizeForTrade } from "@/lib/auto-trade-utils";
+import { mappedSize, plannedAutoTradeSizeForTrade, plannedRiskSizeMultiplierForTrade } from "@/lib/auto-trade-utils";
 import { customUnitSizeMultiplierForTrade } from "@/lib/custom-unit-sizing";
 import type { StrategySignal } from "@/lib/strategy-definition";
 import { planTradeAlert } from "@/lib/trade-planner";
@@ -106,6 +106,17 @@ test("uses ceiling-safe whole units after account scaling", () => {
 test("planned live execution uses the largest ceiling-safe whole futures size", () => {
   assert.equal(plannedAutoTradeSizeForTrade(trade()), 6);
   assert.equal(plannedAutoTradeSizeForTrade(trade({ slUnits: 200, tpUnits: 600 })), 5);
+});
+
+test("planned risk display keeps exact custom range sizing", () => {
+  assert.equal(plannedRiskSizeMultiplierForTrade(trade()), 6.711409);
+});
+
+test("planned risk display keeps saved custom size exact when older trades lack a range snapshot", () => {
+  const olderLiveTrade = trade({ customScaleRange: undefined, sizeMode: "custom", sizeMultiplier: 24.3902, slUnits: 41, tpUnits: 41 });
+
+  assert.equal(plannedRiskSizeMultiplierForTrade(olderLiveTrade), 24.3902);
+  assert.equal(plannedAutoTradeSizeForTrade(olderLiveTrade), 24);
 });
 
 test("custom units override a static provider size map", () => {
