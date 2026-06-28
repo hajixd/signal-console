@@ -166,6 +166,23 @@ test("legacy ProjectX order metadata falls back to max executable custom futures
   );
 });
 
+test("legacy ProjectX order metadata keeps explicit stored execution size", () => {
+  assert.equal(
+    projectXLegacyOrderSummarySize(
+      trade({
+        autoTradeAccountId: 1,
+        autoTradeAccountName: "50K account",
+        autoTradeOrderId: 123,
+        autoTradeStatus: "placed",
+        entryOrderSizeMultiplier: 5,
+        sizeMultiplier: 24
+      }),
+      false
+    ),
+    5
+  );
+});
+
 test("ProjectX bracket ticks are positive distances after side geometry validation", () => {
   assert.deepEqual(
     projectXBracketTicksForTrade({

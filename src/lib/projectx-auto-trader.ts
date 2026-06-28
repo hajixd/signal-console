@@ -1315,8 +1315,10 @@ function orderSummaryStatus(status: TradeAlert["autoTradeStatus"]): AutoTradeOrd
 
 export function projectXLegacyOrderSummarySize(trade: TradeAlert, limitOrder: boolean): number {
   const explicitSize = limitOrder ? trade.limitOrderSizeMultiplier : trade.entryOrderSizeMultiplier;
-  const fallbackBaseSize = explicitSize ?? trade.sizeMultiplier ?? 1;
-  return plannedAutoTradeSizeForTrade(trade, fallbackBaseSize, {
+  if (typeof explicitSize === "number" && Number.isFinite(explicitSize) && explicitSize > 0) {
+    return Math.max(0, Math.floor(explicitSize));
+  }
+  return plannedAutoTradeSizeForTrade(trade, trade.sizeMultiplier ?? 1, {
     accountName: trade.autoTradeAccountName
   });
 }
