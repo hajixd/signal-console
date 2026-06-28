@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import { assetForKey, assetForSymbol, assetLookupSymbolForSymbol } from "@/lib/assets";
 import { buildAutoTradeTestTrade } from "@/lib/auto-trade-test";
-import { autoTradeAccountSizeScale, scaledAutoTradeSizeForTrade } from "@/lib/auto-trade-utils";
+import { autoTradeAccountSizeScale, plannedAutoTradeSizeForTrade, scaledAutoTradeSizeForTrade } from "@/lib/auto-trade-utils";
 import { customUnitSizeMultiplierForTrade } from "@/lib/custom-unit-sizing";
 import { dollarPerUnit } from "@/lib/instruments";
 import {
@@ -556,8 +556,8 @@ export function projectXBracketTicksForTrade(
     throw new Error(`Invalid ${trade.side} ProjectX bracket geometry: TP/SL must be on the correct side of entry.`);
   }
 
-  const stopLossTicks = wholeNumber(Math.abs(trade.slUnits), "Stop-loss ticks") * -direction;
-  const takeProfitTicks = wholeNumber(Math.abs(trade.tpUnits), "Take-profit ticks") * direction;
+  const stopLossTicks = wholeNumber(Math.abs(trade.slUnits), "Stop-loss ticks");
+  const takeProfitTicks = wholeNumber(Math.abs(trade.tpUnits), "Take-profit ticks");
   return {
     stopLossTicks,
     takeProfitTicks
@@ -1313,6 +1313,14 @@ function orderSummaryStatus(status: TradeAlert["autoTradeStatus"]): AutoTradeOrd
   return null;
 }
 
+export function projectXLegacyOrderSummarySize(trade: TradeAlert, limitOrder: boolean): number {
+  const explicitSize = limitOrder ? trade.limitOrderSizeMultiplier : trade.entryOrderSizeMultiplier;
+  const fallbackBaseSize = explicitSize ?? trade.sizeMultiplier ?? 1;
+  return plannedAutoTradeSizeForTrade(trade, fallbackBaseSize, {
+    accountName: trade.autoTradeAccountName
+  });
+}
+
 function singleOrderSummaryFromTrade(trade: TradeAlert, limitOrder: boolean): AutoTradeOrderSummary | null {
   const accountId = limitOrder ? trade.limitOrderAutoTradeOrderId && trade.autoTradeAccountId : trade.autoTradeAccountId;
   const orderId = limitOrder ? trade.limitOrderAutoTradeOrderId : trade.autoTradeOrderId;
@@ -1325,7 +1333,7 @@ function singleOrderSummaryFromTrade(trade: TradeAlert, limitOrder: boolean): Au
     contractName: limitOrder ? trade.limitOrderAutoTradeContractName : trade.autoTradeContractName,
     customTag: limitOrder ? trade.limitOrderAutoTradeCustomTag : trade.autoTradeCustomTag,
     orderId,
-    size: trade.sizeMultiplier,
+    size: projectXLegacyOrderSummarySize(trade, limitOrder),
     status
   };
 }

@@ -1,13 +1,13 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { autoTradeRequest, mappedSize, plannedAutoTradeSizeForTrade, realAutoTradeSizeForTrade } from "@/lib/auto-trade-utils";
+import { autoTradeRequest, mappedSize, nonExecutableOrderSizeReason, plannedAutoTradeSizeForTrade, realAutoTradeSizeForTrade } from "@/lib/auto-trade-utils";
 import { customUnitSizeMultiplierForTrade } from "@/lib/custom-unit-sizing";
 import {
   alertTargetDollarsWithSize,
   liveClosedTradePnlDollars,
   liveTradeEventAutoTradeOrders
 } from "@/lib/live-trade-calculations";
-import { projectXOrderSizeForAccount } from "@/lib/projectx-auto-trader";
+import { projectXBracketTicksForTrade, projectXLegacyOrderSummarySize, projectXOrderSizeForAccount } from "@/lib/projectx-auto-trader";
 import type { StrategySignal } from "@/lib/strategy-definition";
 import { planTradeAlert } from "@/lib/trade-planner";
 import type { StrategyRule, TradeAlert } from "@/lib/types";
@@ -118,6 +118,27 @@ test("live auto trade requests attempt the max custom-safe futures size", () => 
   assert.equal(request.size, 6);
 });
 
+test("live futures requests skip instead of rounding custom size above the ceiling", () => {
+  const request = autoTradeRequest(
+    "TRADOVATE",
+    trade({
+      customScaleRange: {
+        riskCeiling: "10",
+        riskFloor: "1",
+        targetCeiling: "20",
+        targetFloor: "1"
+      }
+    }),
+    1
+  );
+
+  assert.equal(request.size, 0);
+  assert.equal(
+    nonExecutableOrderSizeReason(request),
+    "Order skipped because the custom unit parameters leave no executable whole futures contract."
+  );
+});
+
 test("ProjectX live orders attempt the max custom-safe futures size", () => {
   assert.equal(
     projectXOrderSizeForAccount(
@@ -126,6 +147,47 @@ test("ProjectX live orders attempt the max custom-safe futures size", () => {
       1
     ),
     6
+  );
+});
+
+test("legacy ProjectX order metadata falls back to max executable custom futures size", () => {
+  assert.equal(
+    projectXLegacyOrderSummarySize(
+      trade({
+        autoTradeAccountId: 1,
+        autoTradeAccountName: "50K account",
+        autoTradeOrderId: 123,
+        autoTradeStatus: "placed",
+        sizeMultiplier: 24
+      }),
+      false
+    ),
+    6
+  );
+});
+
+test("ProjectX bracket ticks are positive distances after side geometry validation", () => {
+  assert.deepEqual(
+    projectXBracketTicksForTrade({
+      entryPrice: 61_090,
+      side: "short",
+      slUnits: 41,
+      stopLossPrice: 61_295,
+      takeProfitPrice: 60_885,
+      tpUnits: 41
+    }),
+    { stopLossTicks: 41, takeProfitTicks: 41 }
+  );
+  assert.deepEqual(
+    projectXBracketTicksForTrade({
+      entryPrice: 6_000,
+      side: "long",
+      slUnits: 10,
+      stopLossPrice: 5_997.5,
+      takeProfitPrice: 6_005,
+      tpUnits: 20
+    }),
+    { stopLossTicks: 10, takeProfitTicks: 20 }
   );
 });
 

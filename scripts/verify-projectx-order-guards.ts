@@ -22,7 +22,7 @@ const shortTicks = projectXBracketTicksForTrade({
   takeProfitPrice: 1.2746,
   tpUnits: 8
 });
-assert(shortTicks.takeProfitTicks === -8, `Expected short take-profit ticks to be -8, got ${shortTicks.takeProfitTicks}`);
+assert(shortTicks.takeProfitTicks === 8, `Expected short take-profit ticks to be 8, got ${shortTicks.takeProfitTicks}`);
 assert(shortTicks.stopLossTicks === 8, `Expected short stop-loss ticks to be 8, got ${shortTicks.stopLossTicks}`);
 
 const longTicks = projectXBracketTicksForTrade({
@@ -34,7 +34,7 @@ const longTicks = projectXBracketTicksForTrade({
   tpUnits: 20
 });
 assert(longTicks.takeProfitTicks === 20, `Expected long take-profit ticks to be 20, got ${longTicks.takeProfitTicks}`);
-assert(longTicks.stopLossTicks === -10, `Expected long stop-loss ticks to be -10, got ${longTicks.stopLossTicks}`);
+assert(longTicks.stopLossTicks === 10, `Expected long stop-loss ticks to be 10, got ${longTicks.stopLossTicks}`);
 
 let rejectedInvalidGeometry = false;
 try {
