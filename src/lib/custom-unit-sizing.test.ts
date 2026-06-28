@@ -1,12 +1,13 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { mappedSize, plannedAutoTradeSizeForTrade, realAutoTradeSizeForTrade } from "@/lib/auto-trade-utils";
+import { autoTradeRequest, mappedSize, plannedAutoTradeSizeForTrade, realAutoTradeSizeForTrade } from "@/lib/auto-trade-utils";
 import { customUnitSizeMultiplierForTrade } from "@/lib/custom-unit-sizing";
 import {
   alertTargetDollarsWithSize,
   liveClosedTradePnlDollars,
   liveTradeEventAutoTradeOrders
 } from "@/lib/live-trade-calculations";
+import { projectXOrderSizeForAccount } from "@/lib/projectx-auto-trader";
 import type { StrategySignal } from "@/lib/strategy-definition";
 import { planTradeAlert } from "@/lib/trade-planner";
 import type { StrategyRule, TradeAlert } from "@/lib/types";
@@ -106,6 +107,26 @@ test("planner snapshots the range and sizes each signal independently", () => {
 
 test("custom auto trade sizing uses the largest ceiling-safe whole futures size", () => {
   assert.equal(mappedSize("TRADOVATE", trade(), undefined, { accountName: "50K account" }), 6);
+});
+
+test("live auto trade requests attempt the max custom-safe futures size", () => {
+  const request = autoTradeRequest("TRADOVATE", trade(), 1, {
+    accountName: "50K account",
+    sizeMap: '{"NQ":"2"}'
+  });
+
+  assert.equal(request.size, 6);
+});
+
+test("ProjectX live orders attempt the max custom-safe futures size", () => {
+  assert.equal(
+    projectXOrderSizeForAccount(
+      trade({ sizeMultiplier: 1 }),
+      { canTrade: true, id: 1, isVisible: true, name: "50K account" },
+      1
+    ),
+    6
+  );
 });
 
 test("planned live execution uses the largest ceiling-safe whole futures size", () => {

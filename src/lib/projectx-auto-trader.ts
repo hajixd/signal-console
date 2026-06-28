@@ -283,7 +283,7 @@ function projectXTotalExecutableSize(trade: TradeAlert, fallbackBaseSize: number
   });
 }
 
-function projectXOrderSizeForAccount(trade: TradeAlert, account: ProjectXAccount, fallbackBaseSize: number): number {
+export function projectXOrderSizeForAccount(trade: TradeAlert, account: ProjectXAccount, fallbackBaseSize: number): number {
   return projectXOrderLegSize(trade, projectXTotalExecutableSize(trade, fallbackBaseSize, account));
 }
 
