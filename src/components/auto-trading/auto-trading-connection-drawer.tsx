@@ -3,6 +3,7 @@
 import { useEffect, useId, useState } from "react";
 import { createPortal } from "react-dom";
 import AutoTradingConnectionPanel from "@/components/auto-trading/auto-trading-connection-panel";
+import Mt5EaStatusPanel from "@/components/auto-trading/mt5-ea-status-panel";
 import { autoTradeMarketLabel, type AutoTradeMarket } from "@/lib/auto-trade-platforms";
 
 type AutoTradingConnectionDrawerProps = {
@@ -56,6 +57,7 @@ export default function AutoTradingConnectionDrawer({ market }: AutoTradingConne
           </button>
         </div>
         <AutoTradingConnectionPanel market={market} />
+        {market === "forex" ? <Mt5EaStatusPanel /> : null}
       </aside>
     </div>
   ) : null;
