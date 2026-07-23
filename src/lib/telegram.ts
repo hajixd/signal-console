@@ -165,7 +165,9 @@ function accountOrderLine(order: NonNullable<TradeAlert["autoTradeOrders"]>[numb
   ].filter((part): part is string => Boolean(part));
 
   return `- ${compactAccountName(order.accountName, order.accountId)}: ${parts.join(" | ")}${
-    order.error && order.status !== "failed" && order.status !== "skipped" ? ` | ${truncate(order.error, 120)}` : ""
+    order.error && order.status !== "placed" && order.status !== "failed" && order.status !== "skipped"
+      ? ` | ${truncate(order.error, 120)}`
+      : ""
   }`;
 }
 
@@ -255,7 +257,7 @@ function accountExecutionRow(order: NonNullable<TradeAlert["autoTradeOrders"]>[n
     accountLabel,
     formattedSize,
     order.status === "placed" ? undefined : orderStatusLabel(order.status),
-    order.error ? truncate(order.error, 80) : undefined
+    order.status !== "placed" && order.error ? truncate(order.error, 80) : undefined
   ].filter((part): part is string => Boolean(part));
 
   return {
