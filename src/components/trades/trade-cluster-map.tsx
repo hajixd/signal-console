@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useRef, useState, type PointerEvent as ReactPointerEvent, type WheelEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent, type WheelEvent } from "react";
+import { UMAP } from "umap-js";
 import type { TradeHistoryRow } from "@/components/trades/trade-history";
 import { LocalDateTimeStack } from "@/components/ui/local-date-time";
 
@@ -21,6 +22,7 @@ type ClusterNode = {
   radius: number;
   outcome: "win" | "loss" | "flat" | "open";
   searchText: string;
+  features: number[];
 };
 
 type ViewState = {
@@ -32,6 +34,8 @@ type ViewState = {
 const MAP_WIDTH = 1200;
 const MAP_HEIGHT = 700;
 const INITIAL_VIEW: ViewState = { scale: 1, x: 0, y: 0 };
+const UMAP_MAX_FIT_NODES = 1400;
+const FEATURE_COUNT = 31;
 
 function hashText(value: string): number {
   let hash = 2166136261;
@@ -83,51 +87,172 @@ function nodeSearchText(row: TradeHistoryRow, source: ClusterNode["source"]): st
     .toLowerCase();
 }
 
-function buildNodes(historyRows: TradeHistoryRow[], liveRows: TradeHistoryRow[]): ClusterNode[] {
+function seededRandom(seed: number): () => number {
+  let state = seed >>> 0;
+  return () => {
+    state += 0x6d2b79f5;
+    let value = state;
+    value = Math.imul(value ^ (value >>> 15), value | 1);
+    value ^= value + Math.imul(value ^ (value >>> 7), value | 61);
+    return ((value ^ (value >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+function finiteNumber(value: unknown, fallback = 0): number {
+  const numeric = Number(value);
+  return Number.isFinite(numeric) ? numeric : fallback;
+}
+
+function logScale(value: number): number {
+  return Math.sign(value) * Math.log1p(Math.abs(value));
+}
+
+function cyclic(value: number, period: number): [number, number] {
+  const angle = (value / period) * Math.PI * 2;
+  return [Math.sin(angle), Math.cos(angle)];
+}
+
+function hashedCategory(value: string | undefined, dimensions: number, weight: number): number[] {
+  const vector = Array.from({ length: dimensions }, () => 0);
+  if (!value) return vector;
+  const hash = hashText(value.toLowerCase());
+  vector[hash % dimensions] = weight;
+  vector[(hash >>> 8) % dimensions] += weight * 0.35;
+  return vector;
+}
+
+function parsedR(row: TradeHistoryRow): number {
+  const parsed = Number.parseFloat(row.rMultipleLabel.replace(/[^\d+-.]/g, ""));
+  if (Number.isFinite(parsed)) return Math.max(-8, Math.min(8, parsed));
+  return row.riskDollars > 0 ? Math.max(-8, Math.min(8, row.pnlDollars / row.riskDollars)) : 0;
+}
+
+function buildFeatureNodes(historyRows: TradeHistoryRow[], liveRows: TradeHistoryRow[]): ClusterNode[] {
   const sourcedRows = [
     ...historyRows.map((row) => ({ row, source: "history" as const })),
     ...liveRows.map((row) => ({ row, source: "live" as const }))
   ];
-  const strategyLabels = [...new Set(sourcedRows.map(({ row }) => row.modelName || row.strategyKey || "Unknown"))].sort();
-  const clusterCount = Math.max(1, strategyLabels.length);
-  const columns = Math.max(1, Math.ceil(Math.sqrt((clusterCount * MAP_WIDTH) / MAP_HEIGHT)));
-  const rows = Math.max(1, Math.ceil(clusterCount / columns));
-  const cellWidth = MAP_WIDTH / columns;
-  const cellHeight = MAP_HEIGHT / rows;
-  const centers = new Map(
-    strategyLabels.map((label, index) => [
-      label,
-      {
-        x: cellWidth * (index % columns + 0.5),
-        y: cellHeight * (Math.floor(index / columns) + 0.5)
-      }
-    ])
-  );
-  const strategyIndexes = new Map<string, number>();
+  const entryTimes = sourcedRows.map(({ row }) => Date.parse(row.entryTime)).filter(Number.isFinite);
+  const earliest = Math.min(...entryTimes, Date.now());
+  const latest = Math.max(...entryTimes, earliest + 1);
 
-  return sourcedRows.map(({ row, source }) => {
-    const strategy = row.modelName || row.strategyKey || "Unknown";
-    const center = centers.get(strategy) ?? { x: MAP_WIDTH / 2, y: MAP_HEIGHT / 2 };
-    const clusterIndex = strategyIndexes.get(strategy) ?? 0;
-    strategyIndexes.set(strategy, clusterIndex + 1);
-    const hash = hashText(`${source}:${row.id}:${row.entryTime}`);
-    const angle = clusterIndex * 2.399963 + ((hash % 1000) / 1000) * 0.7;
-    const cellRadius = Math.max(34, Math.min(cellWidth, cellHeight) * 0.38);
-    const radius = Math.min(cellRadius, 13 + Math.sqrt(clusterIndex) * 8.5);
-    const pnlPush = Math.max(-18, Math.min(18, row.pnlDollars / Math.max(8, Math.abs(row.riskDollars) || 100) * 7));
-    const sidePush = row.side === "long" ? -8 : 8;
+  const nodes = sourcedRows.map(({ row, source }) => {
+    const entryDate = new Date(row.entryTime);
+    const hour = Number.isFinite(entryDate.getTime()) ? entryDate.getHours() + entryDate.getMinutes() / 60 : 0;
+    const weekday = Number.isFinite(entryDate.getTime()) ? entryDate.getDay() : 0;
+    const [hourSin, hourCos] = cyclic(hour, 24);
+    const [weekdaySin, weekdayCos] = cyclic(weekday, 7);
+    const risk = Math.max(0, finiteNumber(row.riskDollars));
+    const target = Math.max(0, finiteNumber(row.targetDollars));
+    const pnl = finiteNumber(row.pnlDollars);
+    const rMultiple = parsedR(row);
+    const durationBars = Math.max(0, finiteNumber(row.exitIndex) - finiteNumber(row.entryIndex));
+    const riskEfficiency = risk > 0 ? Math.max(-8, Math.min(8, pnl / risk)) : 0;
+    const targetRisk = risk > 0 ? Math.max(0, Math.min(10, target / risk)) : 0;
+    const entryMs = Date.parse(row.entryTime);
+    const recency = Number.isFinite(entryMs) ? (entryMs - earliest) / Math.max(1, latest - earliest) : 0;
     const outcome = outcomeForRow(row);
+    const features = [
+      rMultiple * 1.7,
+      riskEfficiency * 1.4,
+      logScale(pnl) * 0.28,
+      logScale(risk) * 0.34,
+      logScale(target) * 0.34,
+      targetRisk * 0.62,
+      logScale(durationBars) * 0.48,
+      logScale(Math.max(0, row.sizeMultiplier)) * 0.3,
+      hourSin * 0.8,
+      hourCos * 0.8,
+      weekdaySin * 0.66,
+      weekdayCos * 0.66,
+      recency * 0.72,
+      row.side === "long" ? -0.75 : 0.75,
+      source === "live" ? 0.8 : -0.25,
+      outcome === "open" ? 1.25 : 0,
+      outcome === "win" ? 0.72 : outcome === "loss" ? -0.72 : 0,
+      ...hashedCategory(row.modelName || row.strategyKey, 6, 1.35),
+      ...hashedCategory(row.displaySymbol || row.symbol, 4, 1.05),
+      ...hashedCategory(row.phase, 2, 0.72),
+      ...hashedCategory(row.exitReasonLabel, 2, 0.72)
+    ];
     return {
       id: `${source}:${row.id}`,
       source,
       row,
-      x: center.x + Math.cos(angle) * radius + sidePush,
-      y: center.y + Math.sin(angle) * radius - pnlPush,
+      x: MAP_WIDTH / 2,
+      y: MAP_HEIGHT / 2,
       radius: source === "live" ? (outcome === "open" ? 7 : 6) : 4.2,
       outcome,
-      searchText: nodeSearchText(row, source)
+      searchText: nodeSearchText(row, source),
+      features
     };
   });
+  return nodes;
+}
+
+function featureDistance(left: number[], right: number[]): number {
+  let distance = 0;
+  for (let index = 0; index < Math.min(left.length, right.length); index += 1) {
+    distance += ((left[index] ?? 0) - (right[index] ?? 0)) ** 2;
+  }
+  return distance;
+}
+
+function fitEmbeddingToCanvas(embedding: number[][]): Array<[number, number]> {
+  if (!embedding.length) return [];
+  const xs = embedding.map((point) => point[0] ?? 0).sort((a, b) => a - b);
+  const ys = embedding.map((point) => point[1] ?? 0).sort((a, b) => a - b);
+  const lowIndex = Math.floor((embedding.length - 1) * 0.015);
+  const highIndex = Math.ceil((embedding.length - 1) * 0.985);
+  const minX = xs[lowIndex] ?? xs[0] ?? 0;
+  const maxX = xs[highIndex] ?? xs[xs.length - 1] ?? minX + 1;
+  const minY = ys[lowIndex] ?? ys[0] ?? 0;
+  const maxY = ys[highIndex] ?? ys[ys.length - 1] ?? minY + 1;
+  return embedding.map((point) => [
+    46 + ((Math.max(minX, Math.min(maxX, point[0] ?? 0)) - minX) / Math.max(1e-9, maxX - minX)) * (MAP_WIDTH - 92),
+    42 + ((Math.max(minY, Math.min(maxY, point[1] ?? 0)) - minY) / Math.max(1e-9, maxY - minY)) * (MAP_HEIGHT - 84)
+  ]);
+}
+
+async function embedFeatureNodes(nodes: ClusterNode[]): Promise<ClusterNode[]> {
+  if (nodes.length < 3) {
+    return nodes.map((node, index) => ({ ...node, x: MAP_WIDTH * (0.42 + index * 0.16), y: MAP_HEIGHT / 2 }));
+  }
+  const fitCount = Math.min(UMAP_MAX_FIT_NODES, nodes.length);
+  const fitIndexes = Array.from({ length: fitCount }, (_, index) => Math.floor((index / fitCount) * nodes.length));
+  const fitNodes = fitIndexes.map((index) => nodes[index]!);
+  const seed = nodes.reduce((value, node) => value ^ hashText(node.id), 0x9e3779b9);
+  const umap = new UMAP({
+    minDist: 0.12,
+    nComponents: 2,
+    nEpochs: fitCount < 350 ? 360 : fitCount < 800 ? 280 : 220,
+    nNeighbors: Math.min(22, Math.max(2, fitCount - 1)),
+    random: seededRandom(seed),
+    spread: 1.15
+  });
+  const fittedEmbedding = await umap.fitAsync(fitNodes.map((node) => node.features));
+  const fittedByIndex = new Map(fitIndexes.map((nodeIndex, index) => [nodeIndex, fittedEmbedding[index]!]));
+  const fullEmbedding = nodes.map((node, nodeIndex) => {
+    const fitted = fittedByIndex.get(nodeIndex);
+    if (fitted) return fitted;
+    let nearestIndex = 0;
+    let nearestDistance = Infinity;
+    const candidateCount = Math.min(240, fitNodes.length);
+    const offset = hashText(node.id) % fitNodes.length;
+    for (let candidate = 0; candidate < candidateCount; candidate += 1) {
+      const index = (offset + Math.floor((candidate / candidateCount) * fitNodes.length)) % fitNodes.length;
+      const distance = featureDistance(node.features, fitNodes[index]!.features);
+      if (distance < nearestDistance) {
+        nearestDistance = distance;
+        nearestIndex = index;
+      }
+    }
+    const anchor = fittedEmbedding[nearestIndex] ?? [0, 0];
+    const jitter = seededRandom(hashText(node.id));
+    return [anchor[0] + (jitter() - 0.5) * 0.06, anchor[1] + (jitter() - 0.5) * 0.06];
+  });
+  const coordinates = fitEmbeddingToCanvas(fullEmbedding);
+  return nodes.map((node, index) => ({ ...node, x: coordinates[index]?.[0] ?? MAP_WIDTH / 2, y: coordinates[index]?.[1] ?? MAP_HEIGHT / 2 }));
 }
 
 export default function TradeClusterMap({ historyRows, liveRows }: TradeClusterMapProps) {
@@ -139,8 +264,39 @@ export default function TradeClusterMap({ historyRows, liveRows }: TradeClusterM
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const [view, setView] = useState<ViewState>(INITIAL_VIEW);
+  const [nodes, setNodes] = useState<ClusterNode[]>([]);
+  const [projectionStatus, setProjectionStatus] = useState<"computing" | "ready" | "fallback">("computing");
   const dragRef = useRef<{ pointerId: number; x: number; y: number; viewX: number; viewY: number } | null>(null);
-  const nodes = useMemo(() => buildNodes(historyRows, liveRows), [historyRows, liveRows]);
+  const featureNodes = useMemo(() => buildFeatureNodes(historyRows, liveRows), [historyRows, liveRows]);
+
+  useEffect(() => {
+    let cancelled = false;
+    setProjectionStatus("computing");
+    setNodes([]);
+    const timer = window.setTimeout(async () => {
+      if (cancelled) return;
+      try {
+        const embeddedNodes = await embedFeatureNodes(featureNodes);
+        if (cancelled) return;
+        setNodes(embeddedNodes);
+        setProjectionStatus("ready");
+      } catch (error) {
+        if (cancelled) return;
+        console.error("UMAP trade projection failed; using feature-axis fallback.", error);
+        const fallbackCoordinates = fitEmbeddingToCanvas(featureNodes.map((node) => [node.features[0] ?? 0, node.features[1] ?? 0]));
+        setNodes(featureNodes.map((node, index) => ({
+          ...node,
+          x: fallbackCoordinates[index]?.[0] ?? MAP_WIDTH / 2,
+          y: fallbackCoordinates[index]?.[1] ?? MAP_HEIGHT / 2
+        })));
+        setProjectionStatus("fallback");
+      }
+    }, 20);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [featureNodes]);
   const strategies = useMemo(
     () => [...new Set(nodes.map((node) => node.row.modelName || node.row.strategyKey || "Unknown"))].sort(),
     [nodes]
@@ -186,13 +342,24 @@ export default function TradeClusterMap({ historyRows, liveRows }: TradeClusterM
   }, [filteredNodes]);
 
   const edges = useMemo(() => {
-    const previousByStrategy = new Map<string, ClusterNode>();
     const result: Array<{ from: ClusterNode; to: ClusterNode }> = [];
-    for (const node of [...filteredNodes].sort((left, right) => Date.parse(left.row.entryTime) - Date.parse(right.row.entryTime))) {
-      const key = node.row.modelName || node.row.strategyKey || "Unknown";
-      const previous = previousByStrategy.get(key);
-      if (previous && result.length < 900) result.push({ from: previous, to: node });
-      previousByStrategy.set(key, node);
+    if (filteredNodes.length < 2) return result;
+    const step = Math.max(1, Math.ceil(filteredNodes.length / 460));
+    const edgeNodes = filteredNodes.filter((_, index) => index % step === 0).slice(0, 460);
+    for (let sourceIndex = 0; sourceIndex < edgeNodes.length; sourceIndex += 1) {
+      const source = edgeNodes[sourceIndex]!;
+      let nearest: ClusterNode | null = null;
+      let nearestDistance = Infinity;
+      for (let targetIndex = 0; targetIndex < edgeNodes.length; targetIndex += 1) {
+        if (sourceIndex === targetIndex) continue;
+        const target = edgeNodes[targetIndex]!;
+        const distance = featureDistance(source.features, target.features);
+        if (distance < nearestDistance) {
+          nearest = target;
+          nearestDistance = distance;
+        }
+      }
+      if (nearest) result.push({ from: source, to: nearest });
     }
     return result;
   }, [filteredNodes]);
@@ -254,9 +421,10 @@ export default function TradeClusterMap({ historyRows, liveRows }: TradeClusterM
         <div>
           <span className="tradeClusterEyebrow">Trade topology</span>
           <h2>Cluster Map</h2>
-          <p>Every point is a trade. Nearby points share a strategy; vertical movement reflects normalized outcome.</p>
+          <p>Every point is a trade. UMAP projects {FEATURE_COUNT} execution, risk, timing, outcome, and identity features into similarity neighborhoods.</p>
         </div>
         <div className="tradeClusterSummary" aria-label="Visible cluster summary">
+          <span className="projection"><b>UMAP</b> {projectionStatus === "ready" ? "ready" : projectionStatus === "fallback" ? "fallback" : "projecting"}</span>
           <span><b>{filteredNodes.length.toLocaleString()}</b> visible</span>
           <span className="history"><b>{filteredNodes.filter((node) => node.source === "history").length.toLocaleString()}</b> history</span>
           <span className="live"><b>{filteredNodes.filter((node) => node.source === "live").length.toLocaleString()}</b> live</span>
@@ -392,6 +560,14 @@ export default function TradeClusterMap({ historyRows, liveRows }: TradeClusterM
           </g>
         </svg>
 
+        {projectionStatus === "computing" ? (
+          <div className="tradeClusterProjectionState" role="status">
+            <i />
+            <strong>Building UMAP projection</strong>
+            <span>Comparing {featureNodes.length.toLocaleString()} trades across {FEATURE_COUNT} weighted features</span>
+          </div>
+        ) : null}
+
         <div className="tradeClusterLegend" aria-label="Map legend">
           <span><i className="history" />History</span>
           <span><i className="live" />Live</span>
@@ -399,7 +575,7 @@ export default function TradeClusterMap({ historyRows, liveRows }: TradeClusterM
           <span><i className="loss" />Loss</span>
           <span><i className="open" />Open</span>
         </div>
-        <div className="tradeClusterHelp">Drag to pan · scroll to zoom · select to focus</div>
+        <div className="tradeClusterHelp">Feature-neighbor links · drag to pan · scroll to zoom</div>
 
         {inspectedNode ? (
           <aside className="tradeClusterInspector">

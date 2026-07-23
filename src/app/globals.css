@@ -4022,6 +4022,15 @@ html[data-theme="light"] .themeDarkLabel {
   color: #a5b4fc;
 }
 
+.tradeClusterSummary .projection {
+  border-color: rgba(96, 165, 250, 0.24);
+  background: rgba(96, 165, 250, 0.08);
+}
+
+.tradeClusterSummary .projection b {
+  color: var(--cluster-accent);
+}
+
 .tradeClusterToolbar {
   position: relative;
   z-index: 8;
@@ -4229,6 +4238,39 @@ html[data-theme="light"] .themeDarkLabel {
 
 .tradeClusterStage > svg:active {
   cursor: grabbing;
+}
+
+.tradeClusterProjectionState {
+  position: absolute;
+  z-index: 6;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 0.34rem;
+  background: color-mix(in srgb, var(--cluster-bg) 82%, transparent);
+  color: var(--cluster-text);
+  text-align: center;
+  backdrop-filter: blur(6px);
+}
+
+.tradeClusterProjectionState i {
+  width: 34px;
+  height: 34px;
+  margin-bottom: 0.25rem;
+  border: 2px solid var(--cluster-line);
+  border-top-color: var(--cluster-accent);
+  border-radius: 50%;
+  animation: tradeClusterProjectionSpin 720ms linear infinite;
+}
+
+.tradeClusterProjectionState strong {
+  font-size: 0.76rem;
+}
+
+.tradeClusterProjectionState span {
+  color: var(--cluster-muted);
+  font-size: 0.61rem;
 }
 
 .tradeClusterBackdrop {
@@ -4491,6 +4533,12 @@ html[data-theme="light"] .themeDarkLabel {
   }
 }
 
+@keyframes tradeClusterProjectionSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 html[data-theme="light"] .cluster-map-card {
   --cluster-bg: #f7f9fc;
   --cluster-panel: rgba(255, 255, 255, 0.93);
@@ -4640,7 +4688,8 @@ html[data-theme="light"] .tradeClusterNode.live {
 @media (prefers-reduced-motion: reduce) {
   .tradeClusterNode,
   .tradeClusterNode.open,
-  .tradeClusterInspector {
+  .tradeClusterInspector,
+  .tradeClusterProjectionState i {
     animation: none;
     transition: none;
   }
