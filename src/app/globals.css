@@ -3405,6 +3405,11 @@ html[data-theme="light"] .themeDarkLabel {
 }
 
 .selectedStatsSurface {
+  --stats-chart-accent: #60a5fa;
+  --stats-chart-accent-soft: rgba(96, 165, 250, 0.14);
+  --stats-chart-grid: rgba(148, 163, 184, 0.22);
+  --stats-chart-text: rgba(226, 232, 240, 0.7);
+  --stats-chart-panel: rgba(7, 12, 22, 0.34);
   min-width: 0;
   display: grid;
   gap: 0.74rem;
@@ -3444,6 +3449,378 @@ html[data-theme="light"] .themeDarkLabel {
 
 .selectedStatsDenseGrid .backtest-stat-card {
   min-height: 72px;
+}
+
+.selectedStatsCharts {
+  min-width: 0;
+  margin-top: 0.08rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.065);
+}
+
+.selectedStatsCharts summary {
+  min-height: 34px;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--stats-chart-text);
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
+}
+
+.selectedStatsCharts summary::-webkit-details-marker {
+  display: none;
+}
+
+.selectedStatsCharts summary span {
+  font-size: 0.7rem;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.selectedStatsCharts summary small {
+  color: rgba(148, 163, 184, 0.62);
+  font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+  font-size: 0.62rem;
+}
+
+.selectedStatsCharts summary i {
+  width: 7px;
+  height: 7px;
+  margin-left: auto;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: rotate(45deg);
+  transition: transform 160ms ease;
+}
+
+.selectedStatsCharts[open] summary i {
+  transform: rotate(225deg);
+}
+
+.selectedStatsChartGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.52rem;
+  padding: 0.18rem 0 0.3rem;
+  animation: statsChartReveal 180ms ease-out both;
+}
+
+.selectedStatsChart {
+  min-width: 0;
+  display: grid;
+  grid-template-rows: auto minmax(128px, 1fr);
+  gap: 0.56rem;
+  border: 1px solid rgba(148, 163, 184, 0.12);
+  border-radius: 13px;
+  background: var(--stats-chart-panel);
+  padding: 0.68rem;
+  overflow: hidden;
+}
+
+.selectedStatsChart header {
+  min-width: 0;
+  display: grid;
+  gap: 0.1rem;
+}
+
+.selectedStatsChart header strong {
+  color: rgba(241, 245, 249, 0.92);
+  font-size: 0.76rem;
+  font-weight: 900;
+}
+
+.selectedStatsChart header span {
+  color: var(--stats-chart-text);
+  font-size: 0.64rem;
+  line-height: 1.25;
+}
+
+.selectedStatsChartPlot {
+  min-width: 0;
+  align-self: end;
+}
+
+.selectedStatsChartPlot svg {
+  width: 100%;
+  height: 142px;
+  display: block;
+  overflow: visible;
+}
+
+.statsChartGridLine {
+  stroke: var(--stats-chart-grid);
+  stroke-dasharray: 4 5;
+  stroke-width: 1;
+}
+
+.statsChartLine {
+  fill: none;
+  stroke: var(--stats-chart-accent);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 3;
+  vector-effect: non-scaling-stroke;
+}
+
+.statsChartLine.secondary {
+  stroke: var(--up);
+  stroke-dasharray: 5 4;
+  stroke-width: 2;
+}
+
+.statsChartPoint,
+.statsChartScatterPoint {
+  fill: var(--stats-chart-accent);
+  stroke: var(--stats-chart-panel);
+  stroke-width: 2;
+  transition: r 120ms ease, opacity 120ms ease;
+}
+
+.statsChartPoint.negative {
+  fill: var(--down);
+}
+
+.statsChartPoint:hover,
+.statsChartScatterPoint:hover {
+  r: 6;
+}
+
+.statsChartScatterPoint {
+  fill: var(--up);
+  opacity: 0.7;
+}
+
+.selectedStatsChartAxis {
+  display: flex;
+  justify-content: space-between;
+  color: var(--stats-chart-text);
+  font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+  font-size: 0.57rem;
+}
+
+.selectedStatsBars {
+  height: 150px;
+  display: flex;
+  align-items: end;
+  gap: clamp(2px, 0.65vw, 7px);
+  border-bottom: 1px solid var(--stats-chart-grid);
+  padding: 8px 2px 0;
+}
+
+.selectedStatsBars > div {
+  min-width: 0;
+  height: 100%;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: end;
+  gap: 0.25rem;
+}
+
+.selectedStatsBars i {
+  min-height: 4px;
+  display: block;
+  border-radius: 3px 3px 1px 1px;
+  background: var(--up);
+  opacity: 0.78;
+  transition: opacity 120ms ease, transform 120ms ease;
+  transform-origin: bottom;
+}
+
+.selectedStatsBars > div:hover i {
+  opacity: 1;
+  transform: scaleY(1.025);
+}
+
+.selectedStatsBars .negative i {
+  background: var(--down);
+}
+
+.selectedStatsBars span {
+  min-height: 12px;
+  overflow: hidden;
+  color: var(--stats-chart-text);
+  font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+  font-size: 0.52rem;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.selectedStatsHorizontalBars {
+  align-self: stretch;
+  display: grid;
+  align-content: center;
+  gap: 0.48rem;
+}
+
+.selectedStatsHorizontalBars > div {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(70px, 0.8fr) minmax(90px, 2fr) auto;
+  align-items: center;
+  gap: 0.45rem;
+  color: var(--stats-chart-text);
+  font-size: 0.6rem;
+}
+
+.selectedStatsHorizontalBars > div > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.selectedStatsHorizontalBars i {
+  height: 6px;
+  display: block;
+  border-radius: 999px;
+  background: var(--stats-chart-grid);
+  overflow: hidden;
+}
+
+.selectedStatsHorizontalBars i b {
+  height: 100%;
+  display: block;
+  border-radius: inherit;
+  background: var(--stats-chart-accent);
+}
+
+.selectedStatsHorizontalBars i b.negative {
+  background: var(--down);
+}
+
+.selectedStatsHorizontalBars strong {
+  color: rgba(241, 245, 249, 0.86);
+  font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+  font-size: 0.61rem;
+}
+
+.selectedStatsOutcomeStrip {
+  min-height: 142px;
+  display: flex;
+  align-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 3px;
+}
+
+.selectedStatsOutcomeStrip i {
+  width: 7px;
+  height: 22px;
+  flex: 1 0 5px;
+  border-radius: 2px;
+  background: var(--stats-chart-grid);
+  opacity: 0.8;
+  transition: opacity 120ms ease, transform 120ms ease;
+}
+
+.selectedStatsOutcomeStrip i:hover {
+  opacity: 1;
+  transform: translateY(-2px);
+}
+
+.selectedStatsOutcomeStrip i.win {
+  background: var(--up);
+}
+
+.selectedStatsOutcomeStrip i.loss {
+  background: var(--down);
+}
+
+.selectedStatsDonut {
+  min-height: 142px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(1rem, 4vw, 2.4rem);
+}
+
+.selectedStatsDonut > i {
+  width: 104px;
+  height: 104px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 26px var(--stats-chart-panel);
+}
+
+.selectedStatsDonut > div {
+  display: grid;
+  gap: 0.44rem;
+}
+
+.selectedStatsDonut span {
+  display: grid;
+  grid-template-columns: 7px 1fr auto;
+  align-items: center;
+  gap: 0.38rem;
+  color: var(--stats-chart-text);
+  font-size: 0.62rem;
+}
+
+.selectedStatsDonut span b {
+  width: 7px;
+  height: 7px;
+  border-radius: 2px;
+}
+
+.selectedStatsDonut span strong {
+  color: rgba(241, 245, 249, 0.9);
+  font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+}
+
+@keyframes statsChartReveal {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 720px) {
+  .selectedStatsChartGrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .selectedStatsChart {
+    min-height: 204px;
+    padding: 0.58rem;
+  }
+
+  .selectedStatsChartPlot svg {
+    height: 132px;
+  }
+
+  .selectedStatsBars {
+    height: 138px;
+  }
+
+  .selectedStatsDonut {
+    min-height: 132px;
+  }
+
+  .selectedStatsHorizontalBars > div {
+    grid-template-columns: minmax(62px, 0.8fr) minmax(70px, 2fr) auto;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .selectedStatsChartGrid {
+    animation: none;
+  }
+
+  .selectedStatsCharts summary i,
+  .selectedStatsBars i,
+  .selectedStatsOutcomeStrip i,
+  .statsChartPoint,
+  .statsChartScatterPoint {
+    transition: none;
+  }
 }
 
 .backtest-stat-card.text-stat-card strong {
@@ -7670,6 +8047,29 @@ html[data-theme="light"] .selectedStatsGroup + .selectedStatsGroup {
 
 html[data-theme="light"] .selectedStatsGroup h3 {
   color: rgba(15, 23, 42, 0.56);
+}
+
+html[data-theme="light"] .selectedStatsSurface {
+  --stats-chart-accent: #2563eb;
+  --stats-chart-accent-soft: rgba(37, 99, 235, 0.1);
+  --stats-chart-grid: rgba(51, 65, 85, 0.18);
+  --stats-chart-text: rgba(51, 65, 85, 0.72);
+  --stats-chart-panel: rgba(248, 250, 252, 0.94);
+}
+
+html[data-theme="light"] .selectedStatsCharts {
+  border-top-color: rgba(15, 23, 42, 0.08);
+}
+
+html[data-theme="light"] .selectedStatsChart {
+  border-color: rgba(15, 23, 42, 0.1);
+  box-shadow: 0 7px 22px rgba(15, 23, 42, 0.045);
+}
+
+html[data-theme="light"] .selectedStatsChart header strong,
+html[data-theme="light"] .selectedStatsHorizontalBars strong,
+html[data-theme="light"] .selectedStatsDonut span strong {
+  color: rgba(15, 23, 42, 0.9);
 }
 
 html[data-theme="light"] .topstepConnectionState strong,

@@ -293,6 +293,18 @@ type StatCardData = {
   title?: string;
 };
 
+type ChartDatum = {
+  label: string;
+  value: number;
+  secondary?: number;
+};
+
+type StatsChartData = {
+  title: string;
+  subtitle: string;
+  chart: ReactNode;
+};
+
 type CustomScaleRangeSeed = {
   riskCeiling?: unknown;
   riskFloor?: unknown;
@@ -1271,6 +1283,219 @@ function aggregateDollars(trades: TradeSnapshot[]): DollarAggregate {
   };
 }
 
+function chartSample<T>(values: T[], limit = 48): T[] {
+  if (values.length <= limit) return values;
+  const sampled: T[] = [];
+  for (let index = 0; index < limit; index += 1) {
+    sampled.push(values[Math.round((index / (limit - 1)) * (values.length - 1))]!);
+  }
+  return sampled;
+}
+
+function categoryChartData(
+  trades: TradeSnapshot[],
+  keyForTrade: (trade: TradeSnapshot) => string,
+  valueForTrade: (trade: TradeSnapshot) => number,
+  limit = 8
+): ChartDatum[] {
+  const buckets = new Map<string, { total: number; count: number }>();
+  for (const trade of trades) {
+    const key = keyForTrade(trade);
+    const bucket = buckets.get(key) ?? { total: 0, count: 0 };
+    bucket.total += valueForTrade(trade);
+    bucket.count += 1;
+    buckets.set(key, bucket);
+  }
+  return [...buckets.entries()]
+    .map(([label, bucket]) => ({ label, value: bucket.total, secondary: bucket.count }))
+    .sort((left, right) => Math.abs(right.value) - Math.abs(left.value))
+    .slice(0, limit);
+}
+
+function histogramData(values: number[], bins = 10): ChartDatum[] {
+  const finite = values.filter(Number.isFinite);
+  if (!finite.length) return [];
+  const minimum = Math.min(...finite);
+  const maximum = Math.max(...finite);
+  if (minimum === maximum) return [{ label: fmtNumber(minimum), value: finite.length }];
+  const width = (maximum - minimum) / bins;
+  const counts = Array.from({ length: bins }, () => 0);
+  for (const value of finite) {
+    counts[Math.min(bins - 1, Math.floor((value - minimum) / width))] += 1;
+  }
+  return counts.map((count, index) => ({
+    label: fmtNumber(minimum + width * (index + 0.5)),
+    value: count
+  }));
+}
+
+function ChartFrame({ chart }: { chart: StatsChartData }) {
+  return (
+    <article className="selectedStatsChart">
+      <header>
+        <strong>{chart.title}</strong>
+        <span>{chart.subtitle}</span>
+      </header>
+      {chart.chart}
+    </article>
+  );
+}
+
+function LineChart({
+  data,
+  formatValue = fmtMoney,
+  secondaryLabel
+}: {
+  data: ChartDatum[];
+  formatValue?: (value: number) => string;
+  secondaryLabel?: string;
+}) {
+  const width = 640;
+  const height = 190;
+  const padX = 16;
+  const padY = 18;
+  const allValues = data.flatMap((point) => (point.secondary == null ? [point.value] : [point.value, point.secondary]));
+  const minimum = Math.min(0, ...allValues);
+  const maximum = Math.max(0, ...allValues);
+  const range = Math.max(1, maximum - minimum);
+  const x = (index: number) => padX + (index / Math.max(1, data.length - 1)) * (width - padX * 2);
+  const y = (value: number) => padY + ((maximum - value) / range) * (height - padY * 2);
+  const points = data.map((point, index) => `${x(index)},${y(point.value)}`).join(" ");
+  const secondaryPoints = data
+    .filter((point) => point.secondary != null)
+    .map((point, index) => `${x(index)},${y(point.secondary ?? 0)}`)
+    .join(" ");
+  const zeroY = y(0);
+  return (
+    <div className="selectedStatsChartPlot">
+      <svg viewBox={`0 0 ${width} ${height}`} role="img" aria-label="Line chart">
+        <line className="statsChartGridLine" x1={padX} x2={width - padX} y1={zeroY} y2={zeroY} />
+        <polyline className="statsChartLine" points={points} />
+        {secondaryPoints ? <polyline className="statsChartLine secondary" points={secondaryPoints} /> : null}
+        {data.map((point, index) => (
+          <circle key={`${point.label}-${index}`} className={`statsChartPoint${point.value < 0 ? " negative" : ""}`} cx={x(index)} cy={y(point.value)} r="3">
+            <title>{`${point.label}: ${formatValue(point.value)}${point.secondary == null ? "" : ` · ${secondaryLabel ?? "Second"} ${formatValue(point.secondary)}`}`}</title>
+          </circle>
+        ))}
+      </svg>
+      <div className="selectedStatsChartAxis"><span>{data[0]?.label ?? "--"}</span><span>{data[data.length - 1]?.label ?? "--"}</span></div>
+    </div>
+  );
+}
+
+function BarChart({
+  data,
+  formatValue = fmtMoney,
+  horizontal = false
+}: {
+  data: ChartDatum[];
+  formatValue?: (value: number) => string;
+  horizontal?: boolean;
+}) {
+  const maximum = Math.max(1, ...data.map((point) => Math.abs(point.value)));
+  if (horizontal) {
+    return (
+      <div className="selectedStatsHorizontalBars">
+        {data.map((point) => (
+          <div key={point.label}>
+            <span>{shortLabel(point.label, 16)}</span>
+            <i><b className={point.value < 0 ? "negative" : ""} style={{ width: `${(Math.abs(point.value) / maximum) * 100}%` }} /></i>
+            <strong>{formatValue(point.value)}</strong>
+          </div>
+        ))}
+      </div>
+    );
+  }
+  return (
+    <div className="selectedStatsBars" role="img" aria-label="Bar chart">
+      {data.map((point) => (
+        <div key={point.label} className={point.value < 0 ? "negative" : ""}>
+          <i style={{ height: `${Math.max(4, (Math.abs(point.value) / maximum) * 100)}%` }} title={`${point.label}: ${formatValue(point.value)}`} />
+          <span>{shortLabel(point.label, 7)}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function ScatterChart({ data }: { data: ChartDatum[] }) {
+  const width = 640;
+  const height = 190;
+  const maxX = Math.max(1, ...data.map((point) => point.value));
+  const maxY = Math.max(1, ...data.map((point) => point.secondary ?? 0));
+  return (
+    <div className="selectedStatsChartPlot">
+      <svg viewBox={`0 0 ${width} ${height}`} role="img" aria-label="Risk versus target scatter plot">
+        <line className="statsChartGridLine" x1="16" x2="624" y1="174" y2="16" />
+        {chartSample(data, 80).map((point, index) => (
+          <circle
+            key={`${point.label}-${index}`}
+            className="statsChartScatterPoint"
+            cx={16 + (point.value / maxX) * 608}
+            cy={174 - ((point.secondary ?? 0) / maxY) * 158}
+            r="4"
+          >
+            <title>{`${point.label}: risk ${fmtMoney(point.value)} · target ${fmtMoney(point.secondary ?? 0)}`}</title>
+          </circle>
+        ))}
+      </svg>
+      <div className="selectedStatsChartAxis"><span>Lower risk</span><span>Higher risk</span></div>
+    </div>
+  );
+}
+
+function OutcomeStrip({ data }: { data: ChartDatum[] }) {
+  return (
+    <div className="selectedStatsOutcomeStrip" role="img" aria-label="Chronological trade outcome strip">
+      {chartSample(data, 100).map((point, index) => (
+        <i key={`${point.label}-${index}`} className={point.value > 0 ? "win" : point.value < 0 ? "loss" : "flat"} title={`${point.label}: ${fmtR(point.value, true)}`} />
+      ))}
+    </div>
+  );
+}
+
+function DonutChart({ data }: { data: ChartDatum[] }) {
+  const total = sum(data.map((point) => Math.max(0, point.value)));
+  let cursor = 0;
+  const colors = ["var(--up)", "var(--down)", "var(--stats-chart-accent)"];
+  const gradient = data
+    .map((point, index) => {
+      const start = cursor;
+      cursor += total ? (Math.max(0, point.value) / total) * 100 : 0;
+      return `${colors[index % colors.length]} ${start}% ${cursor}%`;
+    })
+    .join(", ");
+  return (
+    <div className="selectedStatsDonut">
+      <i style={{ background: `conic-gradient(${gradient || "var(--stats-chart-grid) 0 100%"})` }} />
+      <div>
+        {data.map((point, index) => (
+          <span key={point.label}><b style={{ background: colors[index % colors.length] }} />{point.label} <strong>{fmtCount(point.value)}</strong></span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function StatsChartRail({ charts, title }: { charts: StatsChartData[]; title: string }) {
+  return (
+    <details
+      className="selectedStatsCharts"
+      onClick={(event) => event.stopPropagation()}
+      onKeyDown={(event) => event.stopPropagation()}
+    >
+      <summary>
+        <span>Charts</span>
+        <small>{charts.length} views</small>
+        <i aria-hidden />
+      </summary>
+      <div className="selectedStatsChartGrid" aria-label={`${title} charts`}>
+        {charts.map((chart) => <ChartFrame key={chart.title} chart={chart} />)}
+      </div>
+    </details>
+  );
+}
+
 function StatCard({ stat }: { stat: StatCardData }) {
   return (
     <div
@@ -1283,7 +1508,7 @@ function StatCard({ stat }: { stat: StatCardData }) {
   );
 }
 
-function StatGroup({ stats, title }: { stats: StatCardData[]; title: string }) {
+function StatGroup({ charts, stats, title }: { charts: StatsChartData[]; stats: StatCardData[]; title: string }) {
   return (
     <section className="selectedStatsGroup" aria-label={title}>
       <h3>{title}</h3>
@@ -1292,6 +1517,7 @@ function StatGroup({ stats, title }: { stats: StatCardData[]; title: string }) {
           <StatCard key={stat.label} stat={stat} />
         ))}
       </div>
+      <StatsChartRail charts={charts} title={title} />
     </section>
   );
 }
@@ -1622,15 +1848,134 @@ export default function SelectedStrategyStats({
     segmentTextStat("Worst side", stats.sides.worst, "total", "tone-down")
   ];
 
+  const chartTrades = [...selectedTradeSnapshots].sort((left, right) => {
+    const leftTime = Number.isFinite(left.exitMs) ? left.exitMs : left.entryMs;
+    const rightTime = Number.isFinite(right.exitMs) ? right.exitMs : right.entryMs;
+    return leftTime - rightTime;
+  });
+  let chartEquity = 0;
+  const equityData = chartSample(
+    chartTrades.map((trade, index) => {
+      chartEquity += trade.pnlDollars;
+      return { label: `Trade ${index + 1}`, value: chartEquity };
+    })
+  );
+  let rollingTotal = 0;
+  const rollingExpectancyData = chartSample(
+    chartTrades.map((trade, index) => {
+      rollingTotal += trade.pnlDollars;
+      return { label: `Trade ${index + 1}`, value: rollingTotal / (index + 1) };
+    })
+  );
+  const drawdownData = chartSample(stats.dailyCurve.map((point) => ({ label: point.dayKey, value: -point.drawdown })));
+  const pnlHistogram = histogramData(chartTrades.map((trade) => trade.pnlDollars));
+  const outcomeData = chartTrades.map((trade, index) => ({ label: `Trade ${index + 1}`, value: trade.rMultiple }));
+  const conditionalWinData: ChartDatum[] = [
+    { label: "After win", value: stats.winAfterWinPct },
+    { label: "After loss", value: stats.winAfterLossPct },
+    { label: "Overall", value: stats.winRatePct }
+  ];
+  const durationData = chartSample(
+    chartTrades.map((trade, index) => ({ label: `${index + 1}`, value: trade.durationMs / 3_600_000 })),
+    36
+  );
+  const entryHourData = categoryChartData(chartTrades, (trade) => localHourLabel(trade.entryTime), () => 1, 24).sort((left, right) =>
+    left.label.localeCompare(right.label)
+  );
+  const riskTargetData = chartTrades.map((trade, index) => ({
+    label: `Trade ${index + 1}`,
+    value: trade.riskDollars,
+    secondary: trade.targetDollars
+  }));
+  const exitMixData: ChartDatum[] = [
+    { label: "Target", value: stats.targetExitCount },
+    { label: "Stop", value: stats.stopExitCount },
+    { label: "Other", value: stats.otherExitCount }
+  ];
+  const monthlyChartData = categoryChartData(chartTrades, (trade) => localTradeMonthKey(trade.exitTime), (trade) => trade.pnlDollars, 24).sort(
+    (left, right) => left.label.localeCompare(right.label)
+  );
+  const weekdayChartData = categoryChartData(chartTrades, (trade) => localWeekdayLabel(trade.entryTime), (trade) => trade.pnlDollars, 7)
+    .map((point) => ({ ...point, value: point.secondary ? point.value / point.secondary : 0 }))
+    .sort((left, right) => WEEKDAY_LABELS.indexOf(left.label as (typeof WEEKDAY_LABELS)[number]) - WEEKDAY_LABELS.indexOf(right.label as (typeof WEEKDAY_LABELS)[number]));
+  const rHistogram = histogramData(chartTrades.map((trade) => trade.rMultiple));
+  const rPercentileData: ChartDatum[] = [
+    { label: "P5", value: stats.p05R },
+    { label: "P10", value: stats.p10R },
+    { label: "P25", value: stats.p25R },
+    { label: "P50", value: stats.medianR },
+    { label: "P75", value: stats.p75R },
+    { label: "P90", value: stats.p90R },
+    { label: "P95", value: stats.p95R }
+  ];
+  const modelAllocationData = categoryChartData(chartTrades, (trade) => trade.strategyLabel, () => 1, 8);
+  const symbolAllocationData = categoryChartData(chartTrades, (trade) => trade.symbolLabel, () => 1, 8);
+
   const statGroups = [
-    { title: "Performance", stats: performanceStats },
-    { title: "Risk & Tails", stats: riskStats },
-    { title: "Streaks & Momentum", stats: streakStats },
-    { title: "Timing & Cadence", stats: timingStats },
-    { title: "Trade Shape", stats: tradeShapeStats },
-    { title: "Calendar Edge", stats: calendarStats },
-    { title: "R-Multiple Anatomy", stats: rStats },
-    { title: "Concentration", stats: concentrationStats }
+    {
+      title: "Performance",
+      stats: performanceStats,
+      charts: [
+        { title: "Equity curve", subtitle: "Cumulative realized P&L by trade", chart: <LineChart data={equityData} /> },
+        { title: "Rolling expectancy", subtitle: "Average P&L after each completed trade", chart: <LineChart data={rollingExpectancyData} /> }
+      ]
+    },
+    {
+      title: "Risk & Tails",
+      stats: riskStats,
+      charts: [
+        { title: "Drawdown path", subtitle: "Daily distance below the prior equity high", chart: <LineChart data={drawdownData} /> },
+        { title: "P&L distribution", subtitle: "Trade frequency across dollar outcomes", chart: <BarChart data={pnlHistogram} formatValue={fmtCount} /> }
+      ]
+    },
+    {
+      title: "Streaks & Momentum",
+      stats: streakStats,
+      charts: [
+        { title: "Outcome tape", subtitle: "Chronological wins, losses, and breakevens", chart: <OutcomeStrip data={outcomeData} /> },
+        { title: "Conditional win rate", subtitle: "How the prior result changes the next outcome", chart: <BarChart data={conditionalWinData} formatValue={fmtPct} /> }
+      ]
+    },
+    {
+      title: "Timing & Cadence",
+      stats: timingStats,
+      charts: [
+        { title: "Holding time", subtitle: "Trade duration in hours across the sample", chart: <BarChart data={durationData} formatValue={(value) => `${fmtNumber(value)}h`} /> },
+        { title: "Entry clock", subtitle: "Number of entries by local hour", chart: <BarChart data={entryHourData} formatValue={fmtCount} /> }
+      ]
+    },
+    {
+      title: "Trade Shape",
+      stats: tradeShapeStats,
+      charts: [
+        { title: "Risk / target map", subtitle: "Planned dollars at risk versus planned reward", chart: <ScatterChart data={riskTargetData} /> },
+        { title: "Exit mix", subtitle: "Target, stop, and discretionary exits", chart: <DonutChart data={exitMixData} /> }
+      ]
+    },
+    {
+      title: "Calendar Edge",
+      stats: calendarStats,
+      charts: [
+        { title: "Monthly P&L", subtitle: "Net realized result by active month", chart: <BarChart data={monthlyChartData} /> },
+        { title: "Weekday expectancy", subtitle: "Average trade P&L by entry weekday", chart: <BarChart data={weekdayChartData} /> }
+      ]
+    },
+    {
+      title: "R-Multiple Anatomy",
+      stats: rStats,
+      charts: [
+        { title: "R distribution", subtitle: "Trade frequency across normalized outcomes", chart: <BarChart data={rHistogram} formatValue={fmtCount} /> },
+        { title: "R percentile profile", subtitle: "The result curve from left tail to right tail", chart: <LineChart data={rPercentileData} formatValue={(value) => fmtR(value, true)} /> }
+      ]
+    },
+    {
+      title: "Concentration",
+      stats: concentrationStats,
+      charts: [
+        { title: "Model allocation", subtitle: "Trade count across the busiest models", chart: <BarChart data={modelAllocationData} formatValue={fmtCount} horizontal /> },
+        { title: "Symbol allocation", subtitle: "Trade count across the busiest symbols", chart: <BarChart data={symbolAllocationData} formatValue={fmtCount} horizontal /> }
+      ]
+    }
   ];
 
   return (
@@ -1654,7 +1999,7 @@ export default function SelectedStrategyStats({
           <StatCard key={stat.label} stat={stat} />
         ))}
       </div>
-      {expanded ? statGroups.map((group) => <StatGroup key={group.title} title={group.title} stats={group.stats} />) : null}
+      {expanded ? statGroups.map((group) => <StatGroup key={group.title} title={group.title} stats={group.stats} charts={group.charts} />) : null}
       {toggleable ? (
         <div className="selectedStatsToggleHint" aria-hidden="true">
           <span>{expanded ? "Hide details" : "More stats"}</span>
