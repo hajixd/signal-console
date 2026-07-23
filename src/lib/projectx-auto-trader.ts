@@ -12,11 +12,14 @@ import {
 } from "@/lib/projectx-connections";
 import { getTrades } from "@/lib/storage";
 import {
+  cancelProjectXOrder,
   closeProjectXPosition,
   listProjectXAvailableContracts,
   modifyProjectXOrder,
   placeProjectXOrder,
+  ProjectXApiError,
   readableProjectXError,
+  searchProjectXOrderById,
   searchProjectXOpenOrders,
   searchProjectXOpenPositions,
   searchProjectXAccounts,
@@ -113,6 +116,10 @@ const PROJECTX_TRADE_RESULT_LOOKAHEAD_MS = 15 * 60_000;
 const PROJECTX_TRADE_RESULT_MAX_LOOKAHEAD_HOURS = 24;
 const PROJECTX_TEST_CLOSE_ATTEMPTS = 10;
 const PROJECTX_TEST_CLOSE_WAIT_MS = 650;
+const PROJECTX_MARKET_FILL_CHECK_ATTEMPTS = 8;
+const PROJECTX_MARKET_FILL_CHECK_WAIT_MS = 250;
+const PROJECTX_ADAPTIVE_SIZE_RETRY_DELAY_MS = 400;
+const PROJECTX_MIN_BRACKET_TICKS = 6;
 const PROJECTX_PAST_FAILURE_SIZE_LOOKBACK_HOURS = 24;
 const PROJECTX_DUPLICATE_ORDER_LOOKBACK_HOURS = 48;
 const PROJECTX_CHICAGO_FORMATTER = new Intl.DateTimeFormat("en-US", {
@@ -184,6 +191,13 @@ function positionBracketFallbackEnabled(): boolean {
 
 function adaptiveSizeFallbackEnabled(): boolean {
   return envFlag("PROJECTX_ADAPTIVE_SIZE_FALLBACK_ENABLED", true);
+}
+
+function minimumBracketTicks(): number {
+  const configured = Number(process.env.PROJECTX_MIN_BRACKET_TICKS);
+  return Number.isInteger(configured) && configured >= PROJECTX_MIN_BRACKET_TICKS
+    ? Math.min(configured, 1_000)
+    : PROJECTX_MIN_BRACKET_TICKS;
 }
 
 function pretradeRiskLookupEnabled(): boolean {
@@ -364,7 +378,21 @@ function projectXTradeResultMaxLookaheadMs(): number {
   return hours * 60 * 60_000;
 }
 
-function isSizeReducibleProjectXError(message: string): boolean {
+export function projectXSizeErrorAllowsRetry(message: string, errorCode?: number): boolean {
+  if (
+    isProjectXTradingLockoutError(message) ||
+    isProjectXMarketUnavailableError(message) ||
+    isPositionBracketConflict(message) ||
+    isProjectXDuplicateCustomTagError(message) ||
+    /(?:unauthori[sz]ed|forbidden|invalid|expired)\s+(?:api\s+key|token|session|credential)/i.test(message) ||
+    /(?:rate\s*limit|too\s+many\s+requests|\b429\b)/i.test(message) ||
+    /(?:invalid|unsupported)\s+(?:order\s+type|price|tick|contract|symbol|bracket)/i.test(message) ||
+    /(?:symbol|instrument)\s+(?:is\s+)?blocked/i.test(message) ||
+    /(?:daily|weekly)\s+trade\s+limit/i.test(message)
+  ) {
+    return false;
+  }
+  if (errorCode === 3) return true;
   return [
     /\bcode\s*3\b/i,
     /insufficient\s+(?:funds?|margin|buying\s+power|purchasing\s+power)/i,
@@ -372,8 +400,16 @@ function isSizeReducibleProjectXError(message: string): boolean {
     /(?:exceeds?|exceeded|over)\s+(?:the\s+)?(?:maximum\s+)?(?:margin|contract|position|size|risk)/i,
     /(?:max|maximum)\s+(?:margin|contracts?|position|position\s+size|order\s+size)/i,
     /(?:contract|position|order\s+size|quantity)\s+limit/i,
-    /too\s+many\s+contracts?/i
+    /too\s+many\s+contracts?/i,
+    /risk\s+(?:check|validation)\s+(?:failed|rejected)/i,
+    /(?:risk|position|contract)\s+limit\s+(?:was\s+)?(?:exceeded|reached)/i,
+    /available\s+(?:margin|buying\s+power|purchasing\s+power).*(?:too\s+low|below|required|needed)/i
   ].some((pattern) => pattern.test(message));
+}
+
+function isSizeReducibleProjectXError(message: string, error?: unknown): boolean {
+  if (error instanceof ProjectXAcceptedOrderRejectedError) return true;
+  return projectXSizeErrorAllowsRetry(message, error instanceof ProjectXApiError ? error.errorCode : undefined);
 }
 
 function isProjectXTradingLockoutError(message: string): boolean {
@@ -428,10 +464,10 @@ function orderMatchesProjectXTrade(order: AutoTradeOrderSummary, trade: TradeAle
 
 function adaptiveSizeMaxAttempts(): number {
   const configured = Number(process.env.PROJECTX_ADAPTIVE_SIZE_MAX_ATTEMPTS);
-  return Number.isInteger(configured) && configured > 0 ? Math.min(configured, 20) : 8;
+  return Number.isInteger(configured) && configured > 0 ? Math.min(configured, 50) : 20;
 }
 
-function sizeAttemptSequence(size: number): number[] {
+export function projectXSizeAttemptSequence(size: number): number[] {
   const start = Math.max(1, Math.floor(size));
   const maxAttempts = adaptiveSizeMaxAttempts();
   if (start <= maxAttempts) {
@@ -556,11 +592,62 @@ export function projectXBracketTicksForTrade(
     throw new Error(`Invalid ${trade.side} ProjectX bracket geometry: TP/SL must be on the correct side of entry.`);
   }
 
-  const stopLossTicks = wholeNumber(Math.abs(trade.slUnits), "Stop-loss ticks");
-  const takeProfitTicks = wholeNumber(Math.abs(trade.tpUnits), "Take-profit ticks");
+  const stopLossMagnitude = Math.max(wholeNumber(Math.abs(trade.slUnits), "Stop-loss ticks"), minimumBracketTicks());
+  const takeProfitMagnitude = Math.max(wholeNumber(Math.abs(trade.tpUnits), "Take-profit ticks"), minimumBracketTicks());
   return {
-    stopLossTicks,
-    takeProfitTicks
+    stopLossTicks: direction * -stopLossMagnitude,
+    takeProfitTicks: direction * takeProfitMagnitude
+  };
+}
+
+function adaptiveSizeRetryDelayMs(): number {
+  const configured = Number(process.env.PROJECTX_ADAPTIVE_SIZE_RETRY_DELAY_MS);
+  return Number.isFinite(configured) && configured >= 0
+    ? Math.min(configured, 5_000)
+    : PROJECTX_ADAPTIVE_SIZE_RETRY_DELAY_MS;
+}
+
+function marketFillCheckAttempts(): number {
+  const configured = Number(process.env.PROJECTX_MARKET_FILL_CHECK_ATTEMPTS);
+  return Number.isInteger(configured) && configured > 0
+    ? Math.min(configured, PROJECTX_MARKET_FILL_CHECK_ATTEMPTS)
+    : 4;
+}
+
+function marketFillCheckWaitMs(): number {
+  const configured = Number(process.env.PROJECTX_MARKET_FILL_CHECK_WAIT_MS);
+  return Number.isFinite(configured) && configured >= PROJECTX_MARKET_FILL_CHECK_WAIT_MS
+    ? Math.min(configured, 5_000)
+    : PROJECTX_MARKET_FILL_CHECK_WAIT_MS * 3;
+}
+
+export function projectXMarketEntryRequest(input: {
+  accountId: number;
+  contractId: string;
+  customTag: string;
+  side: ProjectXOrderSide;
+  size: number;
+  stopLossTicks: number;
+  takeProfitTicks: number;
+}): ProjectXPlaceOrderRequest {
+  return {
+    accountId: input.accountId,
+    contractId: input.contractId,
+    customTag: input.customTag,
+    limitPrice: null,
+    side: input.side,
+    size: input.size,
+    stopLossBracket: {
+      ticks: input.stopLossTicks,
+      type: 4
+    },
+    stopPrice: null,
+    takeProfitBracket: {
+      ticks: input.takeProfitTicks,
+      type: 1
+    },
+    trailPrice: null,
+    type: 2
   };
 }
 
@@ -983,6 +1070,7 @@ class ProjectXOrderSkippedError extends Error {
 
 type ProjectXPlacedOrder = {
   customTag?: string;
+  filledSize?: number;
   note?: string;
   orderId: number;
 };
@@ -1117,6 +1205,55 @@ async function placeProjectXOrderWithTagRecovery(token: string, request: Project
   }
 }
 
+async function confirmProjectXMarketOrder(
+  token: string,
+  request: ProjectXPlaceOrderRequest,
+  order: ProjectXPlacedOrder
+): Promise<ProjectXPlacedOrder> {
+  if (request.type !== 2) return order;
+
+  const fillCheckAttempts = marketFillCheckAttempts();
+  for (let attempt = 0; attempt < fillCheckAttempts; attempt += 1) {
+    try {
+      const brokerOrder = await searchProjectXOrderById(token, request.accountId, order.orderId);
+      const status = projectXOrderStatusValue(brokerOrder?.status);
+      if (status === 2) {
+        const reportedFill = brokerOrder?.fillVolume;
+        const filledSize =
+          typeof reportedFill === "number" && Number.isFinite(reportedFill) && reportedFill > 0
+            ? Math.min(request.size, Math.floor(reportedFill))
+            : request.size;
+        const fillNote =
+          filledSize < request.size
+            ? `ProjectX filled ${unitsLabel(filledSize)} of the requested ${unitsLabel(request.size)}; no additional entry was submitted.`
+            : "ProjectX confirmed the market entry filled.";
+        return {
+          ...order,
+          filledSize,
+          note: [order.note, fillNote].filter(Boolean).join(" ")
+        };
+      }
+      if (status === 5) throw new ProjectXAcceptedOrderRejectedError(order.orderId);
+      if (status === 3 || status === 4) {
+        throw new Error(`ProjectX accepted market order ${order.orderId}, then marked it ${projectXOrderStatusLabel(brokerOrder?.status)}.`);
+      }
+    } catch (error) {
+      if (error instanceof ProjectXAcceptedOrderRejectedError) throw error;
+      if (error instanceof Error && /then marked it (?:cancelled|expired)/i.test(error.message)) throw error;
+    }
+    if (attempt < fillCheckAttempts - 1) {
+      await wait(marketFillCheckWaitMs());
+    }
+  }
+
+  return {
+    ...order,
+    note: [order.note, "ProjectX accepted the market entry; fill confirmation was still pending when the execution check ended."]
+      .filter(Boolean)
+      .join(" ")
+  };
+}
+
 async function placeProjectXOrderWithAdaptiveFallback(
   token: string,
   request: ProjectXPlaceOrderRequest,
@@ -1124,7 +1261,7 @@ async function placeProjectXOrderWithAdaptiveFallback(
   originalSize: number,
   preAdjustmentNote?: string
 ): Promise<AutoTradeOrderSummary> {
-  const attempts = adaptiveSizeFallbackEnabled() ? sizeAttemptSequence(request.size) : [request.size];
+  const attempts = adaptiveSizeFallbackEnabled() ? projectXSizeAttemptSequence(request.size) : [request.size];
   let lastSizeError: string | undefined;
   let lastAttemptSize = request.size;
 
@@ -1142,7 +1279,23 @@ async function placeProjectXOrderWithAdaptiveFallback(
     };
 
     try {
-      const order = await placeProjectXOrderWithTagRecovery(token, attemptRequest);
+      console.info("ProjectX market entry attempt", {
+        accountId: attemptRequest.accountId,
+        contractId: attemptRequest.contractId,
+        side: attemptRequest.side,
+        size: attemptRequest.size,
+        stopLossTicks: attemptRequest.stopLossBracket?.ticks,
+        takeProfitTicks: attemptRequest.takeProfitBracket?.ticks,
+        type: attemptRequest.type
+      });
+      const acceptedOrder = await placeProjectXOrderWithTagRecovery(token, attemptRequest);
+      const order = await confirmProjectXMarketOrder(token, attemptRequest, acceptedOrder);
+      console.info("ProjectX market entry accepted", {
+        accountId: attemptRequest.accountId,
+        contractId: attemptRequest.contractId,
+        orderId: order.orderId,
+        size: attemptRequest.size
+      });
       const retryNote = lastSizeError
         ? `Placed with ${unitsLabel(attemptSize)} after ProjectX said this account needs to have less units; planned size was ${unitsLabel(originalSize)}. ${lastSizeError}`
         : preAdjustmentNote;
@@ -1151,6 +1304,7 @@ async function placeProjectXOrderWithAdaptiveFallback(
         customTag: order.customTag ?? attemptSummary.customTag,
         error: [retryNote, order.note].filter(Boolean).join(" ") || undefined,
         orderId: order.orderId,
+        size: order.filledSize ?? attemptSize,
         status: "placed"
       };
     } catch (error) {
@@ -1163,6 +1317,13 @@ async function placeProjectXOrderWithAdaptiveFallback(
       }
 
       const rawMessage = readableProjectXError(error);
+      console.warn("ProjectX market entry attempt failed", {
+        accountId: attemptRequest.accountId,
+        contractId: attemptRequest.contractId,
+        errorCode: error instanceof ProjectXApiError ? error.errorCode : undefined,
+        message: rawMessage,
+        size: attemptRequest.size
+      });
       if (isPositionBracketConflict(rawMessage) && positionBracketFallbackEnabled()) {
         const fallbackRequest = positionBracketFallbackRequest(attemptRequest);
         const fallbackSummary: Omit<AutoTradeOrderSummary, "status"> = {
@@ -1170,7 +1331,8 @@ async function placeProjectXOrderWithAdaptiveFallback(
           customTag: fallbackRequest.customTag ?? undefined
         };
         try {
-          const fallbackOrder = await placeProjectXOrderWithTagRecovery(token, fallbackRequest);
+          const fallbackAcceptedOrder = await placeProjectXOrderWithTagRecovery(token, fallbackRequest);
+          const fallbackOrder = await confirmProjectXMarketOrder(token, fallbackRequest, fallbackAcceptedOrder);
           const retryNote = lastSizeError
             ? `Placed with ${unitsLabel(attemptSize)} after ProjectX said this account needs to have less units; planned size was ${unitsLabel(originalSize)}. Placed via Position Brackets fallback; API TP/SL ticks were not attached. Previous rejection: ${lastSizeError}`
             : "Placed via ProjectX Position Brackets fallback. Exit protection is managed by the account-level Position Bracket settings; API TP/SL ticks were not attached.";
@@ -1179,6 +1341,7 @@ async function placeProjectXOrderWithAdaptiveFallback(
             customTag: fallbackOrder.customTag ?? fallbackSummary.customTag,
             error: [preAdjustmentNote && !lastSizeError ? preAdjustmentNote : undefined, retryNote, fallbackOrder.note].filter(Boolean).join(" "),
             orderId: fallbackOrder.orderId,
+            size: fallbackOrder.filledSize ?? attemptSize,
             status: "placed"
           };
         } catch (fallbackError) {
@@ -1198,8 +1361,9 @@ async function placeProjectXOrderWithAdaptiveFallback(
               status: "skipped"
             };
           }
-          if (attemptSize > 1 && isSizeReducibleProjectXError(fallbackRawMessage)) {
+          if (attemptSize > 1 && isSizeReducibleProjectXError(fallbackRawMessage, fallbackError)) {
             lastSizeError = fallbackRawMessage;
+            await wait(adaptiveSizeRetryDelayMs());
             continue;
           }
           const message = `${projectXOrderErrorMessage(rawMessage)} Fallback failed: ${fallbackRawMessage}`;
@@ -1219,8 +1383,9 @@ async function placeProjectXOrderWithAdaptiveFallback(
           status: "skipped"
         };
       }
-      if (attemptSize > 1 && isSizeReducibleProjectXError(rawMessage)) {
+      if (attemptSize > 1 && isSizeReducibleProjectXError(rawMessage, error)) {
         lastSizeError = message;
+        await wait(adaptiveSizeRetryDelayMs());
         continue;
       }
       return {
@@ -1311,6 +1476,13 @@ function eventManagementPrice(event: TradeManagementEvent): number {
 function orderSummaryStatus(status: TradeAlert["autoTradeStatus"]): AutoTradeOrderSummary["status"] | null {
   if (status === "dry_run" || status === "failed" || status === "placed" || status === "skipped") return status;
   return null;
+}
+
+class ProjectXAcceptedOrderRejectedError extends Error {
+  constructor(readonly orderId: number) {
+    super(`ProjectX accepted market order ${orderId}, then marked it rejected.`);
+    this.name = "ProjectXAcceptedOrderRejectedError";
+  }
 }
 
 export function projectXLegacyOrderSummarySize(trade: TradeAlert, limitOrder: boolean): number {
@@ -1508,6 +1680,31 @@ async function waitForProjectXTestPosition(token: string, accountId: number, con
     await wait(PROJECTX_TEST_CLOSE_WAIT_MS);
   }
   return false;
+}
+
+async function projectXOpenOrderIds(token: string, accountId: number): Promise<Set<number>> {
+  const orders = await searchProjectXOpenOrders(token, accountId);
+  return new Set(
+    orders
+      .map((order) => projectXOrderId(order))
+      .filter((orderId): orderId is number => orderId !== null)
+  );
+}
+
+async function cancelNewProjectXTestOrders(
+  token: string,
+  accountId: number,
+  contractId: string,
+  existingOrderIds: Set<number>
+): Promise<number[]> {
+  const openOrders = await searchProjectXOpenOrders(token, accountId);
+  const newOrderIds = openOrders
+    .filter((order) => order.contractId === contractId)
+    .map((order) => projectXOrderId(order))
+    .filter((orderId): orderId is number => orderId !== null && !existingOrderIds.has(orderId));
+
+  await Promise.all(newOrderIds.map((orderId) => cancelProjectXOrder(token, { accountId, orderId })));
+  return newOrderIds;
 }
 
 export async function enrichProjectXTradeOutcome(trade: TradeAlert): Promise<TradeAlert> {
@@ -1793,30 +1990,30 @@ export async function executeProjectXTestTrade(input: { accountId: number; conne
       const message = readableProjectXError(error);
       return result("failed", { error: message, orders: [{ ...summaryBase, error: message, status: "failed" }] });
     }
-    const entryType: ProjectXOrderType = trade.entryType === "limit" ? 1 : 2;
     const side: ProjectXOrderSide = trade.side === "long" ? 0 : 1;
-    const request: ProjectXPlaceOrderRequest = {
+    const request = projectXMarketEntryRequest({
       accountId: account.id,
       contractId: contract.id,
       customTag,
-      limitPrice: entryType === 1 ? trade.entryPrice : null,
       side,
       size,
-      stopLossBracket: {
-        ticks: stopLossTicks,
-        type: 4 as ProjectXOrderType
-      },
-      stopPrice: null,
-      takeProfitBracket: {
-        ticks: takeProfitTicks,
-        type: 1 as ProjectXOrderType
-      },
-      trailPrice: null,
-      type: entryType
-    };
+      stopLossTicks,
+      takeProfitTicks
+    });
 
     if (dryRunEnabled()) {
       return result("dry_run", summarizeOrders([{ ...summaryBase, status: "dry_run" }], contractFields));
+    }
+
+    let existingOrderIds: Set<number>;
+    try {
+      existingOrderIds = await projectXOpenOrderIds(targetRefresh.connection.token, account.id);
+    } catch (error) {
+      const message = `Test order was not sent because the existing-order safety check failed: ${readableProjectXError(error)}`;
+      return result("failed", {
+        ...summarizeOrders([{ ...summaryBase, error: message, status: "failed" }], contractFields),
+        error: message
+      });
     }
 
     const placedOrder = await placeProjectXOrderWithAdaptiveFallback(
@@ -1829,21 +2026,44 @@ export async function executeProjectXTestTrade(input: { accountId: number; conne
       return result(placedOrder.status, summarizeOrders([placedOrder], contractFields));
     }
 
-    try {
-      const positionOpened = await waitForProjectXTestPosition(targetRefresh.connection.token, account.id, contract.id);
-      if (!positionOpened) {
-        const closeWarning = "Test order was placed with TP/SL, but no open position was found to close.";
-        return result("failed", {
-          ...summarizeOrders([{ ...placedOrder, error: closeWarning }], contractFields),
-          error: closeWarning
-        });
+    const positionOpened = await waitForProjectXTestPosition(targetRefresh.connection.token, account.id, contract.id);
+    if (!positionOpened) {
+      let cleanupMessage: string;
+      try {
+        const cancelledOrderIds = await cancelNewProjectXTestOrders(
+          targetRefresh.connection.token,
+          account.id,
+          contract.id,
+          existingOrderIds
+        );
+        cleanupMessage = `Cleaned up ${cancelledOrderIds.length} new working order(s).`;
+      } catch (cleanupError) {
+        cleanupMessage = `Working-order cleanup failed: ${readableProjectXError(cleanupError)}`;
       }
+      const closeWarning = `Test order was placed with TP/SL, but no open position was found to close. ${cleanupMessage}`;
+      return result("failed", {
+        ...summarizeOrders([{ ...placedOrder, error: closeWarning }], contractFields),
+        error: closeWarning
+      });
+    }
+
+    try {
       await closeProjectXPosition(targetRefresh.connection.token, {
         accountId: account.id,
         contractId: contract.id
       });
     } catch (closeError) {
       const message = `Test order was placed with TP/SL, but closing it failed: ${readableProjectXError(closeError)}`;
+      return result("failed", {
+        ...summarizeOrders([{ ...placedOrder, error: message }], contractFields),
+        error: message
+      });
+    }
+
+    try {
+      await cancelNewProjectXTestOrders(targetRefresh.connection.token, account.id, contract.id, existingOrderIds);
+    } catch (cleanupError) {
+      const message = `Test position was closed, but cleaning up its working TP/SL orders failed: ${readableProjectXError(cleanupError)}`;
       return result("failed", {
         ...summarizeOrders([{ ...placedOrder, error: message }], contractFields),
         error: message
@@ -1890,7 +2110,6 @@ export async function executeProjectXAutoTrade(trade: TradeAlert): Promise<Proje
       });
     }
 
-    const entryType: ProjectXOrderType = trade.entryType === "limit" ? 1 : 2;
     const side: ProjectXOrderSide = trade.side === "long" ? 0 : 1;
     const orders: AutoTradeOrderSummary[] = [...failedConnectionOrders];
     let baseSize: number;
@@ -1982,25 +2201,15 @@ export async function executeProjectXAutoTrade(trade: TradeAlert): Promise<Proje
         }
         size = preflight.size;
 
-        const request: ProjectXPlaceOrderRequest = {
+        const request = projectXMarketEntryRequest({
           accountId: account.id,
           contractId: contract.id,
           customTag,
-          limitPrice: entryType === 1 ? trade.entryPrice : null,
           side,
           size,
-          stopLossBracket: {
-            ticks: stopLossTicks,
-            type: 4 as ProjectXOrderType
-          },
-          stopPrice: null,
-          takeProfitBracket: {
-            ticks: takeProfitTicks,
-            type: 1 as ProjectXOrderType
-          },
-          trailPrice: null,
-          type: entryType
-        };
+          stopLossTicks,
+          takeProfitTicks
+        });
 
         if (dryRunEnabled()) {
           orders.push({

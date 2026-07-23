@@ -200,11 +200,16 @@ type ProjectXOrderSearchResponse = ProjectXBaseResponse & {
   orders?: ProjectXOrder[];
 };
 
+type ProjectXOrderSearchByIdResponse = ProjectXBaseResponse & {
+  order?: ProjectXOrder;
+};
+
 type ProjectXTradeSearchResponse = ProjectXBaseResponse & {
   trades?: ProjectXTrade[];
 };
 
 type ProjectXModifyOrderResponse = ProjectXBaseResponse;
+type ProjectXCancelOrderResponse = ProjectXBaseResponse;
 type ProjectXOpenPositionSearchResponse = ProjectXBaseResponse & {
   positions?: ProjectXOpenPosition[];
 };
@@ -408,6 +413,18 @@ export async function searchProjectXOrders(
   return response.orders ?? [];
 }
 
+export async function searchProjectXOrderById(token: string, accountId: number, orderId: number): Promise<ProjectXOrder | undefined> {
+  const response = await projectXPost<ProjectXOrderSearchByIdResponse>(
+    "/api/Order/searchById",
+    {
+      accountId,
+      orderId
+    },
+    token
+  );
+  return response.order;
+}
+
 export async function searchProjectXTrades(
   token: string,
   request: { accountId: number; endTimestamp?: string; startTimestamp: string }
@@ -418,6 +435,10 @@ export async function searchProjectXTrades(
 
 export async function modifyProjectXOrder(token: string, request: ProjectXModifyOrderRequest): Promise<void> {
   await projectXPost<ProjectXModifyOrderResponse>("/api/Order/modify", request, token);
+}
+
+export async function cancelProjectXOrder(token: string, request: { accountId: number; orderId: number }): Promise<void> {
+  await projectXPost<ProjectXCancelOrderResponse>("/api/Order/cancel", request, token);
 }
 
 export async function searchProjectXOpenPositions(token: string, accountId: number): Promise<ProjectXOpenPosition[]> {

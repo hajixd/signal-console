@@ -183,7 +183,7 @@ test("legacy ProjectX order metadata keeps explicit stored execution size", () =
   );
 });
 
-test("ProjectX bracket ticks are positive distances after side geometry validation", () => {
+test("ProjectX bracket ticks use broker-required directional offsets after geometry validation", () => {
   assert.deepEqual(
     projectXBracketTicksForTrade({
       entryPrice: 61_090,
@@ -193,7 +193,7 @@ test("ProjectX bracket ticks are positive distances after side geometry validati
       takeProfitPrice: 60_885,
       tpUnits: 41
     }),
-    { stopLossTicks: 41, takeProfitTicks: 41 }
+    { stopLossTicks: 41, takeProfitTicks: -41 }
   );
   assert.deepEqual(
     projectXBracketTicksForTrade({
@@ -204,7 +204,7 @@ test("ProjectX bracket ticks are positive distances after side geometry validati
       takeProfitPrice: 6_005,
       tpUnits: 20
     }),
-    { stopLossTicks: 10, takeProfitTicks: 20 }
+    { stopLossTicks: -10, takeProfitTicks: 20 }
   );
 });
 
