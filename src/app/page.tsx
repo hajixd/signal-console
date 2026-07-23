@@ -74,7 +74,6 @@ import { getTrades } from "@/lib/storage";
 import { discordChannelInviteLink, discordConfigured as discordIsConfigured } from "@/lib/discord";
 import { telegramGroupInviteLink } from "@/lib/telegram";
 import { type DataTimeframe } from "@/lib/timeframes";
-import { topstepSessionKey } from "@/lib/topstep";
 import { resolveFirstTradeBracketHit, type TradeBracketBar, type TradeBracketHit } from "@/lib/trade-bracket-truth";
 import { conciseStrategyName } from "@/lib/strategy-names";
 import type { NotificationStatus, TradeAlert, TradeManagementEvent } from "@/lib/types";
@@ -1477,17 +1476,6 @@ function approximateBarsHeld(startValue: string, endValue: string, timeframeMinu
   return Math.max(1, Math.round((end - start) / (timeframeMinutes * 60_000)));
 }
 
-function challengeSessionCount(trades: { entryTime: string; pnlDollars: number }[]): number {
-  const sessions = new Set<string>();
-  for (const trade of trades) {
-    const parsed = Date.parse(trade.entryTime);
-    if (Number.isFinite(parsed) && Number.isFinite(trade.pnlDollars)) {
-      sessions.add(topstepSessionKey(new Date(parsed)));
-    }
-  }
-  return sessions.size;
-}
-
 export default async function Home({ searchParams }: HomeProps) {
   const params = await searchParams;
   const [liveTrades, strategyCatalog, backtestStats, liveRules, liveConfig, datasetStatus, backtestFreshness] = await Promise.all([
@@ -2316,8 +2304,14 @@ export default async function Home({ searchParams }: HomeProps) {
       pnlDollars: boundedBacktestTradeDollarPnl(trade, sizeMultiplier)
     };
   });
-  const challengeReplaySeed = `trading-bot:${activeMarket}:${selectedKeys.join("|")}`;
-  const challengeHistoricalSessions = challengeSessionCount(challengeReplayTrades);
+  const liveChallengeReplayTrades = visibleLiveHistoryRows.map((trade) => ({
+    entryTime: trade.entryTime,
+    key: trade.strategyKey,
+    lockedSize: true,
+    pnlDollars: trade.pnlDollars
+  }));
+  const challengeReplaySeed = `trading-bot:${activeMarket}:${selectedKeys.join("|")}:history`;
+  const liveChallengeReplaySeed = `trading-bot:${activeMarket}:live`;
   const telegramConfigured = Boolean(process.env.TELEGRAM_BOT_TOKEN && (process.env.TELEGRAM_GROUP_CHAT_ID || process.env.TELEGRAM_CHAT_ID));
   const telegramGroupLink = telegramGroupInviteLink();
   const discordConfigured = discordIsConfigured();
@@ -2516,20 +2510,45 @@ export default async function Home({ searchParams }: HomeProps) {
               <h2>Prop Firm Challenge Replay</h2>
             </div>
             <span className="count-pill">
-              {fmtNumber(selectedBacktestTradeCount || challengeReplayTrades.length)} trades / {fmtNumber(challengeHistoricalSessions)} starts
+              {fmtNumber(selectedBacktestTradeCount || challengeReplayTrades.length)} history / {fmtNumber(liveChallengeReplayTrades.length)} live
             </span>
           </div>
-          <ChallengeReplay
-            initialRules={challengeRules}
-            loadCachedReplay={loadChallengeReplayCache}
-            persistedRules={Boolean(persistedMarketChallengeRules)}
-            persistCachedReplay={syncChallengeReplayCache}
-            persistRules={persistChallengeRules}
-            seedPrefix={challengeReplaySeed}
-            storageKey={`trading-bot:challenge-rules:v1:${activeMarket}`}
-            strategies={strategyOptions}
-            trades={challengeReplayTrades}
-            persistedStrategyEdits={liveConfig.strategyEdits}
+          <StrategyStatsTabs
+            liveLabel="Live"
+            tabListLabel="Challenge replay source"
+            history={(
+              <ChallengeReplay
+                initialRules={challengeRules}
+                loadCachedReplay={loadChallengeReplayCache}
+                persistedRules={Boolean(persistedMarketChallengeRules)}
+                persistCachedReplay={syncChallengeReplayCache}
+                persistRules={persistChallengeRules}
+                seedPrefix={challengeReplaySeed}
+                storageKey={`trading-bot:challenge-rules:v1:${activeMarket}`}
+                strategies={strategyOptions}
+                trades={challengeReplayTrades}
+                persistedStrategyEdits={liveConfig.strategyEdits}
+              />
+            )}
+            live={liveChallengeReplayTrades.length ? (
+              <ChallengeReplay
+                initialRules={challengeRules}
+                loadCachedReplay={loadChallengeReplayCache}
+                persistedRules={Boolean(persistedMarketChallengeRules)}
+                persistCachedReplay={syncChallengeReplayCache}
+                persistRules={persistChallengeRules}
+                seedPrefix={liveChallengeReplaySeed}
+                storageKey={`trading-bot:challenge-rules:v1:${activeMarket}`}
+                strategies={strategyOptions}
+                trades={liveChallengeReplayTrades}
+                persistedStrategyEdits={liveConfig.strategyEdits}
+              />
+            ) : (
+              <div className="empty-state">
+                <strong>No live executions yet</strong>
+                <span>Live challenge replay will appear after an active-market execution is stored.</span>
+              </div>
+            )}
           />
         </section>
 

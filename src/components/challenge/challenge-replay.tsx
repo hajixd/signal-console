@@ -31,6 +31,7 @@ import {
 
 type ChallengeReplayInputTrade = ChallengeReplayTrade & {
   key: string;
+  lockedSize?: boolean;
 };
 
 type ChallengeReplayProps = {
@@ -919,6 +920,7 @@ export default function ChallengeReplay({
       entryTime: trade.entryTime,
       key: trade.key,
       pnlDollars: (() => {
+        if (trade.lockedSize) return trade.pnlDollars;
         const strategy = strategyByKey.get(trade.key);
         if (!strategy) return trade.pnlDollars * accountScale;
         const contractScale = strategyContractScale(strategy, edits);
