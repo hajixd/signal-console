@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useState, type MouseEvent as ReactMouseEvent, type ReactNode } from "react";
 import {
   strategyContractScale,
   type StrategyEditOption,
@@ -1403,8 +1403,14 @@ function LineChart({
   const points = data.map((point, index) => `${x(index)},${y(point.value)}`).join(" ");
   const secondaryPoints = data.filter((point) => point.secondary != null).map((point, index) => `${x(index)},${y(point.secondary ?? 0)}`).join(" ");
   const activePoint = activeIndex == null ? null : data[activeIndex] ?? null;
+  const activateNearest = (event: ReactMouseEvent<HTMLDivElement>) => {
+    if (!data.length) return;
+    const rect = event.currentTarget.getBoundingClientRect();
+    const ratio = Math.max(0, Math.min(1, (event.clientX - rect.left) / Math.max(1, rect.width)));
+    setActiveIndex(Math.round(ratio * (data.length - 1)));
+  };
   return (
-    <div className="selectedStatsChartPlot statsChartInteractive" onMouseLeave={() => setActiveIndex(null)}>
+    <div className="selectedStatsChartPlot statsChartInteractive" onMouseMove={activateNearest} onMouseLeave={() => setActiveIndex(null)}>
       <svg viewBox={`0 0 ${width} ${height}`} role="img" aria-label={`${tooltipContext} line chart`}>
         <line className="statsChartGridLine" x1={padX} x2={width - padX} y1={y(0)} y2={y(0)} />
         <polyline className="statsChartLine" points={points} />
@@ -1446,9 +1452,21 @@ function BarChart({
   const maximum = Math.max(1, ...data.map((point) => Math.abs(point.value)));
   const activePoint = activeIndex == null ? null : data[activeIndex] ?? null;
   const tooltip = activePoint ? <ChartTooltip context={tooltipContext} detail={tooltipDetail?.(activePoint) ?? activePoint.detail} label={activePoint.label} value={formatValue(activePoint.value)} /> : null;
+  const activateVertical = (event: ReactMouseEvent<HTMLDivElement>) => {
+    if (!data.length) return;
+    const rect = event.currentTarget.getBoundingClientRect();
+    const ratio = Math.max(0, Math.min(0.9999, (event.clientX - rect.left) / Math.max(1, rect.width)));
+    setActiveIndex(Math.floor(ratio * data.length));
+  };
+  const activateHorizontal = (event: ReactMouseEvent<HTMLDivElement>) => {
+    if (!data.length) return;
+    const rect = event.currentTarget.getBoundingClientRect();
+    const ratio = Math.max(0, Math.min(0.9999, (event.clientY - rect.top) / Math.max(1, rect.height)));
+    setActiveIndex(Math.floor(ratio * data.length));
+  };
   if (horizontal) {
     return (
-      <div className="selectedStatsHorizontalBars statsChartInteractive" onMouseLeave={() => setActiveIndex(null)}>
+      <div className="selectedStatsHorizontalBars statsChartInteractive" onMouseMove={activateHorizontal} onMouseLeave={() => setActiveIndex(null)}>
         {data.map((point, index) => (
           <div key={point.label} tabIndex={0} onClick={() => setActiveIndex(index)} onFocus={() => setActiveIndex(index)} onMouseEnter={() => setActiveIndex(index)}>
             <span>{shortLabel(point.label, 16)}</span><i><b className={point.value < 0 ? "negative" : ""} style={{ width: `${(Math.abs(point.value) / maximum) * 100}%` }} /></i><strong>{formatValue(point.value)}</strong>
@@ -1459,7 +1477,7 @@ function BarChart({
     );
   }
   return (
-    <div className="selectedStatsBars statsChartInteractive" role="img" aria-label={`${tooltipContext} bar chart`} onMouseLeave={() => setActiveIndex(null)}>
+    <div className="selectedStatsBars statsChartInteractive" role="img" aria-label={`${tooltipContext} bar chart`} onMouseMove={activateVertical} onMouseLeave={() => setActiveIndex(null)}>
       {data.map((point, index) => (
         <div key={point.label} className={`${point.value < 0 ? "negative" : ""}${activeIndex === index ? " isActive" : ""}`} tabIndex={0} onClick={() => setActiveIndex(index)} onFocus={() => setActiveIndex(index)} onMouseEnter={() => setActiveIndex(index)}>
           <i style={{ height: `${Math.max(4, (Math.abs(point.value) / maximum) * 100)}%` }} /><span>{shortLabel(point.label, 7)}</span>
@@ -1495,8 +1513,24 @@ function ScatterChart({
   const maxY = Math.max(1, ...sampled.map((point) => point.secondary ?? 0));
   const x = (value: number) => 16 + ((value - minX) / Math.max(1, maxX - minX)) * 608;
   const y = (value: number) => 174 - ((value - minY) / Math.max(1, maxY - minY)) * 158;
+  const activateNearest = (event: ReactMouseEvent<HTMLDivElement>) => {
+    if (!sampled.length) return;
+    const rect = event.currentTarget.getBoundingClientRect();
+    const pointerX = ((event.clientX - rect.left) / Math.max(1, rect.width)) * width;
+    const pointerY = ((event.clientY - rect.top) / Math.max(1, rect.height)) * height;
+    let nearest = sampled[0]!;
+    let nearestDistance = Infinity;
+    for (const point of sampled) {
+      const distance = (x(point.value) - pointerX) ** 2 + (y(point.secondary ?? 0) - pointerY) ** 2;
+      if (distance < nearestDistance) {
+        nearest = point;
+        nearestDistance = distance;
+      }
+    }
+    setActivePoint(nearest);
+  };
   return (
-    <div className="selectedStatsChartPlot statsChartInteractive" onMouseLeave={() => setActivePoint(null)}>
+    <div className="selectedStatsChartPlot statsChartInteractive" onMouseMove={activateNearest} onMouseLeave={() => setActivePoint(null)}>
       <svg viewBox={`0 0 ${width} ${height}`} role="img" aria-label={`${tooltipContext} scatter plot`}>
         <line className="statsChartGridLine" x1="16" x2="624" y1={y(0)} y2={y(0)} />
         <line className="statsChartGridLine" x1={x(0)} x2={x(0)} y1="16" y2="174" />
@@ -1513,9 +1547,27 @@ function ScatterChart({
 
 function OutcomeStrip({ data, tooltipContext = "Trade outcome" }: { data: ChartDatum[]; tooltipContext?: string }) {
   const [activePoint, setActivePoint] = useState<ChartDatum | null>(null);
+  const sampled = chartSample(data, 100);
+  const activateNearest = (event: ReactMouseEvent<HTMLDivElement>) => {
+    if (!sampled.length) return;
+    const marks = Array.from(event.currentTarget.querySelectorAll<HTMLElement>("i"));
+    let nearestIndex = 0;
+    let nearestDistance = Infinity;
+    marks.forEach((mark, index) => {
+      const rect = mark.getBoundingClientRect();
+      const centerX = rect.left + rect.width / 2;
+      const centerY = rect.top + rect.height / 2;
+      const distance = (centerX - event.clientX) ** 2 + (centerY - event.clientY) ** 2;
+      if (distance < nearestDistance) {
+        nearestDistance = distance;
+        nearestIndex = index;
+      }
+    });
+    setActivePoint(sampled[nearestIndex] ?? null);
+  };
   return (
-    <div className="selectedStatsOutcomeStrip statsChartInteractive" role="img" aria-label={tooltipContext} onMouseLeave={() => setActivePoint(null)}>
-      {chartSample(data, 100).map((point, index) => (
+    <div className="selectedStatsOutcomeStrip statsChartInteractive" role="img" aria-label={tooltipContext} onMouseMove={activateNearest} onMouseLeave={() => setActivePoint(null)}>
+      {sampled.map((point, index) => (
         <i key={`${point.label}-${index}`} className={point.value > 0 ? "win" : point.value < 0 ? "loss" : "flat"} tabIndex={0}
           onClick={() => setActivePoint(point)} onFocus={() => setActivePoint(point)} onMouseEnter={() => setActivePoint(point)} />
       ))}
@@ -1534,9 +1586,29 @@ function DonutChart({ data, tooltipContext = "Share" }: { data: ChartDatum[]; to
     cursor += total ? (Math.max(0, point.value) / total) * 100 : 0;
     return `${colors[index % colors.length]} ${start}% ${cursor}%`;
   }).join(", ");
+  const activateDonutSegment = (event: ReactMouseEvent<HTMLElement>) => {
+    if (!data.length || total <= 0) return;
+    const rect = event.currentTarget.getBoundingClientRect();
+    const angle = (Math.atan2(event.clientY - (rect.top + rect.height / 2), event.clientX - (rect.left + rect.width / 2)) * 180) / Math.PI;
+    const pct = ((angle + 90 + 360) % 360) / 360;
+    let running = 0;
+    const match = data.find((point) => {
+      running += Math.max(0, point.value) / total;
+      return pct <= running;
+    });
+    setActivePoint(match ?? data[data.length - 1] ?? null);
+  };
   return (
     <div className="selectedStatsDonut statsChartInteractive" onMouseLeave={() => setActivePoint(null)}>
-      <i style={{ background: `conic-gradient(${gradient || "var(--stats-chart-grid) 0 100%"})` }} />
+      <i
+        aria-label={`${tooltipContext} donut chart`}
+        onClick={activateDonutSegment}
+        onFocus={() => setActivePoint(data[0] ?? null)}
+        onMouseMove={activateDonutSegment}
+        role="img"
+        style={{ background: `conic-gradient(${gradient || "var(--stats-chart-grid) 0 100%"})` }}
+        tabIndex={0}
+      />
       <div>
         {data.map((point, index) => (
           <span key={point.label} tabIndex={0} onClick={() => setActivePoint(point)} onFocus={() => setActivePoint(point)} onMouseEnter={() => setActivePoint(point)}>

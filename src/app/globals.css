@@ -3545,6 +3545,7 @@ html[data-theme="light"] .themeDarkLabel {
 
 .statsChartInteractive {
   position: relative;
+  cursor: crosshair;
 }
 
 .statsChartTooltip {
@@ -3835,6 +3836,13 @@ html[data-theme="light"] .themeDarkLabel {
   flex: 0 0 auto;
   border-radius: 50%;
   box-shadow: inset 0 0 0 26px var(--stats-chart-panel);
+  cursor: crosshair;
+  outline: none;
+}
+
+.selectedStatsDonut > i:focus-visible {
+  outline: 2px solid rgba(96, 165, 250, 0.72);
+  outline-offset: 4px;
 }
 
 .selectedStatsDonut > div {
