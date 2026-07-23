@@ -9,6 +9,7 @@ import SelectedStrategyStats from "@/components/strategies/selected-strategy-sta
 import StrategyStatsTabs from "@/components/strategies/strategy-stats-tabs";
 import StrategySelector from "@/components/strategies/strategy-selector";
 import BacktestHistoryPanel from "@/components/trades/backtest-history-panel";
+import TradeClusterMap from "@/components/trades/trade-cluster-map";
 import { type TradeHistoryRow } from "@/components/trades/trade-history";
 import { type TradeChartTimeframe } from "@/components/trades/trade-price-chart";
 import AutoRefresh from "@/components/ui/auto-refresh";
@@ -2332,6 +2333,12 @@ export default async function Home({ searchParams }: HomeProps) {
       meta: `${fmtNumber(selectedBacktestTradeCount || selectedBacktestTrades.length)} trades`
     },
     {
+      icon: "cluster",
+      id: "cluster-map",
+      label: "Cluster Map",
+      meta: `${fmtNumber(visibleStoredBacktestHistoryRows.length + visibleLiveHistoryRows.length)} nodes`
+    },
+    {
       icon: "replay",
       id: "challenge",
       label: "Replay",
@@ -2502,6 +2509,10 @@ export default async function Home({ searchParams }: HomeProps) {
               </div>
             )}
           />
+        </section>
+
+        <section className="backtest-card cluster-map-card" id="cluster-map">
+          <TradeClusterMap historyRows={visibleStoredBacktestHistoryRows} liveRows={visibleLiveHistoryRows} />
         </section>
 
         <section className="backtest-card challenge-card" id="challenge">

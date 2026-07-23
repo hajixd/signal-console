@@ -3823,6 +3823,727 @@ html[data-theme="light"] .themeDarkLabel {
   }
 }
 
+.cluster-map-card {
+  --cluster-bg: #070b12;
+  --cluster-panel: rgba(9, 15, 26, 0.92);
+  --cluster-panel-soft: rgba(15, 23, 42, 0.7);
+  --cluster-line: rgba(148, 163, 184, 0.14);
+  --cluster-grid: rgba(148, 163, 184, 0.075);
+  --cluster-text: #e8eef9;
+  --cluster-muted: rgba(203, 213, 225, 0.62);
+  --cluster-accent: #60a5fa;
+  padding: 0;
+  overflow: visible;
+}
+
+.tradeClusterMap {
+  min-width: 0;
+  display: grid;
+  gap: 0.8rem;
+  padding: 0.9rem;
+}
+
+.tradeClusterHeader {
+  min-width: 0;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.tradeClusterHeader > div:first-child {
+  min-width: 0;
+}
+
+.tradeClusterEyebrow {
+  display: block;
+  margin-bottom: 0.18rem;
+  color: var(--cluster-accent);
+  font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+  font-size: 0.59rem;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.tradeClusterHeader h2 {
+  margin: 0;
+  color: var(--cluster-text);
+  font-size: 1.15rem;
+  letter-spacing: -0.025em;
+}
+
+.tradeClusterHeader p {
+  max-width: 670px;
+  margin: 0.22rem 0 0;
+  color: var(--cluster-muted);
+  font-size: 0.69rem;
+  line-height: 1.42;
+}
+
+.tradeClusterSummary {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+}
+
+.tradeClusterSummary span {
+  min-height: 27px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.28rem;
+  border: 1px solid var(--cluster-line);
+  border-radius: 999px;
+  background: var(--cluster-panel-soft);
+  padding: 0 0.58rem;
+  color: var(--cluster-muted);
+  font-size: 0.59rem;
+  white-space: nowrap;
+}
+
+.tradeClusterSummary b {
+  color: var(--cluster-text);
+  font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+}
+
+.tradeClusterSummary .live b,
+.tradeClusterSummary .win b {
+  color: var(--up);
+}
+
+.tradeClusterSummary .loss b {
+  color: var(--down);
+}
+
+.tradeClusterSummary .history b {
+  color: #a5b4fc;
+}
+
+.tradeClusterToolbar {
+  position: relative;
+  z-index: 8;
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(260px, 1fr) auto;
+  align-items: center;
+  gap: 0.55rem;
+}
+
+.tradeClusterSearch {
+  position: relative;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+}
+
+.tradeClusterSearch > svg {
+  position: absolute;
+  left: 0.7rem;
+  width: 15px;
+  height: 15px;
+  fill: none;
+  stroke: var(--cluster-muted);
+  stroke-linecap: round;
+  stroke-width: 1.8;
+  pointer-events: none;
+}
+
+.tradeClusterSearch input,
+.tradeClusterFilters select,
+.tradeClusterFilters button {
+  min-height: 38px;
+  border: 1px solid var(--cluster-line);
+  border-radius: 10px;
+  background: var(--cluster-panel-soft);
+  color: var(--cluster-text);
+  font: inherit;
+  font-size: 0.68rem;
+  outline: none;
+}
+
+.tradeClusterSearch input {
+  width: 100%;
+  padding: 0 2.45rem 0 2.15rem;
+}
+
+.tradeClusterSearch input::placeholder {
+  color: var(--cluster-muted);
+}
+
+.tradeClusterSearch input:focus,
+.tradeClusterFilters select:focus-visible,
+.tradeClusterFilters button:focus-visible {
+  border-color: rgba(96, 165, 250, 0.62);
+  box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.12);
+}
+
+.tradeClusterSearch > button {
+  position: absolute;
+  right: 0.38rem;
+  width: 29px;
+  height: 29px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  background: transparent;
+  color: var(--cluster-muted);
+  cursor: pointer;
+  font-size: 1rem;
+}
+
+.tradeClusterSuggestions {
+  position: absolute;
+  top: calc(100% + 7px);
+  right: 0;
+  left: 0;
+  max-height: 330px;
+  overflow: auto;
+  border: 1px solid var(--cluster-line);
+  border-radius: 13px;
+  background: color-mix(in srgb, var(--cluster-panel) 94%, transparent);
+  box-shadow: 0 22px 55px rgba(0, 0, 0, 0.42);
+  backdrop-filter: blur(18px);
+}
+
+.tradeClusterSuggestions button {
+  width: 100%;
+  min-height: 54px;
+  display: grid;
+  grid-template-columns: 8px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.65rem;
+  border: 0;
+  border-bottom: 1px solid var(--cluster-line);
+  background: transparent;
+  padding: 0.48rem 0.65rem;
+  color: var(--cluster-text);
+  cursor: pointer;
+  text-align: left;
+}
+
+.tradeClusterSuggestions button:last-child {
+  border-bottom: 0;
+}
+
+.tradeClusterSuggestions button:hover,
+.tradeClusterSuggestions button:focus-visible {
+  background: rgba(96, 165, 250, 0.09);
+  outline: none;
+}
+
+.tradeClusterSuggestions button > i {
+  width: 7px;
+  height: 28px;
+  border-radius: 999px;
+  background: #818cf8;
+}
+
+.tradeClusterSuggestions button > i.live {
+  background: #22d3ee;
+}
+
+.tradeClusterSuggestions button > span {
+  min-width: 0;
+  display: grid;
+  gap: 0.16rem;
+}
+
+.tradeClusterSuggestions strong,
+.tradeClusterSuggestions small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tradeClusterSuggestions strong {
+  font-size: 0.7rem;
+}
+
+.tradeClusterSuggestions small {
+  color: var(--cluster-muted);
+  font-size: 0.58rem;
+}
+
+.tradeClusterSuggestions button > b {
+  font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+  font-size: 0.63rem;
+}
+
+.tradeClusterSuggestions button > b.win {
+  color: var(--up);
+}
+
+.tradeClusterSuggestions button > b.loss {
+  color: var(--down);
+}
+
+.tradeClusterSuggestions button > b.open {
+  color: #22d3ee;
+}
+
+.tradeClusterNoResults {
+  padding: 1rem;
+  color: var(--cluster-muted);
+  font-size: 0.68rem;
+}
+
+.tradeClusterFilters {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.4rem;
+}
+
+.tradeClusterFilters select {
+  max-width: 160px;
+  padding: 0 1.8rem 0 0.62rem;
+  cursor: pointer;
+}
+
+.tradeClusterFilters button {
+  padding: 0 0.72rem;
+  cursor: pointer;
+  font-weight: 800;
+}
+
+.tradeClusterStage {
+  position: relative;
+  min-height: 590px;
+  border: 1px solid var(--cluster-line);
+  border-radius: 15px;
+  background: var(--cluster-bg);
+  box-shadow: inset 0 1px rgba(255, 255, 255, 0.03);
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.tradeClusterStage > svg {
+  width: 100%;
+  height: clamp(590px, 67vh, 790px);
+  display: block;
+  cursor: grab;
+  touch-action: none;
+}
+
+.tradeClusterStage > svg:active {
+  cursor: grabbing;
+}
+
+.tradeClusterBackdrop {
+  fill: var(--cluster-bg);
+}
+
+.tradeClusterGrid {
+  fill: none;
+  stroke: var(--cluster-grid);
+  stroke-width: 1;
+}
+
+.tradeClusterEdges line {
+  stroke: rgba(148, 163, 184, 0.1);
+  stroke-width: 0.65;
+  vector-effect: non-scaling-stroke;
+}
+
+.tradeClusterLabels text {
+  fill: var(--cluster-muted);
+  font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.035em;
+  paint-order: stroke;
+  pointer-events: none;
+  stroke: var(--cluster-bg);
+  stroke-width: 4px;
+  text-anchor: middle;
+  vector-effect: non-scaling-stroke;
+}
+
+.tradeClusterNode {
+  fill: #94a3b8;
+  stroke: rgba(255, 255, 255, 0.72);
+  stroke-width: 1;
+  cursor: pointer;
+  transition: opacity 140ms ease, r 140ms ease, stroke-width 140ms ease;
+  vector-effect: non-scaling-stroke;
+}
+
+.tradeClusterNode.history {
+  stroke: #a5b4fc;
+}
+
+.tradeClusterNode.live {
+  stroke: #67e8f9;
+  stroke-width: 2;
+}
+
+.tradeClusterNode.win {
+  fill: #34d399;
+}
+
+.tradeClusterNode.loss {
+  fill: #fb7185;
+}
+
+.tradeClusterNode.flat {
+  fill: #94a3b8;
+}
+
+.tradeClusterNode.open {
+  fill: #22d3ee;
+  animation: tradeClusterPulse 1.8s ease-in-out infinite;
+}
+
+.tradeClusterNode:hover,
+.tradeClusterNode:focus,
+.tradeClusterNode.isSelected,
+.tradeClusterNode.isMatch {
+  stroke: #ffffff;
+  stroke-width: 3;
+  outline: none;
+}
+
+.tradeClusterNode:hover,
+.tradeClusterNode:focus,
+.tradeClusterNode.isSelected {
+  r: 8px;
+}
+
+.tradeClusterNode.isDimmed {
+  opacity: 0.075;
+}
+
+.tradeClusterNode.isFiltered {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.tradeClusterLegend,
+.tradeClusterHelp {
+  position: absolute;
+  bottom: 0.7rem;
+  z-index: 3;
+  border: 1px solid var(--cluster-line);
+  border-radius: 9px;
+  background: var(--cluster-panel);
+  color: var(--cluster-muted);
+  backdrop-filter: blur(12px);
+}
+
+.tradeClusterLegend {
+  left: 0.7rem;
+  display: flex;
+  gap: 0.68rem;
+  padding: 0.48rem 0.58rem;
+}
+
+.tradeClusterLegend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.28rem;
+  font-size: 0.55rem;
+}
+
+.tradeClusterLegend i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #94a3b8;
+}
+
+.tradeClusterLegend i.history {
+  border: 1px solid #a5b4fc;
+  background: transparent;
+}
+
+.tradeClusterLegend i.live,
+.tradeClusterLegend i.open {
+  background: #22d3ee;
+}
+
+.tradeClusterLegend i.win {
+  background: #34d399;
+}
+
+.tradeClusterLegend i.loss {
+  background: #fb7185;
+}
+
+.tradeClusterHelp {
+  right: 0.7rem;
+  padding: 0.48rem 0.58rem;
+  font-size: 0.55rem;
+}
+
+.tradeClusterInspector {
+  position: absolute;
+  top: 0.7rem;
+  right: 0.7rem;
+  z-index: 4;
+  width: min(245px, calc(100% - 1.4rem));
+  border: 1px solid var(--cluster-line);
+  border-radius: 13px;
+  background: var(--cluster-panel);
+  box-shadow: 0 18px 45px rgba(0, 0, 0, 0.32);
+  padding: 0.72rem;
+  color: var(--cluster-text);
+  backdrop-filter: blur(16px);
+  animation: tradeClusterInspectorIn 150ms ease-out both;
+}
+
+.tradeClusterInspector > div {
+  display: flex;
+  gap: 0.3rem;
+}
+
+.tradeClusterSource,
+.tradeClusterOutcome {
+  border: 1px solid var(--cluster-line);
+  border-radius: 999px;
+  padding: 0.16rem 0.4rem;
+  color: var(--cluster-muted);
+  font-size: 0.5rem;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.tradeClusterSource.live,
+.tradeClusterOutcome.open {
+  border-color: rgba(34, 211, 238, 0.34);
+  color: #67e8f9;
+}
+
+.tradeClusterOutcome.win {
+  color: var(--up);
+}
+
+.tradeClusterOutcome.loss {
+  color: var(--down);
+}
+
+.tradeClusterInspector h3 {
+  margin: 0.52rem 0 0;
+  font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+  font-size: 1rem;
+}
+
+.tradeClusterInspector > p {
+  margin: 0.12rem 0 0.62rem;
+  overflow: hidden;
+  color: var(--cluster-muted);
+  font-size: 0.62rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tradeClusterInspector dl {
+  display: grid;
+  gap: 0.38rem;
+  margin: 0;
+}
+
+.tradeClusterInspector dl > div {
+  display: grid;
+  grid-template-columns: 46px minmax(0, 1fr);
+  gap: 0.45rem;
+  align-items: start;
+}
+
+.tradeClusterInspector dt {
+  color: var(--cluster-muted);
+  font-size: 0.55rem;
+}
+
+.tradeClusterInspector dd {
+  min-width: 0;
+  margin: 0;
+  color: var(--cluster-text);
+  font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+  font-size: 0.61rem;
+  text-align: right;
+}
+
+.tradeClusterInspector dd.win {
+  color: var(--up);
+}
+
+.tradeClusterInspector dd.loss {
+  color: var(--down);
+}
+
+.tradeClusterInspector .localDateTimeStack {
+  justify-items: end;
+}
+
+@keyframes tradeClusterPulse {
+  50% {
+    opacity: 0.56;
+  }
+}
+
+@keyframes tradeClusterInspectorIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+
+html[data-theme="light"] .cluster-map-card {
+  --cluster-bg: #f7f9fc;
+  --cluster-panel: rgba(255, 255, 255, 0.93);
+  --cluster-panel-soft: rgba(248, 250, 252, 0.92);
+  --cluster-line: rgba(15, 23, 42, 0.12);
+  --cluster-grid: rgba(51, 65, 85, 0.08);
+  --cluster-text: #0f172a;
+  --cluster-muted: rgba(51, 65, 85, 0.67);
+  --cluster-accent: #2563eb;
+}
+
+html[data-theme="light"] .tradeClusterStage {
+  box-shadow: inset 0 1px rgba(255, 255, 255, 0.9);
+}
+
+html[data-theme="light"] .tradeClusterSuggestions,
+html[data-theme="light"] .tradeClusterInspector {
+  box-shadow: 0 18px 46px rgba(15, 23, 42, 0.14);
+}
+
+html[data-theme="light"] .tradeClusterNode {
+  stroke: #ffffff;
+}
+
+html[data-theme="light"] .tradeClusterNode.history {
+  stroke: #4f46e5;
+}
+
+html[data-theme="light"] .tradeClusterNode.live {
+  stroke: #0369a1;
+}
+
+@media (max-width: 900px) {
+  .tradeClusterHeader {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .tradeClusterSummary {
+    justify-content: flex-start;
+  }
+
+  .tradeClusterToolbar {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .tradeClusterFilters {
+    justify-content: flex-start;
+    overflow-x: auto;
+    padding-bottom: 2px;
+  }
+
+  .tradeClusterFilters select,
+  .tradeClusterFilters button {
+    flex: 0 0 auto;
+  }
+
+  .tradeClusterStage,
+  .tradeClusterStage > svg {
+    min-height: 500px;
+    height: 500px;
+  }
+}
+
+@media (max-width: 620px) {
+  .tradeClusterMap {
+    padding: 0.6rem;
+  }
+
+  .tradeClusterHeader p {
+    font-size: 0.62rem;
+  }
+
+  .tradeClusterSummary span {
+    min-height: 24px;
+    padding: 0 0.45rem;
+    font-size: 0.52rem;
+  }
+
+  .tradeClusterSearch input,
+  .tradeClusterFilters select,
+  .tradeClusterFilters button {
+    min-height: 35px;
+    font-size: 0.61rem;
+  }
+
+  .tradeClusterLegend {
+    max-width: calc(100% - 1.4rem);
+    flex-wrap: wrap;
+    gap: 0.35rem 0.55rem;
+  }
+
+  .tradeClusterHelp {
+    display: none;
+  }
+
+  .tradeClusterInspector {
+    top: 0.5rem;
+    right: 0.5rem;
+  }
+}
+
+@media (max-width: 680px) {
+  .mobile-phone-tabbar {
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+  }
+
+  .mobile-phone-card.mobile-phone-card-cluster {
+    min-height: 0;
+    display: block;
+    border: 0;
+    background: transparent;
+    padding: 0;
+    overflow: auto;
+  }
+
+  .mobile-phone-card-cluster .tradeClusterMap {
+    min-height: 100%;
+    padding: 0.45rem;
+  }
+
+  .mobile-phone-card-cluster .tradeClusterHeader {
+    gap: 0.45rem;
+  }
+
+  .mobile-phone-card-cluster .tradeClusterHeader h2 {
+    font-size: 0.94rem;
+  }
+
+  .mobile-phone-card-cluster .tradeClusterHeader p {
+    display: none;
+  }
+
+  .mobile-phone-card-cluster .tradeClusterSummary {
+    max-height: 54px;
+    overflow: auto;
+    flex-wrap: nowrap;
+  }
+
+  .mobile-phone-card-cluster .tradeClusterStage,
+  .mobile-phone-card-cluster .tradeClusterStage > svg {
+    min-height: 430px;
+    height: 430px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tradeClusterNode,
+  .tradeClusterNode.open,
+  .tradeClusterInspector {
+    animation: none;
+    transition: none;
+  }
+}
+
 .backtest-stat-card.text-stat-card strong {
   min-width: 0;
   overflow: hidden;
@@ -15439,7 +16160,7 @@ html[data-theme="light"] .tradeReplaySlider input::-webkit-slider-thumb {
     background: #000;
     box-shadow: none;
     display: grid;
-    grid-template-columns: repeat(6, minmax(0, 1fr));
+    grid-template-columns: repeat(7, minmax(0, 1fr));
     gap: 0.18rem;
     align-self: end;
   }
