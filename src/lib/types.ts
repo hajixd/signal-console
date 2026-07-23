@@ -16,6 +16,8 @@ export type AutoTradeOrderSummary = {
   contractName?: string;
   customTag?: string;
   error?: string;
+  filledPrice?: number;
+  fillConfirmationLatencyMs?: number;
   feesDollars?: number;
   grossPnlDollars?: number;
   netPnlDollars?: number;
@@ -26,6 +28,7 @@ export type AutoTradeOrderSummary = {
   resultError?: string;
   resultTradeId?: number;
   size?: number;
+  submitLatencyMs?: number;
   status: "dry_run" | "failed" | "placed" | "skipped";
 };
 

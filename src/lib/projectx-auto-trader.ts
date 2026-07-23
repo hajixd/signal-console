@@ -446,6 +446,13 @@ function isMissingProjectXOrderIdError(message: string): boolean {
   return /did\s+not\s+return\s+an\s+order\s+id/i.test(message);
 }
 
+function isAmbiguousProjectXPlacementError(error: unknown, message: string): boolean {
+  if (error instanceof ProjectXApiError) {
+    return error.status === 408 || error.status === 429 || (typeof error.status === "number" && error.status >= 500);
+  }
+  return error instanceof TypeError || /timed?\s*out|network|connection\s+(?:reset|closed)|fetch\s+failed/i.test(message);
+}
+
 function projectXSkippableOrderError(message: string): boolean {
   return isProjectXTradingLockoutError(message) || isProjectXMarketUnavailableError(message);
 }
@@ -1071,8 +1078,11 @@ class ProjectXOrderSkippedError extends Error {
 type ProjectXPlacedOrder = {
   customTag?: string;
   filledSize?: number;
+  filledPrice?: number;
+  fillConfirmationLatencyMs?: number;
   note?: string;
   orderId: number;
+  submitLatencyMs?: number;
 };
 
 type ProjectXCustomTagResolution = {
@@ -1164,26 +1174,42 @@ async function resolveProjectXCustomTag(token: string, request: ProjectXPlaceOrd
 }
 
 async function placeProjectXOrderWithTagRecovery(token: string, request: ProjectXPlaceOrderRequest): Promise<ProjectXPlacedOrder> {
+  const submitStartedAt = Date.now();
   try {
     const order = await placeProjectXOrder(token, request);
     return {
       customTag: request.customTag ?? undefined,
-      orderId: order.orderId
+      orderId: order.orderId,
+      submitLatencyMs: Date.now() - submitStartedAt
     };
   } catch (error) {
     const rawMessage = readableProjectXError(error);
     const duplicateCustomTag = isProjectXDuplicateCustomTagError(rawMessage);
     const missingOrderId = isMissingProjectXOrderIdError(rawMessage);
-    if (!request.customTag || (!duplicateCustomTag && !missingOrderId)) {
+    const ambiguousPlacement = isAmbiguousProjectXPlacementError(error, rawMessage);
+    if (!request.customTag || (!duplicateCustomTag && !missingOrderId && !ambiguousPlacement)) {
       throw error;
     }
 
-    const resolution = await resolveProjectXCustomTag(token, request);
+    let resolution: ProjectXCustomTagResolution;
+    try {
+      resolution = await resolveProjectXCustomTag(token, request);
+    } catch (reconciliationError) {
+      if (ambiguousPlacement) {
+        throw new ProjectXOrderSkippedError(
+          `ProjectX order placement had an uncertain result and reconciliation failed (${readableProjectXError(
+            reconciliationError
+          )}). No retry was sent to avoid a duplicate entry.`
+        );
+      }
+      throw error;
+    }
     if (resolution.orderId) {
       return {
         customTag: request.customTag ?? undefined,
         note: resolution.note,
-        orderId: resolution.orderId
+        orderId: resolution.orderId,
+        submitLatencyMs: Date.now() - submitStartedAt
       };
     }
 
@@ -1196,11 +1222,17 @@ async function placeProjectXOrderWithTagRecovery(token: string, request: Project
       return {
         customTag: retryRequest.customTag ?? undefined,
         note: resolution.note,
-        orderId: retryOrder.orderId
+        orderId: retryOrder.orderId,
+        submitLatencyMs: Date.now() - submitStartedAt
       };
     }
 
     if (resolution.skipReason && duplicateCustomTag) throw new ProjectXOrderSkippedError(resolution.skipReason);
+    if (ambiguousPlacement) {
+      throw new ProjectXOrderSkippedError(
+        `ProjectX order placement had an uncertain result (${rawMessage}); no matching order was visible yet, so no retry was sent to avoid a duplicate entry.`
+      );
+    }
     throw error;
   }
 }
@@ -1212,6 +1244,7 @@ async function confirmProjectXMarketOrder(
 ): Promise<ProjectXPlacedOrder> {
   if (request.type !== 2) return order;
 
+  const confirmationStartedAt = Date.now();
   const fillCheckAttempts = marketFillCheckAttempts();
   for (let attempt = 0; attempt < fillCheckAttempts; attempt += 1) {
     try {
@@ -1230,6 +1263,11 @@ async function confirmProjectXMarketOrder(
         return {
           ...order,
           filledSize,
+          filledPrice:
+            typeof brokerOrder?.filledPrice === "number" && Number.isFinite(brokerOrder.filledPrice)
+              ? brokerOrder.filledPrice
+              : undefined,
+          fillConfirmationLatencyMs: Date.now() - confirmationStartedAt,
           note: [order.note, fillNote].filter(Boolean).join(" ")
         };
       }
@@ -1248,6 +1286,7 @@ async function confirmProjectXMarketOrder(
 
   return {
     ...order,
+    fillConfirmationLatencyMs: Date.now() - confirmationStartedAt,
     note: [order.note, "ProjectX accepted the market entry; fill confirmation was still pending when the execution check ended."]
       .filter(Boolean)
       .join(" ")
@@ -1296,15 +1335,15 @@ async function placeProjectXOrderWithAdaptiveFallback(
         orderId: order.orderId,
         size: attemptRequest.size
       });
-      const retryNote = lastSizeError
-        ? `Placed with ${unitsLabel(attemptSize)} after ProjectX said this account needs to have less units; planned size was ${unitsLabel(originalSize)}. ${lastSizeError}`
-        : preAdjustmentNote;
       return {
         ...attemptSummary,
         customTag: order.customTag ?? attemptSummary.customTag,
-        error: [retryNote, order.note].filter(Boolean).join(" ") || undefined,
+        error: [lastSizeError ? undefined : preAdjustmentNote, order.note].filter(Boolean).join(" ") || undefined,
+        filledPrice: order.filledPrice,
+        fillConfirmationLatencyMs: order.fillConfirmationLatencyMs,
         orderId: order.orderId,
         size: order.filledSize ?? attemptSize,
+        submitLatencyMs: order.submitLatencyMs,
         status: "placed"
       };
     } catch (error) {
@@ -1340,8 +1379,11 @@ async function placeProjectXOrderWithAdaptiveFallback(
             ...fallbackSummary,
             customTag: fallbackOrder.customTag ?? fallbackSummary.customTag,
             error: [preAdjustmentNote && !lastSizeError ? preAdjustmentNote : undefined, retryNote, fallbackOrder.note].filter(Boolean).join(" "),
+            filledPrice: fallbackOrder.filledPrice,
+            fillConfirmationLatencyMs: fallbackOrder.fillConfirmationLatencyMs,
             orderId: fallbackOrder.orderId,
             size: fallbackOrder.filledSize ?? attemptSize,
+            submitLatencyMs: fallbackOrder.submitLatencyMs,
             status: "placed"
           };
         } catch (fallbackError) {

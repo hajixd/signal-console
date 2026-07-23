@@ -245,6 +245,11 @@ function projectXRetryDelayMs(attemptIndex: number): number {
   return baseDelay * (attemptIndex + 1);
 }
 
+function projectXRequestTimeoutMs(): number {
+  const configured = Number(process.env.PROJECTX_API_TIMEOUT_MS);
+  return Number.isFinite(configured) && configured >= 1_000 ? Math.min(configured, 30_000) : 8_000;
+}
+
 function wait(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
@@ -292,22 +297,38 @@ async function parseProjectXResponse<T extends ProjectXBaseResponse>(response: R
 }
 
 async function projectXPostOnce<T extends ProjectXBaseResponse>(path: string, body?: unknown, token?: string): Promise<T> {
-  const response = await fetch(projectXUrl(path), {
-    method: "POST",
-    cache: "no-store",
-    headers: {
-      accept: "text/plain",
-      "content-type": "application/json",
-      ...(token ? { authorization: `Bearer ${token}` } : {})
-    },
-    body: JSON.stringify(body ?? {})
-  });
-
-  return parseProjectXResponse<T>(response, `ProjectX request failed for ${path}`);
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), projectXRequestTimeoutMs());
+  try {
+    const response = await fetch(projectXUrl(path), {
+      method: "POST",
+      cache: "no-store",
+      headers: {
+        accept: "text/plain",
+        "content-type": "application/json",
+        ...(token ? { authorization: `Bearer ${token}` } : {})
+      },
+      body: JSON.stringify(body ?? {}),
+      signal: controller.signal
+    });
+    return await parseProjectXResponse<T>(response, `ProjectX request failed for ${path}`);
+  } catch (error) {
+    if (error instanceof Error && error.name === "AbortError") {
+      throw new ProjectXApiError(`ProjectX request timed out for ${path}`, 408);
+    }
+    throw error;
+  } finally {
+    clearTimeout(timeout);
+  }
 }
 
-async function projectXPost<T extends ProjectXBaseResponse>(path: string, body?: unknown, token?: string): Promise<T> {
-  const attempts = projectXRetryAttempts();
+async function projectXPost<T extends ProjectXBaseResponse>(
+  path: string,
+  body?: unknown,
+  token?: string,
+  options: { retry?: boolean } = {}
+): Promise<T> {
+  const attempts = options.retry === false ? 1 : projectXRetryAttempts();
   let lastError: unknown;
   for (let attempt = 0; attempt < attempts; attempt += 1) {
     try {
@@ -393,7 +414,7 @@ export async function retrieveProjectXBars(token: string, request: ProjectXRetri
 }
 
 export async function placeProjectXOrder(token: string, request: ProjectXPlaceOrderRequest): Promise<ProjectXPlaceOrderResult> {
-  const response = await projectXPost<ProjectXPlaceOrderResponse>("/api/Order/place", request, token);
+  const response = await projectXPost<ProjectXPlaceOrderResponse>("/api/Order/place", request, token, { retry: false });
   if (typeof response.orderId !== "number" || !Number.isFinite(response.orderId)) {
     throw new ProjectXApiError("ProjectX accepted the request but did not return an order id.");
   }
@@ -434,11 +455,11 @@ export async function searchProjectXTrades(
 }
 
 export async function modifyProjectXOrder(token: string, request: ProjectXModifyOrderRequest): Promise<void> {
-  await projectXPost<ProjectXModifyOrderResponse>("/api/Order/modify", request, token);
+  await projectXPost<ProjectXModifyOrderResponse>("/api/Order/modify", request, token, { retry: false });
 }
 
 export async function cancelProjectXOrder(token: string, request: { accountId: number; orderId: number }): Promise<void> {
-  await projectXPost<ProjectXCancelOrderResponse>("/api/Order/cancel", request, token);
+  await projectXPost<ProjectXCancelOrderResponse>("/api/Order/cancel", request, token, { retry: false });
 }
 
 export async function searchProjectXOpenPositions(token: string, accountId: number): Promise<ProjectXOpenPosition[]> {
@@ -447,7 +468,7 @@ export async function searchProjectXOpenPositions(token: string, accountId: numb
 }
 
 export async function closeProjectXPosition(token: string, request: { accountId: number; contractId: string }): Promise<void> {
-  await projectXPost<ProjectXClosePositionResponse>("/api/Position/closeContract", request, token);
+  await projectXPost<ProjectXClosePositionResponse>("/api/Position/closeContract", request, token, { retry: false });
 }
 
 export function readableProjectXError(error: unknown): string {
