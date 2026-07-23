@@ -181,7 +181,7 @@ function buildFeatureNodes(historyRows: TradeHistoryRow[], liveRows: TradeHistor
       row,
       x: MAP_WIDTH / 2,
       y: MAP_HEIGHT / 2,
-      radius: source === "live" ? (outcome === "open" ? 7 : 6) : 4.2,
+      radius: source === "live" ? (outcome === "open" ? 5.4 : 4.6) : 3,
       outcome,
       searchText: nodeSearchText(row, source),
       features
@@ -323,24 +323,6 @@ export default function TradeClusterMap({ historyRows, liveRows }: TradeClusterM
   const inspectedNode = hoveredNode ?? selectedNode;
   const wins = filteredNodes.filter((node) => node.outcome === "win").length;
   const losses = filteredNodes.filter((node) => node.outcome === "loss").length;
-  const clusterLabels = useMemo(() => {
-    const buckets = new Map<string, { count: number; x: number; y: number }>();
-    for (const node of filteredNodes) {
-      const key = node.row.modelName || node.row.strategyKey || "Unknown";
-      const bucket = buckets.get(key) ?? { count: 0, x: 0, y: 0 };
-      bucket.count += 1;
-      bucket.x += node.x;
-      bucket.y += node.y;
-      buckets.set(key, bucket);
-    }
-    return [...buckets.entries()].map(([label, bucket]) => ({
-      count: bucket.count,
-      label,
-      x: bucket.x / bucket.count,
-      y: bucket.y / bucket.count
-    }));
-  }, [filteredNodes]);
-
   const edges = useMemo(() => {
     const result: Array<{ from: ClusterNode; to: ClusterNode }> = [];
     if (filteredNodes.length < 2) return result;
@@ -500,8 +482,8 @@ export default function TradeClusterMap({ historyRows, liveRows }: TradeClusterM
           aria-label={`${filteredNodes.length} trade nodes grouped by strategy`}
         >
           <defs>
-            <pattern id="trade-cluster-grid" width="32" height="32" patternUnits="userSpaceOnUse">
-              <path d="M 32 0 L 0 0 0 32" className="tradeClusterGrid" />
+            <pattern id="trade-cluster-grid" width="22" height="22" patternUnits="userSpaceOnUse">
+              <path d="M 22 0 L 0 0 0 22" className="tradeClusterGrid" />
             </pattern>
             <filter id="trade-cluster-glow" x="-100%" y="-100%" width="300%" height="300%">
               <feGaussianBlur stdDeviation="4" result="blur" />
@@ -514,13 +496,6 @@ export default function TradeClusterMap({ historyRows, liveRows }: TradeClusterM
             <g className="tradeClusterEdges">
               {edges.map(({ from, to }) => (
                 <line key={`${from.id}:${to.id}`} x1={from.x} y1={from.y} x2={to.x} y2={to.y} />
-              ))}
-            </g>
-            <g className="tradeClusterLabels" aria-hidden>
-              {clusterLabels.map((cluster) => (
-                <text key={cluster.label} x={cluster.x} y={cluster.y - 34}>
-                  {shortLabel(cluster.label, 24)} · {cluster.count}
-                </text>
               ))}
             </g>
             <g>
@@ -551,34 +526,18 @@ export default function TradeClusterMap({ historyRows, liveRows }: TradeClusterM
                     r={node.radius}
                     role="button"
                     tabIndex={filteredOut ? -1 : 0}
-                  >
-                    <title>{`${node.row.displaySymbol || node.row.symbol} · ${node.row.modelName} · ${node.source} · ${node.outcome}`}</title>
-                  </circle>
+                  />
                 );
               })}
             </g>
           </g>
         </svg>
 
-        {projectionStatus === "computing" ? (
-          <div className="tradeClusterProjectionState" role="status">
-            <i />
-            <strong>Building UMAP projection</strong>
-            <span>Comparing {featureNodes.length.toLocaleString()} trades across {FEATURE_COUNT} weighted features</span>
-          </div>
-        ) : null}
+        {projectionStatus === "computing" ? <div className="tradeClusterProjectionState" role="status" aria-label="Building UMAP projection"><i /></div> : null}
+      </div>
 
-        <div className="tradeClusterLegend" aria-label="Map legend">
-          <span><i className="history" />History</span>
-          <span><i className="live" />Live</span>
-          <span><i className="win" />Win</span>
-          <span><i className="loss" />Loss</span>
-          <span><i className="open" />Open</span>
-        </div>
-        <div className="tradeClusterHelp">Feature-neighbor links · drag to pan · scroll to zoom</div>
-
-        {inspectedNode ? (
-          <aside className="tradeClusterInspector">
+      {inspectedNode ? (
+          <aside className="tradeClusterInspector" aria-label="Selected trade details">
             <div>
               <span className={`tradeClusterSource ${inspectedNode.source}`}>{inspectedNode.source}</span>
               <span className={`tradeClusterOutcome ${inspectedNode.outcome}`}>{inspectedNode.outcome}</span>
@@ -592,8 +551,7 @@ export default function TradeClusterMap({ historyRows, liveRows }: TradeClusterM
               <div><dt>Exit</dt><dd>{inspectedNode.outcome === "open" ? "Still open" : <LocalDateTimeStack value={inspectedNode.row.exitTime} />}</dd></div>
             </dl>
           </aside>
-        ) : null}
-      </div>
+      ) : null}
     </section>
   );
 }
