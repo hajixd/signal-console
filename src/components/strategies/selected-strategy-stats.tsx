@@ -76,15 +76,21 @@ type SegmentRollup = {
   worst: SegmentSummary | null;
   largest: SegmentSummary | null;
   largestSharePct: number;
+  topThreeSharePct: number;
   effectiveCount: number;
+  entropyEffectiveCount: number;
+  profitablePct: number;
+  profitContributionPct: number;
 };
 
 type DollarAggregate = {
   activeDayRatePct: number;
   avgLossDollars: number;
+  medianLossDollars: number;
   trades: number;
   breakevens: number;
   avgWinDollars: number;
+  medianWinDollars: number;
   avgLossR: number;
   avgWinR: number;
   avgTargetDollars: number;
@@ -110,18 +116,26 @@ type DollarAggregate = {
   avgR: number;
   medianR: number;
   stdDevR: number;
+  downsideDeviationR: number;
+  medianAbsoluteDeviationR: number;
   bestR: number;
   worstR: number;
+  p05R: number;
   p10R: number;
   p25R: number;
   p75R: number;
   p90R: number;
+  p95R: number;
+  cvarLossR: number;
+  iqrR: number;
   skewR: number;
   excessKurtosisR: number;
   avgDurationMs: number;
   avgWinDurationMs: number;
   avgLossDurationMs: number;
   medianDurationMs: number;
+  durationIqrMs: number;
+  durationStdDevMs: number;
   medianWinDurationMs: number;
   medianLossDurationMs: number;
   shortestDurationMs: number;
@@ -132,8 +146,14 @@ type DollarAggregate = {
   exposurePct: number;
   avgGapMs: number;
   medianGapMs: number;
+  gapIqrMs: number;
+  gapStdDevMs: number;
   shortestGapMs: number;
   longestGapMs: number;
+  maxConcurrentTrades: number;
+  overlapRatePct: number;
+  maxTradesPerActiveDay: number;
+  tradesPerActiveDay: number;
   maxDailyDrawdownDollars: number;
   maxTradeDrawdownDollars: number;
   maxRunupDollars: number;
@@ -142,6 +162,16 @@ type DollarAggregate = {
   painIndexDollars: number;
   underwaterDaysPct: number;
   equityHighs: number;
+  currentDrawdownDollars: number;
+  currentUnderwaterDays: number;
+  longestUnderwaterDays: number;
+  tradeStdDevDollars: number;
+  tradeDownsideDeviationDollars: number;
+  tradeMedianAbsoluteDeviationDollars: number;
+  tradeIqrDollars: number;
+  expectancyStdErrorDollars: number;
+  expectancyTStat: number;
+  expectancyLower95Dollars: number;
   avgDailyDollars: number;
   avgActiveDayDollars: number;
   avgMonthlyDollars: number;
@@ -156,6 +186,16 @@ type DollarAggregate = {
   losingMonths: number;
   winningMonthRatePct: number;
   monthlyProfitFactor: number;
+  medianDailyDollars: number;
+  stdDevDailyDollars: number;
+  activeWeeks: number;
+  avgWeeklyDollars: number;
+  winningWeekRatePct: number;
+  bestWeekDollars: number;
+  worstWeekDollars: number;
+  activeQuarters: number;
+  avgQuarterlyDollars: number;
+  winningQuarterRatePct: number;
   dailyProfitFactor: number;
   bestTradeDollars: number;
   bestDayDollars: number;
@@ -197,8 +237,18 @@ type DollarAggregate = {
   currentStreakCount: number;
   avgAfterWinDollars: number;
   avgAfterLossDollars: number;
+  winAfterWinPct: number;
+  winAfterLossPct: number;
+  lagOneCorrelation: number;
+  runsCount: number;
+  runsZScore: number;
+  longestBreakevenStreak: number;
   avgWinToTargetPct: number;
   avgLossToRiskPct: number;
+  riskIqrDollars: number;
+  targetIqrDollars: number;
+  riskCoefficientVariationPct: number;
+  targetCoefficientVariationPct: number;
   targetExitCount: number;
   stopExitCount: number;
   otherExitCount: number;
@@ -415,6 +465,21 @@ function localTradeMonthKey(value: string): string {
   return `${year}-${month}`;
 }
 
+function localTradeWeekKey(value: string): string {
+  const date = localDateFromValue(value);
+  if (!date) return value;
+  const day = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  const weekday = (day.getDay() + 6) % 7;
+  day.setDate(day.getDate() - weekday);
+  return `${day.getFullYear()}-${String(day.getMonth() + 1).padStart(2, "0")}-${String(day.getDate()).padStart(2, "0")}`;
+}
+
+function localTradeQuarterKey(value: string): string {
+  const date = localDateFromValue(value);
+  if (!date) return value;
+  return `${date.getFullYear()}-Q${Math.floor(date.getMonth() / 3) + 1}`;
+}
+
 function formatTradeMonthKey(value: string): string {
   const [yearValue, monthValue] = value.split("-");
   const year = Number(yearValue);
@@ -487,6 +552,43 @@ function downsideDeviation(values: number[]): number {
   if (!values.length) return 0;
   const downsideVariance = values.reduce((sum, value) => sum + Math.min(0, value) ** 2, 0) / values.length;
   return Math.sqrt(Math.max(0, downsideVariance));
+}
+
+function medianAbsoluteDeviation(values: number[]): number {
+  if (!values.length) return 0;
+  const center = median(values);
+  return median(values.map((value) => Math.abs(value - center)));
+}
+
+function lagOneCorrelation(values: number[]): number {
+  if (values.length < 3) return 0;
+  const left = values.slice(0, -1);
+  const right = values.slice(1);
+  const leftMean = mean(left);
+  const rightMean = mean(right);
+  const numerator = left.reduce((total, value, index) => total + (value - leftMean) * ((right[index] ?? 0) - rightMean), 0);
+  const denominator = Math.sqrt(
+    left.reduce((total, value) => total + (value - leftMean) ** 2, 0) *
+      right.reduce((total, value) => total + (value - rightMean) ** 2, 0)
+  );
+  return denominator > 0 ? numerator / denominator : 0;
+}
+
+function sequenceRuns(values: number[]): { count: number; zScore: number } {
+  const signs = values.filter((value) => value !== 0).map((value) => (value > 0 ? 1 : -1));
+  if (!signs.length) return { count: 0, zScore: 0 };
+  const positive = signs.filter((sign) => sign > 0).length;
+  const negative = signs.length - positive;
+  let count = 1;
+  for (let index = 1; index < signs.length; index += 1) {
+    if (signs[index] !== signs[index - 1]) count += 1;
+  }
+  if (!positive || !negative || signs.length < 2) return { count, zScore: 0 };
+  const expected = 1 + (2 * positive * negative) / signs.length;
+  const variance =
+    (2 * positive * negative * (2 * positive * negative - signs.length)) /
+    (signs.length ** 2 * (signs.length - 1));
+  return { count, zScore: variance > 0 ? (count - expected) / Math.sqrt(variance) : 0 };
 }
 
 function median(values: number[]): number {
@@ -634,6 +736,11 @@ function segmentRollup(map: Map<string, SegmentBucket>): SegmentRollup {
   const sortedByPnl = [...summaries].sort((left, right) => right.totalDollars - left.totalDollars);
   const sortedByShare = [...summaries].sort((left, right) => right.sharePct - left.sharePct);
   const hhi = summaries.reduce((total, summary) => total + (summary.sharePct / 100) ** 2, 0);
+  const entropy = summaries.reduce((total, summary) => {
+    const share = summary.sharePct / 100;
+    return share > 0 ? total - share * Math.log(share) : total;
+  }, 0);
+  const positiveProfit = sum(summaries.filter((summary) => summary.totalDollars > 0).map((summary) => summary.totalDollars));
   const effectiveCount = hhi > 0 ? 1 / hhi : 0;
   return {
     count: summaries.length,
@@ -641,7 +748,11 @@ function segmentRollup(map: Map<string, SegmentBucket>): SegmentRollup {
     worst: sortedByPnl[sortedByPnl.length - 1] ?? null,
     largest: sortedByShare[0] ?? null,
     largestSharePct: sortedByShare[0]?.sharePct ?? 0,
-    effectiveCount
+    topThreeSharePct: sum(sortedByShare.slice(0, 3).map((summary) => summary.sharePct)),
+    effectiveCount,
+    entropyEffectiveCount: summaries.length ? Math.exp(entropy) : 0,
+    profitablePct: summaries.length ? (summaries.filter((summary) => summary.totalDollars > 0).length / summaries.length) * 100 : 0,
+    profitContributionPct: positiveProfit > 0 ? ((sortedByPnl[0]?.totalDollars ?? 0) / positiveProfit) * 100 : 0
   };
 }
 
@@ -708,6 +819,9 @@ function aggregateDollars(trades: TradeSnapshot[]): DollarAggregate {
   let breakevens = 0;
   const dailyPnl = new Map<string, number>();
   const monthlyPnl = new Map<string, number>();
+  const weeklyPnl = new Map<string, number>();
+  const quarterlyPnl = new Map<string, number>();
+  const tradesByEntryDay = new Map<string, number>();
   const durationsMs: number[] = [];
   const winDurationsMs: number[] = [];
   const lossDurationsMs: number[] = [];
@@ -759,6 +873,12 @@ function aggregateDollars(trades: TradeSnapshot[]): DollarAggregate {
     dailyPnl.set(dayKey, (dailyPnl.get(dayKey) ?? 0) + pnl);
     const monthKey = localTradeMonthKey(trade.exitTime);
     monthlyPnl.set(monthKey, (monthlyPnl.get(monthKey) ?? 0) + pnl);
+    const weekKey = localTradeWeekKey(trade.exitTime);
+    weeklyPnl.set(weekKey, (weeklyPnl.get(weekKey) ?? 0) + pnl);
+    const quarterKey = localTradeQuarterKey(trade.exitTime);
+    quarterlyPnl.set(quarterKey, (quarterlyPnl.get(quarterKey) ?? 0) + pnl);
+    const entryDayKey = localTradeDayKey(trade.entryTime);
+    tradesByEntryDay.set(entryDayKey, (tradesByEntryDay.get(entryDayKey) ?? 0) + 1);
 
     if (result > 0) {
       wins += 1;
@@ -810,6 +930,8 @@ function aggregateDollars(trades: TradeSnapshot[]): DollarAggregate {
   );
   const monthlyGrossWinDollars = sum(monthlyValues.filter((value) => value > 0));
   const monthlyGrossLossDollars = Math.abs(sum(monthlyValues.filter((value) => value < 0)));
+  const weeklyValues = [...weeklyPnl.values()];
+  const quarterlyValues = [...quarterlyPnl.values()];
   const avgWinDollars = wins ? winDollars / wins : 0;
   const avgLossDollars = losses ? lossDollars / losses : 0;
   const avgWinR = mean(winRMultiples);
@@ -817,6 +939,9 @@ function aggregateDollars(trades: TradeSnapshot[]): DollarAggregate {
   const totalR = sum(rMultiples);
   const avgR = mean(rMultiples);
   const stdDevR = sampleStdDev(rMultiples, avgR);
+  const avgTradeDollars = mean(tradePnlDollars);
+  const tradeStdDevDollars = sampleStdDev(tradePnlDollars, avgTradeDollars);
+  const expectancyStdErrorDollars = trades.length > 1 ? tradeStdDevDollars / Math.sqrt(trades.length) : 0;
   const dailyGrossWinDollars = sum(activeDailyValues.filter((value) => value > 0));
   const dailyGrossLossDollars = Math.abs(sum(activeDailyValues.filter((value) => value < 0)));
   const largestWinningDay = Math.max(0, ...dailyPnl.values());
@@ -841,6 +966,20 @@ function aggregateDollars(trades: TradeSnapshot[]): DollarAggregate {
     maxTradeDrawdownDollars = Math.max(maxTradeDrawdownDollars, drawdown);
   }
 
+  const currentDrawdownDollars = tradeDrawdowns[tradeDrawdowns.length - 1] ?? 0;
+  let longestUnderwaterDays = 0;
+  let currentUnderwaterDays = 0;
+  let underwaterRun = 0;
+  for (const point of dailyCurve) {
+    if (point.drawdown > 0) {
+      underwaterRun += 1;
+      longestUnderwaterDays = Math.max(longestUnderwaterDays, underwaterRun);
+    } else {
+      underwaterRun = 0;
+    }
+  }
+  currentUnderwaterDays = underwaterRun;
+
   let currentStreakSign: "Win" | "Loss" | null = null;
   let currentStreakCount = 0;
   let currentStreakDollars = 0;
@@ -848,14 +987,19 @@ function aggregateDollars(trades: TradeSnapshot[]): DollarAggregate {
   let longestLossStreak = 0;
   let bestWinStreakDollars = 0;
   let worstLossStreakDollars = 0;
+  let longestBreakevenStreak = 0;
+  let breakevenStreak = 0;
   for (const trade of exitSortedTrades) {
     const sign = trade.rMultiple > 0 ? "Win" : trade.rMultiple < 0 ? "Loss" : null;
     if (!sign) {
+      breakevenStreak += 1;
+      longestBreakevenStreak = Math.max(longestBreakevenStreak, breakevenStreak);
       currentStreakSign = null;
       currentStreakCount = 0;
       currentStreakDollars = 0;
       continue;
     }
+    breakevenStreak = 0;
     if (sign === currentStreakSign) {
       currentStreakCount += 1;
       currentStreakDollars += trade.pnlDollars;
@@ -901,11 +1045,37 @@ function aggregateDollars(trades: TradeSnapshot[]): DollarAggregate {
   const targetExitCount = segmentSummaries(exitReasonSegments).find((summary) => summary.label === "Target")?.trades ?? 0;
   const stopExitCount = segmentSummaries(exitReasonSegments).find((summary) => summary.label === "Stop")?.trades ?? 0;
   const otherExitCount = Math.max(0, trades.length - targetExitCount - stopExitCount);
+  const winAfterWin = exitSortedTrades.slice(1).filter((trade, index) => exitSortedTrades[index]?.rMultiple > 0 && trade.rMultiple > 0).length;
+  const afterWinCount = exitSortedTrades.slice(0, -1).filter((trade) => trade.rMultiple > 0).length;
+  const winAfterLoss = exitSortedTrades.slice(1).filter((trade, index) => exitSortedTrades[index]?.rMultiple < 0 && trade.rMultiple > 0).length;
+  const afterLossCount = exitSortedTrades.slice(0, -1).filter((trade) => trade.rMultiple < 0).length;
+  const runs = sequenceRuns(rMultiples);
+  const concurrencyEvents = entrySortedTrades
+    .flatMap((trade) => [
+      { time: trade.entryMs, delta: 1 },
+      { time: Number.isFinite(trade.exitMs) ? trade.exitMs : trade.entryMs + trade.durationMs, delta: -1 }
+    ])
+    .filter((event) => Number.isFinite(event.time))
+    .sort((left, right) => left.time - right.time || left.delta - right.delta);
+  let concurrentTrades = 0;
+  let maxConcurrentTrades = 0;
+  let overlappingTrades = 0;
+  for (const event of concurrencyEvents) {
+    if (event.delta > 0) {
+      if (concurrentTrades > 0) overlappingTrades += 1;
+      concurrentTrades += 1;
+      maxConcurrentTrades = Math.max(maxConcurrentTrades, concurrentTrades);
+    } else {
+      concurrentTrades = Math.max(0, concurrentTrades - 1);
+    }
+  }
 
   return {
     activeDayRatePct: calendarDays ? (activeDays / calendarDays) * 100 : 0,
     avgLossDollars,
+    medianLossDollars: median(tradePnlDollars.filter((value) => value < 0)),
     avgWinDollars,
+    medianWinDollars: median(tradePnlDollars.filter((value) => value > 0)),
     avgLossR,
     avgWinR,
     avgRiskDollars: mean(riskDollars),
@@ -933,18 +1103,26 @@ function aggregateDollars(trades: TradeSnapshot[]): DollarAggregate {
     avgR,
     medianR: median(rMultiples),
     stdDevR,
+    downsideDeviationR: downsideDeviation(rMultiples),
+    medianAbsoluteDeviationR: medianAbsoluteDeviation(rMultiples),
     bestR: Math.max(0, ...rMultiples),
     worstR: Math.min(0, ...rMultiples),
+    p05R: percentile(rMultiples, 5),
     p10R: percentile(rMultiples, 10),
     p25R: percentile(rMultiples, 25),
     p75R: percentile(rMultiples, 75),
     p90R: percentile(rMultiples, 90),
+    p95R: percentile(rMultiples, 95),
+    cvarLossR: tailAverage(rMultiples, 5, "bottom"),
+    iqrR: percentile(rMultiples, 75) - percentile(rMultiples, 25),
     skewR: skewness(rMultiples),
     excessKurtosisR: excessKurtosis(rMultiples),
     avgDurationMs: mean(durationsMs),
     avgWinDurationMs: mean(winDurationsMs),
     avgLossDurationMs: mean(lossDurationsMs),
     medianDurationMs: median(durationsMs),
+    durationIqrMs: percentile(durationsMs, 75) - percentile(durationsMs, 25),
+    durationStdDevMs: sampleStdDev(durationsMs, mean(durationsMs)),
     medianWinDurationMs: median(winDurationsMs),
     medianLossDurationMs: median(lossDurationsMs),
     shortestDurationMs: durationsMs.length ? Math.min(...durationsMs) : 0,
@@ -955,8 +1133,14 @@ function aggregateDollars(trades: TradeSnapshot[]): DollarAggregate {
     exposurePct: calendarMs > 0 ? Math.min(999, (totalDurationMs / calendarMs) * 100) : 0,
     avgGapMs: mean(entryGapsMs),
     medianGapMs: median(entryGapsMs),
+    gapIqrMs: percentile(entryGapsMs, 75) - percentile(entryGapsMs, 25),
+    gapStdDevMs: sampleStdDev(entryGapsMs, mean(entryGapsMs)),
     shortestGapMs: entryGapsMs.length ? Math.min(...entryGapsMs) : 0,
     longestGapMs: Math.max(0, ...entryGapsMs),
+    maxConcurrentTrades,
+    overlapRatePct: trades.length ? (overlappingTrades / trades.length) * 100 : 0,
+    maxTradesPerActiveDay: Math.max(0, ...tradesByEntryDay.values()),
+    tradesPerActiveDay: tradesByEntryDay.size ? trades.length / tradesByEntryDay.size : 0,
     maxDailyDrawdownDollars: Math.max(0, ...dailyCurve.map((point) => point.drawdown)),
     maxTradeDrawdownDollars,
     maxRunupDollars,
@@ -965,6 +1149,16 @@ function aggregateDollars(trades: TradeSnapshot[]): DollarAggregate {
     painIndexDollars: mean(dailyCurve.map((point) => point.drawdown)),
     underwaterDaysPct: dailyCurve.length ? (dailyCurve.filter((point) => point.drawdown > 0).length / dailyCurve.length) * 100 : 0,
     equityHighs,
+    currentDrawdownDollars,
+    currentUnderwaterDays,
+    longestUnderwaterDays,
+    tradeStdDevDollars,
+    tradeDownsideDeviationDollars: downsideDeviation(tradePnlDollars),
+    tradeMedianAbsoluteDeviationDollars: medianAbsoluteDeviation(tradePnlDollars),
+    tradeIqrDollars: percentile(tradePnlDollars, 75) - percentile(tradePnlDollars, 25),
+    expectancyStdErrorDollars,
+    expectancyTStat: expectancyStdErrorDollars > 0 ? avgTradeDollars / expectancyStdErrorDollars : avgTradeDollars > 0 ? Infinity : 0,
+    expectancyLower95Dollars: avgTradeDollars - 1.96 * expectancyStdErrorDollars,
     avgDailyDollars: averageDailyPnl,
     avgActiveDayDollars: mean(activeDailyValues),
     avgMonthlyDollars: averageMonthlyPnl,
@@ -984,6 +1178,18 @@ function aggregateDollars(trades: TradeSnapshot[]): DollarAggregate {
         ? Infinity
         : 0,
     dailyProfitFactor: dailyGrossLossDollars ? dailyGrossWinDollars / dailyGrossLossDollars : dailyGrossWinDollars ? Infinity : 0,
+    medianDailyDollars: median(activeDailyValues),
+    stdDevDailyDollars: sampleStdDev(activeDailyValues, mean(activeDailyValues)),
+    activeWeeks: weeklyValues.length,
+    avgWeeklyDollars: mean(weeklyValues),
+    winningWeekRatePct: weeklyValues.length ? (weeklyValues.filter((value) => value > 0).length / weeklyValues.length) * 100 : 0,
+    bestWeekDollars: Math.max(0, ...weeklyValues),
+    worstWeekDollars: Math.min(0, ...weeklyValues),
+    activeQuarters: quarterlyValues.length,
+    avgQuarterlyDollars: mean(quarterlyValues),
+    winningQuarterRatePct: quarterlyValues.length
+      ? (quarterlyValues.filter((value) => value > 0).length / quarterlyValues.length) * 100
+      : 0,
     bestTradeDollars: tradePnlDollars.length ? Math.max(...tradePnlDollars) : 0,
     bestDayDollars: Math.max(0, ...activeDailyValues),
     bestThreeTradesDollars: rollingExtreme(tradePnlDollars, 3, "best"),
@@ -1015,7 +1221,7 @@ function aggregateDollars(trades: TradeSnapshot[]): DollarAggregate {
     winningDayRatePct: activeDailyValues.length ? (activeDailyValues.filter((value) => value > 0).length / activeDailyValues.length) * 100 : 0,
     dailyCurve,
     totalDollars,
-    avgDollars: trades.length ? totalDollars / trades.length : 0,
+    avgDollars: avgTradeDollars,
     longestWinStreak,
     longestLossStreak,
     bestWinStreakDollars,
@@ -1024,12 +1230,23 @@ function aggregateDollars(trades: TradeSnapshot[]): DollarAggregate {
     currentStreakCount: currentTailCount,
     avgAfterWinDollars: mean(afterWinDollars),
     avgAfterLossDollars: mean(afterLossDollars),
+    winAfterWinPct: afterWinCount ? (winAfterWin / afterWinCount) * 100 : 0,
+    winAfterLossPct: afterLossCount ? (winAfterLoss / afterLossCount) * 100 : 0,
+    lagOneCorrelation: lagOneCorrelation(rMultiples),
+    runsCount: runs.count,
+    runsZScore: runs.zScore,
+    longestBreakevenStreak,
     avgWinToTargetPct: mean(
       exitSortedTrades.filter((trade) => trade.rMultiple > 0 && trade.targetDollars > 0).map((trade) => (trade.pnlDollars / trade.targetDollars) * 100)
     ),
     avgLossToRiskPct: mean(
       exitSortedTrades.filter((trade) => trade.rMultiple < 0 && trade.riskDollars > 0).map((trade) => (Math.abs(trade.pnlDollars) / trade.riskDollars) * 100)
     ),
+    riskIqrDollars: percentile(riskDollars, 75) - percentile(riskDollars, 25),
+    targetIqrDollars: percentile(targetDollars, 75) - percentile(targetDollars, 25),
+    riskCoefficientVariationPct: mean(riskDollars) > 0 ? (sampleStdDev(riskDollars, mean(riskDollars)) / mean(riskDollars)) * 100 : 0,
+    targetCoefficientVariationPct:
+      mean(targetDollars) > 0 ? (sampleStdDev(targetDollars, mean(targetDollars)) / mean(targetDollars)) * 100 : 0,
     targetExitCount,
     stopExitCount,
     otherExitCount,
@@ -1165,6 +1382,10 @@ export default function SelectedStrategyStats({
     moneyStat("Gross loss", -stats.grossLossDollars, stats.trades),
     moneyStat("Avg trade", stats.avgDollars, stats.trades),
     moneyStat("Median trade", stats.p50TradeDollars, stats.trades),
+    { label: "Trade volatility", value: showWhenTrades(stats, fmtMoney(stats.tradeStdDevDollars)), tone: "tone-neutral", title: "Sample standard deviation of trade P&L" },
+    { label: "Expectancy error", value: showWhenTrades(stats, fmtMoney(stats.expectancyStdErrorDollars)), tone: "tone-neutral", title: "Standard error of average trade expectancy" },
+    ratioStat("Expectancy t-stat", stats.expectancyTStat, 1.96, stats.trades),
+    moneyStat("95% expectancy floor", stats.expectancyLower95Dollars, stats.trades),
     { label: "Total R", value: showWhenTrades(stats, fmtR(stats.totalR, true)), tone: statTone(stats.totalR) as StatTone },
     { label: "Avg R", value: showWhenTrades(stats, fmtR(stats.avgR, true)), tone: statTone(stats.avgR) as StatTone },
     { label: "Median R", value: showWhenTrades(stats, fmtR(stats.medianR, true)), tone: statTone(stats.medianR) as StatTone },
@@ -1189,6 +1410,12 @@ export default function SelectedStrategyStats({
     { label: "Pain index", value: showWhenTrades(stats, fmtMoney(-stats.painIndexDollars)), tone: stats.painIndexDollars > 0 ? "tone-down" : "tone-neutral" },
     { label: "Underwater days", value: showWhenTrades(stats, fmtPct(stats.underwaterDaysPct)), tone: statTone(stats.underwaterDaysPct, false) as StatTone },
     { label: "Equity highs", value: showWhenTrades(stats, fmtCount(stats.equityHighs)), tone: "tone-neutral" },
+    { label: "Current drawdown", value: showWhenTrades(stats, fmtMoney(-stats.currentDrawdownDollars)), tone: stats.currentDrawdownDollars > 0 ? "tone-down" : "tone-neutral" },
+    { label: "Current underwater", value: showWhenTrades(stats, `${fmtCount(stats.currentUnderwaterDays)} days`), tone: stats.currentUnderwaterDays > 0 ? "tone-down" : "tone-neutral" },
+    { label: "Longest underwater", value: showWhenTrades(stats, `${fmtCount(stats.longestUnderwaterDays)} days`), tone: stats.longestUnderwaterDays > 0 ? "tone-down" : "tone-neutral" },
+    { label: "Trade downside dev", value: showWhenTrades(stats, fmtMoney(stats.tradeDownsideDeviationDollars)), tone: "tone-neutral" },
+    { label: "Trade MAD", value: showWhenTrades(stats, fmtMoney(stats.tradeMedianAbsoluteDeviationDollars)), tone: "tone-neutral", title: "Median absolute deviation: robust dispersion less influenced by outliers" },
+    { label: "Trade IQR", value: showWhenTrades(stats, fmtMoney(stats.tradeIqrDollars)), tone: "tone-neutral", title: "Middle 50% spread of trade P&L" },
     moneyStat("5% VaR", stats.p05TradeDollars, stats.trades),
     moneyStat("5% CVaR", stats.cvarLossDollars, stats.trades),
     moneyStat("10th pct trade", stats.p10TradeDollars, stats.trades),
@@ -1219,6 +1446,12 @@ export default function SelectedStrategyStats({
     moneyStat("Worst 5 trades", stats.worstFiveTradesDollars, stats.trades),
     moneyStat("After win avg", stats.avgAfterWinDollars, stats.trades),
     moneyStat("After loss avg", stats.avgAfterLossDollars, stats.trades),
+    { label: "Win after win", value: showWhenTrades(stats, fmtPct(stats.winAfterWinPct)), tone: stats.winAfterWinPct >= stats.winRatePct ? "tone-up" : "tone-neutral" },
+    { label: "Win after loss", value: showWhenTrades(stats, fmtPct(stats.winAfterLossPct)), tone: stats.winAfterLossPct >= stats.winRatePct ? "tone-up" : "tone-neutral" },
+    { label: "Lag-1 correlation", value: showWhenTrades(stats, fmtNumber(stats.lagOneCorrelation)), tone: Math.abs(stats.lagOneCorrelation) >= 0.3 ? "tone-down" : "tone-neutral", title: "Correlation between each trade's R result and the next trade" },
+    { label: "Outcome runs", value: showWhenTrades(stats, fmtCount(stats.runsCount)), tone: "tone-neutral" },
+    { label: "Runs z-score", value: showWhenTrades(stats, fmtNumber(stats.runsZScore)), tone: Math.abs(stats.runsZScore) >= 1.96 ? "tone-down" : "tone-neutral", title: "Wald-Wolfowitz runs test; magnitude above 1.96 suggests non-random sequencing" },
+    { label: "Longest breakevens", value: showWhenTrades(stats, fmtCount(stats.longestBreakevenStreak)), tone: "tone-neutral" },
     moneyStat("Best trade", stats.bestTradeDollars, stats.trades)
   ];
 
@@ -1249,7 +1482,15 @@ export default function SelectedStrategyStats({
     { label: "Shortest gap", value: showWhenTrades(stats, fmtDurationMs(stats.shortestGapMs)), tone: "tone-neutral" },
     { label: "Longest gap", value: showWhenTrades(stats, fmtDurationMs(stats.longestGapMs)), tone: "tone-neutral" },
     { label: "Avg bars held", value: showWhenTrades(stats, fmtNumber(stats.avgBarsHeld)), tone: "tone-neutral" },
-    { label: "Max bars held", value: showWhenTrades(stats, fmtNumber(stats.maxBarsHeld)), tone: "tone-neutral" }
+    { label: "Max bars held", value: showWhenTrades(stats, fmtNumber(stats.maxBarsHeld)), tone: "tone-neutral" },
+    { label: "Duration IQR", value: showWhenTrades(stats, fmtDurationMs(stats.durationIqrMs)), tone: "tone-neutral" },
+    { label: "Duration std dev", value: showWhenTrades(stats, fmtDurationMs(stats.durationStdDevMs)), tone: "tone-neutral" },
+    { label: "Gap IQR", value: showWhenTrades(stats, fmtDurationMs(stats.gapIqrMs)), tone: "tone-neutral" },
+    { label: "Gap std dev", value: showWhenTrades(stats, fmtDurationMs(stats.gapStdDevMs)), tone: "tone-neutral" },
+    { label: "Trades / active day", value: showWhenTrades(stats, fmtNumber(stats.tradesPerActiveDay)), tone: "tone-neutral" },
+    { label: "Peak trades / day", value: showWhenTrades(stats, fmtCount(stats.maxTradesPerActiveDay)), tone: "tone-neutral" },
+    { label: "Max concurrent", value: showWhenTrades(stats, fmtCount(stats.maxConcurrentTrades)), tone: "tone-neutral" },
+    { label: "Overlap rate", value: showWhenTrades(stats, fmtPct(stats.overlapRatePct)), tone: stats.overlapRatePct > 50 ? "tone-down" : "tone-neutral", title: "Share of entries opened while another trade was already active" }
   ];
 
   const tradeShapeStats: StatCardData[] = [
@@ -1261,6 +1502,8 @@ export default function SelectedStrategyStats({
     { label: "R payoff", value: showWhenTrades(stats, fmtRiskReward(stats.rRewardRiskRatio)), tone: ratioTone(stats.rRewardRiskRatio, 1) as StatTone },
     moneyStat("Average win", stats.avgWinDollars, stats.wins),
     moneyStat("Average loss", stats.avgLossDollars, stats.losses),
+    moneyStat("Median win", stats.medianWinDollars, stats.wins),
+    moneyStat("Median loss", stats.medianLossDollars, stats.losses),
     { label: "Avg win R", value: showWhenTrades(stats, fmtR(stats.avgWinR, true)), tone: "tone-up" },
     { label: "Avg loss R", value: showWhenTrades(stats, fmtR(stats.avgLossR, true)), tone: "tone-down" },
     { label: "BE win rate", value: showWhenTrades(stats, fmtPct(stats.breakEvenWinRatePct)), tone: "tone-neutral" },
@@ -1271,7 +1514,11 @@ export default function SelectedStrategyStats({
     { label: "Stop exits", value: showWhenTrades(stats, fmtCount(stats.stopExitCount)), tone: "tone-down" },
     { label: "Stop rate", value: showWhenTrades(stats, fmtPct(stats.stopExitRatePct)), tone: stats.stopExitRatePct >= 50 ? "tone-down" : "tone-neutral" },
     { label: "Other exits", value: showWhenTrades(stats, fmtCount(stats.otherExitCount)), tone: "tone-neutral" },
-    segmentTextStat("Common exit", stats.commonExitReason, "share")
+    segmentTextStat("Common exit", stats.commonExitReason, "share"),
+    { label: "Risk IQR", value: showWhenTrades(stats, fmtMoney(stats.riskIqrDollars)), tone: "tone-neutral" },
+    { label: "Target IQR", value: showWhenTrades(stats, fmtMoney(stats.targetIqrDollars)), tone: "tone-neutral" },
+    { label: "Risk variability", value: showWhenTrades(stats, fmtPct(stats.riskCoefficientVariationPct)), tone: stats.riskCoefficientVariationPct > 50 ? "tone-down" : "tone-neutral", title: "Risk-size coefficient of variation" },
+    { label: "Target variability", value: showWhenTrades(stats, fmtPct(stats.targetCoefficientVariationPct)), tone: "tone-neutral", title: "Target-size coefficient of variation" }
   ];
 
   const calendarStats: StatCardData[] = [
@@ -1280,11 +1527,11 @@ export default function SelectedStrategyStats({
     moneyStat("Median month", stats.medianMonthlyDollars, stats.trades),
     { label: "Monthly std dev", value: showWhenTrades(stats, fmtMoney(stats.stdDevMonthlyDollars)), tone: "tone-neutral" },
     {
-      ...moneyStat(stats.trades ? `Best month · ${stats.bestMonthPeriod}` : "Best month", stats.bestMonthDollars, stats.trades),
+      ...moneyStat(stats.trades ? `Best month - ${stats.bestMonthPeriod}` : "Best month", stats.bestMonthDollars, stats.trades),
       title: stats.trades ? stats.bestMonthPeriod : undefined
     },
     {
-      ...moneyStat(stats.trades ? `Worst month · ${stats.worstMonthPeriod}` : "Worst month", stats.worstMonthDollars, stats.trades),
+      ...moneyStat(stats.trades ? `Worst month - ${stats.worstMonthPeriod}` : "Worst month", stats.worstMonthDollars, stats.trades),
       title: stats.trades ? stats.worstMonthPeriod : undefined
     },
     { label: "Winning months", value: showWhenTrades(stats, fmtCount(stats.winningMonths)), tone: "tone-up" },
@@ -1307,6 +1554,16 @@ export default function SelectedStrategyStats({
     { label: "Losing days", value: showWhenTrades(stats, fmtCount(stats.losingDays)), tone: "tone-down" },
     { label: "Day win rate", value: showWhenTrades(stats, fmtPct(stats.winningDayRatePct)), tone: stats.winningDayRatePct >= 50 ? "tone-up" : "tone-neutral" },
     ratioStat("Daily PF", stats.dailyProfitFactor, 1, stats.trades),
+    moneyStat("Median active day", stats.medianDailyDollars, stats.trades),
+    { label: "Daily std dev", value: showWhenTrades(stats, fmtMoney(stats.stdDevDailyDollars)), tone: "tone-neutral" },
+    { label: "Active weeks", value: showWhenTrades(stats, fmtCount(stats.activeWeeks)), tone: "tone-neutral" },
+    moneyStat("Avg week", stats.avgWeeklyDollars, stats.trades),
+    { label: "Week win rate", value: showWhenTrades(stats, fmtPct(stats.winningWeekRatePct)), tone: stats.winningWeekRatePct >= 50 ? "tone-up" : "tone-neutral" },
+    moneyStat("Best week", stats.bestWeekDollars, stats.trades),
+    moneyStat("Worst week", stats.worstWeekDollars, stats.trades),
+    { label: "Active quarters", value: showWhenTrades(stats, fmtCount(stats.activeQuarters)), tone: "tone-neutral" },
+    moneyStat("Avg quarter", stats.avgQuarterlyDollars, stats.trades),
+    { label: "Quarter win rate", value: showWhenTrades(stats, fmtPct(stats.winningQuarterRatePct)), tone: stats.winningQuarterRatePct >= 50 ? "tone-up" : "tone-neutral" },
     segmentTextStat("Best weekday", stats.weekdays.best, "avg", "tone-up"),
     segmentTextStat("Worst weekday", stats.weekdays.worst, "avg", "tone-down"),
     segmentTextStat("Best entry hour", stats.entryHours.best, "avg", "tone-up"),
@@ -1326,6 +1583,12 @@ export default function SelectedStrategyStats({
     { label: "25th pct R", value: showWhenTrades(stats, fmtR(stats.p25R, true)), tone: statTone(stats.p25R) as StatTone },
     { label: "75th pct R", value: showWhenTrades(stats, fmtR(stats.p75R, true)), tone: statTone(stats.p75R) as StatTone },
     { label: "90th pct R", value: showWhenTrades(stats, fmtR(stats.p90R, true)), tone: statTone(stats.p90R) as StatTone },
+    { label: "5th pct R", value: showWhenTrades(stats, fmtR(stats.p05R, true)), tone: statTone(stats.p05R) as StatTone },
+    { label: "95th pct R", value: showWhenTrades(stats, fmtR(stats.p95R, true)), tone: statTone(stats.p95R) as StatTone },
+    { label: "5% CVaR R", value: showWhenTrades(stats, fmtR(stats.cvarLossR, true)), tone: "tone-down" },
+    { label: "R downside dev", value: showWhenTrades(stats, fmtR(stats.downsideDeviationR)), tone: "tone-neutral" },
+    { label: "R MAD", value: showWhenTrades(stats, fmtR(stats.medianAbsoluteDeviationR)), tone: "tone-neutral" },
+    { label: "R IQR", value: showWhenTrades(stats, fmtR(stats.iqrR)), tone: "tone-neutral" },
     { label: "Skew", value: showWhenTrades(stats, fmtNumber(stats.skewR)), tone: statTone(stats.skewR) as StatTone },
     { label: "Excess kurt", value: showWhenTrades(stats, fmtNumber(stats.excessKurtosisR)), tone: stats.excessKurtosisR > 3 ? "tone-down" : "tone-neutral" }
   ];
@@ -1334,11 +1597,19 @@ export default function SelectedStrategyStats({
     { label: "Models", value: showWhenTrades(stats, fmtCount(stats.strategies.count)), tone: "tone-neutral" },
     { label: "Effective models", value: showWhenTrades(stats, fmtNumber(stats.strategies.effectiveCount)), tone: "tone-neutral" },
     { label: "Top model share", value: showWhenTrades(stats, fmtPct(stats.strategies.largestSharePct)), tone: stats.strategies.largestSharePct > 50 ? "tone-down" : "tone-neutral" },
+    { label: "Top 3 model share", value: showWhenTrades(stats, fmtPct(stats.strategies.topThreeSharePct)), tone: stats.strategies.topThreeSharePct > 80 ? "tone-down" : "tone-neutral" },
+    { label: "Model breadth", value: showWhenTrades(stats, fmtPct(stats.strategies.profitablePct)), tone: stats.strategies.profitablePct >= 50 ? "tone-up" : "tone-neutral", title: "Share of models with positive net P&L" },
+    { label: "Model entropy count", value: showWhenTrades(stats, fmtNumber(stats.strategies.entropyEffectiveCount)), tone: "tone-neutral", title: "Shannon-entropy effective number of independently sized model buckets" },
+    { label: "Top model profit", value: showWhenTrades(stats, fmtPct(stats.strategies.profitContributionPct)), tone: stats.strategies.profitContributionPct > 50 ? "tone-down" : "tone-neutral", title: "Best model's share of all positive model profit" },
     segmentTextStat("Best model", stats.strategies.best, "total", "tone-up"),
     segmentTextStat("Worst model", stats.strategies.worst, "total", "tone-down"),
     { label: "Symbols", value: showWhenTrades(stats, fmtCount(stats.symbols.count)), tone: "tone-neutral" },
     { label: "Effective symbols", value: showWhenTrades(stats, fmtNumber(stats.symbols.effectiveCount)), tone: "tone-neutral" },
     { label: "Top symbol share", value: showWhenTrades(stats, fmtPct(stats.symbols.largestSharePct)), tone: stats.symbols.largestSharePct > 50 ? "tone-down" : "tone-neutral" },
+    { label: "Top 3 symbol share", value: showWhenTrades(stats, fmtPct(stats.symbols.topThreeSharePct)), tone: stats.symbols.topThreeSharePct > 80 ? "tone-down" : "tone-neutral" },
+    { label: "Symbol breadth", value: showWhenTrades(stats, fmtPct(stats.symbols.profitablePct)), tone: stats.symbols.profitablePct >= 50 ? "tone-up" : "tone-neutral", title: "Share of symbols with positive net P&L" },
+    { label: "Symbol entropy count", value: showWhenTrades(stats, fmtNumber(stats.symbols.entropyEffectiveCount)), tone: "tone-neutral", title: "Shannon-entropy effective number of independently sized symbol buckets" },
+    { label: "Top symbol profit", value: showWhenTrades(stats, fmtPct(stats.symbols.profitContributionPct)), tone: stats.symbols.profitContributionPct > 50 ? "tone-down" : "tone-neutral", title: "Best symbol's share of all positive symbol profit" },
     segmentTextStat("Best symbol", stats.symbols.best, "total", "tone-up"),
     segmentTextStat("Worst symbol", stats.symbols.worst, "total", "tone-down"),
     { label: "Markets", value: showWhenTrades(stats, fmtCount(stats.markets.count)), tone: "tone-neutral" },
