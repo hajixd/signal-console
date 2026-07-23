@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent, type WheelEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 import { UMAP } from "umap-js";
 import type { TradeHistoryRow } from "@/components/trades/trade-history";
 import { LocalDateTimeStack } from "@/components/ui/local-date-time";
@@ -267,6 +267,7 @@ export default function TradeClusterMap({ historyRows, liveRows }: TradeClusterM
   const [nodes, setNodes] = useState<ClusterNode[]>([]);
   const [projectionStatus, setProjectionStatus] = useState<"computing" | "ready" | "fallback">("computing");
   const dragRef = useRef<{ pointerId: number; x: number; y: number; viewX: number; viewY: number } | null>(null);
+  const stageRef = useRef<HTMLDivElement>(null);
   const featureNodes = useMemo(() => buildFeatureNodes(historyRows, liveRows), [historyRows, liveRows]);
 
   useEffect(() => {
@@ -323,6 +324,32 @@ export default function TradeClusterMap({ historyRows, liveRows }: TradeClusterM
   const inspectedNode = hoveredNode ?? selectedNode;
   const wins = filteredNodes.filter((node) => node.outcome === "win").length;
   const losses = filteredNodes.filter((node) => node.outcome === "loss").length;
+
+  useEffect(() => {
+    const stage = stageRef.current;
+    if (!stage) return;
+    const handleWheel = (event: globalThis.WheelEvent) => {
+      event.preventDefault();
+      const svg = stage.querySelector("svg");
+      if (!svg) return;
+      const rect = svg.getBoundingClientRect();
+      const pointerX = ((event.clientX - rect.left) / rect.width) * MAP_WIDTH;
+      const pointerY = ((event.clientY - rect.top) / rect.height) * MAP_HEIGHT;
+      setView((current) => {
+        const nextScale = Math.max(0.65, Math.min(4.5, current.scale * Math.exp(-event.deltaY * 0.0012)));
+        const worldX = (pointerX - current.x) / current.scale;
+        const worldY = (pointerY - current.y) / current.scale;
+        return {
+          scale: nextScale,
+          x: pointerX - worldX * nextScale,
+          y: pointerY - worldY * nextScale
+        };
+      });
+    };
+    stage.addEventListener("wheel", handleWheel, { passive: false });
+    return () => stage.removeEventListener("wheel", handleWheel);
+  }, []);
+
   const edges = useMemo(() => {
     const result: Array<{ from: ClusterNode; to: ClusterNode }> = [];
     if (filteredNodes.length < 2) return result;
@@ -358,21 +385,6 @@ export default function TradeClusterMap({ historyRows, liveRows }: TradeClusterM
       scale,
       x: MAP_WIDTH / 2 - node.x * scale,
       y: MAP_HEIGHT / 2 - node.y * scale
-    });
-  }
-
-  function handleWheel(event: WheelEvent<SVGSVGElement>) {
-    event.preventDefault();
-    const rect = event.currentTarget.getBoundingClientRect();
-    const pointerX = ((event.clientX - rect.left) / rect.width) * MAP_WIDTH;
-    const pointerY = ((event.clientY - rect.top) / rect.height) * MAP_HEIGHT;
-    const nextScale = Math.max(0.65, Math.min(4.5, view.scale * Math.exp(-event.deltaY * 0.0012)));
-    const worldX = (pointerX - view.x) / view.scale;
-    const worldY = (pointerY - view.y) / view.scale;
-    setView({
-      scale: nextScale,
-      x: pointerX - worldX * nextScale,
-      y: pointerY - worldY * nextScale
     });
   }
 
@@ -470,13 +482,12 @@ export default function TradeClusterMap({ historyRows, liveRows }: TradeClusterM
         </div>
       </div>
 
-      <div className="tradeClusterStage">
+      <div className="tradeClusterStage" ref={stageRef}>
         <svg
           onPointerDown={handlePointerDown}
           onPointerMove={handlePointerMove}
           onPointerUp={endDrag}
           onPointerCancel={endDrag}
-          onWheel={handleWheel}
           viewBox={`0 0 ${MAP_WIDTH} ${MAP_HEIGHT}`}
           role="img"
           aria-label={`${filteredNodes.length} trade nodes grouped by strategy`}
@@ -534,24 +545,33 @@ export default function TradeClusterMap({ historyRows, liveRows }: TradeClusterM
         </svg>
 
         {projectionStatus === "computing" ? <div className="tradeClusterProjectionState" role="status" aria-label="Building UMAP projection"><i /></div> : null}
-      </div>
-
-      {inspectedNode ? (
+        {inspectedNode ? (
           <aside className="tradeClusterInspector" aria-label="Selected trade details">
-            <div>
-              <span className={`tradeClusterSource ${inspectedNode.source}`}>{inspectedNode.source}</span>
-              <span className={`tradeClusterOutcome ${inspectedNode.outcome}`}>{inspectedNode.outcome}</span>
+            <div className="tradeClusterInspectorTitle">
+              <strong>Selected</strong>
+              <span
+                aria-label={inspectedNode.outcome === "loss" ? "Losing trade" : "Winning or active trade"}
+                className={inspectedNode.outcome === "loss" ? "loss" : "positive"}
+                title={inspectedNode.outcome === "loss" ? "Losing trade" : "Winning or active trade"}
+              >
+                ⚑
+              </span>
             </div>
-            <h3>{inspectedNode.row.displaySymbol || inspectedNode.row.symbol}</h3>
-            <p>{inspectedNode.row.modelName || inspectedNode.row.strategyKey}</p>
             <dl>
-              <div><dt>Side</dt><dd>{inspectedNode.row.sideLabel}</dd></div>
+              <div><dt>ID</dt><dd>{inspectedNode.row.indexLabel || inspectedNode.row.id}</dd></div>
+              <div><dt>Kind</dt><dd className="accent">{inspectedNode.source === "live" ? "Live" : "History"}</dd></div>
+              <div><dt>Symbol</dt><dd>{inspectedNode.row.displaySymbol || inspectedNode.row.symbol}</dd></div>
+              <div><dt>Direction</dt><dd className={inspectedNode.row.side === "long" ? "win" : "loss"}>{inspectedNode.row.sideLabel}</dd></div>
+              <div><dt>Entry Date</dt><dd><LocalDateTimeStack value={inspectedNode.row.entryTime} /></dd></div>
+              <div><dt>Exit Date</dt><dd>{inspectedNode.outcome === "open" ? "—" : <LocalDateTimeStack value={inspectedNode.row.exitTime} />}</dd></div>
+              <div><dt>Duration</dt><dd>{Math.max(0, finiteNumber(inspectedNode.row.exitIndex) - finiteNumber(inspectedNode.row.entryIndex)).toLocaleString()} bars</dd></div>
+              <div><dt>Entry Method</dt><dd>{shortLabel(inspectedNode.row.modelName || inspectedNode.row.strategyKey, 28)}</dd></div>
+              <div><dt>Exit Method</dt><dd>{inspectedNode.row.exitReasonLabel}</dd></div>
               <div><dt>P&L</dt><dd className={inspectedNode.outcome}>{inspectedNode.outcome === "open" ? "Open" : signedMoney(inspectedNode.row.pnlDollars)}</dd></div>
-              <div><dt>Entry</dt><dd><LocalDateTimeStack value={inspectedNode.row.entryTime} /></dd></div>
-              <div><dt>Exit</dt><dd>{inspectedNode.outcome === "open" ? "Still open" : <LocalDateTimeStack value={inspectedNode.row.exitTime} />}</dd></div>
             </dl>
           </aside>
-      ) : null}
+        ) : null}
+      </div>
     </section>
   );
 }
