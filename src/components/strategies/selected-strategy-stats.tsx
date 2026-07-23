@@ -144,6 +144,18 @@ type DollarAggregate = {
   equityHighs: number;
   avgDailyDollars: number;
   avgActiveDayDollars: number;
+  avgMonthlyDollars: number;
+  medianMonthlyDollars: number;
+  stdDevMonthlyDollars: number;
+  bestMonthDollars: number;
+  worstMonthDollars: number;
+  bestMonthPeriod: string;
+  worstMonthPeriod: string;
+  activeMonths: number;
+  winningMonths: number;
+  losingMonths: number;
+  winningMonthRatePct: number;
+  monthlyProfitFactor: number;
   dailyProfitFactor: number;
   bestTradeDollars: number;
   bestDayDollars: number;
@@ -393,6 +405,22 @@ function localTradeDayKey(value: string): string {
   const month = String(date.getMonth() + 1).padStart(2, "0");
   const day = String(date.getDate()).padStart(2, "0");
   return `${year}-${month}-${day}`;
+}
+
+function localTradeMonthKey(value: string): string {
+  const date = localDateFromValue(value);
+  if (!date) return value;
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  return `${year}-${month}`;
+}
+
+function formatTradeMonthKey(value: string): string {
+  const [yearValue, monthValue] = value.split("-");
+  const year = Number(yearValue);
+  const month = Number(monthValue);
+  if (!Number.isInteger(year) || !Number.isInteger(month) || month < 1 || month > 12) return value;
+  return `${MONTH_LABELS[month - 1]} ${year}`;
 }
 
 const WEEKDAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"] as const;
@@ -679,6 +707,7 @@ function aggregateDollars(trades: TradeSnapshot[]): DollarAggregate {
   let losses = 0;
   let breakevens = 0;
   const dailyPnl = new Map<string, number>();
+  const monthlyPnl = new Map<string, number>();
   const durationsMs: number[] = [];
   const winDurationsMs: number[] = [];
   const lossDurationsMs: number[] = [];
@@ -728,6 +757,8 @@ function aggregateDollars(trades: TradeSnapshot[]): DollarAggregate {
     if (Number.isFinite(trade.barsHeld) && trade.barsHeld > 0) barsHeld.push(trade.barsHeld);
     const dayKey = localTradeDayKey(trade.exitTime);
     dailyPnl.set(dayKey, (dailyPnl.get(dayKey) ?? 0) + pnl);
+    const monthKey = localTradeMonthKey(trade.exitTime);
+    monthlyPnl.set(monthKey, (monthlyPnl.get(monthKey) ?? 0) + pnl);
 
     if (result > 0) {
       wins += 1;
@@ -766,6 +797,19 @@ function aggregateDollars(trades: TradeSnapshot[]): DollarAggregate {
   const dailyValues = dailyCurve.map((point) => point.pnl);
   const averageDailyPnl = mean(dailyValues);
   const activeDailyValues = [...dailyPnl.values()];
+  const monthlyEntries = [...monthlyPnl.entries()];
+  const monthlyValues = monthlyEntries.map(([, pnl]) => pnl);
+  const averageMonthlyPnl = mean(monthlyValues);
+  const bestMonthEntry = monthlyEntries.reduce<[string, number] | null>(
+    (best, entry) => (!best || entry[1] > best[1] ? entry : best),
+    null
+  );
+  const worstMonthEntry = monthlyEntries.reduce<[string, number] | null>(
+    (worst, entry) => (!worst || entry[1] < worst[1] ? entry : worst),
+    null
+  );
+  const monthlyGrossWinDollars = sum(monthlyValues.filter((value) => value > 0));
+  const monthlyGrossLossDollars = Math.abs(sum(monthlyValues.filter((value) => value < 0)));
   const avgWinDollars = wins ? winDollars / wins : 0;
   const avgLossDollars = losses ? lossDollars / losses : 0;
   const avgWinR = mean(winRMultiples);
@@ -923,6 +967,22 @@ function aggregateDollars(trades: TradeSnapshot[]): DollarAggregate {
     equityHighs,
     avgDailyDollars: averageDailyPnl,
     avgActiveDayDollars: mean(activeDailyValues),
+    avgMonthlyDollars: averageMonthlyPnl,
+    medianMonthlyDollars: median(monthlyValues),
+    stdDevMonthlyDollars: sampleStdDev(monthlyValues, averageMonthlyPnl),
+    bestMonthDollars: bestMonthEntry?.[1] ?? 0,
+    worstMonthDollars: worstMonthEntry?.[1] ?? 0,
+    bestMonthPeriod: bestMonthEntry ? formatTradeMonthKey(bestMonthEntry[0]) : "--",
+    worstMonthPeriod: worstMonthEntry ? formatTradeMonthKey(worstMonthEntry[0]) : "--",
+    activeMonths: monthlyValues.length,
+    winningMonths: monthlyValues.filter((value) => value > 0).length,
+    losingMonths: monthlyValues.filter((value) => value < 0).length,
+    winningMonthRatePct: monthlyValues.length ? (monthlyValues.filter((value) => value > 0).length / monthlyValues.length) * 100 : 0,
+    monthlyProfitFactor: monthlyGrossLossDollars
+      ? monthlyGrossWinDollars / monthlyGrossLossDollars
+      : monthlyGrossWinDollars
+        ? Infinity
+        : 0,
     dailyProfitFactor: dailyGrossLossDollars ? dailyGrossWinDollars / dailyGrossLossDollars : dailyGrossWinDollars ? Infinity : 0,
     bestTradeDollars: tradePnlDollars.length ? Math.max(...tradePnlDollars) : 0,
     bestDayDollars: Math.max(0, ...activeDailyValues),
@@ -1215,6 +1275,26 @@ export default function SelectedStrategyStats({
   ];
 
   const calendarStats: StatCardData[] = [
+    { label: "Active months", value: showWhenTrades(stats, fmtCount(stats.activeMonths)), tone: "tone-neutral" },
+    moneyStat("Avg month", stats.avgMonthlyDollars, stats.trades),
+    moneyStat("Median month", stats.medianMonthlyDollars, stats.trades),
+    { label: "Monthly std dev", value: showWhenTrades(stats, fmtMoney(stats.stdDevMonthlyDollars)), tone: "tone-neutral" },
+    {
+      ...moneyStat(stats.trades ? `Best month · ${stats.bestMonthPeriod}` : "Best month", stats.bestMonthDollars, stats.trades),
+      title: stats.trades ? stats.bestMonthPeriod : undefined
+    },
+    {
+      ...moneyStat(stats.trades ? `Worst month · ${stats.worstMonthPeriod}` : "Worst month", stats.worstMonthDollars, stats.trades),
+      title: stats.trades ? stats.worstMonthPeriod : undefined
+    },
+    { label: "Winning months", value: showWhenTrades(stats, fmtCount(stats.winningMonths)), tone: "tone-up" },
+    { label: "Losing months", value: showWhenTrades(stats, fmtCount(stats.losingMonths)), tone: "tone-down" },
+    {
+      label: "Month win rate",
+      value: showWhenTrades(stats, fmtPct(stats.winningMonthRatePct)),
+      tone: stats.winningMonthRatePct >= 50 ? "tone-up" : "tone-neutral"
+    },
+    ratioStat("Monthly PF", stats.monthlyProfitFactor, 1, stats.trades),
     moneyStat("Avg day", stats.avgDailyDollars, stats.trades),
     moneyStat("Avg active day", stats.avgActiveDayDollars, stats.trades),
     moneyStat("Best day", stats.bestDayDollars, stats.trades),
@@ -1231,8 +1311,8 @@ export default function SelectedStrategyStats({
     segmentTextStat("Worst weekday", stats.weekdays.worst, "avg", "tone-down"),
     segmentTextStat("Best entry hour", stats.entryHours.best, "avg", "tone-up"),
     segmentTextStat("Worst entry hour", stats.entryHours.worst, "avg", "tone-down"),
-    segmentTextStat("Best month", stats.months.best, "avg", "tone-up"),
-    segmentTextStat("Worst month", stats.months.worst, "avg", "tone-down")
+    segmentTextStat("Best calendar month", stats.months.best, "avg", "tone-up"),
+    segmentTextStat("Worst calendar month", stats.months.worst, "avg", "tone-down")
   ];
 
   const rStats: StatCardData[] = [
