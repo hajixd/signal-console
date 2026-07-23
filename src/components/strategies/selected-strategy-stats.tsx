@@ -297,6 +297,7 @@ type ChartDatum = {
   label: string;
   value: number;
   secondary?: number;
+  detail?: string;
 };
 
 type StatsChartData = {
@@ -1283,6 +1284,12 @@ function aggregateDollars(trades: TradeSnapshot[]): DollarAggregate {
   };
 }
 
+function outcomeForChartTrade(trade: TradeSnapshot): string {
+  if (trade.rMultiple > 0) return "Win";
+  if (trade.rMultiple < 0) return "Loss";
+  return "Breakeven";
+}
+
 function chartSample<T>(values: T[], limit = 48): T[] {
   if (values.length <= limit) return values;
   const sampled: T[] = [];
@@ -1329,27 +1336,60 @@ function histogramData(values: number[], bins = 10): ChartDatum[] {
   }));
 }
 
+function rollingChartData(values: ChartDatum[], windowSize: number): ChartDatum[] {
+  return values.map((point, index) => {
+    const window = values.slice(Math.max(0, index - windowSize + 1), index + 1);
+    return {
+      ...point,
+      value: mean(window.map((entry) => entry.value)),
+      detail: `${window.length}-trade rolling sample`
+    };
+  });
+}
+
+function averageCategoryData(data: ChartDatum[]): ChartDatum[] {
+  return data.map((point) => ({
+    ...point,
+    value: point.secondary ? point.value / point.secondary : 0,
+    detail: `${fmtCount(point.secondary ?? 0)} trades in this group`
+  }));
+}
+
 function ChartFrame({ chart }: { chart: StatsChartData }) {
   return (
     <article className="selectedStatsChart">
-      <header>
-        <strong>{chart.title}</strong>
-        <span>{chart.subtitle}</span>
-      </header>
+      <header><strong>{chart.title}</strong><span>{chart.subtitle}</span></header>
       {chart.chart}
     </article>
   );
 }
 
+function ChartTooltip({ context, detail, label, value }: { context: string; detail?: string; label: string; value: string }) {
+  return (
+    <div className="statsChartTooltip" role="status">
+      <span>{context}</span><strong>{value}</strong><small>{label}</small>
+      {detail ? <p>{detail}</p> : null}
+    </div>
+  );
+}
+
+type ChartTooltipProps = {
+  tooltipContext?: string;
+  tooltipDetail?: (point: ChartDatum) => string;
+};
+
 function LineChart({
   data,
   formatValue = fmtMoney,
-  secondaryLabel
+  secondaryLabel,
+  tooltipContext = "Value",
+  tooltipDetail
 }: {
   data: ChartDatum[];
   formatValue?: (value: number) => string;
   secondaryLabel?: string;
-}) {
+} & ChartTooltipProps) {
+  const [activeIndex, setActiveIndex] = useState<number | null>(null);
   const width = 640;
   const height = 190;
   const padX = 16;
@@ -1361,23 +1401,31 @@ function LineChart({
   const x = (index: number) => padX + (index / Math.max(1, data.length - 1)) * (width - padX * 2);
   const y = (value: number) => padY + ((maximum - value) / range) * (height - padY * 2);
   const points = data.map((point, index) => `${x(index)},${y(point.value)}`).join(" ");
-  const secondaryPoints = data
-    .filter((point) => point.secondary != null)
-    .map((point, index) => `${x(index)},${y(point.secondary ?? 0)}`)
-    .join(" ");
-  const zeroY = y(0);
+  const secondaryPoints = data.filter((point) => point.secondary != null).map((point, index) => `${x(index)},${y(point.secondary ?? 0)}`).join(" ");
+  const activePoint = activeIndex == null ? null : data[activeIndex] ?? null;
   return (
-    <div className="selectedStatsChartPlot">
-      <svg viewBox={`0 0 ${width} ${height}`} role="img" aria-label="Line chart">
-        <line className="statsChartGridLine" x1={padX} x2={width - padX} y1={zeroY} y2={zeroY} />
+    <div className="selectedStatsChartPlot statsChartInteractive" onMouseLeave={() => setActiveIndex(null)}>
+      <svg viewBox={`0 0 ${width} ${height}`} role="img" aria-label={`${tooltipContext} line chart`}>
+        <line className="statsChartGridLine" x1={padX} x2={width - padX} y1={y(0)} y2={y(0)} />
         <polyline className="statsChartLine" points={points} />
         {secondaryPoints ? <polyline className="statsChartLine secondary" points={secondaryPoints} /> : null}
         {data.map((point, index) => (
-          <circle key={`${point.label}-${index}`} className={`statsChartPoint${point.value < 0 ? " negative" : ""}`} cx={x(index)} cy={y(point.value)} r="3">
-            <title>{`${point.label}: ${formatValue(point.value)}${point.secondary == null ? "" : ` · ${secondaryLabel ?? "Second"} ${formatValue(point.secondary)}`}`}</title>
-          </circle>
+          <circle
+            key={`${point.label}-${index}`}
+            className={`statsChartPoint${point.value < 0 ? " negative" : ""}${activeIndex === index ? " isActive" : ""}`}
+            cx={x(index)} cy={y(point.value)} r="3" tabIndex={0}
+            onClick={() => setActiveIndex(index)} onFocus={() => setActiveIndex(index)} onMouseEnter={() => setActiveIndex(index)}
+          />
         ))}
       </svg>
+      {activePoint ? (
+        <ChartTooltip
+          context={tooltipContext}
+          detail={tooltipDetail?.(activePoint) ?? activePoint.detail}
+          label={activePoint.label}
+          value={`${formatValue(activePoint.value)}${activePoint.secondary == null ? "" : ` · ${secondaryLabel ?? "Second"} ${formatValue(activePoint.secondary)}`}`}
+        />
+      ) : null}
       <div className="selectedStatsChartAxis"><span>{data[0]?.label ?? "--"}</span><span>{data[data.length - 1]?.label ?? "--"}</span></div>
     </div>
   );
@@ -1386,93 +1434,117 @@ function LineChart({
 function BarChart({
   data,
   formatValue = fmtMoney,
-  horizontal = false
+  horizontal = false,
+  tooltipContext = "Value",
+  tooltipDetail
 }: {
   data: ChartDatum[];
   formatValue?: (value: number) => string;
   horizontal?: boolean;
-}) {
+} & ChartTooltipProps) {
+  const [activeIndex, setActiveIndex] = useState<number | null>(null);
   const maximum = Math.max(1, ...data.map((point) => Math.abs(point.value)));
+  const activePoint = activeIndex == null ? null : data[activeIndex] ?? null;
+  const tooltip = activePoint ? <ChartTooltip context={tooltipContext} detail={tooltipDetail?.(activePoint) ?? activePoint.detail} label={activePoint.label} value={formatValue(activePoint.value)} /> : null;
   if (horizontal) {
     return (
-      <div className="selectedStatsHorizontalBars">
-        {data.map((point) => (
-          <div key={point.label}>
-            <span>{shortLabel(point.label, 16)}</span>
-            <i><b className={point.value < 0 ? "negative" : ""} style={{ width: `${(Math.abs(point.value) / maximum) * 100}%` }} /></i>
-            <strong>{formatValue(point.value)}</strong>
+      <div className="selectedStatsHorizontalBars statsChartInteractive" onMouseLeave={() => setActiveIndex(null)}>
+        {data.map((point, index) => (
+          <div key={point.label} tabIndex={0} onClick={() => setActiveIndex(index)} onFocus={() => setActiveIndex(index)} onMouseEnter={() => setActiveIndex(index)}>
+            <span>{shortLabel(point.label, 16)}</span><i><b className={point.value < 0 ? "negative" : ""} style={{ width: `${(Math.abs(point.value) / maximum) * 100}%` }} /></i><strong>{formatValue(point.value)}</strong>
           </div>
         ))}
+        {tooltip}
       </div>
     );
   }
   return (
-    <div className="selectedStatsBars" role="img" aria-label="Bar chart">
-      {data.map((point) => (
-        <div key={point.label} className={point.value < 0 ? "negative" : ""}>
-          <i style={{ height: `${Math.max(4, (Math.abs(point.value) / maximum) * 100)}%` }} title={`${point.label}: ${formatValue(point.value)}`} />
-          <span>{shortLabel(point.label, 7)}</span>
+    <div className="selectedStatsBars statsChartInteractive" role="img" aria-label={`${tooltipContext} bar chart`} onMouseLeave={() => setActiveIndex(null)}>
+      {data.map((point, index) => (
+        <div key={point.label} className={`${point.value < 0 ? "negative" : ""}${activeIndex === index ? " isActive" : ""}`} tabIndex={0} onClick={() => setActiveIndex(index)} onFocus={() => setActiveIndex(index)} onMouseEnter={() => setActiveIndex(index)}>
+          <i style={{ height: `${Math.max(4, (Math.abs(point.value) / maximum) * 100)}%` }} /><span>{shortLabel(point.label, 7)}</span>
         </div>
       ))}
+      {tooltip}
     </div>
   );
 }
 
-function ScatterChart({ data }: { data: ChartDatum[] }) {
+function ScatterChart({
+  data,
+  formatX = fmtMoney,
+  formatY = fmtMoney,
+  tooltipContext = "Trade",
+  xLabel = "X",
+  yLabel = "Y"
+}: {
+  data: ChartDatum[];
+  formatX?: (value: number) => string;
+  formatY?: (value: number) => string;
+  tooltipContext?: string;
+  xLabel?: string;
+  yLabel?: string;
+}) {
+  const [activePoint, setActivePoint] = useState<ChartDatum | null>(null);
   const width = 640;
   const height = 190;
-  const maxX = Math.max(1, ...data.map((point) => point.value));
-  const maxY = Math.max(1, ...data.map((point) => point.secondary ?? 0));
+  const sampled = chartSample(data, 80);
+  const minX = Math.min(0, ...sampled.map((point) => point.value));
+  const maxX = Math.max(1, ...sampled.map((point) => point.value));
+  const minY = Math.min(0, ...sampled.map((point) => point.secondary ?? 0));
+  const maxY = Math.max(1, ...sampled.map((point) => point.secondary ?? 0));
+  const x = (value: number) => 16 + ((value - minX) / Math.max(1, maxX - minX)) * 608;
+  const y = (value: number) => 174 - ((value - minY) / Math.max(1, maxY - minY)) * 158;
   return (
-    <div className="selectedStatsChartPlot">
-      <svg viewBox={`0 0 ${width} ${height}`} role="img" aria-label="Risk versus target scatter plot">
-        <line className="statsChartGridLine" x1="16" x2="624" y1="174" y2="16" />
-        {chartSample(data, 80).map((point, index) => (
-          <circle
-            key={`${point.label}-${index}`}
-            className="statsChartScatterPoint"
-            cx={16 + (point.value / maxX) * 608}
-            cy={174 - ((point.secondary ?? 0) / maxY) * 158}
-            r="4"
-          >
-            <title>{`${point.label}: risk ${fmtMoney(point.value)} · target ${fmtMoney(point.secondary ?? 0)}`}</title>
-          </circle>
+    <div className="selectedStatsChartPlot statsChartInteractive" onMouseLeave={() => setActivePoint(null)}>
+      <svg viewBox={`0 0 ${width} ${height}`} role="img" aria-label={`${tooltipContext} scatter plot`}>
+        <line className="statsChartGridLine" x1="16" x2="624" y1={y(0)} y2={y(0)} />
+        <line className="statsChartGridLine" x1={x(0)} x2={x(0)} y1="16" y2="174" />
+        {sampled.map((point, index) => (
+          <circle key={`${point.label}-${index}`} className="statsChartScatterPoint" cx={x(point.value)} cy={y(point.secondary ?? 0)} r="4" tabIndex={0}
+            onClick={() => setActivePoint(point)} onFocus={() => setActivePoint(point)} onMouseEnter={() => setActivePoint(point)} />
         ))}
       </svg>
-      <div className="selectedStatsChartAxis"><span>Lower risk</span><span>Higher risk</span></div>
+      {activePoint ? <ChartTooltip context={tooltipContext} detail={activePoint.detail} label={activePoint.label} value={`${xLabel} ${formatX(activePoint.value)} · ${yLabel} ${formatY(activePoint.secondary ?? 0)}`} /> : null}
+      <div className="selectedStatsChartAxis"><span>{xLabel}: low</span><span>{xLabel}: high</span></div>
     </div>
   );
 }
 
-function OutcomeStrip({ data }: { data: ChartDatum[] }) {
+function OutcomeStrip({ data, tooltipContext = "Trade outcome" }: { data: ChartDatum[]; tooltipContext?: string }) {
+  const [activePoint, setActivePoint] = useState<ChartDatum | null>(null);
   return (
-    <div className="selectedStatsOutcomeStrip" role="img" aria-label="Chronological trade outcome strip">
+    <div className="selectedStatsOutcomeStrip statsChartInteractive" role="img" aria-label={tooltipContext} onMouseLeave={() => setActivePoint(null)}>
       {chartSample(data, 100).map((point, index) => (
-        <i key={`${point.label}-${index}`} className={point.value > 0 ? "win" : point.value < 0 ? "loss" : "flat"} title={`${point.label}: ${fmtR(point.value, true)}`} />
+        <i key={`${point.label}-${index}`} className={point.value > 0 ? "win" : point.value < 0 ? "loss" : "flat"} tabIndex={0}
+          onClick={() => setActivePoint(point)} onFocus={() => setActivePoint(point)} onMouseEnter={() => setActivePoint(point)} />
       ))}
+      {activePoint ? <ChartTooltip context={tooltipContext} detail={activePoint.detail} label={activePoint.label} value={fmtR(activePoint.value, true)} /> : null}
     </div>
   );
 }
 
-function DonutChart({ data }: { data: ChartDatum[] }) {
+function DonutChart({ data, tooltipContext = "Share" }: { data: ChartDatum[]; tooltipContext?: string }) {
+  const [activePoint, setActivePoint] = useState<ChartDatum | null>(null);
   const total = sum(data.map((point) => Math.max(0, point.value)));
   let cursor = 0;
-  const colors = ["var(--up)", "var(--down)", "var(--stats-chart-accent)"];
-  const gradient = data
-    .map((point, index) => {
-      const start = cursor;
-      cursor += total ? (Math.max(0, point.value) / total) * 100 : 0;
-      return `${colors[index % colors.length]} ${start}% ${cursor}%`;
-    })
-    .join(", ");
+  const colors = ["var(--up)", "var(--down)", "var(--stats-chart-accent)", "#a78bfa", "#f59e0b", "#22d3ee"];
+  const gradient = data.map((point, index) => {
+    const start = cursor;
+    cursor += total ? (Math.max(0, point.value) / total) * 100 : 0;
+    return `${colors[index % colors.length]} ${start}% ${cursor}%`;
+  }).join(", ");
   return (
-    <div className="selectedStatsDonut">
+    <div className="selectedStatsDonut statsChartInteractive" onMouseLeave={() => setActivePoint(null)}>
       <i style={{ background: `conic-gradient(${gradient || "var(--stats-chart-grid) 0 100%"})` }} />
       <div>
         {data.map((point, index) => (
-          <span key={point.label}><b style={{ background: colors[index % colors.length] }} />{point.label} <strong>{fmtCount(point.value)}</strong></span>
+          <span key={point.label} tabIndex={0} onClick={() => setActivePoint(point)} onFocus={() => setActivePoint(point)} onMouseEnter={() => setActivePoint(point)}>
+            <b style={{ background: colors[index % colors.length] }} />{point.label}<strong>{fmtCount(point.value)}</strong>
+          </span>
         ))}
       </div>
+      {activePoint ? <ChartTooltip context={tooltipContext} detail={activePoint.detail} label={activePoint.label} value={`${fmtCount(activePoint.value)} · ${fmtPct(total ? (activePoint.value / total) * 100 : 0)}`} /> : null}
     </div>
   );
 }
@@ -1910,70 +1982,206 @@ export default function SelectedStrategyStats({
   ];
   const modelAllocationData = categoryChartData(chartTrades, (trade) => trade.strategyLabel, () => 1, 8);
   const symbolAllocationData = categoryChartData(chartTrades, (trade) => trade.symbolLabel, () => 1, 8);
+  const tradePnlData: ChartDatum[] = chartSample(chartTrades.map((trade, index) => ({
+    label: `Trade ${index + 1}`,
+    value: trade.pnlDollars,
+    detail: `${trade.symbolLabel} · ${trade.strategyLabel}`
+  })), 48);
+  const tradeRData: ChartDatum[] = chartSample(chartTrades.map((trade, index) => ({
+    label: `Trade ${index + 1}`,
+    value: trade.rMultiple,
+    detail: `${trade.symbolLabel} · ${trade.sideLabel}`
+  })), 48);
+  let cumulativeR = 0;
+  const cumulativeRData = chartSample(chartTrades.map((trade, index) => {
+    cumulativeR += trade.rMultiple;
+    return { label: `Trade ${index + 1}`, value: cumulativeR, detail: `${fmtR(trade.rMultiple, true)} added on this trade` };
+  }));
+  const rollingPnlData = chartSample(rollingChartData(chartTrades.map((trade, index) => ({ label: `Trade ${index + 1}`, value: trade.pnlDollars })), 20));
+  const rollingRData = chartSample(rollingChartData(chartTrades.map((trade, index) => ({ label: `Trade ${index + 1}`, value: trade.rMultiple })), 20));
+  const modelPnlData = categoryChartData(chartTrades, (trade) => trade.strategyLabel, (trade) => trade.pnlDollars, 10);
+  const symbolPnlData = categoryChartData(chartTrades, (trade) => trade.symbolLabel, (trade) => trade.pnlDollars, 10);
+  const grossSplitData: ChartDatum[] = [
+    { label: "Gross profit", value: stats.grossWinDollars, detail: `${fmtCount(stats.wins)} winning trades` },
+    { label: "Gross loss", value: stats.grossLossDollars, detail: `${fmtCount(stats.losses)} losing trades` }
+  ];
+  const riskSequenceData = chartSample(chartTrades.map((trade, index) => ({ label: `Trade ${index + 1}`, value: trade.riskDollars, detail: `${trade.symbolLabel} planned risk` })), 48);
+  const targetSequenceData = chartSample(chartTrades.map((trade, index) => ({ label: `Trade ${index + 1}`, value: trade.targetDollars, detail: `${trade.symbolLabel} planned target` })), 48);
+  const downsideSequenceData = chartSample(chartTrades.map((trade, index) => ({ label: `Trade ${index + 1}`, value: Math.min(0, trade.pnlDollars), detail: trade.pnlDollars < 0 ? `${trade.symbolLabel} realized loss` : "No downside on this trade" })), 48);
+  const tailProfileData: ChartDatum[] = [
+    { label: "P5", value: stats.p05TradeDollars }, { label: "P10", value: stats.p10TradeDollars },
+    { label: "P25", value: stats.p25TradeDollars }, { label: "Median", value: stats.p50TradeDollars },
+    { label: "P75", value: stats.p75TradeDollars }, { label: "P90", value: stats.p90TradeDollars },
+    { label: "P95", value: stats.p95TradeDollars }
+  ];
+  const underwaterData = chartSample(stats.dailyCurve.map((point) => ({ label: point.dayKey, value: point.drawdown > 0 ? 1 : 0, detail: point.drawdown > 0 ? `${fmtMoney(point.drawdown)} below peak` : "At a new equity high" })));
+  const dailyPnlData = chartSample(stats.dailyCurve.map((point) => ({ label: point.dayKey, value: point.pnl, detail: `Equity ${fmtMoney(point.equity, true)}` })));
+  const riskPnlScatter = chartTrades.map((trade, index) => ({ label: `Trade ${index + 1}`, value: trade.riskDollars, secondary: trade.pnlDollars, detail: `${trade.symbolLabel} · ${trade.strategyLabel}` }));
+  const rollingWinRateData = chartSample(rollingChartData(chartTrades.map((trade, index) => ({ label: `Trade ${index + 1}`, value: trade.rMultiple > 0 ? 100 : 0 })), 20));
+  let activeStreak = 0;
+  let priorSign = 0;
+  const streakLengthData = chartSample(chartTrades.map((trade, index) => {
+    const sign = Math.sign(trade.rMultiple);
+    activeStreak = sign !== 0 && sign === priorSign ? activeStreak + 1 : sign === 0 ? 0 : 1;
+    priorSign = sign;
+    return { label: `Trade ${index + 1}`, value: sign < 0 ? -activeStreak : activeStreak, detail: sign > 0 ? "Winning streak" : sign < 0 ? "Losing streak" : "Breakeven reset" };
+  }));
+  let cumulativeWins = 0;
+  let cumulativeLosses = 0;
+  const cumulativeOutcomeData = chartSample(chartTrades.map((trade, index) => {
+    if (trade.rMultiple > 0) cumulativeWins += 1;
+    if (trade.rMultiple < 0) cumulativeLosses += 1;
+    return { label: `Trade ${index + 1}`, value: cumulativeWins, secondary: cumulativeLosses, detail: `${cumulativeWins + cumulativeLosses} decided outcomes` };
+  }));
+  const sideExpectancyData = averageCategoryData(categoryChartData(chartTrades, (trade) => trade.sideLabel, (trade) => trade.pnlDollars, 4));
+  const modelWinRateData = averageCategoryData(categoryChartData(chartTrades, (trade) => trade.strategyLabel, (trade) => trade.rMultiple > 0 ? 100 : 0, 10));
+  const outcomeMixData: ChartDatum[] = [
+    { label: "Wins", value: stats.wins, detail: fmtPct(stats.winRatePct) },
+    { label: "Losses", value: stats.losses, detail: fmtPct(stats.lossRatePct) },
+    { label: "Breakeven", value: stats.breakevens, detail: "Zero-R results" }
+  ];
+  const weekdayCountData = categoryChartData(chartTrades, (trade) => localWeekdayLabel(trade.entryTime), () => 1, 7);
+  const monthCountData = categoryChartData(chartTrades, (trade) => localTradeMonthKey(trade.entryTime), () => 1, 18).sort((a, b) => a.label.localeCompare(b.label));
+  const sortedByEntry = [...chartTrades].sort((a, b) => a.entryMs - b.entryMs);
+  const gapSequenceData = chartSample(sortedByEntry.slice(1).map((trade, index) => ({ label: `Gap ${index + 1}`, value: (trade.entryMs - sortedByEntry[index]!.entryMs) / 3_600_000, detail: `Before ${trade.symbolLabel}` })), 48);
+  const barsHeldData = chartSample(chartTrades.map((trade, index) => ({ label: `Trade ${index + 1}`, value: trade.barsHeld, detail: `${trade.symbolLabel} · ${trade.durationMs > 0 ? fmtDurationMs(trade.durationMs) : "--"}` })), 48);
+  const durationOutcomeData = averageCategoryData(categoryChartData(chartTrades, (trade) => outcomeForChartTrade(trade), (trade) => trade.durationMs / 3_600_000, 4));
+  const dayActivityData = categoryChartData(chartTrades, (trade) => localTradeDayKey(trade.entryTime), () => 1, 24).sort((a, b) => a.label.localeCompare(b.label));
+  const targetRiskRatioData = chartSample(chartTrades.map((trade, index) => ({ label: `Trade ${index + 1}`, value: trade.riskDollars > 0 ? trade.targetDollars / trade.riskDollars : 0, detail: `${trade.symbolLabel} planned reward/risk` })), 48);
+  const sideMixData = categoryChartData(chartTrades, (trade) => trade.sideLabel, () => 1, 4);
+  const exitReasonData = categoryChartData(chartTrades, (trade) => trade.exitBucket, () => 1, 10);
+  let cumulativeMonthPnl = 0;
+  const cumulativeMonthlyData = monthlyChartData.map((point) => {
+    cumulativeMonthPnl += point.value;
+    return { ...point, value: cumulativeMonthPnl, detail: `${fmtMoney(point.value, true)} during this month` };
+  });
+  const weeklyPnlData = categoryChartData(chartTrades, (trade) => localTradeWeekKey(trade.exitTime), (trade) => trade.pnlDollars, 24).sort((a, b) => a.label.localeCompare(b.label));
+  const calendarMonthAvgData = averageCategoryData(categoryChartData(chartTrades, (trade) => localMonthLabel(trade.entryTime), (trade) => trade.pnlDollars, 12));
+  const hourExpectancyData = averageCategoryData(categoryChartData(chartTrades, (trade) => localHourLabel(trade.entryTime), (trade) => trade.pnlDollars, 24)).sort((a, b) => a.label.localeCompare(b.label));
+  const quarterPnlData = categoryChartData(chartTrades, (trade) => localTradeQuarterKey(trade.exitTime), (trade) => trade.pnlDollars, 16).sort((a, b) => a.label.localeCompare(b.label));
+  const modelRData = averageCategoryData(categoryChartData(chartTrades, (trade) => trade.strategyLabel, (trade) => trade.rMultiple, 10));
+  const rPnlScatter = chartTrades.map((trade, index) => ({ label: `Trade ${index + 1}`, value: trade.rMultiple, secondary: trade.pnlDollars, detail: `${trade.symbolLabel} · ${trade.strategyLabel}` }));
+  const rTailData: ChartDatum[] = [
+    { label: "Worst", value: stats.worstR }, { label: "5% CVaR", value: stats.cvarLossR },
+    { label: "P5", value: stats.p05R }, { label: "P10", value: stats.p10R },
+    { label: "P90", value: stats.p90R }, { label: "P95", value: stats.p95R }, { label: "Best", value: stats.bestR }
+  ];
+  const marketAllocationData = categoryChartData(chartTrades, (trade) => trade.marketLabel, () => 1, 8);
+  const phaseAllocationData = categoryChartData(chartTrades, (trade) => trade.phaseLabel, () => 1, 8);
+  const sidePnlData = categoryChartData(chartTrades, (trade) => trade.sideLabel, (trade) => trade.pnlDollars, 4);
+  const exitAllocationData = categoryChartData(chartTrades, (trade) => trade.exitBucket, () => 1, 8);
 
   const statGroups = [
     {
       title: "Performance",
       stats: performanceStats,
       charts: [
-        { title: "Equity curve", subtitle: "Cumulative realized P&L by trade", chart: <LineChart data={equityData} /> },
-        { title: "Rolling expectancy", subtitle: "Average P&L after each completed trade", chart: <LineChart data={rollingExpectancyData} /> }
+        { title: "Equity curve", subtitle: "Cumulative realized P&L by trade", chart: <LineChart data={equityData} tooltipContext="Account equity" tooltipDetail={(point) => `Net realized result through ${point.label.toLowerCase()}`} /> },
+        { title: "Rolling expectancy", subtitle: "Average P&L after each completed trade", chart: <LineChart data={rollingExpectancyData} tooltipContext="Expanding expectancy" tooltipDetail={(point) => `Average dollars earned per trade through ${point.label.toLowerCase()}`} /> },
+        { title: "Cumulative R", subtitle: "Normalized equity independent of position size", chart: <LineChart data={cumulativeRData} formatValue={(value) => fmtR(value, true)} tooltipContext="Accumulated R" /> },
+        { title: "Trade P&L tape", subtitle: "Realized dollar result in execution order", chart: <BarChart data={tradePnlData} tooltipContext="Realized trade P&L" /> },
+        { title: "20-trade edge", subtitle: "Rolling short-window dollar expectancy", chart: <LineChart data={rollingPnlData} tooltipContext="20-trade expectancy" /> },
+        { title: "Model contribution", subtitle: "Net P&L supplied by each leading strategy", chart: <BarChart data={modelPnlData} horizontal tooltipContext="Strategy contribution" tooltipDetail={(point) => `${fmtCount(point.secondary ?? 0)} trades generated this result`} /> },
+        { title: "Symbol contribution", subtitle: "Net P&L supplied by each leading market", chart: <BarChart data={symbolPnlData} horizontal tooltipContext="Symbol contribution" tooltipDetail={(point) => `${fmtCount(point.secondary ?? 0)} trades contributed`} /> },
+        { title: "Gross profit balance", subtitle: "Total winning dollars versus losing dollars", chart: <DonutChart data={grossSplitData} tooltipContext="Gross P&L composition" /> }
       ]
     },
     {
       title: "Risk & Tails",
       stats: riskStats,
       charts: [
-        { title: "Drawdown path", subtitle: "Daily distance below the prior equity high", chart: <LineChart data={drawdownData} /> },
-        { title: "P&L distribution", subtitle: "Trade frequency across dollar outcomes", chart: <BarChart data={pnlHistogram} formatValue={fmtCount} /> }
+        { title: "Drawdown path", subtitle: "Daily distance below the prior equity high", chart: <LineChart data={drawdownData} tooltipContext="Equity drawdown" tooltipDetail={(point) => `${point.label} distance from the prior high-water mark`} /> },
+        { title: "P&L distribution", subtitle: "Trade frequency across dollar outcomes", chart: <BarChart data={pnlHistogram} formatValue={fmtCount} tooltipContext="Outcome frequency" tooltipDetail={(point) => `Trades near the ${point.label} P&L bucket`} /> },
+        { title: "Planned risk tape", subtitle: "Dollar risk committed to each trade", chart: <BarChart data={riskSequenceData} tooltipContext="Planned downside" /> },
+        { title: "Realized downside", subtitle: "Loss-only sequence with wins held at zero", chart: <BarChart data={downsideSequenceData} tooltipContext="Realized downside event" /> },
+        { title: "Tail profile", subtitle: "Dollar outcomes from lower to upper tail", chart: <LineChart data={tailProfileData} tooltipContext="P&L percentile" tooltipDetail={(point) => `${point.label} of the realized trade distribution`} /> },
+        { title: "Underwater timeline", subtitle: "Days below the previous equity peak", chart: <OutcomeStrip data={underwaterData} tooltipContext="Underwater state" /> },
+        { title: "Daily shock tape", subtitle: "Calendar-day gains and losses", chart: <BarChart data={dailyPnlData} tooltipContext="Daily net result" /> },
+        { title: "Risk efficiency map", subtitle: "Planned risk versus realized P&L", chart: <ScatterChart data={riskPnlScatter} tooltipContext="Risk efficiency" xLabel="Risk" yLabel="P&L" /> }
       ]
     },
     {
       title: "Streaks & Momentum",
       stats: streakStats,
       charts: [
-        { title: "Outcome tape", subtitle: "Chronological wins, losses, and breakevens", chart: <OutcomeStrip data={outcomeData} /> },
-        { title: "Conditional win rate", subtitle: "How the prior result changes the next outcome", chart: <BarChart data={conditionalWinData} formatValue={fmtPct} /> }
+        { title: "Outcome tape", subtitle: "Chronological wins, losses, and breakevens", chart: <OutcomeStrip data={outcomeData} tooltipContext="Chronological R outcome" /> },
+        { title: "Conditional win rate", subtitle: "How the prior result changes the next outcome", chart: <BarChart data={conditionalWinData} formatValue={fmtPct} tooltipContext="Next-trade win probability" tooltipDetail={(point) => `${point.label} condition across all eligible transitions`} /> },
+        { title: "Rolling win rate", subtitle: "Local hit rate across the latest 20 trades", chart: <LineChart data={rollingWinRateData} formatValue={fmtPct} tooltipContext="20-trade win rate" /> },
+        { title: "Streak pressure", subtitle: "Positive and negative run length over time", chart: <BarChart data={streakLengthData} formatValue={fmtNumber} tooltipContext="Active streak length" /> },
+        { title: "Cumulative decisions", subtitle: "Wins versus losses accumulated over time", chart: <LineChart data={cumulativeOutcomeData} formatValue={fmtCount} secondaryLabel="Losses" tooltipContext="Cumulative wins" /> },
+        { title: "Side expectancy", subtitle: "Average dollars earned by long and short trades", chart: <BarChart data={sideExpectancyData} tooltipContext="Directional expectancy" /> },
+        { title: "Model hit rate", subtitle: "Average win probability by strategy", chart: <BarChart data={modelWinRateData} formatValue={fmtPct} horizontal tooltipContext="Strategy win rate" /> },
+        { title: "Outcome composition", subtitle: "Wins, losses, and breakevens as a whole", chart: <DonutChart data={outcomeMixData} tooltipContext="Outcome mix" /> }
       ]
     },
     {
       title: "Timing & Cadence",
       stats: timingStats,
       charts: [
-        { title: "Holding time", subtitle: "Trade duration in hours across the sample", chart: <BarChart data={durationData} formatValue={(value) => `${fmtNumber(value)}h`} /> },
-        { title: "Entry clock", subtitle: "Number of entries by local hour", chart: <BarChart data={entryHourData} formatValue={fmtCount} /> }
+        { title: "Holding time", subtitle: "Trade duration in hours across the sample", chart: <BarChart data={durationData} formatValue={(value) => `${fmtNumber(value)}h`} tooltipContext="Trade holding time" /> },
+        { title: "Entry clock", subtitle: "Number of entries by local hour", chart: <BarChart data={entryHourData} formatValue={fmtCount} tooltipContext="Hourly entry count" /> },
+        { title: "Weekday activity", subtitle: "Execution frequency by weekday", chart: <BarChart data={weekdayCountData} formatValue={fmtCount} tooltipContext="Weekday trade volume" /> },
+        { title: "Monthly activity", subtitle: "Execution count across recent active months", chart: <BarChart data={monthCountData} formatValue={fmtCount} tooltipContext="Monthly trade volume" /> },
+        { title: "Entry gaps", subtitle: "Hours between consecutive entries", chart: <LineChart data={gapSequenceData} formatValue={(value) => `${fmtNumber(value)}h`} tooltipContext="Time between entries" /> },
+        { title: "Bars held", subtitle: "Chart bars consumed by each position", chart: <BarChart data={barsHeldData} formatValue={fmtCount} tooltipContext="Bars in position" /> },
+        { title: "Duration by outcome", subtitle: "Average holding hours for each result class", chart: <BarChart data={durationOutcomeData} formatValue={(value) => `${fmtNumber(value)}h`} tooltipContext="Outcome holding time" /> },
+        { title: "Daily execution load", subtitle: "Trades entered on each recent active day", chart: <BarChart data={dayActivityData} formatValue={fmtCount} tooltipContext="Daily entry load" /> }
       ]
     },
     {
       title: "Trade Shape",
       stats: tradeShapeStats,
       charts: [
-        { title: "Risk / target map", subtitle: "Planned dollars at risk versus planned reward", chart: <ScatterChart data={riskTargetData} /> },
-        { title: "Exit mix", subtitle: "Target, stop, and discretionary exits", chart: <DonutChart data={exitMixData} /> }
+        { title: "Risk / target map", subtitle: "Planned dollars at risk versus planned reward", chart: <ScatterChart data={riskTargetData} tooltipContext="Bracket geometry" xLabel="Risk" yLabel="Target" /> },
+        { title: "Exit mix", subtitle: "Target, stop, and discretionary exits", chart: <DonutChart data={exitMixData} tooltipContext="Exit route share" /> },
+        { title: "Risk sizing", subtitle: "Planned risk consistency across trades", chart: <LineChart data={riskSequenceData} tooltipContext="Risk size" /> },
+        { title: "Target sizing", subtitle: "Planned reward consistency across trades", chart: <LineChart data={targetSequenceData} tooltipContext="Target size" /> },
+        { title: "Planned reward / risk", subtitle: "Target dollars divided by risk dollars", chart: <LineChart data={targetRiskRatioData} formatValue={fmtNumber} tooltipContext="Planned payoff ratio" /> },
+        { title: "Risk versus outcome", subtitle: "Whether larger risk translated into larger P&L", chart: <ScatterChart data={riskPnlScatter} tooltipContext="Risk realization" xLabel="Risk" yLabel="P&L" /> },
+        { title: "Directional mix", subtitle: "Long and short participation", chart: <DonutChart data={sideMixData} tooltipContext="Side allocation" /> },
+        { title: "Exit reason volume", subtitle: "Frequency of each normalized exit path", chart: <BarChart data={exitReasonData} formatValue={fmtCount} horizontal tooltipContext="Exit reason frequency" /> }
       ]
     },
     {
       title: "Calendar Edge",
       stats: calendarStats,
       charts: [
-        { title: "Monthly P&L", subtitle: "Net realized result by active month", chart: <BarChart data={monthlyChartData} /> },
-        { title: "Weekday expectancy", subtitle: "Average trade P&L by entry weekday", chart: <BarChart data={weekdayChartData} /> }
+        { title: "Monthly P&L", subtitle: "Net realized result by active month", chart: <BarChart data={monthlyChartData} tooltipContext="Monthly net P&L" /> },
+        { title: "Weekday expectancy", subtitle: "Average trade P&L by entry weekday", chart: <BarChart data={weekdayChartData} tooltipContext="Weekday expectancy" /> },
+        { title: "Daily P&L", subtitle: "Net result on every calendar day", chart: <LineChart data={dailyPnlData} tooltipContext="Calendar-day P&L" /> },
+        { title: "Monthly equity", subtitle: "Cumulative result at each month end", chart: <LineChart data={cumulativeMonthlyData} tooltipContext="Month-end equity" /> },
+        { title: "Weekly P&L", subtitle: "Net realized result by active week", chart: <BarChart data={weeklyPnlData} tooltipContext="Weekly net P&L" /> },
+        { title: "Month-of-year edge", subtitle: "Average trade result by calendar month", chart: <BarChart data={calendarMonthAvgData} tooltipContext="Seasonal month expectancy" /> },
+        { title: "Hour expectancy", subtitle: "Average result by local entry hour", chart: <BarChart data={hourExpectancyData} tooltipContext="Entry-hour expectancy" /> },
+        { title: "Quarterly P&L", subtitle: "Net result across active quarters", chart: <BarChart data={quarterPnlData} tooltipContext="Quarterly net P&L" /> }
       ]
     },
     {
       title: "R-Multiple Anatomy",
       stats: rStats,
       charts: [
-        { title: "R distribution", subtitle: "Trade frequency across normalized outcomes", chart: <BarChart data={rHistogram} formatValue={fmtCount} /> },
-        { title: "R percentile profile", subtitle: "The result curve from left tail to right tail", chart: <LineChart data={rPercentileData} formatValue={(value) => fmtR(value, true)} /> }
+        { title: "R distribution", subtitle: "Trade frequency across normalized outcomes", chart: <BarChart data={rHistogram} formatValue={fmtCount} tooltipContext="R-multiple frequency" /> },
+        { title: "R percentile profile", subtitle: "The result curve from left tail to right tail", chart: <LineChart data={rPercentileData} formatValue={(value) => fmtR(value, true)} tooltipContext="R percentile" /> },
+        { title: "R sequence", subtitle: "Normalized outcome in execution order", chart: <BarChart data={tradeRData} formatValue={(value) => fmtR(value, true)} tooltipContext="Trade R result" /> },
+        { title: "Cumulative R", subtitle: "Running normalized strategy equity", chart: <LineChart data={cumulativeRData} formatValue={(value) => fmtR(value, true)} tooltipContext="Cumulative R equity" /> },
+        { title: "20-trade R edge", subtitle: "Rolling normalized expectancy", chart: <LineChart data={rollingRData} formatValue={(value) => fmtR(value, true)} tooltipContext="Rolling R expectancy" /> },
+        { title: "R by model", subtitle: "Average normalized outcome by strategy", chart: <BarChart data={modelRData} formatValue={(value) => fmtR(value, true)} horizontal tooltipContext="Strategy R expectancy" /> },
+        { title: "R / dollar map", subtitle: "Normalized result versus realized dollars", chart: <ScatterChart data={rPnlScatter} formatX={(value) => fmtR(value, true)} tooltipContext="R-dollar relationship" xLabel="R" yLabel="P&L" /> },
+        { title: "R tail balance", subtitle: "Extremes and critical distribution cutoffs", chart: <BarChart data={rTailData} formatValue={(value) => fmtR(value, true)} tooltipContext="R tail marker" /> }
       ]
     },
     {
       title: "Concentration",
       stats: concentrationStats,
       charts: [
-        { title: "Model allocation", subtitle: "Trade count across the busiest models", chart: <BarChart data={modelAllocationData} formatValue={fmtCount} horizontal /> },
-        { title: "Symbol allocation", subtitle: "Trade count across the busiest symbols", chart: <BarChart data={symbolAllocationData} formatValue={fmtCount} horizontal /> }
+        { title: "Model allocation", subtitle: "Trade count across the busiest models", chart: <BarChart data={modelAllocationData} formatValue={fmtCount} horizontal tooltipContext="Model trade allocation" /> },
+        { title: "Symbol allocation", subtitle: "Trade count across the busiest symbols", chart: <BarChart data={symbolAllocationData} formatValue={fmtCount} horizontal tooltipContext="Symbol trade allocation" /> },
+        { title: "Model P&L", subtitle: "Net contribution by leading strategy", chart: <BarChart data={modelPnlData} horizontal tooltipContext="Model net contribution" /> },
+        { title: "Symbol P&L", subtitle: "Net contribution by leading instrument", chart: <BarChart data={symbolPnlData} horizontal tooltipContext="Symbol net contribution" /> },
+        { title: "Market allocation", subtitle: "Trade volume across market families", chart: <BarChart data={marketAllocationData} formatValue={fmtCount} horizontal tooltipContext="Market allocation" /> },
+        { title: "Phase allocation", subtitle: "Trade volume across strategy phases", chart: <BarChart data={phaseAllocationData} formatValue={fmtCount} horizontal tooltipContext="Phase allocation" /> },
+        { title: "Side contribution", subtitle: "Net dollars generated by long and short trades", chart: <BarChart data={sidePnlData} tooltipContext="Directional P&L contribution" /> },
+        { title: "Exit allocation", subtitle: "Trade volume across exit paths", chart: <DonutChart data={exitAllocationData} tooltipContext="Exit concentration" /> }
       ]
     }
   ];
