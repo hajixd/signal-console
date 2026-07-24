@@ -343,6 +343,10 @@ export default function TradeClusterMap({ historyRows, liveRows }: TradeClusterM
         return { ...edge, proximity };
       });
   }, [filteredNodes, selectedNode, visibleIds]);
+  const selectedNeighborIds = useMemo(
+    () => new Set(selectedNeighborEdges.map((edge) => edge.to.id)),
+    [selectedNeighborEdges]
+  );
 
   useEffect(() => {
     const stage = stageRef.current;
@@ -531,7 +535,6 @@ export default function TradeClusterMap({ historyRows, liveRows }: TradeClusterM
             <g className="tradeClusterNeighborEdges">
               {selectedNeighborEdges.map(({ from, proximity, to }, index) => (
                 <line
-                  filter="url(#trade-cluster-glow)"
                   key={`selected:${from.id}:${to.id}`}
                   x1={from.x}
                   y1={from.y}
@@ -550,12 +553,13 @@ export default function TradeClusterMap({ historyRows, liveRows }: TradeClusterM
             <g>
               {nodes.map((node) => {
                 const filteredOut = !visibleIds.has(node.id);
-                const searchDimmed = normalizedQuery ? !node.searchText.includes(normalizedQuery) : false;
-                const selected = node.id === selectedId;
-                return (
+                    const searchDimmed = normalizedQuery ? !node.searchText.includes(normalizedQuery) : false;
+                    const selected = node.id === selectedId;
+                    const selectedNeighbor = selectedNeighborIds.has(node.id);
+                    return (
                   <circle
                     aria-label={`${node.source} ${node.row.displaySymbol || node.row.symbol} ${node.outcome}`}
-                    className={`tradeClusterNode ${node.source} ${node.outcome}${filteredOut ? " isFiltered" : ""}${searchDimmed ? " isDimmed" : ""}${selected ? " isSelected" : ""}${matchingIds.has(node.id) ? " isMatch" : ""}`}
+                    className={`tradeClusterNode ${node.source} ${node.outcome}${filteredOut ? " isFiltered" : ""}${searchDimmed && !selectedNeighbor ? " isDimmed" : ""}${selected ? " isSelected" : ""}${selectedNeighbor ? " isNeighbor" : ""}${matchingIds.has(node.id) ? " isMatch" : ""}`}
                     cx={node.x}
                     cy={node.y}
                     filter={selected ? "url(#trade-cluster-glow)" : undefined}

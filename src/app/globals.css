@@ -4313,6 +4313,9 @@ html[data-theme="light"] .themeDarkLabel {
 }
 
 .tradeClusterNeighborEdges line {
+  filter:
+    drop-shadow(0 0 2px rgba(103, 232, 249, 0.98))
+    drop-shadow(0 0 7px rgba(34, 211, 238, 0.82));
   vector-effect: non-scaling-stroke;
 }
 
@@ -4368,6 +4371,7 @@ html[data-theme="light"] .themeDarkLabel {
 .tradeClusterNode:hover,
 .tradeClusterNode:focus,
 .tradeClusterNode.isSelected,
+.tradeClusterNode.isNeighbor,
 .tradeClusterNode.isMatch {
   stroke: #ffffff;
   stroke-width: 3;
@@ -4378,6 +4382,14 @@ html[data-theme="light"] .themeDarkLabel {
 .tradeClusterNode:focus,
 .tradeClusterNode.isSelected {
   r: 6.5px;
+}
+
+.tradeClusterNode.isNeighbor {
+  opacity: 1;
+  stroke: #a5f3fc;
+  stroke-width: 2.4;
+  r: 4.8px;
+  filter: drop-shadow(0 0 5px rgba(34, 211, 238, 0.92));
 }
 
 .tradeClusterNode.isDimmed {
