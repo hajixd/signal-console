@@ -4309,25 +4309,27 @@ html[data-theme="light"] .themeDarkLabel {
   pointer-events: none;
 }
 
-.tradeClusterNeighborEdges line {
+.tradeClusterNeighborEdges line,
+.tradeClusterNeighborEdges path {
+  fill: none;
   vector-effect: non-scaling-stroke;
 }
 
-.tradeClusterNeighborEdges line.underlay {
-  opacity: 0.92;
+.tradeClusterNeighborEdges .underlay {
+  opacity: 0.76;
   stroke: rgba(34, 211, 238, 0.58);
-  stroke-width: 16;
+  stroke-width: 8;
 }
 
-.tradeClusterNeighborEdges line.core {
+.tradeClusterNeighborEdges .core {
   stroke-linecap: round;
 }
 
-.tradeClusterNeighborEdges.influenced line.underlay {
+.tradeClusterNeighborEdges.influenced .underlay {
   stroke: rgba(192, 38, 211, 0.78) !important;
 }
 
-.tradeClusterNeighborEdges.influenced line.core {
+.tradeClusterNeighborEdges.influenced .core {
   stroke: #d946ef !important;
 }
 

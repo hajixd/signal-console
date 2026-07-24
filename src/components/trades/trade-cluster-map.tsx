@@ -340,7 +340,7 @@ export default function TradeClusterMap({ historyRows, liveRows }: TradeClusterM
   const visibleIds = useMemo(() => new Set(filteredNodes.map((node) => node.id)), [filteredNodes]);
   const selectedNode = nodes.find((node) => node.id === selectedId) ?? null;
   const hoveredNode = nodes.find((node) => node.id === hoveredId) ?? null;
-  const inspectedNode = hoveredNode ?? selectedNode;
+  const inspectedNode = selectedNode ?? hoveredNode;
   const wins = filteredNodes.filter((node) => node.outcome === "win").length;
   const losses = filteredNodes.filter((node) => node.outcome === "loss").length;
   const selectedNeighborEdges = useMemo(() => {
@@ -472,6 +472,8 @@ export default function TradeClusterMap({ historyRows, liveRows }: TradeClusterM
     setOutcomeFilter("all");
     setStrategyFilter("all");
     setSelectedId(node.id);
+    setHoveredId(null);
+    setRelationshipView("neighbors");
     setQuery(node.row.displaySymbol || node.row.symbol || node.row.id);
     setSearchFocused(false);
     const scale = Math.max(1.55, view.scale);
@@ -611,9 +613,9 @@ export default function TradeClusterMap({ historyRows, liveRows }: TradeClusterM
                   x2={to.x}
                   y2={to.y}
                   style={{
-                    opacity: selectedNeighborEdges.length ? 0.1 + proximity * 0.08 : 0.13 + proximity * 0.14,
-                    stroke: `rgba(${Math.round(70 + proximity * 33)}, ${Math.round(150 + proximity * 82)}, 249, 1)`,
-                    strokeWidth: 0.55 + proximity * 0.65
+                    opacity: 0.12,
+                    stroke: "rgba(92, 168, 214, 1)",
+                    strokeWidth: 0.72
                   }}
                 />
               ))}
@@ -622,25 +624,30 @@ export default function TradeClusterMap({ historyRows, liveRows }: TradeClusterM
               {activeRelationshipEdges.map(({ from, proximity, to }, index) => {
                 const lineFrom = relationshipView === "influenced" ? to : from;
                 const lineTo = relationshipView === "influenced" ? from : to;
+                const dx = lineTo.x - lineFrom.x;
+                const dy = lineTo.y - lineFrom.y;
+                const length = Math.max(1, Math.hypot(dx, dy));
+                const fanOffset = (index - (activeRelationshipEdges.length - 1) / 2) * 14;
+                const controlX = (lineFrom.x + lineTo.x) / 2 - (dy / length) * fanOffset;
+                const controlY = (lineFrom.y + lineTo.y) / 2 + (dx / length) * fanOffset;
+                const path = `M ${lineFrom.x} ${lineFrom.y} Q ${controlX} ${controlY} ${lineTo.x} ${lineTo.y}`;
                 return (
                 <g key={`selected:${from.id}:${to.id}`}>
-                  <line className="underlay" filter="url(#trade-cluster-line-glow)" x1={lineFrom.x} y1={lineFrom.y} x2={lineTo.x} y2={lineTo.y} />
-                  <line
+                  <path className="underlay" d={path} filter="url(#trade-cluster-line-glow)" />
+                  <path
                     className="core"
-                    x1={lineFrom.x}
-                    y1={lineFrom.y}
-                    x2={lineTo.x}
-                    y2={lineTo.y}
+                    d={path}
+                    fill="none"
                     style={{
                       opacity: 0.92 + proximity * 0.08,
                       stroke: relationshipView === "influenced"
                         ? (proximity > 0.5 ? "#e9d5ff" : "#c084fc")
                         : (proximity > 0.5 ? "#a5f3fc" : "#60a5fa"),
-                      strokeWidth: 3.6 + proximity * 4.4
+                      strokeWidth: 2.5 + proximity * 2.5
                     }}
                   >
                     <title>{`${relationshipView === "influenced" ? "Influenced" : "Neighbor"} ${index + 1}: ${lineTo.row.displaySymbol || lineTo.row.symbol}`}</title>
-                  </line>
+                  </path>
                 </g>
               )})}
             </g>
