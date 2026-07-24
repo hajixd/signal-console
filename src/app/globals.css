@@ -4475,6 +4475,8 @@ html[data-theme="light"] .themeDarkLabel {
   pointer-events: auto;
   user-select: text;
   animation: tradeClusterInspectorIn 150ms ease-out both;
+  max-height: calc(100% - 24px);
+  overflow: auto;
 }
 
 .tradeClusterInspectorTitle {
@@ -4550,6 +4552,107 @@ html[data-theme="light"] .themeDarkLabel {
   justify-items: start;
   gap: 0;
   font: inherit;
+}
+
+.tradeClusterNeighbors {
+  margin-top: 10px;
+}
+
+.tradeClusterNeighborsHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.02em;
+}
+
+.tradeClusterNeighborsHeader span {
+  opacity: 0.7;
+  font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+}
+
+.tradeClusterNeighborList {
+  max-height: 140px;
+  margin-top: 8px;
+  overflow: auto;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.22);
+}
+
+.tradeClusterNeighborList button {
+  width: 100%;
+  min-height: 42px;
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 8px;
+  border: 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  background: transparent;
+  color: rgba(255, 255, 255, 0.9);
+  text-align: left;
+  cursor: pointer;
+}
+
+.tradeClusterNeighborList button:last-child {
+  border-bottom: 0;
+}
+
+.tradeClusterNeighborList button:hover,
+.tradeClusterNeighborList button:focus-visible {
+  outline: none;
+  background: rgba(55, 220, 180, 0.1);
+}
+
+.tradeClusterNeighborList button > i {
+  width: 20px;
+  height: 20px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(103, 232, 249, 0.3);
+  border-radius: 50%;
+  color: #a5f3fc;
+  font-size: 9px;
+  font-style: normal;
+  font-weight: 900;
+}
+
+.tradeClusterNeighborList button > span {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.tradeClusterNeighborList strong,
+.tradeClusterNeighborList small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tradeClusterNeighborList strong {
+  font-size: 10px;
+  font-weight: 900;
+}
+
+.tradeClusterNeighborList small {
+  color: rgba(255, 255, 255, 0.58);
+  font-size: 9px;
+}
+
+.tradeClusterNeighborMetric {
+  justify-items: end;
+  font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+}
+
+.tradeClusterNeighborMetric b {
+  color: #91ffdc;
+  font-size: 10px;
 }
 
 @keyframes tradeClusterPulse {

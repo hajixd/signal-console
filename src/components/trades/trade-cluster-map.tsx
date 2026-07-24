@@ -326,12 +326,12 @@ export default function TradeClusterMap({ historyRows, liveRows }: TradeClusterM
   const wins = filteredNodes.filter((node) => node.outcome === "win").length;
   const losses = filteredNodes.filter((node) => node.outcome === "loss").length;
   const selectedNeighborEdges = useMemo(() => {
-    if (!selectedNode || !visibleIds.has(selectedNode.id)) return [];
+    if (!inspectedNode || !visibleIds.has(inspectedNode.id)) return [];
     return filteredNodes
-      .filter((node) => node.id !== selectedNode.id)
+      .filter((node) => node.id !== inspectedNode.id)
       .map((node) => ({
-        distance: featureDistance(selectedNode.features, node.features),
-        from: selectedNode,
+        distance: featureDistance(inspectedNode.features, node.features),
+        from: inspectedNode,
         to: node
       }))
       .sort((left, right) => left.distance - right.distance)
@@ -342,7 +342,7 @@ export default function TradeClusterMap({ historyRows, liveRows }: TradeClusterM
         const proximity = 1 - (edge.distance - minimum) / Math.max(1e-9, maximum - minimum);
         return { ...edge, proximity };
       });
-  }, [filteredNodes, selectedNode, visibleIds]);
+  }, [filteredNodes, inspectedNode, visibleIds]);
   const selectedNeighborIds = useMemo(
     () => new Set(selectedNeighborEdges.map((edge) => edge.to.id)),
     [selectedNeighborEdges]
@@ -611,6 +611,33 @@ export default function TradeClusterMap({ historyRows, liveRows }: TradeClusterM
               <div><dt>Exit Method</dt><dd>{inspectedNode.row.exitReasonLabel}</dd></div>
               <div><dt>P&L</dt><dd className={inspectedNode.outcome}>{inspectedNode.outcome === "open" ? "Open" : signedMoney(inspectedNode.row.pnlDollars)}</dd></div>
             </dl>
+            <div className="tradeClusterNeighbors">
+              <div className="tradeClusterNeighborsHeader">
+                <strong>Nearest Neighbors</strong>
+                <span>k={selectedNeighborEdges.length}</span>
+              </div>
+              <div className="tradeClusterNeighborList">
+                {selectedNeighborEdges.map(({ distance, proximity, to }, index) => (
+                  <button
+                    key={to.id}
+                    onClick={() => focusNode(to)}
+                    onMouseDown={(event) => event.stopPropagation()}
+                    onPointerDown={(event) => event.stopPropagation()}
+                    type="button"
+                  >
+                    <i>{index + 1}</i>
+                    <span>
+                      <strong>{to.row.indexLabel || to.row.id}</strong>
+                      <small>{to.row.displaySymbol || to.row.symbol} · {shortLabel(to.row.modelName || to.row.strategyKey, 22)}</small>
+                    </span>
+                    <span className="tradeClusterNeighborMetric">
+                      <b>{Math.round(proximity * 100)}%</b>
+                      <small>d {Math.sqrt(distance).toFixed(3)}</small>
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
           </aside>
         ) : null}
       </div>
