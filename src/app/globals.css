@@ -4323,6 +4323,14 @@ html[data-theme="light"] .themeDarkLabel {
   stroke-linecap: round;
 }
 
+.tradeClusterNeighborEdges.influenced line.underlay {
+  stroke: rgba(192, 38, 211, 0.78) !important;
+}
+
+.tradeClusterNeighborEdges.influenced line.core {
+  stroke: #d946ef !important;
+}
+
 .tradeClusterLabels text {
   fill: var(--cluster-muted);
   font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
@@ -4394,6 +4402,14 @@ html[data-theme="light"] .themeDarkLabel {
   stroke-width: 2.4;
   r: 4.8px;
   filter: drop-shadow(0 0 5px rgba(34, 211, 238, 0.92));
+}
+
+.tradeClusterNode.isInfluenced {
+  opacity: 1;
+  stroke: #e9d5ff;
+  stroke-width: 2.6;
+  r: 4.9px;
+  filter: drop-shadow(0 0 6px rgba(192, 132, 252, 0.95));
 }
 
 .tradeClusterNode.isDimmed {
@@ -4555,6 +4571,11 @@ html[data-theme="light"] .themeDarkLabel {
   font-weight: 950;
 }
 
+.tradeClusterInspector dd.anc {
+  color: rgba(120, 190, 255, 0.92);
+  font-weight: 900;
+}
+
 .tradeClusterInspector dd.win {
   color: var(--up);
 }
@@ -4596,6 +4617,43 @@ html[data-theme="light"] .themeDarkLabel {
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 10px;
   background: rgba(0, 0, 0, 0.22);
+}
+
+.tradeClusterRelationshipTabs {
+  display: flex;
+  gap: 8px;
+  margin: 8px 0;
+}
+
+.tradeClusterRelationshipTabs button {
+  min-height: 28px;
+  padding: 5px 8px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 9px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.tradeClusterRelationshipTabs button.active {
+  border-color: rgba(55, 220, 180, 0.85);
+  background: rgba(55, 220, 180, 0.12);
+  color: rgba(145, 255, 220, 0.98);
+}
+
+.tradeClusterRelationshipTabs button.active.influenced {
+  border-color: rgba(192, 132, 252, 0.85);
+  background: rgba(192, 132, 252, 0.14);
+  color: #e9d5ff;
+}
+
+.tradeClusterNeighborEmpty {
+  padding: 16px 10px;
+  color: rgba(255, 255, 255, 0.52);
+  font-size: 9px;
+  text-align: center;
 }
 
 .tradeClusterNeighborList button {

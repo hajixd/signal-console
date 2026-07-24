@@ -281,6 +281,7 @@ export default function TradeClusterMap({ historyRows, liveRows }: TradeClusterM
   const [searchFocused, setSearchFocused] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [hoveredId, setHoveredId] = useState<string | null>(null);
+  const [relationshipView, setRelationshipView] = useState<"neighbors" | "influenced">("neighbors");
   const [view, setView] = useState<ViewState>(INITIAL_VIEW);
   const [nodes, setNodes] = useState<ClusterNode[]>([]);
   const [projectionStatus, setProjectionStatus] = useState<"computing" | "ready" | "fallback">("computing");
@@ -395,7 +396,6 @@ export default function TradeClusterMap({ historyRows, liveRows }: TradeClusterM
     if (filteredNodes.length < 2) return result;
     const edgeNodes = filteredNodes.slice(0, 1_500);
     const raw: Array<{ distance: number; from: ClusterNode; to: ClusterNode }> = [];
-    const seen = new Set<string>();
     for (let sourceIndex = 0; sourceIndex < edgeNodes.length; sourceIndex += 1) {
       const source = edgeNodes[sourceIndex]!;
       const nearest: Array<{ distance: number; node: ClusterNode }> = [];
@@ -411,9 +411,6 @@ export default function TradeClusterMap({ historyRows, liveRows }: TradeClusterM
         }
       }
       for (const match of nearest) {
-        const key = source.id < match.node.id ? `${source.id}:${match.node.id}` : `${match.node.id}:${source.id}`;
-        if (seen.has(key)) continue;
-        seen.add(key);
         raw.push({ distance: match.distance, from: source, to: match.node });
       }
     }
@@ -427,6 +424,48 @@ export default function TradeClusterMap({ historyRows, liveRows }: TradeClusterM
     }
     return result;
   }, [filteredNodes]);
+  const influencedEdges = useMemo(() => {
+    if (!inspectedNode) return [];
+    const matches = edges.filter((edge) => edge.to.id === inspectedNode.id);
+    const minimum = Math.min(...matches.map((edge) => edge.distance));
+    const maximum = Math.max(...matches.map((edge) => edge.distance));
+    return matches.map((edge) => ({
+      ...edge,
+      proximity: 1 - (edge.distance - minimum) / Math.max(1e-9, maximum - minimum)
+    }));
+  }, [edges, inspectedNode]);
+  const activeRelationshipEdges = relationshipView === "influenced" ? influencedEdges : selectedNeighborEdges;
+  const activeRelationshipIds = useMemo(
+    () => new Set(activeRelationshipEdges.map((edge) => relationshipView === "influenced" ? edge.from.id : edge.to.id)),
+    [activeRelationshipEdges, relationshipView]
+  );
+  const activeRelationshipNodes = useMemo(
+    () => activeRelationshipEdges.map((edge) => relationshipView === "influenced" ? edge.from : edge.to),
+    [activeRelationshipEdges, relationshipView]
+  );
+  const selectedEntryMs = inspectedNode ? Date.parse(inspectedNode.row.entryTime) : NaN;
+  const outcomeScore = (node: ClusterNode): number | null => node.outcome === "win" ? 1 : node.outcome === "loss" ? 0 : null;
+  const relationshipScores = activeRelationshipNodes.map(outcomeScore).filter((value): value is number => value !== null);
+  const entryRelationshipScores = activeRelationshipNodes
+    .filter((node) => !Number.isFinite(selectedEntryMs) || Date.parse(node.row.entryTime) <= selectedEntryMs)
+    .map(outcomeScore)
+    .filter((value): value is number => value !== null);
+  const ancCurrent = relationshipScores.length
+    ? relationshipScores.reduce<number>((sum, value) => sum + value, 0) / relationshipScores.length
+    : null;
+  const ancEntry = entryRelationshipScores.length
+    ? entryRelationshipScores.reduce<number>((sum, value) => sum + value, 0) / entryRelationshipScores.length
+    : null;
+  const influencedScores = influencedEdges
+    .map((edge) => outcomeScore(edge.from))
+    .filter((value): value is number => value !== null);
+  const contribution = influencedScores.length
+    ? influencedScores.reduce<number>((sum, value) => sum + value, 0) / influencedScores.length
+    : null;
+
+  useEffect(() => {
+    setRelationshipView("neighbors");
+  }, [selectedId]);
 
   function focusNode(node: ClusterNode) {
     setSourceFilter("all");
@@ -579,26 +618,31 @@ export default function TradeClusterMap({ historyRows, liveRows }: TradeClusterM
                 />
               ))}
             </g>
-            <g className="tradeClusterNeighborEdges">
-              {selectedNeighborEdges.map(({ from, proximity, to }, index) => (
+            <g className={`tradeClusterNeighborEdges ${relationshipView}`}>
+              {activeRelationshipEdges.map(({ from, proximity, to }, index) => {
+                const lineFrom = relationshipView === "influenced" ? to : from;
+                const lineTo = relationshipView === "influenced" ? from : to;
+                return (
                 <g key={`selected:${from.id}:${to.id}`}>
-                  <line className="underlay" filter="url(#trade-cluster-line-glow)" x1={from.x} y1={from.y} x2={to.x} y2={to.y} />
+                  <line className="underlay" filter="url(#trade-cluster-line-glow)" x1={lineFrom.x} y1={lineFrom.y} x2={lineTo.x} y2={lineTo.y} />
                   <line
                     className="core"
-                    x1={from.x}
-                    y1={from.y}
-                    x2={to.x}
-                    y2={to.y}
+                    x1={lineFrom.x}
+                    y1={lineFrom.y}
+                    x2={lineTo.x}
+                    y2={lineTo.y}
                     style={{
                       opacity: 0.92 + proximity * 0.08,
-                      stroke: proximity > 0.5 ? "#a5f3fc" : "#60a5fa",
+                      stroke: relationshipView === "influenced"
+                        ? (proximity > 0.5 ? "#e9d5ff" : "#c084fc")
+                        : (proximity > 0.5 ? "#a5f3fc" : "#60a5fa"),
                       strokeWidth: 3.6 + proximity * 4.4
                     }}
                   >
-                    <title>{`Neighbor ${index + 1}: ${to.row.displaySymbol || to.row.symbol}`}</title>
+                    <title>{`${relationshipView === "influenced" ? "Influenced" : "Neighbor"} ${index + 1}: ${lineTo.row.displaySymbol || lineTo.row.symbol}`}</title>
                   </line>
                 </g>
-              ))}
+              )})}
             </g>
             <g>
               {nodes.map((node) => {
@@ -606,10 +650,11 @@ export default function TradeClusterMap({ historyRows, liveRows }: TradeClusterM
                     const searchDimmed = normalizedQuery ? !node.searchText.includes(normalizedQuery) : false;
                     const selected = node.id === selectedId;
                     const selectedNeighbor = selectedNeighborIds.has(node.id);
+                    const activeRelationship = activeRelationshipIds.has(node.id);
                     return (
                   <circle
                     aria-label={`${node.source} ${node.row.displaySymbol || node.row.symbol} ${node.outcome}`}
-                    className={`tradeClusterNode ${node.source} ${node.outcome}${filteredOut ? " isFiltered" : ""}${searchDimmed && !selectedNeighbor ? " isDimmed" : ""}${selected ? " isSelected" : ""}${selectedNeighbor ? " isNeighbor" : ""}${matchingIds.has(node.id) ? " isMatch" : ""}`}
+                    className={`tradeClusterNode ${node.source} ${node.outcome}${filteredOut ? " isFiltered" : ""}${searchDimmed && !activeRelationship ? " isDimmed" : ""}${selected ? " isSelected" : ""}${selectedNeighbor ? " isNeighbor" : ""}${relationshipView === "influenced" && activeRelationship ? " isInfluenced" : ""}${matchingIds.has(node.id) ? " isMatch" : ""}`}
                     cx={node.x}
                     cy={node.y}
                     filter={selected ? "url(#trade-cluster-glow)" : undefined}
@@ -662,6 +707,9 @@ export default function TradeClusterMap({ historyRows, liveRows }: TradeClusterM
               <div><dt>Weekday</dt><dd>{new Intl.DateTimeFormat("en-US", { weekday: "long" }).format(new Date(inspectedNode.row.entryTime))}</dd></div>
               <div><dt>Entry Method</dt><dd>{shortLabel(inspectedNode.row.modelName || inspectedNode.row.strategyKey, 28)}</dd></div>
               <div><dt>AI Entry</dt><dd className="ai">Model</dd></div>
+              <div><dt>Confidence</dt><dd>{ancCurrent == null ? "—" : `${Math.round(ancCurrent * 100)}%`}</dd></div>
+              <div><dt>Contribution</dt><dd>{contribution == null ? "—" : `${Math.round(contribution * 100)}%`}</dd></div>
+              <div><dt>ANC</dt><dd className="anc">{`${ancEntry == null ? "—" : `${Math.round(ancEntry * 100)}%`} | ${ancCurrent == null ? "—" : `${Math.round(ancCurrent * 100)}%`}`}</dd></div>
               <div><dt>Entry Price</dt><dd>{inspectedNode.row.entryPriceLabel}</dd></div>
               <div><dt>Exit Price</dt><dd>{inspectedNode.outcome === "open" ? "—" : inspectedNode.row.exitPriceLabel}</dd></div>
               <div><dt>Risk</dt><dd>{inspectedNode.row.riskLabel}</dd></div>
@@ -674,29 +722,35 @@ export default function TradeClusterMap({ historyRows, liveRows }: TradeClusterM
             </dl>
             <div className="tradeClusterNeighbors">
               <div className="tradeClusterNeighborsHeader">
-                <strong>Nearest Neighbors</strong>
-                <span>k={selectedNeighborEdges.length}</span>
+                <strong>{relationshipView === "influenced" ? "Neighbors Influenced" : "Nearest Neighbors"}</strong>
+                <span>{relationshipView === "influenced" ? "n" : "k"}={activeRelationshipEdges.length}</span>
+              </div>
+              <div className="tradeClusterRelationshipTabs">
+                <button className={relationshipView === "neighbors" ? "active" : ""} onClick={() => setRelationshipView("neighbors")} type="button">Nearest Neighbors</button>
+                <button className={relationshipView === "influenced" ? "active influenced" : ""} onClick={() => setRelationshipView("influenced")} type="button">Neighbors Influenced</button>
               </div>
               <div className="tradeClusterNeighborList">
-                {selectedNeighborEdges.map(({ distance, proximity, to }, index) => (
+                {activeRelationshipEdges.length ? activeRelationshipEdges.map(({ distance, from, proximity, to }, index) => {
+                  const relatedNode = relationshipView === "influenced" ? from : to;
+                  return (
                   <button
-                    key={to.id}
-                    onClick={() => focusNode(to)}
+                    key={`${relationshipView}:${relatedNode.id}`}
+                    onClick={() => focusNode(relatedNode)}
                     onMouseDown={(event) => event.stopPropagation()}
                     onPointerDown={(event) => event.stopPropagation()}
                     type="button"
                   >
                     <i>{index + 1}</i>
                     <span>
-                      <strong>{to.row.indexLabel || to.row.id}</strong>
-                      <small>{to.row.displaySymbol || to.row.symbol} · {shortLabel(to.row.modelName || to.row.strategyKey, 22)}</small>
+                      <strong>{relatedNode.row.indexLabel || relatedNode.row.id}</strong>
+                      <small>{relatedNode.row.displaySymbol || relatedNode.row.symbol} · {shortLabel(relatedNode.row.modelName || relatedNode.row.strategyKey, 22)}</small>
                     </span>
                     <span className="tradeClusterNeighborMetric">
                       <b>{Math.round(proximity * 100)}%</b>
                       <small>d {Math.sqrt(distance).toFixed(3)}</small>
                     </span>
                   </button>
-                ))}
+                )}) : <div className="tradeClusterNeighborEmpty">No influenced nodes available.</div>}
               </div>
             </div>
             <details className="tradeClusterCalculation">
