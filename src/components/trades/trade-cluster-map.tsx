@@ -37,6 +37,13 @@ const INITIAL_VIEW: ViewState = { scale: 1, x: 0, y: 0 };
 const UMAP_MAX_FIT_NODES = 1400;
 const FEATURE_COUNT = 31;
 const SELECTED_NEIGHBOR_COUNT = 8;
+const FEATURE_LABELS = [
+  "R multiple", "Risk efficiency", "P&L (log)", "Risk (log)", "Target (log)", "Target / risk",
+  "Duration (log)", "Size (log)", "Hour sin", "Hour cos", "Weekday sin", "Weekday cos", "Recency",
+  "Direction", "Source", "Open state", "Outcome", "Strategy 1", "Strategy 2", "Strategy 3", "Strategy 4",
+  "Strategy 5", "Strategy 6", "Symbol 1", "Symbol 2", "Symbol 3", "Symbol 4", "Phase 1", "Phase 2",
+  "Exit reason 1", "Exit reason 2"
+] as const;
 
 function hashText(value: string): number {
   let hash = 2166136261;
@@ -63,6 +70,16 @@ function signedMoney(value: number): string {
   return `${value > 0 ? "+" : value < 0 ? "-" : ""}$${Math.abs(value).toLocaleString("en-US", {
     maximumFractionDigits: Math.abs(value) < 100 ? 2 : 0
   })}`;
+}
+
+function sessionForDate(value: string): string {
+  const date = new Date(value);
+  if (!Number.isFinite(date.getTime())) return "—";
+  const hour = date.getUTCHours();
+  if (hour < 7) return "Asia";
+  if (hour < 13) return "London";
+  if (hour < 21) return "New York";
+  return "After Hours";
 }
 
 function nodeSearchText(row: TradeHistoryRow, source: ClusterNode["source"]): string {
@@ -374,10 +391,10 @@ export default function TradeClusterMap({ historyRows, liveRows }: TradeClusterM
   }, []);
 
   const edges = useMemo(() => {
-    const result: Array<{ from: ClusterNode; to: ClusterNode }> = [];
+    const result: Array<{ distance: number; from: ClusterNode; proximity: number; to: ClusterNode }> = [];
     if (filteredNodes.length < 2) return result;
-    const step = Math.max(1, Math.ceil(filteredNodes.length / 460));
-    const edgeNodes = filteredNodes.filter((_, index) => index % step === 0).slice(0, 460);
+    const edgeNodes = filteredNodes.slice(0, 1_500);
+    const raw: Array<{ distance: number; from: ClusterNode; to: ClusterNode }> = [];
     for (let sourceIndex = 0; sourceIndex < edgeNodes.length; sourceIndex += 1) {
       const source = edgeNodes[sourceIndex]!;
       let nearest: ClusterNode | null = null;
@@ -391,7 +408,15 @@ export default function TradeClusterMap({ historyRows, liveRows }: TradeClusterM
           nearestDistance = distance;
         }
       }
-      if (nearest) result.push({ from: source, to: nearest });
+      if (nearest) raw.push({ distance: nearestDistance, from: source, to: nearest });
+    }
+    const minimum = Math.min(...raw.map((edge) => edge.distance));
+    const maximum = Math.max(...raw.map((edge) => edge.distance));
+    for (const edge of raw) {
+      result.push({
+        ...edge,
+        proximity: 1 - (edge.distance - minimum) / Math.max(1e-9, maximum - minimum)
+      });
     }
     return result;
   }, [filteredNodes]);
@@ -528,26 +553,39 @@ export default function TradeClusterMap({ historyRows, liveRows }: TradeClusterM
           <rect width={MAP_WIDTH} height={MAP_HEIGHT} fill="url(#trade-cluster-grid)" />
           <g transform={`translate(${view.x} ${view.y}) scale(${view.scale})`}>
             <g className={`tradeClusterEdges${selectedNeighborEdges.length ? " hasSelection" : ""}`}>
-              {edges.map(({ from, to }) => (
-                <line key={`${from.id}:${to.id}`} x1={from.x} y1={from.y} x2={to.x} y2={to.y} />
-              ))}
-            </g>
-            <g className="tradeClusterNeighborEdges">
-              {selectedNeighborEdges.map(({ from, proximity, to }, index) => (
+              {edges.map(({ from, proximity, to }) => (
                 <line
-                  key={`selected:${from.id}:${to.id}`}
+                  key={`${from.id}:${to.id}`}
                   x1={from.x}
                   y1={from.y}
                   x2={to.x}
                   y2={to.y}
                   style={{
-                    opacity: 0.56 + proximity * 0.38,
-                    stroke: `hsl(${194 - proximity * 22} 95% ${66 + proximity * 11}%)`,
-                    strokeWidth: 2.2 + proximity * 3.4
+                    opacity: selectedNeighborEdges.length ? 0.08 : 0.18 + proximity * 0.38,
+                    stroke: `rgba(${Math.round(70 + proximity * 33)}, ${Math.round(150 + proximity * 82)}, 249, 1)`,
+                    strokeWidth: 0.65 + proximity * 1.5
                   }}
-                >
-                  <title>{`Neighbor ${index + 1}: ${to.row.displaySymbol || to.row.symbol}`}</title>
-                </line>
+                />
+              ))}
+            </g>
+            <g className="tradeClusterNeighborEdges">
+              {selectedNeighborEdges.map(({ from, proximity, to }, index) => (
+                <g key={`selected:${from.id}:${to.id}`}>
+                  <line className="underlay" x1={from.x} y1={from.y} x2={to.x} y2={to.y} />
+                  <line
+                    x1={from.x}
+                    y1={from.y}
+                    x2={to.x}
+                    y2={to.y}
+                    style={{
+                      opacity: 0.78 + proximity * 0.22,
+                      stroke: proximity > 0.5 ? "#67e8f9" : "#60a5fa",
+                      strokeWidth: 2.8 + proximity * 3.8
+                    }}
+                  >
+                    <title>{`Neighbor ${index + 1}: ${to.row.displaySymbol || to.row.symbol}`}</title>
+                  </line>
+                </g>
               ))}
             </g>
             <g>
@@ -602,12 +640,23 @@ export default function TradeClusterMap({ historyRows, liveRows }: TradeClusterM
             <dl>
               <div><dt>ID</dt><dd>{inspectedNode.row.indexLabel || inspectedNode.row.id}</dd></div>
               <div><dt>Kind</dt><dd className="accent">{inspectedNode.source === "live" ? "Live" : "History"}</dd></div>
+              <div><dt>Library</dt><dd>Trades</dd></div>
               <div><dt>Symbol</dt><dd>{inspectedNode.row.displaySymbol || inspectedNode.row.symbol}</dd></div>
               <div><dt>Direction</dt><dd className={inspectedNode.row.side === "long" ? "win" : "loss"}>{inspectedNode.row.sideLabel}</dd></div>
               <div><dt>Entry Date</dt><dd><LocalDateTimeStack value={inspectedNode.row.entryTime} /></dd></div>
               <div><dt>Exit Date</dt><dd>{inspectedNode.outcome === "open" ? "—" : <LocalDateTimeStack value={inspectedNode.row.exitTime} />}</dd></div>
               <div><dt>Duration</dt><dd>{Math.max(0, finiteNumber(inspectedNode.row.exitIndex) - finiteNumber(inspectedNode.row.entryIndex)).toLocaleString()} bars</dd></div>
+              <div><dt>Session</dt><dd>{sessionForDate(inspectedNode.row.entryTime)}</dd></div>
+              <div><dt>Weekday</dt><dd>{new Intl.DateTimeFormat("en-US", { weekday: "long" }).format(new Date(inspectedNode.row.entryTime))}</dd></div>
               <div><dt>Entry Method</dt><dd>{shortLabel(inspectedNode.row.modelName || inspectedNode.row.strategyKey, 28)}</dd></div>
+              <div><dt>AI Entry</dt><dd className="ai">Model</dd></div>
+              <div><dt>Entry Price</dt><dd>{inspectedNode.row.entryPriceLabel}</dd></div>
+              <div><dt>Exit Price</dt><dd>{inspectedNode.outcome === "open" ? "—" : inspectedNode.row.exitPriceLabel}</dd></div>
+              <div><dt>Risk</dt><dd>{inspectedNode.row.riskLabel}</dd></div>
+              <div><dt>Target</dt><dd>{inspectedNode.row.targetLabel}</dd></div>
+              <div><dt>R Multiple</dt><dd>{inspectedNode.row.rMultipleLabel}</dd></div>
+              <div><dt>Size</dt><dd>{inspectedNode.row.sizeLabel}</dd></div>
+              <div><dt>MIT ID</dt><dd className="mit">{selectedNeighborEdges[0]?.to.row.indexLabel || selectedNeighborEdges[0]?.to.row.id || "—"}</dd></div>
               <div><dt>Exit Method</dt><dd>{inspectedNode.row.exitReasonLabel}</dd></div>
               <div><dt>P&L</dt><dd className={inspectedNode.outcome}>{inspectedNode.outcome === "open" ? "Open" : signedMoney(inspectedNode.row.pnlDollars)}</dd></div>
             </dl>
@@ -638,6 +687,18 @@ export default function TradeClusterMap({ historyRows, liveRows }: TradeClusterM
                 ))}
               </div>
             </div>
+            <details className="tradeClusterCalculation">
+              <summary>High-dimensional calculation</summary>
+              <p>Euclidean distance: √Σ(featureᵢ − neighborᵢ)². Smaller distance means a closer market-state neighbor. UMAP uses the same standardized 31-feature vectors for the 2D projection.</p>
+              <div>
+                {inspectedNode.features.map((value, index) => (
+                  <span key={`${FEATURE_LABELS[index] ?? "Feature"}:${index}`}>
+                    <i>{FEATURE_LABELS[index] ?? `Feature ${index + 1}`}</i>
+                    <b>{value.toFixed(4)}</b>
+                  </span>
+                ))}
+              </div>
+            </details>
           </aside>
         ) : null}
       </div>
