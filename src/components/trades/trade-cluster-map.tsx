@@ -36,6 +36,7 @@ const MAP_HEIGHT = 700;
 const INITIAL_VIEW: ViewState = { scale: 1, x: 0, y: 0 };
 const UMAP_MAX_FIT_NODES = 1400;
 const FEATURE_COUNT = 31;
+const SELECTED_NEIGHBOR_COUNT = 8;
 
 function hashText(value: string): number {
   let hash = 2166136261;
@@ -324,6 +325,24 @@ export default function TradeClusterMap({ historyRows, liveRows }: TradeClusterM
   const inspectedNode = hoveredNode ?? selectedNode;
   const wins = filteredNodes.filter((node) => node.outcome === "win").length;
   const losses = filteredNodes.filter((node) => node.outcome === "loss").length;
+  const selectedNeighborEdges = useMemo(() => {
+    if (!selectedNode || !visibleIds.has(selectedNode.id)) return [];
+    return filteredNodes
+      .filter((node) => node.id !== selectedNode.id)
+      .map((node) => ({
+        distance: featureDistance(selectedNode.features, node.features),
+        from: selectedNode,
+        to: node
+      }))
+      .sort((left, right) => left.distance - right.distance)
+      .slice(0, SELECTED_NEIGHBOR_COUNT)
+      .map((edge, index, matches) => {
+        const minimum = matches[0]?.distance ?? edge.distance;
+        const maximum = matches.at(-1)?.distance ?? edge.distance;
+        const proximity = 1 - (edge.distance - minimum) / Math.max(1e-9, maximum - minimum);
+        return { ...edge, proximity };
+      });
+  }, [filteredNodes, selectedNode, visibleIds]);
 
   useEffect(() => {
     const stage = stageRef.current;
@@ -504,9 +523,28 @@ export default function TradeClusterMap({ historyRows, liveRows }: TradeClusterM
           <rect width={MAP_WIDTH} height={MAP_HEIGHT} className="tradeClusterBackdrop" />
           <rect width={MAP_WIDTH} height={MAP_HEIGHT} fill="url(#trade-cluster-grid)" />
           <g transform={`translate(${view.x} ${view.y}) scale(${view.scale})`}>
-            <g className="tradeClusterEdges">
+            <g className={`tradeClusterEdges${selectedNeighborEdges.length ? " hasSelection" : ""}`}>
               {edges.map(({ from, to }) => (
                 <line key={`${from.id}:${to.id}`} x1={from.x} y1={from.y} x2={to.x} y2={to.y} />
+              ))}
+            </g>
+            <g className="tradeClusterNeighborEdges">
+              {selectedNeighborEdges.map(({ from, proximity, to }, index) => (
+                <line
+                  filter="url(#trade-cluster-glow)"
+                  key={`selected:${from.id}:${to.id}`}
+                  x1={from.x}
+                  y1={from.y}
+                  x2={to.x}
+                  y2={to.y}
+                  style={{
+                    opacity: 0.56 + proximity * 0.38,
+                    stroke: `hsl(${194 - proximity * 22} 95% ${66 + proximity * 11}%)`,
+                    strokeWidth: 2.2 + proximity * 3.4
+                  }}
+                >
+                  <title>{`Neighbor ${index + 1}: ${to.row.displaySymbol || to.row.symbol}`}</title>
+                </line>
               ))}
             </g>
             <g>

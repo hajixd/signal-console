@@ -4303,6 +4303,19 @@ html[data-theme="light"] .themeDarkLabel {
   vector-effect: non-scaling-stroke;
 }
 
+.tradeClusterEdges.hasSelection line {
+  opacity: 0.12;
+  stroke: rgba(110, 110, 110, 0.28);
+}
+
+.tradeClusterNeighborEdges {
+  pointer-events: none;
+}
+
+.tradeClusterNeighborEdges line {
+  vector-effect: non-scaling-stroke;
+}
+
 .tradeClusterLabels text {
   fill: var(--cluster-muted);
   font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
