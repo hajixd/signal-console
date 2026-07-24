@@ -287,7 +287,19 @@ export default function TradeClusterMap({ historyRows, liveRows }: TradeClusterM
   const [projectionStatus, setProjectionStatus] = useState<"computing" | "ready" | "fallback">("computing");
   const dragRef = useRef<{ pointerId: number; x: number; y: number; viewX: number; viewY: number } | null>(null);
   const stageRef = useRef<HTMLDivElement>(null);
+  const viewportRef = useRef<SVGGElement>(null);
+  const viewRef = useRef<ViewState>(INITIAL_VIEW);
+  const wheelCommitRef = useRef<number | null>(null);
   const featureNodes = useMemo(() => buildFeatureNodes(historyRows, liveRows), [historyRows, liveRows]);
+
+  function applyViewport(nextView: ViewState): void {
+    viewRef.current = nextView;
+    viewportRef.current?.setAttribute("transform", `translate(${nextView.x} ${nextView.y}) scale(${nextView.scale})`);
+  }
+
+  useEffect(() => {
+    applyViewport(view);
+  }, [view]);
 
   useEffect(() => {
     let cancelled = false;
@@ -376,19 +388,26 @@ export default function TradeClusterMap({ historyRows, liveRows }: TradeClusterM
       const rect = svg.getBoundingClientRect();
       const pointerX = ((event.clientX - rect.left) / rect.width) * MAP_WIDTH;
       const pointerY = ((event.clientY - rect.top) / rect.height) * MAP_HEIGHT;
-      setView((current) => {
-        const nextScale = Math.max(0.65, Math.min(4.5, current.scale * Math.exp(-event.deltaY * 0.0012)));
-        const worldX = (pointerX - current.x) / current.scale;
-        const worldY = (pointerY - current.y) / current.scale;
-        return {
-          scale: nextScale,
-          x: pointerX - worldX * nextScale,
-          y: pointerY - worldY * nextScale
-        };
+      const current = viewRef.current;
+      const nextScale = Math.max(0.65, Math.min(4.5, current.scale * Math.exp(-event.deltaY * 0.0012)));
+      const worldX = (pointerX - current.x) / current.scale;
+      const worldY = (pointerY - current.y) / current.scale;
+      applyViewport({
+        scale: nextScale,
+        x: pointerX - worldX * nextScale,
+        y: pointerY - worldY * nextScale
       });
+      if (wheelCommitRef.current !== null) window.clearTimeout(wheelCommitRef.current);
+      wheelCommitRef.current = window.setTimeout(() => {
+        wheelCommitRef.current = null;
+        setView({ ...viewRef.current });
+      }, 90);
     };
     stage.addEventListener("wheel", handleWheel, { passive: false });
-    return () => stage.removeEventListener("wheel", handleWheel);
+    return () => {
+      stage.removeEventListener("wheel", handleWheel);
+      if (wheelCommitRef.current !== null) window.clearTimeout(wheelCommitRef.current);
+    };
   }, []);
 
   const edges = useMemo(() => {
@@ -476,33 +495,40 @@ export default function TradeClusterMap({ historyRows, liveRows }: TradeClusterM
     setRelationshipView("neighbors");
     setQuery(node.row.displaySymbol || node.row.symbol || node.row.id);
     setSearchFocused(false);
-    const scale = Math.max(1.55, view.scale);
-    setView({
+    const scale = Math.max(1.55, viewRef.current.scale);
+    const nextView = {
       scale,
       x: MAP_WIDTH / 2 - node.x * scale,
       y: MAP_HEIGHT / 2 - node.y * scale
-    });
+    };
+    applyViewport(nextView);
+    setView(nextView);
   }
 
   function handlePointerDown(event: ReactPointerEvent<SVGSVGElement>) {
     if ((event.target as Element).closest(".tradeClusterNode")) return;
     event.currentTarget.setPointerCapture(event.pointerId);
-    dragRef.current = { pointerId: event.pointerId, x: event.clientX, y: event.clientY, viewX: view.x, viewY: view.y };
+    const current = viewRef.current;
+    dragRef.current = { pointerId: event.pointerId, x: event.clientX, y: event.clientY, viewX: current.x, viewY: current.y };
+    stageRef.current?.setAttribute("data-panning", "true");
   }
 
   function handlePointerMove(event: ReactPointerEvent<SVGSVGElement>) {
     const drag = dragRef.current;
     if (!drag || drag.pointerId !== event.pointerId) return;
     const rect = event.currentTarget.getBoundingClientRect();
-    setView({
-      ...view,
+    applyViewport({
+      scale: viewRef.current.scale,
       x: drag.viewX + ((event.clientX - drag.x) / rect.width) * MAP_WIDTH,
       y: drag.viewY + ((event.clientY - drag.y) / rect.height) * MAP_HEIGHT
     });
   }
 
   function endDrag(event: ReactPointerEvent<SVGSVGElement>) {
-    if (dragRef.current?.pointerId === event.pointerId) dragRef.current = null;
+    if (dragRef.current?.pointerId !== event.pointerId) return;
+    dragRef.current = null;
+    stageRef.current?.removeAttribute("data-panning");
+    setView({ ...viewRef.current });
   }
 
   return (
@@ -603,7 +629,7 @@ export default function TradeClusterMap({ historyRows, liveRows }: TradeClusterM
           </defs>
           <rect width={MAP_WIDTH} height={MAP_HEIGHT} className="tradeClusterBackdrop" />
           <rect width={MAP_WIDTH} height={MAP_HEIGHT} fill="url(#trade-cluster-grid)" />
-          <g transform={`translate(${view.x} ${view.y}) scale(${view.scale})`}>
+          <g ref={viewportRef} transform={`translate(${view.x} ${view.y}) scale(${view.scale})`}>
             <g className={`tradeClusterEdges${selectedNeighborEdges.length ? " hasSelection" : ""}`}>
               {edges.map(({ from, proximity, to }) => (
                 <line

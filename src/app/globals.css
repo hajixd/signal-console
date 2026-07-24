@@ -4255,6 +4255,19 @@ html[data-theme="light"] .themeDarkLabel {
   cursor: grabbing;
 }
 
+.tradeClusterStage[data-panning="true"] > svg {
+  cursor: grabbing;
+}
+
+.tradeClusterStage[data-panning="true"] .tradeClusterNode {
+  pointer-events: none;
+}
+
+.tradeClusterEdges,
+.tradeClusterNeighborEdges {
+  pointer-events: none;
+}
+
 .tradeClusterProjectionState {
   position: absolute;
   z-index: 6;
