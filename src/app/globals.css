@@ -4302,8 +4302,7 @@ html[data-theme="light"] .themeDarkLabel {
 }
 
 .tradeClusterEdges.hasSelection line {
-  opacity: 0.12;
-  stroke: rgba(110, 110, 110, 0.28);
+  stroke: rgba(95, 150, 190, 0.8);
 }
 
 .tradeClusterNeighborEdges {
@@ -4315,9 +4314,13 @@ html[data-theme="light"] .themeDarkLabel {
 }
 
 .tradeClusterNeighborEdges line.underlay {
-  opacity: 0.72;
-  stroke: rgba(34, 211, 238, 0.28);
-  stroke-width: 11;
+  opacity: 0.92;
+  stroke: rgba(34, 211, 238, 0.58);
+  stroke-width: 16;
+}
+
+.tradeClusterNeighborEdges line.core {
+  stroke-linecap: round;
 }
 
 .tradeClusterLabels text {

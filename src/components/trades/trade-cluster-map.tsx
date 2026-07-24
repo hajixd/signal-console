@@ -395,20 +395,27 @@ export default function TradeClusterMap({ historyRows, liveRows }: TradeClusterM
     if (filteredNodes.length < 2) return result;
     const edgeNodes = filteredNodes.slice(0, 1_500);
     const raw: Array<{ distance: number; from: ClusterNode; to: ClusterNode }> = [];
+    const seen = new Set<string>();
     for (let sourceIndex = 0; sourceIndex < edgeNodes.length; sourceIndex += 1) {
       const source = edgeNodes[sourceIndex]!;
-      let nearest: ClusterNode | null = null;
-      let nearestDistance = Infinity;
+      const nearest: Array<{ distance: number; node: ClusterNode }> = [];
       for (let targetIndex = 0; targetIndex < edgeNodes.length; targetIndex += 1) {
         if (sourceIndex === targetIndex) continue;
         const target = edgeNodes[targetIndex]!;
         const distance = featureDistance(source.features, target.features);
-        if (distance < nearestDistance) {
-          nearest = target;
-          nearestDistance = distance;
+        if (nearest.length < SELECTED_NEIGHBOR_COUNT || distance < nearest[nearest.length - 1]!.distance) {
+          let insertAt = nearest.length;
+          while (insertAt > 0 && distance < nearest[insertAt - 1]!.distance) insertAt -= 1;
+          nearest.splice(insertAt, 0, { distance, node: target });
+          if (nearest.length > SELECTED_NEIGHBOR_COUNT) nearest.pop();
         }
       }
-      if (nearest) raw.push({ distance: nearestDistance, from: source, to: nearest });
+      for (const match of nearest) {
+        const key = source.id < match.node.id ? `${source.id}:${match.node.id}` : `${match.node.id}:${source.id}`;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        raw.push({ distance: match.distance, from: source, to: match.node });
+      }
     }
     const minimum = Math.min(...raw.map((edge) => edge.distance));
     const maximum = Math.max(...raw.map((edge) => edge.distance));
@@ -548,6 +555,10 @@ export default function TradeClusterMap({ historyRows, liveRows }: TradeClusterM
               <feGaussianBlur stdDeviation="4" result="blur" />
               <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
             </filter>
+            <filter id="trade-cluster-line-glow" filterUnits="userSpaceOnUse" x="-2400" y="-1400" width="4800" height="2800">
+              <feGaussianBlur stdDeviation="7" result="lineBlur" />
+              <feMerge><feMergeNode in="lineBlur" /><feMergeNode in="SourceGraphic" /></feMerge>
+            </filter>
           </defs>
           <rect width={MAP_WIDTH} height={MAP_HEIGHT} className="tradeClusterBackdrop" />
           <rect width={MAP_WIDTH} height={MAP_HEIGHT} fill="url(#trade-cluster-grid)" />
@@ -561,9 +572,9 @@ export default function TradeClusterMap({ historyRows, liveRows }: TradeClusterM
                   x2={to.x}
                   y2={to.y}
                   style={{
-                    opacity: selectedNeighborEdges.length ? 0.08 : 0.18 + proximity * 0.38,
+                    opacity: selectedNeighborEdges.length ? 0.1 + proximity * 0.08 : 0.13 + proximity * 0.14,
                     stroke: `rgba(${Math.round(70 + proximity * 33)}, ${Math.round(150 + proximity * 82)}, 249, 1)`,
-                    strokeWidth: 0.65 + proximity * 1.5
+                    strokeWidth: 0.55 + proximity * 0.65
                   }}
                 />
               ))}
@@ -571,16 +582,17 @@ export default function TradeClusterMap({ historyRows, liveRows }: TradeClusterM
             <g className="tradeClusterNeighborEdges">
               {selectedNeighborEdges.map(({ from, proximity, to }, index) => (
                 <g key={`selected:${from.id}:${to.id}`}>
-                  <line className="underlay" x1={from.x} y1={from.y} x2={to.x} y2={to.y} />
+                  <line className="underlay" filter="url(#trade-cluster-line-glow)" x1={from.x} y1={from.y} x2={to.x} y2={to.y} />
                   <line
+                    className="core"
                     x1={from.x}
                     y1={from.y}
                     x2={to.x}
                     y2={to.y}
                     style={{
-                      opacity: 0.78 + proximity * 0.22,
-                      stroke: proximity > 0.5 ? "#67e8f9" : "#60a5fa",
-                      strokeWidth: 2.8 + proximity * 3.8
+                      opacity: 0.92 + proximity * 0.08,
+                      stroke: proximity > 0.5 ? "#a5f3fc" : "#60a5fa",
+                      strokeWidth: 3.6 + proximity * 4.4
                     }}
                   >
                     <title>{`Neighbor ${index + 1}: ${to.row.displaySymbol || to.row.symbol}`}</title>
