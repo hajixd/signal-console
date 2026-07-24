@@ -29,23 +29,8 @@ type AutoTradeConnector = {
   providerId: AutoTradeProviderId;
 };
 
-function envFlag(name: string, fallback: boolean): boolean {
-  const value = process.env[name]?.trim().toLowerCase();
-  if (!value) return fallback;
-  if (["1", "true", "yes", "on"].includes(value)) return true;
-  if (["0", "false", "no", "off"].includes(value)) return false;
-  return fallback;
-}
-
 async function hasStoredProjectXConnection(): Promise<boolean> {
   return Boolean(await getLatestStoredProjectXConnection(process.env.PROJECTX_AUTO_TRADE_CONNECTION_ID?.trim()).catch(() => null));
-}
-
-function unsafeLimitOrderGuard(trade: TradeAlert): AutoTradeExecutionResult | null {
-  if (trade.entryType !== "limit" || envFlag("AUTO_TRADE_ALLOW_LIVE_LIMIT_ORDERS", true)) return null;
-  return result("skipped", {
-    error: "Live limit-order execution is disabled by AUTO_TRADE_ALLOW_LIVE_LIMIT_ORDERS=0."
-  });
 }
 
 const AUTO_TRADE_CONNECTORS: AutoTradeConnector[] = [
@@ -121,13 +106,17 @@ function readableExecutionError(error: unknown): string {
 }
 
 export async function executeAutoTrade(trade: TradeAlert): Promise<AutoTradeExecutionResult> {
-  const limitGuard = unsafeLimitOrderGuard(trade);
-  if (limitGuard) return limitGuard;
-
   const market = autoTradeMarketForSignal(trade.market);
   if (!market) {
     return result("skipped", { error: `No auto-trade market route exists for ${trade.market}.` });
   }
+  const executionTrade: TradeAlert =
+    market === "futures" && trade.entryType === "limit"
+      ? {
+          ...trade,
+          entryType: "market"
+        }
+      : trade;
 
   const preferredProviderId = (
     market === "futures" ? process.env.AUTO_TRADE_FUTURES_PROVIDER : process.env.AUTO_TRADE_FOREX_PROVIDER
@@ -150,7 +139,7 @@ export async function executeAutoTrade(trade: TradeAlert): Promise<AutoTradeExec
     const provider = autoTradeProviderById(connector.providerId);
     const providerName = provider?.label ?? connector.providerId;
     try {
-      const execution = await connector.execute(trade);
+      const execution = await connector.execute(executionTrade);
       return {
         ...execution,
         providerId: connector.providerId,
@@ -177,6 +166,14 @@ export async function executeAutoTradeManagement(trade: TradeAlert, event: Trade
   const connector = AUTO_TRADE_CONNECTORS.find((candidate) => candidate.providerId === providerId) ?? AUTO_TRADE_CONNECTORS[0];
   const provider = connector ? autoTradeProviderById(connector.providerId) : undefined;
   const providerName = provider?.label ?? providerId;
+
+  if (trade.market === "futures" && event.type === "edit_limit") {
+    return result("skipped", {
+      error: "Futures entries execute at market; there is no resting entry limit order to modify.",
+      providerId,
+      providerName
+    });
+  }
 
   if (!connector?.executeManagement) {
     return result("skipped", {

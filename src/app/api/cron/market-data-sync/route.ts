@@ -165,7 +165,10 @@ export async function GET(request: NextRequest) {
     const finishedAt = new Date().toISOString();
     const failed = result.summary.errors.length > 0 || result.summary.assets.length === 0;
     const failureMessage = marketDataFailureMessage(result.summary.errors, result.summary.assets.length);
-    const signalCheck = failed ? undefined : await runSignalCheckAfterMarketDataSync(result).catch((error) => ({
+    // A single provider/storage failure must not suppress alerts for every asset
+    // that did refresh successfully. The signal scanner can use the refreshed
+    // bars here and independently skip only the unavailable asset/timeframe.
+    const signalCheck = result.summary.assets.length === 0 ? undefined : await runSignalCheckAfterMarketDataSync(result).catch((error) => ({
       durationMs: 0,
       error: errorMessage(error),
       ok: false,

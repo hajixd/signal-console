@@ -17,6 +17,7 @@ import {
 import { Upload } from "@aws-sdk/lib-storage";
 
 const DEFAULT_R2_TIMEOUT_MS = 20_000;
+const DEFAULT_R2_MULTIPART_TIMEOUT_MS = 90_000;
 const MIN_MULTIPART_PART_BYTES = 5 * 1024 * 1024;
 const MULTIPART_UPLOAD_THRESHOLD_BYTES = 64 * 1024 * 1024;
 
@@ -30,6 +31,13 @@ function trim(value: string | undefined): string | undefined {
 function operationTimeoutMs(): number {
   const configured = Number(process.env.R2_OPERATION_TIMEOUT_MS);
   return Number.isFinite(configured) && configured >= 250 ? configured : DEFAULT_R2_TIMEOUT_MS;
+}
+
+function multipartOperationTimeoutMs(): number {
+  const configured = Number(process.env.R2_MULTIPART_TIMEOUT_MS);
+  return Number.isFinite(configured) && configured >= 1_000
+    ? configured
+    : Math.max(operationTimeoutMs(), DEFAULT_R2_MULTIPART_TIMEOUT_MS);
 }
 
 export function missingR2Env(): string[] {
@@ -189,7 +197,7 @@ export async function r2PutObject(
       partSize: 32 * 1024 * 1024,
       queueSize: 3
     });
-    await withR2Timeout(upload.done(), `R2 multipart object write ${relativePath}`);
+    await withR2Timeout(upload.done(), `R2 multipart object write ${relativePath}`, multipartOperationTimeoutMs());
     return;
   }
 
@@ -227,7 +235,8 @@ export async function r2AppendText(relativePath: string, text: string, contentTy
         Key: key
       })
     ),
-    `R2 append multipart create ${relativePath}`
+    `R2 append multipart create ${relativePath}`,
+    multipartOperationTimeoutMs()
   );
   if (!upload.UploadId) throw new Error(`R2 multipart upload failed to start for ${relativePath}`);
 
@@ -243,7 +252,8 @@ export async function r2AppendText(relativePath: string, text: string, contentTy
           UploadId: upload.UploadId
         })
       ),
-      `R2 append multipart copy ${relativePath}`
+      `R2 append multipart copy ${relativePath}`,
+      multipartOperationTimeoutMs()
     );
     const appended = await withR2Timeout(
       r2Client().send(
@@ -255,7 +265,8 @@ export async function r2AppendText(relativePath: string, text: string, contentTy
           UploadId: upload.UploadId
         })
       ),
-      `R2 append multipart upload ${relativePath}`
+      `R2 append multipart upload ${relativePath}`,
+      multipartOperationTimeoutMs()
     );
     await withR2Timeout(
       r2Client().send(
@@ -271,12 +282,14 @@ export async function r2AppendText(relativePath: string, text: string, contentTy
           UploadId: upload.UploadId
         })
       ),
-      `R2 append multipart complete ${relativePath}`
+      `R2 append multipart complete ${relativePath}`,
+      multipartOperationTimeoutMs()
     );
   } catch (error) {
     await withR2Timeout(
       r2Client().send(new AbortMultipartUploadCommand({ Bucket: bucket, Key: key, UploadId: upload.UploadId })),
-      `R2 append multipart abort ${relativePath}`
+      `R2 append multipart abort ${relativePath}`,
+      multipartOperationTimeoutMs()
     ).catch(() => undefined);
     throw error;
   }
