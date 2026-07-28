@@ -1,6 +1,6 @@
 import { dollarPerUnit, instrumentSizeLabel } from "./instruments";
 import { plannedAutoTradeSizeForTrade } from "./auto-trade-utils";
-import type { StrategyPhase, StrategyRule, TradeAlert } from "./types";
+import type { StrategyRule, TradeAlert } from "./types";
 
 export const TOPSTEP_100K_ACCOUNT = {
   startingBalance: 100_000,
@@ -57,27 +57,6 @@ const CHICAGO_FORMATTER = new Intl.DateTimeFormat("en-US", {
   minute: "2-digit",
   hour12: false
 });
-
-const MINUTES_TO_FLATTEN_BY_PHASE: Record<StrategyPhase, number> = {
-  decile_forward_edge: 90,
-  ict_sweep_fvg: 35,
-  ict_turtle_soup: 120,
-  mean_reversion: 220,
-  momentum: 260,
-  moving_average_crossover: 120,
-  moving_average_touch: 160,
-  percentile_range_study: 90,
-  reddit_capitulation_reversion: 180,
-  reddit_ema_pullback: 180,
-  reddit_orb_breakout: 120,
-  reddit_orb_retest: 120,
-  round_number_rejection: 120,
-  support_resistance_retest: 160,
-  tori_trendline_mtf: 240,
-  trendline_break: 240,
-  vwap_pullback: 160,
-  squeeze_breakout: 180
-};
 
 function chicagoParts(value: Date): ChicagoParts {
   const parts = Object.fromEntries(CHICAGO_FORMATTER.formatToParts(value).map((part) => [part.type, part.value]));
@@ -162,10 +141,6 @@ export function reviewTopstepSignal(rule: StrategyRule, trade: TradeAlert): Tops
   if (rule.market !== "futures") reasons.push("Topstep Combine only permits futures products");
   if (!clock.allowed && clock.reason) reasons.push(clock.reason);
   if (sizeMultiplier <= 0) reasons.push("custom unit sizing leaves no executable futures contract under the configured risk ceiling");
-  const flattenBufferMinutes = MINUTES_TO_FLATTEN_BY_PHASE[rule.phase] ?? 180;
-  if (minutesLeft < flattenBufferMinutes) {
-    reasons.push(`too close to ${TOPSTEP_100K_ACCOUNT.flattenTimeCt} for ${rule.phase.replaceAll("_", " ")}`);
-  }
   const maxPositionSize = topstepMaxPositionSizeForSymbol(trade.symbol);
   if (sizeMultiplier > maxPositionSize) {
     reasons.push(`size ${sizeMultiplier} exceeds ${maxPositionSize} contract max`);
