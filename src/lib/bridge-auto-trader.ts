@@ -5,10 +5,12 @@ import {
   envText,
   fieldText,
   failedOrder,
+  nonExecutableOrderSizeReason,
   readJsonResponse,
   readableError,
   requiredEnv,
   result,
+  skippedOrder,
   type ProviderPrefix
 } from "@/lib/auto-trade-utils";
 import { getAutoTradeConnection } from "@/lib/auto-trade-connections";
@@ -57,6 +59,8 @@ async function executeBridgeAutoTrade(provider: BridgeProvider, trade: TradeAler
   const missing = missingBridgeSettings(fields, provider);
   const request = autoTradeRequest(provider.prefix, trade, fieldText(fields, "accountId", provider.accountEnv), fields);
   if (missing.length) return result("skipped", { error: `Missing ${provider.name} bridge settings: ${missing.join(", ")}.` });
+  const sizeError = nonExecutableOrderSizeReason(request);
+  if (sizeError) return result("skipped", { error: sizeError, orders: [skippedOrder(request, sizeError)] });
 
   if (envFlag(provider.dryRunEnv, false)) {
     const order = dryRunOrder(request, provider.name);

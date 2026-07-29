@@ -109,7 +109,7 @@ type ProjectXTradeHistoryRow = {
   orderIds: number[];
   priceLine: string;
   profitAndLoss?: number;
-  resultDetail: string;
+  resultDetail?: string;
   resultLabel: string;
   resultTone: ProjectXTone;
   size?: number;
@@ -431,7 +431,17 @@ function projectXToneForAmount(value: number | undefined): ProjectXTone {
 
 function projectXTradeRange(openedAt: string | undefined, closedAt: string | undefined): string {
   if (openedAt && closedAt && fmtShortTime(openedAt) !== fmtShortTime(closedAt)) {
-    return `${fmtShortTime(openedAt)} -> ${fmtShortTime(closedAt)}`;
+    const opened = new Date(openedAt);
+    const closed = new Date(closedAt);
+    if (
+      Number.isFinite(opened.getTime()) &&
+      Number.isFinite(closed.getTime()) &&
+      opened.toLocaleDateString() === closed.toLocaleDateString()
+    ) {
+      const closedTime = new Intl.DateTimeFormat(undefined, { hour: "numeric", minute: "2-digit" }).format(closed);
+      return `${fmtShortTime(openedAt)} – ${closedTime}`;
+    }
+    return `${fmtShortTime(openedAt)} – ${fmtShortTime(closedAt)}`;
   }
   return fmtShortTime(closedAt ?? openedAt);
 }
@@ -675,7 +685,6 @@ function buildProjectXAttemptRows(orders: ProjectXOrder[], trades: ProjectXTrade
     .map((group) => {
       const order = group.terminalOrder!;
       const status = projectXOrderStatusValue(order.status);
-      const statusLabel = projectXOrderStatusLabel(order.status);
       const orderId = projectXOrderId(order);
       const price = finiteNumber(order.filledPrice) ?? finiteNumber(order.limitPrice) ?? finiteNumber(order.stopPrice);
       const size = finiteNumber(order.size);
@@ -691,13 +700,13 @@ function buildProjectXAttemptRows(orders: ProjectXOrder[], trades: ProjectXTrade
         openedAt: order.creationTimestamp,
         orderIds: orderId !== undefined ? [orderId] : [],
         priceLine: projectXPriceLine(size, price, undefined),
-        resultDetail: status === 5 ? "Order was rejected" : "Order was cancelled or expired",
+        resultDetail: undefined,
         resultLabel,
         resultTone: status === 5 ? "down" : "warn",
         size,
         sortTime: projectXOrderTimeMs(order),
         statusClass: status === 5 ? "failed" : "warn",
-        statusLabel
+        statusLabel: status === 5 ? "Rejected" : "Cancelled"
       } satisfies ProjectXTradeHistoryRow;
     });
 }
@@ -928,7 +937,7 @@ function ProjectXAccountDetailPanel({ account, state }: { account: ProjectXAccou
                 <div className="topstepTradeHistoryMain">
                   <strong>{row.contractId ?? "--"}</strong>
                   <small>
-                    {projectXTradeRange(row.openedAt, row.closedAt)} / {projectXOrderLabel(row.orderIds, row.fills)}
+                    {projectXTradeRange(row.openedAt, row.closedAt)} · {projectXOrderLabel(row.orderIds, row.fills)}
                   </small>
                 </div>
                 <div className="topstepTradeHistoryMeta">
@@ -940,7 +949,7 @@ function ProjectXAccountDetailPanel({ account, state }: { account: ProjectXAccou
                 </div>
                 <div className="topstepTradeHistoryPnl">
                   <strong className={`tone-${row.resultTone}`}>{row.resultLabel}</strong>
-                  <small>{row.resultDetail}</small>
+                  {row.resultDetail ? <small>{row.resultDetail}</small> : null}
                 </div>
               </div>
             ))

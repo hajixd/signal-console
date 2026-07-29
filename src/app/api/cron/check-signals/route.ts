@@ -3,6 +3,7 @@ import { executeAutoTrade, executeAutoTradeManagement, type AutoTradeExecutionRe
 import { autoTradeMarketForSignal } from "@/lib/auto-trade-platforms";
 import { plannedAutoTradeSizeForTrade } from "@/lib/auto-trade-utils";
 import { dollarPerUnit } from "@/lib/instruments";
+import { sendDiscord } from "@/lib/discord";
 import { assetTimeframeBarsKey } from "@/lib/market-data-refresh";
 import { fetchStoredAssetBars, fetchStoredMarketBars } from "@/lib/market-data-store";
 import { saveCronRun, updateDatasetSyncRunStatus } from "@/lib/live-config";
@@ -13,6 +14,7 @@ import { sendTradeManagementNotification, sendTradeNotification, sendTradeOutcom
 import { enrichProjectXTradeOutcome } from "@/lib/projectx-auto-trader";
 import { DEFAULT_STRATEGY_TIMEFRAME, timeframeFromVariant, type DataTimeframe } from "@/lib/timeframes";
 import { TOPSTEP_100K_ACCOUNT, reviewTopstepSignal, withTopstepGuardNote } from "@/lib/topstep";
+import { sendTelegram } from "@/lib/telegram";
 import type { Bar, CronResult, StrategyRule, TradeAlert, TradeManagementEvent } from "@/lib/types";
 import { sendDueDailyTradeSummaries, sendDueWeeklyTradeSummaries } from "@/lib/weekly-trade-summary";
 
@@ -881,7 +883,62 @@ type DispatchOutcome = {
   trade?: TradeAlert;
 };
 
-async function dispatchSelectedSignal(candidate: { signal: TradeAlert }): Promise<DispatchOutcome> {
+function isQueuedTradeClaim(trade: TradeAlert): boolean {
+  return trade.autoTradeStatus === "skipped" && trade.autoTradeError?.includes("execution queued") === true;
+}
+
+async function recoverRecentNotificationFailures(
+  trades: TradeAlert[],
+  actionableAgeMs: number,
+  result: CronResult
+): Promise<void> {
+  const now = Date.now();
+  const recoverable = trades.filter((trade) => {
+    const signalAt = signalTimeMs(trade);
+    if (signalAt === null || now - signalAt > actionableAgeMs) return false;
+    return isQueuedTradeClaim(trade) || trade.telegramStatus === "failed" || trade.discordStatus === "failed";
+  });
+
+  for (const trade of recoverable) {
+    try {
+      const queued = isQueuedTradeClaim(trade);
+      const recoveryTrade: TradeAlert = queued
+        ? {
+            ...trade,
+            autoTradeCheckedAt: new Date().toISOString(),
+            autoTradeError: "Alert recovered after an interrupted dispatch; automatic execution outcome is unknown and was not retried.",
+            autoTradeStatus: "skipped"
+          }
+        : trade;
+      const [telegram, discord] = await Promise.all([
+        queued || trade.telegramStatus === "failed" ? sendTelegram(recoveryTrade) : Promise.resolve(null),
+        queued || trade.discordStatus === "failed" ? sendDiscord(recoveryTrade) : Promise.resolve(null)
+      ]);
+
+      await saveTrade({
+        ...recoveryTrade,
+        discordError: discord?.error ?? recoveryTrade.discordError,
+        discordStatus: discord?.status ?? recoveryTrade.discordStatus,
+        telegramError: telegram?.error ?? recoveryTrade.telegramError,
+        telegramStatus: telegram?.status ?? recoveryTrade.telegramStatus
+      });
+    } catch (error) {
+      result.errors.push({
+        message: `Notification recovery failed: ${errorMessage(error)}`,
+        symbol: trade.symbol
+      });
+    }
+  }
+}
+
+type SignalCandidate = {
+  autoTradeBlockedReason?: string;
+  riskDollars: number;
+  score: number;
+  signal: TradeAlert;
+};
+
+async function dispatchSelectedSignal(candidate: SignalCandidate): Promise<DispatchOutcome> {
   const claimed = await claimTrade({
     ...candidate.signal,
     autoTradeCheckedAt: new Date().toISOString(),
@@ -892,7 +949,24 @@ async function dispatchSelectedSignal(candidate: { signal: TradeAlert }): Promis
     return { skippedDuplicate: candidate.signal.id };
   }
 
-  const autoTrade = await executeAutoTrade(candidate.signal);
+  let autoTrade: AutoTradeExecutionResult;
+  if (candidate.autoTradeBlockedReason) {
+    autoTrade = {
+      checkedAt: new Date().toISOString(),
+      error: `Alert only; auto-trade blocked by futures risk guard: ${candidate.autoTradeBlockedReason}`,
+      status: "skipped"
+    };
+  } else {
+    try {
+      autoTrade = await executeAutoTrade(candidate.signal);
+    } catch (error) {
+      autoTrade = {
+        checkedAt: new Date().toISOString(),
+        error: `Alert only; automatic execution failed unexpectedly: ${errorMessage(error)}`,
+        status: "failed"
+      };
+    }
+  }
   const executableSignal = tradeWithAutoTradeResult(candidate.signal, autoTrade);
   const [notification] = await Promise.all([sendTradeNotification(executableSignal), saveTrade(executableSignal)]);
   const trade: TradeAlert = {
@@ -916,7 +990,7 @@ export async function runSignalCheck(options: RunSignalCheckOptions = {}): Promi
     skippedRisk: [],
     errors: []
   };
-  const candidates: Array<{ signal: ReturnType<typeof withTopstepGuardNote>; score: number; riskDollars: number }> = [];
+  const candidates: SignalCandidate[] = [];
   const recentTrades = await getTrades();
   const repeatLookbackMs = repeatSuppressionLookbackMs();
   const scanReferenceMs = Date.now();
@@ -924,6 +998,7 @@ export async function runSignalCheck(options: RunSignalCheckOptions = {}): Promi
   const scanMaxBars = signalScanMaxBars(scanLookbackMs);
   const scanConcurrency = signalScanConcurrency();
   const maxActionableAgeMs = maxActionableSignalAgeMs();
+  await recoverRecentNotificationFailures(recentTrades, maxActionableAgeMs, result);
   const scanSinceMs = scanReferenceMs - scanLookbackMs;
   const candidateRepeatSignals = new Map<string, TradeAlert[]>();
   const candidateDailyKeys = new Set<string>();
@@ -1036,11 +1111,17 @@ export async function runSignalCheck(options: RunSignalCheckOptions = {}): Promi
 
     const topstepReview = signalMarket === "futures" ? reviewTopstepSignal(rule, signal) : null;
     if (topstepReview && !topstepReview.allowed) {
-      result.skippedRisk.push({
-        id: signal.id,
-        symbol: signal.symbol,
-        reason: topstepReview.reason ?? "Futures risk guard rejected the signal"
+      const reason = topstepReview.reason ?? "Futures risk guard rejected automatic execution";
+      candidates.push({
+        autoTradeBlockedReason: reason,
+        riskDollars: 0,
+        score: topstepReview.score,
+        signal: {
+          ...signal,
+          notes: [signal.notes, `Alert only: automatic futures execution blocked because ${reason}.`].filter(Boolean).join(" ")
+        }
       });
+      result.signalScan.candidates = candidates.length;
       continue;
     }
 
@@ -1064,26 +1145,29 @@ export async function runSignalCheck(options: RunSignalCheckOptions = {}): Promi
 
   const selected = candidates
     .sort((left, right) => right.score - left.score || (signalTimeMs(right.signal) ?? 0) - (signalTimeMs(left.signal) ?? 0))
-    .filter((candidate) => {
+    .map((candidate): SignalCandidate => {
+      if (candidate.autoTradeBlockedReason) return candidate;
       if (acceptedCount >= maxAlerts) {
+        const reason = `lower-ranked concurrent signal; ${maxAlerts} auto-trade limit for this check`;
         result.skippedRisk.push({
           id: candidate.signal.id,
           symbol: candidate.signal.symbol,
-          reason: `lower-ranked concurrent signal; ${maxAlerts} alert limit for this check`
+          reason
         });
-        return false;
+        return { ...candidate, autoTradeBlockedReason: reason, riskDollars: 0 };
       }
       if (acceptedRisk + candidate.riskDollars > maxRisk) {
+        const reason = `would exceed ${new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(maxRisk)} auto-trade risk budget for this check`;
         result.skippedRisk.push({
           id: candidate.signal.id,
           symbol: candidate.signal.symbol,
-          reason: `would exceed ${new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(maxRisk)} risk budget for this check`
+          reason
         });
-        return false;
+        return { ...candidate, autoTradeBlockedReason: reason, riskDollars: 0 };
       }
       acceptedRisk += candidate.riskDollars;
       acceptedCount += 1;
-      return true;
+      return candidate;
     });
 
   result.signalScan.dispatchConcurrency = autoTradeDispatchConcurrency(maxAlerts);

@@ -9,6 +9,7 @@ import SelectedStrategyStats from "@/components/strategies/selected-strategy-sta
 import StrategyStatsTabs from "@/components/strategies/strategy-stats-tabs";
 import StrategySelector from "@/components/strategies/strategy-selector";
 import BacktestHistoryPanel from "@/components/trades/backtest-history-panel";
+import TradeClusterMap from "@/components/trades/trade-cluster-map";
 import { type TradeHistoryRow } from "@/components/trades/trade-history";
 import { type TradeChartTimeframe } from "@/components/trades/trade-price-chart";
 import AutoRefresh from "@/components/ui/auto-refresh";
@@ -47,6 +48,17 @@ import { DEFAULT_CHALLENGE_RULES, type ChallengeRules } from "@/lib/challenge";
 import { analyzeBacktestDataValidity, dataValidityClass, type DataValidityResult, type DataValidityTone } from "@/lib/data-validity";
 import { dollarPerUnit, instrumentSizeLabel, instrumentUnitLabel, recommendedSizeMultiplier } from "@/lib/instruments";
 import {
+  alertRiskDollarsWithSize,
+  alertRiskUnits,
+  alertTargetDollarsWithSize,
+  alertTargetUnits,
+  boundedTradeDollarPnl,
+  inferredAlertPriceUnit,
+  liveClosedTradePnlDollars,
+  liveOpenTradePnlDollars,
+  liveTradeEventAutoTradeOrders
+} from "@/lib/live-trade-calculations";
+import {
   dashboardSelectedStrategyIdsForMarket,
   defaultDatasetStatus,
   enabledStrategyIdsForMarket,
@@ -63,7 +75,6 @@ import { getTrades } from "@/lib/storage";
 import { discordChannelInviteLink, discordConfigured as discordIsConfigured } from "@/lib/discord";
 import { telegramGroupInviteLink } from "@/lib/telegram";
 import { type DataTimeframe } from "@/lib/timeframes";
-import { topstepSessionKey } from "@/lib/topstep";
 import { resolveFirstTradeBracketHit, type TradeBracketBar, type TradeBracketHit } from "@/lib/trade-bracket-truth";
 import { conciseStrategyName } from "@/lib/strategy-names";
 import type { NotificationStatus, TradeAlert, TradeManagementEvent } from "@/lib/types";
@@ -898,12 +909,7 @@ function plannedLiveTradeSizeMultiplier(trade: TradeAlert, option?: StrategyOpti
 }
 
 function liveTradeRealSizeMultiplier(trade: TradeAlert, option?: StrategyOption, event?: LiveTradeEvent): number {
-  const orders =
-    event && isManagementLiveTradeEvent(event)
-      ? event.managementEvent.autoTradeOrders
-      : event?.kind === "limit"
-        ? trade.limitOrderAutoTradeOrders
-        : trade.autoTradeOrders;
+  const orders = event ? liveTradeEventAutoTradeOrders(trade, event.kind, event.managementEvent) : trade.autoTradeOrders;
   const orderSize = executableOrderSizeMultiplier(orders);
   return orderSize ?? plannedLiveTradeSizeMultiplier(trade, option);
 }
@@ -1078,12 +1084,12 @@ function liveTradeEventEntryPrice(trade: TradeAlert, event: LiveTradeEvent): num
   return trade.entryPrice;
 }
 
-function liveTradeEventSizeMultiplier(trade: TradeAlert, event: LiveTradeEvent): number {
-  return liveTradeRealSizeMultiplier(trade, undefined, event);
+function liveTradeEventSizeMultiplier(trade: TradeAlert, event: LiveTradeEvent, option?: StrategyOption): number {
+  return liveTradeRealSizeMultiplier(trade, option, event);
 }
 
-function liveTradeEventSizeLabel(trade: TradeAlert, event: LiveTradeEvent): string {
-  return liveTradePlannedSizeLabel(trade, liveTradeEventDisplaySymbol(trade, event), liveTradeEventSizeMultiplier(trade, event));
+function liveTradeEventSizeLabel(trade: TradeAlert, event: LiveTradeEvent, option?: StrategyOption): string {
+  return liveTradePlannedSizeLabel(trade, liveTradeEventDisplaySymbol(trade, event), liveTradeEventSizeMultiplier(trade, event, option));
 }
 
 function liveTradeEventPriceUnit(trade: TradeAlert, event: LiveTradeEvent): number {
@@ -1114,8 +1120,12 @@ function liveTradeEventStopLossPrice(trade: TradeAlert, event: LiveTradeEvent): 
   return trade.stopLossPrice;
 }
 
-function liveTradeEventRiskDollars(trade: TradeAlert, event: LiveTradeEvent): number {
-  return Math.abs(liveTradeEventSlUnits(trade, event) * dollarPerUnit(trade.symbol, liveTradeEventEntryPrice(trade, event)) * liveTradeEventSizeMultiplier(trade, event));
+function liveTradeEventRiskDollars(trade: TradeAlert, event: LiveTradeEvent, option?: StrategyOption): number {
+  return Math.abs(
+    liveTradeEventSlUnits(trade, event) *
+      dollarPerUnit(trade.symbol, liveTradeEventEntryPrice(trade, event)) *
+      liveTradeEventSizeMultiplier(trade, event, option)
+  );
 }
 
 function autoTradeStatusClass(trade: TradeAlert): string {
@@ -1168,44 +1178,26 @@ function liveTradeEventPriceLine(trade: TradeAlert, event: LiveTradeEvent): stri
 }
 
 function liveTradePnlOrRiskLabel(trade: TradeAlert, sizeMultiplier: number): string {
-  if (typeof trade.lifecyclePnlDollars === "number" && Number.isFinite(trade.lifecyclePnlDollars)) {
-    return fmtMoney(trade.lifecyclePnlDollars, true);
-  }
-  if (trade.lifecycleStatus === "take_profit") return fmtMoney(alertTargetDollarsWithSize(trade, sizeMultiplier), true);
-  if (trade.lifecycleStatus === "stop_loss") return fmtMoney(-alertRiskDollarsWithSize(trade, sizeMultiplier), true);
+  if (isClosedLifecycleStatus(trade.lifecycleStatus)) return fmtMoney(liveClosedTradePnlDollars(trade, sizeMultiplier), true);
   return `Risk ${fmtMoney(-alertRiskDollarsWithSize(trade, sizeMultiplier), true)}`;
 }
 
-function liveTradePnlToneClass(trade: TradeAlert): string {
-  if (typeof trade.lifecyclePnlDollars === "number" && Number.isFinite(trade.lifecyclePnlDollars)) return resultClass(trade.lifecyclePnlDollars);
-  if (trade.lifecycleStatus === "take_profit") return "up";
-  if (trade.lifecycleStatus === "stop_loss") return "down";
+function liveTradePnlToneClass(trade: TradeAlert, sizeMultiplier = liveTradeRealSizeMultiplier(trade)): string {
+  if (isClosedLifecycleStatus(trade.lifecycleStatus)) return resultClass(liveClosedTradePnlDollars(trade, sizeMultiplier));
   return "neutral";
 }
 
-function liveTradeEventPnlOrRiskLabel(trade: TradeAlert, event: LiveTradeEvent): string {
-  if (event.kind === "exit") return liveTradePnlOrRiskLabel(trade, liveTradeEventSizeMultiplier(trade, event));
-  return `Risk ${fmtMoney(-liveTradeEventRiskDollars(trade, event), true)}`;
+function liveTradeEventPnlOrRiskLabel(trade: TradeAlert, event: LiveTradeEvent, option?: StrategyOption): string {
+  if (event.kind === "exit") return liveTradePnlOrRiskLabel(trade, liveTradeEventSizeMultiplier(trade, event, option));
+  return `Risk ${fmtMoney(-liveTradeEventRiskDollars(trade, event, option), true)}`;
 }
 
-function liveTradeEventPnlToneClass(trade: TradeAlert, event: LiveTradeEvent): string {
-  return event.kind === "exit" ? liveTradePnlToneClass(trade) : "neutral";
+function liveTradeEventPnlToneClass(trade: TradeAlert, event: LiveTradeEvent, option?: StrategyOption): string {
+  return event.kind === "exit" ? liveTradePnlToneClass(trade, liveTradeEventSizeMultiplier(trade, event, option)) : "neutral";
 }
 
 function tradeDollarPnl(trade: BacktestTrade, sizeMultiplier = 1): number {
   return trade.netUnits * dollarPerUnit(trade.symbol, trade.entryPrice) * tradeSizeMultiplier(trade, sizeMultiplier);
-}
-
-function boundedTradeDollarPnl(rawPnlDollars: number, targetDollars: number, riskDollars: number): number {
-  if (!Number.isFinite(rawPnlDollars)) return 0;
-  const target = Math.abs(targetDollars);
-  const risk = Math.abs(riskDollars);
-  let bounded = rawPnlDollars;
-
-  if (target > 0) bounded = Math.min(bounded, target);
-  if (risk > 0) bounded = Math.max(bounded, -risk);
-
-  return bounded;
 }
 
 type EffectiveExitBoundary = "target" | "stop" | null;
@@ -1456,45 +1448,6 @@ function tradeDollarsPerPricePoint(trade: BacktestTrade, priceUnit: number, size
   return (dollarPerUnit(trade.symbol, trade.entryPrice) * tradeSizeMultiplier(trade, sizeMultiplier)) / priceUnit;
 }
 
-function alertTargetDollars(trade: TradeAlert): number {
-  return alertTargetDollarsWithSize(trade, trade.sizeMultiplier ?? 1);
-}
-
-function alertRiskDollars(trade: TradeAlert): number {
-  return alertRiskDollarsWithSize(trade, trade.sizeMultiplier ?? 1);
-}
-
-function alertTargetDollarsWithSize(trade: TradeAlert, sizeMultiplier: number): number {
-  return Math.abs(alertTargetUnits(trade) * dollarPerUnit(trade.symbol, trade.entryPrice) * sizeMultiplier);
-}
-
-function alertRiskDollarsWithSize(trade: TradeAlert, sizeMultiplier: number): number {
-  return Math.abs(alertRiskUnits(trade) * dollarPerUnit(trade.symbol, trade.entryPrice) * sizeMultiplier);
-}
-
-function inferredAlertPriceUnit(trade: TradeAlert, fallback = 1): number {
-  const assetTickSize = assetForSymbol(trade.symbol)?.tickSize;
-  if (assetTickSize !== undefined && assetTickSize > 0 && Number.isFinite(assetTickSize)) return assetTickSize;
-  if (fallback > 0 && Number.isFinite(fallback)) return fallback;
-  const targetDelta = Math.abs(trade.takeProfitPrice - trade.entryPrice);
-  if (targetDelta > 0 && trade.tpUnits > 0) return targetDelta / trade.tpUnits;
-  const stopDelta = Math.abs(trade.entryPrice - trade.stopLossPrice);
-  if (stopDelta > 0 && trade.slUnits > 0) return stopDelta / trade.slUnits;
-  return 1;
-}
-
-function alertTargetUnits(trade: TradeAlert): number {
-  const priceUnit = inferredAlertPriceUnit(trade, 0);
-  const priceDelta = Math.abs(trade.takeProfitPrice - trade.entryPrice);
-  return priceUnit > 0 && priceDelta > 0 ? priceDelta / priceUnit : trade.tpUnits;
-}
-
-function alertRiskUnits(trade: TradeAlert): number {
-  const priceUnit = inferredAlertPriceUnit(trade, 0);
-  const priceDelta = Math.abs(trade.entryPrice - trade.stopLossPrice);
-  return priceUnit > 0 && priceDelta > 0 ? priceDelta / priceUnit : trade.slUnits;
-}
-
 type LatestLivePrice = {
   price: number;
   time: string;
@@ -1517,29 +1470,11 @@ function liveTradeLatestPriceConfig(trade: TradeAlert, option?: StrategyOption):
   };
 }
 
-function liveOpenTradePnlDollars(trade: TradeAlert, priceUnit: number, exitPrice: number, sizeMultiplier: number): number {
-  if (!Number.isFinite(exitPrice) || priceUnit <= 0) return 0;
-  const sideMultiplier = trade.side === "long" ? 1 : -1;
-  const netUnits = ((exitPrice - trade.entryPrice) * sideMultiplier) / priceUnit;
-  return netUnits * dollarPerUnit(trade.symbol, trade.entryPrice) * sizeMultiplier;
-}
-
 function approximateBarsHeld(startValue: string, endValue: string, timeframeMinutes = 15): number {
   const start = Date.parse(startValue);
   const end = Date.parse(endValue);
   if (!Number.isFinite(start) || !Number.isFinite(end) || end <= start) return 1;
   return Math.max(1, Math.round((end - start) / (timeframeMinutes * 60_000)));
-}
-
-function challengeSessionCount(trades: { entryTime: string; pnlDollars: number }[]): number {
-  const sessions = new Set<string>();
-  for (const trade of trades) {
-    const parsed = Date.parse(trade.entryTime);
-    if (Number.isFinite(parsed) && Number.isFinite(trade.pnlDollars)) {
-      sessions.add(topstepSessionKey(new Date(parsed)));
-    }
-  }
-  return sessions.size;
 }
 
 export default async function Home({ searchParams }: HomeProps) {
@@ -1946,15 +1881,9 @@ export default async function Home({ searchParams }: HomeProps) {
       const rawExitPrice = isClosed
         ? finiteNumberOr(trade.lifecyclePrice, trade.entryPrice)
         : finiteNumberOr(latestOpenPrice?.price, trade.entryPrice);
-      const rawPnlDollars = isClosed
-        ? finiteNumberOr(
-            typeof trade.lifecycleRMultiple === "number" && Number.isFinite(trade.lifecycleRMultiple)
-              ? trade.lifecycleRMultiple * riskDollars
-              : trade.lifecyclePnlDollars,
-            trade.lifecycleStatus === "take_profit" ? targetDollars : trade.lifecycleStatus === "stop_loss" ? -riskDollars : 0
-          )
+      const pnlDollars = isClosed
+        ? liveClosedTradePnlDollars(trade, sizeMultiplier, { riskDollars, targetDollars })
         : liveOpenTradePnlDollars(trade, priceUnit, rawExitPrice, sizeMultiplier);
-      const pnlDollars = isClosed ? boundedTradeDollarPnl(rawPnlDollars, targetDollars, riskDollars) : rawPnlDollars;
       const rMultiple = riskDollars > 0 ? pnlDollars / riskDollars : finiteNumberOr(trade.lifecycleRMultiple, 0);
       const exitBoundary = exitBoundaryFromReason(trade.lifecycleStatus);
       const exitPrice =
@@ -2376,8 +2305,14 @@ export default async function Home({ searchParams }: HomeProps) {
       pnlDollars: boundedBacktestTradeDollarPnl(trade, sizeMultiplier)
     };
   });
-  const challengeReplaySeed = `trading-bot:${activeMarket}:${selectedKeys.join("|")}`;
-  const challengeHistoricalSessions = challengeSessionCount(challengeReplayTrades);
+  const liveChallengeReplayTrades = visibleLiveHistoryRows.map((trade) => ({
+    entryTime: trade.entryTime,
+    key: trade.strategyKey,
+    lockedSize: true,
+    pnlDollars: trade.pnlDollars
+  }));
+  const challengeReplaySeed = `trading-bot:${activeMarket}:${selectedKeys.join("|")}:history`;
+  const liveChallengeReplaySeed = `trading-bot:${activeMarket}:live`;
   const telegramConfigured = Boolean(process.env.TELEGRAM_BOT_TOKEN && (process.env.TELEGRAM_GROUP_CHAT_ID || process.env.TELEGRAM_CHAT_ID));
   const telegramGroupLink = telegramGroupInviteLink();
   const discordConfigured = discordIsConfigured();
@@ -2396,6 +2331,12 @@ export default async function Home({ searchParams }: HomeProps) {
       id: "stats",
       label: "Stats",
       meta: `${fmtNumber(selectedBacktestTradeCount || selectedBacktestTrades.length)} trades`
+    },
+    {
+      icon: "cluster",
+      id: "cluster-map",
+      label: "Cluster Map",
+      meta: `${fmtNumber(visibleStoredBacktestHistoryRows.length + visibleLiveHistoryRows.length)} nodes`
     },
     {
       icon: "replay",
@@ -2570,26 +2511,55 @@ export default async function Home({ searchParams }: HomeProps) {
           />
         </section>
 
+        <section className="backtest-card cluster-map-card" id="cluster-map">
+          <TradeClusterMap historyRows={visibleStoredBacktestHistoryRows} liveRows={visibleLiveHistoryRows} />
+        </section>
+
         <section className="backtest-card challenge-card" id="challenge">
           <div className="backtest-card-head">
             <div>
               <h2>Prop Firm Challenge Replay</h2>
             </div>
             <span className="count-pill">
-              {fmtNumber(selectedBacktestTradeCount || challengeReplayTrades.length)} trades / {fmtNumber(challengeHistoricalSessions)} starts
+              {fmtNumber(selectedBacktestTradeCount || challengeReplayTrades.length)} history / {fmtNumber(liveChallengeReplayTrades.length)} live
             </span>
           </div>
-          <ChallengeReplay
-            initialRules={challengeRules}
-            loadCachedReplay={loadChallengeReplayCache}
-            persistedRules={Boolean(persistedMarketChallengeRules)}
-            persistCachedReplay={syncChallengeReplayCache}
-            persistRules={persistChallengeRules}
-            seedPrefix={challengeReplaySeed}
-            storageKey={`trading-bot:challenge-rules:v1:${activeMarket}`}
-            strategies={strategyOptions}
-            trades={challengeReplayTrades}
-            persistedStrategyEdits={liveConfig.strategyEdits}
+          <StrategyStatsTabs
+            liveLabel="Live"
+            tabListLabel="Challenge replay source"
+            history={(
+              <ChallengeReplay
+                initialRules={challengeRules}
+                loadCachedReplay={loadChallengeReplayCache}
+                persistedRules={Boolean(persistedMarketChallengeRules)}
+                persistCachedReplay={syncChallengeReplayCache}
+                persistRules={persistChallengeRules}
+                seedPrefix={challengeReplaySeed}
+                storageKey={`trading-bot:challenge-rules:v1:${activeMarket}`}
+                strategies={strategyOptions}
+                trades={challengeReplayTrades}
+                persistedStrategyEdits={liveConfig.strategyEdits}
+              />
+            )}
+            live={liveChallengeReplayTrades.length ? (
+              <ChallengeReplay
+                initialRules={challengeRules}
+                loadCachedReplay={loadChallengeReplayCache}
+                persistedRules={Boolean(persistedMarketChallengeRules)}
+                persistCachedReplay={syncChallengeReplayCache}
+                persistRules={persistChallengeRules}
+                seedPrefix={liveChallengeReplaySeed}
+                storageKey={`trading-bot:challenge-rules:v1:${activeMarket}`}
+                strategies={strategyOptions}
+                trades={liveChallengeReplayTrades}
+                persistedStrategyEdits={liveConfig.strategyEdits}
+              />
+            ) : (
+              <div className="empty-state">
+                <strong>No live executions yet</strong>
+                <span>Live challenge replay will appear after an active-market execution is stored.</span>
+              </div>
+            )}
           />
         </section>
 
@@ -2696,7 +2666,7 @@ export default async function Home({ searchParams }: HomeProps) {
                                 <small>{liveTradeExitLine(trade)}</small>
                               </span>
                               <span data-label="Size">{liveTradePlannedSizeLabel(trade, displaySymbol, summarySizeMultiplier)}</span>
-                              <span className={`cronMoneyCell ${liveTradePnlToneClass(trade)}`} data-label="P&L / Risk">{liveTradePnlOrRiskLabel(trade, summarySizeMultiplier)}</span>
+                              <span className={`cronMoneyCell ${liveTradePnlToneClass(trade, summarySizeMultiplier)}`} data-label="P&L / Risk">{liveTradePnlOrRiskLabel(trade, summarySizeMultiplier)}</span>
                               <span data-label="Auto Trade" title={trade.autoTradeError ?? trade.autoTradeProviderName ?? trade.autoTradeContractName ?? trade.autoTradeContractId ?? undefined}>
                                 <span className={`status ${autoTradeStatusClass(trade)}`}>{autoTradeStatusLabel(trade)}</span>
                               </span>
@@ -2733,9 +2703,9 @@ export default async function Home({ searchParams }: HomeProps) {
                                       <span>{fmtDollarPrice(liveTradeEventEntryPrice(trade, event))}</span>
                                       <small>{liveTradeEventPriceLine(trade, event)}</small>
                                     </span>
-                                    <span data-label="Size">{liveTradeEventSizeLabel(trade, event)}</span>
-                                    <span className={`cronMoneyCell ${liveTradeEventPnlToneClass(trade, event)}`} data-label="P&L / Risk">
-                                      {liveTradeEventPnlOrRiskLabel(trade, event)}
+                                    <span data-label="Size">{liveTradeEventSizeLabel(trade, event, option)}</span>
+                                    <span className={`cronMoneyCell ${liveTradeEventPnlToneClass(trade, event, option)}`} data-label="P&L / Risk">
+                                      {liveTradeEventPnlOrRiskLabel(trade, event, option)}
                                     </span>
                                     <span
                                       data-label="Auto Trade"

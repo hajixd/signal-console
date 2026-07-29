@@ -327,6 +327,26 @@ export function failedOrder(request: AutoTradeRequest, error: string): AutoTrade
   };
 }
 
+export function skippedOrder(request: AutoTradeRequest, error: string): AutoTradeOrderSummary {
+  return {
+    accountId: typeof request.accountId === "number" ? request.accountId : 0,
+    accountName: request.accountId ? String(request.accountId) : undefined,
+    contractId: request.symbol,
+    contractName: request.symbol,
+    customTag: request.customTag,
+    error,
+    size: request.size,
+    status: "skipped"
+  };
+}
+
+export function nonExecutableOrderSizeReason(request: AutoTradeRequest): string | undefined {
+  if (Number.isFinite(request.size) && request.size > 0) return undefined;
+  return tradeRequiresWholeNumberSize(request.rawTrade)
+    ? "Order skipped because the custom unit parameters leave no executable whole futures contract."
+    : "Order size must be a positive number.";
+}
+
 export function readableError(error: unknown, fallback: string): string {
   if (error instanceof Error) return error.message;
   return fallback;

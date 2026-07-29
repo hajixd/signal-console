@@ -134,7 +134,7 @@ function latestBarMs(bars: Bar[]): number | null {
   return latest;
 }
 
-function hasFreshSignalBars(bars: Bar[], timeframe: DataTimeframe): boolean {
+export function hasFreshSignalBars(bars: Bar[], timeframe: DataTimeframe): boolean {
   const latest = latestBarMs(bars);
   if (latest == null) return false;
 
@@ -143,7 +143,11 @@ function hasFreshSignalBars(bars: Bar[], timeframe: DataTimeframe): boolean {
     return Date.now() - latest <= configuredStaleMs;
   }
 
-  return latest >= closedBarStartSeconds(timeframe) * 1000;
+  // Providers commonly publish a just-closed aggregate a minute or two after
+  // its boundary. Allow one completed interval of lag so a refresh that is
+  // still finishing does not suppress the entire asset. The actionable-signal
+  // age guard remains the final protection against dispatching old signals.
+  return latest >= (closedBarStartSeconds(timeframe) - timeframeSeconds(timeframe)) * 1000;
 }
 
 function mergeBars(storedBars: Bar[], liveBars: Bar[], limit: number): Bar[] {

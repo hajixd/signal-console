@@ -21,11 +21,12 @@ import {
 } from "@/components/strategies/strategy-edits-store";
 import { adjustTradeHistoryRows } from "@/components/trades/adjust-trade-history-rows";
 import { BacktestTradeMiniChart, type TradeHistoryRow } from "@/components/trades/trade-history";
+import TradeClusterMap from "@/components/trades/trade-cluster-map";
 import LocalDateTime, { formatLocalDateTimeParts } from "@/components/ui/local-date-time";
 import { type AutoTradeMarket } from "@/lib/auto-trade-platforms";
 import { type TradeChartBar, type TradeChartTimeframe } from "@/components/trades/trade-price-chart";
 
-type MobileTradingTab = "history" | "alerts" | "strategies" | "sync" | "autotrade" | "settings";
+type MobileTradingTab = "history" | "alerts" | "cluster" | "strategies" | "sync" | "autotrade" | "settings";
 
 type MobileTradingDashboardProps = {
   activeMarket: AutoTradeMarket;
@@ -112,6 +113,7 @@ const TRADE_CHART_CONTEXT_CANDLES = 240;
 const mobileTabs: Array<{ id: MobileTradingTab; label: string }> = [
   { id: "alerts", label: "Alerts" },
   { id: "history", label: "History" },
+  { id: "cluster", label: "Map" },
   { id: "strategies", label: "Strategies" },
   { id: "sync", label: "Sync" },
   { id: "autotrade", label: "Auto" },
@@ -261,6 +263,17 @@ function mobileHistoryDayLabel(dayKey: string): string {
 }
 
 function MobileWorkspaceTabIcon({ tab }: { tab: MobileTradingTab }) {
+  if (tab === "cluster") {
+    return (
+      <svg viewBox="0 0 24 24" aria-hidden>
+        <circle cx="6" cy="8" r="2" fill="currentColor" />
+        <circle cx="17.5" cy="6.5" r="1.7" fill="currentColor" />
+        <circle cx="13" cy="17" r="2.2" fill="currentColor" />
+        <path d="m7.8 8.8 3.8 6.2m1.8-7.4-.2 7.2M8 7.7l7.7-.9" fill="none" opacity="0.65" stroke="currentColor" strokeWidth="1.2" />
+      </svg>
+    );
+  }
+
   if (tab === "history") {
     return (
       <svg viewBox="0 0 24 24" aria-hidden>
@@ -998,6 +1011,11 @@ export default function MobileTradingDashboard({
     [customScaleRange, edits, historyRows, strategies]
   );
   const adjustedLiveAlertRows = useMemo(() => adjustTradeHistoryRows(liveAlertRows, strategies, edits), [edits, liveAlertRows, strategies]);
+  const adjustedLiveIds = useMemo(() => new Set(adjustedLiveAlertRows.map((row) => row.id)), [adjustedLiveAlertRows]);
+  const clusterHistoryRows = useMemo(
+    () => adjustedHistoryRows.filter((row) => !adjustedLiveIds.has(row.id)),
+    [adjustedHistoryRows, adjustedLiveIds]
+  );
   const activeTrade = useMemo(
     () => [...adjustedLiveAlertRows, ...adjustedHistoryRows].find((row) => row.id === activeTradeId) ?? null,
     [activeTradeId, adjustedHistoryRows, adjustedLiveAlertRows]
@@ -1013,6 +1031,8 @@ export default function MobileTradingDashboard({
       ? "Live Alerts"
       : activeTab === "strategies"
         ? "Strategies"
+        : activeTab === "cluster"
+          ? "Cluster Map"
         : activeTab === "sync"
           ? "Sync"
       : activeTab === "autotrade"
@@ -1155,6 +1175,10 @@ export default function MobileTradingDashboard({
               />
             ) : activeTab === "strategies" ? (
               <MobileStrategiesPanel edits={edits} strategies={strategies} />
+            ) : activeTab === "cluster" ? (
+              <section className="mobile-phone-card mobile-phone-card-cluster">
+                <TradeClusterMap historyRows={clusterHistoryRows} liveRows={adjustedLiveAlertRows} />
+              </section>
             ) : activeTab === "sync" ? (
               <MobileSyncPanel summary={syncSummary} />
             ) : activeTab === "autotrade" ? (

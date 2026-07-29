@@ -6,20 +6,29 @@ type StatsView = "history" | "live";
 
 type StrategyStatsTabsProps = {
   history: ReactNode;
+  historyLabel?: string;
   live: ReactNode;
+  liveLabel?: string;
+  tabListLabel?: string;
 };
 
-export default function StrategyStatsTabs({ history, live }: StrategyStatsTabsProps) {
+export default function StrategyStatsTabs({
+  history,
+  historyLabel = "History",
+  live,
+  liveLabel = "Live Statistics",
+  tabListLabel = "Statistics source"
+}: StrategyStatsTabsProps) {
   const [view, setView] = useState<StatsView>("history");
   const id = useId();
   const tabs = [
-    { id: "history" as const, label: "History", panel: history },
-    { id: "live" as const, label: "Live Statistics", panel: live }
+    { id: "history" as const, label: historyLabel, panel: history },
+    { id: "live" as const, label: liveLabel, panel: live }
   ];
 
   return (
     <div className="statsViewTabs">
-      <div className="historyViewSwitch" role="tablist" aria-label="Statistics source">
+      <div className="historyViewSwitch" role="tablist" aria-label={tabListLabel}>
         {tabs.map((tab) => (
           <button
             aria-controls={`${id}-${tab.id}-panel`}

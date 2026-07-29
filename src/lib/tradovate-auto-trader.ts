@@ -5,10 +5,12 @@ import {
   envText,
   fieldText,
   failedOrder,
+  nonExecutableOrderSizeReason,
   readJsonResponse,
   readableError,
   requiredEnv,
-  result
+  result,
+  skippedOrder
 } from "@/lib/auto-trade-utils";
 import { getAutoTradeConnection } from "@/lib/auto-trade-connections";
 import type { ProjectXAutoTradeResult } from "@/lib/projectx-auto-trader";
@@ -128,6 +130,8 @@ export async function executeTradovateAutoTrade(trade: TradeAlert): Promise<Proj
       ...fields,
       accountSpec: fields?.accountSpec ?? account.accountSpec
     });
+    const sizeError = nonExecutableOrderSizeReason(request);
+    if (sizeError) return result("skipped", { error: sizeError, orders: [skippedOrder(request, sizeError)] });
 
     if (dryRunEnabled()) {
       const order = dryRunOrder(request, PROVIDER_NAME);
@@ -147,7 +151,7 @@ export async function executeTradovateAutoTrade(trade: TradeAlert): Promise<Proj
         action: request.action === "buy" ? "Buy" : "Sell",
         clOrdId: request.customTag,
         isAutomated: true,
-        orderQty: Math.max(1, Math.ceil(request.size)),
+        orderQty: Math.max(1, Math.floor(request.size)),
         orderType: request.entryType === "limit" ? "Limit" : "Market",
         price: request.entryType === "limit" ? request.entryPrice : undefined,
         symbol: request.symbol,

@@ -1,7 +1,13 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { mappedSize, plannedAutoTradeSizeForTrade, realAutoTradeSizeForTrade } from "@/lib/auto-trade-utils";
+import { autoTradeRequest, mappedSize, nonExecutableOrderSizeReason, plannedAutoTradeSizeForTrade, realAutoTradeSizeForTrade } from "@/lib/auto-trade-utils";
 import { customUnitSizeMultiplierForTrade } from "@/lib/custom-unit-sizing";
+import {
+  alertTargetDollarsWithSize,
+  liveClosedTradePnlDollars,
+  liveTradeEventAutoTradeOrders
+} from "@/lib/live-trade-calculations";
+import { projectXBracketTicksForTrade, projectXLegacyOrderSummarySize, projectXOrderSizeForAccount } from "@/lib/projectx-auto-trader";
 import type { StrategySignal } from "@/lib/strategy-definition";
 import { planTradeAlert } from "@/lib/trade-planner";
 import type { StrategyRule, TradeAlert } from "@/lib/types";
@@ -103,6 +109,105 @@ test("custom auto trade sizing uses the largest ceiling-safe whole futures size"
   assert.equal(mappedSize("TRADOVATE", trade(), undefined, { accountName: "50K account" }), 6);
 });
 
+test("live auto trade requests attempt the max custom-safe futures size", () => {
+  const request = autoTradeRequest("TRADOVATE", trade(), 1, {
+    accountName: "50K account",
+    sizeMap: '{"NQ":"2"}'
+  });
+
+  assert.equal(request.size, 6);
+});
+
+test("live futures requests skip instead of rounding custom size above the ceiling", () => {
+  const request = autoTradeRequest(
+    "TRADOVATE",
+    trade({
+      customScaleRange: {
+        riskCeiling: "10",
+        riskFloor: "1",
+        targetCeiling: "20",
+        targetFloor: "1"
+      }
+    }),
+    1
+  );
+
+  assert.equal(request.size, 0);
+  assert.equal(
+    nonExecutableOrderSizeReason(request),
+    "Order skipped because the custom unit parameters leave no executable whole futures contract."
+  );
+});
+
+test("ProjectX live orders attempt the max custom-safe futures size", () => {
+  assert.equal(
+    projectXOrderSizeForAccount(
+      trade({ sizeMultiplier: 1 }),
+      { canTrade: true, id: 1, isVisible: true, name: "50K account" },
+      1
+    ),
+    6
+  );
+});
+
+test("legacy ProjectX order metadata falls back to max executable custom futures size", () => {
+  assert.equal(
+    projectXLegacyOrderSummarySize(
+      trade({
+        autoTradeAccountId: 1,
+        autoTradeAccountName: "50K account",
+        autoTradeOrderId: 123,
+        autoTradeStatus: "placed",
+        sizeMultiplier: 24
+      }),
+      false
+    ),
+    6
+  );
+});
+
+test("legacy ProjectX order metadata keeps explicit stored execution size", () => {
+  assert.equal(
+    projectXLegacyOrderSummarySize(
+      trade({
+        autoTradeAccountId: 1,
+        autoTradeAccountName: "50K account",
+        autoTradeOrderId: 123,
+        autoTradeStatus: "placed",
+        entryOrderSizeMultiplier: 5,
+        sizeMultiplier: 24
+      }),
+      false
+    ),
+    5
+  );
+});
+
+test("ProjectX bracket ticks use broker-required directional offsets after geometry validation", () => {
+  assert.deepEqual(
+    projectXBracketTicksForTrade({
+      entryPrice: 61_090,
+      side: "short",
+      slUnits: 41,
+      stopLossPrice: 61_295,
+      takeProfitPrice: 60_885,
+      tpUnits: 41
+    }),
+    { stopLossTicks: 41, takeProfitTicks: -41 }
+  );
+  assert.deepEqual(
+    projectXBracketTicksForTrade({
+      entryPrice: 6_000,
+      side: "long",
+      slUnits: 10,
+      stopLossPrice: 5_997.5,
+      takeProfitPrice: 6_005,
+      tpUnits: 20
+    }),
+    { stopLossTicks: -10, takeProfitTicks: 20 }
+  );
+});
+
 test("planned live execution uses the largest ceiling-safe whole futures size", () => {
   assert.equal(plannedAutoTradeSizeForTrade(trade()), 6);
   assert.equal(plannedAutoTradeSizeForTrade(trade({ slUnits: 200, tpUnits: 600 })), 5);
@@ -127,6 +232,33 @@ test("real live reporting uses stored execution size before planned size", () =>
     ),
     8
   );
+});
+
+test("live MBT display uses executed size and bounded bracket dollars", () => {
+  const mbtTrade = trade({
+    autoTradeOrders: [{ accountId: 1, contractName: "MBTM6", size: 5, status: "placed" }],
+    customScaleRange: undefined,
+    entryPrice: 61_090,
+    entryType: "limit",
+    lifecyclePnlDollars: 500,
+    lifecycleRMultiple: 500 / 102.5,
+    lifecycleStatus: "take_profit",
+    market: "futures",
+    side: "short",
+    sizeMode: "custom",
+    sizeMultiplier: 24,
+    slUnits: 41,
+    stopLossPrice: 61_295,
+    symbol: "MBT",
+    takeProfitPrice: 60_885,
+    tpUnits: 41
+  });
+  const limitOrders = liveTradeEventAutoTradeOrders(mbtTrade, "limit");
+  const executedSize = realAutoTradeSizeForTrade(mbtTrade, mbtTrade.sizeMultiplier, limitOrders);
+
+  assert.equal(executedSize, 5);
+  assert.equal(alertTargetDollarsWithSize(mbtTrade, executedSize), 102.5);
+  assert.equal(liveClosedTradePnlDollars(mbtTrade, executedSize), 102.5);
 });
 
 test("custom units override a static provider size map", () => {

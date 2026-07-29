@@ -37,7 +37,8 @@
     "lightweight-charts": "^5.1.0",
     "next": "16.2.6",
     "react": "19.2.4",
-    "react-dom": "19.2.4"
+    "react-dom": "19.2.4",
+    "umap-js": "^1.4.0"
   },
   "overrides": {
     "@tootallnate/once": "3.0.1",

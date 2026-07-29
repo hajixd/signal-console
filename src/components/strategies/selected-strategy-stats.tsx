@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useState, type MouseEvent as ReactMouseEvent, type ReactNode } from "react";
 import {
   strategyContractScale,
   type StrategyEditOption,
@@ -76,15 +76,21 @@ type SegmentRollup = {
   worst: SegmentSummary | null;
   largest: SegmentSummary | null;
   largestSharePct: number;
+  topThreeSharePct: number;
   effectiveCount: number;
+  entropyEffectiveCount: number;
+  profitablePct: number;
+  profitContributionPct: number;
 };
 
 type DollarAggregate = {
   activeDayRatePct: number;
   avgLossDollars: number;
+  medianLossDollars: number;
   trades: number;
   breakevens: number;
   avgWinDollars: number;
+  medianWinDollars: number;
   avgLossR: number;
   avgWinR: number;
   avgTargetDollars: number;
@@ -110,18 +116,26 @@ type DollarAggregate = {
   avgR: number;
   medianR: number;
   stdDevR: number;
+  downsideDeviationR: number;
+  medianAbsoluteDeviationR: number;
   bestR: number;
   worstR: number;
+  p05R: number;
   p10R: number;
   p25R: number;
   p75R: number;
   p90R: number;
+  p95R: number;
+  cvarLossR: number;
+  iqrR: number;
   skewR: number;
   excessKurtosisR: number;
   avgDurationMs: number;
   avgWinDurationMs: number;
   avgLossDurationMs: number;
   medianDurationMs: number;
+  durationIqrMs: number;
+  durationStdDevMs: number;
   medianWinDurationMs: number;
   medianLossDurationMs: number;
   shortestDurationMs: number;
@@ -132,8 +146,14 @@ type DollarAggregate = {
   exposurePct: number;
   avgGapMs: number;
   medianGapMs: number;
+  gapIqrMs: number;
+  gapStdDevMs: number;
   shortestGapMs: number;
   longestGapMs: number;
+  maxConcurrentTrades: number;
+  overlapRatePct: number;
+  maxTradesPerActiveDay: number;
+  tradesPerActiveDay: number;
   maxDailyDrawdownDollars: number;
   maxTradeDrawdownDollars: number;
   maxRunupDollars: number;
@@ -142,8 +162,40 @@ type DollarAggregate = {
   painIndexDollars: number;
   underwaterDaysPct: number;
   equityHighs: number;
+  currentDrawdownDollars: number;
+  currentUnderwaterDays: number;
+  longestUnderwaterDays: number;
+  tradeStdDevDollars: number;
+  tradeDownsideDeviationDollars: number;
+  tradeMedianAbsoluteDeviationDollars: number;
+  tradeIqrDollars: number;
+  expectancyStdErrorDollars: number;
+  expectancyTStat: number;
+  expectancyLower95Dollars: number;
   avgDailyDollars: number;
   avgActiveDayDollars: number;
+  avgMonthlyDollars: number;
+  medianMonthlyDollars: number;
+  stdDevMonthlyDollars: number;
+  bestMonthDollars: number;
+  worstMonthDollars: number;
+  bestMonthPeriod: string;
+  worstMonthPeriod: string;
+  activeMonths: number;
+  winningMonths: number;
+  losingMonths: number;
+  winningMonthRatePct: number;
+  monthlyProfitFactor: number;
+  medianDailyDollars: number;
+  stdDevDailyDollars: number;
+  activeWeeks: number;
+  avgWeeklyDollars: number;
+  winningWeekRatePct: number;
+  bestWeekDollars: number;
+  worstWeekDollars: number;
+  activeQuarters: number;
+  avgQuarterlyDollars: number;
+  winningQuarterRatePct: number;
   dailyProfitFactor: number;
   bestTradeDollars: number;
   bestDayDollars: number;
@@ -185,8 +237,18 @@ type DollarAggregate = {
   currentStreakCount: number;
   avgAfterWinDollars: number;
   avgAfterLossDollars: number;
+  winAfterWinPct: number;
+  winAfterLossPct: number;
+  lagOneCorrelation: number;
+  runsCount: number;
+  runsZScore: number;
+  longestBreakevenStreak: number;
   avgWinToTargetPct: number;
   avgLossToRiskPct: number;
+  riskIqrDollars: number;
+  targetIqrDollars: number;
+  riskCoefficientVariationPct: number;
+  targetCoefficientVariationPct: number;
   targetExitCount: number;
   stopExitCount: number;
   otherExitCount: number;
@@ -229,6 +291,19 @@ type StatCardData = {
   text?: boolean;
   className?: string;
   title?: string;
+};
+
+type ChartDatum = {
+  label: string;
+  value: number;
+  secondary?: number;
+  detail?: string;
+};
+
+type StatsChartData = {
+  title: string;
+  subtitle: string;
+  chart: ReactNode;
 };
 
 type CustomScaleRangeSeed = {
@@ -395,6 +470,37 @@ function localTradeDayKey(value: string): string {
   return `${year}-${month}-${day}`;
 }
 
+function localTradeMonthKey(value: string): string {
+  const date = localDateFromValue(value);
+  if (!date) return value;
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  return `${year}-${month}`;
+}
+
+function localTradeWeekKey(value: string): string {
+  const date = localDateFromValue(value);
+  if (!date) return value;
+  const day = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  const weekday = (day.getDay() + 6) % 7;
+  day.setDate(day.getDate() - weekday);
+  return `${day.getFullYear()}-${String(day.getMonth() + 1).padStart(2, "0")}-${String(day.getDate()).padStart(2, "0")}`;
+}
+
+function localTradeQuarterKey(value: string): string {
+  const date = localDateFromValue(value);
+  if (!date) return value;
+  return `${date.getFullYear()}-Q${Math.floor(date.getMonth() / 3) + 1}`;
+}
+
+function formatTradeMonthKey(value: string): string {
+  const [yearValue, monthValue] = value.split("-");
+  const year = Number(yearValue);
+  const month = Number(monthValue);
+  if (!Number.isInteger(year) || !Number.isInteger(month) || month < 1 || month > 12) return value;
+  return `${MONTH_LABELS[month - 1]} ${year}`;
+}
+
 const WEEKDAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"] as const;
 const MONTH_LABELS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"] as const;
 
@@ -459,6 +565,43 @@ function downsideDeviation(values: number[]): number {
   if (!values.length) return 0;
   const downsideVariance = values.reduce((sum, value) => sum + Math.min(0, value) ** 2, 0) / values.length;
   return Math.sqrt(Math.max(0, downsideVariance));
+}
+
+function medianAbsoluteDeviation(values: number[]): number {
+  if (!values.length) return 0;
+  const center = median(values);
+  return median(values.map((value) => Math.abs(value - center)));
+}
+
+function lagOneCorrelation(values: number[]): number {
+  if (values.length < 3) return 0;
+  const left = values.slice(0, -1);
+  const right = values.slice(1);
+  const leftMean = mean(left);
+  const rightMean = mean(right);
+  const numerator = left.reduce((total, value, index) => total + (value - leftMean) * ((right[index] ?? 0) - rightMean), 0);
+  const denominator = Math.sqrt(
+    left.reduce((total, value) => total + (value - leftMean) ** 2, 0) *
+      right.reduce((total, value) => total + (value - rightMean) ** 2, 0)
+  );
+  return denominator > 0 ? numerator / denominator : 0;
+}
+
+function sequenceRuns(values: number[]): { count: number; zScore: number } {
+  const signs = values.filter((value) => value !== 0).map((value) => (value > 0 ? 1 : -1));
+  if (!signs.length) return { count: 0, zScore: 0 };
+  const positive = signs.filter((sign) => sign > 0).length;
+  const negative = signs.length - positive;
+  let count = 1;
+  for (let index = 1; index < signs.length; index += 1) {
+    if (signs[index] !== signs[index - 1]) count += 1;
+  }
+  if (!positive || !negative || signs.length < 2) return { count, zScore: 0 };
+  const expected = 1 + (2 * positive * negative) / signs.length;
+  const variance =
+    (2 * positive * negative * (2 * positive * negative - signs.length)) /
+    (signs.length ** 2 * (signs.length - 1));
+  return { count, zScore: variance > 0 ? (count - expected) / Math.sqrt(variance) : 0 };
 }
 
 function median(values: number[]): number {
@@ -606,6 +749,11 @@ function segmentRollup(map: Map<string, SegmentBucket>): SegmentRollup {
   const sortedByPnl = [...summaries].sort((left, right) => right.totalDollars - left.totalDollars);
   const sortedByShare = [...summaries].sort((left, right) => right.sharePct - left.sharePct);
   const hhi = summaries.reduce((total, summary) => total + (summary.sharePct / 100) ** 2, 0);
+  const entropy = summaries.reduce((total, summary) => {
+    const share = summary.sharePct / 100;
+    return share > 0 ? total - share * Math.log(share) : total;
+  }, 0);
+  const positiveProfit = sum(summaries.filter((summary) => summary.totalDollars > 0).map((summary) => summary.totalDollars));
   const effectiveCount = hhi > 0 ? 1 / hhi : 0;
   return {
     count: summaries.length,
@@ -613,7 +761,11 @@ function segmentRollup(map: Map<string, SegmentBucket>): SegmentRollup {
     worst: sortedByPnl[sortedByPnl.length - 1] ?? null,
     largest: sortedByShare[0] ?? null,
     largestSharePct: sortedByShare[0]?.sharePct ?? 0,
-    effectiveCount
+    topThreeSharePct: sum(sortedByShare.slice(0, 3).map((summary) => summary.sharePct)),
+    effectiveCount,
+    entropyEffectiveCount: summaries.length ? Math.exp(entropy) : 0,
+    profitablePct: summaries.length ? (summaries.filter((summary) => summary.totalDollars > 0).length / summaries.length) * 100 : 0,
+    profitContributionPct: positiveProfit > 0 ? ((sortedByPnl[0]?.totalDollars ?? 0) / positiveProfit) * 100 : 0
   };
 }
 
@@ -679,6 +831,10 @@ function aggregateDollars(trades: TradeSnapshot[]): DollarAggregate {
   let losses = 0;
   let breakevens = 0;
   const dailyPnl = new Map<string, number>();
+  const monthlyPnl = new Map<string, number>();
+  const weeklyPnl = new Map<string, number>();
+  const quarterlyPnl = new Map<string, number>();
+  const tradesByEntryDay = new Map<string, number>();
   const durationsMs: number[] = [];
   const winDurationsMs: number[] = [];
   const lossDurationsMs: number[] = [];
@@ -728,6 +884,14 @@ function aggregateDollars(trades: TradeSnapshot[]): DollarAggregate {
     if (Number.isFinite(trade.barsHeld) && trade.barsHeld > 0) barsHeld.push(trade.barsHeld);
     const dayKey = localTradeDayKey(trade.exitTime);
     dailyPnl.set(dayKey, (dailyPnl.get(dayKey) ?? 0) + pnl);
+    const monthKey = localTradeMonthKey(trade.exitTime);
+    monthlyPnl.set(monthKey, (monthlyPnl.get(monthKey) ?? 0) + pnl);
+    const weekKey = localTradeWeekKey(trade.exitTime);
+    weeklyPnl.set(weekKey, (weeklyPnl.get(weekKey) ?? 0) + pnl);
+    const quarterKey = localTradeQuarterKey(trade.exitTime);
+    quarterlyPnl.set(quarterKey, (quarterlyPnl.get(quarterKey) ?? 0) + pnl);
+    const entryDayKey = localTradeDayKey(trade.entryTime);
+    tradesByEntryDay.set(entryDayKey, (tradesByEntryDay.get(entryDayKey) ?? 0) + 1);
 
     if (result > 0) {
       wins += 1;
@@ -766,6 +930,21 @@ function aggregateDollars(trades: TradeSnapshot[]): DollarAggregate {
   const dailyValues = dailyCurve.map((point) => point.pnl);
   const averageDailyPnl = mean(dailyValues);
   const activeDailyValues = [...dailyPnl.values()];
+  const monthlyEntries = [...monthlyPnl.entries()];
+  const monthlyValues = monthlyEntries.map(([, pnl]) => pnl);
+  const averageMonthlyPnl = mean(monthlyValues);
+  const bestMonthEntry = monthlyEntries.reduce<[string, number] | null>(
+    (best, entry) => (!best || entry[1] > best[1] ? entry : best),
+    null
+  );
+  const worstMonthEntry = monthlyEntries.reduce<[string, number] | null>(
+    (worst, entry) => (!worst || entry[1] < worst[1] ? entry : worst),
+    null
+  );
+  const monthlyGrossWinDollars = sum(monthlyValues.filter((value) => value > 0));
+  const monthlyGrossLossDollars = Math.abs(sum(monthlyValues.filter((value) => value < 0)));
+  const weeklyValues = [...weeklyPnl.values()];
+  const quarterlyValues = [...quarterlyPnl.values()];
   const avgWinDollars = wins ? winDollars / wins : 0;
   const avgLossDollars = losses ? lossDollars / losses : 0;
   const avgWinR = mean(winRMultiples);
@@ -773,6 +952,9 @@ function aggregateDollars(trades: TradeSnapshot[]): DollarAggregate {
   const totalR = sum(rMultiples);
   const avgR = mean(rMultiples);
   const stdDevR = sampleStdDev(rMultiples, avgR);
+  const avgTradeDollars = mean(tradePnlDollars);
+  const tradeStdDevDollars = sampleStdDev(tradePnlDollars, avgTradeDollars);
+  const expectancyStdErrorDollars = trades.length > 1 ? tradeStdDevDollars / Math.sqrt(trades.length) : 0;
   const dailyGrossWinDollars = sum(activeDailyValues.filter((value) => value > 0));
   const dailyGrossLossDollars = Math.abs(sum(activeDailyValues.filter((value) => value < 0)));
   const largestWinningDay = Math.max(0, ...dailyPnl.values());
@@ -797,6 +979,20 @@ function aggregateDollars(trades: TradeSnapshot[]): DollarAggregate {
     maxTradeDrawdownDollars = Math.max(maxTradeDrawdownDollars, drawdown);
   }
 
+  const currentDrawdownDollars = tradeDrawdowns[tradeDrawdowns.length - 1] ?? 0;
+  let longestUnderwaterDays = 0;
+  let currentUnderwaterDays = 0;
+  let underwaterRun = 0;
+  for (const point of dailyCurve) {
+    if (point.drawdown > 0) {
+      underwaterRun += 1;
+      longestUnderwaterDays = Math.max(longestUnderwaterDays, underwaterRun);
+    } else {
+      underwaterRun = 0;
+    }
+  }
+  currentUnderwaterDays = underwaterRun;
+
   let currentStreakSign: "Win" | "Loss" | null = null;
   let currentStreakCount = 0;
   let currentStreakDollars = 0;
@@ -804,14 +1000,19 @@ function aggregateDollars(trades: TradeSnapshot[]): DollarAggregate {
   let longestLossStreak = 0;
   let bestWinStreakDollars = 0;
   let worstLossStreakDollars = 0;
+  let longestBreakevenStreak = 0;
+  let breakevenStreak = 0;
   for (const trade of exitSortedTrades) {
     const sign = trade.rMultiple > 0 ? "Win" : trade.rMultiple < 0 ? "Loss" : null;
     if (!sign) {
+      breakevenStreak += 1;
+      longestBreakevenStreak = Math.max(longestBreakevenStreak, breakevenStreak);
       currentStreakSign = null;
       currentStreakCount = 0;
       currentStreakDollars = 0;
       continue;
     }
+    breakevenStreak = 0;
     if (sign === currentStreakSign) {
       currentStreakCount += 1;
       currentStreakDollars += trade.pnlDollars;
@@ -857,11 +1058,37 @@ function aggregateDollars(trades: TradeSnapshot[]): DollarAggregate {
   const targetExitCount = segmentSummaries(exitReasonSegments).find((summary) => summary.label === "Target")?.trades ?? 0;
   const stopExitCount = segmentSummaries(exitReasonSegments).find((summary) => summary.label === "Stop")?.trades ?? 0;
   const otherExitCount = Math.max(0, trades.length - targetExitCount - stopExitCount);
+  const winAfterWin = exitSortedTrades.slice(1).filter((trade, index) => exitSortedTrades[index]?.rMultiple > 0 && trade.rMultiple > 0).length;
+  const afterWinCount = exitSortedTrades.slice(0, -1).filter((trade) => trade.rMultiple > 0).length;
+  const winAfterLoss = exitSortedTrades.slice(1).filter((trade, index) => exitSortedTrades[index]?.rMultiple < 0 && trade.rMultiple > 0).length;
+  const afterLossCount = exitSortedTrades.slice(0, -1).filter((trade) => trade.rMultiple < 0).length;
+  const runs = sequenceRuns(rMultiples);
+  const concurrencyEvents = entrySortedTrades
+    .flatMap((trade) => [
+      { time: trade.entryMs, delta: 1 },
+      { time: Number.isFinite(trade.exitMs) ? trade.exitMs : trade.entryMs + trade.durationMs, delta: -1 }
+    ])
+    .filter((event) => Number.isFinite(event.time))
+    .sort((left, right) => left.time - right.time || left.delta - right.delta);
+  let concurrentTrades = 0;
+  let maxConcurrentTrades = 0;
+  let overlappingTrades = 0;
+  for (const event of concurrencyEvents) {
+    if (event.delta > 0) {
+      if (concurrentTrades > 0) overlappingTrades += 1;
+      concurrentTrades += 1;
+      maxConcurrentTrades = Math.max(maxConcurrentTrades, concurrentTrades);
+    } else {
+      concurrentTrades = Math.max(0, concurrentTrades - 1);
+    }
+  }
 
   return {
     activeDayRatePct: calendarDays ? (activeDays / calendarDays) * 100 : 0,
     avgLossDollars,
+    medianLossDollars: median(tradePnlDollars.filter((value) => value < 0)),
     avgWinDollars,
+    medianWinDollars: median(tradePnlDollars.filter((value) => value > 0)),
     avgLossR,
     avgWinR,
     avgRiskDollars: mean(riskDollars),
@@ -889,18 +1116,26 @@ function aggregateDollars(trades: TradeSnapshot[]): DollarAggregate {
     avgR,
     medianR: median(rMultiples),
     stdDevR,
+    downsideDeviationR: downsideDeviation(rMultiples),
+    medianAbsoluteDeviationR: medianAbsoluteDeviation(rMultiples),
     bestR: Math.max(0, ...rMultiples),
     worstR: Math.min(0, ...rMultiples),
+    p05R: percentile(rMultiples, 5),
     p10R: percentile(rMultiples, 10),
     p25R: percentile(rMultiples, 25),
     p75R: percentile(rMultiples, 75),
     p90R: percentile(rMultiples, 90),
+    p95R: percentile(rMultiples, 95),
+    cvarLossR: tailAverage(rMultiples, 5, "bottom"),
+    iqrR: percentile(rMultiples, 75) - percentile(rMultiples, 25),
     skewR: skewness(rMultiples),
     excessKurtosisR: excessKurtosis(rMultiples),
     avgDurationMs: mean(durationsMs),
     avgWinDurationMs: mean(winDurationsMs),
     avgLossDurationMs: mean(lossDurationsMs),
     medianDurationMs: median(durationsMs),
+    durationIqrMs: percentile(durationsMs, 75) - percentile(durationsMs, 25),
+    durationStdDevMs: sampleStdDev(durationsMs, mean(durationsMs)),
     medianWinDurationMs: median(winDurationsMs),
     medianLossDurationMs: median(lossDurationsMs),
     shortestDurationMs: durationsMs.length ? Math.min(...durationsMs) : 0,
@@ -911,8 +1146,14 @@ function aggregateDollars(trades: TradeSnapshot[]): DollarAggregate {
     exposurePct: calendarMs > 0 ? Math.min(999, (totalDurationMs / calendarMs) * 100) : 0,
     avgGapMs: mean(entryGapsMs),
     medianGapMs: median(entryGapsMs),
+    gapIqrMs: percentile(entryGapsMs, 75) - percentile(entryGapsMs, 25),
+    gapStdDevMs: sampleStdDev(entryGapsMs, mean(entryGapsMs)),
     shortestGapMs: entryGapsMs.length ? Math.min(...entryGapsMs) : 0,
     longestGapMs: Math.max(0, ...entryGapsMs),
+    maxConcurrentTrades,
+    overlapRatePct: trades.length ? (overlappingTrades / trades.length) * 100 : 0,
+    maxTradesPerActiveDay: Math.max(0, ...tradesByEntryDay.values()),
+    tradesPerActiveDay: tradesByEntryDay.size ? trades.length / tradesByEntryDay.size : 0,
     maxDailyDrawdownDollars: Math.max(0, ...dailyCurve.map((point) => point.drawdown)),
     maxTradeDrawdownDollars,
     maxRunupDollars,
@@ -921,9 +1162,47 @@ function aggregateDollars(trades: TradeSnapshot[]): DollarAggregate {
     painIndexDollars: mean(dailyCurve.map((point) => point.drawdown)),
     underwaterDaysPct: dailyCurve.length ? (dailyCurve.filter((point) => point.drawdown > 0).length / dailyCurve.length) * 100 : 0,
     equityHighs,
+    currentDrawdownDollars,
+    currentUnderwaterDays,
+    longestUnderwaterDays,
+    tradeStdDevDollars,
+    tradeDownsideDeviationDollars: downsideDeviation(tradePnlDollars),
+    tradeMedianAbsoluteDeviationDollars: medianAbsoluteDeviation(tradePnlDollars),
+    tradeIqrDollars: percentile(tradePnlDollars, 75) - percentile(tradePnlDollars, 25),
+    expectancyStdErrorDollars,
+    expectancyTStat: expectancyStdErrorDollars > 0 ? avgTradeDollars / expectancyStdErrorDollars : avgTradeDollars > 0 ? Infinity : 0,
+    expectancyLower95Dollars: avgTradeDollars - 1.96 * expectancyStdErrorDollars,
     avgDailyDollars: averageDailyPnl,
     avgActiveDayDollars: mean(activeDailyValues),
+    avgMonthlyDollars: averageMonthlyPnl,
+    medianMonthlyDollars: median(monthlyValues),
+    stdDevMonthlyDollars: sampleStdDev(monthlyValues, averageMonthlyPnl),
+    bestMonthDollars: bestMonthEntry?.[1] ?? 0,
+    worstMonthDollars: worstMonthEntry?.[1] ?? 0,
+    bestMonthPeriod: bestMonthEntry ? formatTradeMonthKey(bestMonthEntry[0]) : "--",
+    worstMonthPeriod: worstMonthEntry ? formatTradeMonthKey(worstMonthEntry[0]) : "--",
+    activeMonths: monthlyValues.length,
+    winningMonths: monthlyValues.filter((value) => value > 0).length,
+    losingMonths: monthlyValues.filter((value) => value < 0).length,
+    winningMonthRatePct: monthlyValues.length ? (monthlyValues.filter((value) => value > 0).length / monthlyValues.length) * 100 : 0,
+    monthlyProfitFactor: monthlyGrossLossDollars
+      ? monthlyGrossWinDollars / monthlyGrossLossDollars
+      : monthlyGrossWinDollars
+        ? Infinity
+        : 0,
     dailyProfitFactor: dailyGrossLossDollars ? dailyGrossWinDollars / dailyGrossLossDollars : dailyGrossWinDollars ? Infinity : 0,
+    medianDailyDollars: median(activeDailyValues),
+    stdDevDailyDollars: sampleStdDev(activeDailyValues, mean(activeDailyValues)),
+    activeWeeks: weeklyValues.length,
+    avgWeeklyDollars: mean(weeklyValues),
+    winningWeekRatePct: weeklyValues.length ? (weeklyValues.filter((value) => value > 0).length / weeklyValues.length) * 100 : 0,
+    bestWeekDollars: Math.max(0, ...weeklyValues),
+    worstWeekDollars: Math.min(0, ...weeklyValues),
+    activeQuarters: quarterlyValues.length,
+    avgQuarterlyDollars: mean(quarterlyValues),
+    winningQuarterRatePct: quarterlyValues.length
+      ? (quarterlyValues.filter((value) => value > 0).length / quarterlyValues.length) * 100
+      : 0,
     bestTradeDollars: tradePnlDollars.length ? Math.max(...tradePnlDollars) : 0,
     bestDayDollars: Math.max(0, ...activeDailyValues),
     bestThreeTradesDollars: rollingExtreme(tradePnlDollars, 3, "best"),
@@ -955,7 +1234,7 @@ function aggregateDollars(trades: TradeSnapshot[]): DollarAggregate {
     winningDayRatePct: activeDailyValues.length ? (activeDailyValues.filter((value) => value > 0).length / activeDailyValues.length) * 100 : 0,
     dailyCurve,
     totalDollars,
-    avgDollars: trades.length ? totalDollars / trades.length : 0,
+    avgDollars: avgTradeDollars,
     longestWinStreak,
     longestLossStreak,
     bestWinStreakDollars,
@@ -964,12 +1243,23 @@ function aggregateDollars(trades: TradeSnapshot[]): DollarAggregate {
     currentStreakCount: currentTailCount,
     avgAfterWinDollars: mean(afterWinDollars),
     avgAfterLossDollars: mean(afterLossDollars),
+    winAfterWinPct: afterWinCount ? (winAfterWin / afterWinCount) * 100 : 0,
+    winAfterLossPct: afterLossCount ? (winAfterLoss / afterLossCount) * 100 : 0,
+    lagOneCorrelation: lagOneCorrelation(rMultiples),
+    runsCount: runs.count,
+    runsZScore: runs.zScore,
+    longestBreakevenStreak,
     avgWinToTargetPct: mean(
       exitSortedTrades.filter((trade) => trade.rMultiple > 0 && trade.targetDollars > 0).map((trade) => (trade.pnlDollars / trade.targetDollars) * 100)
     ),
     avgLossToRiskPct: mean(
       exitSortedTrades.filter((trade) => trade.rMultiple < 0 && trade.riskDollars > 0).map((trade) => (Math.abs(trade.pnlDollars) / trade.riskDollars) * 100)
     ),
+    riskIqrDollars: percentile(riskDollars, 75) - percentile(riskDollars, 25),
+    targetIqrDollars: percentile(targetDollars, 75) - percentile(targetDollars, 25),
+    riskCoefficientVariationPct: mean(riskDollars) > 0 ? (sampleStdDev(riskDollars, mean(riskDollars)) / mean(riskDollars)) * 100 : 0,
+    targetCoefficientVariationPct:
+      mean(targetDollars) > 0 ? (sampleStdDev(targetDollars, mean(targetDollars)) / mean(targetDollars)) * 100 : 0,
     targetExitCount,
     stopExitCount,
     otherExitCount,
@@ -994,6 +1284,362 @@ function aggregateDollars(trades: TradeSnapshot[]): DollarAggregate {
   };
 }
 
+function outcomeForChartTrade(trade: TradeSnapshot): string {
+  if (trade.rMultiple > 0) return "Win";
+  if (trade.rMultiple < 0) return "Loss";
+  return "Breakeven";
+}
+
+function chartSample<T>(values: T[], limit = 48): T[] {
+  if (values.length <= limit) return values;
+  const sampled: T[] = [];
+  for (let index = 0; index < limit; index += 1) {
+    sampled.push(values[Math.round((index / (limit - 1)) * (values.length - 1))]!);
+  }
+  return sampled;
+}
+
+function categoryChartData(
+  trades: TradeSnapshot[],
+  keyForTrade: (trade: TradeSnapshot) => string,
+  valueForTrade: (trade: TradeSnapshot) => number,
+  limit = 8
+): ChartDatum[] {
+  const buckets = new Map<string, { total: number; count: number }>();
+  for (const trade of trades) {
+    const key = keyForTrade(trade);
+    const bucket = buckets.get(key) ?? { total: 0, count: 0 };
+    bucket.total += valueForTrade(trade);
+    bucket.count += 1;
+    buckets.set(key, bucket);
+  }
+  return [...buckets.entries()]
+    .map(([label, bucket]) => ({ label, value: bucket.total, secondary: bucket.count }))
+    .sort((left, right) => Math.abs(right.value) - Math.abs(left.value))
+    .slice(0, limit);
+}
+
+function histogramData(values: number[], bins = 10): ChartDatum[] {
+  const finite = values.filter(Number.isFinite);
+  if (!finite.length) return [];
+  const minimum = Math.min(...finite);
+  const maximum = Math.max(...finite);
+  if (minimum === maximum) return [{ label: fmtNumber(minimum), value: finite.length }];
+  const width = (maximum - minimum) / bins;
+  const counts = Array.from({ length: bins }, () => 0);
+  for (const value of finite) {
+    counts[Math.min(bins - 1, Math.floor((value - minimum) / width))] += 1;
+  }
+  return counts.map((count, index) => ({
+    label: fmtNumber(minimum + width * (index + 0.5)),
+    value: count
+  }));
+}
+
+function rollingChartData(values: ChartDatum[], windowSize: number): ChartDatum[] {
+  return values.map((point, index) => {
+    const window = values.slice(Math.max(0, index - windowSize + 1), index + 1);
+    return {
+      ...point,
+      value: mean(window.map((entry) => entry.value)),
+      detail: `${window.length}-trade rolling sample`
+    };
+  });
+}
+
+function averageCategoryData(data: ChartDatum[]): ChartDatum[] {
+  return data.map((point) => ({
+    ...point,
+    value: point.secondary ? point.value / point.secondary : 0,
+    detail: `${fmtCount(point.secondary ?? 0)} trades in this group`
+  }));
+}
+
+function ChartFrame({ chart }: { chart: StatsChartData }) {
+  return (
+    <article className="selectedStatsChart">
+      <header><strong>{chart.title}</strong><span>{chart.subtitle}</span></header>
+      {chart.chart}
+    </article>
+  );
+}
+
+function ChartTooltip({ context, detail, label, value }: { context: string; detail?: string; label: string; value: string }) {
+  return (
+    <div className="statsChartTooltip" role="status">
+      <span>{context}</span><strong>{value}</strong><small>{label}</small>
+      {detail ? <p>{detail}</p> : null}
+    </div>
+  );
+}
+
+type ChartTooltipProps = {
+  tooltipContext?: string;
+  tooltipDetail?: (point: ChartDatum) => string;
+};
+
+function LineChart({
+  data,
+  formatValue = fmtMoney,
+  secondaryLabel,
+  tooltipContext = "Value",
+  tooltipDetail
+}: {
+  data: ChartDatum[];
+  formatValue?: (value: number) => string;
+  secondaryLabel?: string;
+} & ChartTooltipProps) {
+  const [activeIndex, setActiveIndex] = useState<number | null>(null);
+  const width = 640;
+  const height = 190;
+  const padX = 16;
+  const padY = 18;
+  const allValues = data.flatMap((point) => (point.secondary == null ? [point.value] : [point.value, point.secondary]));
+  const minimum = Math.min(0, ...allValues);
+  const maximum = Math.max(0, ...allValues);
+  const range = Math.max(1, maximum - minimum);
+  const x = (index: number) => padX + (index / Math.max(1, data.length - 1)) * (width - padX * 2);
+  const y = (value: number) => padY + ((maximum - value) / range) * (height - padY * 2);
+  const points = data.map((point, index) => `${x(index)},${y(point.value)}`).join(" ");
+  const secondaryPoints = data.filter((point) => point.secondary != null).map((point, index) => `${x(index)},${y(point.secondary ?? 0)}`).join(" ");
+  const activePoint = activeIndex == null ? null : data[activeIndex] ?? null;
+  const activateNearest = (event: ReactMouseEvent<HTMLDivElement>) => {
+    if (!data.length) return;
+    const rect = event.currentTarget.getBoundingClientRect();
+    const ratio = Math.max(0, Math.min(1, (event.clientX - rect.left) / Math.max(1, rect.width)));
+    setActiveIndex(Math.round(ratio * (data.length - 1)));
+  };
+  return (
+    <div className="selectedStatsChartPlot statsChartInteractive" onMouseMove={activateNearest} onMouseLeave={() => setActiveIndex(null)}>
+      <svg viewBox={`0 0 ${width} ${height}`} role="img" aria-label={`${tooltipContext} line chart`}>
+        <line className="statsChartGridLine" x1={padX} x2={width - padX} y1={y(0)} y2={y(0)} />
+        <polyline className="statsChartLine" points={points} />
+        {secondaryPoints ? <polyline className="statsChartLine secondary" points={secondaryPoints} /> : null}
+        {data.map((point, index) => (
+          <circle
+            key={`${point.label}-${index}`}
+            className={`statsChartPoint${point.value < 0 ? " negative" : ""}${activeIndex === index ? " isActive" : ""}`}
+            cx={x(index)} cy={y(point.value)} r="3" tabIndex={0}
+            onClick={() => setActiveIndex(index)} onFocus={() => setActiveIndex(index)} onMouseEnter={() => setActiveIndex(index)}
+          />
+        ))}
+      </svg>
+      {activePoint ? (
+        <ChartTooltip
+          context={tooltipContext}
+          detail={tooltipDetail?.(activePoint) ?? activePoint.detail}
+          label={activePoint.label}
+          value={`${formatValue(activePoint.value)}${activePoint.secondary == null ? "" : ` · ${secondaryLabel ?? "Second"} ${formatValue(activePoint.secondary)}`}`}
+        />
+      ) : null}
+      <div className="selectedStatsChartAxis"><span>{data[0]?.label ?? "--"}</span><span>{data[data.length - 1]?.label ?? "--"}</span></div>
+    </div>
+  );
+}
+
+function BarChart({
+  data,
+  formatValue = fmtMoney,
+  horizontal = false,
+  tooltipContext = "Value",
+  tooltipDetail
+}: {
+  data: ChartDatum[];
+  formatValue?: (value: number) => string;
+  horizontal?: boolean;
+} & ChartTooltipProps) {
+  const [activeIndex, setActiveIndex] = useState<number | null>(null);
+  const maximum = Math.max(1, ...data.map((point) => Math.abs(point.value)));
+  const activePoint = activeIndex == null ? null : data[activeIndex] ?? null;
+  const tooltip = activePoint ? <ChartTooltip context={tooltipContext} detail={tooltipDetail?.(activePoint) ?? activePoint.detail} label={activePoint.label} value={formatValue(activePoint.value)} /> : null;
+  const activateVertical = (event: ReactMouseEvent<HTMLDivElement>) => {
+    if (!data.length) return;
+    const rect = event.currentTarget.getBoundingClientRect();
+    const ratio = Math.max(0, Math.min(0.9999, (event.clientX - rect.left) / Math.max(1, rect.width)));
+    setActiveIndex(Math.floor(ratio * data.length));
+  };
+  const activateHorizontal = (event: ReactMouseEvent<HTMLDivElement>) => {
+    if (!data.length) return;
+    const rect = event.currentTarget.getBoundingClientRect();
+    const ratio = Math.max(0, Math.min(0.9999, (event.clientY - rect.top) / Math.max(1, rect.height)));
+    setActiveIndex(Math.floor(ratio * data.length));
+  };
+  if (horizontal) {
+    return (
+      <div className="selectedStatsHorizontalBars statsChartInteractive" onMouseMove={activateHorizontal} onMouseLeave={() => setActiveIndex(null)}>
+        {data.map((point, index) => (
+          <div key={point.label} tabIndex={0} onClick={() => setActiveIndex(index)} onFocus={() => setActiveIndex(index)} onMouseEnter={() => setActiveIndex(index)}>
+            <span>{shortLabel(point.label, 16)}</span><i><b className={point.value < 0 ? "negative" : ""} style={{ width: `${(Math.abs(point.value) / maximum) * 100}%` }} /></i><strong>{formatValue(point.value)}</strong>
+          </div>
+        ))}
+        {tooltip}
+      </div>
+    );
+  }
+  return (
+    <div className="selectedStatsBars statsChartInteractive" role="img" aria-label={`${tooltipContext} bar chart`} onMouseMove={activateVertical} onMouseLeave={() => setActiveIndex(null)}>
+      {data.map((point, index) => (
+        <div key={point.label} className={`${point.value < 0 ? "negative" : ""}${activeIndex === index ? " isActive" : ""}`} tabIndex={0} onClick={() => setActiveIndex(index)} onFocus={() => setActiveIndex(index)} onMouseEnter={() => setActiveIndex(index)}>
+          <i style={{ height: `${Math.max(4, (Math.abs(point.value) / maximum) * 100)}%` }} /><span>{shortLabel(point.label, 7)}</span>
+        </div>
+      ))}
+      {tooltip}
+    </div>
+  );
+}
+
+function ScatterChart({
+  data,
+  formatX = fmtMoney,
+  formatY = fmtMoney,
+  tooltipContext = "Trade",
+  xLabel = "X",
+  yLabel = "Y"
+}: {
+  data: ChartDatum[];
+  formatX?: (value: number) => string;
+  formatY?: (value: number) => string;
+  tooltipContext?: string;
+  xLabel?: string;
+  yLabel?: string;
+}) {
+  const [activePoint, setActivePoint] = useState<ChartDatum | null>(null);
+  const width = 640;
+  const height = 190;
+  const sampled = chartSample(data, 80);
+  const minX = Math.min(0, ...sampled.map((point) => point.value));
+  const maxX = Math.max(1, ...sampled.map((point) => point.value));
+  const minY = Math.min(0, ...sampled.map((point) => point.secondary ?? 0));
+  const maxY = Math.max(1, ...sampled.map((point) => point.secondary ?? 0));
+  const x = (value: number) => 16 + ((value - minX) / Math.max(1, maxX - minX)) * 608;
+  const y = (value: number) => 174 - ((value - minY) / Math.max(1, maxY - minY)) * 158;
+  const activateNearest = (event: ReactMouseEvent<HTMLDivElement>) => {
+    if (!sampled.length) return;
+    const rect = event.currentTarget.getBoundingClientRect();
+    const pointerX = ((event.clientX - rect.left) / Math.max(1, rect.width)) * width;
+    const pointerY = ((event.clientY - rect.top) / Math.max(1, rect.height)) * height;
+    let nearest = sampled[0]!;
+    let nearestDistance = Infinity;
+    for (const point of sampled) {
+      const distance = (x(point.value) - pointerX) ** 2 + (y(point.secondary ?? 0) - pointerY) ** 2;
+      if (distance < nearestDistance) {
+        nearest = point;
+        nearestDistance = distance;
+      }
+    }
+    setActivePoint(nearest);
+  };
+  return (
+    <div className="selectedStatsChartPlot statsChartInteractive" onMouseMove={activateNearest} onMouseLeave={() => setActivePoint(null)}>
+      <svg viewBox={`0 0 ${width} ${height}`} role="img" aria-label={`${tooltipContext} scatter plot`}>
+        <line className="statsChartGridLine" x1="16" x2="624" y1={y(0)} y2={y(0)} />
+        <line className="statsChartGridLine" x1={x(0)} x2={x(0)} y1="16" y2="174" />
+        {sampled.map((point, index) => (
+          <circle key={`${point.label}-${index}`} className="statsChartScatterPoint" cx={x(point.value)} cy={y(point.secondary ?? 0)} r="4" tabIndex={0}
+            onClick={() => setActivePoint(point)} onFocus={() => setActivePoint(point)} onMouseEnter={() => setActivePoint(point)} />
+        ))}
+      </svg>
+      {activePoint ? <ChartTooltip context={tooltipContext} detail={activePoint.detail} label={activePoint.label} value={`${xLabel} ${formatX(activePoint.value)} · ${yLabel} ${formatY(activePoint.secondary ?? 0)}`} /> : null}
+      <div className="selectedStatsChartAxis"><span>{xLabel}: low</span><span>{xLabel}: high</span></div>
+    </div>
+  );
+}
+
+function OutcomeStrip({ data, tooltipContext = "Trade outcome" }: { data: ChartDatum[]; tooltipContext?: string }) {
+  const [activePoint, setActivePoint] = useState<ChartDatum | null>(null);
+  const sampled = chartSample(data, 100);
+  const activateNearest = (event: ReactMouseEvent<HTMLDivElement>) => {
+    if (!sampled.length) return;
+    const marks = Array.from(event.currentTarget.querySelectorAll<HTMLElement>("i"));
+    let nearestIndex = 0;
+    let nearestDistance = Infinity;
+    marks.forEach((mark, index) => {
+      const rect = mark.getBoundingClientRect();
+      const centerX = rect.left + rect.width / 2;
+      const centerY = rect.top + rect.height / 2;
+      const distance = (centerX - event.clientX) ** 2 + (centerY - event.clientY) ** 2;
+      if (distance < nearestDistance) {
+        nearestDistance = distance;
+        nearestIndex = index;
+      }
+    });
+    setActivePoint(sampled[nearestIndex] ?? null);
+  };
+  return (
+    <div className="selectedStatsOutcomeStrip statsChartInteractive" role="img" aria-label={tooltipContext} onMouseMove={activateNearest} onMouseLeave={() => setActivePoint(null)}>
+      {sampled.map((point, index) => (
+        <i key={`${point.label}-${index}`} className={point.value > 0 ? "win" : point.value < 0 ? "loss" : "flat"} tabIndex={0}
+          onClick={() => setActivePoint(point)} onFocus={() => setActivePoint(point)} onMouseEnter={() => setActivePoint(point)} />
+      ))}
+      {activePoint ? <ChartTooltip context={tooltipContext} detail={activePoint.detail} label={activePoint.label} value={fmtR(activePoint.value, true)} /> : null}
+    </div>
+  );
+}
+
+function DonutChart({ data, tooltipContext = "Share" }: { data: ChartDatum[]; tooltipContext?: string }) {
+  const [activePoint, setActivePoint] = useState<ChartDatum | null>(null);
+  const total = sum(data.map((point) => Math.max(0, point.value)));
+  let cursor = 0;
+  const colors = ["var(--up)", "var(--down)", "var(--stats-chart-accent)", "#a78bfa", "#f59e0b", "#22d3ee"];
+  const gradient = data.map((point, index) => {
+    const start = cursor;
+    cursor += total ? (Math.max(0, point.value) / total) * 100 : 0;
+    return `${colors[index % colors.length]} ${start}% ${cursor}%`;
+  }).join(", ");
+  const activateDonutSegment = (event: ReactMouseEvent<HTMLElement>) => {
+    if (!data.length || total <= 0) return;
+    const rect = event.currentTarget.getBoundingClientRect();
+    const angle = (Math.atan2(event.clientY - (rect.top + rect.height / 2), event.clientX - (rect.left + rect.width / 2)) * 180) / Math.PI;
+    const pct = ((angle + 90 + 360) % 360) / 360;
+    let running = 0;
+    const match = data.find((point) => {
+      running += Math.max(0, point.value) / total;
+      return pct <= running;
+    });
+    setActivePoint(match ?? data[data.length - 1] ?? null);
+  };
+  return (
+    <div className="selectedStatsDonut statsChartInteractive" onMouseLeave={() => setActivePoint(null)}>
+      <i
+        aria-label={`${tooltipContext} donut chart`}
+        onClick={activateDonutSegment}
+        onFocus={() => setActivePoint(data[0] ?? null)}
+        onMouseMove={activateDonutSegment}
+        role="img"
+        style={{ background: `conic-gradient(${gradient || "var(--stats-chart-grid) 0 100%"})` }}
+        tabIndex={0}
+      />
+      <div>
+        {data.map((point, index) => (
+          <span key={point.label} tabIndex={0} onClick={() => setActivePoint(point)} onFocus={() => setActivePoint(point)} onMouseEnter={() => setActivePoint(point)}>
+            <b style={{ background: colors[index % colors.length] }} />{point.label}<strong>{fmtCount(point.value)}</strong>
+          </span>
+        ))}
+      </div>
+      {activePoint ? <ChartTooltip context={tooltipContext} detail={activePoint.detail} label={activePoint.label} value={`${fmtCount(activePoint.value)} · ${fmtPct(total ? (activePoint.value / total) * 100 : 0)}`} /> : null}
+    </div>
+  );
+}
+
+function StatsChartRail({ charts, title }: { charts: StatsChartData[]; title: string }) {
+  return (
+    <details
+      className="selectedStatsCharts"
+      onClick={(event) => event.stopPropagation()}
+      onKeyDown={(event) => event.stopPropagation()}
+    >
+      <summary>
+        <span>Charts</span>
+        <small>{charts.length} views</small>
+        <i aria-hidden />
+      </summary>
+      <div className="selectedStatsChartGrid" aria-label={`${title} charts`}>
+        {charts.map((chart) => <ChartFrame key={chart.title} chart={chart} />)}
+      </div>
+    </details>
+  );
+}
+
 function StatCard({ stat }: { stat: StatCardData }) {
   return (
     <div
@@ -1006,7 +1652,7 @@ function StatCard({ stat }: { stat: StatCardData }) {
   );
 }
 
-function StatGroup({ stats, title }: { stats: StatCardData[]; title: string }) {
+function StatGroup({ charts, stats, title }: { charts: StatsChartData[]; stats: StatCardData[]; title: string }) {
   return (
     <section className="selectedStatsGroup" aria-label={title}>
       <h3>{title}</h3>
@@ -1015,6 +1661,7 @@ function StatGroup({ stats, title }: { stats: StatCardData[]; title: string }) {
           <StatCard key={stat.label} stat={stat} />
         ))}
       </div>
+      <StatsChartRail charts={charts} title={title} />
     </section>
   );
 }
@@ -1105,6 +1752,10 @@ export default function SelectedStrategyStats({
     moneyStat("Gross loss", -stats.grossLossDollars, stats.trades),
     moneyStat("Avg trade", stats.avgDollars, stats.trades),
     moneyStat("Median trade", stats.p50TradeDollars, stats.trades),
+    { label: "Trade volatility", value: showWhenTrades(stats, fmtMoney(stats.tradeStdDevDollars)), tone: "tone-neutral", title: "Sample standard deviation of trade P&L" },
+    { label: "Expectancy error", value: showWhenTrades(stats, fmtMoney(stats.expectancyStdErrorDollars)), tone: "tone-neutral", title: "Standard error of average trade expectancy" },
+    ratioStat("Expectancy t-stat", stats.expectancyTStat, 1.96, stats.trades),
+    moneyStat("95% expectancy floor", stats.expectancyLower95Dollars, stats.trades),
     { label: "Total R", value: showWhenTrades(stats, fmtR(stats.totalR, true)), tone: statTone(stats.totalR) as StatTone },
     { label: "Avg R", value: showWhenTrades(stats, fmtR(stats.avgR, true)), tone: statTone(stats.avgR) as StatTone },
     { label: "Median R", value: showWhenTrades(stats, fmtR(stats.medianR, true)), tone: statTone(stats.medianR) as StatTone },
@@ -1129,6 +1780,12 @@ export default function SelectedStrategyStats({
     { label: "Pain index", value: showWhenTrades(stats, fmtMoney(-stats.painIndexDollars)), tone: stats.painIndexDollars > 0 ? "tone-down" : "tone-neutral" },
     { label: "Underwater days", value: showWhenTrades(stats, fmtPct(stats.underwaterDaysPct)), tone: statTone(stats.underwaterDaysPct, false) as StatTone },
     { label: "Equity highs", value: showWhenTrades(stats, fmtCount(stats.equityHighs)), tone: "tone-neutral" },
+    { label: "Current drawdown", value: showWhenTrades(stats, fmtMoney(-stats.currentDrawdownDollars)), tone: stats.currentDrawdownDollars > 0 ? "tone-down" : "tone-neutral" },
+    { label: "Current underwater", value: showWhenTrades(stats, `${fmtCount(stats.currentUnderwaterDays)} days`), tone: stats.currentUnderwaterDays > 0 ? "tone-down" : "tone-neutral" },
+    { label: "Longest underwater", value: showWhenTrades(stats, `${fmtCount(stats.longestUnderwaterDays)} days`), tone: stats.longestUnderwaterDays > 0 ? "tone-down" : "tone-neutral" },
+    { label: "Trade downside dev", value: showWhenTrades(stats, fmtMoney(stats.tradeDownsideDeviationDollars)), tone: "tone-neutral" },
+    { label: "Trade MAD", value: showWhenTrades(stats, fmtMoney(stats.tradeMedianAbsoluteDeviationDollars)), tone: "tone-neutral", title: "Median absolute deviation: robust dispersion less influenced by outliers" },
+    { label: "Trade IQR", value: showWhenTrades(stats, fmtMoney(stats.tradeIqrDollars)), tone: "tone-neutral", title: "Middle 50% spread of trade P&L" },
     moneyStat("5% VaR", stats.p05TradeDollars, stats.trades),
     moneyStat("5% CVaR", stats.cvarLossDollars, stats.trades),
     moneyStat("10th pct trade", stats.p10TradeDollars, stats.trades),
@@ -1159,6 +1816,12 @@ export default function SelectedStrategyStats({
     moneyStat("Worst 5 trades", stats.worstFiveTradesDollars, stats.trades),
     moneyStat("After win avg", stats.avgAfterWinDollars, stats.trades),
     moneyStat("After loss avg", stats.avgAfterLossDollars, stats.trades),
+    { label: "Win after win", value: showWhenTrades(stats, fmtPct(stats.winAfterWinPct)), tone: stats.winAfterWinPct >= stats.winRatePct ? "tone-up" : "tone-neutral" },
+    { label: "Win after loss", value: showWhenTrades(stats, fmtPct(stats.winAfterLossPct)), tone: stats.winAfterLossPct >= stats.winRatePct ? "tone-up" : "tone-neutral" },
+    { label: "Lag-1 correlation", value: showWhenTrades(stats, fmtNumber(stats.lagOneCorrelation)), tone: Math.abs(stats.lagOneCorrelation) >= 0.3 ? "tone-down" : "tone-neutral", title: "Correlation between each trade's R result and the next trade" },
+    { label: "Outcome runs", value: showWhenTrades(stats, fmtCount(stats.runsCount)), tone: "tone-neutral" },
+    { label: "Runs z-score", value: showWhenTrades(stats, fmtNumber(stats.runsZScore)), tone: Math.abs(stats.runsZScore) >= 1.96 ? "tone-down" : "tone-neutral", title: "Wald-Wolfowitz runs test; magnitude above 1.96 suggests non-random sequencing" },
+    { label: "Longest breakevens", value: showWhenTrades(stats, fmtCount(stats.longestBreakevenStreak)), tone: "tone-neutral" },
     moneyStat("Best trade", stats.bestTradeDollars, stats.trades)
   ];
 
@@ -1189,7 +1852,15 @@ export default function SelectedStrategyStats({
     { label: "Shortest gap", value: showWhenTrades(stats, fmtDurationMs(stats.shortestGapMs)), tone: "tone-neutral" },
     { label: "Longest gap", value: showWhenTrades(stats, fmtDurationMs(stats.longestGapMs)), tone: "tone-neutral" },
     { label: "Avg bars held", value: showWhenTrades(stats, fmtNumber(stats.avgBarsHeld)), tone: "tone-neutral" },
-    { label: "Max bars held", value: showWhenTrades(stats, fmtNumber(stats.maxBarsHeld)), tone: "tone-neutral" }
+    { label: "Max bars held", value: showWhenTrades(stats, fmtNumber(stats.maxBarsHeld)), tone: "tone-neutral" },
+    { label: "Duration IQR", value: showWhenTrades(stats, fmtDurationMs(stats.durationIqrMs)), tone: "tone-neutral" },
+    { label: "Duration std dev", value: showWhenTrades(stats, fmtDurationMs(stats.durationStdDevMs)), tone: "tone-neutral" },
+    { label: "Gap IQR", value: showWhenTrades(stats, fmtDurationMs(stats.gapIqrMs)), tone: "tone-neutral" },
+    { label: "Gap std dev", value: showWhenTrades(stats, fmtDurationMs(stats.gapStdDevMs)), tone: "tone-neutral" },
+    { label: "Trades / active day", value: showWhenTrades(stats, fmtNumber(stats.tradesPerActiveDay)), tone: "tone-neutral" },
+    { label: "Peak trades / day", value: showWhenTrades(stats, fmtCount(stats.maxTradesPerActiveDay)), tone: "tone-neutral" },
+    { label: "Max concurrent", value: showWhenTrades(stats, fmtCount(stats.maxConcurrentTrades)), tone: "tone-neutral" },
+    { label: "Overlap rate", value: showWhenTrades(stats, fmtPct(stats.overlapRatePct)), tone: stats.overlapRatePct > 50 ? "tone-down" : "tone-neutral", title: "Share of entries opened while another trade was already active" }
   ];
 
   const tradeShapeStats: StatCardData[] = [
@@ -1201,6 +1872,8 @@ export default function SelectedStrategyStats({
     { label: "R payoff", value: showWhenTrades(stats, fmtRiskReward(stats.rRewardRiskRatio)), tone: ratioTone(stats.rRewardRiskRatio, 1) as StatTone },
     moneyStat("Average win", stats.avgWinDollars, stats.wins),
     moneyStat("Average loss", stats.avgLossDollars, stats.losses),
+    moneyStat("Median win", stats.medianWinDollars, stats.wins),
+    moneyStat("Median loss", stats.medianLossDollars, stats.losses),
     { label: "Avg win R", value: showWhenTrades(stats, fmtR(stats.avgWinR, true)), tone: "tone-up" },
     { label: "Avg loss R", value: showWhenTrades(stats, fmtR(stats.avgLossR, true)), tone: "tone-down" },
     { label: "BE win rate", value: showWhenTrades(stats, fmtPct(stats.breakEvenWinRatePct)), tone: "tone-neutral" },
@@ -1211,10 +1884,34 @@ export default function SelectedStrategyStats({
     { label: "Stop exits", value: showWhenTrades(stats, fmtCount(stats.stopExitCount)), tone: "tone-down" },
     { label: "Stop rate", value: showWhenTrades(stats, fmtPct(stats.stopExitRatePct)), tone: stats.stopExitRatePct >= 50 ? "tone-down" : "tone-neutral" },
     { label: "Other exits", value: showWhenTrades(stats, fmtCount(stats.otherExitCount)), tone: "tone-neutral" },
-    segmentTextStat("Common exit", stats.commonExitReason, "share")
+    segmentTextStat("Common exit", stats.commonExitReason, "share"),
+    { label: "Risk IQR", value: showWhenTrades(stats, fmtMoney(stats.riskIqrDollars)), tone: "tone-neutral" },
+    { label: "Target IQR", value: showWhenTrades(stats, fmtMoney(stats.targetIqrDollars)), tone: "tone-neutral" },
+    { label: "Risk variability", value: showWhenTrades(stats, fmtPct(stats.riskCoefficientVariationPct)), tone: stats.riskCoefficientVariationPct > 50 ? "tone-down" : "tone-neutral", title: "Risk-size coefficient of variation" },
+    { label: "Target variability", value: showWhenTrades(stats, fmtPct(stats.targetCoefficientVariationPct)), tone: "tone-neutral", title: "Target-size coefficient of variation" }
   ];
 
   const calendarStats: StatCardData[] = [
+    { label: "Active months", value: showWhenTrades(stats, fmtCount(stats.activeMonths)), tone: "tone-neutral" },
+    moneyStat("Avg month", stats.avgMonthlyDollars, stats.trades),
+    moneyStat("Median month", stats.medianMonthlyDollars, stats.trades),
+    { label: "Monthly std dev", value: showWhenTrades(stats, fmtMoney(stats.stdDevMonthlyDollars)), tone: "tone-neutral" },
+    {
+      ...moneyStat(stats.trades ? `Best month - ${stats.bestMonthPeriod}` : "Best month", stats.bestMonthDollars, stats.trades),
+      title: stats.trades ? stats.bestMonthPeriod : undefined
+    },
+    {
+      ...moneyStat(stats.trades ? `Worst month - ${stats.worstMonthPeriod}` : "Worst month", stats.worstMonthDollars, stats.trades),
+      title: stats.trades ? stats.worstMonthPeriod : undefined
+    },
+    { label: "Winning months", value: showWhenTrades(stats, fmtCount(stats.winningMonths)), tone: "tone-up" },
+    { label: "Losing months", value: showWhenTrades(stats, fmtCount(stats.losingMonths)), tone: "tone-down" },
+    {
+      label: "Month win rate",
+      value: showWhenTrades(stats, fmtPct(stats.winningMonthRatePct)),
+      tone: stats.winningMonthRatePct >= 50 ? "tone-up" : "tone-neutral"
+    },
+    ratioStat("Monthly PF", stats.monthlyProfitFactor, 1, stats.trades),
     moneyStat("Avg day", stats.avgDailyDollars, stats.trades),
     moneyStat("Avg active day", stats.avgActiveDayDollars, stats.trades),
     moneyStat("Best day", stats.bestDayDollars, stats.trades),
@@ -1227,12 +1924,22 @@ export default function SelectedStrategyStats({
     { label: "Losing days", value: showWhenTrades(stats, fmtCount(stats.losingDays)), tone: "tone-down" },
     { label: "Day win rate", value: showWhenTrades(stats, fmtPct(stats.winningDayRatePct)), tone: stats.winningDayRatePct >= 50 ? "tone-up" : "tone-neutral" },
     ratioStat("Daily PF", stats.dailyProfitFactor, 1, stats.trades),
+    moneyStat("Median active day", stats.medianDailyDollars, stats.trades),
+    { label: "Daily std dev", value: showWhenTrades(stats, fmtMoney(stats.stdDevDailyDollars)), tone: "tone-neutral" },
+    { label: "Active weeks", value: showWhenTrades(stats, fmtCount(stats.activeWeeks)), tone: "tone-neutral" },
+    moneyStat("Avg week", stats.avgWeeklyDollars, stats.trades),
+    { label: "Week win rate", value: showWhenTrades(stats, fmtPct(stats.winningWeekRatePct)), tone: stats.winningWeekRatePct >= 50 ? "tone-up" : "tone-neutral" },
+    moneyStat("Best week", stats.bestWeekDollars, stats.trades),
+    moneyStat("Worst week", stats.worstWeekDollars, stats.trades),
+    { label: "Active quarters", value: showWhenTrades(stats, fmtCount(stats.activeQuarters)), tone: "tone-neutral" },
+    moneyStat("Avg quarter", stats.avgQuarterlyDollars, stats.trades),
+    { label: "Quarter win rate", value: showWhenTrades(stats, fmtPct(stats.winningQuarterRatePct)), tone: stats.winningQuarterRatePct >= 50 ? "tone-up" : "tone-neutral" },
     segmentTextStat("Best weekday", stats.weekdays.best, "avg", "tone-up"),
     segmentTextStat("Worst weekday", stats.weekdays.worst, "avg", "tone-down"),
     segmentTextStat("Best entry hour", stats.entryHours.best, "avg", "tone-up"),
     segmentTextStat("Worst entry hour", stats.entryHours.worst, "avg", "tone-down"),
-    segmentTextStat("Best month", stats.months.best, "avg", "tone-up"),
-    segmentTextStat("Worst month", stats.months.worst, "avg", "tone-down")
+    segmentTextStat("Best calendar month", stats.months.best, "avg", "tone-up"),
+    segmentTextStat("Worst calendar month", stats.months.worst, "avg", "tone-down")
   ];
 
   const rStats: StatCardData[] = [
@@ -1246,6 +1953,12 @@ export default function SelectedStrategyStats({
     { label: "25th pct R", value: showWhenTrades(stats, fmtR(stats.p25R, true)), tone: statTone(stats.p25R) as StatTone },
     { label: "75th pct R", value: showWhenTrades(stats, fmtR(stats.p75R, true)), tone: statTone(stats.p75R) as StatTone },
     { label: "90th pct R", value: showWhenTrades(stats, fmtR(stats.p90R, true)), tone: statTone(stats.p90R) as StatTone },
+    { label: "5th pct R", value: showWhenTrades(stats, fmtR(stats.p05R, true)), tone: statTone(stats.p05R) as StatTone },
+    { label: "95th pct R", value: showWhenTrades(stats, fmtR(stats.p95R, true)), tone: statTone(stats.p95R) as StatTone },
+    { label: "5% CVaR R", value: showWhenTrades(stats, fmtR(stats.cvarLossR, true)), tone: "tone-down" },
+    { label: "R downside dev", value: showWhenTrades(stats, fmtR(stats.downsideDeviationR)), tone: "tone-neutral" },
+    { label: "R MAD", value: showWhenTrades(stats, fmtR(stats.medianAbsoluteDeviationR)), tone: "tone-neutral" },
+    { label: "R IQR", value: showWhenTrades(stats, fmtR(stats.iqrR)), tone: "tone-neutral" },
     { label: "Skew", value: showWhenTrades(stats, fmtNumber(stats.skewR)), tone: statTone(stats.skewR) as StatTone },
     { label: "Excess kurt", value: showWhenTrades(stats, fmtNumber(stats.excessKurtosisR)), tone: stats.excessKurtosisR > 3 ? "tone-down" : "tone-neutral" }
   ];
@@ -1254,11 +1967,19 @@ export default function SelectedStrategyStats({
     { label: "Models", value: showWhenTrades(stats, fmtCount(stats.strategies.count)), tone: "tone-neutral" },
     { label: "Effective models", value: showWhenTrades(stats, fmtNumber(stats.strategies.effectiveCount)), tone: "tone-neutral" },
     { label: "Top model share", value: showWhenTrades(stats, fmtPct(stats.strategies.largestSharePct)), tone: stats.strategies.largestSharePct > 50 ? "tone-down" : "tone-neutral" },
+    { label: "Top 3 model share", value: showWhenTrades(stats, fmtPct(stats.strategies.topThreeSharePct)), tone: stats.strategies.topThreeSharePct > 80 ? "tone-down" : "tone-neutral" },
+    { label: "Model breadth", value: showWhenTrades(stats, fmtPct(stats.strategies.profitablePct)), tone: stats.strategies.profitablePct >= 50 ? "tone-up" : "tone-neutral", title: "Share of models with positive net P&L" },
+    { label: "Model entropy count", value: showWhenTrades(stats, fmtNumber(stats.strategies.entropyEffectiveCount)), tone: "tone-neutral", title: "Shannon-entropy effective number of independently sized model buckets" },
+    { label: "Top model profit", value: showWhenTrades(stats, fmtPct(stats.strategies.profitContributionPct)), tone: stats.strategies.profitContributionPct > 50 ? "tone-down" : "tone-neutral", title: "Best model's share of all positive model profit" },
     segmentTextStat("Best model", stats.strategies.best, "total", "tone-up"),
     segmentTextStat("Worst model", stats.strategies.worst, "total", "tone-down"),
     { label: "Symbols", value: showWhenTrades(stats, fmtCount(stats.symbols.count)), tone: "tone-neutral" },
     { label: "Effective symbols", value: showWhenTrades(stats, fmtNumber(stats.symbols.effectiveCount)), tone: "tone-neutral" },
     { label: "Top symbol share", value: showWhenTrades(stats, fmtPct(stats.symbols.largestSharePct)), tone: stats.symbols.largestSharePct > 50 ? "tone-down" : "tone-neutral" },
+    { label: "Top 3 symbol share", value: showWhenTrades(stats, fmtPct(stats.symbols.topThreeSharePct)), tone: stats.symbols.topThreeSharePct > 80 ? "tone-down" : "tone-neutral" },
+    { label: "Symbol breadth", value: showWhenTrades(stats, fmtPct(stats.symbols.profitablePct)), tone: stats.symbols.profitablePct >= 50 ? "tone-up" : "tone-neutral", title: "Share of symbols with positive net P&L" },
+    { label: "Symbol entropy count", value: showWhenTrades(stats, fmtNumber(stats.symbols.entropyEffectiveCount)), tone: "tone-neutral", title: "Shannon-entropy effective number of independently sized symbol buckets" },
+    { label: "Top symbol profit", value: showWhenTrades(stats, fmtPct(stats.symbols.profitContributionPct)), tone: stats.symbols.profitContributionPct > 50 ? "tone-down" : "tone-neutral", title: "Best symbol's share of all positive symbol profit" },
     segmentTextStat("Best symbol", stats.symbols.best, "total", "tone-up"),
     segmentTextStat("Worst symbol", stats.symbols.worst, "total", "tone-down"),
     { label: "Markets", value: showWhenTrades(stats, fmtCount(stats.markets.count)), tone: "tone-neutral" },
@@ -1271,15 +1992,270 @@ export default function SelectedStrategyStats({
     segmentTextStat("Worst side", stats.sides.worst, "total", "tone-down")
   ];
 
+  const chartTrades = [...selectedTradeSnapshots].sort((left, right) => {
+    const leftTime = Number.isFinite(left.exitMs) ? left.exitMs : left.entryMs;
+    const rightTime = Number.isFinite(right.exitMs) ? right.exitMs : right.entryMs;
+    return leftTime - rightTime;
+  });
+  let chartEquity = 0;
+  const equityData = chartSample(
+    chartTrades.map((trade, index) => {
+      chartEquity += trade.pnlDollars;
+      return { label: `Trade ${index + 1}`, value: chartEquity };
+    })
+  );
+  let rollingTotal = 0;
+  const rollingExpectancyData = chartSample(
+    chartTrades.map((trade, index) => {
+      rollingTotal += trade.pnlDollars;
+      return { label: `Trade ${index + 1}`, value: rollingTotal / (index + 1) };
+    })
+  );
+  const drawdownData = chartSample(stats.dailyCurve.map((point) => ({ label: point.dayKey, value: -point.drawdown })));
+  const pnlHistogram = histogramData(chartTrades.map((trade) => trade.pnlDollars));
+  const outcomeData = chartTrades.map((trade, index) => ({ label: `Trade ${index + 1}`, value: trade.rMultiple }));
+  const conditionalWinData: ChartDatum[] = [
+    { label: "After win", value: stats.winAfterWinPct },
+    { label: "After loss", value: stats.winAfterLossPct },
+    { label: "Overall", value: stats.winRatePct }
+  ];
+  const durationData = chartSample(
+    chartTrades.map((trade, index) => ({ label: `${index + 1}`, value: trade.durationMs / 3_600_000 })),
+    36
+  );
+  const entryHourData = categoryChartData(chartTrades, (trade) => localHourLabel(trade.entryTime), () => 1, 24).sort((left, right) =>
+    left.label.localeCompare(right.label)
+  );
+  const riskTargetData = chartTrades.map((trade, index) => ({
+    label: `Trade ${index + 1}`,
+    value: trade.riskDollars,
+    secondary: trade.targetDollars
+  }));
+  const exitMixData: ChartDatum[] = [
+    { label: "Target", value: stats.targetExitCount },
+    { label: "Stop", value: stats.stopExitCount },
+    { label: "Other", value: stats.otherExitCount }
+  ];
+  const monthlyChartData = categoryChartData(chartTrades, (trade) => localTradeMonthKey(trade.exitTime), (trade) => trade.pnlDollars, 24).sort(
+    (left, right) => left.label.localeCompare(right.label)
+  );
+  const weekdayChartData = categoryChartData(chartTrades, (trade) => localWeekdayLabel(trade.entryTime), (trade) => trade.pnlDollars, 7)
+    .map((point) => ({ ...point, value: point.secondary ? point.value / point.secondary : 0 }))
+    .sort((left, right) => WEEKDAY_LABELS.indexOf(left.label as (typeof WEEKDAY_LABELS)[number]) - WEEKDAY_LABELS.indexOf(right.label as (typeof WEEKDAY_LABELS)[number]));
+  const rHistogram = histogramData(chartTrades.map((trade) => trade.rMultiple));
+  const rPercentileData: ChartDatum[] = [
+    { label: "P5", value: stats.p05R },
+    { label: "P10", value: stats.p10R },
+    { label: "P25", value: stats.p25R },
+    { label: "P50", value: stats.medianR },
+    { label: "P75", value: stats.p75R },
+    { label: "P90", value: stats.p90R },
+    { label: "P95", value: stats.p95R }
+  ];
+  const modelAllocationData = categoryChartData(chartTrades, (trade) => trade.strategyLabel, () => 1, 8);
+  const symbolAllocationData = categoryChartData(chartTrades, (trade) => trade.symbolLabel, () => 1, 8);
+  const tradePnlData: ChartDatum[] = chartSample(chartTrades.map((trade, index) => ({
+    label: `Trade ${index + 1}`,
+    value: trade.pnlDollars,
+    detail: `${trade.symbolLabel} · ${trade.strategyLabel}`
+  })), 48);
+  const tradeRData: ChartDatum[] = chartSample(chartTrades.map((trade, index) => ({
+    label: `Trade ${index + 1}`,
+    value: trade.rMultiple,
+    detail: `${trade.symbolLabel} · ${trade.sideLabel}`
+  })), 48);
+  let cumulativeR = 0;
+  const cumulativeRData = chartSample(chartTrades.map((trade, index) => {
+    cumulativeR += trade.rMultiple;
+    return { label: `Trade ${index + 1}`, value: cumulativeR, detail: `${fmtR(trade.rMultiple, true)} added on this trade` };
+  }));
+  const rollingPnlData = chartSample(rollingChartData(chartTrades.map((trade, index) => ({ label: `Trade ${index + 1}`, value: trade.pnlDollars })), 20));
+  const rollingRData = chartSample(rollingChartData(chartTrades.map((trade, index) => ({ label: `Trade ${index + 1}`, value: trade.rMultiple })), 20));
+  const modelPnlData = categoryChartData(chartTrades, (trade) => trade.strategyLabel, (trade) => trade.pnlDollars, 10);
+  const symbolPnlData = categoryChartData(chartTrades, (trade) => trade.symbolLabel, (trade) => trade.pnlDollars, 10);
+  const grossSplitData: ChartDatum[] = [
+    { label: "Gross profit", value: stats.grossWinDollars, detail: `${fmtCount(stats.wins)} winning trades` },
+    { label: "Gross loss", value: stats.grossLossDollars, detail: `${fmtCount(stats.losses)} losing trades` }
+  ];
+  const riskSequenceData = chartSample(chartTrades.map((trade, index) => ({ label: `Trade ${index + 1}`, value: trade.riskDollars, detail: `${trade.symbolLabel} planned risk` })), 48);
+  const targetSequenceData = chartSample(chartTrades.map((trade, index) => ({ label: `Trade ${index + 1}`, value: trade.targetDollars, detail: `${trade.symbolLabel} planned target` })), 48);
+  const downsideSequenceData = chartSample(chartTrades.map((trade, index) => ({ label: `Trade ${index + 1}`, value: Math.min(0, trade.pnlDollars), detail: trade.pnlDollars < 0 ? `${trade.symbolLabel} realized loss` : "No downside on this trade" })), 48);
+  const tailProfileData: ChartDatum[] = [
+    { label: "P5", value: stats.p05TradeDollars }, { label: "P10", value: stats.p10TradeDollars },
+    { label: "P25", value: stats.p25TradeDollars }, { label: "Median", value: stats.p50TradeDollars },
+    { label: "P75", value: stats.p75TradeDollars }, { label: "P90", value: stats.p90TradeDollars },
+    { label: "P95", value: stats.p95TradeDollars }
+  ];
+  const underwaterData = chartSample(stats.dailyCurve.map((point) => ({ label: point.dayKey, value: point.drawdown > 0 ? 1 : 0, detail: point.drawdown > 0 ? `${fmtMoney(point.drawdown)} below peak` : "At a new equity high" })));
+  const dailyPnlData = chartSample(stats.dailyCurve.map((point) => ({ label: point.dayKey, value: point.pnl, detail: `Equity ${fmtMoney(point.equity, true)}` })));
+  const riskPnlScatter = chartTrades.map((trade, index) => ({ label: `Trade ${index + 1}`, value: trade.riskDollars, secondary: trade.pnlDollars, detail: `${trade.symbolLabel} · ${trade.strategyLabel}` }));
+  const rollingWinRateData = chartSample(rollingChartData(chartTrades.map((trade, index) => ({ label: `Trade ${index + 1}`, value: trade.rMultiple > 0 ? 100 : 0 })), 20));
+  let activeStreak = 0;
+  let priorSign = 0;
+  const streakLengthData = chartSample(chartTrades.map((trade, index) => {
+    const sign = Math.sign(trade.rMultiple);
+    activeStreak = sign !== 0 && sign === priorSign ? activeStreak + 1 : sign === 0 ? 0 : 1;
+    priorSign = sign;
+    return { label: `Trade ${index + 1}`, value: sign < 0 ? -activeStreak : activeStreak, detail: sign > 0 ? "Winning streak" : sign < 0 ? "Losing streak" : "Breakeven reset" };
+  }));
+  let cumulativeWins = 0;
+  let cumulativeLosses = 0;
+  const cumulativeOutcomeData = chartSample(chartTrades.map((trade, index) => {
+    if (trade.rMultiple > 0) cumulativeWins += 1;
+    if (trade.rMultiple < 0) cumulativeLosses += 1;
+    return { label: `Trade ${index + 1}`, value: cumulativeWins, secondary: cumulativeLosses, detail: `${cumulativeWins + cumulativeLosses} decided outcomes` };
+  }));
+  const sideExpectancyData = averageCategoryData(categoryChartData(chartTrades, (trade) => trade.sideLabel, (trade) => trade.pnlDollars, 4));
+  const modelWinRateData = averageCategoryData(categoryChartData(chartTrades, (trade) => trade.strategyLabel, (trade) => trade.rMultiple > 0 ? 100 : 0, 10));
+  const outcomeMixData: ChartDatum[] = [
+    { label: "Wins", value: stats.wins, detail: fmtPct(stats.winRatePct) },
+    { label: "Losses", value: stats.losses, detail: fmtPct(stats.lossRatePct) },
+    { label: "Breakeven", value: stats.breakevens, detail: "Zero-R results" }
+  ];
+  const weekdayCountData = categoryChartData(chartTrades, (trade) => localWeekdayLabel(trade.entryTime), () => 1, 7);
+  const monthCountData = categoryChartData(chartTrades, (trade) => localTradeMonthKey(trade.entryTime), () => 1, 18).sort((a, b) => a.label.localeCompare(b.label));
+  const sortedByEntry = [...chartTrades].sort((a, b) => a.entryMs - b.entryMs);
+  const gapSequenceData = chartSample(sortedByEntry.slice(1).map((trade, index) => ({ label: `Gap ${index + 1}`, value: (trade.entryMs - sortedByEntry[index]!.entryMs) / 3_600_000, detail: `Before ${trade.symbolLabel}` })), 48);
+  const barsHeldData = chartSample(chartTrades.map((trade, index) => ({ label: `Trade ${index + 1}`, value: trade.barsHeld, detail: `${trade.symbolLabel} · ${trade.durationMs > 0 ? fmtDurationMs(trade.durationMs) : "--"}` })), 48);
+  const durationOutcomeData = averageCategoryData(categoryChartData(chartTrades, (trade) => outcomeForChartTrade(trade), (trade) => trade.durationMs / 3_600_000, 4));
+  const dayActivityData = categoryChartData(chartTrades, (trade) => localTradeDayKey(trade.entryTime), () => 1, 24).sort((a, b) => a.label.localeCompare(b.label));
+  const targetRiskRatioData = chartSample(chartTrades.map((trade, index) => ({ label: `Trade ${index + 1}`, value: trade.riskDollars > 0 ? trade.targetDollars / trade.riskDollars : 0, detail: `${trade.symbolLabel} planned reward/risk` })), 48);
+  const sideMixData = categoryChartData(chartTrades, (trade) => trade.sideLabel, () => 1, 4);
+  const exitReasonData = categoryChartData(chartTrades, (trade) => trade.exitBucket, () => 1, 10);
+  let cumulativeMonthPnl = 0;
+  const cumulativeMonthlyData = monthlyChartData.map((point) => {
+    cumulativeMonthPnl += point.value;
+    return { ...point, value: cumulativeMonthPnl, detail: `${fmtMoney(point.value, true)} during this month` };
+  });
+  const weeklyPnlData = categoryChartData(chartTrades, (trade) => localTradeWeekKey(trade.exitTime), (trade) => trade.pnlDollars, 24).sort((a, b) => a.label.localeCompare(b.label));
+  const calendarMonthAvgData = averageCategoryData(categoryChartData(chartTrades, (trade) => localMonthLabel(trade.entryTime), (trade) => trade.pnlDollars, 12));
+  const hourExpectancyData = averageCategoryData(categoryChartData(chartTrades, (trade) => localHourLabel(trade.entryTime), (trade) => trade.pnlDollars, 24)).sort((a, b) => a.label.localeCompare(b.label));
+  const quarterPnlData = categoryChartData(chartTrades, (trade) => localTradeQuarterKey(trade.exitTime), (trade) => trade.pnlDollars, 16).sort((a, b) => a.label.localeCompare(b.label));
+  const modelRData = averageCategoryData(categoryChartData(chartTrades, (trade) => trade.strategyLabel, (trade) => trade.rMultiple, 10));
+  const rPnlScatter = chartTrades.map((trade, index) => ({ label: `Trade ${index + 1}`, value: trade.rMultiple, secondary: trade.pnlDollars, detail: `${trade.symbolLabel} · ${trade.strategyLabel}` }));
+  const rTailData: ChartDatum[] = [
+    { label: "Worst", value: stats.worstR }, { label: "5% CVaR", value: stats.cvarLossR },
+    { label: "P5", value: stats.p05R }, { label: "P10", value: stats.p10R },
+    { label: "P90", value: stats.p90R }, { label: "P95", value: stats.p95R }, { label: "Best", value: stats.bestR }
+  ];
+  const marketAllocationData = categoryChartData(chartTrades, (trade) => trade.marketLabel, () => 1, 8);
+  const phaseAllocationData = categoryChartData(chartTrades, (trade) => trade.phaseLabel, () => 1, 8);
+  const sidePnlData = categoryChartData(chartTrades, (trade) => trade.sideLabel, (trade) => trade.pnlDollars, 4);
+  const exitAllocationData = categoryChartData(chartTrades, (trade) => trade.exitBucket, () => 1, 8);
+
   const statGroups = [
-    { title: "Performance", stats: performanceStats },
-    { title: "Risk & Tails", stats: riskStats },
-    { title: "Streaks & Momentum", stats: streakStats },
-    { title: "Timing & Cadence", stats: timingStats },
-    { title: "Trade Shape", stats: tradeShapeStats },
-    { title: "Calendar Edge", stats: calendarStats },
-    { title: "R-Multiple Anatomy", stats: rStats },
-    { title: "Concentration", stats: concentrationStats }
+    {
+      title: "Performance",
+      stats: performanceStats,
+      charts: [
+        { title: "Equity curve", subtitle: "Cumulative realized P&L by trade", chart: <LineChart data={equityData} tooltipContext="Account equity" tooltipDetail={(point) => `Net realized result through ${point.label.toLowerCase()}`} /> },
+        { title: "Rolling expectancy", subtitle: "Average P&L after each completed trade", chart: <LineChart data={rollingExpectancyData} tooltipContext="Expanding expectancy" tooltipDetail={(point) => `Average dollars earned per trade through ${point.label.toLowerCase()}`} /> },
+        { title: "Cumulative R", subtitle: "Normalized equity independent of position size", chart: <LineChart data={cumulativeRData} formatValue={(value) => fmtR(value, true)} tooltipContext="Accumulated R" /> },
+        { title: "Trade P&L tape", subtitle: "Realized dollar result in execution order", chart: <BarChart data={tradePnlData} tooltipContext="Realized trade P&L" /> },
+        { title: "20-trade edge", subtitle: "Rolling short-window dollar expectancy", chart: <LineChart data={rollingPnlData} tooltipContext="20-trade expectancy" /> },
+        { title: "Model contribution", subtitle: "Net P&L supplied by each leading strategy", chart: <BarChart data={modelPnlData} horizontal tooltipContext="Strategy contribution" tooltipDetail={(point) => `${fmtCount(point.secondary ?? 0)} trades generated this result`} /> },
+        { title: "Symbol contribution", subtitle: "Net P&L supplied by each leading market", chart: <BarChart data={symbolPnlData} horizontal tooltipContext="Symbol contribution" tooltipDetail={(point) => `${fmtCount(point.secondary ?? 0)} trades contributed`} /> },
+        { title: "Gross profit balance", subtitle: "Total winning dollars versus losing dollars", chart: <DonutChart data={grossSplitData} tooltipContext="Gross P&L composition" /> }
+      ]
+    },
+    {
+      title: "Risk & Tails",
+      stats: riskStats,
+      charts: [
+        { title: "Drawdown path", subtitle: "Daily distance below the prior equity high", chart: <LineChart data={drawdownData} tooltipContext="Equity drawdown" tooltipDetail={(point) => `${point.label} distance from the prior high-water mark`} /> },
+        { title: "P&L distribution", subtitle: "Trade frequency across dollar outcomes", chart: <BarChart data={pnlHistogram} formatValue={fmtCount} tooltipContext="Outcome frequency" tooltipDetail={(point) => `Trades near the ${point.label} P&L bucket`} /> },
+        { title: "Planned risk tape", subtitle: "Dollar risk committed to each trade", chart: <BarChart data={riskSequenceData} tooltipContext="Planned downside" /> },
+        { title: "Realized downside", subtitle: "Loss-only sequence with wins held at zero", chart: <BarChart data={downsideSequenceData} tooltipContext="Realized downside event" /> },
+        { title: "Tail profile", subtitle: "Dollar outcomes from lower to upper tail", chart: <LineChart data={tailProfileData} tooltipContext="P&L percentile" tooltipDetail={(point) => `${point.label} of the realized trade distribution`} /> },
+        { title: "Underwater timeline", subtitle: "Days below the previous equity peak", chart: <OutcomeStrip data={underwaterData} tooltipContext="Underwater state" /> },
+        { title: "Daily shock tape", subtitle: "Calendar-day gains and losses", chart: <BarChart data={dailyPnlData} tooltipContext="Daily net result" /> },
+        { title: "Risk efficiency map", subtitle: "Planned risk versus realized P&L", chart: <ScatterChart data={riskPnlScatter} tooltipContext="Risk efficiency" xLabel="Risk" yLabel="P&L" /> }
+      ]
+    },
+    {
+      title: "Streaks & Momentum",
+      stats: streakStats,
+      charts: [
+        { title: "Outcome tape", subtitle: "Chronological wins, losses, and breakevens", chart: <OutcomeStrip data={outcomeData} tooltipContext="Chronological R outcome" /> },
+        { title: "Conditional win rate", subtitle: "How the prior result changes the next outcome", chart: <BarChart data={conditionalWinData} formatValue={fmtPct} tooltipContext="Next-trade win probability" tooltipDetail={(point) => `${point.label} condition across all eligible transitions`} /> },
+        { title: "Rolling win rate", subtitle: "Local hit rate across the latest 20 trades", chart: <LineChart data={rollingWinRateData} formatValue={fmtPct} tooltipContext="20-trade win rate" /> },
+        { title: "Streak pressure", subtitle: "Positive and negative run length over time", chart: <BarChart data={streakLengthData} formatValue={fmtNumber} tooltipContext="Active streak length" /> },
+        { title: "Cumulative decisions", subtitle: "Wins versus losses accumulated over time", chart: <LineChart data={cumulativeOutcomeData} formatValue={fmtCount} secondaryLabel="Losses" tooltipContext="Cumulative wins" /> },
+        { title: "Side expectancy", subtitle: "Average dollars earned by long and short trades", chart: <BarChart data={sideExpectancyData} tooltipContext="Directional expectancy" /> },
+        { title: "Model hit rate", subtitle: "Average win probability by strategy", chart: <BarChart data={modelWinRateData} formatValue={fmtPct} horizontal tooltipContext="Strategy win rate" /> },
+        { title: "Outcome composition", subtitle: "Wins, losses, and breakevens as a whole", chart: <DonutChart data={outcomeMixData} tooltipContext="Outcome mix" /> }
+      ]
+    },
+    {
+      title: "Timing & Cadence",
+      stats: timingStats,
+      charts: [
+        { title: "Holding time", subtitle: "Trade duration in hours across the sample", chart: <BarChart data={durationData} formatValue={(value) => `${fmtNumber(value)}h`} tooltipContext="Trade holding time" /> },
+        { title: "Entry clock", subtitle: "Number of entries by local hour", chart: <BarChart data={entryHourData} formatValue={fmtCount} tooltipContext="Hourly entry count" /> },
+        { title: "Weekday activity", subtitle: "Execution frequency by weekday", chart: <BarChart data={weekdayCountData} formatValue={fmtCount} tooltipContext="Weekday trade volume" /> },
+        { title: "Monthly activity", subtitle: "Execution count across recent active months", chart: <BarChart data={monthCountData} formatValue={fmtCount} tooltipContext="Monthly trade volume" /> },
+        { title: "Entry gaps", subtitle: "Hours between consecutive entries", chart: <LineChart data={gapSequenceData} formatValue={(value) => `${fmtNumber(value)}h`} tooltipContext="Time between entries" /> },
+        { title: "Bars held", subtitle: "Chart bars consumed by each position", chart: <BarChart data={barsHeldData} formatValue={fmtCount} tooltipContext="Bars in position" /> },
+        { title: "Duration by outcome", subtitle: "Average holding hours for each result class", chart: <BarChart data={durationOutcomeData} formatValue={(value) => `${fmtNumber(value)}h`} tooltipContext="Outcome holding time" /> },
+        { title: "Daily execution load", subtitle: "Trades entered on each recent active day", chart: <BarChart data={dayActivityData} formatValue={fmtCount} tooltipContext="Daily entry load" /> }
+      ]
+    },
+    {
+      title: "Trade Shape",
+      stats: tradeShapeStats,
+      charts: [
+        { title: "Risk / target map", subtitle: "Planned dollars at risk versus planned reward", chart: <ScatterChart data={riskTargetData} tooltipContext="Bracket geometry" xLabel="Risk" yLabel="Target" /> },
+        { title: "Exit mix", subtitle: "Target, stop, and discretionary exits", chart: <DonutChart data={exitMixData} tooltipContext="Exit route share" /> },
+        { title: "Risk sizing", subtitle: "Planned risk consistency across trades", chart: <LineChart data={riskSequenceData} tooltipContext="Risk size" /> },
+        { title: "Target sizing", subtitle: "Planned reward consistency across trades", chart: <LineChart data={targetSequenceData} tooltipContext="Target size" /> },
+        { title: "Planned reward / risk", subtitle: "Target dollars divided by risk dollars", chart: <LineChart data={targetRiskRatioData} formatValue={fmtNumber} tooltipContext="Planned payoff ratio" /> },
+        { title: "Risk versus outcome", subtitle: "Whether larger risk translated into larger P&L", chart: <ScatterChart data={riskPnlScatter} tooltipContext="Risk realization" xLabel="Risk" yLabel="P&L" /> },
+        { title: "Directional mix", subtitle: "Long and short participation", chart: <DonutChart data={sideMixData} tooltipContext="Side allocation" /> },
+        { title: "Exit reason volume", subtitle: "Frequency of each normalized exit path", chart: <BarChart data={exitReasonData} formatValue={fmtCount} horizontal tooltipContext="Exit reason frequency" /> }
+      ]
+    },
+    {
+      title: "Calendar Edge",
+      stats: calendarStats,
+      charts: [
+        { title: "Monthly P&L", subtitle: "Net realized result by active month", chart: <BarChart data={monthlyChartData} tooltipContext="Monthly net P&L" /> },
+        { title: "Weekday expectancy", subtitle: "Average trade P&L by entry weekday", chart: <BarChart data={weekdayChartData} tooltipContext="Weekday expectancy" /> },
+        { title: "Daily P&L", subtitle: "Net result on every calendar day", chart: <LineChart data={dailyPnlData} tooltipContext="Calendar-day P&L" /> },
+        { title: "Monthly equity", subtitle: "Cumulative result at each month end", chart: <LineChart data={cumulativeMonthlyData} tooltipContext="Month-end equity" /> },
+        { title: "Weekly P&L", subtitle: "Net realized result by active week", chart: <BarChart data={weeklyPnlData} tooltipContext="Weekly net P&L" /> },
+        { title: "Month-of-year edge", subtitle: "Average trade result by calendar month", chart: <BarChart data={calendarMonthAvgData} tooltipContext="Seasonal month expectancy" /> },
+        { title: "Hour expectancy", subtitle: "Average result by local entry hour", chart: <BarChart data={hourExpectancyData} tooltipContext="Entry-hour expectancy" /> },
+        { title: "Quarterly P&L", subtitle: "Net result across active quarters", chart: <BarChart data={quarterPnlData} tooltipContext="Quarterly net P&L" /> }
+      ]
+    },
+    {
+      title: "R-Multiple Anatomy",
+      stats: rStats,
+      charts: [
+        { title: "R distribution", subtitle: "Trade frequency across normalized outcomes", chart: <BarChart data={rHistogram} formatValue={fmtCount} tooltipContext="R-multiple frequency" /> },
+        { title: "R percentile profile", subtitle: "The result curve from left tail to right tail", chart: <LineChart data={rPercentileData} formatValue={(value) => fmtR(value, true)} tooltipContext="R percentile" /> },
+        { title: "R sequence", subtitle: "Normalized outcome in execution order", chart: <BarChart data={tradeRData} formatValue={(value) => fmtR(value, true)} tooltipContext="Trade R result" /> },
+        { title: "Cumulative R", subtitle: "Running normalized strategy equity", chart: <LineChart data={cumulativeRData} formatValue={(value) => fmtR(value, true)} tooltipContext="Cumulative R equity" /> },
+        { title: "20-trade R edge", subtitle: "Rolling normalized expectancy", chart: <LineChart data={rollingRData} formatValue={(value) => fmtR(value, true)} tooltipContext="Rolling R expectancy" /> },
+        { title: "R by model", subtitle: "Average normalized outcome by strategy", chart: <BarChart data={modelRData} formatValue={(value) => fmtR(value, true)} horizontal tooltipContext="Strategy R expectancy" /> },
+        { title: "R / dollar map", subtitle: "Normalized result versus realized dollars", chart: <ScatterChart data={rPnlScatter} formatX={(value) => fmtR(value, true)} tooltipContext="R-dollar relationship" xLabel="R" yLabel="P&L" /> },
+        { title: "R tail balance", subtitle: "Extremes and critical distribution cutoffs", chart: <BarChart data={rTailData} formatValue={(value) => fmtR(value, true)} tooltipContext="R tail marker" /> }
+      ]
+    },
+    {
+      title: "Concentration",
+      stats: concentrationStats,
+      charts: [
+        { title: "Model allocation", subtitle: "Trade count across the busiest models", chart: <BarChart data={modelAllocationData} formatValue={fmtCount} horizontal tooltipContext="Model trade allocation" /> },
+        { title: "Symbol allocation", subtitle: "Trade count across the busiest symbols", chart: <BarChart data={symbolAllocationData} formatValue={fmtCount} horizontal tooltipContext="Symbol trade allocation" /> },
+        { title: "Model P&L", subtitle: "Net contribution by leading strategy", chart: <BarChart data={modelPnlData} horizontal tooltipContext="Model net contribution" /> },
+        { title: "Symbol P&L", subtitle: "Net contribution by leading instrument", chart: <BarChart data={symbolPnlData} horizontal tooltipContext="Symbol net contribution" /> },
+        { title: "Market allocation", subtitle: "Trade volume across market families", chart: <BarChart data={marketAllocationData} formatValue={fmtCount} horizontal tooltipContext="Market allocation" /> },
+        { title: "Phase allocation", subtitle: "Trade volume across strategy phases", chart: <BarChart data={phaseAllocationData} formatValue={fmtCount} horizontal tooltipContext="Phase allocation" /> },
+        { title: "Side contribution", subtitle: "Net dollars generated by long and short trades", chart: <BarChart data={sidePnlData} tooltipContext="Directional P&L contribution" /> },
+        { title: "Exit allocation", subtitle: "Trade volume across exit paths", chart: <DonutChart data={exitAllocationData} tooltipContext="Exit concentration" /> }
+      ]
+    }
   ];
 
   return (
@@ -1303,7 +2279,7 @@ export default function SelectedStrategyStats({
           <StatCard key={stat.label} stat={stat} />
         ))}
       </div>
-      {expanded ? statGroups.map((group) => <StatGroup key={group.title} title={group.title} stats={group.stats} />) : null}
+      {expanded ? statGroups.map((group) => <StatGroup key={group.title} title={group.title} stats={group.stats} charts={group.charts} />) : null}
       {toggleable ? (
         <div className="selectedStatsToggleHint" aria-hidden="true">
           <span>{expanded ? "Hide details" : "More stats"}</span>
