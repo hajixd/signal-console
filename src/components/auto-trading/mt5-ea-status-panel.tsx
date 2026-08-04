@@ -54,7 +54,12 @@ type OrderView = {
 };
 
 type StatusResponse = {
+  backendConfigured: boolean;
   configured: boolean;
+  provider: string | null;
+  providerSelected: boolean;
+  storageConfigured: boolean;
+  tokenConfigured: boolean;
   bridgeAccountId: string;
   heartbeat: Heartbeat | null;
   state: AccountState | null;
@@ -156,7 +161,20 @@ export default function Mt5EaStatusPanel() {
   const state = data?.state ?? null;
   const stats = data?.stats ?? null;
   const orders = data?.orders ?? [];
-  const conn = freshness(hb?.updatedAt);
+  const conn = !data?.configured
+    ? { label: "setup required", tone: "offline" as const }
+    : !hb
+      ? { label: "waiting for EA", tone: "stale" as const }
+      : freshness(hb.updatedAt);
+  const setupIssues = data
+    ? [
+        !data.tokenConfigured ? "the secure EA token" : null,
+        !data.storageConfigured ? "the Turso order queue" : null,
+        !data.providerSelected
+          ? `forex routing${data.provider ? ` (currently ${data.provider})` : ""}`
+          : null
+      ].filter((issue): issue is string => Boolean(issue))
+    : [];
 
   return (
     <section className="mt5EaPanel">
@@ -170,7 +188,7 @@ export default function Mt5EaStatusPanel() {
 
       {data && !data.configured ? (
         <p className="mt5EaNote">
-          Not configured. Set <code>EA_INGEST_TOKEN</code> and <code>AUTO_TRADE_FOREX_PROVIDER=mt5_ea</code>, then point the EA at this app.
+          MT5 setup is incomplete: {setupIssues.join(", ")}. No forex orders are being sent to this EA.
         </p>
       ) : !hb ? (
         <p className="mt5EaNote">

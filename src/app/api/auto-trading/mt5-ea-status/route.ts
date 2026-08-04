@@ -1,8 +1,9 @@
 import { NextResponse, type NextRequest } from "next/server";
 
 import { isAdminAuthorized } from "@/lib/admin-api";
-import { mt5EaConfigured } from "@/lib/mt5-ea-queue";
+import { eaIngestToken, mt5EaConfigured } from "@/lib/mt5-ea-queue";
 import { getAccountState, getHeartbeat, getMt5ExecutionStats, listMt5Orders } from "@/lib/mt5-ea-state";
+import { tursoConfigured } from "@/lib/turso";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -24,10 +25,21 @@ export async function GET(request: NextRequest) {
   }
 
   const account = bridgeAccountId(request);
-  const configured = mt5EaConfigured();
-  if (!configured) {
+  const backendConfigured = mt5EaConfigured();
+  const provider = process.env.AUTO_TRADE_FOREX_PROVIDER?.trim() || null;
+  const providerSelected = provider === "mt5_ea";
+  const configuration = {
+    backendConfigured,
+    configured: backendConfigured && providerSelected,
+    provider,
+    providerSelected,
+    storageConfigured: tursoConfigured(),
+    tokenConfigured: Boolean(eaIngestToken())
+  };
+
+  if (!backendConfigured) {
     return NextResponse.json({
-      configured: false,
+      ...configuration,
       bridgeAccountId: account,
       heartbeat: null,
       state: null,
@@ -43,10 +55,10 @@ export async function GET(request: NextRequest) {
       getMt5ExecutionStats(account),
       listMt5Orders(account, 50)
     ]);
-    return NextResponse.json({ configured: true, bridgeAccountId: account, heartbeat, state, stats, orders });
+    return NextResponse.json({ ...configuration, bridgeAccountId: account, heartbeat, state, stats, orders });
   } catch (error) {
     return NextResponse.json(
-      { configured: true, bridgeAccountId: account, error: error instanceof Error ? error.message : String(error) },
+      { ...configuration, bridgeAccountId: account, error: error instanceof Error ? error.message : String(error) },
       { status: 500 }
     );
   }
