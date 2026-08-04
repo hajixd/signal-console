@@ -491,6 +491,16 @@ export function projectXSizeAttemptSequence(size: number): number[] {
   return [...attempts].sort((left, right) => right - left);
 }
 
+export function projectXSizeAfterRecentFailure(plannedSize: number, failedSize: number): number {
+  const planned = Math.max(0, Math.floor(plannedSize));
+  const failed = Math.max(0, Math.floor(failedSize));
+  // A remembered one-unit rejection is not a durable zero-size cap: exposure,
+  // margin, or account state may have changed since that order. Current
+  // preflight checks and the live one-unit attempt remain authoritative.
+  if (planned <= 0 || failed <= 1 || failed > planned) return planned;
+  return Math.max(1, Math.min(planned, failed - 1));
+}
+
 function unitsLabel(size: number): string {
   return `${size} unit${size === 1 ? "" : "s"}`;
 }
@@ -2215,17 +2225,11 @@ export async function executeProjectXAutoTrade(trade: TradeAlert): Promise<Proje
         let adjustmentNote: string | undefined;
         const recentFailure = await recentProjectXSizeFailureCap(account.id, trade, contract, recentTrades);
         if (recentFailure && recentFailure.size <= size) {
-          if (recentFailure.size <= 1) {
-            orders.push({
-              ...orderBase,
-              error: `Skipped because this account recently needed to have less units at 1 unit: ${recentFailure.reason}`,
-              size: 1,
-              status: "skipped"
-            });
-            continue;
+          const rememberedSize = projectXSizeAfterRecentFailure(size, recentFailure.size);
+          if (rememberedSize < size) {
+            size = rememberedSize;
+            adjustmentNote = `Started with ${unitsLabel(size)} instead of ${unitsLabel(originalSize)} because this account recently needed to have less units at ${unitsLabel(recentFailure.size)}: ${recentFailure.reason}`;
           }
-          size = Math.max(1, Math.min(size, recentFailure.size - 1));
-          adjustmentNote = `Started with ${unitsLabel(size)} instead of ${unitsLabel(originalSize)} because this account recently needed to have less units at ${unitsLabel(recentFailure.size)}: ${recentFailure.reason}`;
         }
 
         const preflight = await projectXPretradeRiskAdjustment(group.token, target, contract, trade, side, size);

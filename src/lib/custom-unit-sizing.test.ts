@@ -1,6 +1,14 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { autoTradeRequest, mappedSize, nonExecutableOrderSizeReason, plannedAutoTradeSizeForTrade, realAutoTradeSizeForTrade } from "@/lib/auto-trade-utils";
+import {
+  adaptiveProviderSizeAttemptSequence,
+  autoTradeRequest,
+  executionSizeErrorAllowsRetry,
+  mappedSize,
+  nonExecutableOrderSizeReason,
+  plannedAutoTradeSizeForTrade,
+  realAutoTradeSizeForTrade
+} from "@/lib/auto-trade-utils";
 import { adjustAutoTradeSizeToLimits } from "@/lib/auto-trade-risk";
 import { customUnitSizeMultiplierForTrade } from "@/lib/custom-unit-sizing";
 import {
@@ -8,7 +16,13 @@ import {
   liveClosedTradePnlDollars,
   liveTradeEventAutoTradeOrders
 } from "@/lib/live-trade-calculations";
-import { projectXBracketTicksForTrade, projectXLegacyOrderSummarySize, projectXOrderSizeForAccount } from "@/lib/projectx-auto-trader";
+import {
+  projectXBracketTicksForTrade,
+  projectXLegacyOrderSummarySize,
+  projectXOrderSizeForAccount,
+  projectXSizeAfterRecentFailure
+} from "@/lib/projectx-auto-trader";
+import { resolveMt5Lots } from "@/lib/mt5-ea-sizing";
 import type { StrategySignal } from "@/lib/strategy-definition";
 import { planTradeAlert } from "@/lib/trade-planner";
 import { reviewTopstepSignal } from "@/lib/topstep";
@@ -299,6 +313,52 @@ test("a per-check risk budget reduces forex units instead of rejecting the trade
   assert.equal(plannedAutoTradeSizeForTrade(adjustment.trade), adjustment.size);
 });
 
+test("lot-based forex connectors receive actual lots after the shared size cap", () => {
+  const forexTrade = mt5ForexTrade();
+
+  assert.equal(mappedSize("TRADELOCKER", forexTrade), 0.84);
+  assert.equal(mappedSize("MATCHTRADER", forexTrade), 0.84);
+  assert.equal(mappedSize("MT5", forexTrade), 0.84);
+  assert.deepEqual(
+    { size: autoTradeRequest("TRADELOCKER", forexTrade).size, sizeUnit: autoTradeRequest("TRADELOCKER", forexTrade).sizeUnit },
+    { size: 0.84, sizeUnit: "lots" }
+  );
+});
+
+test("cTrader forex bridge receives base units while retaining the same risk cap", () => {
+  const request = autoTradeRequest("CTRADER", mt5ForexTrade());
+
+  assert.equal(request.size, 84_600);
+  assert.equal(request.sizeUnit, "base_units");
+});
+
+test("provider lot maps remain broker quantities but cannot bypass the shared cap", () => {
+  const forexTrade = mt5ForexTrade();
+
+  assert.equal(mappedSize("TRADELOCKER", forexTrade, undefined, { sizeMap: '{"AUDNZD":"5"}' }), 0.84);
+  assert.equal(
+    mappedSize("TRADELOCKER", forexTrade, undefined, { sizeMap: '{"AUDNZD":"0.5"}', volumeStep: "0.01" }),
+    0.5
+  );
+});
+
+test("provider execution records convert back to strategy units without changing legacy history", () => {
+  const forexTrade = mt5ForexTrade();
+
+  assert.equal(
+    realAutoTradeSizeForTrade(forexTrade, undefined, [{ accountId: 1, size: 0.84, sizeUnit: "lots", status: "placed" }]),
+    8.4
+  );
+  assert.equal(realAutoTradeSizeForTrade(forexTrade, undefined, [{ accountId: 1, size: 0.84, status: "placed" }]), 0.84);
+});
+
+test("broker size rejections retry progressively smaller valid quantities", () => {
+  assert.deepEqual(adaptiveProviderSizeAttemptSequence(0.84, 0.01), [0.84, 0.42, 0.21, 0.1, 0.05, 0.02, 0.01]);
+  assert.equal(executionSizeErrorAllowsRetry("Insufficient margin for requested volume"), true);
+  assert.equal(executionSizeErrorAllowsRetry("Market is closed"), false);
+  assert.equal(executionSizeErrorAllowsRetry("Daily loss limit reached"), false);
+});
+
 test("Topstep converts size, risk, and consistency breaches into a smaller executable order", () => {
   const oversizedTrade = trade({
     customScaleRange: undefined,
@@ -313,4 +373,88 @@ test("Topstep converts size, risk, and consistency breaches into a smaller execu
   assert.match(review.adjustmentNote ?? "", /reduced units/i);
   assert.ok(review.riskDollars <= 1_250);
   assert.ok(review.targetDollars < 3_000);
+});
+
+test("ProjectX does not turn a remembered one-unit rejection into a durable execution block", () => {
+  assert.equal(projectXSizeAfterRecentFailure(6, 1), 6);
+  assert.equal(projectXSizeAfterRecentFailure(6, 4), 3);
+});
+
+async function withEnv(
+  values: Record<string, string | undefined>,
+  run: () => Promise<void>
+): Promise<void> {
+  const previous = Object.fromEntries(Object.keys(values).map((key) => [key, process.env[key]]));
+  try {
+    for (const [key, value] of Object.entries(values)) {
+      if (value === undefined) delete process.env[key];
+      else process.env[key] = value;
+    }
+    await run();
+  } finally {
+    for (const [key, value] of Object.entries(previous)) {
+      if (value === undefined) delete process.env[key];
+      else process.env[key] = value;
+    }
+  }
+}
+
+function mt5ForexTrade(overrides: Partial<TradeAlert> = {}): TradeAlert {
+  return trade({
+    autoTradeSizeCap: 8.46,
+    customScaleRange: undefined,
+    entryPrice: 1.1,
+    market: "forex",
+    sizeMode: undefined,
+    sizeMultiplier: 33.87,
+    slUnits: 50,
+    stopLossPrice: 1.095,
+    symbol: "AUDNZD",
+    takeProfitPrice: 1.105,
+    tpUnits: 50,
+    unitLabel: "pips",
+    ...overrides
+  });
+}
+
+const mt5SizingEnv = {
+  MT5_EA_ACCOUNT_BALANCE: "100000",
+  MT5_EA_LOT_OVERRIDE: undefined,
+  MT5_EA_LOT_STEP: "0.01",
+  MT5_EA_MAX_LOT: "50",
+  MT5_EA_MIN_LOT: "0.01",
+  MT5_EA_PIP_VALUE_OVERRIDE: undefined,
+  MT5_EA_RISK_PER_TRADE_PCT: "0.5",
+  TURSO_AUTH_TOKEN: undefined,
+  TURSO_DATABASE_URL: undefined
+};
+
+test("MT5 converts the shared forex size cap to lots and reports actual capped risk", async () => {
+  await withEnv(mt5SizingEnv, async () => {
+    const sizing = await resolveMt5Lots(mt5ForexTrade(), "mt5-demo-100k");
+
+    assert.equal(sizing.lots, 0.84);
+    assert.ok(sizing.riskUsd > 0);
+    assert.ok(sizing.riskUsd <= 250);
+    assert.match(sizing.reason, /shared execution guard capped/i);
+  });
+});
+
+test("MT5 risk guards cap fixed lot overrides instead of bypassing them", async () => {
+  await withEnv({ ...mt5SizingEnv, MT5_EA_LOT_OVERRIDE: "AUDNZD:5" }, async () => {
+    const sizing = await resolveMt5Lots(mt5ForexTrade(), "mt5-demo-100k");
+
+    assert.equal(sizing.lots, 0.84);
+    assert.ok(sizing.riskUsd <= 250);
+    assert.match(sizing.reason, /lot override 5/i);
+  });
+});
+
+test("MT5 does not force the broker minimum when no risk-safe lot remains", async () => {
+  await withEnv(mt5SizingEnv, async () => {
+    const sizing = await resolveMt5Lots(mt5ForexTrade({ autoTradeSizeCap: 0.05 }), "mt5-demo-100k");
+
+    assert.equal(sizing.lots, 0);
+    assert.equal(sizing.riskUsd, 0);
+  });
 });

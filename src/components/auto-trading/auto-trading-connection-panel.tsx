@@ -187,7 +187,8 @@ const CONNECTION_FIELDS: Record<AutoTradeProviderId, ConnectionField[]> = {
     { advanced: true, defaultValue: "TRADE", key: "routeId", label: "Route ID", placeholder: "TRADE" },
     { advanced: true, key: "apiBaseUrl", label: "API base URL", placeholder: "https://demo.tradelocker.com/backend-api" },
     { advanced: true, key: "symbolMap", label: "Symbol map", placeholder: "EURUSD:EURUSD,XAUUSD:XAUUSD" },
-    { advanced: true, key: "sizeMap", label: "Size map", placeholder: "EURUSD:0.1,XAUUSD:0.05" }
+    { advanced: true, key: "sizeMap", label: "Size map", placeholder: "EURUSD:0.1,XAUUSD:0.05" },
+    { advanced: true, defaultValue: "0.01", key: "volumeStep", label: "Volume step", placeholder: "0.01" }
   ],
   mt5_bridge: [
     { key: "login", label: "MT5 username / login", placeholder: "318747699", required: true },
@@ -198,7 +199,8 @@ const CONNECTION_FIELDS: Record<AutoTradeProviderId, ConnectionField[]> = {
     { advanced: true, key: "accountId", label: "Account ID" },
     { advanced: true, key: "accountSize", label: "Account size", placeholder: "50000" },
     { advanced: true, key: "symbolMap", label: "Symbol map", placeholder: "EURUSD:EURUSD.,XAUUSD:XAUUSDm" },
-    { advanced: true, key: "lotMap", label: "Lot map", placeholder: "EURUSD:0.1,XAUUSD:0.05" }
+    { advanced: true, key: "lotMap", label: "Lot map", placeholder: "EURUSD:0.1,XAUUSD:0.05" },
+    { advanced: true, defaultValue: "0.01", key: "lotStep", label: "Lot step", placeholder: "0.01" }
   ],
   // MT5 EA is configured via env (EA_INGEST_TOKEN, MT5_EA_* settings); the EA
   // itself holds the MT5 login. No per-connection form fields in Phase 1.
@@ -211,7 +213,8 @@ const CONNECTION_FIELDS: Record<AutoTradeProviderId, ConnectionField[]> = {
     { advanced: true, key: "bridgeUrl", label: "Bridge URL", placeholder: "https://your-ctrader-bridge/place-order" },
     { advanced: true, key: "bridgeSecret", label: "Bridge secret", secret: true },
     { advanced: true, key: "symbolMap", label: "Symbol map", placeholder: "EURUSD:1,XAUUSD:2" },
-    { advanced: true, key: "sizeMap", label: "Size map", placeholder: "EURUSD:10000,XAUUSD:1" }
+    { advanced: true, key: "sizeMap", label: "Size map", placeholder: "EURUSD:10000,XAUUSD:10" },
+    { advanced: true, defaultValue: "1", key: "volumeStep", label: "Volume step", placeholder: "1" }
   ],
   matchtrader: [
     { key: "tradingApiToken", label: "Trading API token", required: true, secret: true },
@@ -221,7 +224,8 @@ const CONNECTION_FIELDS: Record<AutoTradeProviderId, ConnectionField[]> = {
     { advanced: true, key: "accountId", label: "Account ID" },
     { advanced: true, key: "accountSize", label: "Account size", placeholder: "50000" },
     { advanced: true, key: "symbolMap", label: "Symbol map", placeholder: "EURUSD:EURUSD,XAUUSD:GOLD" },
-    { advanced: true, key: "sizeMap", label: "Size map", placeholder: "EURUSD:0.1,XAUUSD:0.05" }
+    { advanced: true, key: "sizeMap", label: "Size map", placeholder: "EURUSD:0.1,XAUUSD:0.05" },
+    { advanced: true, defaultValue: "0.01", key: "volumeStep", label: "Volume step", placeholder: "0.01" }
   ],
   tradovate: [
     { key: "username", label: "Tradovate username", required: true },

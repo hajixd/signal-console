@@ -111,6 +111,7 @@ async function executeBridgeAutoTrade(provider: BridgeProvider, trade: TradeAler
           customTag: request.customTag,
           orderId,
           size: request.size,
+          sizeUnit: request.sizeUnit,
           status: "placed"
         }
       ]

@@ -1,14 +1,18 @@
 import {
+  adaptiveProviderSizeAttemptSequence,
   autoTradeRequest,
   dryRunOrder,
   envFlag,
   envText,
   fieldText,
   failedOrder,
+  executionSizeErrorAllowsRetry,
+  nonExecutableOrderSizeReason,
   readJsonResponse,
   readableError,
   requiredEnv,
-  result
+  result,
+  skippedOrder
 } from "@/lib/auto-trade-utils";
 import { getAutoTradeConnection } from "@/lib/auto-trade-connections";
 import type { ProjectXAutoTradeResult } from "@/lib/projectx-auto-trader";
@@ -184,6 +188,8 @@ export async function executeTradeLockerAutoTrade(trade: TradeAlert): Promise<Pr
     const route = await discoverTradeLockerAccount(token, fields);
     if (!route?.accountId || !route.accNum) return result("skipped", { error: "TradeLocker could not discover an account. Add Account ID and Account number in Advanced Settings." });
     request = autoTradeRequest("TRADELOCKER", trade, Number(route.accountId) || route.accountId, fields);
+    const sizeError = nonExecutableOrderSizeReason(request);
+    if (sizeError) return result("skipped", { error: sizeError, orders: [skippedOrder(request, sizeError)] });
     const instrument = await discoverTradeLockerInstrument(token, route, request.symbol, fields);
     if (!instrument?.tradableInstrumentId) return result("skipped", { error: `TradeLocker could not discover instrument ${request.symbol}. Add Instrument ID in Advanced Settings.` });
 
@@ -192,44 +198,65 @@ export async function executeTradeLockerAutoTrade(trade: TradeAlert): Promise<Pr
       return result("dry_run", { accountId: order.accountId, contractId: request.symbol, contractName: request.symbol, orders: [order] });
     }
 
-    const response = await fetch(`${baseUrl(fields)}/trade/accounts/${route.accountId}/orders`, {
-      body: JSON.stringify({
-        price: request.entryType === "limit" ? request.entryPrice : 0,
-        qty: request.size,
-        routeId: instrument.routeId ?? "TRADE",
-        side: request.action,
-        stopLoss: request.stopLossPrice,
-        takeProfit: request.takeProfitPrice,
-        tradableInstrumentId: Number(instrument.tradableInstrumentId),
-        type: request.entryType,
-        validity: request.entryType === "market" ? "IOC" : "GTC"
-      }),
-      cache: "no-store",
-      headers: {
-        accNum: route.accNum,
-        authorization: `Bearer ${token}`,
-        "content-type": "application/json",
-        ...(fieldText(fields, "developerApiKey", "TRADELOCKER_DEVELOPER_API_KEY")
-          ? { "developer-api-key": fieldText(fields, "developerApiKey", "TRADELOCKER_DEVELOPER_API_KEY")! }
-          : {})
-      },
-      method: "POST"
-    });
-    const parsed = await readJsonResponse<TradeLockerOrderResponse>(response, "TradeLocker order placement failed.");
-    const orderId = parsed.orderId ?? parsed.id;
-    return result("placed", {
-      accountId: typeof request.accountId === "number" ? request.accountId : undefined,
-      contractId: request.symbol,
-      contractName: request.symbol,
-      orderId,
-      orders: [
-        {
-          ...dryRunOrder(request, PROVIDER_NAME),
+    const plannedSize = request.size;
+    let priorSizeError: string | undefined;
+    const attempts = adaptiveProviderSizeAttemptSequence(request.size, request.sizeStep);
+    for (let attemptIndex = 0; attemptIndex < attempts.length; attemptIndex += 1) {
+      request = { ...request, size: attempts[attemptIndex] };
+      try {
+        const response = await fetch(`${baseUrl(fields)}/trade/accounts/${route.accountId}/orders`, {
+          body: JSON.stringify({
+            price: request.entryType === "limit" ? request.entryPrice : 0,
+            qty: request.size,
+            routeId: instrument.routeId ?? "TRADE",
+            side: request.action,
+            stopLoss: request.stopLossPrice,
+            strategyId: request.customTag,
+            takeProfit: request.takeProfitPrice,
+            tradableInstrumentId: Number(instrument.tradableInstrumentId),
+            type: request.entryType,
+            validity: request.entryType === "market" ? "IOC" : "GTC"
+          }),
+          cache: "no-store",
+          headers: {
+            accNum: route.accNum,
+            authorization: `Bearer ${token}`,
+            "content-type": "application/json",
+            ...(fieldText(fields, "developerApiKey", "TRADELOCKER_DEVELOPER_API_KEY")
+              ? { "developer-api-key": fieldText(fields, "developerApiKey", "TRADELOCKER_DEVELOPER_API_KEY")! }
+              : {})
+          },
+          method: "POST"
+        });
+        const parsed = await readJsonResponse<TradeLockerOrderResponse>(response, "TradeLocker order placement failed.");
+        const orderId = parsed.orderId ?? parsed.id;
+        const retryNote = priorSizeError
+          ? `TradeLocker reduced broker size from ${plannedSize} to ${request.size} after a size-related rejection. Previous rejection: ${priorSizeError}`
+          : undefined;
+        return result("placed", {
+          accountId: typeof request.accountId === "number" ? request.accountId : undefined,
+          contractId: request.symbol,
+          contractName: request.symbol,
           orderId,
-          status: "placed"
+          orders: [
+            {
+              ...dryRunOrder(request, PROVIDER_NAME),
+              error: retryNote,
+              orderId,
+              status: "placed"
+            }
+          ]
+        });
+      } catch (error) {
+        const message = readableError(error, "TradeLocker order placement failed.");
+        if (attemptIndex < attempts.length - 1 && executionSizeErrorAllowsRetry(message)) {
+          priorSizeError = message;
+          continue;
         }
-      ]
-    });
+        throw error;
+      }
+    }
+    throw new Error("TradeLocker order placement failed after size-reduction attempts.");
   } catch (error) {
     const message = readableError(error, "TradeLocker order placement failed.");
     return result("failed", { error: message, orders: request ? [failedOrder(request, message)] : undefined });

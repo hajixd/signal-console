@@ -910,7 +910,7 @@ function plannedLiveTradeSizeMultiplier(trade: TradeAlert, option?: StrategyOpti
 
 function liveTradeRealSizeMultiplier(trade: TradeAlert, option?: StrategyOption, event?: LiveTradeEvent): number {
   const orders = event ? liveTradeEventAutoTradeOrders(trade, event.kind, event.managementEvent) : trade.autoTradeOrders;
-  const orderSize = executableOrderSizeMultiplier(orders);
+  const orderSize = executableOrderSizeMultiplier(orders, trade);
   return orderSize ?? plannedLiveTradeSizeMultiplier(trade, option);
 }
 

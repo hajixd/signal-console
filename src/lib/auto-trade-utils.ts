@@ -14,6 +14,8 @@ export type AutoTradeRequest = {
   entryType: "limit" | "market";
   rawTrade: TradeAlert;
   size: number;
+  sizeStep: number;
+  sizeUnit: NonNullable<AutoTradeOrderSummary["sizeUnit"]>;
   stopLossPrice: number;
   symbol: string;
   takeProfitPrice: number;
@@ -231,18 +233,41 @@ export function plannedAutoTradeSizeForTrade(
   });
 }
 
-export function executableOrderSizeMultiplier(orders: AutoTradeOrderSummary[] | undefined): number | undefined {
-  const sizes = (orders ?? [])
+function strategyLotsPerSizeUnit(trade: Pick<TradeAlert, "assetKey" | "market" | "symbol">): number {
+  const market = trade.market || assetMarketForTrade(trade);
+  return market === "forex" || market === "gold_spot" ? 0.1 : 1;
+}
+
+function baseUnitsPerStrategySizeUnit(trade: Pick<TradeAlert, "assetKey" | "market" | "symbol">): number {
+  const market = trade.market || assetMarketForTrade(trade);
+  if (market === "forex") return 10_000;
+  if (market === "gold_spot") return 10;
+  return 1;
+}
+
+function strategySizeFromOrderSize(order: AutoTradeOrderSummary, trade: TradeAlert): number {
+  const size = Math.abs(order.size!);
+  if (order.sizeUnit === "lots") return Number((size / strategyLotsPerSizeUnit(trade)).toFixed(8));
+  if (order.sizeUnit === "base_units") return Number((size / baseUnitsPerStrategySizeUnit(trade)).toFixed(8));
+  // Historical records predate size-unit metadata and already store the
+  // strategy multiplier, so missing metadata must remain backward compatible.
+  return size;
+}
+
+export function executableOrderSizeMultiplier(orders: AutoTradeOrderSummary[] | undefined, trade?: TradeAlert): number | undefined {
+  const executableOrders = (orders ?? [])
     .filter(
       (order) =>
         (order.status === "placed" || order.status === "dry_run") &&
         typeof order.size === "number" &&
         Number.isFinite(order.size) &&
         order.size > 0
-    )
-    .map((order) => Math.abs(order.size!));
-  if (!sizes.length) return undefined;
-  return sizes.reduce((sum, size) => sum + size, 0);
+    );
+  if (!executableOrders.length) return undefined;
+  return executableOrders.reduce(
+    (sum, order) => sum + (trade ? strategySizeFromOrderSize(order, trade) : Math.abs(order.size!)),
+    0
+  );
 }
 
 export function realAutoTradeSizeForTrade(
@@ -250,7 +275,7 @@ export function realAutoTradeSizeForTrade(
   fallbackBaseSize = trade.sizeMultiplier ?? 1,
   orders: AutoTradeOrderSummary[] | undefined = trade.autoTradeOrders
 ): number {
-  return executableOrderSizeMultiplier(orders) ?? plannedAutoTradeSizeForTrade(trade, fallbackBaseSize);
+  return executableOrderSizeMultiplier(orders, trade) ?? plannedAutoTradeSizeForTrade(trade, fallbackBaseSize);
 }
 
 export function mappedSymbol(prefix: ProviderPrefix, trade: TradeAlert): string {
@@ -263,15 +288,91 @@ export function mappedSymbolWithFields(prefix: ProviderPrefix, trade: TradeAlert
   return parseMap(fields?.symbolMap)[symbol] ?? parseEnvMap(`${prefix}_SYMBOL_MAP`)[symbol] ?? symbol;
 }
 
-export function mappedSize(prefix: ProviderPrefix, trade: TradeAlert, fallback = trade.sizeMultiplier ?? 1, fields?: Record<string, string>): number {
+function providerSizeUnit(prefix: ProviderPrefix): NonNullable<AutoTradeOrderSummary["sizeUnit"]> {
+  if (prefix === "CTRADER") return "base_units";
+  if (prefix === "MATCHTRADER" || prefix === "MT5" || prefix === "TRADELOCKER") return "lots";
+  return "strategy";
+}
+
+function providerSizeScale(prefix: ProviderPrefix, trade: TradeAlert): number {
+  const unit = providerSizeUnit(prefix);
+  if (unit === "lots") return strategyLotsPerSizeUnit(trade);
+  if (unit === "base_units") return baseUnitsPerStrategySizeUnit(trade);
+  return 1;
+}
+
+function configuredProviderSizeStep(prefix: ProviderPrefix, fields: Record<string, string> | undefined, unit: NonNullable<AutoTradeOrderSummary["sizeUnit"]>): number {
+  const configured = Number(
+    fields?.sizeStep ??
+      fields?.lotStep ??
+      fields?.volumeStep ??
+      envText(`${prefix}_SIZE_STEP`) ??
+      envText(`${prefix}_LOT_STEP`) ??
+      envText(`${prefix}_VOLUME_STEP`)
+  );
+  if (Number.isFinite(configured) && configured > 0) return configured;
+  if (unit === "lots") return 0.01;
+  if (unit === "base_units") return 1;
+  return 1;
+}
+
+function roundProviderSizeDown(size: number, step: number): number {
+  if (!(size > 0) || !(step > 0)) return 0;
+  const steps = Math.floor((size + Number.EPSILON) / step);
+  if (steps < 1) return 0;
+  return Number((steps * step).toFixed(8));
+}
+
+function providerSizing(
+  prefix: ProviderPrefix,
+  trade: TradeAlert,
+  fallback = trade.sizeMultiplier ?? 1,
+  fields?: Record<string, string>
+): { size: number; sizeStep: number; sizeUnit: NonNullable<AutoTradeOrderSummary["sizeUnit"]> } {
   const symbol = trade.symbol.trim().toUpperCase();
   const mapped = Number(
     parseMap(fields?.sizeMap)[symbol] ?? parseMap(fields?.lotMap)[symbol] ?? parseEnvMap(`${prefix}_SIZE_MAP`)[symbol] ?? parseEnvMap(`${prefix}_LOT_MAP`)[symbol]
   );
-  const size = Number.isFinite(mapped) && mapped > 0 ? mapped : fallback;
-  return scaledAutoTradeSizeForTrade(trade, Number.isFinite(size) && size > 0 ? size : 1, fields, {
+  const sizeUnit = providerSizeUnit(prefix);
+  const scale = providerSizeScale(prefix, trade);
+  const mappedStrategySize = Number.isFinite(mapped) && mapped > 0 ? mapped / scale : null;
+  const fallbackStrategySize = mappedStrategySize ?? (Number.isFinite(fallback) && fallback > 0 ? fallback : 1);
+  const strategySize = scaledAutoTradeSizeForTrade(trade, fallbackStrategySize, fields, {
     wholeNumber: tradeRequiresWholeNumberSize(trade)
   });
+  const sizeStep = configuredProviderSizeStep(prefix, fields, sizeUnit);
+  return { size: roundProviderSizeDown(strategySize * scale, sizeStep), sizeStep, sizeUnit };
+}
+
+export function mappedSize(prefix: ProviderPrefix, trade: TradeAlert, fallback = trade.sizeMultiplier ?? 1, fields?: Record<string, string>): number {
+  return providerSizing(prefix, trade, fallback, fields).size;
+}
+
+export function adaptiveProviderSizeAttemptSequence(size: number, step: number): number[] {
+  const normalizedStep = Number.isFinite(step) && step > 0 ? step : 0.01;
+  const first = roundProviderSizeDown(size, normalizedStep);
+  if (!(first > 0)) return [];
+  const attempts = [first];
+  let current = first;
+  while (current > normalizedStep) {
+    let next = roundProviderSizeDown(current / 2, normalizedStep);
+    if (!(next > 0)) next = roundProviderSizeDown(normalizedStep, normalizedStep);
+    if (!(next > 0) || next >= current) break;
+    attempts.push(next);
+    current = next;
+  }
+  return attempts;
+}
+
+export function executionSizeErrorAllowsRetry(message: string): boolean {
+  return [
+    /insufficient\s+(?:funds?|margin|buying\s+power|purchasing\s+power)/i,
+    /not\s+enough\s+(?:funds?|margin|buying\s+power|purchasing\s+power)/i,
+    /(?:exceeds?|exceeded|over)\s+(?:the\s+)?(?:maximum\s+)?(?:margin|contract|position|size|volume|risk)/i,
+    /(?:max|maximum)\s+(?:margin|contracts?|position|position\s+size|order\s+size|volume)/i,
+    /(?:contract|position|order\s+size|quantity|volume)\s+limit/i,
+    /available\s+(?:margin|buying\s+power|purchasing\s+power).*(?:too\s+low|below|required|needed)/i
+  ].some((pattern) => pattern.test(message));
 }
 
 export function tradeLevels(trade: TradeAlert): Pick<AutoTradeRequest, "stopLossPrice" | "takeProfitPrice"> {
@@ -288,6 +389,7 @@ export function tradeLevels(trade: TradeAlert): Pick<AutoTradeRequest, "stopLoss
 
 export function autoTradeRequest(prefix: ProviderPrefix, trade: TradeAlert, accountId?: number | string, fields?: Record<string, string>): AutoTradeRequest {
   const customTag = createHash("sha256").update(`${prefix}:${trade.id}:${accountId ?? ""}`).digest("hex").slice(0, 24);
+  const sizing = providerSizing(prefix, trade, trade.sizeMultiplier ?? 1, fields);
   return {
     ...tradeLevels(trade),
     accountId,
@@ -296,7 +398,9 @@ export function autoTradeRequest(prefix: ProviderPrefix, trade: TradeAlert, acco
     entryPrice: trade.entryPrice,
     entryType: trade.entryType === "limit" ? "limit" : "market",
     rawTrade: trade,
-    size: mappedSize(prefix, trade, trade.sizeMultiplier ?? 1, fields),
+    size: sizing.size,
+    sizeStep: sizing.sizeStep,
+    sizeUnit: sizing.sizeUnit,
     symbol: mappedSymbolWithFields(prefix, trade, fields)
   };
 }
@@ -320,6 +424,7 @@ export function dryRunOrder(request: AutoTradeRequest, providerName: string): Au
     contractName: request.symbol,
     customTag: request.customTag,
     size: request.size,
+    sizeUnit: request.sizeUnit,
     status: "dry_run"
   };
 }
@@ -333,6 +438,7 @@ export function failedOrder(request: AutoTradeRequest, error: string): AutoTrade
     customTag: request.customTag,
     error,
     size: request.size,
+    sizeUnit: request.sizeUnit,
     status: "failed"
   };
 }
@@ -346,6 +452,7 @@ export function skippedOrder(request: AutoTradeRequest, error: string): AutoTrad
     customTag: request.customTag,
     error,
     size: request.size,
+    sizeUnit: request.sizeUnit,
     status: "skipped"
   };
 }

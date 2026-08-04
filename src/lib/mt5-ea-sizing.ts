@@ -1,6 +1,6 @@
 import { defaultTickSize } from "@/lib/assets";
 import { dollarPerUnit } from "@/lib/instruments";
-import { tradeLevels } from "@/lib/auto-trade-utils";
+import { plannedAutoTradeSizeForTrade, tradeLevels } from "@/lib/auto-trade-utils";
 import { getLatestAccountBalance } from "@/lib/mt5-ea-state";
 import type { TradeAlert } from "@/lib/types";
 
@@ -44,14 +44,31 @@ export function mt5RiskPerTradePct(): number {
   return Math.min(5, Math.max(0, pct)) / 100;
 }
 
-function clampToStep(lots: number): number {
-  const step = numEnv("MT5_EA_LOT_STEP", 0.01);
-  const minLot = numEnv("MT5_EA_MIN_LOT", 0.01);
-  const maxLot = numEnv("MT5_EA_MAX_LOT", 50);
-  const stepped = Math.floor(lots / step) * step;
-  const clamped = Math.min(maxLot, Math.max(minLot, stepped));
-  // Avoid float dust like 0.30000000000000004.
-  return Number(clamped.toFixed(2));
+function decimalPlaces(value: number): number {
+  const text = value.toString().toLowerCase();
+  if (text.includes("e-")) return Math.min(8, Number(text.split("e-")[1]) || 0);
+  return Math.min(8, text.split(".")[1]?.length ?? 0);
+}
+
+function roundDownToLotStep(lots: number): number {
+  const configuredStep = numEnv("MT5_EA_LOT_STEP", 0.01);
+  const step = configuredStep > 0 ? configuredStep : 0.01;
+  const configuredMin = numEnv("MT5_EA_MIN_LOT", 0.01);
+  const minLot = configuredMin > 0 ? configuredMin : step;
+  const configuredMax = numEnv("MT5_EA_MAX_LOT", 50);
+  const maxLot = configuredMax >= minLot ? configuredMax : minLot;
+  if (!Number.isFinite(lots) || lots + Number.EPSILON < minLot) return 0;
+
+  const bounded = Math.min(lots, maxLot);
+  const stepped = Math.floor((bounded + Number.EPSILON) / step) * step;
+  if (stepped + Number.EPSILON < minLot) return 0;
+  return Number(stepped.toFixed(Math.max(2, decimalPlaces(step))));
+}
+
+function sharedExecutionLotCap(trade: TradeAlert): number {
+  // The shared sizing model expresses forex size in 0.1-lot units. This cap
+  // carries per-check and other upstream risk reductions into the MT5 queue.
+  return Math.max(0, plannedAutoTradeSizeForTrade(trade) * SIZE_UNIT_LOTS);
 }
 
 export type Mt5Sizing = {
@@ -69,25 +86,12 @@ export type Mt5Sizing = {
 export async function resolveMt5Lots(trade: TradeAlert, bridgeAccountId: string): Promise<Mt5Sizing> {
   const symbol = trade.symbol.trim().toUpperCase();
 
-  // 1. Hard per-symbol override wins (calibration / manual control).
   const overrideLots = parseMap(process.env.MT5_EA_LOT_OVERRIDE)[symbol];
   const configuredBalance = numEnv("MT5_EA_ACCOUNT_BALANCE", 100_000);
   const liveBalance = await getLatestAccountBalance(bridgeAccountId).catch(() => null);
-  const balance = liveBalance && liveBalance > 0 ? liveBalance : configuredBalance;
-
-  if (overrideLots && overrideLots > 0) {
-    return {
-      lots: clampToStep(overrideLots),
-      riskUsd: 0,
-      balance,
-      stopTicks: 0,
-      reason: `lot override ${overrideLots} for ${symbol}`
-    };
-  }
-
-  // 2. Risk-based sizing off the (live or configured) balance.
+  const balance = liveBalance && liveBalance > 0 ? liveBalance : Math.max(0, configuredBalance);
   const riskPct = mt5RiskPerTradePct();
-  const riskUsd = balance * riskPct;
+  const riskBudgetUsd = balance * riskPct;
   const { stopLossPrice } = tradeLevels(trade);
   const tickSize = defaultTickSize(trade.symbol, "forex");
   const stopDistance = Math.abs(trade.entryPrice - stopLossPrice);
@@ -98,24 +102,33 @@ export async function resolveMt5Lots(trade: TradeAlert, bridgeAccountId: string)
   const pipValuePerLot = pipValueOverride && pipValueOverride > 0
     ? pipValueOverride
     : dollarPerUnit(trade.symbol) / SIZE_UNIT_LOTS;
+  const lotCap = sharedExecutionLotCap(trade);
 
-  if (!(stopTicks > 0) || !(pipValuePerLot > 0) || !(riskUsd > 0)) {
-    const fallback = clampToStep(numEnv("MT5_EA_MIN_LOT", 0.01));
+  if (!(stopTicks > 0) || !(pipValuePerLot > 0) || !(riskBudgetUsd > 0) || !(lotCap > 0)) {
     return {
-      lots: fallback,
-      riskUsd,
+      lots: 0,
+      riskUsd: 0,
       balance,
       stopTicks,
-      reason: `fallback min lot (stopTicks=${stopTicks.toFixed(1)}, pipValue=${pipValuePerLot})`
+      reason: `no risk-safe executable lot (stopTicks=${stopTicks.toFixed(1)}, pipValue=${pipValuePerLot}, lotCap=${lotCap})`
     };
   }
 
-  const rawLots = riskUsd / (stopTicks * pipValuePerLot);
+  const riskBasedLots = riskBudgetUsd / (stopTicks * pipValuePerLot);
+  const requestedLots = overrideLots && overrideLots > 0 ? overrideLots : riskBasedLots;
+  const cappedLots = Math.min(requestedLots, lotCap);
+  const lots = roundDownToLotStep(cappedLots);
+  const riskUsd = lots * stopTicks * pipValuePerLot;
+  const capReason = lotCap + 1e-9 < requestedLots
+    ? `; shared execution guard capped ${requestedLots.toFixed(4)} lots at ${lotCap.toFixed(4)}`
+    : "";
   return {
-    lots: clampToStep(rawLots),
+    lots,
     riskUsd,
     balance,
     stopTicks,
-    reason: `risk ${(riskPct * 100).toFixed(2)}% of ${balance} = $${riskUsd.toFixed(0)} over ${stopTicks.toFixed(1)} pips`
+    reason: overrideLots && overrideLots > 0
+      ? `lot override ${overrideLots} for ${symbol}${capReason}; actual risk $${riskUsd.toFixed(2)}`
+      : `risk ${(riskPct * 100).toFixed(2)}% of ${balance} = $${riskBudgetUsd.toFixed(0)} over ${stopTicks.toFixed(1)} pips${capReason}; actual risk $${riskUsd.toFixed(2)}`
   };
 }

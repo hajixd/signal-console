@@ -28,6 +28,7 @@ export type AutoTradeOrderSummary = {
   resultError?: string;
   resultTradeId?: number;
   size?: number;
+  sizeUnit?: "base_units" | "lots" | "strategy";
   submitLatencyMs?: number;
   status: "dry_run" | "failed" | "placed" | "skipped";
 };

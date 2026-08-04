@@ -61,6 +61,7 @@ function orderSummary(
     contractName: symbol,
     customTag,
     size: lots,
+    sizeUnit: "lots",
     status,
     ...(error ? { error } : {})
   };
