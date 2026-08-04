@@ -1,6 +1,6 @@
 "use client";
 
-import { Children, type KeyboardEvent, type ReactNode, useEffect, useMemo, useState } from "react";
+import { Children, type KeyboardEvent, type ReactNode, useCallback, useEffect, useMemo, useState } from "react";
 
 export type DashboardSectionTab = {
   icon: "cluster" | "history" | "live" | "replay" | "stats" | "storage" | "strategies" | "sync" | "telegram";
@@ -29,22 +29,38 @@ export default function DashboardSectionTabs({ children, tabs }: DashboardSectio
   const defaultTab = tabs[0]?.id ?? "";
   const tabIds = useMemo(() => new Set(tabs.map((tab) => tab.id)), [tabs]);
   const [activeTab, setActiveTab] = useState(defaultTab);
+  const [mountedTabs, setMountedTabs] = useState<Set<string>>(() => new Set(defaultTab ? [defaultTab] : []));
+
+  const mountTab = useCallback((tabId: string) => {
+    if (!tabIds.has(tabId)) return;
+    setMountedTabs((current) => {
+      if (current.has(tabId)) return current;
+      const next = new Set(current);
+      next.add(tabId);
+      return next;
+    });
+  }, [tabIds]);
 
   useEffect(() => {
     const hashedTab = tabFromHash(tabs);
     setActiveTab((current) => (hashedTab ?? (tabIds.has(current) ? current : defaultTab)));
+    if (hashedTab ?? defaultTab) mountTab(hashedTab ?? defaultTab);
 
     function handleHashChange() {
       const nextTab = tabFromHash(tabs);
-      if (nextTab) setActiveTab(nextTab);
+      if (nextTab) {
+        mountTab(nextTab);
+        setActiveTab(nextTab);
+      }
     }
 
     window.addEventListener("hashchange", handleHashChange);
     return () => window.removeEventListener("hashchange", handleHashChange);
-  }, [defaultTab, tabIds, tabs]);
+  }, [defaultTab, mountTab, tabIds, tabs]);
 
   function activateTab(tabId: string, scrollIntoView = true) {
     if (!tabIds.has(tabId)) return;
+    mountTab(tabId);
     setActiveTab(tabId);
     if (typeof window !== "undefined") {
       const nextUrl = `${window.location.pathname}${window.location.search}#${encodeURIComponent(tabId)}`;
@@ -103,6 +119,7 @@ export default function DashboardSectionTabs({ children, tabs }: DashboardSectio
       <div className="dashboardTabPanels">
         {tabs.map((tab, index) => {
           const selected = tab.id === activeTab;
+          const mounted = mountedTabs.has(tab.id);
           return (
             <div
               aria-labelledby={`dashboard-tab-${tab.id}`}
@@ -112,7 +129,7 @@ export default function DashboardSectionTabs({ children, tabs }: DashboardSectio
               key={tab.id}
               role="tabpanel"
             >
-              {panels[index]}
+              {mounted ? panels[index] : null}
             </div>
           );
         })}

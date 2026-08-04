@@ -50,6 +50,8 @@ const DEFAULT_TIMEFRAME = "1m";
 const DEFAULT_CONTEXT_CANDLES = 240;
 const MAX_CONTEXT_CANDLES = 1000;
 const LIVE_FALLBACK_MAX_AGE_SECONDS = 14 * 24 * 60 * 60;
+const PRIMARY_PROVIDER_COOLDOWN_MS = 10 * 60_000;
+let primaryProviderUnavailableUntil = 0;
 
 function chartTimeframe(value: string | null): string {
   return value && SUPPORTED_TIMEFRAMES.has(value) ? value : DEFAULT_TIMEFRAME;
@@ -648,10 +650,13 @@ async function recentProviderBars({
   const providerStart = windowStart - timeframeSeconds(LIVE_SOURCE_TIMEFRAME);
   let sourceBars: Array<{ time: string; open: number; high: number; low: number; close: number; volume?: number }> = [];
   let primaryProviderError: unknown;
-  try {
-    sourceBars = await fetchMarketSourceBars(asset, { afterSeconds: providerStart });
-  } catch (error) {
-    primaryProviderError = error;
+  if (Date.now() >= primaryProviderUnavailableUntil) {
+    try {
+      sourceBars = await fetchMarketSourceBars(asset, { afterSeconds: providerStart });
+    } catch (error) {
+      primaryProviderError = error;
+      primaryProviderUnavailableUntil = Date.now() + PRIMARY_PROVIDER_COOLDOWN_MS;
+    }
   }
   if (!sourceBars.length) {
     try {

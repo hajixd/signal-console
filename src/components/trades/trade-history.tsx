@@ -106,6 +106,28 @@ type CandleMenuState = {
 };
 
 const TRADE_CHART_CONTEXT_CANDLES = 240;
+const TRADE_CHART_CACHE_TTL_MS = 2 * 60_000;
+const MAX_TRADE_CHART_CACHE_ENTRIES = 48;
+const tradeChartCache = new Map<string, { expiresAt: number; payload: ChartPayload }>();
+
+async function fetchCachedTradeChart(url: string, signal: AbortSignal): Promise<ChartPayload> {
+  const cached = tradeChartCache.get(url);
+  if (cached && cached.expiresAt > Date.now()) return cached.payload;
+  if (cached) tradeChartCache.delete(url);
+
+  const response = await fetch(url, { signal });
+  if (!response.ok) throw new Error("Chart unavailable");
+  const payload = (await response.json()) as ChartPayload;
+  if (!payload.bars?.length) return payload;
+
+  tradeChartCache.set(url, { expiresAt: Date.now() + TRADE_CHART_CACHE_TTL_MS, payload });
+  while (tradeChartCache.size > MAX_TRADE_CHART_CACHE_ENTRIES) {
+    const oldestKey = tradeChartCache.keys().next().value;
+    if (!oldestKey) break;
+    tradeChartCache.delete(oldestKey);
+  }
+  return payload;
+}
 
 function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
@@ -1915,6 +1937,9 @@ export default function TradeHistory({ rows }: TradeHistoryProps) {
   const [activeTradeId, setActiveTradeId] = useState<string | null>(null);
   const [chartState, setChartState] = useState<ChartState>({ status: "idle", bars: [] });
   const [chartTimeframe, setChartTimeframe] = useState<TradeChartTimeframe>("1m");
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const modalRef = useRef<HTMLElement>(null);
+  const previousFocusRef = useRef<HTMLElement | null>(null);
   const isRestricted = !useAutoTradeAdminMode();
   const activeTrade = useMemo(
     () => (activeTradeId ? rows.find((row) => row.id === activeTradeId) ?? null : null),
@@ -1977,7 +2002,8 @@ export default function TradeHistory({ rows }: TradeHistoryProps) {
   const activeStats = activeDisplayTrade ? tradePathStats(activeDisplayTrade, activeSourceBars) : { mfe: null, mae: null };
   const activeDurationLabel = activeDisplayTrade ? `${activeDisplayTrade.durationLabel} / ${activeDisplayTrade.durationDetailLabel}` : "";
 
-  function openTrade(trade: TradeHistoryRow) {
+  function openTrade(trade: TradeHistoryRow, opener?: HTMLElement) {
+    previousFocusRef.current = opener ?? (document.activeElement instanceof HTMLElement ? document.activeElement : null);
     setChartTimeframe(trade.sourceTimeframe ?? "1m");
     setActiveTradeId(trade.id);
   }
@@ -1990,13 +2016,38 @@ export default function TradeHistory({ rows }: TradeHistoryProps) {
     if (!activeTradeId) return undefined;
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
+    const focusFrame = window.requestAnimationFrame(() => closeButtonRef.current?.focus());
     function closeOnEscape(event: KeyboardEvent) {
-      if (event.key === "Escape") setActiveTradeId(null);
+      if (event.key === "Escape") {
+        event.preventDefault();
+        setActiveTradeId(null);
+        return;
+      }
+      if (event.key === "Tab") {
+        const focusable = Array.from(
+          modalRef.current?.querySelectorAll<HTMLElement>(
+            'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+          ) ?? []
+        ).filter((element) => !element.hidden && element.getClientRects().length > 0);
+        if (!focusable.length) return;
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        if (event.shiftKey && document.activeElement === first) {
+          event.preventDefault();
+          last.focus();
+        } else if (!event.shiftKey && document.activeElement === last) {
+          event.preventDefault();
+          first.focus();
+        }
+      }
     }
     document.addEventListener("keydown", closeOnEscape);
     return () => {
+      window.cancelAnimationFrame(focusFrame);
       document.body.style.overflow = previousOverflow;
       document.removeEventListener("keydown", closeOnEscape);
+      const previousFocus = previousFocusRef.current;
+      window.requestAnimationFrame(() => previousFocus?.focus());
     };
   }, [activeTradeId]);
 
@@ -2020,9 +2071,7 @@ export default function TradeHistory({ rows }: TradeHistoryProps) {
         context: String(TRADE_CHART_CONTEXT_CANDLES)
       });
     const fetchChartPayload = (timeframeValue: TradeChartTimeframe) =>
-      fetch(`/api/trade-chart?${chartParams(timeframeValue).toString()}`, { signal: controller.signal }).then((response) =>
-        response.ok ? (response.json() as Promise<ChartPayload>) : Promise.reject(new Error("Chart unavailable"))
-      );
+      fetchCachedTradeChart(`/api/trade-chart?${chartParams(timeframeValue).toString()}`, controller.signal);
 
     setChartState({ status: "loading", bars: [] });
     Promise.all([
@@ -2093,6 +2142,7 @@ export default function TradeHistory({ rows }: TradeHistoryProps) {
         aria-modal="true"
         aria-label={`${displaySymbol(activeDisplayTrade)} trade details`}
         onMouseDown={(event) => event.stopPropagation()}
+        ref={modalRef}
       >
         <div className="tradeModalHead">
           <div className="tradeModalTitle">
@@ -2102,7 +2152,7 @@ export default function TradeHistory({ rows }: TradeHistoryProps) {
             </span>
           </div>
           <div className="tradeModalHeadActions">
-            <button type="button" className="tradeModalCloseButton" aria-label="Close trade details" title="Close" onClick={() => setActiveTradeId(null)}>
+            <button type="button" className="tradeModalCloseButton" aria-label="Close trade details" title="Close" onClick={() => setActiveTradeId(null)} ref={closeButtonRef}>
               <span aria-hidden="true">X</span>
             </button>
           </div>
@@ -2191,11 +2241,11 @@ export default function TradeHistory({ rows }: TradeHistoryProps) {
                   role="button"
                   tabIndex={0}
                   aria-label={`Open ${visibleSymbol} trade details`}
-                  onClick={() => openTrade(trade)}
+                  onClick={(event) => openTrade(trade, event.currentTarget)}
                   onKeyDown={(event) => {
                     if (event.key === "Enter" || event.key === " ") {
                       event.preventDefault();
-                      openTrade(trade);
+                      openTrade(trade, event.currentTarget);
                     }
                   }}
                 >
