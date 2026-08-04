@@ -17227,3 +17227,161 @@ html[data-theme="light"] .tradeReplaySlider input::-webkit-slider-thumb {
     gap: 0.68rem;
   }
 }
+
+/* MT5 EA execution status panel */
+.mt5EaPanel {
+  display: grid;
+  gap: 0.6rem;
+  padding: 0.85rem;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--bg);
+  font-size: 0.82rem;
+}
+
+.mt5EaHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+
+.mt5EaHead strong {
+  font-size: 0.92rem;
+}
+
+.mt5EaAccount {
+  margin-left: 0.5rem;
+  color: var(--text-faint);
+  font-family: var(--font-geist-mono), monospace;
+  font-size: 0.74rem;
+}
+
+.mt5EaBadge {
+  padding: 0.12rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  border: 1px solid var(--line);
+}
+
+.mt5EaBadge--live {
+  color: var(--up);
+  border-color: color-mix(in srgb, var(--up) 45%, transparent);
+  background: color-mix(in srgb, var(--up) 12%, transparent);
+}
+
+.mt5EaBadge--stale {
+  color: var(--accent);
+  border-color: color-mix(in srgb, var(--accent) 45%, transparent);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+}
+
+.mt5EaBadge--offline {
+  color: var(--down);
+  border-color: color-mix(in srgb, var(--down) 45%, transparent);
+  background: color-mix(in srgb, var(--down) 12%, transparent);
+}
+
+.mt5EaNote {
+  color: var(--text-dim);
+  line-height: 1.5;
+}
+
+.mt5EaNote code,
+.mt5EaMeta code {
+  font-family: var(--font-geist-mono), monospace;
+  font-size: 0.74rem;
+  color: var(--text);
+}
+
+.mt5EaMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem 0.85rem;
+  color: var(--text-dim);
+  font-size: 0.76rem;
+}
+
+.mt5EaOk { color: var(--up); }
+.mt5EaWarn { color: var(--down); }
+
+.mt5EaStatGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(92px, 1fr));
+  gap: 0.4rem;
+}
+
+.mt5EaStat {
+  display: grid;
+  gap: 0.12rem;
+  padding: 0.45rem 0.55rem;
+  border: 1px solid var(--line-soft);
+  border-radius: 9px;
+}
+
+.mt5EaStat span {
+  color: var(--text-faint);
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.mt5EaStat strong {
+  font-size: 0.9rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.mt5EaTableWrap {
+  overflow-x: auto;
+}
+
+.mt5EaTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.76rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.mt5EaTable th,
+.mt5EaTable td {
+  padding: 0.32rem 0.5rem;
+  text-align: left;
+  border-bottom: 1px solid var(--line-soft);
+  white-space: nowrap;
+}
+
+.mt5EaTable th {
+  color: var(--text-faint);
+  font-weight: 600;
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.mt5EaTag {
+  padding: 0.05rem 0.4rem;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  border: 1px solid var(--line);
+  color: var(--text-dim);
+}
+
+.mt5EaTag--filled {
+  color: var(--up);
+  border-color: color-mix(in srgb, var(--up) 40%, transparent);
+}
+
+.mt5EaTag--rejected,
+.mt5EaTag--expired {
+  color: var(--down);
+  border-color: color-mix(in srgb, var(--down) 40%, transparent);
+}
+
+.mt5EaTag--queued,
+.mt5EaTag--claimed {
+  color: var(--accent);
+  border-color: color-mix(in srgb, var(--accent) 40%, transparent);
+}

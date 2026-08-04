@@ -122,6 +122,28 @@ export async function getTrades(): Promise<TradeAlert[]> {
   return dedupeSortedTrades(await readLocal());
 }
 
+export async function getTrade(id: string): Promise<TradeAlert | null> {
+  if (tursoConfigured()) {
+    try {
+      const doc = await getTursoDocument(TRADE_COLLECTION, id);
+      return doc ? normalizeTrade({ ...doc.payload, id: doc.payload.id ?? doc.id }, doc.id) : null;
+    } catch {
+      // Fall back to Firebase/local storage below.
+    }
+  }
+
+  if (hasFirebaseAdmin()) {
+    try {
+      const snapshot = await withFirebaseTimeout(firebaseDb().collection(TRADE_COLLECTION).doc(id).get(), "Firebase trade get");
+      return snapshot.exists ? normalizeTrade(snapshot.data(), id) : null;
+    } catch {
+      return (await readLocal()).find((trade) => trade.id === id) ?? null;
+    }
+  }
+
+  return (await readLocal()).find((trade) => trade.id === id) ?? null;
+}
+
 export async function hasTrade(id: string): Promise<boolean> {
   if (tursoConfigured()) {
     try {

@@ -200,6 +200,9 @@ const CONNECTION_FIELDS: Record<AutoTradeProviderId, ConnectionField[]> = {
     { advanced: true, key: "symbolMap", label: "Symbol map", placeholder: "EURUSD:EURUSD.,XAUUSD:XAUUSDm" },
     { advanced: true, key: "lotMap", label: "Lot map", placeholder: "EURUSD:0.1,XAUUSD:0.05" }
   ],
+  // MT5 EA is configured via env (EA_INGEST_TOKEN, MT5_EA_* settings); the EA
+  // itself holds the MT5 login. No per-connection form fields in Phase 1.
+  mt5_ea: [],
   ctrader: [
     { key: "accountId", label: "cTrader account ID", required: true },
     { key: "accessToken", label: "Access token", required: true, secret: true },

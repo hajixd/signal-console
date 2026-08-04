@@ -4,6 +4,7 @@ export type AutoTradeProviderId =
   | "projectx"
   | "tradelocker"
   | "mt5_bridge"
+  | "mt5_ea"
   | "ctrader"
   | "matchtrader"
   | "tradovate"
@@ -78,6 +79,17 @@ export const AUTO_TRADE_PROVIDERS: AutoTradeProvider[] = [
     coverage: "FTMO, FundedNext, The5ers, FXIFY, and MT5-based prop accounts through a Windows bridge.",
     connectionMode: "Windows VPS bridge",
     description: "MT5 execution using the account login, password, and server while bridge infrastructure stays advanced."
+  },
+  {
+    id: "mt5_ea",
+    label: "MetaTrader 5 EA",
+    shortLabel: "MT5 EA",
+    markets: ["forex"],
+    status: "live",
+    statusLabel: "Live",
+    coverage: "Any MT5 account running the in-terminal Expert Advisor that polls this app for orders.",
+    connectionMode: "In-terminal EA (pull)",
+    description: "Pull-based MT5 execution: the EA polls /ea/orders/pending and reports fills, so no inbound bridge to the VM is needed."
   },
   {
     id: "ctrader",

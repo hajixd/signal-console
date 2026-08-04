@@ -9,6 +9,7 @@ import {
   rithmicBridgeConfigured
 } from "@/lib/bridge-auto-trader";
 import { executeMatchTraderAutoTrade, matchTraderConfigured } from "@/lib/matchtrader-auto-trader";
+import { executeMt5EaAutoTrade, mt5EaConfigured } from "@/lib/mt5-ea-auto-trader";
 import { getAutoTradeConnection } from "@/lib/auto-trade-connections";
 import { getLatestStoredProjectXConnection } from "@/lib/projectx-connections";
 import { executeProjectXAutoTrade, executeProjectXManagementTrade, executeProjectXTestTrade, type ProjectXAutoTradeResult } from "@/lib/projectx-auto-trader";
@@ -60,6 +61,11 @@ const AUTO_TRADE_CONNECTORS: AutoTradeConnector[] = [
     execute: executeMt5BridgeAutoTrade,
     isConfigured: mt5BridgeConfigured,
     providerId: "mt5_bridge"
+  },
+  {
+    execute: executeMt5EaAutoTrade,
+    isConfigured: mt5EaConfigured,
+    providerId: "mt5_ea"
   },
   {
     execute: executeCTraderBridgeAutoTrade,
