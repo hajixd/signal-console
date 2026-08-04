@@ -1,6 +1,7 @@
 import { dollarPerUnit, instrumentSizeLabel } from "./instruments";
 import { plannedAutoTradeSizeForTrade } from "./auto-trade-utils";
-import type { StrategyPhase, StrategyRule, TradeAlert } from "./types";
+import { adjustAutoTradeSizeToLimits } from "./auto-trade-risk";
+import type { StrategyRule, TradeAlert } from "./types";
 
 export const TOPSTEP_100K_ACCOUNT = {
   startingBalance: 100_000,
@@ -37,7 +38,11 @@ type ChicagoParts = {
 };
 
 export type TopstepSignalReview = {
+  adjustedTrade: TradeAlert;
+  adjustmentNote?: string;
   allowed: boolean;
+  executableSize: number;
+  requestedSize: number;
   reason?: string;
   sessionKey: string;
   chicagoTime: string;
@@ -57,27 +62,6 @@ const CHICAGO_FORMATTER = new Intl.DateTimeFormat("en-US", {
   minute: "2-digit",
   hour12: false
 });
-
-const MINUTES_TO_FLATTEN_BY_PHASE: Record<StrategyPhase, number> = {
-  decile_forward_edge: 90,
-  ict_sweep_fvg: 35,
-  ict_turtle_soup: 120,
-  mean_reversion: 220,
-  momentum: 260,
-  moving_average_crossover: 120,
-  moving_average_touch: 160,
-  percentile_range_study: 90,
-  reddit_capitulation_reversion: 180,
-  reddit_ema_pullback: 180,
-  reddit_orb_breakout: 120,
-  reddit_orb_retest: 120,
-  round_number_rejection: 120,
-  support_resistance_retest: 160,
-  tori_trendline_mtf: 240,
-  trendline_break: 240,
-  vwap_pullback: 160,
-  squeeze_breakout: 180
-};
 
 function chicagoParts(value: Date): ChicagoParts {
   const parts = Object.fromEntries(CHICAGO_FORMATTER.formatToParts(value).map((part) => [part.type, part.value]));
@@ -155,26 +139,34 @@ export function reviewTopstepSignal(rule: StrategyRule, trade: TradeAlert): Tops
   const parts = chicagoParts(projectedEntry);
   const clock = canOpenNewTrade(parts);
   const minutesLeft = minutesUntilFlatten(parts);
-  const { targetDollars, riskDollars } = topstepAlertDollars(trade);
   const reasons: string[] = [];
-  const sizeMultiplier = plannedAutoTradeSizeForTrade(trade);
+  const requestedSize = plannedAutoTradeSizeForTrade(trade);
+  const maxPositionSize = topstepMaxPositionSizeForSymbol(trade.symbol);
+  const sizeAdjustment = adjustAutoTradeSizeToLimits(trade, {
+    maxRiskDollars: TOPSTEP_100K_ACCOUNT.maxPerTradeRisk,
+    maxSize: maxPositionSize,
+    maxTargetDollars: TOPSTEP_100K_ACCOUNT.bestDayRecommendation,
+    targetLimitExclusive: true
+  });
+  const { riskDollars, targetDollars } = sizeAdjustment;
+  const adjustmentCaps = [
+    requestedSize > maxPositionSize ? `${maxPositionSize}-contract position cap` : undefined,
+    sizeAdjustment.originalRiskDollars > TOPSTEP_100K_ACCOUNT.maxPerTradeRisk
+      ? `${formatWholeDollars(TOPSTEP_100K_ACCOUNT.maxPerTradeRisk)} per-trade risk cap`
+      : undefined,
+    sizeAdjustment.originalTargetDollars >= TOPSTEP_100K_ACCOUNT.bestDayRecommendation
+      ? `${formatWholeDollars(TOPSTEP_100K_ACCOUNT.bestDayRecommendation)} best-day line`
+      : undefined
+  ].filter((value): value is string => Boolean(value));
+  const adjustmentNote = sizeAdjustment.adjusted && sizeAdjustment.size > 0
+    ? `Topstep risk guard reduced units from ${instrumentSizeLabel(trade.symbol, requestedSize)} to ${instrumentSizeLabel(trade.symbol, sizeAdjustment.size)} to fit the ${adjustmentCaps.join(" and ")}.`
+    : undefined;
 
   if (rule.market !== "futures") reasons.push("Topstep Combine only permits futures products");
   if (!clock.allowed && clock.reason) reasons.push(clock.reason);
-  if (sizeMultiplier <= 0) reasons.push("custom unit sizing leaves no executable futures contract under the configured risk ceiling");
-  const flattenBufferMinutes = MINUTES_TO_FLATTEN_BY_PHASE[rule.phase] ?? 180;
-  if (minutesLeft < flattenBufferMinutes) {
-    reasons.push(`too close to ${TOPSTEP_100K_ACCOUNT.flattenTimeCt} for ${rule.phase.replaceAll("_", " ")}`);
-  }
-  const maxPositionSize = topstepMaxPositionSizeForSymbol(trade.symbol);
-  if (sizeMultiplier > maxPositionSize) {
-    reasons.push(`size ${sizeMultiplier} exceeds ${maxPositionSize} contract max`);
-  }
-  if (riskDollars > TOPSTEP_100K_ACCOUNT.maxPerTradeRisk) {
-    reasons.push(`risk ${formatWholeDollars(riskDollars)} exceeds ${formatWholeDollars(TOPSTEP_100K_ACCOUNT.maxPerTradeRisk)} per-trade cap`);
-  }
-  if (targetDollars >= TOPSTEP_100K_ACCOUNT.bestDayRecommendation) {
-    reasons.push(`target ${formatWholeDollars(targetDollars)} can break the best-day consistency target`);
+  if (requestedSize <= 0) reasons.push("custom unit sizing leaves no executable futures contract under the configured risk ceiling");
+  if (requestedSize > 0 && sizeAdjustment.size <= 0) {
+    reasons.push("even one futures contract would exceed the configured position, risk, or consistency ceiling");
   }
 
   const boundedProfitFactor = Number.isFinite(trade.liveProfitFactor) ? Math.min(Math.max(trade.liveProfitFactor, 0), 6) : 6;
@@ -186,7 +178,11 @@ export function reviewTopstepSignal(rule: StrategyRule, trade: TradeAlert): Tops
     (rule.phase === "ict_sweep_fvg" ? 0.12 : 0);
 
   return {
+    adjustedTrade: sizeAdjustment.trade,
+    adjustmentNote,
     allowed: reasons.length === 0,
+    executableSize: sizeAdjustment.size,
+    requestedSize,
     reason: reasons.join("; ") || undefined,
     sessionKey: topstepSessionKey(projectedEntry),
     chicagoTime: chicagoTimeLabel(parts),
@@ -207,8 +203,10 @@ export function topstepGuardNote(review: Pick<TopstepSignalReview, "targetDollar
 }
 
 export function withTopstepGuardNote(trade: TradeAlert, review: TopstepSignalReview): TradeAlert {
+  const adjustedTrade = review.adjustedTrade ?? trade;
   return {
-    ...trade,
-    notes: [trade.notes, topstepGuardNote(review)].filter(Boolean).join(" ")
+    ...adjustedTrade,
+    autoTradeSizeAdjustment: [adjustedTrade.autoTradeSizeAdjustment, review.adjustmentNote].filter(Boolean).join(" ") || undefined,
+    notes: [adjustedTrade.notes, review.adjustmentNote, topstepGuardNote(review)].filter(Boolean).join(" ")
   };
 }

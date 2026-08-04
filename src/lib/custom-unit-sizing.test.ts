@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { autoTradeRequest, mappedSize, nonExecutableOrderSizeReason, plannedAutoTradeSizeForTrade, realAutoTradeSizeForTrade } from "@/lib/auto-trade-utils";
+import { adjustAutoTradeSizeToLimits } from "@/lib/auto-trade-risk";
 import { customUnitSizeMultiplierForTrade } from "@/lib/custom-unit-sizing";
 import {
   alertTargetDollarsWithSize,
@@ -10,6 +11,7 @@ import {
 import { projectXBracketTicksForTrade, projectXLegacyOrderSummarySize, projectXOrderSizeForAccount } from "@/lib/projectx-auto-trader";
 import type { StrategySignal } from "@/lib/strategy-definition";
 import { planTradeAlert } from "@/lib/trade-planner";
+import { reviewTopstepSignal } from "@/lib/topstep";
 import type { StrategyRule, TradeAlert } from "@/lib/types";
 
 const customScaleRange = {
@@ -267,4 +269,48 @@ test("custom units override a static provider size map", () => {
 
 test("non-custom futures sizing retains existing upward rounding", () => {
   assert.equal(mappedSize("TRADOVATE", trade({ customScaleRange: undefined, sizeMultiplier: 6.711409 }), undefined, { accountName: "50K account" }), 4);
+});
+
+test("an execution size cap overrides custom sizing and provider size maps", () => {
+  const cappedTrade = trade({ autoTradeSizeCap: 2 });
+
+  assert.equal(plannedAutoTradeSizeForTrade(cappedTrade), 2);
+  assert.equal(mappedSize("TRADOVATE", cappedTrade, undefined, { sizeMap: '{"NQ":"20"}' }), 2);
+  assert.equal(autoTradeRequest("TRADOVATE", cappedTrade, 1, { sizeMap: '{"NQ":"20"}' }).size, 2);
+});
+
+test("a per-check risk budget reduces forex units instead of rejecting the trade", () => {
+  const forexTrade = trade({
+    customScaleRange: undefined,
+    market: "forex",
+    sizeMode: undefined,
+    sizeMultiplier: 33.87,
+    slUnits: 50,
+    symbol: "AUDNZD",
+    tpUnits: 50,
+    unitLabel: "pips"
+  });
+  const adjustment = adjustAutoTradeSizeToLimits(forexTrade, { maxRiskDollars: 250 });
+
+  assert.equal(adjustment.adjusted, true);
+  assert.ok(adjustment.size > 0);
+  assert.ok(adjustment.size < adjustment.originalSize);
+  assert.ok(adjustment.riskDollars <= 250);
+  assert.equal(plannedAutoTradeSizeForTrade(adjustment.trade), adjustment.size);
+});
+
+test("Topstep converts size, risk, and consistency breaches into a smaller executable order", () => {
+  const oversizedTrade = trade({
+    customScaleRange: undefined,
+    sizeMode: "custom",
+    sizeMultiplier: 99
+  });
+  const review = reviewTopstepSignal(rule, oversizedTrade);
+
+  assert.equal(review.allowed, true);
+  assert.equal(review.executableSize, 13);
+  assert.equal(review.adjustedTrade.autoTradeSizeCap, 13);
+  assert.match(review.adjustmentNote ?? "", /reduced units/i);
+  assert.ok(review.riskDollars <= 1_250);
+  assert.ok(review.targetDollars < 3_000);
 });

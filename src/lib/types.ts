@@ -173,6 +173,8 @@ export type TradeAlert = {
   autoTradeOrders?: AutoTradeOrderSummary[];
   autoTradeProviderId?: string;
   autoTradeProviderName?: string;
+  autoTradeSizeAdjustment?: string;
+  autoTradeSizeCap?: number;
   autoTradeStatus?: "disabled" | "dry_run" | "failed" | "placed" | "skipped";
   entryOrderSizeMultiplier?: number;
   id: string;

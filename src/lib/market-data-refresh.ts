@@ -95,6 +95,10 @@ type OneMinuteFetchOptions = {
 };
 
 const DEFAULT_MARKET_DATA_REFRESH_CONCURRENCY = 4;
+const R2_MARKET_DATA_UNAVAILABLE_COOLDOWN_MS = 60_000;
+
+let r2MarketDataUnavailableUntil = 0;
+let r2MarketDataFallbackWarningShown = false;
 
 function boundedIntegerEnv(name: string, fallback: number, min: number, max: number): number {
   const value = Number(process.env[name]);
@@ -166,8 +170,12 @@ function requireLocalMarketDataStorage(relativePath: string): void {
 
 function storageErrorCode(error: unknown): number | string | undefined {
   if (!error || typeof error !== "object") return undefined;
-  const candidate = error as { code?: number | string; status?: number | string };
-  return candidate.code ?? candidate.status;
+  const candidate = error as {
+    $metadata?: { httpStatusCode?: number };
+    code?: number | string;
+    status?: number | string;
+  };
+  return candidate.code ?? candidate.status ?? candidate.$metadata?.httpStatusCode;
 }
 
 function isStorageNotFoundError(error: unknown): boolean {
@@ -186,7 +194,9 @@ function marketDataStorageError(error: unknown, relativePath: string): Error {
   ) {
     return new Error(marketDataStorageUnavailableMessage(relativePath));
   }
-  return error instanceof Error ? error : new Error("Unknown market data storage error");
+  if (error instanceof Error && error.message.trim() && !/^Unknown(?:Error)?$/i.test(error.message.trim())) return error;
+  const code = storageErrorCode(error);
+  return new Error(`Market data storage request failed${code == null ? "" : ` (HTTP ${code})`}.`);
 }
 
 function readableErrorMessage(error: unknown): string {
@@ -198,8 +208,29 @@ function apiOnlyStorageFallbackEnabled(options: MarketDataRefreshOptions): boole
 }
 
 function isMarketDataStorageAccessError(error: unknown): boolean {
+  const code = storageErrorCode(error);
+  if (code === 401 || code === "401" || code === 403 || code === "403" || code === 404 || code === "404") return true;
   const message = readableErrorMessage(error);
-  return /billing account|owning project is disabled|firebase|firestore|storage|bucket|no such object|invalid.*symlink/i.test(message);
+  return /billing account|owning project is disabled|firebase|firestore|storage|bucket|no such object|invalid.*symlink|unknownerror/i.test(message);
+}
+
+function r2MarketDataAvailable(): boolean {
+  if (!r2Configured() || Date.now() < r2MarketDataUnavailableUntil) return false;
+  if (r2MarketDataUnavailableUntil > 0) {
+    r2MarketDataUnavailableUntil = 0;
+    r2MarketDataFallbackWarningShown = false;
+  }
+  return true;
+}
+
+function markR2MarketDataUnavailable(error: unknown): void {
+  r2MarketDataUnavailableUntil = Math.max(r2MarketDataUnavailableUntil, Date.now() + R2_MARKET_DATA_UNAVAILABLE_COOLDOWN_MS);
+  if (r2MarketDataFallbackWarningShown) return;
+  r2MarketDataFallbackWarningShown = true;
+  console.warn("R2 market data storage is unavailable; using Firebase Storage for this sync.", {
+    code: storageErrorCode(error),
+    message: readableErrorMessage(error)
+  });
 }
 
 function emptyCsvState(): StoredCsvState {
@@ -502,12 +533,15 @@ async function appendLocalText(relativePath: string, text: string): Promise<void
   await appendFile(filePath, text, "utf8");
 }
 
+type RemoteCsvProvider = "firebase" | "r2";
+
 type StoredCsvState = {
   endsWithNewline: boolean;
   exists: boolean;
   firstBarTime?: number;
   generation?: number;
   lastBarTime?: number;
+  remoteProvider?: RemoteCsvProvider;
   rows?: number;
   tailBars?: CsvBar[];
 };
@@ -592,33 +626,14 @@ async function localCsvState(relativePath: string, coverage: DatasetAssetCoverag
   }
 }
 
-async function remoteCsvState(relativePath: string, coverage: DatasetAssetCoverage | undefined): Promise<StoredCsvState> {
-  if (r2Configured()) {
-    try {
-      const metadata = await r2HeadObject(relativePath);
-      const size = Number(metadata?.contentLength ?? 0);
-      if (!Number.isFinite(size) || size <= 0) return { endsWithNewline: true, exists: false, rows: coverage?.rows };
-
-      const tailText = (await r2GetTailText(relativePath, 65536)) ?? "";
-      return {
-        endsWithNewline: tailText.endsWith("\n"),
-        exists: true,
-        firstBarTime: secondsFromIso(coverage?.firstBarAt ?? "") ?? undefined,
-        lastBarTime: lastDataTimestamp(tailText),
-        rows: coverage?.rows,
-        tailBars: parseCsvTailBars(tailText)
-      };
-    } catch (error) {
-      if (firebaseLocalFallbackEnabled()) return localCsvState(relativePath, coverage);
-      throw marketDataStorageError(error, relativePath);
-    }
-  }
-
+async function firebaseCsvState(relativePath: string, coverage: DatasetAssetCoverage | undefined): Promise<StoredCsvState> {
   try {
     const file = firebaseBucket().file(storageObjectPath(relativePath));
     const [metadata] = await file.getMetadata();
     const size = Number(metadata.size ?? 0);
-    if (!Number.isFinite(size) || size <= 0) return { endsWithNewline: true, exists: false, rows: coverage?.rows };
+    if (!Number.isFinite(size) || size <= 0) {
+      return { endsWithNewline: true, exists: false, remoteProvider: "firebase", rows: coverage?.rows };
+    }
 
     const [tail] = await file.download({
       start: Math.max(0, size - 65536),
@@ -632,14 +647,47 @@ async function remoteCsvState(relativePath: string, coverage: DatasetAssetCovera
       firstBarTime: secondsFromIso(coverage?.firstBarAt ?? "") ?? undefined,
       generation: Number.isFinite(Number(metadata.generation)) ? Number(metadata.generation) : undefined,
       lastBarTime: lastDataTimestamp(tailText),
+      remoteProvider: "firebase",
       rows: coverage?.rows,
       tailBars: parseCsvTailBars(tailText)
     };
   } catch (error) {
-    if (isStorageNotFoundError(error)) return { endsWithNewline: true, exists: false, rows: coverage?.rows };
+    if (isStorageNotFoundError(error)) {
+      return { endsWithNewline: true, exists: false, remoteProvider: "firebase", rows: coverage?.rows };
+    }
     if (firebaseLocalFallbackEnabled()) return localCsvState(relativePath, coverage);
     throw marketDataStorageError(error, relativePath);
   }
+}
+
+async function remoteCsvState(relativePath: string, coverage: DatasetAssetCoverage | undefined): Promise<StoredCsvState> {
+  if (r2MarketDataAvailable()) {
+    try {
+      const metadata = await r2HeadObject(relativePath);
+      const size = Number(metadata?.contentLength ?? 0);
+      if (!Number.isFinite(size) || size <= 0) {
+        return { endsWithNewline: true, exists: false, remoteProvider: "r2", rows: coverage?.rows };
+      }
+
+      const tailText = (await r2GetTailText(relativePath, 65536)) ?? "";
+      return {
+        endsWithNewline: tailText.endsWith("\n"),
+        exists: true,
+        firstBarTime: secondsFromIso(coverage?.firstBarAt ?? "") ?? undefined,
+        lastBarTime: lastDataTimestamp(tailText),
+        remoteProvider: "r2",
+        rows: coverage?.rows,
+        tailBars: parseCsvTailBars(tailText)
+      };
+    } catch (error) {
+      markR2MarketDataUnavailable(error);
+      if (hasFirebaseAdmin()) return firebaseCsvState(relativePath, coverage);
+      if (firebaseLocalFallbackEnabled()) return localCsvState(relativePath, coverage);
+      throw marketDataStorageError(error, relativePath);
+    }
+  }
+
+  return firebaseCsvState(relativePath, coverage);
 }
 
 async function storedCsvState(relativePath: string, coverage: DatasetAssetCoverage | undefined): Promise<StoredCsvState> {
@@ -653,8 +701,8 @@ function remoteTempObjectPath(relativePath: string, label: string): string {
   return storageObjectPath(`tmp/market-data-sync/${Date.now()}-${process.pid}-${label}-${safePath}`);
 }
 
-async function saveRemoteText(relativePath: string, text: string): Promise<void> {
-  if (r2Configured()) {
+async function saveRemoteText(relativePath: string, text: string, provider: RemoteCsvProvider): Promise<void> {
+  if (provider === "r2") {
     await r2PutText(relativePath, text, "text/csv; charset=utf-8");
     return;
   }
@@ -671,7 +719,8 @@ async function saveRemoteText(relativePath: string, text: string): Promise<void>
 }
 
 async function appendRemoteText(relativePath: string, text: string, existing: StoredCsvState): Promise<void> {
-  if (r2Configured()) {
+  const provider = existing.remoteProvider ?? (r2MarketDataAvailable() ? "r2" : "firebase");
+  if (provider === "r2") {
     if (!existing.exists) {
       await r2PutText(relativePath, `time,open,high,low,close,volume\n${text}`, "text/csv; charset=utf-8");
       return;
@@ -681,7 +730,7 @@ async function appendRemoteText(relativePath: string, text: string, existing: St
   }
 
   if (!existing.exists) {
-    await saveRemoteText(relativePath, `time,open,high,low,close,volume\n${text}`);
+    await saveRemoteText(relativePath, `time,open,high,low,close,volume\n${text}`, "firebase");
     return;
   }
 

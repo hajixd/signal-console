@@ -20,7 +20,7 @@ const DEFAULT_TEST_SIZE_BY_MARKET: Record<AutoTradeMarket, number> = {
 
 const DEFAULT_TEST_UNITS_BY_MARKET: Record<AutoTradeMarket, number> = {
   forex: 10,
-  futures: 4
+  futures: 6
 };
 
 function envText(name: string): string | undefined {

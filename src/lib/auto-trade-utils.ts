@@ -183,6 +183,13 @@ function positiveFiniteSize(value: unknown): number | null {
   return Number.isFinite(numeric) && numeric > 0 ? numeric : null;
 }
 
+function normalizedAutoTradeSizeCap(trade: TradeAlert, wholeNumber: boolean): number | null {
+  const numeric = Number(trade.autoTradeSizeCap);
+  if (!Number.isFinite(numeric) || numeric < 0) return null;
+  if (wholeNumber) return Math.max(0, Math.floor(numeric + Number.EPSILON));
+  return Math.max(0, Math.floor((numeric + Number.EPSILON) * 10_000) / 10_000);
+}
+
 function savedCustomSizeMultiplierForTrade(trade: TradeAlert, fallbackBaseSize: number): number | null {
   if (trade.sizeMode !== "custom") return null;
   return positiveFiniteSize(fallbackBaseSize);
@@ -194,19 +201,22 @@ export function scaledAutoTradeSizeForTrade(
   sources: AutoTradeAccountSizeSource | Array<AutoTradeAccountSizeSource | undefined> | undefined,
   options: { minSize?: number; wholeNumber?: boolean } = {}
 ): number {
+  const sizeCap = normalizedAutoTradeSizeCap(trade, options.wholeNumber === true);
   const customSize = customUnitSizeMultiplierForTrade(trade) ?? savedCustomSizeMultiplierForTrade(trade, fallbackBaseSize);
   if (customSize !== null) {
-    return scaledAutoTradeSize(customSize, undefined, {
+    const size = scaledAutoTradeSize(customSize, undefined, {
       ...options,
       minSize: options.wholeNumber ? (options.minSize ?? 0) : options.minSize,
       wholeNumberRounding: options.wholeNumber ? "floor" : undefined
     });
+    return sizeCap === null ? size : Math.min(size, sizeCap);
   }
 
-  return scaledAutoTradeSize(fallbackBaseSize, sources, {
+  const size = scaledAutoTradeSize(fallbackBaseSize, sources, {
     ...options,
     wholeNumberRounding: undefined
   });
+  return sizeCap === null ? size : Math.min(size, sizeCap);
 }
 
 export function plannedAutoTradeSizeForTrade(

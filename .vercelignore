@@ -16,3 +16,6 @@ strategy/**/backtest_trades.csv
 strategy/research_summary.csv
 strategy/tuning_summary.csv
 .codex-next-dev.log
+.cluster-dev*.log
+cluster-map*verified.png
+test-results

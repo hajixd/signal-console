@@ -2390,6 +2390,9 @@ export default async function Home({ searchParams }: HomeProps) {
         <div className="marketTopShell">
           <div className="marketTopRow">
             <AutoTradeAccountModeSwitch />
+            <Link className="autoTradeResearchLink marketTopNavLink" href="/tour">
+              Product Tour
+            </Link>
             <Link className="autoTradeResearchLink marketTopNavLink" href="/research">
               Research
             </Link>

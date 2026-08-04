@@ -53,6 +53,11 @@ strategy/tuning_summary.csv
 .codex-next-prod.*.log
 .codex-next-prod-*.log
 
+# local verification artifacts
+/.cluster-dev*.log
+/cluster-map*verified.png
+/test-results/
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts

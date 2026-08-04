@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { executeAutoTrade, executeAutoTradeManagement, type AutoTradeExecutionResult } from "@/lib/auto-trader";
 import { autoTradeMarketForSignal } from "@/lib/auto-trade-platforms";
+import { adjustAutoTradeSizeToLimits } from "@/lib/auto-trade-risk";
 import { plannedAutoTradeSizeForTrade } from "@/lib/auto-trade-utils";
-import { dollarPerUnit } from "@/lib/instruments";
+import { dollarPerUnit, instrumentSizeLabel } from "@/lib/instruments";
 import { sendDiscord } from "@/lib/discord";
 import { assetTimeframeBarsKey } from "@/lib/market-data-refresh";
 import { fetchStoredAssetBars, fetchStoredMarketBars } from "@/lib/market-data-store";
@@ -85,6 +86,21 @@ function signalDollars(trade: TradeAlert): { targetDollars: number; riskDollars:
   return {
     riskDollars: Math.abs(trade.slUnits * unitValue * sizeMultiplier),
     targetDollars: Math.abs(trade.tpUnits * unitValue * sizeMultiplier)
+  };
+}
+
+function wholeDollarLabel(value: number): string {
+  return new Intl.NumberFormat("en-US", {
+    currency: "USD",
+    maximumFractionDigits: 0,
+    style: "currency"
+  }).format(value);
+}
+
+function appendAutoTradeSizeAdjustment(trade: TradeAlert, note: string): TradeAlert {
+  return {
+    ...trade,
+    autoTradeSizeAdjustment: [trade.autoTradeSizeAdjustment, note].filter(Boolean).join(" ")
   };
 }
 
@@ -953,7 +969,7 @@ async function dispatchSelectedSignal(candidate: SignalCandidate): Promise<Dispa
   if (candidate.autoTradeBlockedReason) {
     autoTrade = {
       checkedAt: new Date().toISOString(),
-      error: `Alert only; auto-trade blocked by futures risk guard: ${candidate.autoTradeBlockedReason}`,
+      error: `Alert only; auto-trade blocked by execution guard: ${candidate.autoTradeBlockedReason}`,
       status: "skipped"
     };
   } else {
@@ -1157,7 +1173,20 @@ export async function runSignalCheck(options: RunSignalCheckOptions = {}): Promi
         return { ...candidate, autoTradeBlockedReason: reason, riskDollars: 0 };
       }
       if (acceptedRisk + candidate.riskDollars > maxRisk) {
-        const reason = `would exceed ${new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(maxRisk)} auto-trade risk budget for this check`;
+        const remainingRisk = Math.max(0, maxRisk - acceptedRisk);
+        const adjustment = adjustAutoTradeSizeToLimits(candidate.signal, { maxRiskDollars: remainingRisk });
+        if (adjustment.size > 0 && adjustment.riskDollars <= remainingRisk + 0.01) {
+          const note = `Risk guard reduced units from ${instrumentSizeLabel(candidate.signal.symbol, adjustment.originalSize)} to ${instrumentSizeLabel(candidate.signal.symbol, adjustment.size)} to use the remaining ${wholeDollarLabel(remainingRisk)} of the ${wholeDollarLabel(maxRisk)} per-check risk budget.`;
+          acceptedRisk += adjustment.riskDollars;
+          acceptedCount += 1;
+          return {
+            ...candidate,
+            riskDollars: adjustment.riskDollars,
+            signal: appendAutoTradeSizeAdjustment(adjustment.trade, note)
+          };
+        }
+
+        const reason = `no executable unit size remains within the ${wholeDollarLabel(maxRisk)} auto-trade risk budget for this check`;
         result.skippedRisk.push({
           id: candidate.signal.id,
           symbol: candidate.signal.symbol,

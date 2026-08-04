@@ -285,10 +285,11 @@ function isNoLoginOrder(order: NonNullable<TradeAlert["autoTradeOrders"]>[number
 }
 
 function executionLines(trade: TradeAlert): string[] {
+  const sizeAdjustment = trade.autoTradeSizeAdjustment ? `- ${trade.autoTradeSizeAdjustment}` : undefined;
   if (trade.autoTradeOrders?.length) {
     const actionableOrders = trade.autoTradeOrders.filter((order) => order.status !== "skipped" || !isNoLoginOrder(order));
     if (!actionableOrders.length) {
-      return [NO_ACCOUNTS_MESSAGE];
+      return [sizeAdjustment, NO_ACCOUNTS_MESSAGE].filter((line): line is string => Boolean(line));
     }
 
     const groups = new Map<string, string[]>();
@@ -298,20 +299,24 @@ function executionLines(trade: TradeAlert): string[] {
       lines.push(row.line);
       groups.set(row.name, lines);
     }
-    return [...groups.entries()].flatMap(([name, lines], index) => (index === 0 ? [name, ...lines] : ["", name, ...lines]));
+    return [
+      sizeAdjustment,
+      ...[...groups.entries()].flatMap(([name, lines], index) => (index === 0 ? [name, ...lines] : ["", name, ...lines]))
+    ].filter((line): line is string => Boolean(line));
   }
 
-  if (!trade.autoTradeStatus && !trade.autoTradeError) return [];
+  if (!trade.autoTradeStatus && !trade.autoTradeError) return sizeAdjustment ? [sizeAdjustment] : [];
 
   if (isNoLoginMessage(trade.autoTradeError)) {
-    return [NO_ACCOUNTS_MESSAGE];
+    return [sizeAdjustment, NO_ACCOUNTS_MESSAGE].filter((line): line is string => Boolean(line));
   }
 
   return [
+    sizeAdjustment,
     `- ${autoTradeStatusLabel(trade.autoTradeStatus)}${
       trade.autoTradeError ? ` | Note: ${truncate(trade.autoTradeError, 90)}` : ""
     }`
-  ];
+  ].filter((line): line is string => Boolean(line));
 }
 
 function autoTradeContractLabel(trade: TradeAlert): string | undefined {
