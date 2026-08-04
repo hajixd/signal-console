@@ -699,6 +699,35 @@ function syncRunGapMs(previousRun: SyncTileRun | undefined, nextRun: SyncTileRun
   return nextStartedAt - previousFinishedAt;
 }
 
+function sanitizedSyncError(error: string): string {
+  return error
+    .replace(/(bearer\s+)[a-z0-9._~+/=-]+/gi, "$1[redacted]")
+    .replace(/([?&](?:api[_-]?key|token|access[_-]?token)=)[^&\s]+/gi, "$1[redacted]")
+    .replace(/((?:api[_-]?key|token|secret)\s*[:=]\s*)[^,;\s]+/gi, "$1[redacted]")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function syncErrorSummary(error: string): string {
+  const normalized = sanitizedSyncError(error);
+  if (/run out of api credits|daily (?:api )?(?:credit|request|usage) limit|quota (?:has been )?(?:reached|exceeded)/i.test(normalized)) {
+    return "Daily provider quota reached. Stored bars remain available; refresh resumes automatically after reset.";
+  }
+  if (/\b429\b|rate[ -]?limit|too many requests/i.test(normalized)) {
+    return "Provider rate limit reached. Stored bars remain available while automatic retries cool down.";
+  }
+  if (/all (?:configured )?(?:market data )?providers? (?:failed|unavailable)|provider unavailable/i.test(normalized)) {
+    return "Live providers are temporarily unavailable. Stored bars remain available while automatic retries continue.";
+  }
+  if (/timed? out|timeout|aborted/i.test(normalized)) {
+    return "The live provider timed out. Stored bars remain available while the next refresh retries.";
+  }
+  if (/not configured|missing.*(?:api[_ -]?key|token)|(?:api[_ -]?key|token).*missing/i.test(normalized)) {
+    return "The live market-data provider is not fully configured.";
+  }
+  return normalized.length > 180 ? `${normalized.slice(0, 177)}...` : normalized;
+}
+
 function SyncTileChecks({ ariaLabel, checks }: { ariaLabel: string; checks: SyncDetailCheck[] }) {
   return (
     <div className="dataValidityChecks syncTileChecks" aria-label={ariaLabel}>
@@ -744,7 +773,8 @@ function syncTileStatusTimestamp(
 
 function syncTileErrorText(state: SyncTileState, run: SyncTileRun | undefined): string | undefined {
   if (state !== "failed" || !run?.error) return undefined;
-  return run.error.length > 220 ? `${run.error.slice(0, 217)}...` : run.error;
+  const error = sanitizedSyncError(run.error);
+  return error.length > 420 ? `${error.slice(0, 417)}...` : error;
 }
 
 function SyncTileStatus({
@@ -757,9 +787,12 @@ function SyncTileStatus({
   state: SyncTileState;
 }) {
   const timestamp = syncTileStatusTimestamp(state, run, lastSuccessfulAt);
+  const errorText = syncTileErrorText(state, run);
+  const errorSummary = errorText ? syncErrorSummary(errorText) : undefined;
+  const hasCondensedError = Boolean(errorText && errorSummary && errorText !== errorSummary);
   return (
     <>
-      <span className="sync-status-value" title={run?.error}>
+      <span className="sync-status-value" title={state === "failed" ? errorSummary : undefined}>
         <span>{syncTileLabel(state)}</span>
         {timestamp ? (
           <span className="sync-status-date">
@@ -767,10 +800,17 @@ function SyncTileStatus({
           </span>
         ) : null}
       </span>
-      {syncTileErrorText(state, run) ? (
-        <span className="sync-status-error" title={run?.error}>
-          {syncTileErrorText(state, run)}
-        </span>
+      {errorSummary ? (
+        hasCondensedError ? (
+          <details className="sync-status-error" title="Open technical details">
+            <summary>{errorSummary}</summary>
+            <span>{errorText}</span>
+          </details>
+        ) : (
+          <span className="sync-status-error" title={errorText}>
+            {errorSummary}
+          </span>
+        )
       ) : null}
     </>
   );
@@ -2090,9 +2130,9 @@ export default async function Home({ searchParams }: HomeProps) {
     ...(marketDataSyncState === "failed"
       ? [
           {
-            detail: syncStatus.marketDataSync?.error,
-            label: "Market data sync failed",
-            tone: "bad" as const
+            detail: syncStatus.marketDataSync?.error ? syncErrorSummary(syncStatus.marketDataSync.error) : undefined,
+            label: coverageRows ? "Stored bars active — retrying" : "Market data sync failed",
+            tone: coverageRows ? ("warning" as const) : ("bad" as const)
           }
         ]
       : []),
@@ -2153,7 +2193,7 @@ export default async function Home({ searchParams }: HomeProps) {
     ...(signalTradeCheckState === "failed"
       ? [
           {
-            detail: syncStatus.signalTradeCheck?.error,
+            detail: syncStatus.signalTradeCheck?.error ? syncErrorSummary(syncStatus.signalTradeCheck.error) : undefined,
             label: "Signal check failed",
             tone: "bad" as const
           }
@@ -2162,7 +2202,7 @@ export default async function Home({ searchParams }: HomeProps) {
     ...(signalPausedForStaleData
       ? [
           {
-            detail: syncStatus.signalTradeCheck?.error,
+            detail: syncStatus.signalTradeCheck?.error ? syncErrorSummary(syncStatus.signalTradeCheck.error) : undefined,
             label: "Stale data pause",
             tone: "warning" as const
           }

@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { Fragment, FormEvent, useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { Fragment, FormEvent, type RefObject, useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { createPortal } from "react-dom";
 import AutoTradingConnectionPanel from "@/components/auto-trading/auto-trading-connection-panel";
 import {
@@ -930,10 +930,14 @@ function MobileAccountModeControl({ showLoading }: Pick<MobileLoadingController,
 
 function MobileTradeChartModal({
   chartState,
+  closeButtonRef,
+  modalRef,
   onClose,
   trade
 }: {
   chartState: MobileChartState;
+  closeButtonRef: RefObject<HTMLButtonElement | null>;
+  modalRef: RefObject<HTMLElement | null>;
   onClose: () => void;
   trade: TradeHistoryRow;
 }) {
@@ -945,13 +949,13 @@ function MobileTradeChartModal({
         if (event.target === event.currentTarget) onClose();
       }}
     >
-      <section className="mobile-trade-modal" role="dialog" aria-modal="true" aria-label={`${displaySymbol(trade)} trade chart`}>
+      <section className="mobile-trade-modal" role="dialog" aria-modal="true" aria-label={`${displaySymbol(trade)} trade chart`} ref={modalRef}>
         <div className="mobile-trade-modal-head">
           <div>
             <span>{trade.sideLabel} / {trade.exitReasonLabel}</span>
             <strong>{displaySymbol(trade)}</strong>
           </div>
-          <button type="button" onClick={onClose} aria-label="Close trade chart">
+          <button type="button" onClick={onClose} aria-label="Close trade chart" ref={closeButtonRef}>
             Close
           </button>
         </div>
@@ -1005,6 +1009,9 @@ export default function MobileTradingDashboard({
   const [chartState, setChartState] = useState<MobileChartState>({ status: "idle", bars: [] });
   const [loadingLabel, setLoadingLabel] = useState<string | null>(null);
   const loadingTimeoutRef = useRef<number | null>(null);
+  const tradeModalRef = useRef<HTMLElement | null>(null);
+  const tradeModalCloseButtonRef = useRef<HTMLButtonElement | null>(null);
+  const previousTradeFocusRef = useRef<HTMLElement | null>(null);
   const edits = useStrategyEdits(strategies, persistedStrategyEdits);
   const adjustedHistoryRows = useMemo(
     () => adjustTradeHistoryRows(historyRows, strategies, edits, customScaleRange),
@@ -1074,6 +1081,11 @@ export default function MobileTradingDashboard({
     setActiveTab(tab);
   }
 
+  function openTrade(row: TradeHistoryRow) {
+    previousTradeFocusRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    setActiveTradeId(row.id);
+  }
+
   useEffect(() => {
     if (activeTradeId && !activeTrade) setActiveTradeId(null);
   }, [activeTrade, activeTradeId]);
@@ -1082,13 +1094,41 @@ export default function MobileTradingDashboard({
     if (!activeTradeId) return undefined;
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
+    const focusFrame = window.requestAnimationFrame(() => tradeModalCloseButtonRef.current?.focus({ preventScroll: true }));
     function closeOnEscape(event: KeyboardEvent) {
-      if (event.key === "Escape") setActiveTradeId(null);
+      if (event.key === "Escape") {
+        event.preventDefault();
+        setActiveTradeId(null);
+        return;
+      }
+      if (event.key === "Tab") {
+        const focusable = Array.from(
+          tradeModalRef.current?.querySelectorAll<HTMLElement>(
+            'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+          ) ?? []
+        ).filter((element) => !element.hidden && element.getClientRects().length > 0);
+        if (!focusable.length) return;
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        if (event.shiftKey && document.activeElement === first) {
+          event.preventDefault();
+          last.focus();
+        } else if (!event.shiftKey && document.activeElement === last) {
+          event.preventDefault();
+          first.focus();
+        }
+      }
     }
     document.addEventListener("keydown", closeOnEscape);
     return () => {
+      window.cancelAnimationFrame(focusFrame);
       document.body.style.overflow = previousOverflow;
       document.removeEventListener("keydown", closeOnEscape);
+      const previousFocus = previousTradeFocusRef.current;
+      previousTradeFocusRef.current = null;
+      window.requestAnimationFrame(() => {
+        if (previousFocus?.isConnected) previousFocus.focus({ preventScroll: true });
+      });
     };
   }, [activeTradeId]);
 
@@ -1161,7 +1201,7 @@ export default function MobileTradingDashboard({
               <MobileHistoryList
                 emptyTitle="No trades yet"
                 kicker="Trade History"
-                onTradeSelect={(row) => setActiveTradeId(row.id)}
+                onTradeSelect={openTrade}
                 rows={adjustedHistoryRows}
                 title="History"
               />
@@ -1169,7 +1209,7 @@ export default function MobileTradingDashboard({
               <MobileHistoryList
                 emptyTitle="No live alerts yet"
                 kicker="Live Alerts"
-                onTradeSelect={(row) => setActiveTradeId(row.id)}
+                onTradeSelect={openTrade}
                 rows={adjustedLiveAlertRows}
                 title="Live Alerts"
               />
@@ -1249,7 +1289,15 @@ export default function MobileTradingDashboard({
         </nav>
         {loadingLabel ? <MobileLoadingBar label={loadingLabel} /> : null}
       </section>
-      {activeTrade ? <MobileTradeChartModal chartState={chartState} onClose={() => setActiveTradeId(null)} trade={activeTrade} /> : null}
+      {activeTrade ? (
+        <MobileTradeChartModal
+          chartState={chartState}
+          closeButtonRef={tradeModalCloseButtonRef}
+          modalRef={tradeModalRef}
+          onClose={() => setActiveTradeId(null)}
+          trade={activeTrade}
+        />
+      ) : null}
     </main>
   );
 }

@@ -11872,6 +11872,49 @@ html[data-theme="light"] .tradeCandlestickPanel {
   white-space: normal;
 }
 
+.sync-tile-times dd details.sync-status-error {
+  overflow: visible;
+}
+
+.sync-tile-times dd details.sync-status-error summary {
+  position: relative;
+  padding-right: 1rem;
+  color: inherit;
+  cursor: pointer;
+  list-style: none;
+}
+
+.sync-tile-times dd details.sync-status-error summary::-webkit-details-marker {
+  display: none;
+}
+
+.sync-tile-times dd details.sync-status-error summary::after {
+  position: absolute;
+  top: 0;
+  right: 0;
+  color: currentColor;
+  content: "+";
+  font-size: 0.68rem;
+  opacity: 0.72;
+}
+
+.sync-tile-times dd details.sync-status-error[open] summary::after {
+  content: "−";
+}
+
+.sync-tile-times dd details.sync-status-error > span {
+  display: block;
+  margin-top: 0.28rem;
+  border-left: 1px solid rgba(248, 113, 113, 0.3);
+  color: rgba(254, 226, 226, 0.68);
+  font-size: 0.53rem;
+  font-weight: 750;
+  line-height: 1.45;
+  padding-left: 0.42rem;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
 .dataset-sync-tile.sync-state-running .sync-tile-times dt {
   color: rgba(253, 224, 71, 0.6);
 }
@@ -12347,6 +12390,11 @@ html[data-theme="light"] .dataset-sync-tile.sync-state-failed .sync-tile-times d
 
 html[data-theme="light"] .sync-tile-times dd .sync-status-error {
   color: #991b1b;
+}
+
+html[data-theme="light"] .sync-tile-times dd details.sync-status-error > span {
+  border-left-color: rgba(185, 28, 28, 0.25);
+  color: rgba(127, 29, 29, 0.72);
 }
 
 html[data-theme="light"] .history-table .ticker-cell {
