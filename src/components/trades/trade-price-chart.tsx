@@ -580,11 +580,11 @@ function candleIsRevealed(candle: MappedCandle | null, current: MappedCandle | n
   return Boolean(candle && current && Number(candle.time) <= Number(current.time));
 }
 
-function chartMessage(status: ChartStatus, emptyMessage?: string): { detail: string; title: string } {
-  if (status === "loading") return { detail: "Finding the best available timeframe for this trade.", title: "Loading market candles" };
-  if (status === "error") return { detail: "The market-data service did not respond. Try the chart again in a moment.", title: "Chart temporarily unavailable" };
-  if (emptyMessage) return { detail: emptyMessage, title: "No candles in this window" };
-  return { detail: "There are no saved candles for the selected trade window.", title: "No candles available" };
+function chartMessage(status: ChartStatus, emptyMessage?: string): string {
+  if (status === "loading") return "Loading candles...";
+  if (status === "error") return "Chart unavailable.";
+  if (emptyMessage) return emptyMessage;
+  return "No candles available for this trade.";
 }
 
 function currentChartTheme(): ChartTheme {
@@ -3423,23 +3423,13 @@ export default function TradePriceChart({
   ) : null;
 
   if (status === "loading" || status === "error" || !bars.length || !mappedCandles.length) {
-    const message = chartMessage(status, emptyMessage);
     return (
       <section className="tradeCandlestickPanel isEmpty">
         <div className="tradeCandlestickHead">
           <strong>Trade Candlesticks</strong>
           {timeframeControls}
         </div>
-        <div className="tradeChartEmptyState" role="status">
-          <span aria-hidden="true" className="tradeChartEmptyGlyph">
-            <i />
-            <i />
-            <i />
-            <i />
-          </span>
-          <strong>{message.title}</strong>
-          <span>{message.detail}</span>
-        </div>
+        <span>{chartMessage(status, emptyMessage)}</span>
       </section>
     );
   }
