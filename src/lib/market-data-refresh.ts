@@ -6,6 +6,11 @@ import { assetForKey, oandaInstrumentForAsset, type AssetDefinition } from "@/li
 import { firebaseBucket, firebaseLocalFallbackEnabled, hasFirebaseAdmin, storageObjectPath } from "@/lib/firebase-admin";
 import { defaultDatasetStatus, getDatasetStatus, saveDatasetStatus, type DatasetAssetCoverage } from "@/lib/live-config";
 import { fetchProjectXMarketDataBars } from "@/lib/projectx-market-data";
+import {
+  markTwelveDataProviderFailure,
+  twelveDataAvailable,
+  twelveDataCooldownRemainingMs
+} from "@/lib/market-data-provider-health";
 import { r2AppendText, r2Configured, r2GetTailText, r2HeadObject, r2PutText } from "@/lib/r2";
 import {
   DATA_TIMEFRAMES,
@@ -513,10 +518,33 @@ async function fetchTwelveDataTimeframeBars(symbol: string, interval: "1min" | "
 
 async function fetchOneMinuteBars(asset: AssetDefinition, options: OneMinuteFetchOptions = {}): Promise<CsvBar[]> {
   if (asset.market === "futures") return fetchProjectXOneMinuteBars(asset, options);
+  const failures: string[] = [];
+
   if ((asset.market === "forex" || asset.market === "gold_spot") && process.env.OANDA_API_TOKEN) {
-    return fetchOandaOneMinuteBars(oandaInstrumentForAsset(asset), options);
+    try {
+      const bars = await fetchOandaOneMinuteBars(oandaInstrumentForAsset(asset), options);
+      if (bars.length) return bars;
+      failures.push("OANDA returned no closed bars");
+    } catch (error) {
+      failures.push(`OANDA: ${readableErrorMessage(error)}`);
+    }
   }
-  return fetchTwelveDataTimeframeBars(asset.twelveDataSymbol ?? asset.symbol, "1min", options);
+
+  if (!twelveDataAvailable()) {
+    failures.push(`TwelveData quota cooldown (${Math.ceil(twelveDataCooldownRemainingMs() / 60_000)}m remaining)`);
+    throw new Error(`Configured market data providers are unavailable for ${asset.symbol}: ${failures.join(" | ")}`);
+  }
+
+  try {
+    const bars = await fetchTwelveDataTimeframeBars(asset.twelveDataSymbol ?? asset.symbol, "1min", options);
+    if (bars.length) return bars;
+    failures.push("TwelveData returned no closed bars");
+  } catch (error) {
+    markTwelveDataProviderFailure(error);
+    failures.push(`TwelveData: ${readableErrorMessage(error)}`);
+  }
+
+  throw new Error(`Configured market data providers failed for ${asset.symbol}: ${failures.join(" | ")}`);
 }
 
 async function writeLocalText(relativePath: string, text: string): Promise<void> {
@@ -828,6 +856,17 @@ function allTimeframesCurrent(states: Record<(typeof REFRESH_TIMEFRAMES)[number]
   });
 }
 
+function storedSourceBarsCanRefresh(states: Record<(typeof REFRESH_TIMEFRAMES)[number], StoredCsvState>): boolean {
+  const source = states[REFRESH_SOURCE_TIMEFRAME];
+  const lastBarTime = source.lastBarTime;
+  return Boolean(
+    source.exists &&
+    source.tailBars?.length &&
+    lastBarTime != null &&
+    lastBarTime >= closedTimeframeBarStartSeconds(REFRESH_SOURCE_TIMEFRAME) - ONE_MINUTE_SECONDS
+  );
+}
+
 function aggregateCsvBarsToTimeframe(sourceBars: CsvBar[], timeframe: DataTimeframe, afterTime: number | undefined): CsvBar[] {
   const closedStart = closedTimeframeBarStartSeconds(timeframe);
   const buckets = new Map<number, CsvBar>();
@@ -1034,7 +1073,22 @@ export async function refreshMarketDataForRulesWithOptions(
       }
 
       const afterSeconds = refreshStartAfterSeconds(states);
-      const incomingBars = await fetchOneMinuteBars(asset, afterSeconds == null ? {} : { afterSeconds });
+      let incomingBars: CsvBar[];
+      if (storedSourceBarsCanRefresh(states)) {
+        // The source data is already current; rebuild any lagging derived
+        // timeframe from its tail instead of spending another provider credit.
+        incomingBars = states[REFRESH_SOURCE_TIMEFRAME].tailBars ?? [];
+      } else {
+        try {
+          incomingBars = await fetchOneMinuteBars(asset, afterSeconds == null ? {} : { afterSeconds });
+        } catch (error) {
+          const source = states[REFRESH_SOURCE_TIMEFRAME];
+          const lastKnownGoodCutoff = closedTimeframeBarStartSeconds(REFRESH_SOURCE_TIMEFRAME) - ONE_MINUTE_SECONDS;
+          if (!source.tailBars?.length || source.lastBarTime == null || source.lastBarTime < lastKnownGoodCutoff) throw error;
+          console.warn(`Using last-known-good stored market data for ${asset.symbol}`, readableErrorMessage(error));
+          incomingBars = source.tailBars;
+        }
+      }
       if (!incomingBars.length && !states[REFRESH_SOURCE_TIMEFRAME].exists) {
         throw new Error("No bars were available to persist.");
       }

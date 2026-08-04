@@ -8,6 +8,11 @@ import {
   type DataTimeframe
 } from "@/lib/timeframes";
 import { fetchProjectXMarketDataBars } from "@/lib/projectx-market-data";
+import {
+  markTwelveDataProviderFailure,
+  twelveDataAvailable,
+  twelveDataCooldownRemainingMs
+} from "@/lib/market-data-provider-health";
 import type { Bar, StrategyRule } from "@/lib/types";
 
 type OandaCandle = {
@@ -89,8 +94,33 @@ export async function fetchMarketBars(rule: StrategyRule, options: MarketBarsOpt
 
 export async function fetchMarketSourceBars(asset: ReturnType<typeof assetForKey>, options: MarketBarsOptions = {}): Promise<Bar[]> {
   if (asset.market === "futures") return fetchProjectXFuturesBars(asset, options);
-  if (asset.market !== "crypto" && process.env.OANDA_API_TOKEN) return fetchOandaBars(oandaInstrumentForAsset(asset), options);
-  return fetchTwelveDataBars(asset.twelveDataSymbol ?? asset.symbol, options);
+  const failures: string[] = [];
+
+  if (asset.market !== "crypto" && process.env.OANDA_API_TOKEN) {
+    try {
+      const bars = await fetchOandaBars(oandaInstrumentForAsset(asset), options);
+      if (bars.length) return bars;
+      failures.push("OANDA returned no closed bars");
+    } catch (error) {
+      failures.push(`OANDA: ${error instanceof Error ? error.message : "Unknown error"}`);
+    }
+  }
+
+  if (!twelveDataAvailable()) {
+    failures.push(`TwelveData quota cooldown (${Math.ceil(twelveDataCooldownRemainingMs() / 60_000)}m remaining)`);
+    throw new Error(`Configured market data providers are unavailable for ${asset.symbol}: ${failures.join(" | ")}`);
+  }
+
+  try {
+    const bars = await fetchTwelveDataBars(asset.twelveDataSymbol ?? asset.symbol, options);
+    if (bars.length) return bars;
+    failures.push("TwelveData returned no closed bars");
+  } catch (error) {
+    markTwelveDataProviderFailure(error);
+    failures.push(`TwelveData: ${error instanceof Error ? error.message : "Unknown error"}`);
+  }
+
+  throw new Error(`Configured market data providers failed for ${asset.symbol}: ${failures.join(" | ")}`);
 }
 
 function providerStartDate(options: MarketBarsOptions, fallbackLookbackMs: number, intervalSeconds: number): Date {
