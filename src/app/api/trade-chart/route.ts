@@ -534,6 +534,88 @@ function aggregateProviderBars(
     .map((bar, index) => ({ ...bar, index }));
 }
 
+function yahooChartSymbol(asset: NonNullable<ReturnType<typeof assetForSymbol>>): string | null {
+  if (asset.market !== "forex" && asset.market !== "gold_spot") return null;
+
+  const compactSymbol = asset.symbol.replace(/[^A-Z]/gi, "").toUpperCase();
+  return compactSymbol.length === 6 ? `${compactSymbol}=X` : null;
+}
+
+async function fetchYahooChartBars(
+  asset: NonNullable<ReturnType<typeof assetForSymbol>>,
+  startSeconds: number,
+  endSeconds: number
+): Promise<Array<{ time: string; open: number; high: number; low: number; close: number; volume?: number }>> {
+  const symbol = yahooChartSymbol(asset);
+  if (!symbol) return [];
+
+  const period1 = Math.max(0, Math.floor(startSeconds));
+  const period2 = Math.max(period1 + 60, Math.min(Math.floor(Date.now() / 1000) + 300, Math.floor(endSeconds) + 300));
+  const url = new URL(`https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}`);
+  url.searchParams.set("period1", String(period1));
+  url.searchParams.set("period2", String(period2));
+  url.searchParams.set("interval", LIVE_SOURCE_TIMEFRAME);
+  url.searchParams.set("includePrePost", "true");
+  url.searchParams.set("events", "div,splits");
+
+  const response = await fetch(url, {
+    cache: "no-store",
+    headers: {
+      Accept: "application/json",
+      "User-Agent": "Mozilla/5.0"
+    }
+  });
+  if (!response.ok) throw new Error(`Yahoo Finance chart request failed (${response.status})`);
+
+  const payload = await response.json() as {
+    chart?: {
+      result?: Array<{
+        timestamp?: number[];
+        indicators?: {
+          quote?: Array<{
+            open?: Array<number | null>;
+            high?: Array<number | null>;
+            low?: Array<number | null>;
+            close?: Array<number | null>;
+            volume?: Array<number | null>;
+          }>;
+        };
+      }>;
+    };
+  };
+  const result = payload.chart?.result?.[0];
+  const quote = result?.indicators?.quote?.[0];
+  if (!result?.timestamp?.length || !quote) return [];
+
+  const bars: Array<{ time: string; open: number; high: number; low: number; close: number; volume?: number }> = [];
+  for (let index = 0; index < result.timestamp.length; index += 1) {
+    const timestamp = result.timestamp[index];
+    const open = quote.open?.[index];
+    const high = quote.high?.[index];
+    const low = quote.low?.[index];
+    const close = quote.close?.[index];
+    const volume = quote.volume?.[index];
+    if (
+      !Number.isFinite(timestamp) ||
+      !Number.isFinite(open) ||
+      !Number.isFinite(high) ||
+      !Number.isFinite(low) ||
+      !Number.isFinite(close)
+    ) continue;
+
+    bars.push({
+      time: new Date(timestamp! * 1000).toISOString(),
+      open: open!,
+      high: high!,
+      low: low!,
+      close: close!,
+      volume: Number.isFinite(volume) ? volume! : undefined
+    });
+  }
+
+  return bars;
+}
+
 async function recentProviderBars({
   asset,
   context,
@@ -563,9 +645,22 @@ async function recentProviderBars({
   const contextSeconds = Math.min(7 * 24 * 60 * 60, Math.max(3 * 60 * 60, requestedContextSeconds));
   const windowStart = Math.max(nowSeconds - LIVE_FALLBACK_MAX_AGE_SECONDS, tradeStart - contextSeconds);
   const windowEnd = tradeEnd + contextSeconds;
-  const sourceBars = await fetchMarketSourceBars(asset, {
-    afterSeconds: windowStart - timeframeSeconds(LIVE_SOURCE_TIMEFRAME)
-  });
+  const providerStart = windowStart - timeframeSeconds(LIVE_SOURCE_TIMEFRAME);
+  let sourceBars: Array<{ time: string; open: number; high: number; low: number; close: number; volume?: number }> = [];
+  let primaryProviderError: unknown;
+  try {
+    sourceBars = await fetchMarketSourceBars(asset, { afterSeconds: providerStart });
+  } catch (error) {
+    primaryProviderError = error;
+  }
+  if (!sourceBars.length) {
+    try {
+      sourceBars = await fetchYahooChartBars(asset, providerStart, windowEnd);
+    } catch (fallbackError) {
+      if (primaryProviderError) throw primaryProviderError;
+      throw fallbackError;
+    }
+  }
   const sourceWindow = sourceBars.filter((bar) => {
     const seconds = Math.floor(Date.parse(bar.time) / 1000);
     return Number.isFinite(seconds) && seconds >= windowStart && seconds <= windowEnd;
