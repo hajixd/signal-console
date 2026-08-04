@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import { appendFile, mkdir, open, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { assetForKey, type AssetDefinition } from "@/lib/assets";
+import { assetForKey, oandaInstrumentForAsset, type AssetDefinition } from "@/lib/assets";
 import { firebaseBucket, firebaseLocalFallbackEnabled, hasFirebaseAdmin, storageObjectPath } from "@/lib/firebase-admin";
 import { defaultDatasetStatus, getDatasetStatus, saveDatasetStatus, type DatasetAssetCoverage } from "@/lib/live-config";
 import { fetchProjectXMarketDataBars } from "@/lib/projectx-market-data";
@@ -514,7 +514,7 @@ async function fetchTwelveDataTimeframeBars(symbol: string, interval: "1min" | "
 async function fetchOneMinuteBars(asset: AssetDefinition, options: OneMinuteFetchOptions = {}): Promise<CsvBar[]> {
   if (asset.market === "futures") return fetchProjectXOneMinuteBars(asset, options);
   if ((asset.market === "forex" || asset.market === "gold_spot") && process.env.OANDA_API_TOKEN) {
-    return fetchOandaOneMinuteBars(asset.oandaSymbol ?? asset.symbol, options);
+    return fetchOandaOneMinuteBars(oandaInstrumentForAsset(asset), options);
   }
   return fetchTwelveDataTimeframeBars(asset.twelveDataSymbol ?? asset.symbol, "1min", options);
 }

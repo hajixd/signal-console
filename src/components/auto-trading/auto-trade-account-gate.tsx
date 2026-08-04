@@ -154,6 +154,24 @@ export default function AutoTradeAccountGate() {
         <div className="autoTradeGatePanel">
           {accountEntryMode === "Admin" ? (
             <form className="autoTradePinForm" onClick={() => adminCodeInputRef.current?.focus()} onSubmit={handleAdminSubmit}>
+              <button
+                aria-label="Back to workspace selection"
+                className="autoTradeGateBack"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  setAccountEntryMode(null);
+                  setAdminCodeInput("");
+                  setAccountAccessError("");
+                }}
+                type="button"
+              >
+                <span aria-hidden="true">←</span> Back
+              </button>
+              <div className="autoTradeGateIntro">
+                <span>Secure access</span>
+                <h1>Enter admin code</h1>
+                <p>Type the 5-digit code to manage connections, sizing, and live execution.</p>
+              </div>
               <input
                 aria-label="Admin code"
                 autoFocus
@@ -203,21 +221,34 @@ export default function AutoTradeAccountGate() {
               {accountAccessError ? <div className="autoTradeGateError">{accountAccessError}</div> : null}
             </form>
           ) : (
-            <div className="autoTradeChoiceGrid">
-              <button
-                className="autoTradeChoiceCard"
-                onClick={() => {
-                  setAccountEntryMode("Admin");
-                  setAdminCodeInput("");
-                  setAccountAccessError("");
-                }}
-                type="button"
-              >
-                Admin
-              </button>
-              <button className="autoTradeChoiceCard" onClick={() => grantAccountMode("User")} type="button">
-                User
-              </button>
+            <div className="autoTradeGateChoiceView">
+              <div className="autoTradeGateIntro">
+                <span>Trading workspace</span>
+                <h1>Choose your view</h1>
+                <p>Open the dashboard in the mode that matches what you need to do.</p>
+              </div>
+              <div className="autoTradeChoiceGrid">
+                <button
+                  className="autoTradeChoiceCard isAdmin"
+                  onClick={() => {
+                    setAccountEntryMode("Admin");
+                    setAdminCodeInput("");
+                    setAccountAccessError("");
+                  }}
+                  type="button"
+                >
+                  <span className="autoTradeChoiceEyebrow">Full control</span>
+                  <strong>Admin</strong>
+                  <small>Manage execution and connections</small>
+                  <i aria-hidden="true">→</i>
+                </button>
+                <button className="autoTradeChoiceCard isUser" onClick={() => grantAccountMode("User")} type="button">
+                  <span className="autoTradeChoiceEyebrow">Read-only</span>
+                  <strong>User</strong>
+                  <small>Review strategies, trades, and performance</small>
+                  <i aria-hidden="true">→</i>
+                </button>
+              </div>
             </div>
           )}
         </div>

@@ -48,7 +48,13 @@ export default function ThemeToggle({ initialTheme, persistTheme }: ThemeToggleP
   }
 
   return (
-    <button type="button" className="themeToggle" onClick={toggleTheme} aria-pressed={theme === "light"} aria-label="Toggle light mode">
+    <button
+      type="button"
+      className="themeToggle"
+      onClick={toggleTheme}
+      aria-pressed={theme === "light"}
+      aria-label={theme === "light" ? "Switch to dark mode" : "Switch to light mode"}
+    >
       <span className="themeLightLabel">Light</span>
       <span className="themeDarkLabel">Dark</span>
     </button>

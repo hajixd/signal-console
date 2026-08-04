@@ -1,4 +1,4 @@
-import { assetForKey } from "@/lib/assets";
+import { assetForKey, oandaInstrumentForAsset } from "@/lib/assets";
 import {
   DEFAULT_STRATEGY_TIMEFRAME,
   LIVE_SOURCE_TIMEFRAME,
@@ -33,7 +33,7 @@ type TwelveDataResponse = {
   values?: Array<Record<string, string>>;
 };
 
-type MarketBarsOptions = {
+export type MarketBarsOptions = {
   afterSeconds?: number;
 };
 
@@ -89,7 +89,7 @@ export async function fetchMarketBars(rule: StrategyRule, options: MarketBarsOpt
 
 export async function fetchMarketSourceBars(asset: ReturnType<typeof assetForKey>, options: MarketBarsOptions = {}): Promise<Bar[]> {
   if (asset.market === "futures") return fetchProjectXFuturesBars(asset, options);
-  if (asset.market !== "crypto" && process.env.OANDA_API_TOKEN) return fetchOandaBars(asset.oandaSymbol ?? asset.symbol, options);
+  if (asset.market !== "crypto" && process.env.OANDA_API_TOKEN) return fetchOandaBars(oandaInstrumentForAsset(asset), options);
   return fetchTwelveDataBars(asset.twelveDataSymbol ?? asset.symbol, options);
 }
 

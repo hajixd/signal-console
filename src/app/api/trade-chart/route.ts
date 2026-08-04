@@ -2,7 +2,15 @@ import { open, readFile } from "node:fs/promises";
 import path from "node:path";
 import { NextResponse } from "next/server";
 import { assetForSymbol, isMarket } from "@/lib/assets";
+import { fetchMarketSourceBars } from "@/lib/market-data";
 import { readDataText } from "@/lib/project-data";
+import {
+  LIVE_SOURCE_TIMEFRAME,
+  floorToTimeframeSeconds,
+  isDataTimeframe,
+  timeframeSeconds,
+  type DataTimeframe
+} from "@/lib/timeframes";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -41,6 +49,7 @@ const TIMEFRAME_SECONDS: Record<(typeof TIMEFRAME_ORDER)[number], number> = {
 const DEFAULT_TIMEFRAME = "1m";
 const DEFAULT_CONTEXT_CANDLES = 240;
 const MAX_CONTEXT_CANDLES = 1000;
+const LIVE_FALLBACK_MAX_AGE_SECONDS = 14 * 24 * 60 * 60;
 
 function chartTimeframe(value: string | null): string {
   return value && SUPPORTED_TIMEFRAMES.has(value) ? value : DEFAULT_TIMEFRAME;
@@ -492,6 +501,90 @@ async function barsForTimeframe({
   return bars;
 }
 
+function aggregateProviderBars(
+  bars: Array<{ time: string; open: number; high: number; low: number; close: number; volume?: number }>,
+  timeframe: DataTimeframe
+): MarketBar[] {
+  const buckets = new Map<number, Omit<MarketBar, "index">>();
+
+  for (const bar of bars) {
+    const barSeconds = Math.floor(Date.parse(bar.time) / 1000);
+    if (!Number.isFinite(barSeconds)) continue;
+    const bucketSeconds = floorToTimeframeSeconds(barSeconds, timeframe);
+    const current = buckets.get(bucketSeconds);
+    if (!current) {
+      buckets.set(bucketSeconds, {
+        time: new Date(bucketSeconds * 1000).toISOString(),
+        open: bar.open,
+        high: bar.high,
+        low: bar.low,
+        close: bar.close,
+        volume: bar.volume ?? 0
+      });
+      continue;
+    }
+    current.high = Math.max(current.high, bar.high);
+    current.low = Math.min(current.low, bar.low);
+    current.close = bar.close;
+    current.volume = (current.volume ?? 0) + (bar.volume ?? 0);
+  }
+
+  return [...buckets.values()]
+    .sort((left, right) => Date.parse(left.time) - Date.parse(right.time))
+    .map((bar, index) => ({ ...bar, index }));
+}
+
+async function recentProviderBars({
+  asset,
+  context,
+  entryTime,
+  exitTime,
+  requestedTimeframe
+}: {
+  asset: NonNullable<ReturnType<typeof assetForSymbol>>;
+  context: number;
+  entryTime: string | null;
+  exitTime: string | null;
+  requestedTimeframe: string;
+}): Promise<{ bars: MarketBar[]; timeframe: DataTimeframe; replayBars?: MarketBar[] } | null> {
+  const entrySeconds = secondsFromSearchTime(entryTime);
+  const exitSeconds = secondsFromSearchTime(exitTime);
+  if (entrySeconds == null || exitSeconds == null) return null;
+
+  const nowSeconds = Math.floor(Date.now() / 1000);
+  const tradeStart = Math.min(entrySeconds, exitSeconds);
+  const tradeEnd = Math.max(entrySeconds, exitSeconds);
+  if (tradeEnd < nowSeconds - LIVE_FALLBACK_MAX_AGE_SECONDS || tradeStart > nowSeconds + 24 * 60 * 60) return null;
+
+  const resolvedTimeframe = isDataTimeframe(requestedTimeframe) && timeframeSeconds(requestedTimeframe) >= timeframeSeconds(LIVE_SOURCE_TIMEFRAME)
+    ? requestedTimeframe
+    : LIVE_SOURCE_TIMEFRAME;
+  const requestedContextSeconds = context * timeframeSeconds(resolvedTimeframe);
+  const contextSeconds = Math.min(7 * 24 * 60 * 60, Math.max(3 * 60 * 60, requestedContextSeconds));
+  const windowStart = Math.max(nowSeconds - LIVE_FALLBACK_MAX_AGE_SECONDS, tradeStart - contextSeconds);
+  const windowEnd = tradeEnd + contextSeconds;
+  const sourceBars = await fetchMarketSourceBars(asset, {
+    afterSeconds: windowStart - timeframeSeconds(LIVE_SOURCE_TIMEFRAME)
+  });
+  const sourceWindow = sourceBars.filter((bar) => {
+    const seconds = Math.floor(Date.parse(bar.time) / 1000);
+    return Number.isFinite(seconds) && seconds >= windowStart && seconds <= windowEnd;
+  });
+  if (!sourceWindow.length) return null;
+
+  const replayBars = aggregateProviderBars(sourceWindow, LIVE_SOURCE_TIMEFRAME);
+  const bars = resolvedTimeframe === LIVE_SOURCE_TIMEFRAME
+    ? replayBars
+    : aggregateProviderBars(sourceWindow, resolvedTimeframe);
+  if (!bars.length) return null;
+
+  return {
+    bars,
+    replayBars: resolvedTimeframe === LIVE_SOURCE_TIMEFRAME ? undefined : replayBars,
+    timeframe: resolvedTimeframe
+  };
+}
+
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const symbol = searchParams.get("symbol") ?? "";
@@ -539,6 +632,29 @@ export async function GET(request: Request) {
     } catch {
       continue;
     }
+  }
+
+  try {
+    const providerResult = await recentProviderBars({
+      asset,
+      context,
+      entryTime: searchParams.get("entryTime"),
+      exitTime: searchParams.get("exitTime"),
+      requestedTimeframe: timeframe
+    });
+    if (providerResult) {
+      return NextResponse.json({
+        bars: providerResult.bars,
+        fallback: providerResult.timeframe !== timeframe,
+        liveSource: true,
+        replayBars: providerResult.replayBars,
+        replayTimeframe: providerResult.replayBars?.length ? LIVE_SOURCE_TIMEFRAME : undefined,
+        requestedTimeframe: timeframe,
+        timeframe: providerResult.timeframe
+      });
+    }
+  } catch (error) {
+    console.warn("Trade chart live fallback failed", error instanceof Error ? error.message : error);
   }
 
   return NextResponse.json({

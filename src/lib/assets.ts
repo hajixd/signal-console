@@ -60,6 +60,17 @@ export function assetForSymbol(symbol: string): AssetDefinition | undefined {
   return ASSET_BY_SYMBOL.get(symbol.trim().toUpperCase());
 }
 
+export function oandaInstrumentForAsset(asset: AssetDefinition): string {
+  if (asset.oandaSymbol) return asset.oandaSymbol;
+
+  const compactSymbol = asset.symbol.replace(/[^A-Z]/gi, "").toUpperCase();
+  if ((asset.market === "forex" || asset.market === "gold_spot") && compactSymbol.length === 6) {
+    return `${compactSymbol.slice(0, 3)}_${compactSymbol.slice(3)}`;
+  }
+
+  return asset.symbol;
+}
+
 export function assetLookupSymbolForSymbol(symbol: string): string {
   const normalizedSymbol = symbol.trim().toUpperCase();
   if (!normalizedSymbol) return "--";
