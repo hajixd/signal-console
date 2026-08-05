@@ -2,6 +2,14 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   allowedDevOrigins: ["127.0.0.1"],
+  async rewrites() {
+    return [
+      {
+        source: "/ea/:path*",
+        destination: "/api/ea/:path*"
+      }
+    ];
+  },
   transpilePackages: ["firebase-admin", "gcp-metadata", "google-auth-library"],
   outputFileTracingExcludes: {
     "/*": [
