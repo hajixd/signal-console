@@ -1,0 +1,40 @@
+{
+  "market": "futures",
+  "assets": 14,
+  "riskRewardGrid": "2",
+  "familyCompleteChunks": [
+    {
+      "name": "daily_rth",
+      "specStart": 109,
+      "specEnd": 132,
+      "frozenVariants": 24,
+      "trainingFamilyFinalists": 0,
+      "validationPasses": 0
+    },
+    {
+      "name": "daily_overnight",
+      "specStart": 133,
+      "specEnd": 180,
+      "frozenVariants": 48,
+      "trainingFamilyFinalists": 1,
+      "validationPasses": 0
+    },
+    {
+      "name": "overnight_and_opening_ranges",
+      "specStart": 181,
+      "specEnd": 204,
+      "frozenVariants": 24,
+      "trainingFamilyFinalists": 0,
+      "validationPasses": 0
+    }
+  ],
+  "totalFrozenVariants": 96,
+  "trainingFamilyFinalists": 1,
+  "validationPasses": 0,
+  "sealedHoldoutTests": 0,
+  "eligiblePooledHypotheses": 0,
+  "selectedPooledHypotheses": 0,
+  "materializedAssetStrategies": 0,
+  "result": "One pooled Futures hypothesis cleared training and failed untouched validation; the sealed holdout remained closed.",
+  "method": "The grid was split only on structural-family boundaries and evaluated across the same 14 liquid Futures contracts. Each family remained complete within one chunk, preserving one-finalist-per-family selection and preventing cross-chunk parameter selection."
+}

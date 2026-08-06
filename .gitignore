@@ -52,6 +52,8 @@ strategy/tuning_summary.csv
 .codex-next-dev-*.log
 .codex-next-prod.*.log
 .codex-next-prod-*.log
+/.codex-*.log
+/.codex-audit.json
 
 # local verification artifacts
 /.cluster-dev*.log

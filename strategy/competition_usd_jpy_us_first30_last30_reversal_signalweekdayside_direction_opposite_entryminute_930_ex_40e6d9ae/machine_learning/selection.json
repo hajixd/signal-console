@@ -5,7 +5,7 @@
   "assetKey": "usd_jpy",
   "phase": "competition_session_edge",
   "variantId": "competition_session_edge|family=us_first30_last30_reversal_signalweekdayside|direction=opposite|entry=930|exit=945|min_signal_atr=0.35|signal_end=585|signal_start=570|signal_weekday_side=2_long|risk_reward=2|managed_exit=bracket",
-  "source": "competition_session_edge_train_forward_2026",
+  "source": "nested_dynamic_management_2026_08",
   "sourceUrls": [
     "https://www.sciencedirect.com/science/article/abs/pii/S0304405X18301351"
   ],
@@ -28,9 +28,15 @@
   "forwardTotalR": 18.344405,
   "forwardAverageR": 0.247897,
   "forwardMaxDrawdownR": 1.528242,
-  "verificationSummary": "Reality audit: true 2R bracket stop/target exit recomputed PF 4.10 over 74 trades, total 18.34R, max drawdown 1.53R (sl=1, time_exit=70, tp=3).",
+  "verificationSummary": "Nested management `lock_0_25r_at_1r`: validation PF 2.30 over 17 trades; sealed holdout PF 8.35 over 31 trades; holdout q=0.008.",
   "costUnits": 0,
   "oneTradePerDay": false,
   "minimumRiskReward": 2.0,
-  "selectedRiskReward": 2.0
+  "selectedRiskReward": 2.0,
+  "dynamicStopLossPolicy": {
+    "mode": "breakeven",
+    "bufferUnits": 0,
+    "triggerMultiple": 1.0,
+    "lockMultiple": 0.25
+  }
 }

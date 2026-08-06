@@ -1,0 +1,41 @@
+{
+  "status": "pass",
+  "registeredStrategies": 150,
+  "strategiesWithRows": 150,
+  "totalRows": 11607,
+  "verifiedRows": 11607,
+  "markets": {
+    "forex": {
+      "rows": 5998,
+      "verifiedRows": 5998,
+      "rawRProfitFactor": 1.679480601921652,
+      "netR": 1772.5803699126773
+    },
+    "futures": {
+      "rows": 5609,
+      "verifiedRows": 5609,
+      "rawRProfitFactor": 1.632285407313301,
+      "netR": 1360.924560761489
+    }
+  },
+  "sources": {
+    "competition_session_edge_train_forward_2026_05": 5759,
+    "competition_session_edge_train_forward_2026": 2328,
+    "cross_asset_true_rr_search_2026_05": 2133,
+    "nested_dynamic_management_2026_08": 552,
+    "high_pf_isolated_competition_2026_05": 434,
+    "true_rr_addition_search_2026_05": 245,
+    "pre_2022_ml_holdout_rebuild_2026_05": 92,
+    "tori_public_mtf_research_2026": 64
+  },
+  "issues": [],
+  "checks": [
+    "registered file presence and schema",
+    "strategy/folder and market identity",
+    "finite positive prices and valid side",
+    "signal <= entry <= exit timing",
+    "positive target/stop/size and non-negative friction",
+    "r_multiple = net_units / (sl_units + cost_units)",
+    "no duplicate trade identity within a strategy"
+  ]
+}

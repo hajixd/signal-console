@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type MouseEvent as ReactMouseEvent, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type MouseEvent as ReactMouseEvent, type ReactNode } from "react";
 import {
   strategyContractScale,
   type StrategyEditOption,
@@ -229,6 +229,10 @@ type DollarAggregate = {
   dailyCurve: DailyCurvePoint[];
   totalDollars: number;
   avgDollars: number;
+  averageTradeReturnPct: number;
+  averageAnnualReturnPct: number;
+  totalReturnPct: number;
+  monthOfYearAverageReturns: Array<{ label: string; averagePct: number; samples: number }>;
   longestWinStreak: number;
   longestLossStreak: number;
   bestWinStreakDollars: number;
@@ -280,6 +284,7 @@ type SelectedStrategyStatsProps = {
   toggleable?: boolean;
   trades: BasketTrade[];
   persistedStrategyEdits?: StrategyEditSeedMap;
+  startingBalanceDollars?: number;
 };
 
 type StatTone = "tone-up" | "tone-down" | "tone-neutral";
@@ -503,6 +508,10 @@ function formatTradeMonthKey(value: string): string {
 
 const WEEKDAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"] as const;
 const MONTH_LABELS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"] as const;
+const MONTH_FULL_LABELS = [
+  "January", "February", "March", "April", "May", "June",
+  "July", "August", "September", "October", "November", "December"
+] as const;
 
 function localWeekdayLabel(value: string): string {
   const date = localDateFromValue(value);
@@ -819,7 +828,8 @@ function makeTradeSnapshots(
   });
 }
 
-function aggregateDollars(trades: TradeSnapshot[]): DollarAggregate {
+function aggregateDollars(trades: TradeSnapshot[], startingBalanceDollars = 100_000): DollarAggregate {
+  const returnBaseDollars = positiveNumber(startingBalanceDollars) ?? 100_000;
   let grossWinR = 0;
   let grossLossR = 0;
   let grossWinDollars = 0;
@@ -1049,6 +1059,22 @@ function aggregateDollars(trades: TradeSnapshot[]): DollarAggregate {
   const calendarDays = dailyCurve.length;
   const activeDays = dailyPnl.size;
   const calendarMs = start !== undefined && end !== undefined && end > start ? end - start : 0;
+  const coveredMonthlyPnl = new Map<string, number>();
+  for (const point of dailyCurve) {
+    const monthKey = point.dayKey.slice(0, 7);
+    coveredMonthlyPnl.set(monthKey, (coveredMonthlyPnl.get(monthKey) ?? 0) + point.pnl);
+  }
+  const monthOfYearDollars = MONTH_LABELS.map(() => [] as number[]);
+  for (const [monthKey, pnl] of coveredMonthlyPnl) {
+    const monthIndex = Number(monthKey.slice(5, 7)) - 1;
+    if (monthIndex >= 0 && monthIndex < MONTH_LABELS.length) monthOfYearDollars[monthIndex]!.push(pnl);
+  }
+  const monthOfYearAverageReturns = MONTH_LABELS.map((label, index) => ({
+    label,
+    averagePct: (mean(monthOfYearDollars[index] ?? []) / returnBaseDollars) * 100,
+    samples: monthOfYearDollars[index]?.length ?? 0
+  }));
+  const coveredYears = Math.max(calendarDays / 365.25, 1 / 365.25);
   const totalDurationMs = sum(durationsMs);
   const rewardRiskRatio = avgLossDollars < 0 ? avgWinDollars / Math.abs(avgLossDollars) : avgWinDollars > 0 ? Infinity : 0;
   const rRewardRiskRatio = avgLossR < 0 ? avgWinR / Math.abs(avgLossR) : avgWinR > 0 ? Infinity : 0;
@@ -1235,6 +1261,10 @@ function aggregateDollars(trades: TradeSnapshot[]): DollarAggregate {
     dailyCurve,
     totalDollars,
     avgDollars: avgTradeDollars,
+    averageTradeReturnPct: (avgTradeDollars / returnBaseDollars) * 100,
+    averageAnnualReturnPct: (totalDollars / returnBaseDollars / coveredYears) * 100,
+    totalReturnPct: (totalDollars / returnBaseDollars) * 100,
+    monthOfYearAverageReturns,
     longestWinStreak,
     longestLossStreak,
     bestWinStreakDollars,
@@ -1652,16 +1682,25 @@ function StatCard({ stat }: { stat: StatCardData }) {
   );
 }
 
+function statsSectionId(title: string): string {
+  return `stats-${title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}`;
+}
+
 function StatGroup({ charts, stats, title }: { charts: StatsChartData[]; stats: StatCardData[]; title: string }) {
   return (
-    <section className="selectedStatsGroup" aria-label={title}>
-      <h3>{title}</h3>
-      <div className="backtest-stats-grid selectedStatsDenseGrid">
-        {stats.map((stat) => (
-          <StatCard key={stat.label} stat={stat} />
-        ))}
+    <section className="selectedStatsGroup" aria-label={title} id={statsSectionId(title)}>
+      <div className="selectedStatsGroupHeading">
+        <h3>{title}</h3>
+        <span>{stats.length} metrics</span>
       </div>
-      <StatsChartRail charts={charts} title={title} />
+      {stats.length ? (
+        <div className="backtest-stats-grid selectedStatsDenseGrid">
+          {stats.map((stat) => (
+            <StatCard key={stat.label} stat={stat} />
+          ))}
+        </div>
+      ) : null}
+      {charts.length ? <StatsChartRail charts={charts} title={title} /> : null}
     </section>
   );
 }
@@ -1693,23 +1732,34 @@ export default function SelectedStrategyStats({
   strategies,
   toggleable = true,
   trades,
-  persistedStrategyEdits
+  persistedStrategyEdits,
+  startingBalanceDollars = 100_000
 }: SelectedStrategyStatsProps) {
   const [expanded, setExpanded] = useState(defaultExpanded);
+  const [metricQuery, setMetricQuery] = useState("");
+  const [activeSection, setActiveSection] = useState("Performance");
   const edits = useStrategyEdits(strategies, persistedStrategyEdits);
-  const strategyByKey = new Map(strategies.map((strategy) => [strategy.key, strategy]));
-  const parsedCustomScaleRange = parseCustomScaleRange(customScaleRange);
-  const selectedTradeSnapshots = makeTradeSnapshots(trades, strategyByKey, (trade) => {
-    if (trade.lockedSize) return 1;
-    const strategy = strategyByKey.get(trade.key);
-    return parsedCustomScaleRange
-      ? customRangeScaleForTrade(trade, parsedCustomScaleRange)
-      : strategy
-        ? strategyContractScale(strategy, edits)
-        : 1;
-  });
-  const selectedDollarAggregate = aggregateDollars(selectedTradeSnapshots);
-  const stats = selectedDollarAggregate;
+  const strategyByKey = useMemo(
+    () => new Map(strategies.map((strategy) => [strategy.key, strategy])),
+    [strategies]
+  );
+  const parsedCustomScaleRange = useMemo(() => parseCustomScaleRange(customScaleRange), [customScaleRange]);
+  const selectedTradeSnapshots = useMemo(
+    () => makeTradeSnapshots(trades, strategyByKey, (trade) => {
+      if (trade.lockedSize) return 1;
+      const strategy = strategyByKey.get(trade.key);
+      return parsedCustomScaleRange
+        ? customRangeScaleForTrade(trade, parsedCustomScaleRange)
+        : strategy
+          ? strategyContractScale(strategy, edits)
+          : 1;
+    }),
+    [edits, parsedCustomScaleRange, strategyByKey, trades]
+  );
+  const stats = useMemo(
+    () => aggregateDollars(selectedTradeSnapshots, startingBalanceDollars),
+    [selectedTradeSnapshots, startingBalanceDollars]
+  );
   const toggleExpanded = () => {
     if (toggleable) setExpanded((current) => !current);
   };
@@ -1734,7 +1784,19 @@ export default function SelectedStrategyStats({
     { label: "Win rate", value: showWhenTrades(stats, fmtPct(stats.winRatePct)), tone: stats.winRatePct >= 50 ? "tone-up" : "tone-neutral" },
     moneyStat("Total P&L", stats.totalDollars, stats.trades),
     moneyStat("Avg trade", stats.avgDollars, stats.trades),
-    { label: "Max trade DD", value: showWhenTrades(stats, fmtMoney(-stats.maxTradeDrawdownDollars)), tone: stats.maxTradeDrawdownDollars > 0 ? "tone-down" : "tone-neutral" },
+    {
+      label: "Avg / trade",
+      value: showWhenTrades(stats, fmtSignedPct(stats.averageTradeReturnPct)),
+      tone: statTone(stats.averageTradeReturnPct) as StatTone,
+      title: `Average trade P&L divided by the ${fmtMoney(startingBalanceDollars)} configured starting balance`
+    },
+    {
+      label: "Avg / year",
+      value: showWhenTrades(stats, fmtSignedPct(stats.averageAnnualReturnPct)),
+      tone: statTone(stats.averageAnnualReturnPct) as StatTone,
+      title: `Simple annualized P&L divided by the ${fmtMoney(startingBalanceDollars)} configured starting balance`
+    },
+    { label: "Max trade drawdown", value: showWhenTrades(stats, fmtMoney(-stats.maxTradeDrawdownDollars)), tone: stats.maxTradeDrawdownDollars > 0 ? "tone-down" : "tone-neutral" },
     ratioStat("Recovery", stats.recoveryFactor, 1, stats.trades),
     { label: "Trades", value: fmtCount(stats.trades), tone: "tone-neutral" },
     { label: "Expectancy", value: showWhenTrades(stats, fmtR(stats.avgR, true)), tone: statTone(stats.avgR) as StatTone },
@@ -1751,6 +1813,14 @@ export default function SelectedStrategyStats({
     moneyStat("Gross profit", stats.grossWinDollars, stats.trades),
     moneyStat("Gross loss", -stats.grossLossDollars, stats.trades),
     moneyStat("Avg trade", stats.avgDollars, stats.trades),
+    {
+      label: "Total return",
+      value: showWhenTrades(stats, fmtSignedPct(stats.totalReturnPct)),
+      tone: statTone(stats.totalReturnPct) as StatTone,
+      title: `Net P&L divided by the ${fmtMoney(startingBalanceDollars)} configured starting balance; fixed-dollar sizing, not compounded`
+    },
+    { label: "Avg return / trade", value: showWhenTrades(stats, fmtSignedPct(stats.averageTradeReturnPct)), tone: statTone(stats.averageTradeReturnPct) as StatTone },
+    { label: "Avg return / year", value: showWhenTrades(stats, fmtSignedPct(stats.averageAnnualReturnPct)), tone: statTone(stats.averageAnnualReturnPct) as StatTone },
     moneyStat("Median trade", stats.p50TradeDollars, stats.trades),
     { label: "Trade volatility", value: showWhenTrades(stats, fmtMoney(stats.tradeStdDevDollars)), tone: "tone-neutral", title: "Sample standard deviation of trade P&L" },
     { label: "Expectancy error", value: showWhenTrades(stats, fmtMoney(stats.expectancyStdErrorDollars)), tone: "tone-neutral", title: "Standard error of average trade expectancy" },
@@ -1772,8 +1842,8 @@ export default function SelectedStrategyStats({
   ];
 
   const riskStats: StatCardData[] = [
-    { label: "Max trade DD", value: showWhenTrades(stats, fmtMoney(-stats.maxTradeDrawdownDollars)), tone: stats.maxTradeDrawdownDollars > 0 ? "tone-down" : "tone-neutral" },
-    { label: "Max daily DD", value: showWhenTrades(stats, fmtMoney(-stats.maxDailyDrawdownDollars)), tone: stats.maxDailyDrawdownDollars > 0 ? "tone-down" : "tone-neutral" },
+    { label: "Max trade drawdown", value: showWhenTrades(stats, fmtMoney(-stats.maxTradeDrawdownDollars)), tone: stats.maxTradeDrawdownDollars > 0 ? "tone-down" : "tone-neutral" },
+    { label: "Max daily drawdown", value: showWhenTrades(stats, fmtMoney(-stats.maxDailyDrawdownDollars)), tone: stats.maxDailyDrawdownDollars > 0 ? "tone-down" : "tone-neutral" },
     moneyStat("Max runup", stats.maxRunupDollars, stats.trades),
     ratioStat("Recovery", stats.recoveryFactor, 1, stats.trades),
     { label: "Ulcer index", value: showWhenTrades(stats, fmtMoney(-stats.ulcerIndexDollars)), tone: stats.ulcerIndexDollars > 0 ? "tone-down" : "tone-neutral" },
@@ -1939,7 +2009,13 @@ export default function SelectedStrategyStats({
     segmentTextStat("Best entry hour", stats.entryHours.best, "avg", "tone-up"),
     segmentTextStat("Worst entry hour", stats.entryHours.worst, "avg", "tone-down"),
     segmentTextStat("Best calendar month", stats.months.best, "avg", "tone-up"),
-    segmentTextStat("Worst calendar month", stats.months.worst, "avg", "tone-down")
+    segmentTextStat("Worst calendar month", stats.months.worst, "avg", "tone-down"),
+    ...stats.monthOfYearAverageReturns.map((month, monthIndex) => ({
+      label: `${month.label} avg return`,
+      value: month.samples && stats.trades ? fmtSignedPct(month.averagePct) : "--",
+      tone: (month.samples ? statTone(month.averagePct) : "tone-neutral") as StatTone,
+      title: `Average total ${MONTH_FULL_LABELS[monthIndex]} P&L across ${month.samples} covered ${MONTH_FULL_LABELS[monthIndex]} period${month.samples === 1 ? "" : "s"}, divided by ${fmtMoney(startingBalanceDollars)}`
+    }))
   ];
 
   const rStats: StatCardData[] = [
@@ -2128,7 +2204,11 @@ export default function SelectedStrategyStats({
     return { ...point, value: cumulativeMonthPnl, detail: `${fmtMoney(point.value, true)} during this month` };
   });
   const weeklyPnlData = categoryChartData(chartTrades, (trade) => localTradeWeekKey(trade.exitTime), (trade) => trade.pnlDollars, 24).sort((a, b) => a.label.localeCompare(b.label));
-  const calendarMonthAvgData = averageCategoryData(categoryChartData(chartTrades, (trade) => localMonthLabel(trade.entryTime), (trade) => trade.pnlDollars, 12));
+  const calendarMonthAvgData = stats.monthOfYearAverageReturns.map((month) => ({
+    label: month.label,
+    value: month.averagePct,
+    detail: `${month.samples} covered ${month.label} period${month.samples === 1 ? "" : "s"}`
+  }));
   const hourExpectancyData = averageCategoryData(categoryChartData(chartTrades, (trade) => localHourLabel(trade.entryTime), (trade) => trade.pnlDollars, 24)).sort((a, b) => a.label.localeCompare(b.label));
   const quarterPnlData = categoryChartData(chartTrades, (trade) => localTradeQuarterKey(trade.exitTime), (trade) => trade.pnlDollars, 16).sort((a, b) => a.label.localeCompare(b.label));
   const modelRData = averageCategoryData(categoryChartData(chartTrades, (trade) => trade.strategyLabel, (trade) => trade.rMultiple, 10));
@@ -2223,7 +2303,7 @@ export default function SelectedStrategyStats({
         { title: "Daily P&L", subtitle: "Net result on every calendar day", chart: <LineChart data={dailyPnlData} tooltipContext="Calendar-day P&L" /> },
         { title: "Monthly equity", subtitle: "Cumulative result at each month end", chart: <LineChart data={cumulativeMonthlyData} tooltipContext="Month-end equity" /> },
         { title: "Weekly P&L", subtitle: "Net realized result by active week", chart: <BarChart data={weeklyPnlData} tooltipContext="Weekly net P&L" /> },
-        { title: "Month-of-year edge", subtitle: "Average trade result by calendar month", chart: <BarChart data={calendarMonthAvgData} tooltipContext="Seasonal month expectancy" /> },
+        { title: "Month-of-year return", subtitle: "Average total return for each month across all covered years", chart: <BarChart data={calendarMonthAvgData} formatValue={fmtSignedPct} tooltipContext="Seasonal month return" /> },
         { title: "Hour expectancy", subtitle: "Average result by local entry hour", chart: <BarChart data={hourExpectancyData} tooltipContext="Entry-hour expectancy" /> },
         { title: "Quarterly P&L", subtitle: "Net result across active quarters", chart: <BarChart data={quarterPnlData} tooltipContext="Quarterly net P&L" /> }
       ]
@@ -2258,6 +2338,60 @@ export default function SelectedStrategyStats({
     }
   ];
 
+  const normalizedMetricQuery = metricQuery.trim().toLowerCase();
+  const visibleStatGroups = statGroups
+    .map((group) => {
+      if (!normalizedMetricQuery || group.title.toLowerCase().includes(normalizedMetricQuery)) return group;
+      return {
+        ...group,
+        stats: group.stats.filter((stat) =>
+          `${stat.label} ${stat.title ?? ""}`.toLowerCase().includes(normalizedMetricQuery)
+        ),
+        charts: group.charts.filter((chart) =>
+          `${chart.title} ${chart.subtitle}`.toLowerCase().includes(normalizedMetricQuery)
+        )
+      };
+    })
+    .filter((group) => group.stats.length > 0 || group.charts.length > 0);
+  const visibleMetricCount = visibleStatGroups.reduce((count, group) => count + group.stats.length, 0);
+  const visibleChartCount = visibleStatGroups.reduce((count, group) => count + group.charts.length, 0);
+  const visibleResultCount = visibleMetricCount + visibleChartCount;
+
+  useEffect(() => {
+    if (!expanded || typeof IntersectionObserver === "undefined") return;
+    const elements = statGroups
+      .map((group) => document.getElementById(statsSectionId(group.title)))
+      .filter((element): element is HTMLElement => Boolean(element));
+    if (!elements.length) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visible = entries
+          .filter((entry) => entry.isIntersecting)
+          .sort((left, right) => right.intersectionRatio - left.intersectionRatio)[0];
+        if (visible) {
+          const title = statGroups.find((group) => statsSectionId(group.title) === visible.target.id)?.title;
+          if (title) setActiveSection(title);
+        }
+      },
+      { rootMargin: "-18% 0px -70% 0px", threshold: [0.01, 0.15, 0.4] }
+    );
+    elements.forEach((element) => observer.observe(element));
+    return () => observer.disconnect();
+  }, [expanded, normalizedMetricQuery]);
+
+  const navigateToStatsSection = (title: string) => {
+    setActiveSection(title);
+    const scrollToSection = () => {
+      document.getElementById(statsSectionId(title))?.scrollIntoView({ behavior: "smooth", block: "start" });
+    };
+    if (normalizedMetricQuery) {
+      setMetricQuery("");
+      requestAnimationFrame(() => requestAnimationFrame(scrollToSection));
+      return;
+    }
+    scrollToSection();
+  };
+
   return (
     <div
       className={`selectedStatsSurface${expanded ? " is-expanded" : ""}${toggleable ? " is-toggleable" : ""}`}
@@ -2274,12 +2408,56 @@ export default function SelectedStrategyStats({
         }
       }}
     >
-      <div className="backtest-stats-grid selectedStatsSummaryGrid">
+      <div className="backtest-stats-grid selectedStatsSummaryGrid" id="stats-overview">
         {summaryStats.map((stat) => (
           <StatCard key={stat.label} stat={stat} />
         ))}
       </div>
-      {expanded ? statGroups.map((group) => <StatGroup key={group.title} title={group.title} stats={group.stats} charts={group.charts} />) : null}
+      {expanded ? (
+        <div className="selectedStatsWorkspace" onClick={(event) => event.stopPropagation()} onKeyDown={(event) => event.stopPropagation()}>
+          <div className="selectedStatsToolbar">
+            <label className="selectedStatsSearch">
+              <span aria-hidden>⌕</span>
+              <input
+                aria-label="Find a statistic or chart"
+                onChange={(event) => setMetricQuery(event.target.value)}
+                placeholder="Find a metric or chart…"
+                type="search"
+                value={metricQuery}
+              />
+              {metricQuery ? <button aria-label="Clear metric search" onClick={() => setMetricQuery("")} type="button">×</button> : null}
+            </label>
+            <span className="selectedStatsResultCount" aria-live="polite">
+              {normalizedMetricQuery
+                ? `${visibleResultCount} matching result${visibleResultCount === 1 ? "" : "s"}`
+                : `${statGroups.reduce((count, group) => count + group.stats.length, 0)} metrics`}
+            </span>
+          </div>
+          <nav className="selectedStatsSectionNav" aria-label="Statistics sections">
+            {statGroups.map((group) => (
+              <button
+                className={activeSection === group.title ? "is-active" : ""}
+                key={group.title}
+                onClick={() => navigateToStatsSection(group.title)}
+                type="button"
+              >
+                {group.title}
+              </button>
+            ))}
+          </nav>
+          {visibleStatGroups.length ? (
+            <div className="selectedStatsSections">
+              {visibleStatGroups.map((group) => <StatGroup key={group.title} title={group.title} stats={group.stats} charts={group.charts} />)}
+            </div>
+          ) : (
+            <div className="selectedStatsNoResults">
+              <strong>No matching statistics</strong>
+              <span>Try “drawdown”, “month”, “R”, “duration”, or a strategy name.</span>
+              <button onClick={() => setMetricQuery("")} type="button">Clear search</button>
+            </div>
+          )}
+        </div>
+      ) : null}
       {toggleable ? (
         <div className="selectedStatsToggleHint" aria-hidden="true">
           <span>{expanded ? "Hide details" : "More stats"}</span>

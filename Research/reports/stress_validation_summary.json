@@ -1,14 +1,14 @@
 {
-  "strategies": 145,
+  "strategies": 150,
   "statusCounts": {
-    "pass": 142,
-    "watch": 3
+    "pass": 57,
+    "watch": 93
   },
-  "minOverallPf": 2.001805,
-  "minQuarterPf": 0.925367,
-  "minBootstrapPfP05": 0.905072,
-  "minBlockBootstrapPfP05": 0.918505,
-  "minAnnualPassRate": 0.6,
+  "minOverallPf": 0.593048,
+  "minQuarterPf": 0.153849,
+  "minBootstrapPfP05": 0.372159,
+  "minBlockBootstrapPfP05": 0.355659,
+  "minAnnualPassRate": 0.0,
   "methods": [
     "chronological half and quarter folds",
     "rolling 20-trade PF lower-quartile",

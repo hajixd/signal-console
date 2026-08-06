@@ -1,0 +1,28 @@
+{
+  "market": "forex",
+  "source": "nested_ml_session_sizing_2026_08",
+  "sourceUrls": [
+    "https://www.kaggle.com/code/mortezataleblou/lightgbm-model-for-financial-predictions",
+    "https://www.kaggle.com/datasets/kanchana1990/algorithmic-trading-macro-stress-and-asset-regimes",
+    "https://www.reddit.com/r/algotrading/comments/1bg6xx5/where_are_we_with_ml_in_2024/",
+    "https://www.reddit.com/r/algotrading/comments/1siny35/where_does_ml_fit_in_algorithmic_trading/",
+    "https://www.reddit.com/r/quant/comments/1kc9nch/offpiste_quant_post_regime_detection_momentum_or/"
+  ],
+  "models": [
+    "logistic_l2_c025",
+    "logistic_l2_c1",
+    "extra_trees_depth3",
+    "extra_trees_depth5",
+    "hist_gradient_depth2",
+    "hist_gradient_depth3",
+    "xgboost_depth2",
+    "xgboost_depth3"
+  ],
+  "sizingRange": [
+    0.5,
+    1.5
+  ],
+  "testedHoldouts": 0,
+  "eligible": 0,
+  "method": "Purged expanding time-series OOF training; untouched validation ranks model/base-signal pairs; sealed holdout uses Benjamini-Hochberg correction, bootstrap/block-bootstrap, odd-even, annual, calibration, AUC, volatility-regime and bounded-size stability gates. ML never rejects a qualified base signal; it sizes every trade from 0.5x to 1.5x."
+}

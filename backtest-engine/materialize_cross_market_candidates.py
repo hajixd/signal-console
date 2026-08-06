@@ -211,6 +211,10 @@ def rewrite_metadata(
     if isinstance(dynamic_stop_loss_policy, dict):
         if "buffer_units" in dynamic_stop_loss_policy and "bufferUnits" not in dynamic_stop_loss_policy:
             dynamic_stop_loss_policy["bufferUnits"] = dynamic_stop_loss_policy.pop("buffer_units")
+        if "trigger_multiple" in dynamic_stop_loss_policy and "triggerMultiple" not in dynamic_stop_loss_policy:
+            dynamic_stop_loss_policy["triggerMultiple"] = dynamic_stop_loss_policy.pop("trigger_multiple")
+        if "lock_multiple" in dynamic_stop_loss_policy and "lockMultiple" not in dynamic_stop_loss_policy:
+            dynamic_stop_loss_policy["lockMultiple"] = dynamic_stop_loss_policy.pop("lock_multiple")
 
     dynamic_take_profit_policy = payload.get("dynamicTakeProfitPolicy")
     if isinstance(dynamic_take_profit_policy, dict):

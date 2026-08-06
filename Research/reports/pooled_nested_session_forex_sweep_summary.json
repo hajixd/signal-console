@@ -1,0 +1,19 @@
+{
+  "market": "forex",
+  "assets": 13,
+  "riskRewardGrids": [
+    "2",
+    "3",
+    "4"
+  ],
+  "frozenVariantsPerGrid": 204,
+  "totalFrozenVariants": 612,
+  "trainingFamilyFinalists": 0,
+  "validationPasses": 0,
+  "sealedHoldoutTests": 0,
+  "eligiblePooledHypotheses": 0,
+  "selectedPooledHypotheses": 0,
+  "materializedAssetStrategies": 0,
+  "result": "No pooled Forex hypothesis cleared the frozen training gate at any tested reward-to-risk setting.",
+  "method": "Each reward-to-risk grid was evaluated independently across all 13 Forex assets. Calendar-agnostic session hypotheses were frozen before testing; training ranked at most one candidate per structural family, untouched validation selected finalists, and the sealed 2025+ holdout was available only after validation."
+}

@@ -1586,8 +1586,8 @@ export default async function Home({ searchParams }: HomeProps) {
             wins: stat.wins
           }
         : aggregateBacktest([]);
-      const avgWinDollars = aggregate.avgWinDollars * accountMultiplier;
-      const avgLossDollars = aggregate.avgLossDollars * accountMultiplier;
+      const unscaledAvgWinDollars = aggregate.avgWinDollars * accountMultiplier;
+      const unscaledAvgLossDollars = aggregate.avgLossDollars * accountMultiplier;
       const symbols = uniqueValues(
         [...stats.map((value) => value.symbol), entry.symbol].filter((value): value is string => Boolean(value))
       ).sort();
@@ -1599,9 +1599,22 @@ export default async function Home({ searchParams }: HomeProps) {
       ).sort();
       const phases = uniqueValues(stats.map((stat) => stat.phase).filter(Boolean)).sort();
       const logicalKeys = uniqueValues([entry.key, ...stats.map((value) => value.logicalKey).filter(Boolean)]).sort();
-      const baseSizeMultiplier = (stat?.sizeMultiplier ?? 1) * accountMultiplier;
       const liveSupported = entry.liveSupported || logicalKeys.some((key) => liveRuleByKey.has(key));
       const displaySymbol = displaySymbols[0] ?? entry.symbol;
+      const uneditedSizeMultiplier = (stat?.sizeMultiplier ?? 1) * accountMultiplier;
+      const savedEdit = liveConfig.strategyEdits[entry.key];
+      const savedContracts = Number(savedEdit?.contracts);
+      const savedScale = Number(savedEdit?.scale);
+      const baseContracts = Number.parseFloat(instrumentSizeLabel(displaySymbol, uneditedSizeMultiplier));
+      const persistedScale =
+        Number.isFinite(savedContracts) && savedContracts > 0 && Number.isFinite(baseContracts) && baseContracts > 0
+          ? savedContracts / baseContracts
+          : Number.isFinite(savedScale) && savedScale > 0
+            ? savedScale
+            : 1;
+      const baseSizeMultiplier = uneditedSizeMultiplier * persistedScale;
+      const avgWinDollars = unscaledAvgWinDollars * persistedScale;
+      const avgLossDollars = unscaledAvgLossDollars * persistedScale;
       const dollarUnit = dollarPerUnit(displaySymbol);
       const fallbackTargetDollars = Math.abs((stat?.tpUnits ?? 0) * dollarUnit * baseSizeMultiplier);
       const fallbackRiskDollars = Math.abs(((stat?.slUnits ?? 0) + (stat?.costUnits ?? 0)) * dollarUnit * baseSizeMultiplier);
@@ -2532,6 +2545,7 @@ export default async function Home({ searchParams }: HomeProps) {
                 customScaleRange={liveConfig.customScaleRanges[activeMarket]}
                 dataEndAt={selectedDataEndAt}
                 defaultExpanded
+                startingBalanceDollars={challengeRules.startingBalance}
                 strategies={strategyOptions}
                 toggleable={false}
                 trades={selectedBasketTrades}
@@ -2541,6 +2555,7 @@ export default async function Home({ searchParams }: HomeProps) {
             live={activeMarketLiveBasketTrades.length ? (
               <SelectedStrategyStats
                 defaultExpanded
+                startingBalanceDollars={challengeRules.startingBalance}
                 strategies={strategyOptions}
                 toggleable={false}
                 trades={activeMarketLiveBasketTrades}

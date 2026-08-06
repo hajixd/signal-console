@@ -5,7 +5,7 @@
   "assetKey": "eur_cad",
   "phase": "competition_session_edge",
   "variantId": "competition_session_edge|family=london_first30_last30_momentum_month_8|direction=same|entry=930|exit=945|min_signal_atr=0|signal_end=195|signal_start=180|signal_month=8",
-  "source": "competition_session_edge_train_forward_2026_05",
+  "source": "nested_dynamic_management_2026_08",
   "sourceUrls": [
     "https://w4.stern.nyu.edu/facdir/lpederse/papers/TimeSeriesMomentum.pdf",
     "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=2694985",
@@ -30,11 +30,13 @@
   "forwardTotalR": 23.162572,
   "forwardAverageR": 0.266236,
   "forwardMaxDrawdownR": 2.093753,
-  "verificationSummary": "Management sweep `be_trail_prior_bar_b4` strict PF 2.75 over 87 trades, beating baseline PF 2.73; train PF 1.28, bootstrap p05 1.71, block-bootstrap p05 1.71, odd/even min PF 2.59, annual pass rate 100%.",
+  "verificationSummary": "Nested management `trail_prior_b0`: validation PF 3.36 over 21 trades; sealed holdout PF 3.28 over 21 trades; holdout q=0.067.",
   "costUnits": 0,
   "oneTradePerDay": false,
   "dynamicStopLossPolicy": {
     "mode": "trail_prior_bar",
-    "bufferUnits": 4.0
+    "bufferUnits": 0,
+    "triggerMultiple": 1.0,
+    "lockMultiple": 0.0
   }
 }

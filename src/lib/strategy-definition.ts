@@ -76,6 +76,8 @@ type StrategyMetadataSizePolicy = {
 type StrategyMetadataDynamicStopLossPolicy = {
   mode?: string | null;
   bufferUnits?: number | null;
+  triggerMultiple?: number | null;
+  lockMultiple?: number | null;
 };
 
 type StrategyMetadataDynamicTakeProfitPolicy = {
@@ -191,11 +193,18 @@ function normalizeSizePolicy(policy: StrategyMetadataSizePolicy | null | undefin
 function normalizeDynamicStopLossPolicy(
   policy: StrategyMetadataDynamicStopLossPolicy | null | undefined
 ): DynamicStopLossPolicy | undefined {
-  if (!policy || (policy.mode !== "trail_prior_bar" && policy.mode !== "trail_hourly_pivot")) return undefined;
+  if (
+    !policy ||
+    (policy.mode !== "breakeven" && policy.mode !== "trail_prior_bar" && policy.mode !== "trail_hourly_pivot")
+  ) return undefined;
   const bufferUnits = definedNumber(policy.bufferUnits);
+  const triggerMultiple = definedNumber(policy.triggerMultiple);
+  const lockMultiple = definedNumber(policy.lockMultiple);
   return {
     mode: policy.mode,
-    ...(bufferUnits === undefined ? {} : { bufferUnits })
+    ...(bufferUnits === undefined ? {} : { bufferUnits }),
+    ...(triggerMultiple === undefined ? {} : { triggerMultiple }),
+    ...(lockMultiple === undefined ? {} : { lockMultiple })
   };
 }
 

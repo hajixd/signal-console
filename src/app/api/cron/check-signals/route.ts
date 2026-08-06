@@ -384,10 +384,60 @@ function matchingRuleForTrade(trade: TradeAlert, rules: StrategyRule[]): Strateg
   );
 }
 
+function managementSwing(rule: StrategyRule | null): number {
+  const raw = rule?.variantId
+    ?.split("|")
+    .find((token) => token.startsWith("swing="))
+    ?.slice("swing=".length);
+  const parsed = Number(raw);
+  return Number.isFinite(parsed) ? Math.max(1, Math.min(2, Math.round(parsed))) : 2;
+}
+
+function latestConfirmedHourlyPivot(
+  trade: TradeAlert,
+  rule: StrategyRule | null,
+  hourlyBars: Bar[],
+  entryTime: string,
+  referenceTime: string,
+  kind: "high" | "low"
+): number | null {
+  const referenceTimeMs = Date.parse(referenceTime);
+  const entryTimeMs = Date.parse(entryTime);
+  if (!Number.isFinite(referenceTimeMs) || !Number.isFinite(entryTimeMs)) return null;
+
+  const available = hourlyBars
+    .filter((bar) => {
+      const time = Date.parse(bar.time);
+      return Number.isFinite(time) && time <= referenceTimeMs;
+    })
+    .sort((left, right) => Date.parse(left.time) - Date.parse(right.time));
+  const swing = managementSwing(rule);
+  const hourIndex = available.length - 1;
+  const entryHourIndex = available.findLastIndex((bar) => Date.parse(bar.time) <= entryTimeMs);
+  const confirmedLimit = hourIndex - swing;
+  if (entryHourIndex < 0 || confirmedLimit <= entryHourIndex) return null;
+
+  const isPivot = (index: number): boolean => {
+    if (index < swing || index + swing >= available.length) return false;
+    const value = available[index]![kind];
+    const left = available.slice(index - swing, index).map((bar) => bar[kind]);
+    const right = available.slice(index + 1, index + swing + 1).map((bar) => bar[kind]);
+    return kind === "high"
+      ? left.every((candidate) => value > candidate) && right.every((candidate) => value >= candidate)
+      : left.every((candidate) => value < candidate) && right.every((candidate) => value <= candidate);
+  };
+
+  for (let index = confirmedLimit; index > entryHourIndex; index -= 1) {
+    if (isPivot(index)) return available[index]![kind];
+  }
+  return null;
+}
+
 function stopManagementCandidate(
   trade: TradeAlert,
   rule: StrategyRule | null,
   trackedBars: Bar[],
+  hourlyBars: Bar[],
   index: number,
   currentStop: number,
   initialRisk: number,
@@ -402,37 +452,45 @@ function stopManagementCandidate(
   const buffer = (policy.bufferUnits ?? 0) * priceUnit;
   const candidates: Array<{ label?: string; price: number; reason: string }> = [];
   const direction = trade.side === "long" ? 1 : -1;
-  const favorableOneR =
+  const triggerMultiple = Math.max(0.01, policy.triggerMultiple ?? 1);
+  const lockMultiple = Math.max(0, Math.min(triggerMultiple - 0.01, policy.lockMultiple ?? 0));
+  const favorableTrigger =
     initialRisk > 0 &&
     (trade.side === "long"
-      ? bar.high >= trade.entryPrice + initialRisk
-      : bar.low <= trade.entryPrice - initialRisk);
+      ? bar.high >= trade.entryPrice + initialRisk * triggerMultiple
+      : bar.low <= trade.entryPrice - initialRisk * triggerMultiple);
 
-  if (favorableOneR) {
+  if (favorableTrigger) {
+    const lockedPrice = trade.entryPrice + direction * initialRisk * lockMultiple;
     candidates.push({
-      label: "Break Even",
-      price: trade.entryPrice,
-      reason: "Move SL to Break Even after price moved at least 1R in favor."
+      label: lockMultiple > 0 ? `Lock ${lockMultiple}R` : "Break Even",
+      price: lockedPrice,
+      reason: lockMultiple > 0
+        ? `Lock ${lockMultiple}R after price moved at least ${triggerMultiple}R in favor.`
+        : `Move SL to Break Even after price moved at least ${triggerMultiple}R in favor.`
     });
   }
 
-  if (policy.mode === "trail_prior_bar" && index > 0) {
-    const priorBar = trackedBars[index - 1]!;
+  if (policy.mode === "trail_prior_bar") {
     candidates.push({
-      price: trade.side === "long" ? priorBar.low - buffer : priorBar.high + buffer,
+      price: trade.side === "long" ? bar.low - buffer : bar.high + buffer,
       reason: "Trail SL using the prior completed bar."
     });
   }
 
-  if (policy.mode === "trail_hourly_pivot" && index > 0) {
-    const lookbackBars = trackedBars.slice(Math.max(0, index - 4), index);
-    if (lookbackBars.length >= 2) {
-      const pivot = trade.side === "long"
-        ? Math.min(...lookbackBars.map((lookbackBar) => lookbackBar.low)) - buffer
-        : Math.max(...lookbackBars.map((lookbackBar) => lookbackBar.high)) + buffer;
+  if (policy.mode === "trail_hourly_pivot") {
+    const pivot = latestConfirmedHourlyPivot(
+      trade,
+      rule,
+      hourlyBars,
+      trackedBars[0]?.time ?? trade.signalTime,
+      bar.time,
+      trade.side === "long" ? "low" : "high"
+    );
+    if (pivot !== null) {
       candidates.push({
-        price: pivot,
-        reason: "Trail SL using the latest hourly pivot window."
+        price: trade.side === "long" ? pivot - buffer : pivot + buffer,
+        reason: "Trail SL using the latest confirmed hourly pivot."
       });
     }
   }
@@ -449,6 +507,7 @@ function takeProfitManagementCandidate(
   trade: TradeAlert,
   rule: StrategyRule | null,
   trackedBars: Bar[],
+  hourlyBars: Bar[],
   index: number,
   currentTakeProfit: number,
   currentStop: number,
@@ -461,23 +520,29 @@ function takeProfitManagementCandidate(
   const direction = trade.side === "long" ? 1 : -1;
   const candidates: Array<{ price: number; reason: string }> = [];
 
-  if (policy.mode === "trail_prior_bar" && index > 0) {
-    const priorBar = trackedBars[index - 1]!;
+  const bar = trackedBars[index];
+  if (!bar) return null;
+
+  if (policy.mode === "trail_prior_bar") {
     candidates.push({
-      price: trade.side === "long" ? priorBar.high + buffer : priorBar.low - buffer,
+      price: trade.side === "long" ? bar.high + buffer : bar.low - buffer,
       reason: "Trail TP using the prior completed bar."
     });
   }
 
-  if (policy.mode === "trail_hourly_extreme" && index > 0) {
-    const lookbackBars = trackedBars.slice(Math.max(0, index - 4), index);
-    if (lookbackBars.length >= 2) {
-      const extreme = trade.side === "long"
-        ? Math.max(...lookbackBars.map((lookbackBar) => lookbackBar.high)) + buffer
-        : Math.min(...lookbackBars.map((lookbackBar) => lookbackBar.low)) - buffer;
+  if (policy.mode === "trail_hourly_extreme") {
+    const extreme = latestConfirmedHourlyPivot(
+      trade,
+      rule,
+      hourlyBars,
+      trackedBars[0]?.time ?? trade.signalTime,
+      bar.time,
+      trade.side === "long" ? "high" : "low"
+    );
+    if (extreme !== null) {
       candidates.push({
-        price: extreme,
-        reason: "Trail TP using the latest hourly extreme window."
+        price: trade.side === "long" ? extreme + buffer : extreme - buffer,
+        reason: "Trail TP using the latest confirmed hourly extreme."
       });
     }
   }
@@ -528,6 +593,7 @@ function lifecycleHitAt(
 function evaluateTradeLifecycleAndManagement(
   trade: TradeAlert,
   bars: Bar[],
+  hourlyBars: Bar[],
   rule: StrategyRule | null
 ): LifecycleAndManagementEvaluation {
   const trackedBars = trackedBarsAfterSignal(trade, bars);
@@ -606,7 +672,7 @@ function evaluateTradeLifecycleAndManagement(
       };
     }
 
-    const stopCandidate = stopManagementCandidate(trade, rule, trackedBars, index, currentStop, initialRisk, priceUnit);
+    const stopCandidate = stopManagementCandidate(trade, rule, trackedBars, hourlyBars, index, currentStop, initialRisk, priceUnit);
     if (stopCandidate) {
       const previousPrice = currentStop;
       currentStop = stopCandidate.price;
@@ -621,6 +687,7 @@ function evaluateTradeLifecycleAndManagement(
       trade,
       rule,
       trackedBars,
+      hourlyBars,
       index,
       currentTakeProfit,
       currentStop,
@@ -653,17 +720,27 @@ async function notifyTradeLifecycles(result: CronResult, barsByAssetKey: Map<str
       (Date.parse(trade.signalTime) || 0) >= oldestSignalTime &&
       Boolean(trade.assetKey)
   );
+  const lifecycleBarsByAssetKey = new Map<string, Bar[]>();
+  const hourlyBarsByAssetKey = new Map<string, Bar[]>();
 
   for (const trade of openTrades) {
     try {
       const assetKey = trade.assetKey!;
-      let bars = barsByAssetKey.get(assetKey);
+      let bars = lifecycleBarsByAssetKey.get(assetKey);
       if (!bars) {
-        bars = await fetchStoredAssetBars(assetKey);
-        barsByAssetKey.set(assetKey, bars);
+        bars = await fetchStoredAssetBars(assetKey, 5_000, "1m").catch(async () => {
+          const cached = barsByAssetKey.get(assetKey);
+          return cached?.length ? cached : fetchStoredAssetBars(assetKey);
+        });
+        lifecycleBarsByAssetKey.set(assetKey, bars);
+      }
+      let hourlyBars = hourlyBarsByAssetKey.get(assetKey);
+      if (!hourlyBars) {
+        hourlyBars = await fetchStoredAssetBars(assetKey, 1_500, "1h").catch(() => []);
+        hourlyBarsByAssetKey.set(assetKey, hourlyBars);
       }
 
-      const evaluation = evaluateTradeLifecycleAndManagement(trade, bars, matchingRuleForTrade(trade, rules));
+      const evaluation = evaluateTradeLifecycleAndManagement(trade, bars, hourlyBars, matchingRuleForTrade(trade, rules));
       const notifiedManagementEvents: TradeManagementEvent[] = [];
       let tradeForManagement = trade;
       for (const event of evaluation.managementEvents) {
@@ -1157,28 +1234,23 @@ export async function runSignalCheck(options: RunSignalCheckOptions = {}): Promi
   const maxAlerts = Number.isFinite(configuredMaxAlerts) && configuredMaxAlerts > 0 ? configuredMaxAlerts : TOPSTEP_100K_ACCOUNT.maxAlertsPerCheck;
   const maxRisk = Number.isFinite(configuredMaxRisk) && configuredMaxRisk > 0 ? configuredMaxRisk : TOPSTEP_100K_ACCOUNT.maxRiskPerCheck;
   let acceptedRisk = 0;
-  let acceptedCount = 0;
+  let processedExecutableCandidates = 0;
 
-  const selected = candidates
-    .sort((left, right) => right.score - left.score || (signalTimeMs(right.signal) ?? 0) - (signalTimeMs(left.signal) ?? 0))
+  const rankedCandidates = candidates
+    .sort((left, right) => right.score - left.score || (signalTimeMs(right.signal) ?? 0) - (signalTimeMs(left.signal) ?? 0));
+  const executableCandidateCount = rankedCandidates.filter((candidate) => !candidate.autoTradeBlockedReason).length;
+  const selected = rankedCandidates
     .map((candidate): SignalCandidate => {
       if (candidate.autoTradeBlockedReason) return candidate;
-      if (acceptedCount >= maxAlerts) {
-        const reason = `lower-ranked concurrent signal; ${maxAlerts} auto-trade limit for this check`;
-        result.skippedRisk.push({
-          id: candidate.signal.id,
-          symbol: candidate.signal.symbol,
-          reason
-        });
-        return { ...candidate, autoTradeBlockedReason: reason, riskDollars: 0 };
-      }
-      if (acceptedRisk + candidate.riskDollars > maxRisk) {
-        const remainingRisk = Math.max(0, maxRisk - acceptedRisk);
-        const adjustment = adjustAutoTradeSizeToLimits(candidate.signal, { maxRiskDollars: remainingRisk });
-        if (adjustment.size > 0 && adjustment.riskDollars <= remainingRisk + 0.01) {
-          const note = `Risk guard reduced units from ${instrumentSizeLabel(candidate.signal.symbol, adjustment.originalSize)} to ${instrumentSizeLabel(candidate.signal.symbol, adjustment.size)} to use the remaining ${wholeDollarLabel(remainingRisk)} of the ${wholeDollarLabel(maxRisk)} per-check risk budget.`;
+      processedExecutableCandidates += 1;
+      const remainingRisk = Math.max(0, maxRisk - acceptedRisk);
+      const remainingCandidates = Math.max(1, executableCandidateCount - processedExecutableCandidates + 1);
+      const fairRiskCapacity = remainingRisk / remainingCandidates;
+      if (candidate.riskDollars > fairRiskCapacity + 0.01) {
+        const adjustment = adjustAutoTradeSizeToLimits(candidate.signal, { maxRiskDollars: fairRiskCapacity });
+        if (adjustment.size > 0 && adjustment.riskDollars <= fairRiskCapacity + 0.01) {
+          const note = `Risk guard reduced units from ${instrumentSizeLabel(candidate.signal.symbol, adjustment.originalSize)} to ${instrumentSizeLabel(candidate.signal.symbol, adjustment.size)} so every concurrent signal can share the ${wholeDollarLabel(maxRisk)} per-check risk budget.`;
           acceptedRisk += adjustment.riskDollars;
-          acceptedCount += 1;
           return {
             ...candidate,
             riskDollars: adjustment.riskDollars,
@@ -1186,7 +1258,7 @@ export async function runSignalCheck(options: RunSignalCheckOptions = {}): Promi
           };
         }
 
-        const reason = `no executable unit size remains within the ${wholeDollarLabel(maxRisk)} auto-trade risk budget for this check`;
+        const reason = `no executable minimum unit remains within this signal's ${wholeDollarLabel(fairRiskCapacity)} share of the ${wholeDollarLabel(maxRisk)} per-check risk budget`;
         result.skippedRisk.push({
           id: candidate.signal.id,
           symbol: candidate.signal.symbol,
@@ -1195,10 +1267,11 @@ export async function runSignalCheck(options: RunSignalCheckOptions = {}): Promi
         return { ...candidate, autoTradeBlockedReason: reason, riskDollars: 0 };
       }
       acceptedRisk += candidate.riskDollars;
-      acceptedCount += 1;
       return candidate;
     });
 
+  // AUTO_TRADE_MAX_ALERTS_PER_CHECK now limits broker dispatch concurrency only;
+  // every risk-safe signal remains eligible for execution.
   result.signalScan.dispatchConcurrency = autoTradeDispatchConcurrency(maxAlerts);
   const dispatchOutcomes = await mapWithConcurrency(selected, result.signalScan.dispatchConcurrency, dispatchSelectedSignal);
   for (const outcome of dispatchOutcomes) {

@@ -703,6 +703,8 @@ class SizePolicy:
 class DynamicStopLossPolicy:
     mode: str
     buffer_units: float = 0.0
+    trigger_multiple: float = 1.0
+    lock_multiple: float = 0.0
 
 
 @dataclass(frozen=True)
@@ -910,7 +912,7 @@ ALLOWED_METADATA_KEYS = {
 STOP_LOSS_POLICY_MODES = {"signal_extreme", "prior_day_extreme"}
 TAKE_PROFIT_POLICY_MODES = {"risk_multiple", "signal_extreme", "prior_day_extreme"}
 SIZE_POLICY_MODES = {"confidence"}
-DYNAMIC_STOP_LOSS_POLICY_MODES = {"trail_prior_bar", "trail_hourly_pivot"}
+DYNAMIC_STOP_LOSS_POLICY_MODES = {"breakeven", "trail_prior_bar", "trail_hourly_pivot"}
 DYNAMIC_TAKE_PROFIT_POLICY_MODES = {"trail_prior_bar", "risk_multiple", "trail_hourly_extreme"}
 ENTRY_MODES = {"market", "limit"}
 PRICE_MODE_FIXED = "fixed"
@@ -1049,7 +1051,22 @@ def parse_dynamic_stop_loss_policy(payload: dict[str, Any], metadata_path: Path)
     if mode not in DYNAMIC_STOP_LOSS_POLICY_MODES:
         raise ValueError(f"Unsupported dynamicStopLossPolicy.mode '{mode}' in {metadata_path}")
     buffer_units = optional_object_float(policy, "bufferUnits", metadata_path) or 0.0
-    return DynamicStopLossPolicy(mode=mode, buffer_units=buffer_units)
+    trigger_multiple = optional_object_float(policy, "triggerMultiple", metadata_path)
+    lock_multiple = optional_object_float(policy, "lockMultiple", metadata_path)
+    trigger_multiple = 1.0 if trigger_multiple is None else trigger_multiple
+    lock_multiple = 0.0 if lock_multiple is None else lock_multiple
+    if trigger_multiple <= 0:
+        raise ValueError(f"dynamicStopLossPolicy.triggerMultiple must be > 0 in {metadata_path}")
+    if lock_multiple < 0 or lock_multiple >= trigger_multiple:
+        raise ValueError(
+            f"dynamicStopLossPolicy.lockMultiple must satisfy 0 <= lockMultiple < triggerMultiple in {metadata_path}"
+        )
+    return DynamicStopLossPolicy(
+        mode=mode,
+        buffer_units=buffer_units,
+        trigger_multiple=trigger_multiple,
+        lock_multiple=lock_multiple,
+    )
 
 
 def parse_dynamic_take_profit_policy(payload: dict[str, Any], metadata_path: Path) -> DynamicTakeProfitPolicy | None:
@@ -3691,15 +3708,18 @@ def dynamic_stop_loss_price(
     candidates: list[float] = []
     initial_risk = abs(open_trade.entry_price - open_trade.initial_stop_loss)
     if initial_risk > 0:
-        moved_one_r = (
-            data.high[reference_index] >= open_trade.entry_price + initial_risk
+        moved_trigger = (
+            data.high[reference_index] >= open_trade.entry_price + initial_risk * policy.trigger_multiple
             if open_trade.side == 1
-            else data.low[reference_index] <= open_trade.entry_price - initial_risk
+            else data.low[reference_index] <= open_trade.entry_price - initial_risk * policy.trigger_multiple
         )
-        if moved_one_r:
-            candidates.append(open_trade.entry_price)
+        if moved_trigger:
+            locked_price = open_trade.entry_price + open_trade.side * initial_risk * policy.lock_multiple
+            candidates.append(round_price(locked_price, asset.tick_size))
 
-    if policy.mode == "trail_prior_bar":
+    if policy.mode == "breakeven":
+        reference = math.nan
+    elif policy.mode == "trail_prior_bar":
         reference = float(data.low[reference_index]) if open_trade.side == 1 else float(data.high[reference_index])
     elif policy.mode == "trail_hourly_pivot":
         if data.hourly is None:
@@ -3828,9 +3848,20 @@ def append_management_event(
 
 def dynamic_stop_reason(strategy: BacktestStrategy, candidate_stop: float, open_trade: OpenTrade, asset: AssetConfig) -> tuple[str, str | None]:
     tolerance = max(abs(asset.tick_size), 1e-12) * 0.5
+    policy = strategy.dynamic_stop_loss_policy
     if abs(candidate_stop - open_trade.entry_price) <= tolerance:
-        return "Move SL to Break Even after price moved at least 1R in favor.", "Break Even"
-    mode = strategy.dynamic_stop_loss_policy.mode if strategy.dynamic_stop_loss_policy else ""
+        trigger = policy.trigger_multiple if policy else 1.0
+        return f"Move SL to Break Even after price moved at least {trigger:g}R in favor.", "Break Even"
+    if policy is not None and policy.lock_multiple > 0:
+        locked_price = open_trade.entry_price + open_trade.side * abs(open_trade.entry_price - open_trade.initial_stop_loss) * policy.lock_multiple
+        if abs(candidate_stop - locked_price) <= tolerance:
+            return (
+                f"Lock {policy.lock_multiple:g}R after price moved at least {policy.trigger_multiple:g}R in favor.",
+                f"Lock {policy.lock_multiple:g}R",
+            )
+    mode = policy.mode if policy else ""
+    if mode == "breakeven":
+        return "Dynamic profit-lock policy adjusted the stop.", None
     if mode == "trail_prior_bar":
         return "Trail SL using the prior completed bar.", None
     if mode == "trail_hourly_pivot":

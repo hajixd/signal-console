@@ -105,20 +105,26 @@ function editRiskRewardRatio(edit: Pick<StrategyEdit, "targetDollars" | "riskDol
   return edit.slUnits > 0 ? edit.tpUnits / edit.slUnits : undefined;
 }
 
-export function normalizeStrategyEdit(strategy: StrategyEditOption, edit: StrategyEdit): StrategyEdit {
+export function normalizeStrategyEdit(strategy: StrategyEditOption, edit: StrategyEditSeed): StrategyEdit {
   const fallback = defaultStrategyEdit(strategy);
-  const savedScale = Number.isFinite(edit.scale) && edit.scale > 0 ? roundControlValue(edit.scale) : undefined;
-  const hasContracts = Number.isFinite(edit.contracts) && edit.contracts > 0;
+  const savedScaleValue = Number(edit.scale);
+  const savedContractsValue = Number(edit.contracts);
+  const savedTpUnitsValue = Number(edit.tpUnits);
+  const savedSlUnitsValue = Number(edit.slUnits);
+  const savedTargetDollarsValue = Number(edit.targetDollars);
+  const savedRiskDollarsValue = Number(edit.riskDollars);
+  const savedScale = Number.isFinite(savedScaleValue) && savedScaleValue > 0 ? roundControlValue(savedScaleValue) : undefined;
+  const hasContracts = Number.isFinite(savedContractsValue) && savedContractsValue > 0;
   const contracts =
     hasContracts
-      ? roundControlValue(edit.contracts)
+      ? roundControlValue(savedContractsValue)
       : savedScale
         ? roundControlValue(fallback.contracts * savedScale)
         : fallback.contracts;
-  let tpUnits = Number.isFinite(edit.tpUnits) && edit.tpUnits > 0 ? roundControlValue(edit.tpUnits) : 0;
-  let slUnits = Number.isFinite(edit.slUnits) && edit.slUnits > 0 ? roundControlValue(edit.slUnits) : 0;
-  let targetDollars = Number.isFinite(edit.targetDollars) && edit.targetDollars > 0 ? roundControlValue(edit.targetDollars) : 0;
-  let riskDollars = Number.isFinite(edit.riskDollars) && edit.riskDollars > 0 ? roundControlValue(edit.riskDollars) : 0;
+  let tpUnits = Number.isFinite(savedTpUnitsValue) && savedTpUnitsValue > 0 ? roundControlValue(savedTpUnitsValue) : 0;
+  let slUnits = Number.isFinite(savedSlUnitsValue) && savedSlUnitsValue > 0 ? roundControlValue(savedSlUnitsValue) : 0;
+  let targetDollars = Number.isFinite(savedTargetDollarsValue) && savedTargetDollarsValue > 0 ? roundControlValue(savedTargetDollarsValue) : 0;
+  let riskDollars = Number.isFinite(savedRiskDollarsValue) && savedRiskDollarsValue > 0 ? roundControlValue(savedRiskDollarsValue) : 0;
 
   if (tpUnits <= 0 && targetDollars > 0) tpUnits = unitsFromDollars(strategy, targetDollars, contracts);
   if (slUnits <= 0 && riskDollars > 0) slUnits = unitsFromDollars(strategy, riskDollars, contracts);
@@ -199,10 +205,7 @@ function normalizeStrategyEdits(strategies: StrategyEditOption[], edits: Strateg
   for (const [key, edit] of Object.entries(edits)) {
     const strategy = optionByKey.get(key);
     if (!strategy) continue;
-    const normalizedEdit = normalizeStrategyEdit(strategy, {
-      ...defaultStrategyEdit(strategy),
-      ...edit
-    });
+    const normalizedEdit = normalizeStrategyEdit(strategy, edit);
     if (!isDefaultStrategyEdit(strategy, normalizedEdit)) {
       normalized[key] = normalizedEdit;
     }

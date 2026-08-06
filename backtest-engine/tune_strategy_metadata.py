@@ -31,6 +31,8 @@ CAMEL_CASE_KEYS = {
     "max_multiplier": "maxMultiplier",
     "min_confidence": "minConfidence",
     "max_confidence": "maxConfidence",
+    "trigger_multiple": "triggerMultiple",
+    "lock_multiple": "lockMultiple",
 }
 
 

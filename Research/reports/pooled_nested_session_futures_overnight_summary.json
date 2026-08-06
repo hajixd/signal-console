@@ -1,0 +1,17 @@
+{
+  "market": "futures",
+  "assets": 14,
+  "riskRewardGrid": "2",
+  "specStart": 133,
+  "specEnd": 180,
+  "frozenVariants": 48,
+  "trainingFamilyFinalists": 1,
+  "validationPasses": 0,
+  "sealedHoldoutTests": 0,
+  "eligiblePooledHypotheses": 0,
+  "selectedPooledHypotheses": 0,
+  "materializedAssetStrategies": 0,
+  "dryRun": true,
+  "selected": [],
+  "method": "Frozen calendar-agnostic session hypotheses pooled across every market asset; train ranks one per family, untouched validation selects finalists, sealed 2025+ holdout uses BH/ordinary bootstrap/block bootstrap/odd-even/annual/strict one-minute parity gates. No asset-specific parameters are selected."
+}

@@ -72,8 +72,10 @@ export type EchoNeuralModel = {
 };
 
 export type DynamicStopLossPolicy = {
-  mode: "trail_prior_bar" | "trail_hourly_pivot";
+  mode: "breakeven" | "trail_prior_bar" | "trail_hourly_pivot";
   bufferUnits?: number;
+  triggerMultiple?: number;
+  lockMultiple?: number;
 };
 
 export type DynamicTakeProfitPolicy = {

@@ -5,7 +5,7 @@
   "assetKey": "gbp_jpy",
   "phase": "competition_session_edge",
   "variantId": "competition_session_edge|family=us_first30_last30_reversal_signalweekdayside|direction=opposite|entry=930|exit=945|min_signal_atr=0.35|signal_end=585|signal_start=570|signal_weekday_side=2_long|risk_reward=5|managed_exit=bracket",
-  "source": "cross_asset_true_rr_search_2026_05",
+  "source": "nested_dynamic_management_2026_08",
   "sourceUrls": [
     "https://w4.stern.nyu.edu/facdir/lpederse/papers/TimeSeriesMomentum.pdf",
     "https://www.sciencedirect.com/science/article/abs/pii/S0304405X18301351",
@@ -32,7 +32,13 @@
   "forwardTotalR": 15.562719,
   "forwardAverageR": 0.18527,
   "forwardMaxDrawdownR": 1.945814,
-  "verificationSummary": "Cross-asset strict PF 2.70 over 84 trades; average planned RR 5.01, min planned RR 4.79; bootstrap p05 1.64, block-bootstrap p05 1.40, annual pass rate 100%.",
+  "verificationSummary": "Nested management `lock_0_25r_at_1r`: validation PF 1.68 over 18 trades; sealed holdout PF 10.74 over 31 trades; holdout q=0.008.",
   "costUnits": 0.0,
-  "oneTradePerDay": false
+  "oneTradePerDay": false,
+  "dynamicStopLossPolicy": {
+    "mode": "breakeven",
+    "bufferUnits": 0,
+    "triggerMultiple": 1.0,
+    "lockMultiple": 0.25
+  }
 }

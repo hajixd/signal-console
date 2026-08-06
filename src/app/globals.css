@@ -3445,6 +3445,140 @@ html[data-theme="light"] .themeDarkLabel {
 
 .selectedStatsSummaryGrid {
   align-items: stretch;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+}
+
+.selectedStatsWorkspace {
+  min-width: 0;
+  display: grid;
+  gap: 0.58rem;
+}
+
+.selectedStatsToolbar {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.62rem;
+  padding-top: 0.08rem;
+}
+
+.selectedStatsSearch {
+  min-width: min(100%, 360px);
+  height: 38px;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.42rem;
+  border: 1px solid rgba(96, 165, 250, 0.2);
+  border-radius: 11px;
+  background: var(--stats-chart-panel);
+  padding: 0 0.58rem;
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+}
+
+.selectedStatsSearch:focus-within {
+  border-color: rgba(96, 165, 250, 0.54);
+  box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.08);
+}
+
+.selectedStatsSearch > span {
+  color: var(--stats-chart-text);
+  font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+  font-size: 0.9rem;
+}
+
+.selectedStatsSearch input {
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--text);
+  font-size: 0.76rem;
+  font-weight: 750;
+}
+
+.selectedStatsSearch input::placeholder {
+  color: var(--stats-chart-text);
+}
+
+.selectedStatsSearch button {
+  width: 24px;
+  height: 24px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--stats-chart-text);
+  cursor: pointer;
+}
+
+.selectedStatsSearch button:hover {
+  background: var(--stats-chart-accent-soft);
+  color: var(--stats-chart-accent);
+}
+
+.selectedStatsResultCount {
+  margin-left: auto;
+  color: var(--stats-chart-text);
+  font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+  font-size: 0.63rem;
+  font-weight: 850;
+  white-space: nowrap;
+}
+
+.selectedStatsSectionNav {
+  position: sticky;
+  top: 42px;
+  z-index: 8;
+  min-width: 0;
+  display: flex;
+  gap: 0.3rem;
+  overflow-x: auto;
+  padding: 0.42rem 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.055);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.075);
+  background: rgba(8, 11, 16, 0.94);
+  backdrop-filter: blur(14px);
+  scrollbar-width: none;
+}
+
+.selectedStatsSectionNav::-webkit-scrollbar {
+  display: none;
+}
+
+.selectedStatsSectionNav button {
+  flex: 0 0 auto;
+  min-height: 30px;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--stats-chart-text);
+  padding: 0.35rem 0.58rem;
+  cursor: pointer;
+  font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+  font-size: 0.6rem;
+  font-weight: 900;
+  letter-spacing: 0.025em;
+  white-space: nowrap;
+  transition: background 140ms ease, border-color 140ms ease, color 140ms ease;
+}
+
+.selectedStatsSectionNav button:hover {
+  background: var(--stats-chart-accent-soft);
+  color: var(--text);
+}
+
+.selectedStatsSectionNav button.is-active {
+  border-color: rgba(96, 165, 250, 0.3);
+  background: var(--stats-chart-accent-soft);
+  color: var(--stats-chart-accent);
+}
+
+.selectedStatsSections {
+  min-width: 0;
+  display: grid;
+  gap: 0.74rem;
 }
 
 .selectedStatsGroup {
@@ -3452,11 +3586,28 @@ html[data-theme="light"] .themeDarkLabel {
   display: grid;
   gap: 0.46rem;
   padding-top: 0.22rem;
+  scroll-margin-top: 96px;
 }
 
 .selectedStatsGroup + .selectedStatsGroup {
   border-top: 1px solid rgba(255, 255, 255, 0.075);
   padding-top: 0.78rem;
+}
+
+.selectedStatsGroupHeading {
+  min-width: 0;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.8rem;
+}
+
+.selectedStatsGroupHeading > span {
+  color: var(--stats-chart-text);
+  font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+  font-size: 0.58rem;
+  font-weight: 800;
+  white-space: nowrap;
 }
 
 .selectedStatsGroup h3 {
@@ -3475,6 +3626,44 @@ html[data-theme="light"] .themeDarkLabel {
 
 .selectedStatsDenseGrid .backtest-stat-card {
   min-height: 72px;
+  transition: border-color 140ms ease, background 140ms ease, transform 140ms ease;
+}
+
+.selectedStatsDenseGrid .backtest-stat-card:hover {
+  border-color: rgba(96, 165, 250, 0.34);
+  transform: translateY(-1px);
+}
+
+.selectedStatsNoResults {
+  min-height: 180px;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 0.35rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.065);
+  color: var(--stats-chart-text);
+  text-align: center;
+}
+
+.selectedStatsNoResults strong {
+  color: var(--text);
+  font-size: 0.86rem;
+}
+
+.selectedStatsNoResults span {
+  font-size: 0.7rem;
+}
+
+.selectedStatsNoResults button {
+  margin-top: 0.35rem;
+  border: 1px solid rgba(96, 165, 250, 0.3);
+  border-radius: 9px;
+  background: var(--stats-chart-accent-soft);
+  color: var(--stats-chart-accent);
+  padding: 0.42rem 0.7rem;
+  cursor: pointer;
+  font-size: 0.68rem;
+  font-weight: 900;
 }
 
 .selectedStatsCharts {
@@ -3914,7 +4103,34 @@ html[data-theme="light"] .themeDarkLabel {
   }
 }
 
+@media (max-width: 1100px) {
+  .selectedStatsSummaryGrid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
 @media (max-width: 720px) {
+  .selectedStatsSummaryGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .selectedStatsToolbar {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 0.35rem;
+  }
+
+  .selectedStatsSearch {
+    width: 100%;
+  }
+
+  .selectedStatsResultCount {
+    margin-left: 0;
+  }
+
+  .selectedStatsSectionNav {
+    top: 40px;
+  }
+
   .selectedStatsChartGrid {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -3951,6 +4167,9 @@ html[data-theme="light"] .themeDarkLabel {
   }
 
   .selectedStatsCharts summary i,
+  .selectedStatsSearch,
+  .selectedStatsSectionNav button,
+  .selectedStatsDenseGrid .backtest-stat-card,
   .selectedStatsBars i,
   .selectedStatsOutcomeStrip i,
   .statsChartPoint,
@@ -9246,6 +9465,28 @@ html[data-theme="light"] .selectedStatsSurface {
   --stats-chart-grid: rgba(51, 65, 85, 0.18);
   --stats-chart-text: rgba(51, 65, 85, 0.72);
   --stats-chart-panel: rgba(248, 250, 252, 0.94);
+}
+
+html[data-theme="light"] .selectedStatsSearch {
+  border-color: rgba(37, 99, 235, 0.18);
+}
+
+html[data-theme="light"] .selectedStatsSearch input,
+html[data-theme="light"] .selectedStatsNoResults strong {
+  color: #0f172a;
+}
+
+html[data-theme="light"] .selectedStatsSectionNav {
+  border-color: rgba(15, 23, 42, 0.08);
+  background: rgba(248, 250, 252, 0.94);
+}
+
+html[data-theme="light"] .selectedStatsSectionNav button.is-active {
+  border-color: rgba(37, 99, 235, 0.24);
+}
+
+html[data-theme="light"] .selectedStatsNoResults {
+  border-top-color: rgba(15, 23, 42, 0.08);
 }
 
 html[data-theme="light"] .selectedStatsCharts {

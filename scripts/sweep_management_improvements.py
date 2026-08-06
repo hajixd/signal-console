@@ -228,7 +228,7 @@ def data_for(
     strategy: runner.BacktestStrategy,
     assets: dict[str, runner.AssetConfig],
     cache: dict[tuple[str, str], runner.EnrichedData],
-) -> tuple[runner.AssetConfig, runner.EnrichedData, runner.EnrichedData | None]:
+) -> tuple[runner.AssetConfig, runner.EnrichedData, list[tuple[str, runner.EnrichedData]] | None]:
     asset = assets[strategy.asset_key]
     timeframe = runner.strategy_timeframe(strategy)
     cache_key = (asset.key, timeframe)
@@ -237,7 +237,7 @@ def data_for(
             runner.load_candle_csv(runner.DATA_ROOT / timeframe / asset.data_file),
             asset,
         )
-    execution_data = None
+    execution_data: list[tuple[str, runner.EnrichedData]] | None = None
     execution_timeframe = runner.strategy_execution_timeframe(strategy)
     if execution_timeframe is not None:
         execution_key = (asset.key, execution_timeframe)
@@ -246,7 +246,7 @@ def data_for(
                 runner.load_candle_csv(runner.DATA_ROOT / execution_timeframe / asset.data_file),
                 asset,
             )
-        execution_data = cache[execution_key]
+        execution_data = [(execution_timeframe, cache[execution_key])]
     return asset, cache[cache_key], execution_data
 
 
@@ -254,7 +254,7 @@ def run_strategy(
     strategy: runner.BacktestStrategy,
     asset: runner.AssetConfig,
     data: runner.EnrichedData,
-    execution_data: runner.EnrichedData | None,
+    execution_data: list[tuple[str, runner.EnrichedData]] | None,
     start_ts: int,
     end_ts: int | None,
 ) -> list[runner.BacktestTradeRow]:
@@ -351,6 +351,8 @@ def apply_improvement(improvement: Improvement) -> None:
         payload["dynamicStopLossPolicy"] = {
             "mode": improvement.spec.dynamic_stop_loss_policy.mode,
             "bufferUnits": improvement.spec.dynamic_stop_loss_policy.buffer_units,
+            "triggerMultiple": improvement.spec.dynamic_stop_loss_policy.trigger_multiple,
+            "lockMultiple": improvement.spec.dynamic_stop_loss_policy.lock_multiple,
         }
     if improvement.spec.dynamic_take_profit_policy is None:
         payload.pop("dynamicTakeProfitPolicy", None)
