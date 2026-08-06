@@ -115,7 +115,10 @@ export const AUTO_TRADE_PROVIDERS: AutoTradeProvider[] = [
   }
 ];
 
-export const FULLY_FUNCTIONING_AUTO_TRADE_PROVIDER_IDS: ReadonlySet<AutoTradeProviderId> = new Set<AutoTradeProviderId>(["projectx"]);
+export const FULLY_FUNCTIONING_AUTO_TRADE_PROVIDER_IDS: ReadonlySet<AutoTradeProviderId> = new Set<AutoTradeProviderId>([
+  "projectx",
+  "mt5_ea"
+]);
 
 export function autoTradeProviderFullyFunctioning(providerId: AutoTradeProviderId): boolean {
   return FULLY_FUNCTIONING_AUTO_TRADE_PROVIDER_IDS.has(providerId);

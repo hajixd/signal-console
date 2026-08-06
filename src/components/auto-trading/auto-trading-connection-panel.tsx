@@ -160,17 +160,17 @@ const PROP_FIRM_OPTIONS: PropFirmOption[] = [
   { id: "leeloo", label: "Leeloo Trading", markets: ["futures"], platformIds: ["rithmic"] },
   { id: "bulenox", label: "Bulenox", markets: ["futures"], platformIds: ["rithmic"] },
   { id: "oneup", label: "OneUp Trader", markets: ["futures"], platformIds: ["rithmic"] },
-  { id: "e8", label: "E8 Markets", markets: ["forex"], platformIds: ["tradelocker", "matchtrader", "ctrader", "mt5_bridge"] },
-  { id: "ftmo", label: "FTMO", markets: ["forex"], platformIds: ["mt5_bridge", "ctrader"] },
-  { id: "the5ers", label: "The5ers", markets: ["forex"], platformIds: ["mt5_bridge", "ctrader"] },
-  { id: "fundednext", label: "FundedNext", markets: ["forex"], platformIds: ["mt5_bridge", "ctrader", "matchtrader"] },
-  { id: "fundingpips", label: "FundingPips", markets: ["forex"], platformIds: ["mt5_bridge", "ctrader", "matchtrader"] },
-  { id: "funded-trading-plus", label: "Funded Trading Plus", markets: ["forex"], platformIds: ["mt5_bridge", "ctrader", "matchtrader"] },
-  { id: "alpha-capital", label: "Alpha Capital Group", markets: ["forex"], platformIds: ["mt5_bridge", "ctrader", "tradelocker"] },
-  { id: "blue-guardian", label: "Blue Guardian", markets: ["forex"], platformIds: ["matchtrader", "tradelocker", "mt5_bridge"] },
-  { id: "goat-funded-trader", label: "GOAT Funded Trader", markets: ["forex"], platformIds: ["ctrader", "tradelocker", "matchtrader", "mt5_bridge"] },
-  { id: "brightfunded", label: "BrightFunded", markets: ["forex"], platformIds: ["mt5_bridge", "ctrader"] },
-  { id: "fxify", label: "FXIFY", markets: ["forex"], platformIds: ["mt5_bridge"] },
+  { id: "e8", label: "E8 Markets", markets: ["forex"], platformIds: ["tradelocker", "matchtrader", "ctrader", "mt5_ea", "mt5_bridge"] },
+  { id: "ftmo", label: "FTMO", markets: ["forex"], platformIds: ["mt5_ea", "mt5_bridge", "ctrader"] },
+  { id: "the5ers", label: "The5ers", markets: ["forex"], platformIds: ["mt5_ea", "mt5_bridge", "ctrader"] },
+  { id: "fundednext", label: "FundedNext", markets: ["forex"], platformIds: ["mt5_ea", "mt5_bridge", "ctrader", "matchtrader"] },
+  { id: "fundingpips", label: "FundingPips", markets: ["forex"], platformIds: ["mt5_ea", "mt5_bridge", "ctrader", "matchtrader"] },
+  { id: "funded-trading-plus", label: "Funded Trading Plus", markets: ["forex"], platformIds: ["mt5_ea", "mt5_bridge", "ctrader", "matchtrader"] },
+  { id: "alpha-capital", label: "Alpha Capital Group", markets: ["forex"], platformIds: ["mt5_ea", "mt5_bridge", "ctrader", "tradelocker"] },
+  { id: "blue-guardian", label: "Blue Guardian", markets: ["forex"], platformIds: ["matchtrader", "tradelocker", "mt5_ea", "mt5_bridge"] },
+  { id: "goat-funded-trader", label: "GOAT Funded Trader", markets: ["forex"], platformIds: ["ctrader", "tradelocker", "matchtrader", "mt5_ea", "mt5_bridge"] },
+  { id: "brightfunded", label: "BrightFunded", markets: ["forex"], platformIds: ["mt5_ea", "mt5_bridge", "ctrader"] },
+  { id: "fxify", label: "FXIFY", markets: ["forex"], platformIds: ["mt5_ea", "mt5_bridge"] },
   { id: "funderpro", label: "FunderPro", markets: ["forex"], platformIds: ["mt5_bridge", "ctrader", "tradelocker"] }
 ];
 
@@ -1888,6 +1888,14 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
                 {isConnecting ? "Connecting..." : reconnectProjectXConnectionId ? "Reconnect" : "Connect Account"}
               </button>
             </form>
+          ) : selectedProviderReady && selectedProvider.id === "mt5_ea" ? (
+            <div className="topstepAccountEmpty">
+              <strong>MT5 EA is enabled</strong>
+              <span>
+                This connection is managed by the Expert Advisor on the MT5 terminal. Start the EA with bridge account
+                <code> mt5-demo-100k</code>; its heartbeat and execution status appear below.
+              </span>
+            </div>
           ) : selectedProviderReady && selectedProviderFields.length ? (
             <form className="topstepConnectForm" onSubmit={handleGenericConnect}>
               <label>
@@ -1948,7 +1956,7 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
           ) : (
             <div className="topstepAccountEmpty autoTradeUnavailable">
               <strong>{selectedProvider.label} is not fully functioning yet</strong>
-              <span>Only ProjectX / TopstepX is enabled for production auto-trading right now.</span>
+              <span>ProjectX / TopstepX and the MT5 EA are enabled for production auto-trading.</span>
             </div>
           )}
         </div>
