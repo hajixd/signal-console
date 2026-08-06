@@ -2579,6 +2579,23 @@ html[data-theme="light"] .themeDarkLabel {
   align-items: end;
 }
 
+.mt5ConnectNotice {
+  grid-column: 1 / -1;
+  display: grid;
+  gap: 0.25rem;
+  border-left: 2px solid rgba(96, 165, 250, 0.62);
+  background: rgba(96, 165, 250, 0.055);
+  padding: 0.65rem 0.75rem;
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  line-height: 1.5;
+}
+
+.mt5ConnectNotice strong {
+  color: var(--text-primary);
+  font-size: 0.76rem;
+}
+
 .topstepConnectForm label {
   min-width: 0;
   display: grid;

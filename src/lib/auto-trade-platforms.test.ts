@@ -7,14 +7,19 @@ import {
   FULLY_FUNCTIONING_AUTO_TRADE_PROVIDER_IDS
 } from "./auto-trade-platforms";
 
-test("ProjectX and the MT5 EA are available production execution paths", () => {
+test("ProjectX and MT5 are available production execution paths", () => {
   assert.deepEqual([...FULLY_FUNCTIONING_AUTO_TRADE_PROVIDER_IDS], ["projectx", "mt5_ea"]);
   assert.equal(autoTradeProviderFullyFunctioning("projectx"), true);
   assert.equal(autoTradeProviderFullyFunctioning("mt5_ea"), true);
 });
 
-test("MT5 EA is the fully functioning forex provider", () => {
-  const provider = autoTradeProvidersForMarket("forex").find((option) => autoTradeProviderFullyFunctioning(option.id));
+test("forex exposes one fully functioning MT5 provider without the legacy duplicate", () => {
+  const forexProviders = autoTradeProvidersForMarket("forex");
+  const mt5Providers = forexProviders.filter((option) => option.shortLabel === "MT5");
+  const provider = forexProviders.find((option) => autoTradeProviderFullyFunctioning(option.id));
+  assert.equal(mt5Providers.length, 1);
+  assert.equal(forexProviders.some((option) => option.id === "mt5_bridge"), false);
   assert.equal(provider?.id, "mt5_ea");
+  assert.equal(provider?.shortLabel, "MT5");
   assert.equal(provider?.status, "live");
 });

@@ -160,18 +160,18 @@ const PROP_FIRM_OPTIONS: PropFirmOption[] = [
   { id: "leeloo", label: "Leeloo Trading", markets: ["futures"], platformIds: ["rithmic"] },
   { id: "bulenox", label: "Bulenox", markets: ["futures"], platformIds: ["rithmic"] },
   { id: "oneup", label: "OneUp Trader", markets: ["futures"], platformIds: ["rithmic"] },
-  { id: "e8", label: "E8 Markets", markets: ["forex"], platformIds: ["tradelocker", "matchtrader", "ctrader", "mt5_ea", "mt5_bridge"] },
-  { id: "ftmo", label: "FTMO", markets: ["forex"], platformIds: ["mt5_ea", "mt5_bridge", "ctrader"] },
-  { id: "the5ers", label: "The5ers", markets: ["forex"], platformIds: ["mt5_ea", "mt5_bridge", "ctrader"] },
-  { id: "fundednext", label: "FundedNext", markets: ["forex"], platformIds: ["mt5_ea", "mt5_bridge", "ctrader", "matchtrader"] },
-  { id: "fundingpips", label: "FundingPips", markets: ["forex"], platformIds: ["mt5_ea", "mt5_bridge", "ctrader", "matchtrader"] },
-  { id: "funded-trading-plus", label: "Funded Trading Plus", markets: ["forex"], platformIds: ["mt5_ea", "mt5_bridge", "ctrader", "matchtrader"] },
-  { id: "alpha-capital", label: "Alpha Capital Group", markets: ["forex"], platformIds: ["mt5_ea", "mt5_bridge", "ctrader", "tradelocker"] },
-  { id: "blue-guardian", label: "Blue Guardian", markets: ["forex"], platformIds: ["matchtrader", "tradelocker", "mt5_ea", "mt5_bridge"] },
-  { id: "goat-funded-trader", label: "GOAT Funded Trader", markets: ["forex"], platformIds: ["ctrader", "tradelocker", "matchtrader", "mt5_ea", "mt5_bridge"] },
-  { id: "brightfunded", label: "BrightFunded", markets: ["forex"], platformIds: ["mt5_ea", "mt5_bridge", "ctrader"] },
-  { id: "fxify", label: "FXIFY", markets: ["forex"], platformIds: ["mt5_ea", "mt5_bridge"] },
-  { id: "funderpro", label: "FunderPro", markets: ["forex"], platformIds: ["mt5_bridge", "ctrader", "tradelocker"] }
+  { id: "e8", label: "E8 Markets", markets: ["forex"], platformIds: ["tradelocker", "matchtrader", "ctrader", "mt5_ea"] },
+  { id: "ftmo", label: "FTMO", markets: ["forex"], platformIds: ["mt5_ea", "ctrader"] },
+  { id: "the5ers", label: "The5ers", markets: ["forex"], platformIds: ["mt5_ea", "ctrader"] },
+  { id: "fundednext", label: "FundedNext", markets: ["forex"], platformIds: ["mt5_ea", "ctrader", "matchtrader"] },
+  { id: "fundingpips", label: "FundingPips", markets: ["forex"], platformIds: ["mt5_ea", "ctrader", "matchtrader"] },
+  { id: "funded-trading-plus", label: "Funded Trading Plus", markets: ["forex"], platformIds: ["mt5_ea", "ctrader", "matchtrader"] },
+  { id: "alpha-capital", label: "Alpha Capital Group", markets: ["forex"], platformIds: ["mt5_ea", "ctrader", "tradelocker"] },
+  { id: "blue-guardian", label: "Blue Guardian", markets: ["forex"], platformIds: ["matchtrader", "tradelocker", "mt5_ea"] },
+  { id: "goat-funded-trader", label: "GOAT Funded Trader", markets: ["forex"], platformIds: ["ctrader", "tradelocker", "matchtrader", "mt5_ea"] },
+  { id: "brightfunded", label: "BrightFunded", markets: ["forex"], platformIds: ["mt5_ea", "ctrader"] },
+  { id: "fxify", label: "FXIFY", markets: ["forex"], platformIds: ["mt5_ea"] },
+  { id: "funderpro", label: "FunderPro", markets: ["forex"], platformIds: ["mt5_ea", "ctrader", "tradelocker"] }
 ];
 
 const CONNECTION_FIELDS: Record<AutoTradeProviderId, ConnectionField[]> = {
@@ -202,9 +202,12 @@ const CONNECTION_FIELDS: Record<AutoTradeProviderId, ConnectionField[]> = {
     { advanced: true, key: "lotMap", label: "Lot map", placeholder: "EURUSD:0.1,XAUUSD:0.05" },
     { advanced: true, defaultValue: "0.01", key: "lotStep", label: "Lot step", placeholder: "0.01" }
   ],
-  // MT5 EA is configured via env (EA_INGEST_TOKEN, MT5_EA_* settings); the EA
-  // itself holds the MT5 login. No per-connection form fields in Phase 1.
-  mt5_ea: [],
+  mt5_ea: [
+    { key: "login", label: "MT5 account login", placeholder: "12345678", required: true },
+    { key: "server", label: "MT5 broker server", placeholder: "Broker-Server", required: true },
+    { advanced: true, key: "accountSize", label: "Account size", placeholder: "100000" },
+    { advanced: true, key: "symbolMap", label: "Symbol map", placeholder: "EURUSD:EURUSD.,XAUUSD:XAUUSDm" }
+  ],
   ctrader: [
     { key: "accountId", label: "cTrader account ID", required: true },
     { key: "accessToken", label: "Access token", required: true, secret: true },
@@ -1352,7 +1355,7 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
           accessCode: genericAccessCode,
-          accountId: genericFields.accountId,
+          accountId: selectedProvider.id === "mt5_ea" ? genericFields.login : genericFields.accountId,
           accountName: accountDisplayName,
           firmId: selectedFirm.id,
           firmLabel: selectedFirm.label,
@@ -1888,16 +1891,18 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
                 {isConnecting ? "Connecting..." : reconnectProjectXConnectionId ? "Reconnect" : "Connect Account"}
               </button>
             </form>
-          ) : selectedProviderReady && selectedProvider.id === "mt5_ea" ? (
-            <div className="topstepAccountEmpty">
-              <strong>MT5 EA is enabled</strong>
-              <span>
-                This connection is managed by the Expert Advisor on the MT5 terminal. Start the EA with bridge account
-                <code> mt5-demo-100k</code>; its heartbeat and execution status appear below.
-              </span>
-            </div>
           ) : selectedProviderReady && selectedProviderFields.length ? (
             <form className="topstepConnectForm" onSubmit={handleGenericConnect}>
+              {selectedProvider.id === "mt5_ea" ? (
+                <div className="mt5ConnectNotice">
+                  <strong>Connect the account already signed in to your MT5 terminal</strong>
+                  <span>
+                    Enter the account login and exact broker server shown in MT5. For security, your trading password
+                    remains inside MT5 and is never stored by this website. Set the EA&apos;s Connection ID to this same
+                    MT5 login number.
+                  </span>
+                </div>
+              ) : null}
               <label>
                 <span>Account name</span>
                 <input
@@ -1915,6 +1920,7 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
                     <span>{field.label}</span>
                     <input
                       autoComplete={field.secret ? "off" : undefined}
+                      inputMode={selectedProvider.id === "mt5_ea" && field.key === "login" ? "numeric" : undefined}
                       name={`${selectedProvider.id}-${field.key}`}
                       onChange={(event) =>
                         setGenericFields((current) => ({
@@ -1923,6 +1929,7 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
                         }))
                       }
                       placeholder={field.placeholder}
+                      pattern={selectedProvider.id === "mt5_ea" && field.key === "login" ? "[0-9]+" : undefined}
                       required={field.required}
                       type={field.secret ? "password" : "text"}
                       value={genericFields[field.key] ?? ""}
@@ -1950,13 +1957,13 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
                 </button>
               ) : null}
               <button type="submit" disabled={isConnecting}>
-                {isConnecting ? "Connecting..." : "Connect Account"}
+                {isConnecting ? "Connecting..." : selectedProvider.id === "mt5_ea" ? "Link MT5 Account" : "Connect Account"}
               </button>
             </form>
           ) : (
             <div className="topstepAccountEmpty autoTradeUnavailable">
               <strong>{selectedProvider.label} is not fully functioning yet</strong>
-              <span>ProjectX / TopstepX and the MT5 EA are enabled for production auto-trading.</span>
+              <span>ProjectX / TopstepX and MT5 are enabled for production auto-trading.</span>
             </div>
           )}
         </div>

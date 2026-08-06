@@ -83,11 +83,18 @@ export type Mt5Sizing = {
  * Resolve the MT5 lot size for a forex trade. Returns the configured live
  * balance (or the EA-reported balance if available) and the computed risk.
  */
-export async function resolveMt5Lots(trade: TradeAlert, bridgeAccountId: string): Promise<Mt5Sizing> {
+export async function resolveMt5Lots(
+  trade: TradeAlert,
+  bridgeAccountId: string,
+  options: { configuredBalance?: number } = {}
+): Promise<Mt5Sizing> {
   const symbol = trade.symbol.trim().toUpperCase();
 
   const overrideLots = parseMap(process.env.MT5_EA_LOT_OVERRIDE)[symbol];
-  const configuredBalance = numEnv("MT5_EA_ACCOUNT_BALANCE", 100_000);
+  const storedBalance = options.configuredBalance;
+  const configuredBalance = typeof storedBalance === "number" && Number.isFinite(storedBalance) && storedBalance > 0
+    ? storedBalance
+    : numEnv("MT5_EA_ACCOUNT_BALANCE", 100_000);
   const liveBalance = await getLatestAccountBalance(bridgeAccountId).catch(() => null);
   const balance = liveBalance && liveBalance > 0 ? liveBalance : Math.max(0, configuredBalance);
   const riskPct = mt5RiskPerTradePct();

@@ -1,14 +1,15 @@
 import { createHash } from "node:crypto";
 
 import { tradeLevels } from "@/lib/auto-trade-utils";
+import { getAutoTradeConnection } from "@/lib/auto-trade-connections";
+import { mt5BridgeAccountId, mt5HeartbeatMismatch } from "@/lib/mt5-ea-account";
 import { enqueueMt5Order, mt5EaConfigured, type Mt5OrderSide } from "@/lib/mt5-ea-queue";
 import { resolveMt5Lots } from "@/lib/mt5-ea-sizing";
+import { getHeartbeat } from "@/lib/mt5-ea-state";
 import type { ProjectXAutoTradeResult, ProjectXAutoTradeStatus } from "@/lib/projectx-auto-trader";
 import type { AutoTradeOrderSummary, TradeAlert } from "@/lib/types";
 
 export { mt5EaConfigured };
-
-const DEFAULT_BRIDGE_ACCOUNT_ID = "mt5-demo-100k";
 
 function envFlag(name: string, fallback: boolean): boolean {
   const value = process.env[name]?.trim().toLowerCase();
@@ -16,10 +17,6 @@ function envFlag(name: string, fallback: boolean): boolean {
   if (["1", "true", "yes", "on"].includes(value)) return true;
   if (["0", "false", "no", "off"].includes(value)) return false;
   return fallback;
-}
-
-function bridgeAccountId(): string {
-  return process.env.MT5_EA_DEMO_ACCOUNT_ID?.trim() || DEFAULT_BRIDGE_ACCOUNT_ID;
 }
 
 function parseSymbolMap(raw: string | undefined): Record<string, string> {
@@ -34,9 +31,9 @@ function parseSymbolMap(raw: string | undefined): Record<string, string> {
   return out;
 }
 
-function mappedSymbol(trade: TradeAlert): string {
+function mappedSymbol(trade: TradeAlert, connectionMap?: string): string {
   const symbol = trade.symbol.trim().toUpperCase();
-  return parseSymbolMap(process.env.MT5_EA_SYMBOL_MAP)[symbol] ?? symbol;
+  return parseSymbolMap(connectionMap || process.env.MT5_EA_SYMBOL_MAP)[symbol] ?? symbol;
 }
 
 function result(
@@ -81,8 +78,22 @@ export async function executeMt5EaAutoTrade(trade: TradeAlert): Promise<ProjectX
     });
   }
 
-  const account = bridgeAccountId();
-  const symbol = mappedSymbol(trade);
+  const connection = await getAutoTradeConnection("mt5_ea").catch(() => null);
+  if (connection?.paused) {
+    return result("skipped", { error: "The connected MT5 account is paused. Enable it before sending trades." });
+  }
+
+  const connectionFields = connection?.fields ?? null;
+  const account = mt5BridgeAccountId(connectionFields);
+  const heartbeat = await getHeartbeat(account).catch(() => null);
+  const heartbeatError = mt5HeartbeatMismatch(connectionFields, heartbeat);
+  if (heartbeatError) {
+    return result("skipped", {
+      error: `${heartbeatError} In the EA settings, set Connection ID to ${account} and attach it to the saved account.`
+    });
+  }
+
+  const symbol = mappedSymbol(trade, connectionFields?.symbolMap);
   const side: Mt5OrderSide = trade.side === "long" ? "buy" : "sell";
   const entryType = trade.entryType === "limit" ? "limit" : "market";
   const { stopLossPrice, takeProfitPrice } = tradeLevels(trade);
@@ -91,7 +102,10 @@ export async function executeMt5EaAutoTrade(trade: TradeAlert): Promise<ProjectX
   let lots: number;
   let riskUsd: number;
   try {
-    const sizing = await resolveMt5Lots(trade, account);
+    const savedBalance = Number(connectionFields?.accountSize);
+    const sizing = await resolveMt5Lots(trade, account, {
+      configuredBalance: Number.isFinite(savedBalance) && savedBalance > 0 ? savedBalance : undefined
+    });
     lots = sizing.lots;
     riskUsd = sizing.riskUsd;
   } catch (error) {

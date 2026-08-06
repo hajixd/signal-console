@@ -70,26 +70,15 @@ export const AUTO_TRADE_PROVIDERS: AutoTradeProvider[] = [
     description: "Direct API route using the email, password, and server issued with a TradeLocker account."
   },
   {
-    id: "mt5_bridge",
-    label: "MetaTrader 5 Bridge",
-    shortLabel: "MT5",
-    markets: ["forex"],
-    status: "adapter_ready",
-    statusLabel: "Bridge required",
-    coverage: "FTMO, FundedNext, The5ers, FXIFY, and MT5-based prop accounts through a Windows bridge.",
-    connectionMode: "Windows VPS bridge",
-    description: "MT5 execution using the account login, password, and server while bridge infrastructure stays advanced."
-  },
-  {
     id: "mt5_ea",
-    label: "MetaTrader 5 EA",
-    shortLabel: "MT5 EA",
+    label: "MetaTrader 5",
+    shortLabel: "MT5",
     markets: ["forex"],
     status: "live",
     statusLabel: "Live",
-    coverage: "Any MT5 account running the in-terminal Expert Advisor that polls this app for orders.",
-    connectionMode: "In-terminal EA (pull)",
-    description: "Pull-based MT5 execution: the EA polls /ea/orders/pending and reports fills, so no inbound bridge to the VM is needed."
+    coverage: "MT5 prop-firm accounts running the in-terminal Expert Advisor.",
+    connectionMode: "MT5 login + in-terminal EA",
+    description: "Connect an MT5 account login and broker server, then the in-terminal EA securely pulls orders and reports fills."
   },
   {
     id: "ctrader",

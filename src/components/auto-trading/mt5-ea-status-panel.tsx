@@ -54,6 +54,7 @@ type OrderView = {
 };
 
 type StatusResponse = {
+  accountMismatch?: string | null;
   backendConfigured: boolean;
   configured: boolean;
   provider: string | null;
@@ -61,6 +62,13 @@ type StatusResponse = {
   storageConfigured: boolean;
   tokenConfigured: boolean;
   bridgeAccountId: string;
+  connectedAccount?: {
+    accountName?: string;
+    firmLabel?: string;
+    login?: string;
+    paused: boolean;
+    server?: string;
+  } | null;
   heartbeat: Heartbeat | null;
   state: AccountState | null;
   stats: ExecutionStats | null;
@@ -146,7 +154,7 @@ export default function Mt5EaStatusPanel() {
     return (
       <section className="mt5EaPanel">
         <div className="mt5EaHead">
-          <strong>MT5 EA Execution</strong>
+          <strong>MT5 Execution</strong>
         </div>
         <p className="mt5EaNote">Loading…</p>
       </section>
@@ -163,6 +171,8 @@ export default function Mt5EaStatusPanel() {
   const orders = data?.orders ?? [];
   const conn = !data?.configured
     ? { label: "setup required", tone: "offline" as const }
+    : data.accountMismatch
+      ? { label: "account mismatch", tone: "offline" as const }
     : !hb
       ? { label: "waiting for EA", tone: "stale" as const }
       : freshness(hb.updatedAt);
@@ -170,6 +180,7 @@ export default function Mt5EaStatusPanel() {
     ? [
         !data.tokenConfigured ? "the secure EA token" : null,
         !data.storageConfigured ? "the Turso order queue" : null,
+        data.connectedAccount?.paused ? "the connected account is paused" : null,
         !data.providerSelected
           ? `forex routing${data.provider ? ` (currently ${data.provider})` : ""}`
           : null
@@ -180,8 +191,11 @@ export default function Mt5EaStatusPanel() {
     <section className="mt5EaPanel">
       <div className="mt5EaHead">
         <div>
-          <strong>MT5 EA Execution</strong>
-          <span className="mt5EaAccount">{data?.bridgeAccountId}</span>
+          <strong>MT5 Execution</strong>
+          <span className="mt5EaAccount">
+            {data?.connectedAccount?.accountName || data?.bridgeAccountId}
+            {data?.connectedAccount?.login ? ` · ${data.connectedAccount.login}` : ""}
+          </span>
         </div>
         <span className={`mt5EaBadge mt5EaBadge--${conn.tone}`}>{conn.label}</span>
       </div>
@@ -189,6 +203,10 @@ export default function Mt5EaStatusPanel() {
       {data && !data.configured ? (
         <p className="mt5EaNote">
           MT5 setup is incomplete: {setupIssues.join(", ")}. No forex orders are being sent to this EA.
+        </p>
+      ) : data?.accountMismatch ? (
+        <p className="mt5EaNote mt5EaWarn">
+          {data.accountMismatch} Open the EA settings and set Connection ID to <code>{data.bridgeAccountId}</code>.
         </p>
       ) : !hb ? (
         <p className="mt5EaNote">
@@ -199,7 +217,7 @@ export default function Mt5EaStatusPanel() {
           <div className="mt5EaMeta">
             <span>Last heartbeat {ago(hb.updatedAt)}</span>
             {hb.accountLogin ? <span>Login {hb.accountLogin}</span> : null}
-            {hb.accountServer ? <span>{hb.accountServer}</span> : null}
+            {hb.accountServer || data?.connectedAccount?.server ? <span>{hb.accountServer || data?.connectedAccount?.server}</span> : null}
             {hb.eaVersion ? <span>EA {hb.eaVersion}</span> : null}
             <span className={hb.tradeAllowed ? "mt5EaOk" : "mt5EaWarn"}>
               {hb.tradeAllowed ? "Algo trading on" : "Algo trading OFF"}

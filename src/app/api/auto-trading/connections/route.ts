@@ -92,6 +92,15 @@ export async function POST(request: NextRequest) {
   if (Object.keys(fields).length === 0) {
     return NextResponse.json({ error: "Enter the provider credentials before connecting." }, { status: 400 });
   }
+  if (providerId === "mt5_ea") {
+    if (!fields.login || !/^\d+$/.test(fields.login)) {
+      return NextResponse.json({ error: "Enter the numeric MT5 account login shown in your terminal." }, { status: 400 });
+    }
+    if (!fields.server) {
+      return NextResponse.json({ error: "Enter the exact MT5 broker server shown in your terminal." }, { status: 400 });
+    }
+    fields.bridgeAccountId = fields.login;
+  }
 
   const accessCode = text(payload.accessCode);
   if (!isValidAccessCode(accessCode)) {
@@ -105,7 +114,7 @@ export async function POST(request: NextRequest) {
   try {
     const connection = await saveAutoTradeConnection({
       accessCode,
-      accountId: text(payload.accountId),
+      accountId: providerId === "mt5_ea" ? fields.login : text(payload.accountId),
       accountName,
       fields,
       firmId: text(payload.firmId),
