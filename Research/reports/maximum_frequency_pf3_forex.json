@@ -1,0 +1,83 @@
+{
+  "applied": true,
+  "annualProfitFactorTarget": 1,
+  "candidatePolicy": "all_stress_tested",
+  "development": {
+    "blockBootstrapPfP05": 2.455179,
+    "firstTradeAt": "2022-01-05T20:30:00.000Z",
+    "lastTradeAt": "2024-12-27T20:59:00.000Z",
+    "profitFactor": 3.01001,
+    "signFlipPValue": 0.000999,
+    "simpleBootstrapPfP05": 2.528031,
+    "strategyCount": 18,
+    "tradeCount": 856,
+    "tradesPerCalendarDay": 0.787474,
+    "tradesPerTradingDay": 2.301075,
+    "worstCalendarYearPf": 2.035097
+  },
+  "developmentProfitFactorTarget": 3,
+  "full": {
+    "blockBootstrapPfP05": 2.561418,
+    "firstTradeAt": "2022-01-05T20:30:00.000Z",
+    "lastTradeAt": "2026-06-05T19:59:00.000Z",
+    "profitFactor": 3.011432,
+    "signFlipPValue": 0.000999,
+    "simpleBootstrapPfP05": 2.63888,
+    "strategyCount": 18,
+    "tradeCount": 1289,
+    "tradesPerCalendarDay": 0.799638,
+    "tradesPerTradingDay": 2.436673,
+    "worstCalendarYearPf": 2.035097
+  },
+  "fullProfitFactorTarget": 3,
+  "holdoutProfitFactorTarget": 3,
+  "market": "forex",
+  "qualifiedStrategyCount": 77,
+  "selectedStrategyIds": [
+    "competition_aud_usd_us_first30_last30_momentum_month_9_xasset_rr_5_629d8cc5",
+    "competition_eur_gbp_us_first30_midday_reversal_weekday_side_3_short_true_rr_5_a5fd6477",
+    "competition_eur_jpy_us_first30_last30_momentum_signalweekdayside_direction_same_entryminute_930_exitba_0a4a3f58",
+    "competition_eur_jpy_us_first30_last30_momentum_weekday_side_2_long_xasset_rr_5_3c88e298",
+    "competition_eur_jpy_us_first30_last30_momentum_weekday_side_2_long_xasset_rr_5_adaebd2b",
+    "competition_eur_jpy_us_first30_last30_reversal_weekday_side_4_long_6d672b02",
+    "competition_eur_usd_us_first30_midday_reversal_month_12_xasset_rr_5_7b276c27",
+    "competition_gbp_jpy_london_first30_last30_reversal_weekday_side_4_long_ef0c2df3",
+    "competition_gbp_jpy_us_first30_last30_momentum_weekday_side_2_long_461ef776",
+    "competition_gbp_jpy_us_first30_last30_reversal_signalweekdayside_xasset_rr_5_e67def76",
+    "competition_gbp_jpy_us_first30_last30_reversal_weekday_side_2_long_bfe5c772",
+    "competition_gbp_usd_us_first30_last30_reversal_month_10_xasset_rr_5_aaed2f73",
+    "competition_usd_cad_us_first30_last30_momentum_signalmonth_month_3_true_rr_5_08845764",
+    "competition_usd_jpy_daily_tsmom_next_overnight_weekday_side_2_short_true_rr_3_40484fa0",
+    "competition_usd_jpy_daily_tsmom_next_overnight_weekday_side_2_short_xasset_rr_4_5981840f",
+    "competition_usd_jpy_london_first30_last30_momentum_weekday_side_4_long_xasset_rr_5_1d1c682f",
+    "competition_usd_jpy_us_first30_last30_reversal_signalweekdayside_direction_opposite_entryminute_930_ex_40e6d9ae",
+    "competition_usd_jpy_us_first30_last30_reversal_weekday_side_2_long_xasset_rr_4_35df306a"
+  ],
+  "selectedWatchStrategyIds": [
+    "competition_aud_usd_us_first30_last30_momentum_month_9_xasset_rr_5_629d8cc5",
+    "competition_gbp_usd_us_first30_last30_reversal_month_10_xasset_rr_5_aaed2f73",
+    "competition_usd_jpy_daily_tsmom_next_overnight_weekday_side_2_short_xasset_rr_4_5981840f",
+    "competition_usd_jpy_london_first30_last30_momentum_weekday_side_4_long_xasset_rr_5_1d1c682f"
+  ],
+  "validation": {
+    "eligibleStrategiesStressScreened": true,
+    "everySelectedStrategyFullyValidated": false,
+    "fullProfitFactorMet": true,
+    "holdoutPositive": true,
+    "holdoutSignificant": true,
+    "passed": true
+  },
+  "sealedHoldout": {
+    "blockBootstrapPfP05": 2.299556,
+    "firstTradeAt": "2025-01-03T20:30:00.000Z",
+    "lastTradeAt": "2026-06-05T19:59:00.000Z",
+    "profitFactor": 3.014296,
+    "signFlipPValue": 0.000999,
+    "simpleBootstrapPfP05": 2.409151,
+    "strategyCount": 18,
+    "tradeCount": 433,
+    "tradesPerCalendarDay": 0.835942,
+    "tradesPerTradingDay": 2.757962,
+    "worstCalendarYearPf": 2.496846
+  }
+}

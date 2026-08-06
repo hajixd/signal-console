@@ -12,6 +12,7 @@
     "typecheck": "tsc --noEmit",
     "verify:history-stats": "python scripts/verify_history_stat_integrity.py",
     "audit:portfolios": "node --env-file=.env.local --import tsx scripts/audit-strategy-portfolios.ts",
+    "portfolio:optimize-pf3": "node --env-file=.env.local --import tsx scripts/optimize-validated-portfolios.ts",
     "research:management:forex": "python scripts/research_nested_management_portfolio.py --market forex",
     "research:management:futures": "python scripts/research_nested_management_portfolio.py --market futures",
     "portfolio:finalize": "node --env-file=.env.local --import tsx scripts/finalize-validated-portfolios.ts",

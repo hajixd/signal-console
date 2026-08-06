@@ -76,9 +76,9 @@ export const AUTO_TRADE_PROVIDERS: AutoTradeProvider[] = [
     markets: ["forex"],
     status: "live",
     statusLabel: "Live",
-    coverage: "MT5 prop-firm accounts running the in-terminal Expert Advisor.",
-    connectionMode: "MT5 login + in-terminal EA",
-    description: "Connect an MT5 account login and broker server, then the in-terminal EA securely pulls orders and reports fills."
+    coverage: "FTMO and other MT5 prop-firm accounts connected through the secure Windows execution service.",
+    connectionMode: "MT5 trading credentials",
+    description: "Connect the login, master trading password, and exact broker server issued with the prop-firm account."
   },
   {
     id: "ctrader",

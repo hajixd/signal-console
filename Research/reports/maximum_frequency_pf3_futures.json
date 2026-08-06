@@ -1,0 +1,76 @@
+{
+  "applied": true,
+  "annualProfitFactorTarget": 1,
+  "candidatePolicy": "all_stress_tested",
+  "development": {
+    "blockBootstrapPfP05": 2.274424,
+    "firstTradeAt": "2022-01-03T20:30:00.000Z",
+    "lastTradeAt": "2024-12-31T20:59:00.000Z",
+    "profitFactor": 3.000608,
+    "signFlipPValue": 0.000999,
+    "simpleBootstrapPfP05": 2.348439,
+    "strategyCount": 12,
+    "tradeCount": 427,
+    "tradesPerCalendarDay": 0.390661,
+    "tradesPerTradingDay": 1.36859,
+    "worstCalendarYearPf": 2.773358
+  },
+  "developmentProfitFactorTarget": 3,
+  "full": {
+    "blockBootstrapPfP05": 2.488352,
+    "firstTradeAt": "2022-01-03T20:30:00.000Z",
+    "lastTradeAt": "2026-06-08T19:59:00.000Z",
+    "profitFactor": 3.002341,
+    "signFlipPValue": 0.000999,
+    "simpleBootstrapPfP05": 2.436915,
+    "strategyCount": 12,
+    "tradeCount": 656,
+    "tradesPerCalendarDay": 0.405695,
+    "tradesPerTradingDay": 1.392781,
+    "worstCalendarYearPf": 2.365983
+  },
+  "fullProfitFactorTarget": 3,
+  "holdoutProfitFactorTarget": 3,
+  "market": "futures",
+  "qualifiedStrategyCount": 73,
+  "selectedStrategyIds": [
+    "competition_british_pound_futures_us_first30_last30_reversal_signalmonth_xasset_rr_5_5f0cb0e3",
+    "competition_copper_futures_london_first30_last30_reversal_month_1_xasset_rr_5_d91f5efb",
+    "competition_copper_futures_us_first30_last30_reversal_weekday_side_0_long_04d98061",
+    "competition_copper_futures_us_first30_last30_reversal_weekday_side_0_long_xasset_rr_5_412871d7",
+    "competition_dow_jones_futures_us_first30_last30_momentum_signalmonth_month_3_xasset_rr_5_3d9679eb",
+    "competition_gold_futures_us_first30_last30_reversal_signalmonth_month_10_xasset_rr_5_5519d329",
+    "competition_japanese_yen_futures_london_first30_ny_open_reversal_month_9_6d9e482f",
+    "competition_japanese_yen_futures_us_first30_last30_reversal_signalweekdayside_direction_opposite_entry_11a69e11",
+    "competition_micro_ether_futures_london_first30_ny_open_momentum_weekday_side_3_short_e779cb85",
+    "competition_natural_gas_futures_us_first30_last30_momentum_month_9_c678e3c1",
+    "competition_new_zealand_dollar_futures_us_first30_last30_reversal_signalmonth_direction_opposite_entry_ce284576",
+    "competition_silver_futures_us_first30_last30_reversal_signalmonth_xasset_rr_5_6a54acc6"
+  ],
+  "selectedWatchStrategyIds": [
+    "competition_micro_ether_futures_london_first30_ny_open_momentum_weekday_side_3_short_e779cb85",
+    "competition_new_zealand_dollar_futures_us_first30_last30_reversal_signalmonth_direction_opposite_entry_ce284576",
+    "competition_silver_futures_us_first30_last30_reversal_signalmonth_xasset_rr_5_6a54acc6"
+  ],
+  "validation": {
+    "eligibleStrategiesStressScreened": true,
+    "everySelectedStrategyFullyValidated": false,
+    "fullProfitFactorMet": true,
+    "holdoutPositive": true,
+    "holdoutSignificant": true,
+    "passed": true
+  },
+  "sealedHoldout": {
+    "blockBootstrapPfP05": 2.247215,
+    "firstTradeAt": "2025-01-02T20:30:00.000Z",
+    "lastTradeAt": "2026-06-08T19:59:00.000Z",
+    "profitFactor": 3.005572,
+    "signFlipPValue": 0.000999,
+    "simpleBootstrapPfP05": 2.203877,
+    "strategyCount": 12,
+    "tradeCount": 229,
+    "tradesPerCalendarDay": 0.438715,
+    "tradesPerTradingDay": 1.440252,
+    "worstCalendarYearPf": 2.365983
+  }
+}

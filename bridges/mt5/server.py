@@ -4,12 +4,14 @@ import json
 import os
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
+from threading import Lock
 from typing import Any
 
 import MetaTrader5 as mt5
 
 
 ROOT = Path(__file__).resolve().parent
+MT5_LOCK = Lock()
 
 
 def load_dotenv() -> None:
@@ -64,25 +66,31 @@ def json_response(handler: BaseHTTPRequestHandler, status: int, payload: dict[st
     handler.wfile.write(raw)
 
 
-def initialize_mt5(payload: dict[str, Any]) -> None:
+def connect_mt5_account(payload: dict[str, Any]) -> Any:
     login_value = text(payload, "login", "MT5_LOGIN")
     password = text(payload, "password", "MT5_PASSWORD")
     server = text(payload, "server", "MT5_SERVER")
     path = env_text("MT5_PATH")
 
-    kwargs: dict[str, Any] = {}
-    if path:
-        kwargs["path"] = path
-    if login_value:
-        kwargs["login"] = int(login_value)
-    if password:
-        kwargs["password"] = password
-    if server:
-        kwargs["server"] = server
-
-    if not mt5.initialize(**kwargs):
+    if not login_value or not password or not server:
+        raise ValueError("MT5 login, master password, and server are required.")
+    initialized = mt5.initialize(path=path) if path else mt5.initialize()
+    if not initialized:
         code, message = mt5.last_error()
         raise RuntimeError(f"MT5 initialize failed ({code}): {message}")
+    if not mt5.login(int(login_value), password=password, server=server):
+        code, message = mt5.last_error()
+        raise RuntimeError(f"MT5 login failed ({code}): {message}")
+
+    account = mt5.account_info()
+    if account is None:
+        code, message = mt5.last_error()
+        raise RuntimeError(f"MT5 returned no account information ({code}): {message}")
+    if str(account.login) != login_value:
+        raise RuntimeError(f"MT5 connected to login {account.login}, not {login_value}.")
+    if str(account.server).strip().lower() != server.strip().lower():
+        raise RuntimeError(f"MT5 connected to server {account.server}, not {server}.")
+    return account
 
 
 def order_type(action: str, entry_type: str) -> int:
@@ -91,13 +99,46 @@ def order_type(action: str, entry_type: str) -> int:
     return mt5.ORDER_TYPE_BUY if action == "buy" else mt5.ORDER_TYPE_SELL
 
 
-def place_order(payload: dict[str, Any]) -> dict[str, Any]:
+def authorize(payload: dict[str, Any]) -> dict[str, Any] | None:
     expected_secret = env_text("MT5_BRIDGE_SECRET")
     supplied_secret = text(payload, "secret")
     if not expected_secret or supplied_secret != expected_secret:
         return {"status": "failed", "error": "Unauthorized bridge request."}
+    return None
 
-    initialize_mt5(payload)
+
+def verify_account(payload: dict[str, Any]) -> dict[str, Any]:
+    unauthorized = authorize(payload)
+    if unauthorized:
+        return unauthorized
+
+    account = connect_mt5_account(payload)
+    if not bool(account.trade_allowed):
+        return {
+            "status": "failed",
+            "error": "This login is read-only or trading is disabled. Use the master trading password.",
+        }
+    return {
+        "status": "connected",
+        "connected": True,
+        "accountId": int(account.login),
+        "accountName": str(account.name),
+        "server": str(account.server),
+        "tradeAllowed": bool(account.trade_allowed),
+        "balance": float(account.balance),
+        "equity": float(account.equity),
+        "currency": str(account.currency),
+    }
+
+
+def place_order(payload: dict[str, Any]) -> dict[str, Any]:
+    unauthorized = authorize(payload)
+    if unauthorized:
+        return unauthorized
+
+    account = connect_mt5_account(payload)
+    if not bool(account.trade_allowed):
+        return {"status": "failed", "error": "Trading is disabled for this MT5 login."}
 
     symbol = text(payload, "symbol")
     if not symbol:
@@ -148,11 +189,10 @@ def place_order(payload: dict[str, Any]) -> dict[str, Any]:
             "contractName": symbol,
         }
 
-    account = mt5.account_info()
     return {
         "status": "placed",
-        "accountId": account.login if account else payload.get("accountId"),
-        "accountName": account.name if account else str(payload.get("accountId") or "MT5"),
+        "accountId": account.login,
+        "accountName": account.name,
         "contractId": symbol,
         "contractName": symbol,
         "orderId": int(result.order),
@@ -167,26 +207,26 @@ class Handler(BaseHTTPRequestHandler):
         if self.path != "/health":
             json_response(self, 404, {"error": "Not found."})
             return
-        initialized = mt5.initialize()
-        account = mt5.account_info() if initialized else None
         json_response(
             self,
             200,
             {
-                "accountId": account.login if account else None,
-                "connected": bool(account),
+                "connected": bool(mt5.initialize()),
                 "status": "ok",
             },
         )
 
     def do_POST(self) -> None:
-        if self.path != "/place-order":
+        if self.path not in {"/place-order", "/verify-account"}:
             json_response(self, 404, {"error": "Not found."})
             return
         try:
             length = int(self.headers.get("content-length", "0"))
             payload = json.loads(self.rfile.read(length).decode("utf-8") or "{}")
-            json_response(self, 200, place_order(payload))
+            with MT5_LOCK:
+                response = verify_account(payload) if self.path == "/verify-account" else place_order(payload)
+            status = 200 if response.get("status") != "failed" else 400
+            json_response(self, status, response)
         except Exception as exc:
             json_response(self, 400, {"status": "failed", "error": str(exc)})
 

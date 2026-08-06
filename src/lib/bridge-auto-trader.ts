@@ -57,7 +57,12 @@ async function executeBridgeAutoTrade(provider: BridgeProvider, trade: TradeAler
   if (connection?.paused) return result("skipped", { error: `${provider.name} connection is paused.` });
   const fields = connection?.fields;
   const missing = missingBridgeSettings(fields, provider);
-  const request = autoTradeRequest(provider.prefix, trade, fieldText(fields, "accountId", provider.accountEnv), fields);
+  const request = autoTradeRequest(
+    provider.prefix,
+    trade,
+    fieldText(fields, "accountId", provider.accountEnv) ?? fields?.login,
+    fields
+  );
   if (missing.length) return result("skipped", { error: `Missing ${provider.name} bridge settings: ${missing.join(", ")}.` });
   const sizeError = nonExecutableOrderSizeReason(request);
   if (sizeError) return result("skipped", { error: sizeError, orders: [skippedOrder(request, sizeError)] });
@@ -143,6 +148,22 @@ export function executeMt5BridgeAutoTrade(trade: TradeAlert): Promise<ProjectXAu
       name: "MetaTrader 5 Bridge",
       prefix: "MT5",
       providerId: "mt5_bridge",
+      secretEnv: "MT5_BRIDGE_SECRET",
+      urlEnv: "MT5_BRIDGE_URL"
+    },
+    trade
+  );
+}
+
+export function executeMt5CredentialAutoTrade(trade: TradeAlert): Promise<ProjectXAutoTradeResult> {
+  return executeBridgeAutoTrade(
+    {
+      accountEnv: "MT5_ACCOUNT_ID",
+      dryRunEnv: "MT5_AUTO_TRADE_DRY_RUN",
+      enabledEnv: "MT5_AUTO_TRADE_ENABLED",
+      name: "MetaTrader 5",
+      prefix: "MT5",
+      providerId: "mt5_ea",
       secretEnv: "MT5_BRIDGE_SECRET",
       urlEnv: "MT5_BRIDGE_URL"
     },

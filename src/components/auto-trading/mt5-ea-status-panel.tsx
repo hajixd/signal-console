@@ -69,6 +69,8 @@ type StatusResponse = {
     paused: boolean;
     server?: string;
   } | null;
+  credentialVerified?: boolean;
+  executionMode?: "credential_bridge" | "terminal_ea";
   heartbeat: Heartbeat | null;
   state: AccountState | null;
   stats: ExecutionStats | null;
@@ -169,8 +171,13 @@ export default function Mt5EaStatusPanel() {
   const state = data?.state ?? null;
   const stats = data?.stats ?? null;
   const orders = data?.orders ?? [];
+  const credentialMode = data?.executionMode === "credential_bridge";
   const conn = !data?.configured
     ? { label: "setup required", tone: "offline" as const }
+    : credentialMode
+      ? data.credentialVerified
+        ? { label: "connected", tone: "live" as const }
+        : { label: "verification failed", tone: "offline" as const }
     : data.accountMismatch
       ? { label: "account mismatch", tone: "offline" as const }
     : !hb
@@ -178,8 +185,8 @@ export default function Mt5EaStatusPanel() {
       : freshness(hb.updatedAt);
   const setupIssues = data
     ? [
-        !data.tokenConfigured ? "the secure EA token" : null,
-        !data.storageConfigured ? "the Turso order queue" : null,
+        !credentialMode && !data.tokenConfigured ? "the secure EA token" : null,
+        !credentialMode && !data.storageConfigured ? "the Turso order queue" : null,
         data.connectedAccount?.paused ? "the connected account is paused" : null,
         !data.providerSelected
           ? `forex routing${data.provider ? ` (currently ${data.provider})` : ""}`
@@ -202,8 +209,22 @@ export default function Mt5EaStatusPanel() {
 
       {data && !data.configured ? (
         <p className="mt5EaNote">
-          MT5 setup is incomplete: {setupIssues.join(", ")}. No forex orders are being sent to this EA.
+          MT5 setup is incomplete: {setupIssues.join(", ")}. No forex orders are being sent to this account.
         </p>
+      ) : credentialMode ? (
+        <>
+          <p className={`mt5EaNote ${data?.credentialVerified ? "mt5EaOk" : "mt5EaWarn"}`}>
+            {data?.credentialVerified
+              ? `Secure execution verified for login ${data.connectedAccount?.login} on ${data.connectedAccount?.server}.`
+              : data?.error || "MT5 could not verify this account."}
+          </p>
+          {data?.credentialVerified ? (
+            <div className="mt5EaStatGrid">
+              <div className="mt5EaStat"><span>Balance</span><strong>{money(state?.balance)}</strong></div>
+              <div className="mt5EaStat"><span>Equity</span><strong>{money(state?.equity)}</strong></div>
+            </div>
+          ) : null}
+        </>
       ) : data?.accountMismatch ? (
         <p className="mt5EaNote mt5EaWarn">
           {data.accountMismatch} Open the EA settings and set Connection ID to <code>{data.bridgeAccountId}</code>.

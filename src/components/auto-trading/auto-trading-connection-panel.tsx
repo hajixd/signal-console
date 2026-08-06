@@ -204,6 +204,7 @@ const CONNECTION_FIELDS: Record<AutoTradeProviderId, ConnectionField[]> = {
   ],
   mt5_ea: [
     { key: "login", label: "MT5 account login", placeholder: "12345678", required: true },
+    { key: "password", label: "MT5 master password", placeholder: "Trading password", required: true, secret: true },
     { key: "server", label: "MT5 broker server", placeholder: "Broker-Server", required: true },
     { advanced: true, key: "accountSize", label: "Account size", placeholder: "100000" },
     { advanced: true, key: "symbolMap", label: "Symbol map", placeholder: "EURUSD:EURUSD.,XAUUSD:XAUUSDm" }
@@ -1895,11 +1896,10 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
             <form className="topstepConnectForm" onSubmit={handleGenericConnect}>
               {selectedProvider.id === "mt5_ea" ? (
                 <div className="mt5ConnectNotice">
-                  <strong>Connect the account already signed in to your MT5 terminal</strong>
+                  <strong>Use the MT5 credentials from {selectedFirm.label}</strong>
                   <span>
-                    Enter the account login and exact broker server shown in MT5. For security, your trading password
-                    remains inside MT5 and is never stored by this website. Set the EA&apos;s Connection ID to this same
-                    MT5 login number.
+                    Enter the login number, master trading password, and exact server from your prop-firm credentials.
+                    Do not use the investor or read-only password. Credentials are encrypted before storage.
                   </span>
                 </div>
               ) : null}

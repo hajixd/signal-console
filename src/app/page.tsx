@@ -1369,6 +1369,27 @@ function boundedBacktestTradeRMultiple(trade: BacktestTrade, sizeMultiplier = 1)
   return riskDollars > 0 ? boundedBacktestTradeDollarPnl(trade, sizeMultiplier) / riskDollars : trade.rMultiple;
 }
 
+function customRangeBacktestScale(
+  trade: BacktestTrade,
+  sizeMultiplier: number,
+  range: { riskCeiling?: unknown; riskFloor?: unknown; targetCeiling?: unknown; targetFloor?: unknown } | undefined
+): number | null {
+  const targetFloor = Number(range?.targetFloor);
+  const targetCeiling = Number(range?.targetCeiling);
+  const riskFloor = Number(range?.riskFloor);
+  const riskCeiling = Number(range?.riskCeiling);
+  if (
+    ![targetFloor, targetCeiling, riskFloor, riskCeiling].every((value) => Number.isFinite(value) && value > 0) ||
+    targetFloor > targetCeiling ||
+    riskFloor > riskCeiling
+  ) return null;
+  const targetDollars = tradeTargetDollars(trade, sizeMultiplier);
+  const riskDollars = tradeRiskDollars(trade, sizeMultiplier);
+  if (!(targetDollars > 0) || !(riskDollars > 0)) return null;
+  const scale = Math.min(targetCeiling / targetDollars, riskCeiling / riskDollars);
+  return Number.isFinite(scale) && scale > 0 ? Number(scale.toFixed(6)) : null;
+}
+
 function recentStrategyTrades(trades: BacktestTrade[]): BacktestTrade[] {
   return [...trades]
     .sort((left, right) => Date.parse(right.entryTime) - Date.parse(left.entryTime))
@@ -2352,10 +2373,12 @@ export default async function Home({ searchParams }: HomeProps) {
   };
   const challengeReplayTrades = selectedBacktestTrades.map((trade) => {
     const sizeMultiplier = optionByKey.get(trade.datasetId)?.sizeMultiplier ?? 1;
+    const customScale = customRangeBacktestScale(trade, sizeMultiplier, liveConfig.customScaleRanges[activeMarket]);
     return {
       key: trade.datasetId,
       entryTime: trade.entryTime,
-      pnlDollars: boundedBacktestTradeDollarPnl(trade, sizeMultiplier)
+      lockedSize: customScale !== null,
+      pnlDollars: boundedBacktestTradeDollarPnl(trade, sizeMultiplier) * (customScale ?? 1)
     };
   });
   const liveChallengeReplayTrades = visibleLiveHistoryRows.map((trade) => ({

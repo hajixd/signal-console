@@ -11,6 +11,7 @@ import {
   verifyAutoTradeConnectionAccessCode
 } from "@/lib/auto-trade-connections";
 import { autoTradeProviderById } from "@/lib/auto-trade-platforms";
+import { mt5CredentialBridgeConfigured, verifyMt5CredentialConnection } from "@/lib/mt5-credential-bridge";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -99,6 +100,9 @@ export async function POST(request: NextRequest) {
     if (!fields.server) {
       return NextResponse.json({ error: "Enter the exact MT5 broker server shown in your terminal." }, { status: 400 });
     }
+    if (!fields.password) {
+      return NextResponse.json({ error: "Enter the MT5 master trading password issued by the prop firm." }, { status: 400 });
+    }
     fields.bridgeAccountId = fields.login;
   }
 
@@ -109,6 +113,17 @@ export async function POST(request: NextRequest) {
   const accountName = text(payload.accountName);
   if (!accountName) {
     return NextResponse.json({ error: "Enter a name for this auto-trading account." }, { status: 400 });
+  }
+
+  if (providerId === "mt5_ea") {
+    if (!mt5CredentialBridgeConfigured()) {
+      return NextResponse.json({ error: "MT5 account connection is temporarily unavailable." }, { status: 503 });
+    }
+    try {
+      await verifyMt5CredentialConnection(fields);
+    } catch (error) {
+      return NextResponse.json({ error: error instanceof Error ? error.message : "MT5 could not verify this account." }, { status: 400 });
+    }
   }
 
   try {

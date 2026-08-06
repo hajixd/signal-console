@@ -2,7 +2,9 @@ import { createHash } from "node:crypto";
 
 import { tradeLevels } from "@/lib/auto-trade-utils";
 import { getAutoTradeConnection } from "@/lib/auto-trade-connections";
+import { executeMt5CredentialAutoTrade } from "@/lib/bridge-auto-trader";
 import { mt5BridgeAccountId, mt5HeartbeatMismatch } from "@/lib/mt5-ea-account";
+import { mt5CredentialBridgeConfigured } from "@/lib/mt5-credential-bridge";
 import { enqueueMt5Order, mt5EaConfigured, type Mt5OrderSide } from "@/lib/mt5-ea-queue";
 import { resolveMt5Lots } from "@/lib/mt5-ea-sizing";
 import { getHeartbeat } from "@/lib/mt5-ea-state";
@@ -72,15 +74,22 @@ export async function executeMt5EaAutoTrade(trade: TradeAlert): Promise<ProjectX
   if (!envFlag("MT5_EA_AUTO_TRADE_ENABLED", true)) {
     return result("disabled", { error: "MT5_EA_AUTO_TRADE_ENABLED is disabled." });
   }
+  const connection = await getAutoTradeConnection("mt5_ea").catch(() => null);
+  if (connection?.paused) {
+    return result("skipped", { error: "The connected MT5 account is paused. Enable it before sending trades." });
+  }
+
+  if (connection?.fields.password) {
+    if (!mt5CredentialBridgeConfigured()) {
+      return result("skipped", { error: "The secure MT5 credential service is not configured." });
+    }
+    return executeMt5CredentialAutoTrade(trade);
+  }
+
   if (!mt5EaConfigured()) {
     return result("skipped", {
       error: "MT5 EA execution is not configured. Set EA_INGEST_TOKEN and TURSO_DATABASE_URL/TURSO_AUTH_TOKEN."
     });
-  }
-
-  const connection = await getAutoTradeConnection("mt5_ea").catch(() => null);
-  if (connection?.paused) {
-    return result("skipped", { error: "The connected MT5 account is paused. Enable it before sending trades." });
   }
 
   const connectionFields = connection?.fields ?? null;

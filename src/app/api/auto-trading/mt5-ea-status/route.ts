@@ -3,6 +3,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { isAdminAuthorized } from "@/lib/admin-api";
 import { getAutoTradeConnection } from "@/lib/auto-trade-connections";
 import { mt5BridgeAccountId, mt5HeartbeatMismatch } from "@/lib/mt5-ea-account";
+import { mt5CredentialBridgeConfigured, verifyMt5CredentialConnection } from "@/lib/mt5-credential-bridge";
 import { eaIngestToken, mt5EaConfigured } from "@/lib/mt5-ea-queue";
 import { getAccountState, getHeartbeat, getMt5ExecutionStats, listMt5Orders } from "@/lib/mt5-ea-state";
 import { tursoConfigured } from "@/lib/turso";
@@ -19,7 +20,8 @@ export async function GET(request: NextRequest) {
   const connection = await getAutoTradeConnection("mt5_ea").catch(() => null);
   const requestedAccount = request.nextUrl.searchParams.get("account")?.trim();
   const account = requestedAccount || mt5BridgeAccountId(connection?.fields);
-  const backendConfigured = mt5EaConfigured();
+  const executionMode = connection?.fields.password ? "credential_bridge" as const : "terminal_ea" as const;
+  const backendConfigured = executionMode === "credential_bridge" ? mt5CredentialBridgeConfigured() : mt5EaConfigured();
   const provider = process.env.AUTO_TRADE_FOREX_PROVIDER?.trim() || null;
   const providerSelected = provider === "mt5_ea" || (!provider && Boolean(connection));
   const connectedAccount = connection
@@ -35,10 +37,11 @@ export async function GET(request: NextRequest) {
     backendConfigured,
     configured: backendConfigured && providerSelected && connection?.paused !== true,
     connectedAccount,
+    executionMode,
     provider,
     providerSelected,
-    storageConfigured: tursoConfigured(),
-    tokenConfigured: Boolean(eaIngestToken())
+    storageConfigured: executionMode === "credential_bridge" || tursoConfigured(),
+    tokenConfigured: executionMode === "credential_bridge" || Boolean(eaIngestToken())
   };
 
   if (!backendConfigured) {
@@ -50,6 +53,33 @@ export async function GET(request: NextRequest) {
       stats: null,
       orders: []
     });
+  }
+
+  if (executionMode === "credential_bridge" && connection) {
+    try {
+      const verification = await verifyMt5CredentialConnection(connection.fields);
+      return NextResponse.json({
+        ...configuration,
+        accountMismatch: null,
+        bridgeAccountId: account,
+        credentialVerified: true,
+        heartbeat: null,
+        orders: [],
+        state: { balance: verification.balance, equity: verification.equity },
+        stats: null
+      });
+    } catch (error: unknown) {
+      return NextResponse.json({
+        ...configuration,
+        bridgeAccountId: account,
+        credentialVerified: false,
+        error: error instanceof Error ? error.message : String(error),
+        heartbeat: null,
+        orders: [],
+        state: null,
+        stats: null
+      });
+    }
   }
 
   try {
