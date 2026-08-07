@@ -18511,10 +18511,15 @@ html[data-theme="light"] .tradeReplaySlider input::-webkit-slider-thumb {
 }
 
 .homePortfolioRail article > header a,
+.homePortfolioRail article > header .homeManageAccounts,
 .homePortfolioRail article > header > strong {
+  border: 0;
+  background: transparent;
   color: #8eb5ed;
+  font: inherit;
   font-size: 0.55rem;
   font-weight: 900;
+  cursor: pointer;
   text-decoration: none;
   text-transform: uppercase;
 }
@@ -19269,5 +19274,589 @@ html[data-theme="light"] .accountSettingsBlock input {
 
   .mobile-phone-tab-label {
     font-size: 0.48rem;
+  }
+}
+
+/* Final workspace refinement: restraint, hierarchy, and interaction feedback */
+html {
+  scrollbar-color: rgba(120, 145, 181, 0.38) transparent;
+  scrollbar-width: thin;
+}
+
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  border: 2px solid transparent;
+  border-radius: 999px;
+  background: rgba(120, 145, 181, 0.34);
+  background-clip: padding-box;
+}
+
+::selection {
+  background: rgba(96, 165, 250, 0.28);
+  color: #ffffff;
+}
+
+:where(button, a, input, select, textarea) {
+  transition-duration: 150ms;
+  transition-timing-function: ease;
+}
+
+.terminal-head,
+.backtest-card {
+  box-shadow: 0 12px 34px rgba(0, 0, 0, 0.42);
+}
+
+.terminal-head {
+  min-height: 74px;
+  border-color: rgba(255, 255, 255, 0.085);
+  background: rgba(10, 11, 13, 0.92);
+}
+
+.asset-meta h1 {
+  letter-spacing: -0.028em;
+}
+
+.terminal-action,
+.accountGear,
+.accountLogout,
+.topstepConnectionActions button,
+.topstepConnectForm button,
+.topstepAccountControls button {
+  transition: border-color 150ms ease, background 150ms ease, color 150ms ease, transform 150ms ease;
+}
+
+.terminal-action:hover:not(.isDisabled),
+.accountGear:hover,
+.accountLogout:hover,
+.topstepConnectionActions button:hover:not(:disabled),
+.topstepConnectForm button:hover:not(:disabled),
+.topstepAccountControls button:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.dashboardSectionTabsHeader {
+  position: sticky;
+  top: 35px;
+  z-index: 34;
+  padding: 0.08rem 0;
+  background: linear-gradient(180deg, rgba(8, 11, 16, 0.97) 72%, rgba(8, 11, 16, 0));
+  backdrop-filter: blur(14px);
+}
+
+.dashboardSectionTabs {
+  gap: 0.18rem;
+  border-color: rgba(255, 255, 255, 0.085);
+  border-radius: 13px;
+  background: rgba(10, 13, 18, 0.92);
+  padding: 0.22rem;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.22);
+}
+
+.dashboardSectionTab {
+  min-width: 110px;
+  min-height: 47px;
+  border-radius: 10px;
+  padding: 0.42rem 0.58rem;
+}
+
+.dashboardSectionTab span {
+  font-size: 0.68rem;
+}
+
+.dashboardSectionTab small {
+  font-size: 0.5rem;
+  opacity: 0.82;
+}
+
+.dashboardSectionTab.is-active {
+  background: linear-gradient(180deg, rgba(96, 165, 250, 0.15), rgba(96, 165, 250, 0.08));
+  box-shadow: inset 0 -2px 0 #6ca9ff;
+}
+
+.dashboardTabPanel.is-active,
+.statsViewPanel:not([hidden]) {
+  animation: polishedPanelEnter 190ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes polishedPanelEnter {
+  from { opacity: 0; transform: translateY(7px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.appAuthCard {
+  animation: appAuthEnter 360ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes appAuthEnter {
+  from { opacity: 0; transform: translateY(12px) scale(0.985); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.accountSettingsPanel > header {
+  position: sticky;
+  top: -0.9rem;
+  z-index: 2;
+  margin: -0.9rem -0.9rem 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  background: rgba(10, 14, 22, 0.94);
+  padding: 0.9rem;
+  backdrop-filter: blur(16px);
+}
+
+.accountSettingsClose:hover {
+  border-color: rgba(96, 165, 250, 0.34);
+  background: rgba(96, 165, 250, 0.08);
+  color: #f2f6fc;
+  transform: rotate(2deg);
+}
+
+.robinhoodHome {
+  gap: 0.95rem;
+  padding: 0.95rem;
+}
+
+.robinhoodHomeGrid {
+  gap: 0.95rem;
+}
+
+.homePortfolioOverview {
+  min-height: 550px;
+  border-color: rgba(255, 255, 255, 0.065);
+  border-radius: 15px;
+  background:
+    radial-gradient(circle at 70% -10%, rgba(0, 200, 5, 0.055), transparent 27rem),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.016), rgba(255, 255, 255, 0.006));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.025);
+  padding: 1.4rem 1.45rem 0;
+}
+
+.homePortfolioHeading > div:first-child > span {
+  color: rgba(225, 232, 242, 0.58);
+  font-size: 0.68rem;
+}
+
+.homePortfolioHeading h2 {
+  margin-top: 0.46rem;
+  font-size: clamp(2.2rem, 3.5vw, 3.15rem);
+}
+
+.homePortfolioHeading h2.is-loading {
+  width: min(290px, 58vw);
+  color: transparent;
+  border-radius: 7px;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.11), rgba(255, 255, 255, 0.045));
+  background-size: 220% 100%;
+  animation: homeSkeletonShimmer 1.15s linear infinite;
+  user-select: none;
+}
+
+.homePortfolioHeading p {
+  font-size: 0.76rem;
+}
+
+.homePortfolioPulse {
+  border: 1px solid rgba(0, 200, 5, 0.16);
+  border-radius: 999px;
+  background: rgba(0, 200, 5, 0.045);
+  padding: 0.34rem 0.52rem;
+}
+
+.homeEquityChart {
+  position: relative;
+  min-height: 285px;
+  padding-top: 1.15rem;
+}
+
+.homeEquityChart::after {
+  content: "";
+  position: absolute;
+  inset: 1.2rem 0 0.5rem;
+  pointer-events: none;
+  opacity: 0.22;
+  background: repeating-linear-gradient(to bottom, transparent 0, transparent calc(25% - 1px), rgba(255, 255, 255, 0.035) 25%);
+}
+
+.homeEquityChart .homeEquityArea {
+  stroke: none;
+  opacity: 0;
+  animation: homeChartAreaIn 480ms 170ms ease-out forwards;
+}
+
+.homeEquityChart .homeEquityLine {
+  fill: none;
+  stroke: #00c805;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2.2;
+  filter: drop-shadow(0 0 6px rgba(0, 200, 5, 0.15));
+  animation: homeChartDraw 560ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.homeEquityChart.is-negative .homeEquityLine {
+  stroke: #ff6b6b;
+  filter: drop-shadow(0 0 6px rgba(255, 107, 107, 0.14));
+}
+
+.homeEquityEndpoint,
+.homeEquityEndpointHalo {
+  fill: #00c805;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: homeChartPointIn 220ms 460ms ease-out both;
+}
+
+.homeEquityEndpointHalo {
+  opacity: 0.14;
+}
+
+.homeEquityChart.is-negative .homeEquityEndpoint,
+.homeEquityChart.is-negative .homeEquityEndpointHalo {
+  fill: #ff6b6b;
+}
+
+.homeEquityChart.is-loading svg {
+  opacity: 0.26;
+}
+
+@keyframes homeChartDraw {
+  to { stroke-dashoffset: 0; }
+}
+
+@keyframes homeChartAreaIn {
+  to { opacity: 1; }
+}
+
+@keyframes homeChartPointIn {
+  from { opacity: 0; transform: scale(0.2); }
+  to { transform: scale(1); }
+}
+
+@keyframes homeSkeletonShimmer {
+  to { background-position: -220% 0; }
+}
+
+.homeRangePicker button {
+  min-width: 38px;
+  font-size: 0.61rem;
+  transition: background 140ms ease, color 140ms ease, transform 140ms ease;
+}
+
+.homeRangePicker button:hover:not(.is-active) {
+  background: rgba(255, 255, 255, 0.045);
+  color: #eef4fc;
+}
+
+.homeRangePicker button:active {
+  transform: scale(0.96);
+}
+
+.homeBuyingPower {
+  min-height: 61px;
+  font-size: 0.72rem;
+}
+
+.homeBuyingPower::after {
+  content: "›";
+  color: var(--text-faint);
+  font-size: 1.12rem;
+  line-height: 1;
+}
+
+.homeBuyingPower strong {
+  margin-left: auto;
+  font-size: 0.78rem;
+}
+
+.homePortfolioRail {
+  gap: 0.95rem;
+}
+
+.homePortfolioRail article,
+.homeExecutionHistory {
+  border-color: rgba(255, 255, 255, 0.065);
+  border-radius: 15px;
+  background: rgba(255, 255, 255, 0.012);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.02);
+}
+
+.homePortfolioRail article > header,
+.homeExecutionHistory > header {
+  border-bottom-color: rgba(255, 255, 255, 0.06);
+}
+
+.homePortfolioRail h3,
+.homeExecutionHistory h3 {
+  font-size: 0.86rem;
+  letter-spacing: -0.012em;
+}
+
+.homePortfolioRail article > header a,
+.homePortfolioRail article > header .homeManageAccounts {
+  border-radius: 6px;
+  padding: 0.28rem 0.38rem;
+}
+
+.homePortfolioRail article > header a:hover,
+.homePortfolioRail article > header .homeManageAccounts:hover {
+  background: rgba(96, 165, 250, 0.08);
+  color: #d9e8ff;
+}
+
+.homeAccountRow {
+  transition: background 140ms ease, padding-left 140ms ease;
+}
+
+.homeAccountRow:hover {
+  background: rgba(255, 255, 255, 0.022);
+  padding-left: 0.78rem;
+}
+
+.homeSkeletonRows {
+  gap: 1px;
+}
+
+.homeSkeletonRow {
+  min-height: 57px;
+  display: grid;
+  grid-template-columns: 30px minmax(0, 1fr) 58px;
+  align-items: center;
+  gap: 0.62rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.045);
+  padding: 0.42rem 0.72rem;
+}
+
+.homeSkeletonRow i,
+.homeSkeletonRow span,
+.homeSkeletonRow b {
+  display: block;
+  border-radius: 6px;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0.085), rgba(255, 255, 255, 0.035));
+  background-size: 220% 100%;
+  animation: homeSkeletonShimmer 1.15s linear infinite;
+}
+
+.homeSkeletonRow i { width: 30px; height: 30px; }
+.homeSkeletonRow span { width: min(150px, 80%); height: 10px; }
+.homeSkeletonRow b { width: 54px; height: 9px; }
+
+.homeExecutionColumns {
+  min-height: 34px;
+  display: grid;
+  grid-template-columns: minmax(190px, 1.25fr) minmax(100px, 0.7fr) minmax(80px, 0.5fr) minmax(110px, 0.75fr) auto minmax(70px, auto);
+  align-items: center;
+  gap: 0.72rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.012);
+  padding: 0 0.82rem;
+}
+
+.homeExecutionColumns span {
+  color: var(--text-faint);
+  font-size: 0.48rem;
+  font-weight: 900;
+  letter-spacing: 0.045em;
+  text-transform: uppercase;
+}
+
+.homeExecutionColumns span:last-child {
+  text-align: right;
+}
+
+.homeExecutionRow {
+  min-height: 61px;
+}
+
+.homeExecutionRow:hover {
+  background: rgba(96, 165, 250, 0.03);
+}
+
+.autoTradeEmptyState {
+  min-height: 190px;
+  place-items: center;
+  align-content: center;
+  justify-items: center;
+  gap: 0.38rem;
+  border-style: dashed;
+  text-align: center;
+}
+
+.autoTradeEmptyState::before {
+  content: "+";
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  margin-bottom: 0.2rem;
+  border: 1px solid rgba(96, 165, 250, 0.24);
+  border-radius: 50%;
+  background: rgba(96, 165, 250, 0.07);
+  color: #a8c8f7;
+  font-family: var(--font-ui), sans-serif;
+  font-size: 1.15rem;
+  font-weight: 500;
+}
+
+.autoTradeEmptyState span {
+  max-width: 330px;
+  font-size: 0.64rem;
+}
+
+html[data-theme="light"] .dashboardSectionTabsHeader {
+  background: linear-gradient(180deg, rgba(237, 241, 247, 0.97) 72%, rgba(237, 241, 247, 0));
+}
+
+html[data-theme="light"] .dashboardSectionTabs,
+html[data-theme="light"] .accountSettingsPanel > header {
+  background: rgba(248, 250, 252, 0.95);
+}
+
+html[data-theme="light"] .homePortfolioOverview {
+  background:
+    radial-gradient(circle at 70% -10%, rgba(0, 200, 5, 0.055), transparent 27rem),
+    #ffffff;
+}
+
+html[data-theme="light"] .homeEquityChart::after {
+  background: repeating-linear-gradient(to bottom, transparent 0, transparent calc(25% - 1px), rgba(15, 23, 42, 0.045) 25%);
+}
+
+html[data-theme="light"] .homeRangePicker button:hover:not(.is-active) {
+  background: rgba(15, 23, 42, 0.045);
+  color: #111827;
+}
+
+@media (max-width: 980px) {
+  .robinhoodHomeGrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .homePortfolioRail {
+    grid-template-columns: minmax(0, 1.35fr) minmax(260px, 0.65fr);
+    grid-template-rows: none;
+  }
+
+  .homePortfolioRail .homeAccountList {
+    max-height: 380px;
+  }
+}
+
+@media (max-width: 760px) {
+  .dashboardSectionTabsHeader {
+    position: static;
+    padding: 0;
+    background: transparent;
+    backdrop-filter: none;
+  }
+
+  .robinhoodHome {
+    gap: 0.68rem;
+  }
+
+  .homePortfolioOverview {
+    min-height: 430px;
+    padding: 1rem 0.9rem 0;
+  }
+
+  .homePortfolioHeading h2 {
+    font-size: clamp(1.85rem, 10vw, 2.35rem);
+  }
+
+  .homePortfolioPulse {
+    padding: 0.3rem 0.4rem;
+  }
+
+  .homeEquityChart {
+    min-height: 210px;
+    flex-basis: 210px;
+  }
+
+  .homeRangePicker button {
+    min-width: 31px;
+    font-size: 0.54rem;
+  }
+
+  .homePortfolioRail {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto auto;
+    gap: 0.68rem;
+  }
+
+  .homeExecutionColumns {
+    display: none;
+  }
+
+  .homeExecutionRow {
+    min-height: 64px;
+  }
+
+  .mobile-phone-action-btn {
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    gap: 0.62rem;
+  }
+
+  .mobile-phone-action-btn > span:last-child {
+    min-width: 0;
+    display: grid;
+    gap: 0.14rem;
+  }
+
+  .mobile-phone-action-btn > span:last-child small {
+    color: rgba(228, 234, 227, 0.6);
+    font-size: 0.56rem;
+    line-height: 1.25;
+  }
+
+  .mobile-phone-action-list > button .mobile-phone-action-icon {
+    background: rgba(248, 113, 113, 0.13);
+    color: #fca5a5;
+  }
+
+  .mobile-phone-card-autotrade .topstepPrimaryActions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.5rem;
+  }
+
+  .mobile-phone-card-autotrade .topstepPrimaryActions button {
+    width: 100%;
+    min-width: 0;
+    border-radius: 7px;
+  }
+
+  .mobile-phone-card-autotrade .autoTradeEmptyState {
+    min-height: 180px;
+    border-right: 1px dashed rgba(255, 255, 255, 0.08);
+    border-left: 1px dashed rgba(255, 255, 255, 0.08);
+    padding: 1.1rem;
+  }
+
+  .accountSettingsPanel > header {
+    top: -0.9rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .homeEquityChart .homeEquityArea,
+  .homeEquityChart .homeEquityLine,
+  .homeEquityEndpoint,
+  .homeEquityEndpointHalo,
+  .homePortfolioHeading h2.is-loading,
+  .homeSkeletonRow i,
+  .homeSkeletonRow span,
+  .homeSkeletonRow b {
+    animation: none !important;
+    opacity: 1;
+    stroke-dashoffset: 0;
   }
 }
