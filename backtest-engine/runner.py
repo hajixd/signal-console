@@ -1668,15 +1668,19 @@ def competition_anti_cheat_window(strategy: BacktestStrategy, data: EnrichedData
     if stop <= 0 or stop > data.times.shape[0]:
         raise IndexError(f"Signal window end {end_index} is outside the available candle history")
 
-    max_recent_days = max(30, competition_param_int(strategy, "lookback", 5) + 5)
+    is_daily_tsmom = competition_param_text(strategy, "family", "").startswith("daily_tsmom")
+    required_daily_closes = max(competition_tsmom_lookbacks(strategy)) + 5 if is_daily_tsmom else 0
     recent_days: list[str] = []
     seen: set[str] = set()
+    daily_closes = 0
     cursor = end_index
-    while cursor >= 0 and len(recent_days) < max_recent_days:
+    while cursor >= 0 and (len(recent_days) < 30 or daily_closes < required_daily_closes):
         day = data.ny_dates[cursor]
         if day not in seen:
             recent_days.append(day)
             seen.add(day)
+        if is_daily_tsmom and int(data.ny_minutes[cursor]) == 945:
+            daily_closes += 1
         cursor -= 1
 
     day_bounds = {
@@ -3620,7 +3624,32 @@ def market_entry_index(signal: dict[str, Any], data: EnrichedData, signal_index:
     except (TypeError, ValueError):
         return None
 
-    target_day = shifted_ny_day(data, signal_index, entry_day_offset)
+    if entry_day_offset > 0:
+        signal_day = int(data.ny_days[signal_index])
+        observed_days: set[int] = set()
+        raw_required_minute = signal.get("entry_required_minute")
+        try:
+            required_minute = int(float(raw_required_minute)) if raw_required_minute is not None else None
+        except (TypeError, ValueError):
+            return None
+        for cursor in range(signal_index + 1, data.times.shape[0]):
+            current_day = int(data.ny_days[cursor])
+            if current_day == signal_day or int(data.ny_minutes[cursor]) != entry_minute:
+                continue
+            if required_minute is not None:
+                day = data.ny_dates[cursor]
+                bounds = data.day_bounds.get(day)
+                if bounds is None or not any(
+                    int(data.ny_minutes[candidate]) == required_minute
+                    for candidate in range(max(cursor, bounds[0]), bounds[1])
+                ):
+                    continue
+            observed_days.add(current_day)
+            if len(observed_days) >= entry_day_offset:
+                return cursor
+        return None
+
+    target_day = shifted_ny_day(data, signal_index, 0)
     if target_day is None:
         return None
     for cursor in range(signal_index + 1, data.times.shape[0]):
@@ -4058,6 +4087,40 @@ def competition_param_float(strategy: BacktestStrategy, key: str, fallback: floa
     return variant_float(strategy.variant_id, key, fallback)
 
 
+def competition_tsmom_lookbacks(strategy: BacktestStrategy) -> tuple[int, ...]:
+    raw = competition_param_text(strategy, "lookbacks", "")
+    values: list[int] = []
+    for token in raw.split(","):
+        try:
+            value = int(float(token.strip()))
+        except ValueError:
+            continue
+        if value > 0:
+            values.append(value)
+    if values:
+        return tuple(sorted(set(values)))
+    return (max(1, competition_param_int(strategy, "lookback", 3)),)
+
+
+def competition_tsmom_vote(
+    closes: list[float], position: int, lookbacks: tuple[int, ...], consensus: int
+) -> int | None:
+    if not lookbacks or position < max(lookbacks):
+        return None
+    current = closes[position]
+    votes = [
+        1 if current > closes[position - lookback] else -1 if current < closes[position - lookback] else 0
+        for lookback in lookbacks
+    ]
+    threshold = max(1, min(len(lookbacks), consensus))
+    score = sum(votes)
+    if score >= threshold:
+        return 1
+    if score <= -threshold:
+        return -1
+    return None
+
+
 def competition_requested_risk_reward(strategy: BacktestStrategy) -> float | None:
     for key in ("risk_reward", "rr"):
         raw = variant_value(strategy.variant_id, key)
@@ -4280,7 +4343,8 @@ def evaluate_competition_daily_tsmom_signal(
 ) -> dict[str, Any] | None:
     if int(data.ny_minutes[index]) != 945:
         return None
-    lookback = competition_param_int(strategy, "lookback", 3)
+    lookbacks = competition_tsmom_lookbacks(strategy)
+    consensus = competition_param_int(strategy, "consensus", len(lookbacks))
     entry_minute = competition_param_int(strategy, "entry", 570)
     exit_minute = competition_param_int(strategy, "exit", 945)
     direction = 1 if competition_param_text(strategy, "direction", "momentum") == "momentum" else -1
@@ -4292,16 +4356,15 @@ def evaluate_competition_daily_tsmom_signal(
             ordered_days.append(day)
             close_by_day[day] = (close_index, float(data.close[close_index]))
     day = data.ny_dates[index]
-    if len(ordered_days) <= lookback or not ordered_days or ordered_days[-1] != day:
+    if len(ordered_days) <= max(lookbacks) or not ordered_days or ordered_days[-1] != day:
         return None
 
-    previous_day = ordered_days[-1 - lookback]
-    signal_index, current_close = close_by_day[day]
-    _past_index, past_close = close_by_day[previous_day]
-    move = current_close - past_close
-    if signal_index != index or move == 0:
+    signal_index, _current_close = close_by_day[day]
+    closes = [close_by_day[current_day][1] for current_day in ordered_days]
+    vote = competition_tsmom_vote(closes, len(closes) - 1, lookbacks, consensus)
+    if signal_index != index or vote is None:
         return None
-    side = (1 if move > 0 else -1) * direction
+    side = vote * direction
     if not competition_passes_filters(strategy, data, index, side):
         return None
 
@@ -4328,7 +4391,7 @@ def evaluate_competition_daily_tsmom_signal(
         entry_minute=entry_minute,
         entry_day_offset=1,
         risk_index=index,
-    )
+    ) | {"entry_required_minute": exit_minute}
 
 
 def evaluate_competition_range_signal(
@@ -4797,7 +4860,8 @@ def run_competition_daily_tsmom_strategy(
     start_ts: int,
     end_ts: int | None,
 ) -> list[BacktestTradeRow]:
-    lookback = competition_param_int(strategy, "lookback", 3)
+    lookbacks = competition_tsmom_lookbacks(strategy)
+    consensus = competition_param_int(strategy, "consensus", len(lookbacks))
     entry_minute = competition_param_int(strategy, "entry", 570)
     exit_minute = competition_param_int(strategy, "exit", 945)
     direction = 1 if competition_param_text(strategy, "direction", "momentum") == "momentum" else -1
@@ -4811,15 +4875,14 @@ def run_competition_daily_tsmom_strategy(
     trades: list[BacktestTradeRow] = []
     overnight = competition_param_text(strategy, "family", "").startswith("daily_tsmom_next_overnight")
 
-    for position in range(lookback, len(ordered_days) - 1):
+    close_values = [value for _day, _index, value in closes]
+    for position in range(max(lookbacks), len(ordered_days) - 1):
         day = ordered_days[position]
-        previous_day = ordered_days[position - lookback]
-        signal_index, current_close = close_by_day[day]
-        _past_index, past_close = close_by_day[previous_day]
-        signal = current_close - past_close
-        if signal == 0:
+        signal_index, _current_close = close_by_day[day]
+        vote = competition_tsmom_vote(close_values, position, lookbacks, consensus)
+        if vote is None:
             continue
-        side = (1 if signal > 0 else -1) * direction
+        side = vote * direction
         next_day = ordered_days[position + 1]
         if overnight:
             entry_index = signal_index + 1 if signal_index + 1 < data.times.shape[0] else None

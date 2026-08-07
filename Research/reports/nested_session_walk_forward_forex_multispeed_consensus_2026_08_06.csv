@@ -1,0 +1,1 @@
+status,strategy_id,asset_key,family,train_pf,train_trades,validation_pf,validation_trades,holdout_pf,holdout_trades,holdout_p_value,holdout_q_value,oos_pf,oos_trades,bootstrap_p05,block_bootstrap_p05,annual_pass_rate,entry_parity,cost_ticks,train_trials,validation_trials,variant_id

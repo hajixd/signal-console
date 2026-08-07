@@ -10,10 +10,10 @@
     "https://www.youtube.com/@ToriTrades"
   ],
   "researchSummary": "Public trendline break-and-retest playbook promoted because it cleared high-PF stress validation.",
-  "selectionMethod": "Existing research folder promoted after chronological split, rolling-window, bootstrap, block-bootstrap, and annual walk-forward stress checks. No RR threshold was required for this competition pass. Management sweep promoted `be_trail_hourly_pivot_b0` only after strict forward PF improved from 2.13 to 2.50. Management sweep promoted `be_trail_hourly_pivot_b0` only after strict forward PF improved from 2.13 to 2.50.",
+  "selectionMethod": "Pre-2022 training followed by post-2022 chronological split, rolling-window, bootstrap, block-bootstrap, and annual walk-forward stress checks. Management sweep promoted `be_trail_hourly_pivot_b0` only after strict forward PF improved from 2.13 to 2.50.",
   "trainingWindow": {
-    "start": "not_available",
-    "end": "not_available"
+    "start": "asset_start",
+    "end": "2021-12-31"
   },
   "forwardWindow": {
     "start": "2022-01-01",

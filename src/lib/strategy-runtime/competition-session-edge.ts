@@ -19,6 +19,14 @@ function num(params: Params, key: string, fallback: number): number {
   return Number.isFinite(parsed) ? parsed : fallback;
 }
 
+function positiveInts(params: Params, key: string, fallback: number): number[] {
+  const parsed = (params[key] ?? "")
+    .split(",")
+    .map((value) => Number(value.trim()))
+    .filter((value) => Number.isInteger(value) && value > 0);
+  return parsed.length ? [...new Set(parsed)].sort((left, right) => left - right) : [fallback];
+}
+
 function sideText(side: number): "long" | "short" {
   return side === 1 ? "long" : "short";
 }
@@ -170,14 +178,18 @@ function dailySignal(rule: StrategyRule, bars: EnrichedBar[], signalIndex: numbe
 
   const closeBars = bars.filter((item) => item.nyMinutes === 945);
   const currentCloseIndex = closeBars.findIndex((item) => item.nyDate === (overnight ? bar.nyDate : previousTradingDay(bars, bar.nyDate)));
-  const lookback = num(params, "lookback", 3);
-  if (currentCloseIndex < lookback) return null;
+  const lookbacks = positiveInts(params, "lookbacks", num(params, "lookback", 3));
+  if (currentCloseIndex < Math.max(...lookbacks)) return null;
   const current = closeBars[currentCloseIndex]!;
-  const past = closeBars[currentCloseIndex - lookback]!;
-  const move = current.close - past.close;
-  if (move === 0) return null;
+  const votes = lookbacks.map((lookback) => {
+    const past = closeBars[currentCloseIndex - lookback]!;
+    return current.close > past.close ? 1 : current.close < past.close ? -1 : 0;
+  });
+  const consensus = Math.max(1, Math.min(lookbacks.length, Math.floor(num(params, "consensus", lookbacks.length))));
+  const vote = votes.reduce<number>((sum, value) => sum + value, 0);
+  if (Math.abs(vote) < consensus) return null;
   const direction = params.direction === "contrarian" ? -1 : 1;
-  const side = (move > 0 ? 1 : -1) * direction;
+  const side = (vote > 0 ? 1 : -1) * direction;
   if (!passesFilters(params, current, side)) return null;
   const signal = signalFromRisk(params, rule, bar, side, safeAtr(bar, rule), "Competition session edge: daily time-series momentum.");
   return overnight

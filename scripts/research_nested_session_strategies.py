@@ -7,6 +7,7 @@ import json
 import math
 import re
 import sys
+from concurrent.futures import ProcessPoolExecutor, as_completed
 from dataclasses import dataclass, replace
 from pathlib import Path
 
@@ -31,6 +32,8 @@ SOURCE = "nested_session_walk_forward_2026_08"
 ROUND_TRIP_COST_TICKS = 2.0
 SOURCE_URLS = [
     "https://pages.stern.nyu.edu/~lpederse/papers/TimeSeriesMomentum.pdf",
+    "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=3489539",
+    "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=2140091",
     "https://www.bis.org/publ/work366.pdf",
     "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=3503816",
     "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=712168",
@@ -64,11 +67,14 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--market", choices=["forex", "futures"], required=True)
     parser.add_argument("--asset", action="append", help="Asset key or symbol; repeat or comma-separate.")
+    parser.add_argument("--family-prefix", action="append", help="Only research matching structural family prefixes.")
+    parser.add_argument("--report-suffix", default="", help="Optional suffix for a focused research report.")
     parser.add_argument("--risk-reward", default="2,3,4")
     parser.add_argument("--max-train-finalists-per-family", type=int, default=1)
     parser.add_argument("--max-holdout-tests-per-asset", type=int, default=4)
     parser.add_argument("--max-add-per-asset", type=int, default=2)
     parser.add_argument("--max-total-additions", type=int, default=24)
+    parser.add_argument("--workers", type=int, default=1, help="Independent asset-research workers.")
     parser.add_argument("--min-train-trades", type=int, default=80)
     parser.add_argument("--min-validation-trades", type=int, default=40)
     parser.add_argument("--min-holdout-trades", type=int, default=60)
@@ -136,6 +142,52 @@ def compact_specs(raw_rr: str) -> list[session.VariantSpec]:
                 summary=range_spec.summary,
             )
         )
+
+    # Multi-speed consensus is intentionally a small, calendar-agnostic grid. The
+    # groups represent fast/intermediate/slow trend speeds; all three signs must
+    # agree, which avoids selecting a different speed after observing each asset.
+    consensus_groups = (
+        ("3,10,20", "fast intermediate slow"),
+        ("5,20,60", "short medium long"),
+        ("20,60,120", "medium long structural"),
+    )
+    consensus_filters = (
+        ("all", (), "all signals"),
+        ("side_long", (("side_filter", "long"),), "long signals"),
+        ("side_short", (("side_filter", "short"),), "short signals"),
+    )
+    for session_name, entry, exit_minute in (
+        ("next_rth", "570", "945"),
+        ("next_overnight", "945", "570"),
+    ):
+        for direction in ("momentum", "contrarian"):
+            for lookbacks, speed_label in consensus_groups:
+                for filter_name, filter_params, filter_label in consensus_filters:
+                    for risk_reward in risk_rewards(raw_rr):
+                        family = f"daily_tsmom_{session_name}_consensus_{filter_name}"
+                        output.append(
+                            session.VariantSpec(
+                                family=family,
+                                params=(
+                                    ("consensus", "3"),
+                                    ("direction", direction),
+                                    ("entry", entry),
+                                    ("exit", exit_minute),
+                                    ("lookbacks", lookbacks),
+                                    ("risk_reward", risk_reward),
+                                    *filter_params,
+                                ),
+                                label=(
+                                    f"Multi-speed {direction} {session_name.replace('_', ' ')} "
+                                    f"{speed_label} {filter_label} {risk_reward}R"
+                                ),
+                                summary=(
+                                    f"Calendar-agnostic multi-speed time-series {direction}: {lookbacks}-day "
+                                    f"trend signs must unanimously agree before the {session_name.replace('_', ' ')} trade. "
+                                    f"Filter: {filter_label}. Reward/risk: {risk_reward}:1."
+                                ),
+                            )
+                        )
 
     return list({spec.variant_id: spec for spec in output}.values())
 
@@ -490,7 +542,8 @@ def update_loader(candidates: list[Candidate]) -> None:
 def write_report(candidates: list[Candidate], selected: list[Candidate], args: argparse.Namespace) -> Path:
     REPORT_ROOT.mkdir(parents=True, exist_ok=True)
     selected_ids = {candidate.strategy.id for candidate in selected}
-    path = REPORT_ROOT / f"nested_session_walk_forward_{args.market}.csv"
+    suffix = f"_{session.slug(args.report_suffix)}" if args.report_suffix.strip() else ""
+    path = REPORT_ROOT / f"nested_session_walk_forward_{args.market}{suffix}.csv"
     fields = [
         "status", "strategy_id", "asset_key", "family", "train_pf", "train_trades", "validation_pf",
         "validation_trades", "holdout_pf", "holdout_trades", "holdout_p_value", "holdout_q_value",
@@ -532,15 +585,28 @@ def main() -> int:
     args = parse_args()
     assets = selected_assets(args)
     specs = compact_specs(args.risk_reward)
+    requested_families = parse_assets(args.family_prefix)
+    if requested_families:
+        specs = [spec for spec in specs if any(spec.family.startswith(prefix) for prefix in requested_families)]
     if not assets:
         raise ValueError("No matching assets with both 15-minute and 1-minute data")
     print(f"Nested session research: {args.market}, {len(assets)} assets, {len(specs)} frozen variants")
     candidates: list[Candidate] = []
-    for asset in assets:
-        print(f"  {asset.key}", flush=True)
-        rows = research_asset(asset, specs, args)
-        candidates.extend(rows)
-        print(f"    sealed holdout tests={len(rows)}", flush=True)
+    worker_count = max(1, min(args.workers, len(assets)))
+    if worker_count == 1:
+        for asset in assets:
+            print(f"  {asset.key}", flush=True)
+            rows = research_asset(asset, specs, args)
+            candidates.extend(rows)
+            print(f"    sealed holdout tests={len(rows)}", flush=True)
+    else:
+        with ProcessPoolExecutor(max_workers=worker_count) as executor:
+            pending = {executor.submit(research_asset, asset, specs, args): asset for asset in assets}
+            for future in as_completed(pending):
+                asset = pending[future]
+                rows = future.result()
+                candidates.extend(rows)
+                print(f"  {asset.key}: sealed holdout tests={len(rows)}", flush=True)
 
     corrected = false_discovery_correction(candidates)
     eligible = [candidate for candidate in corrected if final_passes(candidate, args)]

@@ -73,6 +73,11 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Fast cross-asset true-RR strategy additions.")
     parser.add_argument("--market", choices=["forex", "futures"], required=True)
     parser.add_argument("--asset", action="append", help="Optional asset key or symbol filter. Repeat or comma-separate.")
+    parser.add_argument(
+        "--variant-contains",
+        action="append",
+        help="Only scan proven variants containing one of these tokens. Repeat or comma-separate.",
+    )
     parser.add_argument("--max-total-additions", type=int, default=25)
     parser.add_argument("--max-add-per-asset", type=int, default=3)
     parser.add_argument("--max-specs", type=int, default=160)
@@ -725,6 +730,14 @@ def main() -> int:
         mutate_weekday_sides=args.mutate_weekday_sides,
         weekday_side_holes_only=args.weekday_side_holes_only,
     )
+    variant_tokens = {
+        item.strip().lower()
+        for raw in args.variant_contains or []
+        for item in raw.split(",")
+        if item.strip()
+    }
+    if variant_tokens:
+        specs = [spec for spec in specs if any(token in spec.variant_id.lower() for token in variant_tokens)]
     full_existing, base_existing = existing_keys()
     requested = {item.lower() for raw in args.asset or [] for item in raw.split(",") if item.strip()}
     assets = [
