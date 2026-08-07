@@ -12,7 +12,6 @@ type ConnectedAccount = {
   detail: string;
   id: string;
   name: string;
-  owner: string;
   paused: boolean;
   platform: string;
 };
@@ -99,7 +98,6 @@ async function loadConnectedAccounts(): Promise<ConnectedAccount[]> {
         detail: folder.displayName ?? "ProjectX folder",
         id: `${folder.id}:${account.id}`,
         name: account.name || String(account.id),
-        owner: folder.displayName ?? "ProjectX",
         paused: paused.has(account.id) || account.canTrade === false,
         platform: "TopstepX"
       }));
@@ -109,7 +107,6 @@ async function loadConnectedAccounts(): Promise<ConnectedAccount[]> {
       detail: [account.firmLabel, account.accountId].filter(Boolean).join(" · ") || "Connected account",
       id: account.id,
       name: account.accountName ?? account.providerLabel ?? account.id,
-      owner: account.accountName ?? account.firmLabel ?? account.providerLabel ?? "Connected account",
       paused: account.paused === true,
       platform: account.providerLabel ?? account.id.toUpperCase()
     }));
@@ -169,11 +166,6 @@ export default function HomeAccountsPanel({
     () => accounts.reduce((total, account) => total + (Number.isFinite(account.balance) ? account.balance ?? 0 : 0), 0),
     [accounts]
   );
-  const accountGroups = useMemo(() => {
-    const groups = new Map<string, ConnectedAccount[]>();
-    accounts.forEach((account) => groups.set(account.owner, [...(groups.get(account.owner) ?? []), account]));
-    return [...groups.entries()].map(([owner, groupedAccounts]) => ({ accounts: groupedAccounts, owner }));
-  }, [accounts]);
   const allSuccessfulExecutions = useMemo(
     () => executionRows.filter((row) => row.executionStatus === "placed"),
     [executionRows]
@@ -302,7 +294,7 @@ export default function HomeAccountsPanel({
         <aside className="homePortfolioRail">
           <article className="homeAccountList">
             <header>
-              <div><span>Execution</span><h3>Broker accounts</h3></div>
+              <div><span>Execution</span><h3>Trading accounts</h3></div>
               {onManageAccounts
                 ? <button className="homeManageAccounts" onClick={onManageAccounts} type="button">Manage</button>
                 : <a href="#autotrade">Manage</a>}
@@ -313,36 +305,31 @@ export default function HomeAccountsPanel({
               </div>
             ) : accounts.length ? (
               <div className="homeRows">
-                {accountGroups.map((group) => (
-                  <section className="homeAccountGroup" key={group.owner}>
-                    <div className="homeAccountGroupHead"><strong>{group.owner}</strong><span>{group.accounts.length} {group.accounts.length === 1 ? "account" : "accounts"}</span></div>
-                    {group.accounts.map((account) => (
-                      <button
-                        aria-expanded={selectedAccountId === account.id}
-                        className={`homeAccountRow${selectedAccountId === account.id ? " is-selected" : ""}`}
-                        key={account.id}
-                        onClick={() => setSelectedAccountId((current) => current === account.id ? null : account.id)}
-                        type="button"
-                      >
-                        <span className="homePlatformMark">{account.platform.slice(0, 2).toUpperCase()}</span>
-                        <div><strong>{account.name}</strong><small>{account.platform}</small></div>
-                        <div className="homeAccountValue">
-                          {Number.isFinite(account.balance) ? <strong>{money(account.balance ?? 0, 0)}</strong> : null}
-                          <span className={`homeStatus${account.paused ? " is-paused" : ""}`}><i />{account.paused ? "Paused" : "Ready"}</span>
-                        </div>
-                        <span className="homeRowChevron" aria-hidden="true">⌄</span>
-                        <span className="homeAccountReveal">Independent prop account · {account.detail}</span>
-                      </button>
-                    ))}
-                  </section>
+                {accounts.map((account) => (
+                  <button
+                    aria-expanded={selectedAccountId === account.id}
+                    className={`homeAccountRow${selectedAccountId === account.id ? " is-selected" : ""}`}
+                    key={account.id}
+                    onClick={() => setSelectedAccountId((current) => current === account.id ? null : account.id)}
+                    type="button"
+                  >
+                    <span className="homePlatformMark">{account.platform.slice(0, 2).toUpperCase()}</span>
+                    <div><strong>{account.name}</strong><small>{account.platform}</small></div>
+                    <div className="homeAccountValue">
+                      {Number.isFinite(account.balance) ? <strong>{money(account.balance ?? 0, 0)}</strong> : null}
+                      <span className={`homeStatus${account.paused ? " is-paused" : ""}`}><i />{account.paused ? "Paused" : "Ready"}</span>
+                    </div>
+                    <span className="homeRowChevron" aria-hidden="true">⌄</span>
+                    <span className="homeAccountReveal">Independent broker account · {account.detail}</span>
+                  </button>
                 ))}
               </div>
             ) : <p className="homeEmptyState">No accounts yet. Open Auto-Trade to connect one.</p>}
           </article>
           <article className="homeOnlineList">
-            <header><div><span>Workspace</span><h3>Korra accounts</h3></div><strong>{friendAccounts.length}</strong></header>
+            <header><div><span>Workspace</span><h3>Friend accounts</h3></div><strong>{onlineFriendCount}/{friendAccounts.length}</strong></header>
             <div className="codenamesOnlineList">
-              <div className="codenamesOnlineSection">{friendAccounts.length} separate logins · {onlineFriendCount} online</div>
+              <div className="codenamesOnlineSection">Separate Korra logins · {onlineFriendCount} online</div>
               {friendAccounts.length ? friendAccounts.map((account) => (
                 <button
                   aria-expanded={selectedPersonId === account.id}
