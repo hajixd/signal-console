@@ -215,6 +215,28 @@ export async function getAppUserById(id: string): Promise<AppUser | null> {
   return user ? publicUser(user) : null;
 }
 
+export async function listWorkspaceAppUsers(): Promise<AppUser[]> {
+  if (hasFirebaseAdmin()) {
+    try {
+      const snapshot = await withFirebaseTimeout(
+        firebaseDb().collection(USERS_COLLECTION).get(),
+        "Firebase workspace user list"
+      );
+      return snapshot.docs
+        .map((doc) => toStoredUser(doc.data() as Record<string, unknown>, doc.id))
+        .filter((user): user is StoredAppUser => user !== null)
+        .map(publicUser)
+        .sort((left, right) => left.username.localeCompare(right.username));
+    } catch (error) {
+      if (!firebaseLocalFallbackEnabled()) throw error;
+    }
+  }
+  const store = await readLocalStore();
+  return Object.values(store.users)
+    .map(publicUser)
+    .sort((left, right) => left.username.localeCompare(right.username));
+}
+
 async function getStoredUserByUsername(username: string): Promise<StoredAppUser | null> {
   if (hasFirebaseAdmin()) {
     try {

@@ -17799,6 +17799,420 @@ html[data-theme="light"] .tradeReplaySlider input::-webkit-slider-thumb {
   }
 }
 
+/* Compact Codenames-inspired home workspace */
+.robinhoodHome {
+  gap: 0.68rem;
+  padding: 0.7rem;
+}
+
+.robinhoodHomeGrid {
+  grid-template-columns: minmax(0, 1.58fr) minmax(290px, 0.68fr);
+  align-items: stretch;
+  gap: 0.68rem;
+}
+
+.homePortfolioOverview {
+  min-height: 398px;
+  border-radius: 10px;
+  background:
+    radial-gradient(circle at 72% -18%, rgba(0, 200, 5, 0.045), transparent 22rem),
+    rgba(255, 255, 255, 0.009);
+  box-shadow: none;
+  padding: 0.92rem 1rem 0;
+}
+
+.homePortfolioHeading h2 {
+  margin-top: 0.34rem;
+  font-size: clamp(1.9rem, 2.7vw, 2.55rem);
+}
+
+.homePortfolioHeading p {
+  margin-top: 0.34rem;
+  font-size: 0.69rem;
+}
+
+.homePortfolioPulse {
+  border: 0;
+  background: transparent;
+  padding: 0.24rem 0;
+}
+
+.homeEquityChart {
+  min-height: 205px;
+  flex-basis: 205px;
+  padding-top: 0.65rem;
+}
+
+.homeEquityChart::after {
+  inset: 0.7rem 0 0.35rem;
+  opacity: 0.16;
+}
+
+.homeRangePicker {
+  min-height: 35px;
+  gap: clamp(0.18rem, 1.1vw, 0.78rem);
+}
+
+.homeRangePicker button {
+  min-width: 31px;
+  min-height: 26px;
+  border-radius: 5px;
+  font-size: 0.55rem;
+}
+
+.homeRangePicker button:hover,
+.homeRangePicker button.is-active {
+  background: rgba(96, 165, 250, 0.12);
+  color: #bdd7ff;
+}
+
+.homeBuyingPower {
+  min-height: 45px;
+  font-size: 0.66rem;
+}
+
+.homeBuyingPower::after {
+  content: none;
+}
+
+.homeBuyingPower strong {
+  font-size: 0.71rem;
+}
+
+.homePortfolioRail {
+  grid-template-rows: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 0.68rem;
+}
+
+.homePortfolioRail article,
+.homeExecutionHistory {
+  border-radius: 10px;
+  box-shadow: none;
+}
+
+.homePortfolioRail article > header {
+  min-height: 48px;
+  padding: 0 0.68rem;
+}
+
+.homePortfolioRail h3,
+.homeExecutionHistory h3 {
+  font-size: 0.78rem;
+}
+
+.homePortfolioRail article > header span,
+.homeExecutionHistory > header > div:first-child > span {
+  font-size: 0.49rem;
+}
+
+.homePortfolioRail .homeRows,
+.homeOnlineList .codenamesOnlineList {
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+
+.homePortfolioRail .homeAccountRow {
+  width: 100%;
+  min-height: 45px;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  gap: 0.5rem;
+  border: 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  padding: 0.36rem 0.62rem;
+  text-align: left;
+  cursor: pointer;
+  transition: background 140ms ease;
+}
+
+.homePortfolioRail .homeAccountRow:hover,
+.homePortfolioRail .homeAccountRow.is-selected {
+  background: rgba(96, 165, 250, 0.045);
+  padding-left: 0.62rem;
+}
+
+.homePlatformMark {
+  width: 27px;
+  height: 27px;
+  border-radius: 7px;
+  font-size: 0.5rem;
+}
+
+.homeAccountRow > div:nth-child(2) {
+  min-width: 0;
+  display: grid;
+  gap: 0.08rem;
+}
+
+.homeAccountRow > div:nth-child(2) strong,
+.homeFriendIdentity strong {
+  overflow: hidden;
+  color: #edf2f9;
+  font-size: 0.66rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.homeAccountRow > div:nth-child(2) small,
+.homeFriendIdentity small {
+  overflow: hidden;
+  color: var(--text-faint);
+  font-size: 0.5rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.homeAccountValue > strong {
+  font-size: 0.59rem;
+}
+
+.homeStatus {
+  font-size: 0.48rem;
+}
+
+.homeRowChevron {
+  color: var(--text-faint);
+  font-size: 0.7rem;
+  transform: rotate(0deg);
+  transition: color 140ms ease, transform 160ms ease;
+}
+
+[aria-expanded="true"] > .homeRowChevron {
+  color: #91bdfb;
+  transform: rotate(180deg);
+}
+
+.homeAccountReveal,
+.homeFriendReveal {
+  grid-column: 2 / -1;
+  max-height: 0;
+  overflow: hidden;
+  color: var(--text-faint);
+  font-size: 0.5rem;
+  line-height: 1.35;
+  opacity: 0;
+  transition: max-height 180ms ease, opacity 140ms ease, padding 180ms ease;
+}
+
+[aria-expanded="true"] > .homeAccountReveal,
+[aria-expanded="true"] > .homeFriendReveal {
+  max-height: 32px;
+  padding-bottom: 0.2rem;
+  opacity: 1;
+}
+
+.codenamesOnlineList {
+  gap: 0;
+  padding: 0.32rem 0;
+}
+
+.codenamesOnlineSection {
+  padding: 0.18rem 0.62rem 0.34rem;
+  font-size: 0.47rem;
+}
+
+.codenamesOnlineRow {
+  width: 100%;
+  min-height: 43px;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  gap: 0.48rem;
+  border: 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.045);
+  border-radius: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  padding: 0.34rem 0.62rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.codenamesOnlineRow:hover,
+.codenamesOnlineRow.is-selected {
+  border-color: rgba(255, 255, 255, 0.045);
+  background: rgba(96, 165, 250, 0.045);
+  transform: none;
+}
+
+.codenamesOnlineRow.is-offline .codenamesOnlineDot {
+  border-color: rgba(132, 145, 166, 0.16);
+  background: #657084;
+  box-shadow: none;
+}
+
+.homeFriendIdentity {
+  min-width: 0;
+  display: grid;
+  gap: 0.07rem;
+}
+
+.codenamesOnlineRole {
+  border: 0;
+  background: transparent;
+  color: #83ca9d;
+  padding: 0;
+  font-size: 0.46rem;
+}
+
+.codenamesOnlineRow.is-offline .codenamesOnlineRole {
+  color: var(--text-faint);
+}
+
+.homeExecutionHistory > header {
+  min-height: 58px;
+  padding: 0.52rem 0.68rem;
+}
+
+.homeExecutionHeaderTools {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.75rem;
+}
+
+.homeExecutionFilters {
+  display: flex;
+  align-items: center;
+  gap: 0.12rem;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 7px;
+  background: rgba(255, 255, 255, 0.015);
+  padding: 0.13rem;
+}
+
+.homeExecutionFilters button {
+  min-height: 24px;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--text-faint);
+  padding: 0 0.44rem;
+  font: inherit;
+  font-size: 0.49rem;
+  font-weight: 850;
+  cursor: pointer;
+}
+
+.homeExecutionFilters button:hover,
+.homeExecutionFilters button.is-active {
+  background: rgba(96, 165, 250, 0.11);
+  color: #b8d4fb;
+}
+
+.homeExecutionStats {
+  display: flex;
+  align-items: center;
+  gap: 0;
+}
+
+.homeExecutionStats > span {
+  min-height: 30px;
+  min-width: 58px;
+  padding: 0 0.52rem;
+}
+
+.homeExecutionStats small {
+  font-size: 0.43rem;
+}
+
+.homeExecutionStats strong {
+  font-size: 0.61rem;
+}
+
+.homeExecutionColumns {
+  min-height: 28px;
+}
+
+.homeExecutionRow {
+  min-height: 49px;
+  padding-top: 0.34rem;
+  padding-bottom: 0.34rem;
+}
+
+html[data-theme="light"] .homePortfolioOverview {
+  background: #ffffff;
+}
+
+html[data-theme="light"] .homeAccountRow > div:nth-child(2) strong,
+html[data-theme="light"] .homeFriendIdentity strong {
+  color: #111827;
+}
+
+html[data-theme="light"] .homePortfolioRail .homeAccountRow,
+html[data-theme="light"] .codenamesOnlineRow,
+html[data-theme="light"] .homeExecutionFilters {
+  border-color: rgba(31, 45, 70, 0.08);
+}
+
+@media (max-width: 980px) {
+  .robinhoodHomeGrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .homePortfolioRail {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-rows: none;
+  }
+}
+
+@media (max-width: 760px) {
+  .robinhoodHome {
+    padding: 0;
+  }
+
+  .homePortfolioOverview {
+    min-height: 354px;
+    padding: 0.78rem 0.72rem 0;
+  }
+
+  .homeEquityChart {
+    min-height: 180px;
+    flex-basis: 180px;
+  }
+
+  .homePortfolioRail {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto auto;
+  }
+
+  .homeExecutionHistory > header {
+    gap: 0.52rem;
+  }
+
+  .homeExecutionHeaderTools {
+    width: 100%;
+    align-items: stretch;
+    flex-direction: column;
+    gap: 0.45rem;
+  }
+
+  .homeExecutionFilters {
+    align-self: flex-start;
+  }
+
+  .homeExecutionStats {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .homeExecutionStats > span {
+    min-width: 0;
+    flex: 1;
+    padding: 0 0.36rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .homeAccountReveal,
+  .homeFriendReveal,
+  .homeRowChevron {
+    transition: none;
+  }
+}
+
 /* Account access, presence, and workspace home */
 .appAuthScreen {
   min-height: 100svh;
