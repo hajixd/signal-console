@@ -5,7 +5,6 @@ import { useAppSession } from "@/components/auth/app-session-provider";
 import type { TradeHistoryRow } from "@/components/trades/trade-history";
 
 type HomeRange = "1D" | "1W" | "1M" | "3M" | "YTD" | "1Y" | "ALL";
-type ExecutionFilter = "all" | "open" | "closed";
 
 type ConnectedAccount = {
   balance?: number;
@@ -38,22 +37,10 @@ type GenericPayload = {
   }>;
 };
 
-type WorkspaceAccount = {
-  createdAt: string;
-  id: string;
-  role: "admin" | "user";
-  username: string;
-};
-
-type WorkspaceAccountsPayload = {
-  accounts?: WorkspaceAccount[];
-};
-
 const HOME_RANGES: HomeRange[] = ["1D", "1W", "1M", "3M", "YTD", "1Y", "ALL"];
 const HOME_ACCOUNTS_CACHE_MS = 5_000;
 let homeAccountsCache: { accounts: ConnectedAccount[]; loadedAt: number } | null = null;
 let homeAccountsRequest: Promise<ConnectedAccount[]> | null = null;
-let workspaceAccountsCache: { accounts: WorkspaceAccount[]; loadedAt: number } | null = null;
 
 function executionTime(value: string): string {
   const time = Date.parse(value);
@@ -120,18 +107,6 @@ async function loadConnectedAccounts(): Promise<ConnectedAccount[]> {
   return homeAccountsRequest;
 }
 
-async function loadWorkspaceAccounts(): Promise<WorkspaceAccount[]> {
-  if (workspaceAccountsCache && Date.now() - workspaceAccountsCache.loadedAt < 30_000) {
-    return workspaceAccountsCache.accounts;
-  }
-  const response = await fetch("/api/auth/accounts", { cache: "no-store", credentials: "same-origin" }).catch(() => null);
-  if (!response?.ok) return [];
-  const payload = (await response.json().catch(() => ({}))) as WorkspaceAccountsPayload;
-  const accounts = Array.isArray(payload.accounts) ? payload.accounts : [];
-  workspaceAccountsCache = { accounts, loadedAt: Date.now() };
-  return accounts;
-}
-
 export default function HomeAccountsPanel({
   compact = false,
   executionRows = [],
@@ -143,19 +118,14 @@ export default function HomeAccountsPanel({
 }) {
   const { onlineUsers, user } = useAppSession();
   const [accounts, setAccounts] = useState<ConnectedAccount[]>([]);
-  const [workspaceAccounts, setWorkspaceAccounts] = useState<WorkspaceAccount[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [range, setRange] = useState<HomeRange>("ALL");
-  const [executionFilter, setExecutionFilter] = useState<ExecutionFilter>("all");
-  const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null);
-  const [selectedPersonId, setSelectedPersonId] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
-    Promise.all([loadConnectedAccounts(), loadWorkspaceAccounts()]).then(([nextAccounts, nextWorkspaceAccounts]) => {
+    loadConnectedAccounts().then((nextAccounts) => {
       if (cancelled) return;
       setAccounts(nextAccounts);
-      setWorkspaceAccounts(nextWorkspaceAccounts);
       setIsLoading(false);
     });
     return () => { cancelled = true; };
@@ -171,12 +141,10 @@ export default function HomeAccountsPanel({
     [executionRows]
   );
   const successfulExecutions = useMemo(
-    () => allSuccessfulExecutions
-      .filter((row) => executionFilter === "all"
-        || (executionFilter === "open" ? row.exitReasonLabel === "Still Open" : row.exitReasonLabel !== "Still Open"))
+    () => [...allSuccessfulExecutions]
       .sort((left, right) => Date.parse(right.entryTime) - Date.parse(left.entryTime))
       .slice(0, compact ? 6 : 10),
-    [allSuccessfulExecutions, compact, executionFilter]
+    [allSuccessfulExecutions, compact]
   );
   const closedExecutions = useMemo(
     () => allSuccessfulExecutions
@@ -233,23 +201,6 @@ export default function HomeAccountsPanel({
     if (onlineUsers.some((onlineUser) => onlineUser.id === user.id)) return onlineUsers;
     return [{ area: "Home", id: user.id, lastSeen: new Date().toISOString(), role: user.role, username: user.username }, ...onlineUsers];
   }, [onlineUsers, user]);
-  const people = useMemo(() => {
-    const onlineById = new Map(visibleOnlineUsers.map((onlineUser) => [onlineUser.id, onlineUser]));
-    const known = workspaceAccounts.length
-      ? workspaceAccounts
-      : visibleOnlineUsers.map((onlineUser) => ({ createdAt: "", ...onlineUser }));
-    if (!known.some((account) => account.id === user.id)) known.unshift(user);
-    return known
-      .map((account) => ({ ...account, presence: onlineById.get(account.id) }))
-      .sort((left, right) => {
-        if (left.id === user.id) return -1;
-        if (right.id === user.id) return 1;
-        if (Boolean(left.presence) !== Boolean(right.presence)) return left.presence ? -1 : 1;
-        return left.username.localeCompare(right.username);
-      });
-  }, [user, visibleOnlineUsers, workspaceAccounts]);
-  const friendAccounts = useMemo(() => people.filter((account) => account.id !== user.id), [people, user.id]);
-  const onlineFriendCount = useMemo(() => friendAccounts.filter((account) => account.presence).length, [friendAccounts]);
 
   return (
     <section className={`homeAccountsPanel robinhoodHome${compact ? " is-compact" : ""}`}>
@@ -294,7 +245,7 @@ export default function HomeAccountsPanel({
         <aside className="homePortfolioRail">
           <article className="homeAccountList">
             <header>
-              <div><span>Execution</span><h3>Trading accounts</h3></div>
+              <div><span>Accounts</span><h3>Connected</h3></div>
               {onManageAccounts
                 ? <button className="homeManageAccounts" onClick={onManageAccounts} type="button">Manage</button>
                 : <a href="#autotrade">Manage</a>}
@@ -306,45 +257,30 @@ export default function HomeAccountsPanel({
             ) : accounts.length ? (
               <div className="homeRows">
                 {accounts.map((account) => (
-                  <button
-                    aria-expanded={selectedAccountId === account.id}
-                    className={`homeAccountRow${selectedAccountId === account.id ? " is-selected" : ""}`}
-                    key={account.id}
-                    onClick={() => setSelectedAccountId((current) => current === account.id ? null : account.id)}
-                    type="button"
-                  >
+                  <div className="homeAccountRow" key={account.id}>
                     <span className="homePlatformMark">{account.platform.slice(0, 2).toUpperCase()}</span>
-                    <div><strong>{account.name}</strong><small>{account.platform}</small></div>
+                    <div><strong>{account.name}</strong><small>{account.platform} · {account.detail}</small></div>
                     <div className="homeAccountValue">
                       {Number.isFinite(account.balance) ? <strong>{money(account.balance ?? 0, 0)}</strong> : null}
                       <span className={`homeStatus${account.paused ? " is-paused" : ""}`}><i />{account.paused ? "Paused" : "Ready"}</span>
                     </div>
-                    <span className="homeRowChevron" aria-hidden="true">⌄</span>
-                    <span className="homeAccountReveal">Independent broker account · {account.detail}</span>
-                  </button>
+                  </div>
                 ))}
               </div>
             ) : <p className="homeEmptyState">No accounts yet. Open Auto-Trade to connect one.</p>}
           </article>
           <article className="homeOnlineList">
-            <header><div><span>Workspace</span><h3>Friend accounts</h3></div><strong>{onlineFriendCount}/{friendAccounts.length}</strong></header>
+            <header><div><span>Presence</span><h3>Who’s online</h3></div><strong>{visibleOnlineUsers.length}</strong></header>
             <div className="codenamesOnlineList">
-              <div className="codenamesOnlineSection">Separate Korra logins · {onlineFriendCount} online</div>
-              {friendAccounts.length ? friendAccounts.map((account) => (
-                <button
-                  aria-expanded={selectedPersonId === account.id}
-                  className={`codenamesOnlineRow${account.presence ? " is-online" : " is-offline"}${selectedPersonId === account.id ? " is-selected" : ""}`}
-                  key={account.id}
-                  onClick={() => setSelectedPersonId((current) => current === account.id ? null : account.id)}
-                  type="button"
-                >
+              <div className="codenamesOnlineSection">Online ({visibleOnlineUsers.length})</div>
+              {visibleOnlineUsers.map((onlineUser) => (
+                <div className={`codenamesOnlineRow${onlineUser.id === user.id ? " is-you" : ""}`} key={onlineUser.id}>
                   <i className="codenamesOnlineDot" />
-                  <span className="homeFriendIdentity"><strong>{account.username}</strong><small>{account.presence?.area || "Offline"}</small></span>
-                  <span className="codenamesOnlineRole">{account.presence ? "Online" : "Offline"}</span>
-                  <span className="homeRowChevron" aria-hidden="true">⌄</span>
-                  <span className="homeFriendReveal">Independent friend account · {account.role === "admin" ? "Workspace administrator" : "Workspace member"}</span>
-                </button>
-              )) : <p className="homeEmptyState">No friend accounts have joined this workspace yet.</p>}
+                  <strong>{onlineUser.username}</strong>
+                  <span className="codenamesOnlineRole">{onlineUser.role}</span>
+                  <small>{onlineUser.area || "Active"}</small>
+                </div>
+              ))}
             </div>
           </article>
         </aside>
@@ -353,20 +289,11 @@ export default function HomeAccountsPanel({
       <article className="homeExecutionHistory">
         <header>
           <div><span>Trade history</span><h3>Recent executions</h3></div>
-          <div className="homeExecutionHeaderTools">
-            <div className="homeExecutionFilters" role="group" aria-label="Filter successful executions">
-              {(["all", "open", "closed"] as const).map((filter) => (
-                <button aria-pressed={executionFilter === filter} className={executionFilter === filter ? "is-active" : ""} key={filter} onClick={() => setExecutionFilter(filter)} type="button">
-                  {filter[0]!.toUpperCase()}{filter.slice(1)}
-                </button>
-              ))}
-            </div>
-            <div className="homeExecutionStats" aria-label="Successful execution summary">
-              <span><small>Executed</small><strong>{allSuccessfulExecutions.length}</strong></span>
-              <span><small>Closed</small><strong>{executionStats.closed}</strong></span>
-              <span><small>Win rate</small><strong>{executionStats.closed ? `${executionStats.winRate.toFixed(1)}%` : "—"}</strong></span>
-              <span><small>Net PnL</small><strong className={executionStats.net > 0 ? "up" : executionStats.net < 0 ? "down" : ""}>{executionStats.closed ? `${executionStats.net >= 0 ? "+" : "-"}$${Math.abs(executionStats.net).toLocaleString("en-US", { maximumFractionDigits: 0 })}` : "—"}</strong></span>
-            </div>
+          <div className="homeExecutionStats" aria-label="Successful execution summary">
+            <span><small>Executed</small><strong>{allSuccessfulExecutions.length}</strong></span>
+            <span><small>Closed</small><strong>{executionStats.closed}</strong></span>
+            <span><small>Win rate</small><strong>{executionStats.closed ? `${executionStats.winRate.toFixed(1)}%` : "—"}</strong></span>
+            <span><small>Net PnL</small><strong className={executionStats.net > 0 ? "up" : executionStats.net < 0 ? "down" : ""}>{executionStats.closed ? `${executionStats.net >= 0 ? "+" : "-"}$${Math.abs(executionStats.net).toLocaleString("en-US", { maximumFractionDigits: 0 })}` : "—"}</strong></span>
           </div>
         </header>
         {successfulExecutions.length ? (
