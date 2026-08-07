@@ -69,6 +69,9 @@ export type TradeHistoryRow = {
   tpUnitsLabel: string;
   slUnitsLabel: string;
   lockedSize?: boolean;
+  executionAccountCount?: number;
+  executionProviderLabel?: string;
+  executionStatus?: "disabled" | "dry_run" | "failed" | "placed" | "skipped";
 };
 
 type TradeHistoryProps = {

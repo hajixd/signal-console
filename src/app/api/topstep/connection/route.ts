@@ -50,10 +50,6 @@ function normalizeText(value: unknown): string {
   return typeof value === "string" ? value.trim() : "";
 }
 
-function adminRequired() {
-  return jsonStatus({ accounts: [], autoTradePaused: true, connected: false, error: "Admin access required.", persisted: false }, { status: 401 });
-}
-
 function connectionIdFromRequest(request: NextRequest): string | undefined {
   const value = request.cookies.get(TOPSTEP_PROJECTX_CONNECTION_COOKIE)?.value?.trim();
   return value && /^[0-9A-Za-z_-]{16,80}$/.test(value) ? value : undefined;
@@ -67,7 +63,17 @@ async function authorizeConnectionMutation(request: NextRequest, connectionId: s
   if (isAdminAuthorized(request)) return null;
   const suppliedCode = normalizeText(accessCode) || normalizeText(request.nextUrl.searchParams.get("accessCode"));
   if (suppliedCode && await verifyStoredProjectXConnectionAccessCode(connectionId, suppliedCode)) return null;
-  return adminRequired();
+  return jsonStatus(
+    {
+      accounts: [],
+      autoTradePaused: true,
+      connected: false,
+      connections: await getStoredProjectXConnectionSummaries(),
+      error: suppliedCode ? "Incorrect current folder code." : "Enter the current folder code.",
+      persisted: false
+    },
+    { status: 401 }
+  );
 }
 
 async function requireCurrentConnectionAccessCode(connectionId: string, accessCode: unknown) {
@@ -463,9 +469,7 @@ export async function DELETE(request: NextRequest) {
   const accountIdValue = Number(request.nextUrl.searchParams.get("accountId"));
   const accountId = Number.isInteger(accountIdValue) ? accountIdValue : undefined;
   if (connectionId) {
-    const unauthorized = request.nextUrl.searchParams.get("connectionId")
-      ? await requireCurrentConnectionAccessCode(connectionId, request.nextUrl.searchParams.get("accessCode"))
-      : await authorizeConnectionMutation(request, connectionId, request.nextUrl.searchParams.get("accessCode"));
+    const unauthorized = await authorizeConnectionMutation(request, connectionId, request.nextUrl.searchParams.get("accessCode"));
     if (unauthorized) return unauthorized;
     if (typeof accountId === "number") {
       const connection = await removeStoredProjectXConnectionAccount(connectionId, accountId);

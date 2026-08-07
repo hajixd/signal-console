@@ -6,6 +6,7 @@ import { useAutoTradeAdminMode } from "@/components/auto-trading/use-auto-trade-
 type Theme = "dark" | "light";
 type ThemeToggleProps = {
   initialTheme?: Theme;
+  onThemeChange?: (theme: Theme) => void | Promise<void>;
   persistTheme?: (theme: Theme) => Promise<void>;
 };
 
@@ -23,7 +24,7 @@ function readTheme(): Theme {
   return stored === "light" ? "light" : "dark";
 }
 
-export default function ThemeToggle({ initialTheme, persistTheme }: ThemeToggleProps) {
+export default function ThemeToggle({ initialTheme, onThemeChange, persistTheme }: ThemeToggleProps) {
   const [theme, setTheme] = useState<Theme>("dark");
   const [, startSavingTheme] = useTransition();
   const canPersistTheme = useAutoTradeAdminMode();
@@ -40,6 +41,7 @@ export default function ThemeToggle({ initialTheme, persistTheme }: ThemeToggleP
     applyTheme(nextTheme);
     window.localStorage.setItem(STORAGE_KEY, nextTheme);
     window.localStorage.removeItem(LEGACY_STORAGE_KEY);
+    if (onThemeChange) void onThemeChange(nextTheme);
     if (canPersistTheme && persistTheme) {
       startSavingTheme(() => {
         void persistTheme(nextTheme).catch((error) => console.error("Failed to save theme", error));
@@ -55,8 +57,8 @@ export default function ThemeToggle({ initialTheme, persistTheme }: ThemeToggleP
       aria-pressed={theme === "light"}
       aria-label={theme === "light" ? "Switch to dark mode" : "Switch to light mode"}
     >
-      <span className="themeLightLabel">Light</span>
-      <span className="themeDarkLabel">Dark</span>
+      <span className="themeIcon themeIconLight" aria-hidden="true">☀</span>
+      <span className="themeIcon themeIconDark" aria-hidden="true">☾</span>
     </button>
   );
 }

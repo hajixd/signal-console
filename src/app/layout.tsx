@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import AppSessionProvider from "@/components/auth/app-session-provider";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -16,7 +17,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
           }}
         />
       </head>
-      <body>{children}</body>
+      <body><AppSessionProvider>{children}</AppSessionProvider></body>
     </html>
   );
 }

@@ -1,15 +1,12 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import Link from "next/link";
-import AutoTradeAccountGate from "@/components/auto-trading/auto-trade-account-gate";
-import AutoTradeAccountModeSwitch from "@/components/auto-trading/auto-trade-account-mode-switch";
+import AccountToolbar from "@/components/auth/account-toolbar";
 import ResearchBacktestTable, { type ResearchBacktestMetrics } from "@/components/research/research-backtest-table";
 import ResearchIdeaForm, { type ResearchAssetOption } from "@/components/research/research-idea-form";
 import ResearchIdeaList from "@/components/research/research-idea-list";
 import ResearchStrategyList from "@/components/research/research-strategy-list";
 import AutoRefresh from "@/components/ui/auto-refresh";
 import LocalDateTime from "@/components/ui/local-date-time";
-import ThemeToggle from "@/components/ui/theme-toggle";
 import { getDatasetStatus } from "@/lib/live-config";
 
 export const dynamic = "force-dynamic";
@@ -1036,14 +1033,10 @@ export default async function ResearchPage() {
   return (
     <main className="terminal">
       <AutoRefresh intervalMs={60_000} />
-      <AutoTradeAccountGate />
       <section className="terminal-workspace marketView researchWorkspace" id="research">
         <div className="marketTopShell researchTopShell">
           <div className="marketTopRow">
-            <AutoTradeAccountModeSwitch />
-            <Link className="autoTradeResearchLink marketTopNavLink" href="/">
-              Main Page
-            </Link>
+            <AccountToolbar />
           </div>
         </div>
 
@@ -1052,9 +1045,6 @@ export default async function ResearchPage() {
             <p className="terminal-kicker">Research</p>
             <h1>Research</h1>
             <span>{currentActivity(snapshot)}</span>
-          </div>
-          <div className="terminal-actions">
-            <ThemeToggle />
           </div>
         </header>
 

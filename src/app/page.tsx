@@ -1,10 +1,9 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
-import Link from "next/link";
 import ChallengeReplay from "@/components/challenge/challenge-replay";
-import AutoTradeAccountGate from "@/components/auto-trading/auto-trade-account-gate";
-import AutoTradeAccountModeSwitch from "@/components/auto-trading/auto-trade-account-mode-switch";
-import AutoTradingConnectionDrawer from "@/components/auto-trading/auto-trading-connection-drawer";
+import AccountToolbar from "@/components/auth/account-toolbar";
+import AutoTradingConnectionPanel from "@/components/auto-trading/auto-trading-connection-panel";
+import HomeAccountsPanel from "@/components/home/home-accounts-panel";
 import SelectedStrategyStats from "@/components/strategies/selected-strategy-stats";
 import StrategyStatsTabs from "@/components/strategies/strategy-stats-tabs";
 import StrategySelector from "@/components/strategies/strategy-selector";
@@ -15,10 +14,8 @@ import { type TradeChartTimeframe } from "@/components/trades/trade-price-chart"
 import AutoRefresh from "@/components/ui/auto-refresh";
 import DashboardSectionTabs, { type DashboardSectionTab } from "@/components/ui/dashboard-section-tabs";
 import LocalDateTime from "@/components/ui/local-date-time";
-import MarketSwitchTabs from "@/components/ui/market-switch-tabs";
 import MobileTradingDashboard from "@/components/ui/mobile-trading-dashboard";
 import TestAlertButton from "@/components/ui/test-alert-button";
-import ThemeToggle from "@/components/ui/theme-toggle";
 import {
   loadChallengeReplayCache,
   syncActiveMarket,
@@ -118,11 +115,6 @@ type TradeHistoryBarRange = {
   start: number;
   startTime?: string;
 };
-
-const MARKET_TABS: Array<{ key: MarketTabKey; label: string }> = [
-  { key: "forex", label: "Forex" },
-  { key: "futures", label: "Futures" }
-];
 
 type StrategyOption = {
   assetKey: string;
@@ -2024,7 +2016,10 @@ export default async function Home({ searchParams }: HomeProps) {
         dollarsPerPricePoint: priceUnit > 0 ? (dollarPerUnit(trade.symbol, trade.entryPrice) * sizeMultiplier) / priceUnit : 0,
         tpUnitsLabel: `${fmtNumber(trade.tpUnits)} ${unitLabel}`,
         slUnitsLabel: `${fmtNumber(trade.slUnits)} ${unitLabel}`,
-        lockedSize: true
+        lockedSize: true,
+        executionAccountCount: Math.max(1, trade.autoTradeOrders?.filter((order) => order.status === "placed").length ?? 0),
+        executionProviderLabel: trade.autoTradeOrders?.find((order) => order.status === "placed")?.providerName,
+        executionStatus: trade.autoTradeStatus
       };
     });
   const visibleLiveHistoryRows = [...liveHistoryRows]
@@ -2038,6 +2033,7 @@ export default async function Home({ searchParams }: HomeProps) {
       ...row,
       indexLabel: fmtNumber(index + 1)
     }));
+  const successfulExecutionRows = visibleLiveHistoryRows.filter((row) => row.executionStatus === "placed");
   const liveHistoryOpenCount = visibleLiveHistoryRows.filter((row) => row.exitReasonLabel === "Still Open").length;
   const liveHistoryClosedCount = visibleLiveHistoryRows.length - liveHistoryOpenCount;
   const activeMarketLiveBasketTrades = visibleLiveHistoryRows
@@ -2397,6 +2393,18 @@ export default async function Home({ searchParams }: HomeProps) {
   const persistChallengeRules = syncChallengeRulesForMarket.bind(null, activeMarket);
   const dashboardSectionTabs: DashboardSectionTab[] = [
     {
+      icon: "home",
+      id: "home",
+      label: "Home",
+      meta: "Accounts & presence"
+    },
+    {
+      icon: "autotrade",
+      id: "autotrade",
+      label: "Auto-Trade",
+      meta: "Execution accounts"
+    },
+    {
       icon: "strategies",
       id: "strategies",
       label: "Strategies",
@@ -2461,19 +2469,11 @@ export default async function Home({ searchParams }: HomeProps) {
     />
     <main className="terminal desktopTradingWorkspace">
       <AutoRefresh />
-      <AutoTradeAccountGate />
       <section className="terminal-workspace marketView" id="signals" key={activeMarket}>
         <div className="marketTopShell">
           <div className="marketTopRow">
-            <AutoTradeAccountModeSwitch />
-            <Link className="autoTradeResearchLink marketTopNavLink" href="/tour">
-              Product Tour
-            </Link>
-            <Link className="autoTradeResearchLink marketTopNavLink" href="/research">
-              Research
-            </Link>
+            <AccountToolbar activeMarket={activeMarket} persistActiveMarket={syncActiveMarket} persistTheme={syncTheme} />
           </div>
-          <MarketSwitchTabs activeMarket={activeMarket} tabs={MARKET_TABS} persistActiveMarket={syncActiveMarket} />
         </div>
         <header className="terminal-head">
           <div className="asset-meta">
@@ -2481,7 +2481,6 @@ export default async function Home({ searchParams }: HomeProps) {
             <h1>Trading Bot</h1>
           </div>
           <div className="terminal-actions">
-            <ThemeToggle initialTheme={liveConfig.dashboardSettings.theme} persistTheme={syncTheme} />
             {telegramGroupLink ? (
               <a className="terminal-action" href={telegramGroupLink} target="_blank" rel="noreferrer">
                 Open Telegram group
@@ -2502,7 +2501,6 @@ export default async function Home({ searchParams }: HomeProps) {
               </span>
             )}
             <TestAlertButton channelLabel="Discord" disabled={!discordConfigured} sendTestAlert={sendTestDiscordAlert} />
-            <AutoTradingConnectionDrawer market={executionMarket} />
           </div>
           <div className="mobileDashboardSnapshot" aria-label="Mobile dashboard snapshot">
             <div>
@@ -2529,6 +2527,19 @@ export default async function Home({ searchParams }: HomeProps) {
         </header>
 
         <DashboardSectionTabs tabs={dashboardSectionTabs}>
+        <section className="backtest-card home-dashboard-card" id="home">
+          <HomeAccountsPanel executionRows={successfulExecutionRows} />
+        </section>
+        <section className="backtest-card autoTradeDashboardCard" id="autotrade">
+          <div className="backtest-card-head autoTradeDashboardHead">
+            <div>
+              <h2>Auto-Trading Accounts</h2>
+              <p>Connect, monitor, and manage the accounts that receive live executions.</p>
+            </div>
+            <span className="count-pill">{marketLabel(executionMarket)}</span>
+          </div>
+          <AutoTradingConnectionPanel market={executionMarket} />
+        </section>
         <section className="backtest-card strategies-card" id="strategies">
           <div className="backtest-card-head">
             <div>

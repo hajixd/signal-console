@@ -3,7 +3,10 @@
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Fragment, FormEvent, type RefObject, useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { createPortal } from "react-dom";
+import { useAppSession } from "@/components/auth/app-session-provider";
+import AccountToolbar from "@/components/auth/account-toolbar";
 import AutoTradingConnectionPanel from "@/components/auto-trading/auto-trading-connection-panel";
+import HomeAccountsPanel from "@/components/home/home-accounts-panel";
 import {
   AUTO_TRADE_ACCOUNT_MODE_CHANGE_EVENT,
   cleanAccessCode,
@@ -26,7 +29,7 @@ import LocalDateTime, { formatLocalDateTimeParts } from "@/components/ui/local-d
 import { type AutoTradeMarket } from "@/lib/auto-trade-platforms";
 import { type TradeChartBar, type TradeChartTimeframe } from "@/components/trades/trade-price-chart";
 
-type MobileTradingTab = "history" | "alerts" | "cluster" | "strategies" | "sync" | "autotrade" | "settings";
+type MobileTradingTab = "home" | "history" | "alerts" | "cluster" | "strategies" | "sync" | "autotrade" | "settings";
 
 type MobileTradingDashboardProps = {
   activeMarket: AutoTradeMarket;
@@ -111,13 +114,14 @@ const LEGACY_THEME_STORAGE_KEY = "signal-console-theme";
 const TRADE_CHART_CONTEXT_CANDLES = 240;
 
 const mobileTabs: Array<{ id: MobileTradingTab; label: string }> = [
-  { id: "alerts", label: "Alerts" },
-  { id: "history", label: "History" },
+  { id: "home", label: "Home" },
+  { id: "alerts", label: "Alert" },
+  { id: "history", label: "Hist" },
   { id: "cluster", label: "Map" },
-  { id: "strategies", label: "Strategies" },
+  { id: "strategies", label: "Strat" },
   { id: "sync", label: "Sync" },
   { id: "autotrade", label: "Auto" },
-  { id: "settings", label: "Settings" }
+  { id: "settings", label: "Set" }
 ];
 
 function useLocalHeaderParts(value?: string): { date: string; time: string } {
@@ -263,6 +267,13 @@ function mobileHistoryDayLabel(dayKey: string): string {
 }
 
 function MobileWorkspaceTabIcon({ tab }: { tab: MobileTradingTab }) {
+  if (tab === "home") {
+    return (
+      <svg viewBox="0 0 24 24" aria-hidden>
+        <path d="m4.5 11.2 7.5-6 7.5 6v7.3h-5v-4.8h-5v4.8h-5Z" fill="none" stroke="currentColor" strokeLinejoin="round" strokeWidth="1.7" />
+      </svg>
+    );
+  }
   if (tab === "cluster") {
     return (
       <svg viewBox="0 0 24 24" aria-hidden>
@@ -763,6 +774,7 @@ function MobileThemeModeControl({
   const [theme, setTheme] = useState<MobileTheme>(() => initialTheme ?? "dark");
   const [, startSavingTheme] = useTransition();
   const canPersistTheme = useAutoTradeAdminMode();
+  const { setUser, user } = useAppSession();
 
   useEffect(() => {
     const currentTheme = readMobileTheme(initialTheme);
@@ -778,6 +790,15 @@ function MobileThemeModeControl({
     applyMobileTheme(nextTheme);
     window.localStorage.setItem(THEME_STORAGE_KEY, nextTheme);
     window.localStorage.removeItem(LEGACY_THEME_STORAGE_KEY);
+    void fetch("/api/auth/settings", {
+      method: "PATCH",
+      credentials: "same-origin",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ theme: nextTheme })
+    }).then(async (response) => {
+      const payload = (await response.json().catch(() => ({}))) as { user?: typeof user };
+      if (response.ok && payload.user) setUser(payload.user);
+    }).catch(() => undefined);
     if (canPersistTheme && persistTheme) {
       startSavingTheme(() => {
         void persistTheme(nextTheme).catch((error) => console.error("Failed to save theme", error));
@@ -1004,7 +1025,8 @@ export default function MobileTradingDashboard({
   syncSummary,
   telegramGroupLink
 }: MobileTradingDashboardProps) {
-  const [activeTab, setActiveTab] = useState<MobileTradingTab>("alerts");
+  const { logout, user } = useAppSession();
+  const [activeTab, setActiveTab] = useState<MobileTradingTab>("home");
   const [activeTradeId, setActiveTradeId] = useState<string | null>(null);
   const [chartState, setChartState] = useState<MobileChartState>({ status: "idle", bars: [] });
   const [loadingLabel, setLoadingLabel] = useState<string | null>(null);
@@ -1034,7 +1056,9 @@ export default function MobileTradingDashboard({
   }, [activeTab, adjustedHistoryRows, adjustedLiveAlertRows, latestHistoryTradeAt, latestLiveAlertAt]);
   const headerParts = useLocalHeaderParts(headerTime);
   const tabTitle =
-    activeTab === "alerts"
+    activeTab === "home"
+      ? "Home"
+    : activeTab === "alerts"
       ? "Live Alerts"
       : activeTab === "strategies"
         ? "Strategies"
@@ -1197,7 +1221,9 @@ export default function MobileTradingDashboard({
 
         <div className="mobile-phone-body">
           <div className="mobile-phone-panel" key={activeTab}>
-            {activeTab === "history" ? (
+            {activeTab === "home" ? (
+              <HomeAccountsPanel compact executionRows={adjustedLiveAlertRows} />
+            ) : activeTab === "history" ? (
               <MobileHistoryList
                 emptyTitle="No trades yet"
                 kicker="Trade History"
@@ -1230,16 +1256,16 @@ export default function MobileTradingDashboard({
             ) : (
               <section className="mobile-phone-card mobile-phone-card-settings">
                 <div className="mobile-phone-account-card">
-                  <div className="mobile-phone-account-avatar">TB</div>
+                  <div className="mobile-phone-account-avatar">{user.username.slice(0, 2).toUpperCase()}</div>
                   <div className="mobile-phone-account-copy">
-                    <span>Signed In</span>
-                    <strong>Trading Bot</strong>
-                    <small>{marketLabel}</small>
+                    <span>Logged in as</span>
+                    <strong>{user.username}</strong>
+                    <small>{user.role} · {marketLabel}</small>
                   </div>
+                  <AccountToolbar compact persistTheme={persistTheme} />
                 </div>
 
                 <div className="mobile-phone-action-list">
-                  <MobileAccountModeControl showLoading={showLoading} />
                   <MobileMarketModeControl
                     activeMarket={activeMarket}
                     hideLoading={hideLoading}
@@ -1247,6 +1273,10 @@ export default function MobileTradingDashboard({
                     showLoading={showLoading}
                   />
                   <MobileThemeModeControl initialTheme={initialTheme} persistTheme={persistTheme} showLoading={showLoading} />
+                  <button className="mobile-phone-action-btn" onClick={() => void logout()} type="button">
+                    <span className="mobile-phone-action-icon" aria-hidden="true">↪</span>
+                    <span><strong>Log out</strong><small>End this secure session</small></span>
+                  </button>
                   {telegramGroupLink ? (
                     <a className="mobile-phone-action-btn mobile-phone-telegram-link" href={telegramGroupLink} rel="noreferrer" target="_blank">
                       <span className="mobile-phone-action-icon"><MobileTelegramIcon /></span>

@@ -1235,6 +1235,17 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
     openProjectXFolderContextMenu(event, folder);
   }
 
+  function openProjectXFolderActionMenu(event: MouseEvent<HTMLButtonElement>, folder: ProjectXConnectionSummary) {
+    event.preventDefault();
+    event.stopPropagation();
+    const rect = event.currentTarget.getBoundingClientRect();
+    setFolderContextMenu({
+      folder,
+      x: Math.max(8, Math.min(rect.right - 172, window.innerWidth - 180)),
+      y: Math.min(rect.bottom + 5, window.innerHeight - 92)
+    });
+  }
+
   function requestProjectXFolderAction(action: ProjectXFolderAction, folder: ProjectXConnectionSummary, account?: ProjectXAccount) {
     setFolderContextMenu(null);
     setPendingProjectXFolder(null);
@@ -1417,7 +1428,8 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
     if (!pendingProjectXFolderAction || isSubmittingFolderAction) return;
 
     const currentCode = cleanAccessCode(folderActionCurrentCode, FOLDER_UNLOCK_CODE_MAX_LENGTH);
-    if (currentCode.length !== FOLDER_UNLOCK_CODE_MAX_LENGTH) {
+    const adminFolderDelete = pendingProjectXFolderAction.action === "delete" && accountMode === "Admin";
+    if (!adminFolderDelete && currentCode.length !== FOLDER_UNLOCK_CODE_MAX_LENGTH) {
       setFolderActionError("Enter the current 5-digit folder password.");
       return;
     }
@@ -1449,7 +1461,8 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
         setUnlockedProjectXFolderCodes((current) => ({ ...current, [folder.id]: newCode }));
         setActiveProjectXFolderId(folder.id);
       } else {
-        const params = new URLSearchParams({ accessCode: currentCode, connectionId: folder.id });
+        const params = new URLSearchParams({ connectionId: folder.id });
+        if (!adminFolderDelete) params.set("accessCode", currentCode);
         if (action === "remove-account" && pendingProjectXFolderAction.account) params.set("accountId", String(pendingProjectXFolderAction.account.id));
         const response = await fetch(`/api/topstep/connection?${params.toString()}`, { method: "DELETE" });
         const nextStatus = await parseConnectionResponse(response);
@@ -1981,24 +1994,29 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
                 </span>
                 <strong>{folderDisplayName(pendingProjectXFolderAction.folder)}</strong>
                 {pendingProjectXFolderAction.account ? <span>{pendingProjectXFolderAction.account.name}</span> : null}
+                {pendingProjectXFolderAction.action === "delete" && accountMode === "Admin" ? (
+                  <small className="autoTradeFolderDeleteWarning">Confirm deletion of this folder and its saved connection. This cannot be undone.</small>
+                ) : null}
               </div>
-              <label>
-                <span>Current password</span>
-                <input
-                  autoComplete="current-password"
-                  inputMode="numeric"
-                  maxLength={FOLDER_UNLOCK_CODE_MAX_LENGTH}
-                  onChange={(event) => {
-                    setFolderActionCurrentCode(cleanAccessCode(event.target.value, FOLDER_UNLOCK_CODE_MAX_LENGTH));
-                    setFolderActionError("");
-                  }}
-                  pattern="[0-9]*"
-                  ref={folderActionCurrentInputRef}
-                  required
-                  type="password"
-                  value={folderActionCurrentCode}
-                />
-              </label>
+              {pendingProjectXFolderAction.action === "delete" && accountMode === "Admin" ? null : (
+                <label>
+                  <span>Current password</span>
+                  <input
+                    autoComplete="current-password"
+                    inputMode="numeric"
+                    maxLength={FOLDER_UNLOCK_CODE_MAX_LENGTH}
+                    onChange={(event) => {
+                      setFolderActionCurrentCode(cleanAccessCode(event.target.value, FOLDER_UNLOCK_CODE_MAX_LENGTH));
+                      setFolderActionError("");
+                    }}
+                    pattern="[0-9]*"
+                    ref={folderActionCurrentInputRef}
+                    required
+                    type="password"
+                    value={folderActionCurrentCode}
+                  />
+                </label>
+              )}
               {pendingProjectXFolderAction.action === "edit-password" ? (
                 <label>
                   <span>New password</span>
@@ -2203,31 +2221,33 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
           ) : (
             <>
               {projectXAccountFolders.map((folder) => (
-                <button
-                  className="topstepAccountFolderButton"
-                  key={folder.id}
-                  onClick={() => requestProjectXFolder(folder)}
-                  onContextMenu={(event) => openProjectXFolderContextMenu(event, folder)}
-                  onMouseDown={(event) => handleProjectXFolderRightMouseDown(event, folder)}
-                  type="button"
-                >
-                  <span className="topstepFolderIcon" aria-hidden="true" />
-                  <div className="topstepFolderIdentity">
-                    <span>Name</span>
-                    <strong>{folderDisplayName(folder)}</strong>
-                  </div>
-                  <div className="topstepFolderMeta provider">
-                    <span>Provider</span>
-                    <strong>ProjectX</strong>
-                  </div>
-                  <div className="topstepFolderMeta platform">
-                    <span>Platform</span>
-                    <strong>TopstepX / Futures</strong>
-                  </div>
-                  <div className="topstepFolderCount">
-                    <strong>{accountCountLabel(folder.accounts.length)}</strong>
-                  </div>
-                </button>
+                <div className="topstepAccountFolderRow" key={folder.id}>
+                  <button
+                    className="topstepAccountFolderButton"
+                    onClick={() => requestProjectXFolder(folder)}
+                    onContextMenu={(event) => openProjectXFolderContextMenu(event, folder)}
+                    onMouseDown={(event) => handleProjectXFolderRightMouseDown(event, folder)}
+                    type="button"
+                  >
+                    <span className="topstepFolderIcon" aria-hidden="true" />
+                    <div className="topstepFolderIdentity">
+                      <span>Name</span>
+                      <strong>{folderDisplayName(folder)}</strong>
+                    </div>
+                    <div className="topstepFolderMeta provider">
+                      <span>Provider</span>
+                      <strong>ProjectX</strong>
+                    </div>
+                    <div className="topstepFolderMeta platform">
+                      <span>Platform</span>
+                      <strong>TopstepX / Futures</strong>
+                    </div>
+                    <div className="topstepFolderCount">
+                      <strong>{accountCountLabel(folder.accounts.length)}</strong>
+                    </div>
+                  </button>
+                  <button aria-label={`Manage ${folderDisplayName(folder)}`} className="topstepFolderMenuButton" onClick={(event) => openProjectXFolderActionMenu(event, folder)} type="button">•••</button>
+                </div>
               ))}
               {visibleSavedConnections.map((connection) => {
                 const provider = providers.find((item) => item.id === connection.id);
