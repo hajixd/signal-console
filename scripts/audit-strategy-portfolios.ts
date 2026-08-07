@@ -27,6 +27,12 @@ type WeightedPortfolioMetrics = PortfolioMetrics & {
   minimumScale: number;
 };
 
+function numericArg(flag: string, fallback: number): number {
+  const raw = process.argv.find((value) => value.startsWith(`${flag}=`))?.slice(flag.length + 1);
+  const value = Number(raw);
+  return Number.isFinite(value) && value > 1 ? value : fallback;
+}
+
 function tradePnlDollars(trade: BacktestTrade, relativeScale = 1): number {
   const size = (trade.sizeMultiplierHint ?? 1) * relativeScale;
   const riskUnits = Math.abs(trade.slUnits) + Math.abs(trade.costUnits);
@@ -124,6 +130,7 @@ function rounded(metrics: PortfolioMetrics): Record<string, string | number | un
 }
 
 async function main(): Promise<void> {
+  const targetProfitFactor = numericArg("--target-pf", 3);
   const [catalog, config] = await Promise.all([buildLocalStrategyCatalog(), getLiveConfig()]);
   const validationCsv = readFileSync(path.join(process.cwd(), "Research", "reports", "stress_validation_catalog.csv"), "utf8")
     .trim()
@@ -161,11 +168,11 @@ async function main(): Promise<void> {
     const robustMetrics = portfolioMetrics(catalog.trades, robustIdsForMarket);
     const robustWide = maximumProfitFactorAtBoundedScales(catalog.trades, robustIdsForMarket, 0.1, 3);
     output[market] = {
-      target: { profitFactor: 3, tradesPerDay: 5 },
+      target: { profitFactor: targetProfitFactor, tradesPerDay: 5 },
       targetFeasibleWithinCatalogAtWideScales:
-        availableWide.profitFactor >= 3 && availableMetrics.tradesPerCalendarDay >= 5,
+        availableWide.profitFactor >= targetProfitFactor && availableMetrics.tradesPerCalendarDay >= 5,
       targetFeasibleWithStressValidatedStrategiesAtWideScales:
-        robustWide.profitFactor >= 3 && robustMetrics.tradesPerCalendarDay >= 5,
+        robustWide.profitFactor >= targetProfitFactor && robustMetrics.tradesPerCalendarDay >= 5,
       available: rounded(availableMetrics),
       availableBoundedScaleUpperBound: rounded(maximumProfitFactorAtBoundedScales(catalog.trades, available)),
       availableWideScaleUpperBound: rounded(availableWide),

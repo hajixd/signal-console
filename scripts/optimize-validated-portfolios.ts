@@ -15,7 +15,7 @@ import {
 } from "../src/lib/live-config";
 
 const DEVELOPMENT_END_MS = Date.UTC(2025, 0, 1);
-const FULL_PORTFOLIO_PF_TARGET = 3;
+const DEFAULT_FULL_PORTFOLIO_PF_TARGET = 3;
 const DEFAULT_DEVELOPMENT_PF_TARGET = 3.25;
 const REPORT_ROOT = path.join(process.cwd(), "Research", "reports");
 
@@ -352,6 +352,7 @@ function reportFor(
   fullyValidatedIds: Set<string>,
   watchTier: WatchTier,
   developmentTarget: number,
+  fullTarget: number,
   range?: LiveConfig["customScaleRanges"][DashboardMarket]
 ): PortfolioReport {
   const marketIds = new Set(
@@ -362,7 +363,7 @@ function reportFor(
   const qualifiedIds = [...eligibleIds].filter((id) => marketIds.has(id));
   const developmentTrades = catalog.trades.filter((trade) => Date.parse(trade.entryTime) < DEVELOPMENT_END_MS);
   const sealedHoldoutTrades = catalog.trades.filter((trade) => Date.parse(trade.entryTime) >= DEVELOPMENT_END_MS);
-  const holdoutTarget = watchTier === "all" ? 3 : 1;
+  const holdoutTarget = watchTier === "all" ? fullTarget : 1;
   const annualTarget = 1;
   const edges = qualifiedIds.map((id) => {
     const developmentValues = developmentTrades
@@ -403,7 +404,7 @@ function reportFor(
   const selectedStrategyIds = maximumFrequencySubset(
     edges,
     developmentTarget,
-    FULL_PORTFOLIO_PF_TARGET,
+    fullTarget,
     holdoutTarget,
     annualTarget
   ).sort();
@@ -415,7 +416,7 @@ function reportFor(
   const validation = {
     eligibleStrategiesStressScreened: selectedStrategyIds.every((id) => eligibleIds.has(id)),
     everySelectedStrategyFullyValidated: selectedWatchStrategyIds.length === 0,
-    fullProfitFactorMet: full.profitFactor >= FULL_PORTFOLIO_PF_TARGET,
+    fullProfitFactorMet: full.profitFactor >= fullTarget,
     holdoutPositive: sealedHoldout.profitFactor >= holdoutTarget && sealedHoldout.worstCalendarYearPf >= annualTarget,
     holdoutSignificant:
       sealedHoldout.simpleBootstrapPfP05 >= 0.9 &&
@@ -443,7 +444,7 @@ function reportFor(
     development,
     developmentProfitFactorTarget: developmentTarget,
     full,
-    fullProfitFactorTarget: FULL_PORTFOLIO_PF_TARGET,
+    fullProfitFactorTarget: fullTarget,
     holdoutProfitFactorTarget: holdoutTarget,
     market,
     qualifiedStrategyCount: qualifiedIds.length,
@@ -473,7 +474,13 @@ async function main(): Promise<void> {
     : process.argv.includes("--include-stable-watch")
       ? "stable"
       : "none";
-  const developmentTarget = numericArg("--development-pf", DEFAULT_DEVELOPMENT_PF_TARGET);
+  const requestedDevelopmentTarget = numericArg("--development-pf", DEFAULT_DEVELOPMENT_PF_TARGET);
+  const fullTarget = numericArg("--portfolio-pf", DEFAULT_FULL_PORTFOLIO_PF_TARGET);
+  const developmentTarget = process.argv.some((value) => value.startsWith("--development-pf="))
+    ? requestedDevelopmentTarget
+    : process.argv.some((value) => value.startsWith("--portfolio-pf="))
+      ? fullTarget
+      : requestedDevelopmentTarget;
   const catalog = await buildLocalStrategyCatalog();
   const screened = stressScreenedIds(watchTier);
   let config = await getLiveConfig();
@@ -485,19 +492,21 @@ async function main(): Promise<void> {
       screened.fullyValidated,
       watchTier,
       developmentTarget,
+      fullTarget,
       config.customScaleRanges[market]
     )
   );
   if (apply && !reports.every((report) => report.validation.passed)) {
-    throw new Error("The optimized portfolios did not clear the PF 3 and sealed-holdout gates; live configuration was not changed.");
+    throw new Error(`The optimized portfolios did not clear the PF ${fullTarget} and sealed-holdout gates; live configuration was not changed.`);
   }
   if (apply) {
     for (const report of reports) config = withPortfolio(config, report);
     await saveLiveConfig(config);
     for (const report of reports) report.applied = true;
   }
+  const targetToken = Number.isInteger(fullTarget) ? String(fullTarget) : String(fullTarget).replace(".", "_");
   for (const report of reports) {
-    writeFileSync(path.join(REPORT_ROOT, `maximum_frequency_pf3_${report.market}.json`), `${JSON.stringify(report, null, 2)}\n`, "utf8");
+    writeFileSync(path.join(REPORT_ROOT, `maximum_frequency_pf${targetToken}_${report.market}.json`), `${JSON.stringify(report, null, 2)}\n`, "utf8");
   }
   console.log(JSON.stringify(reports, null, 2));
 }
