@@ -2052,9 +2052,8 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
               </div>
             </form>
           ) : projectXAccountFolders.length === 0 && visibleSavedConnections.length === 0 ? (
-            <div className="topstepAccountEmpty autoTradeEmptyState">
+            <div className="topstepAccountEmpty">
               <strong>No accounts connected</strong>
-              <span>Use Add Account to connect the account that should receive live executions.</span>
             </div>
           ) : pendingProjectXFolder ? (
             <form className="autoTradeFolderGate" onClick={() => folderCodeInputRef.current?.focus()} onSubmit={handleUnlockProjectXFolder}>

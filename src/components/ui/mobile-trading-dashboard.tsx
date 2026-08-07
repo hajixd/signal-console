@@ -1222,7 +1222,7 @@ export default function MobileTradingDashboard({
         <div className="mobile-phone-body">
           <div className="mobile-phone-panel" key={activeTab}>
             {activeTab === "home" ? (
-              <HomeAccountsPanel compact executionRows={adjustedLiveAlertRows} onManageAccounts={() => setActiveTab("autotrade")} />
+              <HomeAccountsPanel compact executionRows={adjustedLiveAlertRows} />
             ) : activeTab === "history" ? (
               <MobileHistoryList
                 emptyTitle="No trades yet"
