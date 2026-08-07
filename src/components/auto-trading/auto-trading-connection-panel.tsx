@@ -2224,9 +2224,6 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
                     <span>Platform</span>
                     <strong>TopstepX / Futures</strong>
                   </div>
-                  <div className="topstepFolderCount">
-                    <strong>{accountCountLabel(folder.accounts.length)}</strong>
-                  </div>
                 </button>
               ))}
               {visibleSavedConnections.map((connection) => {

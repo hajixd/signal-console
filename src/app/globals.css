@@ -2654,8 +2654,8 @@ html[data-theme="light"] .themeDarkLabel {
   min-width: 0;
   width: 100%;
   display: grid;
-  grid-template-columns: auto minmax(0, 1.4fr) minmax(0, 0.85fr) minmax(0, 0.95fr) auto;
-  grid-template-areas: "icon identity provider platform count";
+  grid-template-columns: auto minmax(0, 1.4fr) minmax(0, 0.85fr) minmax(0, 0.95fr);
+  grid-template-areas: "icon identity provider platform";
   align-items: center;
   gap: 0.62rem;
   border: 1px solid rgba(255, 255, 255, 0.08);
@@ -2740,8 +2740,7 @@ html[data-theme="light"] .themeDarkLabel {
 }
 
 .topstepFolderIdentity,
-.topstepFolderMeta,
-.topstepFolderCount {
+.topstepFolderMeta {
   min-width: 0;
   display: grid;
   gap: 0.16rem;
@@ -2759,15 +2758,9 @@ html[data-theme="light"] .themeDarkLabel {
   grid-area: platform;
 }
 
-.topstepFolderCount {
-  grid-area: count;
-  justify-items: end;
-}
-
 .topstepFolderPageHead strong,
 .topstepFolderIdentity strong,
-.topstepFolderMeta strong,
-.topstepFolderCount strong {
+.topstepFolderMeta strong {
   min-width: 0;
   overflow: hidden;
   color: rgba(255, 255, 255, 0.9);
@@ -3340,16 +3333,12 @@ html[data-theme="light"] .themeDarkLabel {
 }
 
 .topstepDrawerPanel .topstepAccountFolderButton {
-  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-columns: auto minmax(0, 1fr);
   grid-template-areas:
-    "icon identity count"
+    "icon identity"
     ". provider provider"
     ". platform platform";
   align-items: start;
-}
-
-.topstepDrawerPanel .topstepFolderCount {
-  align-self: center;
 }
 
 .topstepDrawerPanel .topstepFolderMeta {
@@ -9788,8 +9777,7 @@ html[data-theme="light"] .topstepFolderIcon {
 
 html[data-theme="light"] .topstepFolderPageHead strong,
 html[data-theme="light"] .topstepFolderIdentity strong,
-html[data-theme="light"] .topstepFolderMeta strong,
-html[data-theme="light"] .topstepFolderCount strong {
+html[data-theme="light"] .topstepFolderMeta strong {
   color: rgba(15, 23, 42, 0.9);
 }
 
@@ -13906,7 +13894,6 @@ html[data-theme="light"] .tradeReplaySlider input {
   .autoTradeFolderGate strong,
   .topstepFolderIdentity strong,
   .topstepFolderMeta strong,
-  .topstepFolderCount strong,
   .topstepConnectionMeta strong,
   .topstepConnectionState small,
   .topstepAccountEmpty span {
