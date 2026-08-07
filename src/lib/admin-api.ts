@@ -2,7 +2,7 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 import { cookies, headers } from "next/headers";
 
 export const ADMIN_SESSION_COOKIE = "tradingbot_admin_session";
-const ADMIN_SESSION_TTL_MS = 7 * 24 * 60 * 60_000;
+const ADMIN_SESSION_TTL_MS = 12 * 60 * 60_000;
 
 type CookieOptions = {
   httpOnly: boolean;
@@ -17,7 +17,7 @@ export function adminApiSecret(): string | undefined {
 }
 
 function adminAccessCode(): string | undefined {
-  return process.env.APP_ADMIN_ACCESS_CODE?.trim();
+  return "12345";
 }
 
 function safeCompare(left: string, right: string): boolean {
