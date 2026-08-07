@@ -20274,3 +20274,408 @@ html[data-theme="light"] .homeRangePicker button:hover:not(.is-active) {
     stroke-dashoffset: 0;
   }
 }
+
+/* Production home density overrides must remain last in the cascade. */
+.robinhoodHome {
+  gap: 0.68rem;
+  padding: 0.7rem;
+}
+
+.robinhoodHomeGrid {
+  height: 390px;
+  grid-template-columns: minmax(0, 1.58fr) minmax(290px, 0.68fr);
+  align-items: stretch;
+  gap: 0.68rem;
+}
+
+.homePortfolioOverview {
+  min-height: 0;
+  height: 390px;
+  border-radius: 10px;
+  background:
+    radial-gradient(circle at 72% -18%, rgba(0, 200, 5, 0.045), transparent 22rem),
+    rgba(255, 255, 255, 0.009);
+  box-shadow: none;
+  padding: 0.92rem 1rem 0;
+}
+
+.homePortfolioHeading h2 {
+  margin-top: 0.34rem;
+  font-size: clamp(1.9rem, 2.7vw, 2.55rem);
+}
+
+.homePortfolioHeading p {
+  margin-top: 0.34rem;
+  font-size: 0.69rem;
+}
+
+.homePortfolioPulse {
+  border: 0;
+  background: transparent;
+  padding: 0.24rem 0;
+}
+
+.homeEquityChart {
+  min-height: 0;
+  flex-basis: 190px;
+  padding-top: 0.55rem;
+}
+
+.homeEquityChart::after {
+  inset: 0.6rem 0 0.3rem;
+  opacity: 0.16;
+}
+
+.homeRangePicker {
+  min-height: 34px;
+  gap: clamp(0.18rem, 1.1vw, 0.78rem);
+}
+
+.homeRangePicker button {
+  min-width: 31px;
+  min-height: 25px;
+  border-radius: 5px;
+  font-size: 0.55rem;
+}
+
+.homeRangePicker button:hover,
+.homeRangePicker button.is-active {
+  background: rgba(96, 165, 250, 0.12);
+  color: #bdd7ff;
+}
+
+.homeBuyingPower {
+  min-height: 44px;
+  font-size: 0.66rem;
+}
+
+.homeBuyingPower::after {
+  content: none;
+}
+
+.homeBuyingPower strong {
+  font-size: 0.71rem;
+}
+
+.homePortfolioRail {
+  height: 390px;
+  grid-template-rows: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 0.68rem;
+}
+
+.homePortfolioRail article,
+.homeExecutionHistory {
+  border-radius: 10px;
+  box-shadow: none;
+}
+
+.homePortfolioRail article > header {
+  min-height: 46px;
+  padding: 0 0.66rem;
+}
+
+.homePortfolioRail h3,
+.homeExecutionHistory h3 {
+  font-size: 0.78rem;
+}
+
+.homePortfolioRail article > header span,
+.homeExecutionHistory > header > div:first-child > span {
+  font-size: 0.49rem;
+}
+
+.homePortfolioRail .homeAccountList,
+.homePortfolioRail .homeOnlineList {
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.homePortfolioRail .homeRows,
+.homeOnlineList .codenamesOnlineList {
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.homePortfolioRail .homeAccountRow,
+.codenamesOnlineRow {
+  width: 100%;
+  min-height: 43px;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  gap: 0.48rem;
+  border: 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.045);
+  border-radius: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  padding: 0.34rem 0.6rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.homePortfolioRail .homeAccountRow:hover,
+.homePortfolioRail .homeAccountRow.is-selected,
+.codenamesOnlineRow:hover,
+.codenamesOnlineRow.is-selected {
+  border-color: rgba(255, 255, 255, 0.045);
+  background: rgba(96, 165, 250, 0.045);
+  padding-left: 0.6rem;
+  transform: none;
+}
+
+.homePlatformMark {
+  width: 27px;
+  height: 27px;
+  border-radius: 7px;
+  font-size: 0.5rem;
+}
+
+.homeAccountRow > div:nth-child(2),
+.homeFriendIdentity {
+  min-width: 0;
+  display: grid;
+  gap: 0.07rem;
+}
+
+.homeAccountRow > div:nth-child(2) strong,
+.homeFriendIdentity strong {
+  overflow: hidden;
+  color: #edf2f9;
+  font-size: 0.64rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.homeAccountRow > div:nth-child(2) small,
+.homeFriendIdentity small {
+  overflow: hidden;
+  color: var(--text-faint);
+  font-size: 0.49rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.homeAccountValue > strong {
+  font-size: 0.58rem;
+}
+
+.homeStatus,
+.codenamesOnlineRole {
+  font-size: 0.46rem;
+}
+
+.codenamesOnlineList {
+  gap: 0;
+  padding: 0.28rem 0;
+}
+
+.codenamesOnlineSection {
+  padding: 0.17rem 0.6rem 0.3rem;
+  font-size: 0.46rem;
+}
+
+.codenamesOnlineRole {
+  border: 0;
+  background: transparent;
+  color: #83ca9d;
+  padding: 0;
+}
+
+.codenamesOnlineRow.is-offline .codenamesOnlineDot {
+  border-color: rgba(132, 145, 166, 0.16);
+  background: #657084;
+  box-shadow: none;
+}
+
+.codenamesOnlineRow.is-offline .codenamesOnlineRole {
+  color: var(--text-faint);
+}
+
+.homeExecutionHistory > header {
+  min-height: 56px;
+  padding: 0.48rem 0.66rem;
+}
+
+.homeExecutionHeaderTools {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.68rem;
+}
+
+.homeExecutionFilters {
+  display: flex;
+  align-items: center;
+  gap: 0.1rem;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 7px;
+  background: rgba(255, 255, 255, 0.015);
+  padding: 0.12rem;
+}
+
+.homeExecutionFilters button {
+  min-height: 23px;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--text-faint);
+  padding: 0 0.42rem;
+  font: inherit;
+  font-size: 0.48rem;
+  font-weight: 850;
+  cursor: pointer;
+}
+
+.homeExecutionFilters button:hover,
+.homeExecutionFilters button.is-active {
+  background: rgba(96, 165, 250, 0.11);
+  color: #b8d4fb;
+}
+
+.homeExecutionStats {
+  display: flex;
+  align-items: center;
+  gap: 0;
+}
+
+.homeExecutionStats > span {
+  min-width: 56px;
+  min-height: 29px;
+  padding: 0 0.48rem;
+}
+
+.homeExecutionStats small {
+  font-size: 0.42rem;
+}
+
+.homeExecutionStats strong {
+  font-size: 0.59rem;
+}
+
+.homeExecutionColumns {
+  min-height: 27px;
+}
+
+.homeExecutionRow {
+  min-height: 47px;
+  padding-top: 0.32rem;
+  padding-bottom: 0.32rem;
+}
+
+html[data-theme="light"] .homePortfolioOverview {
+  background: #ffffff;
+}
+
+html[data-theme="light"] .homeAccountRow > div:nth-child(2) strong,
+html[data-theme="light"] .homeFriendIdentity strong {
+  color: #111827;
+}
+
+@media (max-width: 980px) {
+  .robinhoodHomeGrid {
+    height: auto;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .homePortfolioOverview {
+    height: 370px;
+  }
+
+  .homePortfolioRail {
+    height: 330px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-rows: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 760px) {
+  .robinhoodHome {
+    padding: 0;
+  }
+
+  .homePortfolioOverview {
+    height: 342px;
+    padding: 0.76rem 0.7rem 0;
+  }
+
+  .homeEquityChart {
+    flex-basis: 168px;
+  }
+
+  .homePortfolioRail {
+    height: auto;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: repeat(2, minmax(150px, auto));
+  }
+
+  .homeExecutionHeaderTools {
+    width: 100%;
+    align-items: stretch;
+    flex-direction: column;
+    gap: 0.42rem;
+  }
+
+  .homeExecutionFilters {
+    align-self: flex-start;
+  }
+
+  .homeExecutionStats {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .homeExecutionStats > span {
+    min-width: 0;
+    flex: 1;
+    padding: 0 0.34rem;
+  }
+}
+
+.homeAccountGroup {
+  min-width: 0;
+}
+
+.homeAccountGroup + .homeAccountGroup {
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.homeAccountGroupHead {
+  min-height: 27px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  background: rgba(255, 255, 255, 0.017);
+  padding: 0 0.6rem;
+}
+
+.homeAccountGroupHead strong {
+  overflow: hidden;
+  color: #9fc3f4;
+  font-size: 0.51rem;
+  font-weight: 900;
+  letter-spacing: 0.025em;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.homeAccountGroupHead span {
+  color: var(--text-faint);
+  font-size: 0.45rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+html[data-theme="light"] .homeAccountGroup + .homeAccountGroup {
+  border-color: rgba(31, 45, 70, 0.08);
+}
+
+html[data-theme="light"] .homeAccountGroupHead {
+  background: rgba(31, 45, 70, 0.025);
+}
+
+html[data-theme="light"] .homeAccountGroupHead strong {
+  color: #315f9f;
+}
