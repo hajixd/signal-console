@@ -642,19 +642,21 @@ async function recentProviderBars({
   context,
   entryTime,
   exitTime,
+  isOpen,
   requestedTimeframe
 }: {
   asset: NonNullable<ReturnType<typeof assetForSymbol>>;
   context: number;
   entryTime: string | null;
   exitTime: string | null;
+  isOpen: boolean;
   requestedTimeframe: string;
 }): Promise<{ bars: MarketBar[]; timeframe: DataTimeframe; replayBars?: MarketBar[]; replayTimeframe?: DataTimeframe } | null> {
   const entrySeconds = secondsFromSearchTime(entryTime);
-  const exitSeconds = secondsFromSearchTime(exitTime);
+  const nowSeconds = Math.floor(Date.now() / 1000);
+  const exitSeconds = isOpen ? nowSeconds : secondsFromSearchTime(exitTime);
   if (entrySeconds == null || exitSeconds == null) return null;
 
-  const nowSeconds = Math.floor(Date.now() / 1000);
   const tradeStart = Math.min(entrySeconds, exitSeconds);
   const tradeEnd = Math.max(entrySeconds, exitSeconds);
   if (tradeEnd < nowSeconds - LIVE_FALLBACK_MAX_AGE_SECONDS || tradeStart > nowSeconds + 24 * 60 * 60) return null;
@@ -668,7 +670,9 @@ async function recentProviderBars({
   const requestedContextSeconds = context * timeframeSeconds(resolvedTimeframe);
   const contextSeconds = Math.min(7 * 24 * 60 * 60, Math.max(3 * 60 * 60, requestedContextSeconds));
   const windowStart = Math.max(nowSeconds - LIVE_FALLBACK_MAX_AGE_SECONDS, tradeStart - contextSeconds);
-  const windowEnd = tradeEnd + contextSeconds;
+  const windowEnd = isOpen
+    ? nowSeconds + timeframeSeconds(sourceTimeframe)
+    : tradeEnd + contextSeconds;
   const providerStart = windowStart - timeframeSeconds(sourceTimeframe);
   let sourceBars: Array<{ time: string; open: number; high: number; low: number; close: number; volume?: number }> = [];
   let primaryProviderError: unknown;
@@ -735,6 +739,7 @@ export async function GET(request: Request) {
   const exitIndex = Math.max(0, Math.round(numericParam(searchParams.get("exitIndex"), entryIndex)));
   const context = contextCandles(searchParams.get("context"));
   const timeframe = chartTimeframe(searchParams.get("timeframe"));
+  const isOpen = searchParams.get("open") === "1";
   const asset = assetForSymbol(symbol);
   const normalizedMarket = market.trim().toLowerCase();
 
@@ -778,21 +783,17 @@ export async function GET(request: Request) {
     return null;
   };
 
-  const exactLocalPayload = await localPayloadForCandidate(candidates[0]);
-  if (exactLocalPayload) {
-    return NextResponse.json(exactLocalPayload);
-  }
-
-  try {
+  const providerPayload = async () => {
     const providerResult = await recentProviderBars({
       asset,
       context,
       entryTime: searchParams.get("entryTime"),
       exitTime: searchParams.get("exitTime"),
+      isOpen,
       requestedTimeframe: timeframe
     });
     if (providerResult) {
-      return NextResponse.json({
+      return {
         bars: providerResult.bars,
         fallback: providerResult.timeframe !== timeframe,
         liveSource: true,
@@ -800,10 +801,36 @@ export async function GET(request: Request) {
         replayTimeframe: providerResult.replayTimeframe,
         requestedTimeframe: timeframe,
         timeframe: providerResult.timeframe
-      });
+      };
     }
-  } catch (error) {
-    console.warn("Trade chart live fallback failed", error instanceof Error ? error.message : error);
+    return null;
+  };
+
+  if (isOpen) {
+    try {
+      const livePayload = await providerPayload();
+      if (livePayload) {
+        return NextResponse.json(livePayload, {
+          headers: { "Cache-Control": "no-store, max-age=0" }
+        });
+      }
+    } catch (error) {
+      console.warn("Open trade chart live source failed", error instanceof Error ? error.message : error);
+    }
+  }
+
+  const exactLocalPayload = await localPayloadForCandidate(candidates[0]);
+  if (exactLocalPayload) {
+    return NextResponse.json(exactLocalPayload, isOpen ? { headers: { "Cache-Control": "no-store, max-age=0" } } : undefined);
+  }
+
+  if (!isOpen) {
+    try {
+      const livePayload = await providerPayload();
+      if (livePayload) return NextResponse.json(livePayload);
+    } catch (error) {
+      console.warn("Trade chart live fallback failed", error instanceof Error ? error.message : error);
+    }
   }
 
   for (const candidate of candidates.slice(1)) {

@@ -6078,6 +6078,25 @@ html[data-theme="light"] .tradeClusterNode.live {
   stroke-width: 1;
 }
 
+.backtest-trade-mini-managed-path {
+  fill: none;
+  pointer-events: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2;
+  vector-effect: non-scaling-stroke;
+}
+
+.backtest-trade-mini-managed-path.tp {
+  stroke: rgba(52, 211, 153, 0.88);
+}
+
+.backtest-trade-mini-managed-path.sl {
+  filter: drop-shadow(0 0 3px rgba(248, 113, 113, 0.22));
+  stroke: rgba(248, 113, 113, 0.96);
+  stroke-width: 2.35;
+}
+
 .backtest-trade-mini-level-label {
   font-size: 10px;
 }

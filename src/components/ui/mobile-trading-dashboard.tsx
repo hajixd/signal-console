@@ -18,7 +18,7 @@ import {
   useStrategyEdits
 } from "@/components/strategies/strategy-edits-store";
 import { adjustTradeHistoryRows } from "@/components/trades/adjust-trade-history-rows";
-import { BacktestTradeMiniChart, type TradeHistoryRow } from "@/components/trades/trade-history";
+import { BacktestTradeMiniChart, withOpenTradeChartMark, type TradeHistoryRow } from "@/components/trades/trade-history";
 import LocalDateTime, { formatLocalDateTimeParts } from "@/components/ui/local-date-time";
 import { type AutoTradeMarket } from "@/lib/auto-trade-platforms";
 import { type TradeChartBar, type TradeChartTimeframe } from "@/components/trades/trade-price-chart";
@@ -106,6 +106,7 @@ type MobileLoadingController = {
 const THEME_STORAGE_KEY = "trading-bot-theme";
 const LEGACY_THEME_STORAGE_KEY = "signal-console-theme";
 const TRADE_CHART_CONTEXT_CANDLES = 240;
+const OPEN_TRADE_CHART_REFRESH_MS = 10_000;
 
 const mobileTabs: Array<{ id: MobileTradingTab; label: string }> = [
   { id: "alerts", label: "Alerts" },
@@ -799,6 +800,7 @@ function MobileTradeChartModal({
   onClose: () => void;
   trade: TradeHistoryRow;
 }) {
+  const displayedTrade = withOpenTradeChartMark(trade, chartState.bars);
   return createPortal(
     <div
       className="mobile-trade-modal-backdrop"
@@ -807,11 +809,11 @@ function MobileTradeChartModal({
         if (event.target === event.currentTarget) onClose();
       }}
     >
-      <section className="mobile-trade-modal" role="dialog" aria-modal="true" aria-label={`${displaySymbol(trade)} trade chart`} ref={modalRef}>
+      <section className="mobile-trade-modal" role="dialog" aria-modal="true" aria-label={`${displaySymbol(displayedTrade)} trade chart`} ref={modalRef}>
         <div className="mobile-trade-modal-head">
           <div>
-            <span>{trade.sideLabel} / {trade.exitReasonLabel}</span>
-            <strong>{displaySymbol(trade)}</strong>
+            <span>{displayedTrade.sideLabel} / {displayedTrade.exitReasonLabel}</span>
+            <strong>{displaySymbol(displayedTrade)}</strong>
           </div>
           <button type="button" onClick={onClose} aria-label="Close trade chart" ref={closeButtonRef}>
             Close
@@ -819,34 +821,34 @@ function MobileTradeChartModal({
         </div>
         <div className="mobile-trade-modal-stats">
           <span>
-            <small>{trade.isEstimatedPnl ? "Estimated PnL" : trade.isOpen ? "Open PnL" : "PnL"}</small>
-            <strong className={trade.pnlClassName}>{trade.isOpen && !trade.hasCurrentMark ? "--" : trade.pnlLabel}</strong>
+            <small>{displayedTrade.isEstimatedPnl ? "Estimated PnL" : displayedTrade.isOpen ? "Open PnL" : "PnL"}</small>
+            <strong className={displayedTrade.pnlClassName}>{displayedTrade.isOpen && !displayedTrade.hasCurrentMark ? "--" : displayedTrade.pnlLabel}</strong>
           </span>
           <span>
             <small>Size</small>
-            <strong>{trade.sizeLabel}</strong>
+            <strong>{displayedTrade.sizeLabel}</strong>
           </span>
           <span>
             <small>Entry</small>
-            <strong>{trade.entryPriceLabel}</strong>
+            <strong>{displayedTrade.entryPriceLabel}</strong>
           </span>
           <span>
-            <small>{trade.isOpen ? "Mark" : "Exit"}</small>
-            <strong>{trade.exitPriceLabel}</strong>
+            <small>{displayedTrade.isOpen ? "Mark" : "Exit"}</small>
+            <strong>{displayedTrade.exitPriceLabel}</strong>
           </span>
         </div>
         <div className="mobile-trade-modal-levels" aria-label="Trade protection levels">
-          <span><small>Take Profit</small><strong className="up">{trade.targetPriceLabel}</strong></span>
-          <span><small>Stop Loss</small><strong className="down">{trade.stopPriceLabel}</strong></span>
+          <span><small>Take Profit</small><strong className="up">{displayedTrade.targetPriceLabel}</strong></span>
+          <span><small>Stop Loss</small><strong className="down">{displayedTrade.stopPriceLabel}</strong></span>
         </div>
-        {trade.isEstimatedPnl && trade.markTime ? (
+        {displayedTrade.isEstimatedPnl && displayedTrade.markTime ? (
           <p className="mobile-trade-modal-note mobile-trade-modal-estimate-note">
-            Estimated from the latest 1-minute asset price at <LocalDateTime value={trade.markTime} fallback={trade.markTime} />.
+            Estimated from the latest 1-minute asset price at <LocalDateTime value={displayedTrade.markTime} fallback={displayedTrade.markTime} />.
           </p>
         ) : null}
         {chartState.message ? <p className="mobile-trade-modal-note">{chartState.message}</p> : null}
         <div className="mobile-trade-mini-chart-wrap">
-          <BacktestTradeMiniChart bars={chartState.bars} compactTooltip isOpen status={chartState.status} trade={trade} />
+          <BacktestTradeMiniChart bars={chartState.bars} compactTooltip isOpen={Boolean(displayedTrade.isOpen)} status={chartState.status} trade={displayedTrade} />
         </div>
       </section>
     </div>,
@@ -996,25 +998,8 @@ export default function MobileTradingDashboard({
       return undefined;
     }
 
-    if (activeTrade.isOpen && !activeTrade.hasCurrentMark) {
-      setChartState({
-        status: "error",
-        bars: [],
-        message: "A current market mark is not available for this unresolved alert, so Korra will not draw a misleading price path."
-      });
-      return undefined;
-    }
-
-    if (activeTrade.isOpen && activeTrade.chartPathAvailable === false) {
-      setChartState({
-        status: "error",
-        bars: [],
-        message: "The estimate is current, but a continuous one-minute chart is not available for this older open alert."
-      });
-      return undefined;
-    }
-
     const controller = new AbortController();
+    const isOpen = Boolean(activeTrade.isOpen);
     const params = new URLSearchParams({
       symbol: activeTrade.symbol,
       market: activeTrade.market ?? "",
@@ -1025,23 +1010,49 @@ export default function MobileTradingDashboard({
       timeframe: activeTrade.sourceTimeframe ?? "1m",
       context: String(TRADE_CHART_CONTEXT_CANDLES)
     });
+    if (isOpen) params.set("open", "1");
 
     setChartState({ status: "loading", bars: [] });
-    fetch(`/api/trade-chart?${params.toString()}`, { signal: controller.signal })
-      .then((response) => (response.ok ? (response.json() as Promise<MobileChartPayload>) : Promise.reject(new Error("Chart unavailable"))))
-      .then((payload) => {
-        const bars = payload.bars ?? [];
-        setChartState({
-          bars,
-          message: payload.error ?? (!bars.length ? "Price movement is not available for this trade." : undefined),
-          status: bars.length ? "ready" : "error"
+    let inFlight = false;
+    const refreshChart = async () => {
+      if (inFlight || controller.signal.aborted) return;
+      inFlight = true;
+      try {
+        const response = await fetch(`/api/trade-chart?${params.toString()}`, {
+          cache: isOpen ? "no-store" : "default",
+          signal: controller.signal
         });
-      })
-      .catch((error: Error) => {
-        if (error.name !== "AbortError") setChartState({ status: "error", bars: [], message: "Price movement unavailable." });
-      });
+        if (!response.ok) throw new Error("Chart unavailable");
+        const payload = (await response.json()) as MobileChartPayload;
+        const bars = payload.bars ?? [];
+        setChartState((current) =>
+          bars.length
+            ? { bars, message: payload.error, status: "ready" }
+            : current.bars.length
+              ? current
+              : {
+                  bars: [],
+                  message: payload.error ?? "Price movement is not available for this trade.",
+                  status: "error"
+                }
+        );
+      } catch (error) {
+        if (!(error instanceof Error && error.name === "AbortError")) {
+          setChartState((current) =>
+            current.bars.length ? current : { status: "error", bars: [], message: "Price movement unavailable." }
+          );
+        }
+      } finally {
+        inFlight = false;
+      }
+    };
 
-    return () => controller.abort();
+    void refreshChart();
+    const intervalId = isOpen ? window.setInterval(() => void refreshChart(), OPEN_TRADE_CHART_REFRESH_MS) : null;
+    return () => {
+      controller.abort();
+      if (intervalId !== null) window.clearInterval(intervalId);
+    };
   }, [activeTrade]);
 
   return (

@@ -15,6 +15,12 @@ import { useAutoTradeAdminMode } from "@/components/auto-trading/use-auto-trade-
 import TradePriceChart, { TRADE_CHART_TIMEFRAMES, type TradeChartBar, type TradeChartTimeframe } from "@/components/trades/trade-price-chart";
 import LocalDateTime from "@/components/ui/local-date-time";
 import { focusedPriceDomain, priceAxisFractionDigits } from "@/lib/chart-scale";
+import {
+  buildManagedLevelStepPath,
+  buildOpenTradeChartPoints,
+  latestOpenTradeMark,
+  resolveOpenTradePathRange
+} from "@/lib/open-trade-chart";
 import { oneMinuteBarsHeld, resolveFirstTradeBracketHit } from "@/lib/trade-bracket-truth";
 import type { TradeManagementEvent } from "@/lib/types";
 
@@ -115,6 +121,7 @@ type CandleMenuState = {
 
 const TRADE_CHART_CONTEXT_CANDLES = 240;
 const TRADE_CHART_CACHE_TTL_MS = 2 * 60_000;
+const OPEN_TRADE_CHART_REFRESH_MS = 10_000;
 const MAX_TRADE_CHART_CACHE_ENTRIES = 48;
 const tradeChartCache = new Map<string, { expiresAt: number; payload: ChartPayload }>();
 
@@ -135,6 +142,13 @@ async function fetchCachedTradeChart(url: string, signal: AbortSignal): Promise<
     tradeChartCache.delete(oldestKey);
   }
   return payload;
+}
+
+async function fetchTradeChart(url: string, signal: AbortSignal, isOpen: boolean): Promise<ChartPayload> {
+  if (!isOpen) return fetchCachedTradeChart(url, signal);
+  const response = await fetch(url, { cache: "no-store", signal });
+  if (!response.ok) throw new Error("Chart unavailable");
+  return (await response.json()) as ChartPayload;
 }
 
 function clamp(value: number, min: number, max: number): number {
@@ -224,7 +238,7 @@ function nearestPositionForAnchor(bars: ChartBar[], indexValue: number, timeValu
   return bestPosition;
 }
 
-function resolvedTradePathRange(
+export function resolvedTradePathRange(
   trade: TradeHistoryRow,
   bars: ChartBar[]
 ): {
@@ -237,8 +251,20 @@ function resolvedTradePathRange(
   start: number;
 } | null {
   const entryPosition = nearestPositionForAnchor(bars, trade.entryIndex, trade.entryTime);
+  if (entryPosition == null || !bars.length) return null;
+
+  const isStillOpen = trade.isOpen ?? trade.exitReasonLabel.trim().toLowerCase().includes("still open");
+  if (isStillOpen) {
+    const openRange = resolveOpenTradePathRange(trade, bars);
+    if (!openRange) return null;
+    return {
+      ...openRange,
+      barsHeld: oneMinuteBarsHeld(openRange.entryTime, openRange.exitTime, openRange.end - openRange.start + 1)
+    };
+  }
+
   const exitPosition = nearestPositionForAnchor(bars, trade.exitIndex, trade.exitTime);
-  if (entryPosition == null || exitPosition == null || !bars.length) return null;
+  if (exitPosition == null) return null;
 
   const fallbackEnd = Math.max(entryPosition, exitPosition);
   const bracketHit = resolveFirstTradeBracketHit(
@@ -576,7 +602,8 @@ function managementMarkerLabel(event: TradeManagementEvent): string {
   return "Limit";
 }
 
-function buildMiniChartPoints(trade: TradeHistoryRow, bars: ChartBar[]): MiniChartPoint[] {
+export function buildMiniChartPoints(trade: TradeHistoryRow, bars: ChartBar[]): MiniChartPoint[] {
+  if (trade.isOpen) return buildOpenTradeChartPoints(trade, bars);
   const resolvedRange = resolvedTradePathRange(trade, bars);
   const entryMs = Date.parse(trade.entryTime);
   const exitMs = Date.parse(resolvedRange?.exitTime ?? trade.exitTime);
@@ -588,6 +615,7 @@ function buildMiniChartPoints(trade: TradeHistoryRow, bars: ChartBar[]): MiniCha
   const exitPosition = nearestPositionForAnchor(bars, trade.exitIndex, trade.exitTime);
 
   if (entryPosition == null || exitPosition == null || !bars.length) {
+    if (trade.isOpen) return [];
     return [
       {
         high: trade.entryPrice,
@@ -669,6 +697,30 @@ function buildMiniChartPoints(trade: TradeHistoryRow, bars: ChartBar[]): MiniCha
   }
 
   return rows.length >= 2 ? rows : [];
+}
+
+export function withOpenTradeChartMark(trade: TradeHistoryRow, bars: ChartBar[]): TradeHistoryRow {
+  if (!trade.isOpen || !bars.length) return trade;
+  const mark = latestOpenTradeMark(trade, bars);
+  if (!mark) return trade;
+  const pnlDollars = mark.pnlDollars;
+  const riskDollars = Math.max(0, Math.abs(trade.riskDollars));
+  const exitPriceLabel = `${trade.exitPriceLabel.trim().startsWith("$") ? "$" : ""}${formatChartPrice(mark.exitPrice)}`;
+  return {
+    ...trade,
+    chartPathAvailable: true,
+    exitPrice: mark.exitPrice,
+    exitPriceLabel,
+    exitTime: mark.exitTime,
+    exitTimeLabel: timeLabel(mark.exitTime),
+    hasCurrentMark: true,
+    isEstimatedPnl: true,
+    markTime: mark.exitTime,
+    pnlClassName: "live-pnl",
+    pnlDollars,
+    pnlLabel: formatSignedMoney(pnlDollars),
+    rMultipleLabel: riskDollars > 0 ? `${(pnlDollars / riskDollars).toFixed(2)}R` : "--"
+  };
 }
 
 export function BacktestTradeMiniChart({
@@ -803,6 +855,7 @@ export function BacktestTradeMiniChart({
       const segments: MiniLevelSegment[] = [];
       const connectors: MiniLevelConnector[] = [];
       const markers: MiniManagementMarker[] = [];
+      const levelPoints = [{ value: initialValue, x: 0 }];
       let currentValue = initialValue;
       let currentX = 0;
       for (const event of orderedManagementEvents(trade).filter(
@@ -814,18 +867,26 @@ export function BacktestTradeMiniChart({
         if (x > currentX) {
           segments.push({ tone, value: currentValue, x1: scaleX(currentX), x2: scaleX(x), y: scaleY(currentValue) });
         }
+        levelPoints.push({ value: nextValue, x });
         connectors.push({ tone, x: scaleX(x), y1: scaleY(currentValue), y2: scaleY(nextValue) });
         markers.push({ label: managementMarkerLabel(event), tone, x: scaleX(x), y: scaleY(nextValue) });
         currentValue = nextValue;
         currentX = x;
       }
       segments.push({ label: type === "edit_tp" ? "TP" : "SL", tone, value: currentValue, x1: scaleX(currentX), x2: scaleX(xMax), y: scaleY(currentValue) });
-      return { connectors, markers, segments };
+      return {
+        connectors,
+        markers,
+        path: buildManagedLevelStepPath(levelPoints, xMax, scaleX, scaleY),
+        segments,
+        tone
+      };
     };
     const targetLevel = buildManagedSegments("edit_tp", trade.targetPrice, "tp");
     const stopLevel = buildManagedSegments("edit_sl", trade.stopPrice, "sl");
     const levelSegments = [...targetLevel.segments, ...stopLevel.segments];
     const levelConnectors = [...targetLevel.connectors, ...stopLevel.connectors];
+    const managedLevelPaths = [targetLevel, stopLevel].map((level) => ({ d: level.path, tone: level.tone }));
     const managementMarkers = [...targetLevel.markers, ...stopLevel.markers];
     const entryLevel: MiniLevelSegment = {
       label: trade.entryType === "limit" ? "Limit Entry" : "Entry",
@@ -862,6 +923,7 @@ export function BacktestTradeMiniChart({
       entryLevel,
       levelConnectors,
       levelSegments,
+      managedLevelPaths,
       limitEntryLine,
       linePath,
       maeIndex,
@@ -1076,6 +1138,15 @@ export function BacktestTradeMiniChart({
             y1={connector.y1}
             y2={connector.y2}
             className={`backtest-trade-mini-level ${connector.tone} connector`}
+          />
+        ))}
+
+        {plot.managedLevelPaths.map((level) => (
+          <path
+            key={`managed-level-path-${level.tone}`}
+            className={`backtest-trade-mini-managed-path ${level.tone}`}
+            d={level.d}
+            fill="none"
           />
         ))}
 
@@ -1303,7 +1374,8 @@ export function TradeHistoryCalendar({ rows }: TradeHistoryProps) {
   useEffect(() => {
     if (!expandedTrade) return undefined;
     const existing = chartStatesRef.current[expandedTrade.id];
-    if (existing && existing.status !== "idle" && existing.status !== "error") return undefined;
+    const isOpen = Boolean(expandedTrade.isOpen);
+    if (!isOpen && existing && existing.status !== "idle" && existing.status !== "error") return undefined;
 
     const controller = new AbortController();
     const params = new URLSearchParams({
@@ -1316,32 +1388,54 @@ export function TradeHistoryCalendar({ rows }: TradeHistoryProps) {
       symbol: expandedTrade.symbol,
       timeframe: expandedTrade.sourceTimeframe ?? "1m"
     });
+    if (isOpen) params.set("open", "1");
 
-    setChartStates((current) => ({
-      ...current,
-      [expandedTrade.id]: { status: "loading", bars: [] }
-    }));
-    fetch(`/api/trade-chart?${params.toString()}`, { signal: controller.signal })
-      .then((response) => (response.ok ? (response.json() as Promise<ChartPayload>) : Promise.reject(new Error("Chart unavailable"))))
-      .then((payload) => {
+    if (!existing?.bars.length) {
+      setChartStates((current) => ({
+        ...current,
+        [expandedTrade.id]: { status: "loading", bars: [] }
+      }));
+    }
+
+    let inFlight = false;
+    const refreshChart = async () => {
+      if (inFlight || controller.signal.aborted) return;
+      inFlight = true;
+      try {
+        const response = await fetch(`/api/trade-chart?${params.toString()}`, {
+          cache: isOpen ? "no-store" : "default",
+          signal: controller.signal
+        });
+        if (!response.ok) throw new Error("Chart unavailable");
+        const payload = (await response.json()) as ChartPayload;
+        const nextBars = payload.replayBars?.length ? payload.replayBars : payload.bars ?? [];
         setChartStates((current) => ({
           ...current,
-          [expandedTrade.id]: {
-            status: "ready",
-            bars: payload.replayBars?.length ? payload.replayBars : payload.bars ?? [],
-            message: payload.error
-          }
+          [expandedTrade.id]: nextBars.length
+            ? { status: "ready", bars: nextBars, message: payload.error }
+            : current[expandedTrade.id]?.bars.length
+              ? current[expandedTrade.id]!
+              : { status: "error", bars: [], message: payload.error ?? "Price movement unavailable." }
         }));
-      })
-      .catch((error: Error) => {
-        if (error.name === "AbortError") return;
+      } catch (error) {
+        if (error instanceof Error && error.name === "AbortError") return;
         setChartStates((current) => ({
           ...current,
-          [expandedTrade.id]: { status: "error", bars: [], message: error.message }
+          [expandedTrade.id]: current[expandedTrade.id]?.bars.length
+            ? current[expandedTrade.id]!
+            : { status: "error", bars: [], message: error instanceof Error ? error.message : "Chart unavailable" }
         }));
-      });
+      } finally {
+        inFlight = false;
+      }
+    };
 
-    return () => controller.abort();
+    void refreshChart();
+    const intervalId = isOpen ? window.setInterval(() => void refreshChart(), OPEN_TRADE_CHART_REFRESH_MS) : null;
+    return () => {
+      controller.abort();
+      if (intervalId !== null) window.clearInterval(intervalId);
+    };
   }, [expandedTrade]);
 
   return (
@@ -1420,10 +1514,11 @@ export function TradeHistoryCalendar({ rows }: TradeHistoryProps) {
         </div>
 
         <div className="backtest-calendar-day-list">
-          {selectedDayTrades.map((trade) => {
-            const isExpanded = expandedTradeId === trade.id;
+          {selectedDayTrades.map((sourceTrade) => {
+            const isExpanded = expandedTradeId === sourceTrade.id;
+            const chartState = chartStates[sourceTrade.id] ?? { status: "idle", bars: [] };
+            const trade = withOpenTradeChartMark(sourceTrade, chartState.bars);
             const durationMinutes = tradeDurationMinutes(trade);
-            const chartState = chartStates[trade.id] ?? { status: "idle", bars: [] };
             const displayedModelName = isRestricted ? "Admin only" : trade.modelName;
             const visibleSymbol = displaySymbol(trade);
             const resolvedDurationLabel = tradePathDurationLabel(trade, chartState.bars);
@@ -1535,7 +1630,7 @@ export function TradeHistoryCalendar({ rows }: TradeHistoryProps) {
                         <strong>Price movement</strong>
                         {chartState.message ? <span>{chartState.message}</span> : null}
                       </div>
-                      <BacktestTradeMiniChart bars={chartState.bars} isOpen={isExpanded} status={chartState.status} trade={trade} />
+                      <BacktestTradeMiniChart bars={chartState.bars} isOpen={Boolean(trade.isOpen)} status={chartState.status} trade={trade} />
                     </div>
                   </div>
                 ) : null}
@@ -2059,7 +2154,10 @@ export default function TradeHistory({ rows }: TradeHistoryProps) {
     [activeTradeId, rows]
   );
   const activeSourceBars = chartState.sourceBars?.length ? chartState.sourceBars : chartState.bars;
-  const activeDisplayTrade = activeTrade;
+  const activeDisplayTrade = useMemo(
+    () => (activeTrade ? withOpenTradeChartMark(activeTrade, activeSourceBars) : null),
+    [activeSourceBars, activeTrade]
+  );
   const activeChartTrade = useMemo(
     () =>
       activeDisplayTrade
@@ -2175,9 +2273,10 @@ export default function TradeHistory({ rows }: TradeHistoryProps) {
     }
 
     const controller = new AbortController();
+    const isOpen = Boolean(activeTrade.isOpen);
     const sourceTimeframe = activeTrade.sourceTimeframe ?? "1m";
-    const chartParams = (timeframeValue: TradeChartTimeframe) =>
-      new URLSearchParams({
+    const chartParams = (timeframeValue: TradeChartTimeframe) => {
+      const params = new URLSearchParams({
         symbol: activeTrade.symbol,
         market: activeTrade.market ?? "",
         entryIndex: String(activeTrade.entryIndex),
@@ -2187,21 +2286,27 @@ export default function TradeHistory({ rows }: TradeHistoryProps) {
         timeframe: timeframeValue,
         context: String(TRADE_CHART_CONTEXT_CANDLES)
       });
+      if (isOpen) params.set("open", "1");
+      return params;
+    };
     const fetchChartPayload = (timeframeValue: TradeChartTimeframe) =>
-      fetchCachedTradeChart(`/api/trade-chart?${chartParams(timeframeValue).toString()}`, controller.signal);
+      fetchTradeChart(`/api/trade-chart?${chartParams(timeframeValue).toString()}`, controller.signal, isOpen);
 
     setChartState({ status: "loading", bars: [] });
-    Promise.all([
-      fetchChartPayload(chartTimeframe),
-      chartTimeframe === sourceTimeframe
-        ? Promise.resolve(null)
-        : fetchChartPayload(sourceTimeframe).catch((error: Error) => {
-            if (error.name !== "AbortError") console.warn(error);
-            return null;
-          })
-    ])
-      .then(
-        ([payload, sourcePayload]) => {
+    let inFlight = false;
+    const refreshChart = async () => {
+      if (inFlight || controller.signal.aborted) return;
+      inFlight = true;
+      try {
+        const [payload, sourcePayload] = await Promise.all([
+          fetchChartPayload(chartTimeframe),
+          chartTimeframe === sourceTimeframe
+            ? Promise.resolve(null)
+            : fetchChartPayload(sourceTimeframe).catch((error: Error) => {
+                if (error.name !== "AbortError") console.warn(error);
+                return null;
+              })
+        ]);
           const resolvedTimeframe = payload.timeframe && TRADE_CHART_TIMEFRAMES.some((option) => option.value === payload.timeframe)
             ? payload.timeframe
             : chartTimeframe;
@@ -2209,24 +2314,39 @@ export default function TradeHistory({ rows }: TradeHistoryProps) {
             payload.requestedTimeframe && TRADE_CHART_TIMEFRAMES.some((option) => option.value === payload.requestedTimeframe)
               ? payload.requestedTimeframe
               : chartTimeframe;
-          setChartState({
-            status: "ready",
-            bars: payload.bars ?? [],
-            replayBars: payload.replayBars,
-            replayTimeframe: payload.replayTimeframe,
-            sourceBars: sourcePayload?.bars ?? payload.bars ?? [],
-            fallback: Boolean(payload.fallback),
-            message: payload.error,
-            requestedTimeframe,
-            timeframe: resolvedTimeframe
-          });
+        const bars = payload.bars ?? [];
+        setChartState((current) =>
+          bars.length
+            ? {
+                status: "ready",
+                bars,
+                replayBars: payload.replayBars,
+                replayTimeframe: payload.replayTimeframe,
+                sourceBars: sourcePayload?.bars ?? bars,
+                fallback: Boolean(payload.fallback),
+                message: payload.error,
+                requestedTimeframe,
+                timeframe: resolvedTimeframe
+              }
+            : current.bars.length
+              ? current
+              : { status: "error", bars: [], message: payload.error }
+        );
+      } catch (error) {
+        if (!(error instanceof Error && error.name === "AbortError")) {
+          setChartState((current) => (current.bars.length ? current : { status: "error", bars: [] }));
         }
-      )
-      .catch((error: Error) => {
-        if (error.name !== "AbortError") setChartState({ status: "error", bars: [] });
-      });
+      } finally {
+        inFlight = false;
+      }
+    };
 
-    return () => controller.abort();
+    void refreshChart();
+    const intervalId = isOpen ? window.setInterval(() => void refreshChart(), OPEN_TRADE_CHART_REFRESH_MS) : null;
+    return () => {
+      controller.abort();
+      if (intervalId !== null) window.clearInterval(intervalId);
+    };
   }, [
     activeTrade?.entryIndex,
     activeTrade?.entryTime,
@@ -2234,6 +2354,7 @@ export default function TradeHistory({ rows }: TradeHistoryProps) {
     activeTrade?.exitTime,
     activeTrade?.id,
     activeTrade?.market,
+    activeTrade?.isOpen,
     activeTrade?.sourceTimeframe,
     activeTrade?.symbol,
     chartTimeframe
