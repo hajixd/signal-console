@@ -1734,11 +1734,16 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
         ) : (
           <>
             {canManageAutoTrade ? (
-              <button type="button" onClick={() => {
-                setAccountDisplayName("");
-                setIsAddingAccount(true);
-              }}>
-                Add Account
+              <button
+                type="button"
+                disabled={market === "forex" && mt5ConnectionMode !== "credential_bridge"}
+                onClick={() => {
+                  setAccountDisplayName("");
+                  setIsAddingAccount(true);
+                }}
+                title={market === "forex" && mt5ConnectionMode !== "credential_bridge" ? "Korra's central MT5 connection is being completed." : undefined}
+              >
+                {market === "forex" && mt5ConnectionMode !== "credential_bridge" ? "MT5 Setup Pending" : "Add Account"}
               </button>
             ) : null}
             <button type="button" disabled={isChecking || isConnecting || market !== "futures"} onClick={() => refreshConnection()}>
@@ -1858,9 +1863,9 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
                   <strong>Use the MT5 credentials from {selectedFirm.label}</strong>
                   <span>
                     {mt5ConnectionMode === "credential_bridge"
-                      ? "Enter the login number, master trading password, and exact server from your prop-firm credentials. Korra verifies and encrypts them, then detects the account name, balance, lot limits, and broker symbol names automatically. No EA or personal terminal setup is required."
-                      : "Enter the login number, master trading password, and exact server from your prop-firm credentials. The secure credential service must be online before an EA-free account can be verified."}
-                    {" "}Do not use the investor or read-only password.
+                      ? "Enter the login number, master trading password, and exact broker server. Korra handles the connection centrally—there is nothing to download or install."
+                      : "Korra's central MT5 connection is being completed. You will not need to download an EA or configure a Connection ID."}
+                    {mt5ConnectionMode === "credential_bridge" ? " Do not use the investor or read-only password." : ""}
                   </span>
                 </div>
               ) : null}
@@ -1914,8 +1919,15 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
                   value={genericAccessCode}
                 />
               </label>
-              <button type="submit" disabled={isConnecting}>
-                {isConnecting ? "Connecting..." : selectedProvider.id === "mt5_ea" ? "Link MT5 Account" : "Connect Account"}
+              <button
+                type="submit"
+                disabled={isConnecting || (selectedProvider.id === "mt5_ea" && mt5ConnectionMode !== "credential_bridge")}
+              >
+                {isConnecting
+                  ? "Connecting..."
+                  : selectedProvider.id === "mt5_ea"
+                    ? mt5ConnectionMode === "credential_bridge" ? "Connect MT5 Account" : "MT5 Connection Pending"
+                    : "Connect Account"}
               </button>
             </form>
           ) : (
@@ -2187,6 +2199,9 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
               {visibleSavedConnections.map((connection) => {
                 const provider = providers.find((item) => item.id === connection.providerId);
                 const connectionReady = autoTradeProviderFullyFunctioning(connection.providerId);
+                const managedConnectionReady = connectionReady && (
+                  connection.providerId !== "mt5_ea" || connection.executionMode === "credential_bridge"
+                );
                 const testKey = providerTestKey(connection.providerId, connection.id);
                 const testState = autoTradeTests[testKey];
                 const isTesting = testState?.status === "running";
@@ -2210,7 +2225,7 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
                         <strong>{connection.accountName ?? connection.accountId ?? "--"}</strong>
                       </div>
                       <div>
-                        <span>{connection.providerId === "mt5_ea" ? "Connection ID" : "Account ID"}</span>
+                        <span>{connection.providerId === "mt5_ea" ? "MT5 Login" : "Account ID"}</span>
                         <strong>{connection.eaConnectionId ?? connection.accountId ?? "--"}</strong>
                       </div>
                       <div>
@@ -2219,37 +2234,36 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
                       </div>
                       <div>
                         <span>Status</span>
-                        <strong className={`topstepStatusValue status ${connectionReady ? (connection.paused ? "skipped" : "sent") : "skipped"}`}>
-                          <span aria-hidden="true" className={connectionReady ? (connection.paused ? "statusDot orange" : "statusDot green") : "statusDot gray"} />
-                          {connectionReady ? (connection.paused ? "Paused" : "Connected") : "Limited"}
+                        <strong className={`topstepStatusValue status ${managedConnectionReady ? (connection.paused ? "skipped" : "sent") : "skipped"}`}>
+                          <span aria-hidden="true" className={managedConnectionReady ? (connection.paused ? "statusDot orange" : "statusDot green") : "statusDot gray"} />
+                          {managedConnectionReady ? (connection.paused ? "Paused" : "Connected") : connection.providerId === "mt5_ea" ? "Central setup pending" : "Limited"}
                         </strong>
                       </div>
                     </div>
                     {canManageAutoTrade ? (
                       <div className="topstepAccountControls">
-                        {connection.providerId === "mt5_ea" && connection.executionMode !== "credential_bridge" ? (
-                          <a className="mt5EaDownloadLink" download href="/mt5/KorraMT5ExecutionEA.mq5">
-                            Download EA
-                          </a>
-                        ) : null}
-                        <button
-                          className={connection.paused ? "playButton" : "pauseButton"}
-                          type="button"
-                          disabled={isUpdatingPaused || isDisconnecting || !connectionReady}
-                          onClick={() => handleGenericPaused(connection, !connection.paused)}
-                        >
-                          {isUpdatingPaused ? "Updating..." : connection.paused ? "Play" : "Pause"}
-                        </button>
-                        {canTestAutoTrade ? (
-                          <button
-                            className="testButton"
-                            type="button"
-                            disabled={isTesting || isUpdatingPaused || isDisconnecting || connection.paused || !connectionReady}
-                            onClick={() => handleGenericTest(connection)}
-                            title={connection.paused ? "Resume this account before testing." : "Send a live TP/SL test order."}
-                          >
-                            {isTesting ? "Testing..." : "Test"}
-                          </button>
+                        {managedConnectionReady ? (
+                          <>
+                            <button
+                              className={connection.paused ? "playButton" : "pauseButton"}
+                              type="button"
+                              disabled={isUpdatingPaused || isDisconnecting}
+                              onClick={() => handleGenericPaused(connection, !connection.paused)}
+                            >
+                              {isUpdatingPaused ? "Updating..." : connection.paused ? "Play" : "Pause"}
+                            </button>
+                            {canTestAutoTrade ? (
+                              <button
+                                className="testButton"
+                                type="button"
+                                disabled={isTesting || isUpdatingPaused || isDisconnecting || connection.paused}
+                                onClick={() => handleGenericTest(connection)}
+                                title={connection.paused ? "Resume this account before testing." : "Send a live TP/SL test order."}
+                              >
+                                {isTesting ? "Testing..." : "Test"}
+                              </button>
+                            ) : null}
+                          </>
                         ) : null}
                         <button className="dangerButton" type="button" disabled={isDisconnecting} onClick={() => handleGenericDisconnect(connection)}>
                           {isDisconnecting ? "Removing..." : "Remove"}

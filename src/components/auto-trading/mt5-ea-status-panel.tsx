@@ -2,145 +2,36 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
-type Heartbeat = {
-  eaVersion?: string;
-  terminalConnected: boolean;
-  tradeAllowed: boolean;
-  accountLogin?: number;
-  accountServer?: string;
-  lastError?: string;
-  updatedAt?: string;
-};
-
 type AccountState = {
   balance?: number;
   equity?: number;
-  floatingPnL?: number;
-  openPositionCount?: number;
-  marginLevelPct?: number;
-  updatedAt?: string;
 };
 
-type ExecutionStats = {
-  total: number;
-  filled: number;
-  rejected: number;
-  pending: number;
-  fillRatePct: number | null;
-  avgSlippagePips: number | null;
-  riskDeployedUsd: number;
-  closed: number;
-  wins: number;
-  losses: number;
-  winRatePct: number | null;
-  realizedPnlUsd: number;
-  realizedR: number | null;
-  lastOrderAt?: string;
-};
-
-type OrderView = {
-  id: string;
-  status: string;
-  symbol: string;
-  side: string;
-  volume: number;
-  riskUsd?: number;
-  fillPrice?: number;
-  slippagePips?: number;
-  errorMessage?: string;
-  createdAt?: string;
-  closeProfit?: number;
-  closeReason?: string;
+type ConnectedAccount = {
+  accountName?: string;
+  connectionId: string;
+  firmLabel?: string;
+  login?: string;
+  paused: boolean;
+  server?: string;
 };
 
 type StatusResponse = {
-  accountMismatch?: string | null;
   backendConfigured: boolean;
   configured: boolean;
-  provider: string | null;
-  providerSelected: boolean;
-  storageConfigured: boolean;
-  tokenConfigured: boolean;
-  bridgeAccountId: string;
-  connectedAccount?: {
-    accountName?: string;
-    connectionId: string;
-    eaConnectionId?: string;
-    firmLabel?: string;
-    login?: string;
-    paused: boolean;
-    server?: string;
-  } | null;
-  connectedAccounts?: Array<{
-    accountName?: string;
-    connectionId: string;
-    eaConnectionId?: string;
-    firmLabel?: string;
-    login?: string;
-    paused: boolean;
-    server?: string;
-  }>;
+  connectedAccount?: ConnectedAccount | null;
+  connectedAccounts?: ConnectedAccount[];
   credentialVerified?: boolean;
-  executionMode?: "credential_bridge" | "terminal_ea";
-  heartbeat: Heartbeat | null;
-  state: AccountState | null;
-  stats: ExecutionStats | null;
-  orders: OrderView[];
   error?: string;
+  executionMode?: "credential_bridge" | "terminal_ea";
+  state: AccountState | null;
 };
 
 const POLL_MS = 10_000;
 
-function freshness(updatedAt: string | undefined): { label: string; tone: "live" | "stale" | "offline" } {
-  if (!updatedAt) return { label: "no signal", tone: "offline" };
-  const ageMs = Date.now() - Date.parse(updatedAt);
-  if (!Number.isFinite(ageMs)) return { label: "no signal", tone: "offline" };
-  if (ageMs < 30_000) return { label: "live", tone: "live" };
-  if (ageMs < 120_000) return { label: "stale", tone: "stale" };
-  return { label: "offline", tone: "offline" };
-}
-
-function ago(updatedAt: string | undefined): string {
-  if (!updatedAt) return "—";
-  const ageMs = Date.now() - Date.parse(updatedAt);
-  if (!Number.isFinite(ageMs)) return "—";
-  const s = Math.max(0, Math.round(ageMs / 1000));
-  if (s < 60) return `${s}s ago`;
-  const m = Math.round(s / 60);
-  if (m < 60) return `${m}m ago`;
-  return `${Math.round(m / 60)}h ago`;
-}
-
 function money(value: number | undefined): string {
   if (typeof value !== "number" || !Number.isFinite(value)) return "—";
   return `$${value.toLocaleString(undefined, { maximumFractionDigits: 2 })}`;
-}
-
-function signedMoney(value: number | undefined): string {
-  if (typeof value !== "number" || !Number.isFinite(value)) return "—";
-  const sign = value >= 0 ? "+" : "−";
-  return `${sign}$${Math.abs(value).toLocaleString(undefined, { maximumFractionDigits: 2 })}`;
-}
-
-function pnlClass(value: number | undefined): string | undefined {
-  if (typeof value !== "number" || !Number.isFinite(value) || value === 0) return undefined;
-  return value > 0 ? "mt5EaOk" : "mt5EaWarn";
-}
-
-function Mt5EaSetup({ connectionId }: { connectionId?: string }) {
-  return (
-    <div className="mt5EaSetup">
-      <ol>
-        <li>Download the Korra EA and place it in MT5&apos;s <code>MQL5/Experts</code> folder.</li>
-        <li>Compile it in MetaEditor, then attach it to any chart on the saved account.</li>
-        <li>Enter the EA Ingest Token and allow WebRequest access to <code>https://www.korra.space</code>.</li>
-        <li>Turn on Algo Trading. The EA automatically uses login <code>{connectionId ?? "your MT5 login"}</code> as its Connection ID.</li>
-      </ol>
-      <a className="mt5EaDownloadLink" download href="/mt5/KorraMT5ExecutionEA.mq5">
-        Download Korra MT5 EA
-      </a>
-    </div>
-  );
 }
 
 export default function Mt5EaStatusPanel() {
@@ -151,19 +42,19 @@ export default function Mt5EaStatusPanel() {
 
   const load = useCallback(async (signal?: AbortSignal) => {
     try {
-      const res = await fetch("/api/auto-trading/mt5-ea-status", { signal, cache: "no-store" });
-      if (res.status === 401) {
-        setError("Admin access required.");
+      const response = await fetch("/api/auto-trading/mt5-ea-status", { signal, cache: "no-store" });
+      if (response.status === 401) {
         setData(null);
+        setError("Admin access required.");
         return;
       }
-      if (!res.ok) throw new Error(`status ${res.status}`);
-      const json = (await res.json()) as StatusResponse;
-      setData(json);
-      setError(json.error ?? null);
-    } catch (err) {
-      if ((err as { name?: string })?.name === "AbortError") return;
-      setError(err instanceof Error ? err.message : String(err));
+      if (!response.ok) throw new Error(`status ${response.status}`);
+      const payload = (await response.json()) as StatusResponse;
+      setData(payload);
+      setError(payload.error ?? null);
+    } catch (loadError) {
+      if ((loadError as { name?: string })?.name === "AbortError") return;
+      setError(loadError instanceof Error ? loadError.message : String(loadError));
     } finally {
       setLoading(false);
     }
@@ -179,179 +70,62 @@ export default function Mt5EaStatusPanel() {
     };
   }, [load]);
 
-  if (loading && !data) {
-    return (
-      <section className="mt5EaPanel">
-        <div className="mt5EaHead">
-          <strong>MT5 Execution</strong>
-        </div>
-        <p className="mt5EaNote">Loading…</p>
-      </section>
-    );
-  }
+  if (error === "Admin access required.") return null;
 
-  if (error === "Admin access required.") {
-    return null; // hidden for non-admin viewers
-  }
-
-  const hb = data?.heartbeat ?? null;
-  const state = data?.state ?? null;
-  const stats = data?.stats ?? null;
-  const orders = data?.orders ?? [];
+  const account = data?.connectedAccount ?? null;
   const credentialMode = data?.executionMode === "credential_bridge";
-  const conn = !data?.configured
-    ? { label: "setup required", tone: "offline" as const }
-    : credentialMode
-      ? data.credentialVerified
-        ? { label: "connected", tone: "live" as const }
-        : { label: "verification failed", tone: "offline" as const }
-    : data.accountMismatch
-      ? { label: "account mismatch", tone: "offline" as const }
-    : !hb
-      ? { label: "waiting for EA", tone: "stale" as const }
-      : freshness(hb.updatedAt);
-  const setupIssues = data
-    ? [
-        !credentialMode && !data.tokenConfigured ? "the secure EA token" : null,
-        !credentialMode && !data.storageConfigured ? "the Turso order queue" : null,
-        data.connectedAccount?.paused ? "the connected account is paused" : null,
-        !data.providerSelected
-          ? `forex routing${data.provider ? ` (currently ${data.provider})` : ""}`
-          : null
-      ].filter((issue): issue is string => Boolean(issue))
-    : [];
+  const accountCount = data?.connectedAccounts?.length ?? 0;
+  const verified = credentialMode && data?.credentialVerified === true;
+  const badge = loading && !data
+    ? { label: "checking", tone: "stale" }
+    : !credentialMode
+      ? { label: "central setup pending", tone: "stale" }
+      : !account
+        ? { label: "ready", tone: "live" }
+        : account.paused
+          ? { label: "paused", tone: "stale" }
+          : verified
+            ? { label: "connected", tone: "live" }
+            : { label: "connection failed", tone: "offline" };
 
   return (
     <section className="mt5EaPanel">
       <div className="mt5EaHead">
         <div>
-          <strong>MT5 Execution</strong>
+          <strong>MT5 Auto-Trading</strong>
           <span className="mt5EaAccount">
-            {data?.connectedAccount?.accountName || data?.bridgeAccountId}
-            {data?.connectedAccount?.login ? ` · ${data.connectedAccount.login}` : ""}
-            {(data?.connectedAccounts?.length ?? 0) > 1 ? ` · ${data?.connectedAccounts?.length} accounts linked` : ""}
+            {account?.accountName || account?.firmLabel || "Managed by Korra"}
+            {account?.login ? ` · ${account.login}` : ""}
+            {accountCount > 1 ? ` · ${accountCount} accounts` : ""}
           </span>
         </div>
-        <span className={`mt5EaBadge mt5EaBadge--${conn.tone}`}>{conn.label}</span>
+        <span className={`mt5EaBadge mt5EaBadge--${badge.tone}`}>{badge.label}</span>
       </div>
 
-      {data && !data.configured ? (
+      {!credentialMode ? (
         <p className="mt5EaNote">
-          MT5 setup is incomplete: {setupIssues.join(", ")}. No forex orders are being sent to this account.
+          Korra&apos;s central MT5 connection is being completed. You will not need to download an EA, configure a Connection ID, or keep MT5 open. When it is ready, reconnect this account once with its login, master password, and broker server.
         </p>
-      ) : credentialMode ? (
+      ) : !account ? (
+        <p className="mt5EaNote">
+          Add an MT5 account above using its login, master password, and broker server. Korra handles everything else.
+        </p>
+      ) : account.paused ? (
+        <p className="mt5EaNote">This account is connected but paused. Select Play to resume auto-trading.</p>
+      ) : verified ? (
         <>
-          <p className={`mt5EaNote ${data?.credentialVerified ? "mt5EaOk" : "mt5EaWarn"}`}>
-            {data?.credentialVerified
-              ? `Secure execution verified for login ${data.connectedAccount?.login} on ${data.connectedAccount?.server}.`
-              : data?.error || "MT5 could not verify this account."}
+          <p className="mt5EaNote mt5EaOk">
+            Secure connection verified for login {account.login} on {account.server}. Active forex signals will be sent automatically.
           </p>
-          {data?.credentialVerified ? (
-            <div className="mt5EaStatGrid">
-              <div className="mt5EaStat"><span>Balance</span><strong>{money(state?.balance)}</strong></div>
-              <div className="mt5EaStat"><span>Equity</span><strong>{money(state?.equity)}</strong></div>
-            </div>
-          ) : null}
-        </>
-      ) : data?.accountMismatch ? (
-        <>
-          <p className="mt5EaNote mt5EaWarn">{data.accountMismatch}</p>
-          <Mt5EaSetup connectionId={data.bridgeAccountId} />
-        </>
-      ) : !hb ? (
-        <>
-          <p className="mt5EaNote">
-            Waiting for the EA — no heartbeat yet for <code>{data?.bridgeAccountId}</code>.
-          </p>
-          <Mt5EaSetup connectionId={data?.bridgeAccountId} />
+          <div className="mt5EaStatGrid">
+            <div className="mt5EaStat"><span>Balance</span><strong>{money(data?.state?.balance)}</strong></div>
+            <div className="mt5EaStat"><span>Equity</span><strong>{money(data?.state?.equity)}</strong></div>
+          </div>
         </>
       ) : (
-        <>
-          <div className="mt5EaMeta">
-            <span>Last heartbeat {ago(hb.updatedAt)}</span>
-            {hb.accountLogin ? <span>Login {hb.accountLogin}</span> : null}
-            {hb.accountServer || data?.connectedAccount?.server ? <span>{hb.accountServer || data?.connectedAccount?.server}</span> : null}
-            {hb.eaVersion ? <span>EA {hb.eaVersion}</span> : null}
-            <span className={hb.tradeAllowed ? "mt5EaOk" : "mt5EaWarn"}>
-              {hb.tradeAllowed ? "Algo trading on" : "Algo trading OFF"}
-            </span>
-          </div>
-          {hb.lastError ? <p className="mt5EaWarn">EA error: {hb.lastError}</p> : null}
-
-          <div className="mt5EaStatGrid">
-            <div className="mt5EaStat"><span>Balance</span><strong>{money(state?.balance)}</strong></div>
-            <div className="mt5EaStat"><span>Equity</span><strong>{money(state?.equity)}</strong></div>
-            <div className="mt5EaStat"><span>Floating P&L</span><strong>{money(state?.floatingPnL)}</strong></div>
-            <div className="mt5EaStat"><span>Open positions</span><strong>{state?.openPositionCount ?? "—"}</strong></div>
-            <div className="mt5EaStat"><span>Orders</span><strong>{stats?.total ?? 0}</strong></div>
-            <div className="mt5EaStat"><span>Filled</span><strong>{stats?.filled ?? 0}</strong></div>
-            <div className="mt5EaStat"><span>Rejected</span><strong>{stats?.rejected ?? 0}</strong></div>
-            <div className="mt5EaStat"><span>Pending</span><strong>{stats?.pending ?? 0}</strong></div>
-            <div className="mt5EaStat">
-              <span>Fill rate</span>
-              <strong>{stats?.fillRatePct == null ? "—" : `${stats.fillRatePct.toFixed(0)}%`}</strong>
-            </div>
-            <div className="mt5EaStat">
-              <span>Avg slippage</span>
-              <strong>{stats?.avgSlippagePips == null ? "—" : `${stats.avgSlippagePips.toFixed(1)} pips`}</strong>
-            </div>
-            <div className="mt5EaStat">
-              <span>Closed</span>
-              <strong>{stats?.closed ?? 0}</strong>
-            </div>
-            <div className="mt5EaStat">
-              <span>Win rate</span>
-              <strong>{stats?.winRatePct == null ? "—" : `${stats.winRatePct.toFixed(0)}%`}</strong>
-            </div>
-            <div className="mt5EaStat">
-              <span>Realized R</span>
-              <strong className={pnlClass(stats?.realizedR ?? undefined)}>
-                {stats?.realizedR == null ? "—" : `${stats.realizedR >= 0 ? "+" : ""}${stats.realizedR.toFixed(2)}R`}
-              </strong>
-            </div>
-            <div className="mt5EaStat">
-              <span>Realized P&L</span>
-              <strong className={pnlClass(stats?.realizedPnlUsd)}>
-                {stats?.closed ? signedMoney(stats?.realizedPnlUsd) : "—"}
-              </strong>
-            </div>
-          </div>
-
-          {orders.length ? (
-            <div className="mt5EaTableWrap">
-              <table className="mt5EaTable">
-                <thead>
-                  <tr>
-                    <th>Time</th>
-                    <th>Symbol</th>
-                    <th>Side</th>
-                    <th>Lots</th>
-                    <th>Status</th>
-                    <th>Fill</th>
-                    <th>Slip</th>
-                    <th>P&L</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {orders.slice(0, 25).map((order) => (
-                    <tr key={order.id} title={order.errorMessage ?? order.closeReason ?? undefined}>
-                      <td>{ago(order.createdAt)}</td>
-                      <td>{order.symbol}</td>
-                      <td className={order.side === "buy" ? "mt5EaOk" : "mt5EaWarn"}>{order.side}</td>
-                      <td>{order.volume}</td>
-                      <td><span className={`mt5EaTag mt5EaTag--${order.status}`}>{order.status}</span></td>
-                      <td>{order.fillPrice ?? "—"}</td>
-                      <td>{order.slippagePips == null ? "—" : order.slippagePips.toFixed(1)}</td>
-                      <td className={pnlClass(order.closeProfit)}>{order.closeProfit == null ? "—" : signedMoney(order.closeProfit)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          ) : (
-            <p className="mt5EaNote">No orders queued yet.</p>
-          )}
-        </>
+        <p className="mt5EaNote mt5EaWarn">
+          {error || "Korra could not verify this account. Check the login, master password, and broker server, then reconnect it."}
+        </p>
       )}
     </section>
   );

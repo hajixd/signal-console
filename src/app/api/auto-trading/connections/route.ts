@@ -14,12 +14,10 @@ import {
 } from "@/lib/auto-trade-connections";
 import { autoTradeProviderById } from "@/lib/auto-trade-platforms";
 import {
-  availableMt5ConnectionMode,
   fieldsForMt5ConnectionMode,
-  storedMt5ConnectionMode,
-  type Mt5ConnectionMode
+  storedMt5ConnectionMode
 } from "@/lib/mt5-connection-mode";
-import { verifyMt5CredentialConnection } from "@/lib/mt5-credential-bridge";
+import { mt5CredentialBridgeConfigured, verifyMt5CredentialConnection } from "@/lib/mt5-credential-bridge";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -62,8 +60,8 @@ function connectionId(value: unknown): string | undefined {
   return typeof value === "string" && /^[0-9A-Za-z_-]{3,80}$/.test(value.trim()) ? value.trim() : undefined;
 }
 
-function mt5ConnectionMode(): Mt5ConnectionMode | null {
-  return availableMt5ConnectionMode();
+function mt5ConnectionMode(): "credential_bridge" | null {
+  return mt5CredentialBridgeConfigured() ? "credential_bridge" : null;
 }
 
 async function authorizeProviderMutation(request: NextRequest, savedConnectionId: string, accessCode: unknown) {
@@ -140,7 +138,9 @@ export async function POST(request: NextRequest) {
     const connectionMode = mt5ConnectionMode();
     if (!connectionMode) {
       return NextResponse.json(
-        { error: "The secure MT5 credential service is not online yet." },
+        {
+          error: "Korra's central MT5 connection is being completed. You do not need to install anything; try again once it is online."
+        },
         { status: 503 }
       );
     }
