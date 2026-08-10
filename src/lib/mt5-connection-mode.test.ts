@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { autoTradeConnectionRecordId } from "./auto-trade-connections";
 import {
   availableMt5ConnectionMode,
   fieldsForMt5ConnectionMode,
@@ -71,4 +72,11 @@ test("stored MT5 mode remains compatible with existing connections", () => {
   assert.equal(storedMt5ConnectionMode({ password: "legacy" }), "credential_bridge");
   assert.equal(storedMt5ConnectionMode({ login: "1600170125" }), "terminal_ea");
   assert.equal(storedMt5ConnectionMode({ executionMode: "terminal_ea", password: "ignored" }), "terminal_ea");
+});
+
+test("each MT5 login receives its own stable saved connection record", () => {
+  assert.equal(autoTradeConnectionRecordId("mt5_ea", "1600170125"), "mt5_ea_1600170125");
+  assert.equal(autoTradeConnectionRecordId("mt5_ea", "24009991"), "mt5_ea_24009991");
+  assert.notEqual(autoTradeConnectionRecordId("mt5_ea", "1600170125"), autoTradeConnectionRecordId("mt5_ea", "24009991"));
+  assert.equal(autoTradeConnectionRecordId("tradelocker", "ignored"), "tradelocker");
 });

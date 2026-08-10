@@ -23,7 +23,7 @@ type AccessCodePayload = {
 };
 
 function normalizeConnectionId(value: unknown): string | undefined {
-  return typeof value === "string" && /^[0-9A-Za-z_-]{16,80}$/.test(value.trim()) ? value.trim() : undefined;
+  return typeof value === "string" && /^[0-9A-Za-z_-]{3,80}$/.test(value.trim()) ? value.trim() : undefined;
 }
 
 export async function GET(request: NextRequest) {
@@ -77,7 +77,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Choose a connected auto-trade provider." }, { status: 400 });
     }
 
-    if (await verifyAutoTradeConnectionAccessCode(providerId, accessCode)) {
+    const connectionId = normalizeConnectionId(payload.connectionId) ?? providerId;
+    if (await verifyAutoTradeConnectionAccessCode(connectionId, accessCode)) {
       return NextResponse.json({ ok: true });
     }
 

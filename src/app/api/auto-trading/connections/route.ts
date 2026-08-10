@@ -4,6 +4,7 @@ import { isAdminAuthorized } from "@/lib/admin-api";
 import {
   autoTradeConnectionStoreMode,
   deleteAutoTradeConnection,
+  getAutoTradeConnectionById,
   listAutoTradeConnections,
   parseAutoTradeProviderId,
   saveAutoTradeConnection,
@@ -29,6 +30,7 @@ type SavePayload = {
 
 type PatchPayload = {
   accessCode?: unknown;
+  connectionId?: unknown;
   paused?: unknown;
   providerId?: unknown;
 };
@@ -50,15 +52,19 @@ function adminRequired() {
   return NextResponse.json({ error: "Admin access required." }, { status: 401 });
 }
 
-async function authorizeProviderMutation(request: NextRequest, providerId: NonNullable<ReturnType<typeof parseAutoTradeProviderId>>, accessCode: unknown) {
+function connectionId(value: unknown): string | undefined {
+  return typeof value === "string" && /^[0-9A-Za-z_-]{3,80}$/.test(value.trim()) ? value.trim() : undefined;
+}
+
+async function authorizeProviderMutation(request: NextRequest, savedConnectionId: string, accessCode: unknown) {
   if (isAdminAuthorized(request)) return null;
   const suppliedCode = text(accessCode) ?? text(request.nextUrl.searchParams.get("accessCode"));
-  if (suppliedCode && await verifyAutoTradeConnectionAccessCode(providerId, suppliedCode)) return null;
+  if (suppliedCode && await verifyAutoTradeConnectionAccessCode(savedConnectionId, suppliedCode)) return null;
   return adminRequired();
 }
 
 function publicConnection(connection: Awaited<ReturnType<typeof listAutoTradeConnections>>[number]) {
-  const provider = autoTradeProviderById(connection.id);
+  const provider = autoTradeProviderById(connection.providerId);
   return {
     accountId: connection.accountId,
     accountName: connection.accountName,
@@ -68,8 +74,10 @@ function publicConnection(connection: Awaited<ReturnType<typeof listAutoTradeCon
     firmId: connection.firmId,
     firmLabel: connection.firmLabel,
     id: connection.id,
+    eaConnectionId: connection.providerId === "mt5_ea" ? connection.fields.bridgeAccountId ?? connection.accountId : undefined,
     marketLabels: provider?.markets ?? [],
     paused: connection.paused,
+    providerId: connection.providerId,
     providerLabel: connection.providerLabel,
     storageMode: autoTradeConnectionStoreMode()
   };
@@ -161,7 +169,12 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ error: "Choose a supported auto-trade provider." }, { status: 400 });
   }
 
-  const connection = await setAutoTradeConnectionPaused(providerId, payload.paused !== false);
+  const savedConnectionId = connectionId(payload.connectionId) ?? providerId;
+  const savedConnection = await getAutoTradeConnectionById(savedConnectionId);
+  if (!savedConnection || savedConnection.providerId !== providerId) {
+    return NextResponse.json({ error: "Auto-trade provider is not connected." }, { status: 404 });
+  }
+  const connection = await setAutoTradeConnectionPaused(savedConnectionId, payload.paused !== false);
   if (!connection) {
     return NextResponse.json({ error: "Auto-trade provider is not connected." }, { status: 404 });
   }
@@ -177,9 +190,14 @@ export async function DELETE(request: NextRequest) {
   if (!providerId) {
     return NextResponse.json({ error: "Choose a supported auto-trade provider." }, { status: 400 });
   }
-  const unauthorized = await authorizeProviderMutation(request, providerId, request.nextUrl.searchParams.get("accessCode"));
+  const savedConnectionId = connectionId(request.nextUrl.searchParams.get("connectionId")) ?? providerId;
+  const savedConnection = await getAutoTradeConnectionById(savedConnectionId);
+  if (!savedConnection || savedConnection.providerId !== providerId) {
+    return NextResponse.json({ error: "Auto-trade provider is not connected." }, { status: 404 });
+  }
+  const unauthorized = await authorizeProviderMutation(request, savedConnectionId, request.nextUrl.searchParams.get("accessCode"));
   if (unauthorized) return unauthorized;
-  await deleteAutoTradeConnection(providerId);
+  await deleteAutoTradeConnection(savedConnectionId);
   return NextResponse.json({
     connections: (await listAutoTradeConnections()).map(publicConnection),
     storageMode: autoTradeConnectionStoreMode()

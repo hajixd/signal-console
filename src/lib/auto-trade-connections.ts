@@ -21,9 +21,10 @@ export type AutoTradeConnection = {
   fields: Record<string, string>;
   firmId?: string;
   firmLabel?: string;
-  id: AutoTradeProviderId;
+  id: string;
   lastCheckedAt?: string;
   paused: boolean;
+  providerId: AutoTradeProviderId;
   providerLabel: string;
   status: "connected";
   updatedAt: string;
@@ -79,7 +80,9 @@ function normalizeProviderId(value: string): AutoTradeProviderId | null {
 
 function toConnection(value: StoredAutoTradeConnection | null | undefined): AutoTradeConnection | null {
   if (!value?.id || !value.encryptedFields) return null;
-  const provider = autoTradeProviderById(value.id);
+  const providerId = normalizeProviderId(String(value.providerId ?? value.id));
+  if (!providerId) return null;
+  const provider = autoTradeProviderById(providerId);
   if (!provider) return null;
   return {
     accessCodeHash: typeof value.accessCodeHash === "string" ? value.accessCodeHash : undefined,
@@ -89,9 +92,10 @@ function toConnection(value: StoredAutoTradeConnection | null | undefined): Auto
     fields: decryptFields(value.encryptedFields),
     firmId: typeof value.firmId === "string" ? value.firmId : undefined,
     firmLabel: typeof value.firmLabel === "string" ? value.firmLabel : undefined,
-    id: value.id,
+    id: String(value.id),
     lastCheckedAt: value.lastCheckedAt,
     paused: value.paused === true,
+    providerId,
     providerLabel: provider.label,
     status: "connected",
     updatedAt: typeof value.updatedAt === "string" ? value.updatedAt : new Date(0).toISOString()
@@ -119,9 +123,9 @@ async function writeLocal(connections: Record<string, StoredAutoTradeConnection>
   await writeFile(LOCAL_PATH, JSON.stringify(connections, null, 2));
 }
 
-async function readTursoConnection(providerId: AutoTradeProviderId): Promise<AutoTradeConnection | null> {
-  const doc = await getTursoDocument(COLLECTION, providerId);
-  return toConnection(doc?.payload as StoredAutoTradeConnection | undefined);
+async function readTursoConnection(connectionId: string): Promise<AutoTradeConnection | null> {
+  const doc = await getTursoDocument(COLLECTION, connectionId);
+  return toConnection(doc ? ({ ...doc.payload, id: doc.payload.id ?? doc.id } as StoredAutoTradeConnection) : undefined);
 }
 
 async function listTursoConnections(): Promise<AutoTradeConnection[]> {
@@ -144,10 +148,32 @@ export function autoTradeConnectionStoreMode(): AutoTradeConnectionStoreMode {
   return hasFirebaseAdmin() ? "firebase" : "local";
 }
 
-export async function getAutoTradeConnection(providerId: AutoTradeProviderId): Promise<AutoTradeConnection | null> {
+export function autoTradeConnectionRecordId(providerId: AutoTradeProviderId, accountId?: string): string {
+  const normalizedAccountId = accountId?.trim().replace(/[^0-9A-Za-z_-]/g, "");
+  return providerId === "mt5_ea" && normalizedAccountId ? `mt5_ea_${normalizedAccountId}` : providerId;
+}
+
+function mt5ConnectionIdentity(connection: AutoTradeConnection): string {
+  return (connection.fields.bridgeAccountId ?? connection.fields.login ?? connection.accountId ?? connection.id).trim();
+}
+
+function dedupeAutoTradeConnections(connections: AutoTradeConnection[]): AutoTradeConnection[] {
+  const seenMt5Accounts = new Set<string>();
+  return [...connections]
+    .sort((left, right) => Date.parse(right.updatedAt) - Date.parse(left.updatedAt))
+    .filter((connection) => {
+      if (connection.providerId !== "mt5_ea") return true;
+      const identity = mt5ConnectionIdentity(connection);
+      if (seenMt5Accounts.has(identity)) return false;
+      seenMt5Accounts.add(identity);
+      return true;
+    });
+}
+
+export async function getAutoTradeConnectionById(connectionId: string): Promise<AutoTradeConnection | null> {
   if (tursoConfigured()) {
     try {
-      const connection = await readTursoConnection(providerId);
+      const connection = await readTursoConnection(connectionId);
       if (connection) return connection;
     } catch {
       // Fall back to Firebase/local storage below.
@@ -156,20 +182,21 @@ export async function getAutoTradeConnection(providerId: AutoTradeProviderId): P
 
   if (hasFirebaseAdmin()) {
     try {
-      const snapshot = await withFirebaseTimeout(firebaseDb().collection(COLLECTION).doc(providerId).get(), "Firebase auto-trade connection read");
-      return toConnection(snapshot.data() as StoredAutoTradeConnection | undefined);
+      const snapshot = await withFirebaseTimeout(firebaseDb().collection(COLLECTION).doc(connectionId).get(), "Firebase auto-trade connection read");
+      const payload = snapshot.data() as StoredAutoTradeConnection | undefined;
+      return toConnection(payload ? { ...payload, id: payload.id ?? connectionId } : undefined);
     } catch {
-      return toConnection((await readLocal())[providerId]);
+      return toConnection((await readLocal())[connectionId]);
     }
   }
-  return toConnection((await readLocal())[providerId]);
+  return toConnection((await readLocal())[connectionId]);
 }
 
 export async function listAutoTradeConnections(): Promise<AutoTradeConnection[]> {
   if (tursoConfigured()) {
     try {
       const connections = await listTursoConnections();
-      if (connections.length) return connections;
+      if (connections.length) return dedupeAutoTradeConnections(connections);
     } catch {
       // Fall back to Firebase/local storage below.
     }
@@ -178,18 +205,37 @@ export async function listAutoTradeConnections(): Promise<AutoTradeConnection[]>
   if (hasFirebaseAdmin()) {
     try {
       const snapshot = await withFirebaseTimeout(firebaseDb().collection(COLLECTION).get(), "Firebase auto-trade connections list");
-      return snapshot.docs
-        .map((doc) => safeToConnection(doc.data() as StoredAutoTradeConnection | undefined))
-        .filter((connection): connection is AutoTradeConnection => Boolean(connection));
+      return dedupeAutoTradeConnections(snapshot.docs
+        .map((doc) => {
+          const payload = doc.data() as StoredAutoTradeConnection | undefined;
+          return safeToConnection(payload ? { ...payload, id: payload.id ?? doc.id } : undefined);
+        })
+        .filter((connection): connection is AutoTradeConnection => Boolean(connection)));
     } catch {
-      return Object.values(await readLocal())
+      return dedupeAutoTradeConnections(Object.values(await readLocal())
         .map((connection) => safeToConnection(connection))
-        .filter((connection): connection is AutoTradeConnection => Boolean(connection));
+        .filter((connection): connection is AutoTradeConnection => Boolean(connection)));
     }
   }
-  return Object.values(await readLocal())
+  return dedupeAutoTradeConnections(Object.values(await readLocal())
     .map((connection) => safeToConnection(connection))
-    .filter((connection): connection is AutoTradeConnection => Boolean(connection));
+    .filter((connection): connection is AutoTradeConnection => Boolean(connection)));
+}
+
+export async function listAutoTradeConnectionsForProvider(providerId: AutoTradeProviderId): Promise<AutoTradeConnection[]> {
+  return (await listAutoTradeConnections())
+    .filter((connection) => connection.providerId === providerId);
+}
+
+export async function getAutoTradeConnection(providerId: AutoTradeProviderId, connectionId?: string): Promise<AutoTradeConnection | null> {
+  if (connectionId) {
+    const connection = await getAutoTradeConnectionById(connectionId);
+    return connection?.providerId === providerId ? connection : null;
+  }
+
+  const legacyConnection = await getAutoTradeConnectionById(providerId);
+  if (legacyConnection?.providerId === providerId) return legacyConnection;
+  return (await listAutoTradeConnectionsForProvider(providerId))[0] ?? null;
 }
 
 export async function saveAutoTradeConnection(input: {
@@ -200,11 +246,21 @@ export async function saveAutoTradeConnection(input: {
   fields: Record<string, string>;
   firmId?: string;
   firmLabel?: string;
+  connectionId?: string;
   providerId: AutoTradeProviderId;
 }): Promise<AutoTradeConnection> {
   const provider = autoTradeProviderById(input.providerId);
   if (!provider) throw new Error("Unknown auto-trade provider.");
-  const existing = await getAutoTradeConnection(input.providerId);
+  let connectionId = input.connectionId?.trim() || autoTradeConnectionRecordId(input.providerId, input.accountId);
+  let existing = await getAutoTradeConnection(input.providerId, connectionId);
+  if (!input.connectionId && input.providerId === "mt5_ea" && !existing) {
+    const legacy = await getAutoTradeConnectionById("mt5_ea");
+    const incomingIdentity = (input.fields.bridgeAccountId ?? input.fields.login ?? input.accountId ?? "").trim();
+    if (legacy?.providerId === "mt5_ea" && mt5ConnectionIdentity(legacy) === incomingIdentity) {
+      connectionId = legacy.id;
+      existing = legacy;
+    }
+  }
   const now = new Date().toISOString();
   const cleanFields = Object.fromEntries(Object.entries(input.fields).filter(([, value]) => Boolean(value?.trim())));
   const payload: StoredAutoTradeConnection = {
@@ -215,9 +271,10 @@ export async function saveAutoTradeConnection(input: {
     encryptedFields: encryptFields(cleanFields),
     firmId: input.firmId,
     firmLabel: input.firmLabel,
-    id: input.providerId,
+    id: connectionId,
     lastCheckedAt: now,
     paused: existing?.paused ?? true,
+    providerId: input.providerId,
     providerLabel: provider.label,
     status: "connected",
     updatedAt: now
@@ -238,27 +295,27 @@ export async function saveAutoTradeConnection(input: {
       await withFirebaseTimeout(
         firebaseDb()
           .collection(COLLECTION)
-          .doc(input.providerId)
+          .doc(connectionId)
           .set(omitUndefinedDeep({ ...payload, updatedAtServer: FieldValue.serverTimestamp() }), { merge: true }),
         "Firebase auto-trade connection save"
       );
     } catch (error) {
       if (!firebaseLocalFallbackEnabled()) throw error;
       const connections = await readLocal();
-      connections[input.providerId] = payload;
+      connections[connectionId] = payload;
       await writeLocal(connections);
     }
   } else if (!persistedToPrimary) {
     const connections = await readLocal();
-    connections[input.providerId] = payload;
+    connections[connectionId] = payload;
     await writeLocal(connections);
   }
 
   return toConnection(payload)!;
 }
 
-export async function setAutoTradeConnectionPaused(providerId: AutoTradeProviderId, paused: boolean): Promise<AutoTradeConnection | null> {
-  const connection = await getAutoTradeConnection(providerId);
+export async function setAutoTradeConnectionPaused(connectionId: string, paused: boolean): Promise<AutoTradeConnection | null> {
+  const connection = await getAutoTradeConnectionById(connectionId);
   if (!connection) return null;
   return saveAutoTradeConnection({
     accessCodeHash: connection.accessCodeHash,
@@ -267,7 +324,8 @@ export async function setAutoTradeConnectionPaused(providerId: AutoTradeProvider
     fields: connection.fields,
     firmId: connection.firmId,
     firmLabel: connection.firmLabel,
-    providerId
+    connectionId: connection.id,
+    providerId: connection.providerId
   }).then((saved) => {
     saved.paused = paused;
     return persistPaused(saved);
@@ -286,6 +344,7 @@ async function persistPaused(connection: AutoTradeConnection): Promise<AutoTrade
     id: connection.id,
     lastCheckedAt: new Date().toISOString(),
     paused: connection.paused,
+    providerId: connection.providerId,
     providerLabel: connection.providerLabel,
     status: "connected",
     updatedAt: new Date().toISOString()
@@ -323,10 +382,10 @@ async function persistPaused(connection: AutoTradeConnection): Promise<AutoTrade
   return toConnection(payload)!;
 }
 
-export async function deleteAutoTradeConnection(providerId: AutoTradeProviderId): Promise<void> {
+export async function deleteAutoTradeConnection(connectionId: string): Promise<void> {
   if (tursoConfigured()) {
     try {
-      await deleteTursoDocument(COLLECTION, providerId);
+      await deleteTursoDocument(COLLECTION, connectionId);
       return;
     } catch {
       // Fall back to Firebase/local storage below.
@@ -335,33 +394,33 @@ export async function deleteAutoTradeConnection(providerId: AutoTradeProviderId)
 
   if (hasFirebaseAdmin()) {
     try {
-      await withFirebaseTimeout(firebaseDb().collection(COLLECTION).doc(providerId).delete(), "Firebase auto-trade connection delete");
+      await withFirebaseTimeout(firebaseDb().collection(COLLECTION).doc(connectionId).delete(), "Firebase auto-trade connection delete");
       return;
     } catch (error) {
       if (!firebaseLocalFallbackEnabled()) throw error;
     }
   }
   const connections = await readLocal();
-  delete connections[providerId];
+  delete connections[connectionId];
   await writeLocal(connections);
 }
 
-export async function verifyAutoTradeConnectionAccessCode(providerId: AutoTradeProviderId, accessCode: string): Promise<boolean> {
+export async function verifyAutoTradeConnectionAccessCode(connectionId: string, accessCode: string): Promise<boolean> {
   const payload = tursoConfigured()
-    ? await getTursoDocument(COLLECTION, providerId)
+    ? await getTursoDocument(COLLECTION, connectionId)
         .then((doc) => doc?.payload as StoredAutoTradeConnection | undefined)
         .catch(async () =>
           hasFirebaseAdmin()
-            ? await withFirebaseTimeout(firebaseDb().collection(COLLECTION).doc(providerId).get(), "Firebase auto-trade access-code read")
+            ? await withFirebaseTimeout(firebaseDb().collection(COLLECTION).doc(connectionId).get(), "Firebase auto-trade access-code read")
                 .then((snapshot) => snapshot.data() as StoredAutoTradeConnection | undefined)
-                .catch(async () => (await readLocal())[providerId])
-            : (await readLocal())[providerId]
+                .catch(async () => (await readLocal())[connectionId])
+            : (await readLocal())[connectionId]
         )
     : hasFirebaseAdmin()
-    ? await withFirebaseTimeout(firebaseDb().collection(COLLECTION).doc(providerId).get(), "Firebase auto-trade access-code read")
+    ? await withFirebaseTimeout(firebaseDb().collection(COLLECTION).doc(connectionId).get(), "Firebase auto-trade access-code read")
         .then((snapshot) => snapshot.data() as StoredAutoTradeConnection | undefined)
-        .catch(async () => (await readLocal())[providerId])
-    : (await readLocal())[providerId];
+        .catch(async () => (await readLocal())[connectionId])
+    : (await readLocal())[connectionId];
   if (!payload || payload.status !== "connected") return false;
   return verifyAccessCode(accessCode, typeof payload.accessCodeHash === "string" ? payload.accessCodeHash : undefined);
 }

@@ -1,7 +1,11 @@
 import { createHash } from "node:crypto";
 
 import { tradeLevels } from "@/lib/auto-trade-utils";
-import { getAutoTradeConnection } from "@/lib/auto-trade-connections";
+import {
+  getAutoTradeConnection,
+  listAutoTradeConnectionsForProvider,
+  type AutoTradeConnection
+} from "@/lib/auto-trade-connections";
 import { executeMt5CredentialAutoTrade } from "@/lib/bridge-auto-trader";
 import { mt5BridgeAccountId, mt5HeartbeatMismatch } from "@/lib/mt5-ea-account";
 import { storedMt5ConnectionMode } from "@/lib/mt5-connection-mode";
@@ -52,11 +56,13 @@ function orderSummary(
   lots: number,
   customTag: string,
   status: AutoTradeOrderSummary["status"],
-  error?: string
+  error?: string,
+  accountName?: string
 ): AutoTradeOrderSummary {
+  const numericAccountId = Number(bridgeAccount);
   return {
-    accountId: 0,
-    accountName: bridgeAccount,
+    accountId: Number.isFinite(numericAccountId) ? numericAccountId : 0,
+    accountName: accountName ?? bridgeAccount,
     contractId: symbol,
     contractName: symbol,
     customTag,
@@ -71,11 +77,10 @@ function orderSummary(
  * Forex execution via the MT5 EA pull queue. Instead of pushing to a Windows
  * bridge, this enqueues an order that the in-terminal EA polls and executes.
  */
-export async function executeMt5EaAutoTrade(trade: TradeAlert): Promise<ProjectXAutoTradeResult> {
-  if (!envFlag("MT5_EA_AUTO_TRADE_ENABLED", true)) {
-    return result("disabled", { error: "MT5_EA_AUTO_TRADE_ENABLED is disabled." });
-  }
-  const connection = await getAutoTradeConnection("mt5_ea").catch(() => null);
+async function executeMt5TradeForConnection(
+  trade: TradeAlert,
+  connection: AutoTradeConnection | null
+): Promise<ProjectXAutoTradeResult> {
   if (connection?.paused) {
     return result("skipped", { error: "The connected MT5 account is paused. Enable it before sending trades." });
   }
@@ -84,7 +89,7 @@ export async function executeMt5EaAutoTrade(trade: TradeAlert): Promise<ProjectX
     if (!mt5CredentialBridgeConfigured()) {
       return result("skipped", { error: "The secure MT5 credential service is not configured." });
     }
-    return executeMt5CredentialAutoTrade(trade);
+    return executeMt5CredentialAutoTrade(trade, connection);
   }
 
   if (!mt5EaConfigured()) {
@@ -95,6 +100,7 @@ export async function executeMt5EaAutoTrade(trade: TradeAlert): Promise<ProjectX
 
   const connectionFields = connection?.fields ?? null;
   const account = mt5BridgeAccountId(connectionFields);
+  const accountName = connection?.accountName ?? connection?.accountId ?? account;
   const heartbeat = await getHeartbeat(account).catch(() => null);
   const heartbeatError = mt5HeartbeatMismatch(connectionFields, heartbeat);
   if (heartbeatError) {
@@ -131,7 +137,7 @@ export async function executeMt5EaAutoTrade(trade: TradeAlert): Promise<ProjectX
       contractId: symbol,
       contractName: symbol,
       error: `Computed lot size was not positive (${lots}).`,
-      orders: [orderSummary(account, symbol, lots, customTag, "skipped", "non-positive lots")]
+      orders: [orderSummary(account, symbol, lots, customTag, "skipped", "non-positive lots", accountName)]
     });
   }
 
@@ -141,7 +147,7 @@ export async function executeMt5EaAutoTrade(trade: TradeAlert): Promise<ProjectX
       contractId: symbol,
       contractName: symbol,
       customTag,
-      orders: [orderSummary(account, symbol, lots, customTag, "dry_run")]
+      orders: [orderSummary(account, symbol, lots, customTag, "dry_run", undefined, accountName)]
     });
   }
 
@@ -164,7 +170,7 @@ export async function executeMt5EaAutoTrade(trade: TradeAlert): Promise<ProjectX
       contractId: symbol,
       contractName: symbol,
       customTag,
-      orders: [orderSummary(account, symbol, lots, customTag, "placed", deduped ? "deduped: existing queued order reused" : undefined)]
+      orders: [orderSummary(account, symbol, lots, customTag, "placed", deduped ? "deduped: existing queued order reused" : undefined, accountName)]
     });
   } catch (error) {
     return result("failed", {
@@ -172,7 +178,63 @@ export async function executeMt5EaAutoTrade(trade: TradeAlert): Promise<ProjectX
       contractName: symbol,
       customTag,
       error: `MT5 EA enqueue failed: ${error instanceof Error ? error.message : String(error)}`,
-      orders: [orderSummary(account, symbol, lots, customTag, "failed", error instanceof Error ? error.message : String(error))]
+      orders: [orderSummary(account, symbol, lots, customTag, "failed", error instanceof Error ? error.message : String(error), accountName)]
     });
   }
+}
+
+export function aggregateMt5Results(
+  targets: Array<{ connection: AutoTradeConnection | null; execution: ProjectXAutoTradeResult }>
+): ProjectXAutoTradeResult {
+  if (targets.length === 1) return targets[0].execution;
+
+  const executions = targets.map((target) => target.execution);
+  const status = executions.some((execution) => execution.status === "placed")
+    ? "placed"
+    : executions.some((execution) => execution.status === "dry_run")
+      ? "dry_run"
+      : executions.some((execution) => execution.status === "failed")
+        ? "failed"
+        : executions.some((execution) => execution.status === "skipped")
+          ? "skipped"
+          : "disabled";
+  const errors = targets
+    .filter((target) => target.execution.status !== "placed" && target.execution.error)
+    .map((target) => {
+      const label = target.connection?.accountName ?? target.connection?.accountId ?? target.connection?.id ?? "MT5";
+      return `${label}: ${target.execution.error}`;
+    });
+  const firstWithContract = executions.find((execution) => execution.contractId || execution.contractName);
+
+  return result(status, {
+    contractId: firstWithContract?.contractId,
+    contractName: firstWithContract?.contractName,
+    error: errors.length ? errors.join(" ") : undefined,
+    orders: executions.flatMap((execution) => execution.orders ?? [])
+  });
+}
+
+export async function executeMt5EaAutoTrade(
+  trade: TradeAlert,
+  options: { connectionId?: string } = {}
+): Promise<ProjectXAutoTradeResult> {
+  if (!envFlag("MT5_EA_AUTO_TRADE_ENABLED", true)) {
+    return result("disabled", { error: "MT5_EA_AUTO_TRADE_ENABLED is disabled." });
+  }
+
+  const connections = options.connectionId
+    ? [await getAutoTradeConnection("mt5_ea", options.connectionId).catch(() => null)].filter(
+        (connection): connection is AutoTradeConnection => connection !== null
+      )
+    : await listAutoTradeConnectionsForProvider("mt5_ea").catch(() => [] as AutoTradeConnection[]);
+  if (options.connectionId && !connections.length) {
+    return result("skipped", { error: "This MT5 account connection no longer exists." });
+  }
+
+  const executionTargets: Array<AutoTradeConnection | null> = connections.length ? connections : [null];
+  const executions: Array<{ connection: AutoTradeConnection | null; execution: ProjectXAutoTradeResult }> = [];
+  for (const connection of executionTargets) {
+    executions.push({ connection, execution: await executeMt5TradeForConnection(trade, connection) });
+  }
+  return aggregateMt5Results(executions);
 }

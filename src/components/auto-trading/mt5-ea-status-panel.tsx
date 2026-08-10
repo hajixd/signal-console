@@ -64,11 +64,22 @@ type StatusResponse = {
   bridgeAccountId: string;
   connectedAccount?: {
     accountName?: string;
+    connectionId: string;
+    eaConnectionId?: string;
     firmLabel?: string;
     login?: string;
     paused: boolean;
     server?: string;
   } | null;
+  connectedAccounts?: Array<{
+    accountName?: string;
+    connectionId: string;
+    eaConnectionId?: string;
+    firmLabel?: string;
+    login?: string;
+    paused: boolean;
+    server?: string;
+  }>;
   credentialVerified?: boolean;
   executionMode?: "credential_bridge" | "terminal_ea";
   heartbeat: Heartbeat | null;
@@ -202,6 +213,7 @@ export default function Mt5EaStatusPanel() {
           <span className="mt5EaAccount">
             {data?.connectedAccount?.accountName || data?.bridgeAccountId}
             {data?.connectedAccount?.login ? ` · ${data.connectedAccount.login}` : ""}
+            {(data?.connectedAccounts?.length ?? 0) > 1 ? ` · ${data?.connectedAccounts?.length} accounts linked` : ""}
           </span>
         </div>
         <span className={`mt5EaBadge mt5EaBadge--${conn.tone}`}>{conn.label}</span>

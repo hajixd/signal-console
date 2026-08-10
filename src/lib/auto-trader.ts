@@ -248,7 +248,9 @@ export async function executeAutoTradeTest(input: {
 
   const trade = await buildAutoTradeTestTrade(market, input.providerId);
   try {
-    const execution = await connector.execute(trade);
+    const execution = input.providerId === "mt5_ea"
+      ? await executeMt5EaAutoTrade(trade, { connectionId: input.connectionId })
+      : await connector.execute(trade);
     return {
       ...execution,
       providerId: connector.providerId,

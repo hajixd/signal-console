@@ -40,10 +40,12 @@ type SavedAutoTradeConnection = {
   checkedAt?: string;
   connected: boolean;
   connectedAt: string;
+  eaConnectionId?: string;
   firmId?: string;
   firmLabel?: string;
-  id: AutoTradeProviderId;
+  id: string;
   paused: boolean;
+  providerId: AutoTradeProviderId;
   providerLabel: string;
   storageMode?: "firebase" | "local" | "turso";
 };
@@ -812,8 +814,8 @@ function projectXTestKey(connectionId: string, accountId: number): string {
   return `projectx:${connectionId}:${accountId}`;
 }
 
-function providerTestKey(providerId: AutoTradeProviderId): string {
-  return `provider:${providerId}`;
+function providerTestKey(providerId: AutoTradeProviderId, connectionId: string): string {
+  return `provider:${providerId}:${connectionId}`;
 }
 
 function autoTradeTestMessage(result: AutoTradeTestResponse): string {
@@ -1051,7 +1053,7 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
         : [],
     [displayUserName, market, status.autoTradePaused, status.checkedAt, status.connections, status.displayName, status.pausedAccountIds, visibleAccounts]
   );
-  const visibleSavedConnections = savedConnections.filter((connection) => providers.some((provider) => provider.id === connection.id));
+  const visibleSavedConnections = savedConnections.filter((connection) => providers.some((provider) => provider.id === connection.providerId));
   const activeProjectXFolder = projectXAccountFolders.find((folder) => folder.id === activeProjectXFolderId);
   const selectedProviderFields = CONNECTION_FIELDS[selectedProvider.id] ?? [];
   const primaryProviderFields = selectedProviderFields.filter((field) => !field.advanced);
@@ -1489,10 +1491,11 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
     }
   }
 
-  async function handleGenericDisconnect(providerId: AutoTradeProviderId) {
+  async function handleGenericDisconnect(connection: SavedAutoTradeConnection) {
     setIsDisconnecting(true);
     try {
-      const response = await fetch(`/api/auto-trading/connections?providerId=${encodeURIComponent(providerId)}`, {
+      const params = new URLSearchParams({ connectionId: connection.id, providerId: connection.providerId });
+      const response = await fetch(`/api/auto-trading/connections?${params.toString()}`, {
         method: "DELETE"
       });
       const payload = await parseSavedConnections(response);
@@ -1550,15 +1553,15 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
     setIsAddingAccount(true);
   }
 
-  async function handleGenericPaused(providerId: AutoTradeProviderId, nextPaused: boolean) {
-    if (!autoTradeProviderFullyFunctioning(providerId)) return;
+  async function handleGenericPaused(connection: SavedAutoTradeConnection, nextPaused: boolean) {
+    if (!autoTradeProviderFullyFunctioning(connection.providerId)) return;
 
     setIsUpdatingPaused(true);
     try {
       const response = await fetch("/api/auto-trading/connections", {
         method: "PATCH",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ paused: nextPaused, providerId })
+        body: JSON.stringify({ connectionId: connection.id, paused: nextPaused, providerId: connection.providerId })
       });
       const payload = await parseSavedConnections(response);
       setSavedConnections(payload.connections);
@@ -1664,8 +1667,9 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
   }
 
   function handleGenericTest(connection: SavedAutoTradeConnection) {
-    void runAutoTradeTest(providerTestKey(connection.id), connection.accountName ?? connection.accountId ?? connection.providerLabel, {
-      providerId: connection.id
+    void runAutoTradeTest(providerTestKey(connection.providerId, connection.id), connection.accountName ?? connection.accountId ?? connection.providerLabel, {
+      connectionId: connection.id,
+      providerId: connection.providerId
     });
   }
 
@@ -1900,7 +1904,7 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
                   <span>
                     Enter the login number, master trading password, and exact server from your prop-firm credentials.
                     Do not use the investor or read-only password. Direct credentials are encrypted when the secure bridge is active;
-                    EA-linked terminals never store the submitted password.
+                    EA-linked terminals never store the submitted password. The MT5 login is automatically saved as that account's EA Connection ID.
                   </span>
                 </div>
               ) : null}
@@ -2228,9 +2232,9 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
                 </button>
               ))}
               {visibleSavedConnections.map((connection) => {
-                const provider = providers.find((item) => item.id === connection.id);
-                const connectionReady = autoTradeProviderFullyFunctioning(connection.id);
-                const testKey = providerTestKey(connection.id);
+                const provider = providers.find((item) => item.id === connection.providerId);
+                const connectionReady = autoTradeProviderFullyFunctioning(connection.providerId);
+                const testKey = providerTestKey(connection.providerId, connection.id);
                 const testState = autoTradeTests[testKey];
                 const isTesting = testState?.status === "running";
                 return (
@@ -2246,15 +2250,15 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
                       </div>
                       <div>
                         <span>Platform</span>
-                        <strong>{provider?.shortLabel ?? connection.id}</strong>
+                        <strong>{provider?.shortLabel ?? connection.providerId}</strong>
                       </div>
                       <div>
                         <span>Account</span>
                         <strong>{connection.accountName ?? connection.accountId ?? "--"}</strong>
                       </div>
                       <div>
-                        <span>Account ID</span>
-                        <strong>{connection.accountId ?? "--"}</strong>
+                        <span>{connection.providerId === "mt5_ea" ? "Connection ID" : "Account ID"}</span>
+                        <strong>{connection.eaConnectionId ?? connection.accountId ?? "--"}</strong>
                       </div>
                       <div>
                         <span>Saved</span>
@@ -2274,7 +2278,7 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
                           className={connection.paused ? "playButton" : "pauseButton"}
                           type="button"
                           disabled={isUpdatingPaused || isDisconnecting || !connectionReady}
-                          onClick={() => handleGenericPaused(connection.id, !connection.paused)}
+                          onClick={() => handleGenericPaused(connection, !connection.paused)}
                         >
                           {isUpdatingPaused ? "Updating..." : connection.paused ? "Play" : "Pause"}
                         </button>
@@ -2289,7 +2293,7 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
                             {isTesting ? "Testing..." : "Test"}
                           </button>
                         ) : null}
-                        <button className="dangerButton" type="button" disabled={isDisconnecting} onClick={() => handleGenericDisconnect(connection.id)}>
+                        <button className="dangerButton" type="button" disabled={isDisconnecting} onClick={() => handleGenericDisconnect(connection)}>
                           {isDisconnecting ? "Removing..." : "Remove"}
                         </button>
                         {testState ? <small className={`topstepAccountTestResult ${testState.status}`}>{testState.message}</small> : null}

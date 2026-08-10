@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 
 import { isAdminAuthorized } from "@/lib/admin-api";
-import { getAutoTradeConnection } from "@/lib/auto-trade-connections";
+import { listAutoTradeConnectionsForProvider } from "@/lib/auto-trade-connections";
 import { mt5BridgeAccountId, mt5HeartbeatMismatch } from "@/lib/mt5-ea-account";
 import { storedMt5ConnectionMode } from "@/lib/mt5-connection-mode";
 import { mt5CredentialBridgeConfigured, verifyMt5CredentialConnection } from "@/lib/mt5-credential-bridge";
@@ -18,16 +18,32 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Admin access required." }, { status: 401 });
   }
 
-  const connection = await getAutoTradeConnection("mt5_ea").catch(() => null);
+  const connections = await listAutoTradeConnectionsForProvider("mt5_ea").catch(() => []);
+  const requestedConnectionId = request.nextUrl.searchParams.get("connectionId")?.trim();
   const requestedAccount = request.nextUrl.searchParams.get("account")?.trim();
+  const connection = connections.find((item) => item.id === requestedConnectionId)
+    ?? connections.find((item) => item.accountId === requestedAccount || item.fields.login === requestedAccount)
+    ?? connections[0]
+    ?? null;
   const account = requestedAccount || mt5BridgeAccountId(connection?.fields);
   const executionMode = storedMt5ConnectionMode(connection?.fields);
   const backendConfigured = executionMode === "credential_bridge" ? mt5CredentialBridgeConfigured() : mt5EaConfigured();
   const provider = process.env.AUTO_TRADE_FOREX_PROVIDER?.trim() || null;
-  const providerSelected = provider === "mt5_ea" || (!provider && Boolean(connection));
+  const providerSelected = provider === "mt5_ea" || (!provider && connections.length > 0);
+  const connectedAccounts = connections.map((item) => ({
+    accountName: item.accountName,
+    connectionId: item.id,
+    eaConnectionId: item.fields.bridgeAccountId ?? item.accountId,
+    firmLabel: item.firmLabel,
+    login: item.fields.login,
+    paused: item.paused,
+    server: item.fields.server
+  }));
   const connectedAccount = connection
     ? {
         accountName: connection.accountName,
+        connectionId: connection.id,
+        eaConnectionId: connection.fields.bridgeAccountId ?? connection.accountId,
         firmLabel: connection.firmLabel,
         login: connection.fields.login,
         paused: connection.paused,
@@ -36,8 +52,9 @@ export async function GET(request: NextRequest) {
     : null;
   const configuration = {
     backendConfigured,
-    configured: backendConfigured && providerSelected && connection?.paused !== true,
+    configured: backendConfigured && providerSelected && connections.some((item) => !item.paused),
     connectedAccount,
+    connectedAccounts,
     executionMode,
     provider,
     providerSelected,

@@ -13,7 +13,7 @@ import {
   skippedOrder,
   type ProviderPrefix
 } from "@/lib/auto-trade-utils";
-import { getAutoTradeConnection } from "@/lib/auto-trade-connections";
+import { getAutoTradeConnection, type AutoTradeConnection } from "@/lib/auto-trade-connections";
 import type { AutoTradeProviderId } from "@/lib/auto-trade-platforms";
 import type { ProjectXAutoTradeResult } from "@/lib/projectx-auto-trader";
 import type { TradeAlert } from "@/lib/types";
@@ -48,12 +48,16 @@ function missingBridgeSettings(fields: Record<string, string> | undefined, provi
     .map(([fieldKey]) => fieldKey);
 }
 
-async function executeBridgeAutoTrade(provider: BridgeProvider, trade: TradeAlert): Promise<ProjectXAutoTradeResult> {
+async function executeBridgeAutoTrade(
+  provider: BridgeProvider,
+  trade: TradeAlert,
+  connectionOverride?: AutoTradeConnection | null
+): Promise<ProjectXAutoTradeResult> {
   if (!envFlag(provider.enabledEnv, true)) {
     return result("disabled", { error: `${provider.enabledEnv} is disabled.` });
   }
 
-  const connection = await getAutoTradeConnection(provider.providerId);
+  const connection = connectionOverride === undefined ? await getAutoTradeConnection(provider.providerId) : connectionOverride;
   if (connection?.paused) return result("skipped", { error: `${provider.name} connection is paused.` });
   const fields = connection?.fields;
   const missing = missingBridgeSettings(fields, provider);
@@ -155,7 +159,10 @@ export function executeMt5BridgeAutoTrade(trade: TradeAlert): Promise<ProjectXAu
   );
 }
 
-export function executeMt5CredentialAutoTrade(trade: TradeAlert): Promise<ProjectXAutoTradeResult> {
+export function executeMt5CredentialAutoTrade(
+  trade: TradeAlert,
+  connection?: AutoTradeConnection | null
+): Promise<ProjectXAutoTradeResult> {
   return executeBridgeAutoTrade(
     {
       accountEnv: "MT5_ACCOUNT_ID",
@@ -167,7 +174,8 @@ export function executeMt5CredentialAutoTrade(trade: TradeAlert): Promise<Projec
       secretEnv: "MT5_BRIDGE_SECRET",
       urlEnv: "MT5_BRIDGE_URL"
     },
-    trade
+    trade,
+    connection
   );
 }
 

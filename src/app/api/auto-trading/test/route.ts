@@ -13,7 +13,7 @@ type TestPayload = {
 };
 
 function normalizeConnectionId(value: unknown): string | undefined {
-  return typeof value === "string" && /^[0-9A-Za-z_-]{16,80}$/.test(value.trim()) ? value.trim() : undefined;
+  return typeof value === "string" && /^[0-9A-Za-z_-]{3,80}$/.test(value.trim()) ? value.trim() : undefined;
 }
 
 function normalizeAccountId(value: unknown): number | undefined {
