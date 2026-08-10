@@ -25,6 +25,7 @@ import {
   type WhitespaceData
 } from "lightweight-charts";
 import type { CanvasRenderingTarget2D } from "fancy-canvas";
+import { resolveActiveTradeOverlayEnd } from "@/lib/open-trade-chart";
 import { resolveFirstTradeBracketHit } from "@/lib/trade-bracket-truth";
 import type { TradeManagementEvent } from "@/lib/types";
 
@@ -77,6 +78,7 @@ type TradeChartTrade = {
   riskDollars?: number;
   dollarsPerPricePoint?: number;
   pnlLabel?: string;
+  isOpen?: boolean;
 };
 type TradeSide = TradeChartTrade["side"];
 
@@ -495,6 +497,9 @@ function firstBracketExitCandle(
   entryCandle: MappedCandle | null,
   fallbackExitCandle: MappedCandle | null
 ): MappedCandle | null {
+  if (trade.isOpen) {
+    return candleAtOrAfterEntry(candles, entryCandle, candles.at(-1) ?? fallbackExitCandle);
+  }
   const safeFallbackExitCandle = candleAtOrAfterEntry(candles, entryCandle, fallbackExitCandle);
   if (!entryCandle || !safeFallbackExitCandle || !candles.length) return safeFallbackExitCandle;
 
@@ -845,7 +850,11 @@ function applyTradeOverlay(series: TradeOverlaySeries, snapshot: TradeVisualSnap
   }
 
   const exitRevealed = candleIsRevealed(snapshot.exitCandle, snapshot.currentReplayCandle);
-  const pathEndCandle = exitRevealed ? snapshot.exitCandle : snapshot.currentReplayCandle;
+  const pathEndCandle = resolveActiveTradeOverlayEnd(
+    exitRevealed,
+    snapshot.exitCandle,
+    snapshot.currentReplayCandle
+  );
   const rawPathEndPrice = snapshot.currentPrice ?? snapshot.currentReplayCandle?.close;
   const pathEndPrice = exitRevealed ? snapshot.trade.exitPrice : boundedTradePathPrice(snapshot.trade, rawPathEndPrice);
 
@@ -1006,7 +1015,11 @@ function tradeDomOverlayGeometry(
   }
 
   const exitRevealed = candleIsRevealed(snapshot.exitCandle, snapshot.currentReplayCandle);
-  const pathEndCandle = exitRevealed ? snapshot.exitCandle : snapshot.currentReplayCandle;
+  const pathEndCandle = resolveActiveTradeOverlayEnd(
+    exitRevealed,
+    snapshot.exitCandle,
+    snapshot.currentReplayCandle
+  );
   const rawPathEndPrice = snapshot.currentPrice ?? snapshot.currentReplayCandle?.close;
   const pathEndPrice = exitRevealed ? snapshot.trade.exitPrice : boundedTradePathPrice(snapshot.trade, rawPathEndPrice);
   if (!snapshot.entryCandle || !pathEndCandle || pathEndPrice == null || !Number.isFinite(pathEndPrice)) return null;
@@ -1015,7 +1028,7 @@ function tradeDomOverlayGeometry(
   const endTime = (exitRevealed ? pathEndCandle.time : snapshot.currentReplayTime ?? pathEndCandle.time) as Time;
   const x1 = chartXForTime(chart, candles, startTime, dataTimeframe);
   const markerX = chartXForTime(chart, candles, endTime, dataTimeframe);
-  const areaEndCandle = snapshot.exitCandle ?? pathEndCandle;
+  const areaEndCandle = resolveActiveTradeOverlayEnd(exitRevealed, snapshot.exitCandle, pathEndCandle) ?? pathEndCandle;
   const areaEndTime = areaEndCandle.time as Time;
   const areaEndCandleForTime = replayCandleForTime(candles, areaEndTime) ?? areaEndCandle;
   const areaEndX = chartXForTime(chart, candles, areaEndTime, dataTimeframe);

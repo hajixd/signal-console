@@ -4,6 +4,8 @@ import {
   buildManagedLevelStepPath,
   buildOpenTradeChartPoints,
   latestOpenTradeMark,
+  mergeLiveOpenTradeBar,
+  resolveActiveTradeOverlayEnd,
   resolveOpenTradePathRange,
   type OpenTradeChartBar,
   type OpenTradeChartTrade
@@ -61,4 +63,33 @@ test("a break-even stop is rendered as a visible price step at its change time",
   );
 
   assert.equal(path, "M 0.00 558.60 H 350.00 V 550.40 H 620.00 V 548.80 H 900.00");
+});
+
+test("an active overlay ends at the current candle instead of a stale planned exit", () => {
+  assert.equal(resolveActiveTradeOverlayEnd(false, "planned-exit", "latest-candle"), "latest-candle");
+  assert.equal(resolveActiveTradeOverlayEnd(true, "actual-exit", "latest-candle"), "actual-exit");
+});
+
+test("a ProjectX partial bar replaces the current minute and appends the next minute", () => {
+  const replaced = mergeLiveOpenTradeBar(bars, {
+    time: "2026-08-10T19:17:00.000Z",
+    open: 4445,
+    high: 4453,
+    low: 4444.8,
+    close: 4452.8
+  });
+  assert.equal(replaced.length, bars.length);
+  assert.equal(replaced.at(-1)?.index, 12);
+  assert.equal(replaced.at(-1)?.close, 4452.8);
+
+  const appended = mergeLiveOpenTradeBar(replaced, {
+    time: "2026-08-10T19:18:00.000Z",
+    open: 4452.8,
+    high: 4454,
+    low: 4452.2,
+    close: 4453.5
+  });
+  assert.equal(appended.length, bars.length + 1);
+  assert.equal(appended.at(-1)?.index, 13);
+  assert.equal(appended.at(-1)?.close, 4453.5);
 });

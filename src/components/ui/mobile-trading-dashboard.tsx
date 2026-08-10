@@ -22,6 +22,7 @@ import { BacktestTradeMiniChart, withOpenTradeChartMark, type TradeHistoryRow } 
 import LocalDateTime, { formatLocalDateTimeParts } from "@/components/ui/local-date-time";
 import { type AutoTradeMarket } from "@/lib/auto-trade-platforms";
 import { type TradeChartBar, type TradeChartTimeframe } from "@/components/trades/trade-price-chart";
+import { mergeLiveOpenTradeBar } from "@/lib/open-trade-chart";
 
 type MobileTradingTab = "history" | "alerts" | "sync" | "autotrade" | "settings";
 
@@ -87,6 +88,10 @@ type MobileChartPayload = {
   timeframe?: TradeChartTimeframe;
 };
 
+type MobileProjectXLiveQuotePayload = {
+  bar?: Omit<TradeChartBar, "index"> & { index?: number };
+};
+
 type MobileHistoryStats = {
   averageLoss: string;
   averageTrade: string;
@@ -106,7 +111,8 @@ type MobileLoadingController = {
 const THEME_STORAGE_KEY = "trading-bot-theme";
 const LEGACY_THEME_STORAGE_KEY = "signal-console-theme";
 const TRADE_CHART_CONTEXT_CANDLES = 240;
-const OPEN_TRADE_CHART_REFRESH_MS = 10_000;
+const OPEN_TRADE_CHART_REFRESH_MS = 30_000;
+const PROJECTX_LIVE_QUOTE_REFRESH_MS = 4_000;
 
 const mobileTabs: Array<{ id: MobileTradingTab; label: string }> = [
   { id: "alerts", label: "Alerts" },
@@ -1014,6 +1020,7 @@ export default function MobileTradingDashboard({
 
     setChartState({ status: "loading", bars: [] });
     let inFlight = false;
+    let quoteInFlight = false;
     const refreshChart = async () => {
       if (inFlight || controller.signal.aborted) return;
       inFlight = true;
@@ -1047,11 +1054,46 @@ export default function MobileTradingDashboard({
       }
     };
 
+    const refreshLiveQuote = async () => {
+      if (
+        !isOpen ||
+        (activeTrade.market && activeTrade.market.toLowerCase() !== "futures") ||
+        quoteInFlight ||
+        controller.signal.aborted
+      ) return;
+      quoteInFlight = true;
+      try {
+        const quoteParams = new URLSearchParams({ market: "futures", symbol: activeTrade.symbol });
+        const response = await fetch(`/api/projectx-live-quote?${quoteParams.toString()}`, {
+          cache: "no-store",
+          signal: controller.signal
+        });
+        if (!response.ok) return;
+        const payload = (await response.json()) as MobileProjectXLiveQuotePayload;
+        const liveBar = payload.bar;
+        if (!liveBar) return;
+        setChartState((current) =>
+          current.bars.length
+            ? { ...current, bars: mergeLiveOpenTradeBar(current.bars, liveBar) }
+            : current
+        );
+      } catch (error) {
+        if (!(error instanceof Error && error.name === "AbortError")) console.warn("ProjectX live quote unavailable", error);
+      } finally {
+        quoteInFlight = false;
+      }
+    };
+
     void refreshChart();
+    void refreshLiveQuote();
     const intervalId = isOpen ? window.setInterval(() => void refreshChart(), OPEN_TRADE_CHART_REFRESH_MS) : null;
+    const quoteIntervalId = isOpen
+      ? window.setInterval(() => void refreshLiveQuote(), PROJECTX_LIVE_QUOTE_REFRESH_MS)
+      : null;
     return () => {
       controller.abort();
       if (intervalId !== null) window.clearInterval(intervalId);
+      if (quoteIntervalId !== null) window.clearInterval(quoteIntervalId);
     };
   }, [activeTrade]);
 

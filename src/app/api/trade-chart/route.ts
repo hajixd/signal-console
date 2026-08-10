@@ -680,6 +680,7 @@ async function recentProviderBars({
     try {
       sourceBars = (await fetchProjectXMarketDataBars(asset, {
         endSeconds: windowEnd,
+        includePartialBar: isOpen,
         limit: 20_000,
         startSeconds: providerStart,
         unit: 2,

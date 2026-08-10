@@ -25,6 +25,43 @@ export type OpenTradeChartPoint = {
   x: number;
 };
 
+export function resolveActiveTradeOverlayEnd<T>(
+  exitRevealed: boolean,
+  exitValue: T | null,
+  currentValue: T | null
+): T | null {
+  return exitRevealed && exitValue ? exitValue : currentValue ?? exitValue;
+}
+
+export function mergeLiveOpenTradeBar(
+  bars: OpenTradeChartBar[],
+  liveBar: Omit<OpenTradeChartBar, "index"> & { index?: number }
+): OpenTradeChartBar[] {
+  const liveTimeMs = Date.parse(liveBar.time);
+  if (!Number.isFinite(liveTimeMs)) return bars;
+
+  const existingPosition = bars.findIndex((bar) => Date.parse(bar.time) === liveTimeMs);
+  if (existingPosition >= 0) {
+    const existing = bars[existingPosition]!;
+    const next = bars.slice();
+    next[existingPosition] = { ...liveBar, index: existing.index };
+    return next;
+  }
+
+  const last = bars.at(-1);
+  const lastTimeMs = last ? Date.parse(last.time) : NaN;
+  if (last && Number.isFinite(lastTimeMs) && liveTimeMs < lastTimeMs) return bars;
+  const minuteDistance = Number.isFinite(lastTimeMs)
+    ? Math.max(1, Math.round((liveTimeMs - lastTimeMs) / 60_000))
+    : 1;
+  const index = Number.isFinite(liveBar.index)
+    ? Number(liveBar.index)
+    : last
+      ? last.index + minuteDistance
+      : 0;
+  return [...bars, { ...liveBar, index }];
+}
+
 export function buildManagedLevelStepPath(
   points: Array<{ value: number; x: number }>,
   xMax: number,
