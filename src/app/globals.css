@@ -17457,6 +17457,45 @@ html[data-theme="light"] .tradeReplaySlider input::-webkit-slider-thumb {
     font-size: 0.55rem;
   }
 
+  .mobile-trade-modal-path-stats {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    margin: 0 0 0.68rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.075);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.075);
+  }
+
+  .mobile-trade-modal-path-stats span {
+    min-width: 0;
+    display: grid;
+    gap: 0.16rem;
+    padding: 0.5rem 0.38rem;
+    text-align: center;
+  }
+
+  .mobile-trade-modal-path-stats span + span {
+    border-left: 1px solid rgba(255, 255, 255, 0.065);
+  }
+
+  .mobile-trade-modal-path-stats small {
+    color: rgba(228, 234, 227, 0.46);
+    font-size: 0.43rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    line-height: 1;
+    text-transform: uppercase;
+  }
+
+  .mobile-trade-modal-path-stats strong {
+    overflow: hidden;
+    color: rgba(249, 252, 248, 0.9);
+    font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+    font-size: 0.52rem;
+    line-height: 1.2;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
   .mobile-trade-modal-stats span {
     min-width: 0;
     min-height: 52px;
@@ -17490,12 +17529,10 @@ html[data-theme="light"] .tradeReplaySlider input::-webkit-slider-thumb {
     overflow: hidden;
   }
 
-  .mobile-trade-mini-chart-wrap .backtest-trade-mini-grid-line,
+  .mobile-trade-mini-chart-wrap .backtest-trade-mini-grid-line.vertical,
   .mobile-trade-mini-chart-wrap .backtest-trade-mini-axis-label.x-axis,
   .mobile-trade-mini-chart-wrap .backtest-trade-mini-range,
   .mobile-trade-mini-chart-wrap .backtest-trade-mini-zone,
-  .mobile-trade-mini-chart-wrap .backtest-trade-mini-marker.mfe,
-  .mobile-trade-mini-chart-wrap .backtest-trade-mini-marker.mae,
   .mobile-trade-mini-chart-wrap .backtest-trade-mini-legend {
     display: none;
   }
@@ -17504,9 +17541,25 @@ html[data-theme="light"] .tradeReplaySlider input::-webkit-slider-thumb {
     fill: #050505;
   }
 
-  .mobile-trade-mini-chart-wrap .backtest-trade-mini-axis-label.y-axis,
+  .mobile-trade-mini-chart-wrap .backtest-trade-mini-grid-line:not(.vertical) {
+    stroke: rgba(255, 255, 255, 0.085);
+  }
+
+  .mobile-trade-mini-chart-wrap .backtest-trade-mini-axis-label.y-axis {
+    display: block;
+    fill: rgba(238, 243, 237, 0.62);
+    font-size: 8px;
+    stroke-width: 2px;
+  }
+
   .mobile-trade-mini-chart-wrap .backtest-trade-mini-level-label,
   .mobile-trade-mini-chart-wrap .backtest-trade-mini-marker text {
+    display: block;
+    font-size: 7px;
+    stroke-width: 2px;
+  }
+
+  .mobile-trade-mini-chart-wrap .backtest-trade-mini-level-label.limit {
     display: none;
   }
 
@@ -17697,12 +17750,14 @@ html[data-theme="light"] .tradeReplaySlider input::-webkit-slider-thumb {
   }
 
   html[data-theme="light"] .mobile-trade-modal-head strong,
-  html[data-theme="light"] .mobile-trade-modal-stats strong {
+  html[data-theme="light"] .mobile-trade-modal-stats strong,
+  html[data-theme="light"] .mobile-trade-modal-path-stats strong {
     color: #0f172a;
   }
 
   html[data-theme="light"] .mobile-trade-modal-head span,
   html[data-theme="light"] .mobile-trade-modal-stats small,
+  html[data-theme="light"] .mobile-trade-modal-path-stats small,
   html[data-theme="light"] .mobile-trade-modal-note {
     color: rgba(15, 23, 42, 0.58);
   }
@@ -17712,6 +17767,14 @@ html[data-theme="light"] .tradeReplaySlider input::-webkit-slider-thumb {
     border-color: rgba(15, 23, 42, 0.1);
     background: rgba(255, 255, 255, 0.78);
     color: #0f172a;
+  }
+
+  html[data-theme="light"] .mobile-trade-modal-path-stats {
+    border-color: rgba(15, 23, 42, 0.1);
+  }
+
+  html[data-theme="light"] .mobile-trade-modal-path-stats span + span {
+    border-left-color: rgba(15, 23, 42, 0.08);
   }
 
   html[data-theme="light"] .mobile-phone-history-stats {

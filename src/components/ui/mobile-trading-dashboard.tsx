@@ -18,7 +18,13 @@ import {
   useStrategyEdits
 } from "@/components/strategies/strategy-edits-store";
 import { adjustTradeHistoryRows } from "@/components/trades/adjust-trade-history-rows";
-import { BacktestTradeMiniChart, withOpenTradeChartMark, type TradeHistoryRow } from "@/components/trades/trade-history";
+import {
+  BacktestTradeMiniChart,
+  tradePathDurationLabel,
+  tradePathStats,
+  withOpenTradeChartMark,
+  type TradeHistoryRow
+} from "@/components/trades/trade-history";
 import LocalDateTime, { formatLocalDateTimeParts } from "@/components/ui/local-date-time";
 import { type AutoTradeMarket } from "@/lib/auto-trade-platforms";
 import { type TradeChartBar, type TradeChartTimeframe } from "@/components/trades/trade-price-chart";
@@ -807,6 +813,8 @@ function MobileTradeChartModal({
   trade: TradeHistoryRow;
 }) {
   const displayedTrade = withOpenTradeChartMark(trade, chartState.bars);
+  const pathStats = tradePathStats(displayedTrade, chartState.bars);
+  const durationLabel = tradePathDurationLabel(displayedTrade, chartState.bars);
   return createPortal(
     <div
       className="mobile-trade-modal-backdrop"
@@ -846,6 +854,12 @@ function MobileTradeChartModal({
         <div className="mobile-trade-modal-levels" aria-label="Trade protection levels">
           <span><small>Take Profit</small><strong className="up">{displayedTrade.targetPriceLabel}</strong></span>
           <span><small>Stop Loss</small><strong className="down">{displayedTrade.stopPriceLabel}</strong></span>
+        </div>
+        <div className="mobile-trade-modal-path-stats" aria-label="Trade path statistics">
+          <span><small>Duration</small><strong>{durationLabel.replace(/\s+bars?/i, "b").replace(" / ", " · ")}</strong></span>
+          <span><small>MFE</small><strong className="up">{pathStats.mfe == null ? "--" : formatMobileMoney(pathStats.mfe)}</strong></span>
+          <span><small>MAE</small><strong className="down">{pathStats.mae == null ? "--" : formatMobileMoney(-pathStats.mae)}</strong></span>
+          <span><small>R</small><strong className={displayedTrade.pnlDollars > 0 ? "up" : displayedTrade.pnlDollars < 0 ? "down" : "neutral"}>{displayedTrade.rMultipleLabel}</strong></span>
         </div>
         {displayedTrade.isEstimatedPnl && displayedTrade.markTime ? (
           <p className="mobile-trade-modal-note mobile-trade-modal-estimate-note">

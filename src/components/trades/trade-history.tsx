@@ -304,7 +304,7 @@ export function resolvedTradePathRange(
   };
 }
 
-function tradePathStats(trade: TradeHistoryRow, bars: ChartBar[]): { mfe: number | null; mae: number | null } {
+export function tradePathStats(trade: TradeHistoryRow, bars: ChartBar[]): { mfe: number | null; mae: number | null } {
   const range = resolvedTradePathRange(trade, bars);
   if (!range) return { mfe: null, mae: null };
 
@@ -333,7 +333,7 @@ function tradePathStats(trade: TradeHistoryRow, bars: ChartBar[]): { mfe: number
   };
 }
 
-function tradePathDurationLabel(trade: TradeHistoryRow, bars: ChartBar[]): string {
+export function tradePathDurationLabel(trade: TradeHistoryRow, bars: ChartBar[]): string {
   const range = resolvedTradePathRange(trade, bars);
   if (!range) return `${trade.durationLabel} / ${trade.durationDetailLabel}`;
   const entryMs = Date.parse(range.entryTime);
@@ -892,15 +892,15 @@ export function BacktestTradeMiniChart({
     const observer = new ResizeObserver(syncWidth);
     observer.observe(node);
     return () => observer.disconnect();
-  }, []);
+  }, [status]);
 
   const plot = useMemo(() => {
     if (data.length < 2) return null;
     const width = Math.max(360, chartWidth);
     const compactMobile = compactTooltip && width < 640;
-    const height = compactMobile ? 194 : width < 640 ? 250 : 300;
+    const height = compactMobile ? 300 : width < 640 ? 250 : 300;
     const margins = compactMobile
-      ? { top: 14, right: 12, bottom: 14, left: 12 }
+      ? { top: 20, right: 12, bottom: 14, left: 58 }
       : width < 640
         ? { top: 22, right: 16, bottom: 42, left: 58 }
         : { top: 24, right: 34, bottom: 46, left: 76 };
