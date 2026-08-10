@@ -37,17 +37,32 @@ export async function verifyMt5CredentialConnection(fields: Record<string, strin
     throw new Error("The secure MT5 connection service is not online yet.");
   }
 
-  const response = await fetch(mt5CredentialBridgeEndpoint(bridgeUrl, "verify-account"), {
-    body: JSON.stringify({
-      login: fields.login,
-      password: fields.password,
-      secret: bridgeSecret,
-      server: fields.server
-    }),
-    cache: "no-store",
-    headers: { "content-type": "application/json" },
-    method: "POST"
-  });
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 25_000);
+  let response: Response;
+  try {
+    response = await fetch(mt5CredentialBridgeEndpoint(bridgeUrl, "verify-account"), {
+      body: JSON.stringify({
+        login: fields.login,
+        password: fields.password,
+        server: fields.server
+      }),
+      cache: "no-store",
+      headers: {
+        authorization: `Bearer ${bridgeSecret}`,
+        "content-type": "application/json"
+      },
+      method: "POST",
+      signal: controller.signal
+    });
+  } catch (error) {
+    if (error instanceof Error && error.name === "AbortError") {
+      throw new Error("The secure MT5 service did not respond in time.");
+    }
+    throw error;
+  } finally {
+    clearTimeout(timeout);
+  }
   const parsed = await readJsonResponse<Mt5CredentialVerificationResponse>(response, "MT5 could not verify this account.");
   if (parsed.status !== "connected" || !parsed.connected || parsed.error) {
     throw new Error(parsed.error || "MT5 could not verify this account.");

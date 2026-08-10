@@ -12,8 +12,8 @@ import {
   verifyAutoTradeConnectionAccessCode
 } from "@/lib/auto-trade-connections";
 import { autoTradeProviderById } from "@/lib/auto-trade-platforms";
-import { availableMt5ConnectionMode, fieldsForMt5ConnectionMode } from "@/lib/mt5-connection-mode";
-import { verifyMt5CredentialConnection } from "@/lib/mt5-credential-bridge";
+import { fieldsForMt5ConnectionMode } from "@/lib/mt5-connection-mode";
+import { mt5CredentialBridgeConfigured, verifyMt5CredentialConnection } from "@/lib/mt5-credential-bridge";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -56,6 +56,10 @@ function connectionId(value: unknown): string | undefined {
   return typeof value === "string" && /^[0-9A-Za-z_-]{3,80}$/.test(value.trim()) ? value.trim() : undefined;
 }
 
+function mt5ConnectionMode(): "credential_bridge" | null {
+  return mt5CredentialBridgeConfigured() ? "credential_bridge" : null;
+}
+
 async function authorizeProviderMutation(request: NextRequest, savedConnectionId: string, accessCode: unknown) {
   if (isAdminAuthorized(request)) return null;
   const suppliedCode = text(accessCode) ?? text(request.nextUrl.searchParams.get("accessCode"));
@@ -87,6 +91,7 @@ export async function GET() {
   const connections = await listAutoTradeConnections();
   return NextResponse.json({
     connections: connections.map(publicConnection),
+    mt5ConnectionMode: mt5ConnectionMode(),
     storageMode: autoTradeConnectionStoreMode()
   });
 }
@@ -104,10 +109,10 @@ export async function POST(request: NextRequest) {
   }
   if (providerId === "mt5_ea") {
     if (!fields.login || !/^\d+$/.test(fields.login)) {
-      return NextResponse.json({ error: "Enter the numeric MT5 account login shown in your terminal." }, { status: 400 });
+      return NextResponse.json({ error: "Enter the numeric MT5 account login issued by the prop firm." }, { status: 400 });
     }
     if (!fields.server) {
-      return NextResponse.json({ error: "Enter the exact MT5 broker server shown in your terminal." }, { status: 400 });
+      return NextResponse.json({ error: "Enter the exact MT5 broker server issued with the account." }, { status: 400 });
     }
     if (!fields.password) {
       return NextResponse.json({ error: "Enter the MT5 master trading password issued by the prop firm." }, { status: 400 });
@@ -119,27 +124,36 @@ export async function POST(request: NextRequest) {
   if (!isValidAccessCode(accessCode)) {
     return NextResponse.json({ error: "Create a 5-digit account code." }, { status: 400 });
   }
-  const accountName = text(payload.accountName);
-  if (!accountName) {
+  let accountName = text(payload.accountName);
+  if (!accountName && providerId !== "mt5_ea") {
     return NextResponse.json({ error: "Enter a name for this auto-trading account." }, { status: 400 });
   }
 
   if (providerId === "mt5_ea") {
-    const connectionMode = availableMt5ConnectionMode();
+    const connectionMode = mt5ConnectionMode();
     if (!connectionMode) {
       return NextResponse.json(
-        { error: "MT5 execution is not configured. Connect the MT5 EA service or credential bridge first." },
+        { error: "The secure MT5 credential service is not online yet." },
         { status: 503 }
       );
     }
     if (connectionMode === "credential_bridge") {
       try {
-        await verifyMt5CredentialConnection(fields);
+        const verification = await verifyMt5CredentialConnection(fields);
+        accountName ||= verification.accountName?.trim();
+        if (typeof verification.balance === "number" && Number.isFinite(verification.balance) && verification.balance > 0) {
+          fields.accountSize = String(verification.balance);
+        }
       } catch (error) {
         return NextResponse.json({ error: error instanceof Error ? error.message : "MT5 could not verify this account." }, { status: 400 });
       }
     }
+    accountName ||= `${text(payload.firmLabel) ?? "MT5"} ${fields.login}`;
     fields = fieldsForMt5ConnectionMode(fields, connectionMode);
+  }
+
+  if (!accountName) {
+    return NextResponse.json({ error: "Enter a name for this auto-trading account." }, { status: 400 });
   }
 
   try {
@@ -155,6 +169,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       connection: publicConnection(connection),
       connections: (await listAutoTradeConnections()).map(publicConnection),
+      mt5ConnectionMode: mt5ConnectionMode(),
       storageMode: autoTradeConnectionStoreMode()
     });
   } catch (error) {
@@ -181,6 +196,7 @@ export async function PATCH(request: NextRequest) {
   return NextResponse.json({
     connection: publicConnection(connection),
     connections: (await listAutoTradeConnections()).map(publicConnection),
+    mt5ConnectionMode: mt5ConnectionMode(),
     storageMode: autoTradeConnectionStoreMode()
   });
 }
@@ -200,6 +216,7 @@ export async function DELETE(request: NextRequest) {
   await deleteAutoTradeConnection(savedConnectionId);
   return NextResponse.json({
     connections: (await listAutoTradeConnections()).map(publicConnection),
+    mt5ConnectionMode: mt5ConnectionMode(),
     storageMode: autoTradeConnectionStoreMode()
   });
 }

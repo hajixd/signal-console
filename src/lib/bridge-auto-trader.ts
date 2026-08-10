@@ -34,8 +34,13 @@ type BridgeOrderResponse = {
   accountName?: string;
   contractId?: string;
   contractName?: string;
+  dealId?: number;
   error?: string;
+  filledPrice?: number;
   orderId?: number;
+  requestedSize?: number;
+  size?: number;
+  sizeReduced?: boolean;
   status?: "dry_run" | "failed" | "placed";
 };
 
@@ -77,30 +82,47 @@ async function executeBridgeAutoTrade(
   }
 
   try {
-    const response = await fetch(fieldText(fields, "bridgeUrl", provider.urlEnv)!, {
-      body: JSON.stringify({
-        accessToken: fields?.accessToken,
-        accountId: request.accountId,
-        action: request.action,
-        customTag: request.customTag,
-        entryPrice: request.entryPrice,
-        entryType: request.entryType,
-        gateway: fields?.gateway,
-        login: fields?.login,
-        password: fields?.password,
-        refreshToken: fields?.refreshToken,
-        secret: fieldText(fields, "bridgeSecret", provider.secretEnv),
-        server: fields?.server,
-        size: request.size,
-        stopLossPrice: request.stopLossPrice,
-        symbol: request.symbol,
-        takeProfitPrice: request.takeProfitPrice,
-        tradeId: trade.id
-      }),
-      cache: "no-store",
-      headers: { "content-type": "application/json" },
-      method: "POST"
-    });
+    const bridgeSecret = fieldText(fields, "bridgeSecret", provider.secretEnv)!;
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 30_000);
+    let response: Response;
+    try {
+      response = await fetch(fieldText(fields, "bridgeUrl", provider.urlEnv)!, {
+        body: JSON.stringify({
+          accessToken: fields?.accessToken,
+          accountId: request.accountId,
+          action: request.action,
+          customTag: request.customTag,
+          entryPrice: request.entryPrice,
+          entryType: request.entryType,
+          gateway: fields?.gateway,
+          login: fields?.login,
+          password: fields?.password,
+          refreshToken: fields?.refreshToken,
+          secret: provider.providerId === "mt5_ea" ? undefined : bridgeSecret,
+          server: fields?.server,
+          size: request.size,
+          stopLossPrice: request.stopLossPrice,
+          symbol: request.symbol,
+          takeProfitPrice: request.takeProfitPrice,
+          tradeId: trade.id
+        }),
+        cache: "no-store",
+        headers: {
+          authorization: `Bearer ${bridgeSecret}`,
+          "content-type": "application/json"
+        },
+        method: "POST",
+        signal: controller.signal
+      });
+    } catch (error) {
+      if (error instanceof Error && error.name === "AbortError") {
+        throw new Error(`${provider.name} bridge timed out before confirming the order.`);
+      }
+      throw error;
+    } finally {
+      clearTimeout(timeout);
+    }
     const parsed = await readJsonResponse<BridgeOrderResponse>(response, `${provider.name} bridge order failed.`);
     if (parsed.status === "failed" || parsed.error) throw new Error(parsed.error ?? `${provider.name} bridge rejected the order.`);
     const orderId = parsed.orderId;
@@ -118,8 +140,9 @@ async function executeBridgeAutoTrade(
           contractId: parsed.contractId ?? request.symbol,
           contractName: parsed.contractName ?? request.symbol,
           customTag: request.customTag,
+          filledPrice: parsed.filledPrice,
           orderId,
-          size: request.size,
+          size: typeof parsed.size === "number" && Number.isFinite(parsed.size) && parsed.size > 0 ? parsed.size : request.size,
           sizeUnit: request.sizeUnit,
           status: "placed"
         }

@@ -716,10 +716,18 @@ async function parseConnectionResponse(response: Response): Promise<ProjectXConn
   return payload;
 }
 
-async function parseSavedConnections(response: Response): Promise<{ connections: SavedAutoTradeConnection[]; error?: string }> {
-  const payload = (await response.json().catch(() => ({ connections: [] }))) as { connections?: SavedAutoTradeConnection[]; error?: string };
+async function parseSavedConnections(response: Response): Promise<{
+  connections: SavedAutoTradeConnection[];
+  error?: string;
+  mt5ConnectionMode?: "credential_bridge" | "terminal_ea" | null;
+}> {
+  const payload = (await response.json().catch(() => ({ connections: [] }))) as {
+    connections?: SavedAutoTradeConnection[];
+    error?: string;
+    mt5ConnectionMode?: "credential_bridge" | "terminal_ea" | null;
+  };
   if (!response.ok) throw new Error(payload.error ?? "Auto-trade connection request failed.");
-  return { connections: payload.connections ?? [] };
+  return { connections: payload.connections ?? [], mt5ConnectionMode: payload.mt5ConnectionMode };
 }
 
 async function parseAutoTradeTestResponse(response: Response): Promise<AutoTradeTestResponse> {
@@ -926,6 +934,7 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
   const [accountMode, setAccountMode] = useState<AutoTradeAccountMode | null>(null);
   const [isAccountModeReady, setIsAccountModeReady] = useState(false);
   const [savedConnections, setSavedConnections] = useState<SavedAutoTradeConnection[]>([]);
+  const [mt5ConnectionMode, setMt5ConnectionMode] = useState<"credential_bridge" | "terminal_ea" | null>(null);
   const [genericFields, setGenericFields] = useState<Record<string, string>>(() => defaultConnectionFields(selectedProviderId));
   const [activeProjectXFolderId, setActiveProjectXFolderId] = useState<string | null>(null);
   const [pendingProjectXFolder, setPendingProjectXFolder] = useState<ProjectXConnectionSummary | null>(null);
@@ -1184,6 +1193,7 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
       const response = await fetch("/api/auto-trading/connections", { cache: "no-store" });
       const payload = await parseSavedConnections(response);
       setSavedConnections(payload.connections);
+      setMt5ConnectionMode(payload.mt5ConnectionMode ?? null);
     } catch (error) {
       setStatus((current) => ({
         ...current,
@@ -1294,6 +1304,7 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
       });
       const payload = await parseSavedConnections(response);
       setSavedConnections(payload.connections);
+      setMt5ConnectionMode(payload.mt5ConnectionMode ?? null);
       setGenericFields(defaultConnectionFields(selectedProvider.id));
       setGenericAccessCode("");
       setAccountDisplayName("");
@@ -1426,6 +1437,7 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
       });
       const payload = await parseSavedConnections(response);
       setSavedConnections(payload.connections);
+      setMt5ConnectionMode(payload.mt5ConnectionMode ?? null);
     } catch (error) {
       setStatus((current) => ({
         ...current,
@@ -1491,6 +1503,7 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
       });
       const payload = await parseSavedConnections(response);
       setSavedConnections(payload.connections);
+      setMt5ConnectionMode(payload.mt5ConnectionMode ?? null);
     } catch (error) {
       setStatus((current) => ({
         ...current,
@@ -1843,25 +1856,27 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
                 <div className="mt5ConnectNotice">
                   <strong>Use the MT5 credentials from {selectedFirm.label}</strong>
                   <span>
-                    Enter the login number, master trading password, and exact server from your prop-firm credentials.
-                    Do not use the investor or read-only password. Direct credentials are encrypted when the secure bridge is active;
-                    EA-linked terminals never store the submitted password. The MT5 login is automatically saved as that account's EA Connection ID.
-                    Account balance and broker-specific symbol names are detected automatically by the EA.
+                    {mt5ConnectionMode === "credential_bridge"
+                      ? "Enter the login number, master trading password, and exact server from your prop-firm credentials. Korra verifies and encrypts them, then detects the account name, balance, lot limits, and broker symbol names automatically. No EA or personal terminal setup is required."
+                      : "Enter the login number, master trading password, and exact server from your prop-firm credentials. The secure credential service must be online before an EA-free account can be verified."}
+                    {" "}Do not use the investor or read-only password.
                   </span>
                 </div>
               ) : null}
-              <label>
-                <span>Account name</span>
-                <input
-                  autoComplete="organization-title"
-                  name={`${selectedProvider.id}-account-name`}
-                  onChange={(event) => setAccountDisplayName(event.target.value)}
-                  placeholder={`${selectedFirm.label} account`}
-                  required
-                  type="text"
-                  value={accountDisplayName}
-                />
-              </label>
+              {selectedProvider.id !== "mt5_ea" ? (
+                <label>
+                  <span>Account name</span>
+                  <input
+                    autoComplete="organization-title"
+                    name={`${selectedProvider.id}-account-name`}
+                    onChange={(event) => setAccountDisplayName(event.target.value)}
+                    placeholder={`${selectedFirm.label} account`}
+                    required
+                    type="text"
+                    value={accountDisplayName}
+                  />
+                </label>
+              ) : null}
               {primaryProviderFields.map((field) => (
                   <label key={field.key}>
                     <span>{field.label}</span>
@@ -1884,7 +1899,7 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
                   </label>
                 ))}
               <label>
-                <span>Account code</span>
+                <span>{selectedProvider.id === "mt5_ea" ? "Korra security code" : "Account code"}</span>
                 <input
                   autoComplete="new-password"
                   inputMode="numeric"
