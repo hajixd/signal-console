@@ -76,13 +76,19 @@ import { getTrades } from "@/lib/storage";
 import { discordChannelInviteLink, discordConfigured as discordIsConfigured } from "@/lib/discord";
 import { telegramGroupInviteLink } from "@/lib/telegram";
 import { type DataTimeframe } from "@/lib/timeframes";
-import { resolveFirstTradeBracketHit, type TradeBracketBar, type TradeBracketHit } from "@/lib/trade-bracket-truth";
+import {
+  oneMinuteBarsHeld,
+  resolveFirstTradeBracketHit,
+  type TradeBracketBar,
+  type TradeBracketHit
+} from "@/lib/trade-bracket-truth";
 import { consistentTradeOutcome } from "@/lib/trade-outcome-consistency";
 import { conciseStrategyName } from "@/lib/strategy-names";
 import type { NotificationStatus, TradeAlert, TradeManagementEvent } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 const DEFAULT_SELECTED_STRATEGY_COUNT = 1;
+const UNIVERSAL_TRADE_TIMEFRAME: TradeChartTimeframe = "1m";
 const TRADE_CHART_TIMEFRAME_VALUES = new Set<TradeChartTimeframe>(["1m", "5m", "10m", "15m", "30m", "45m", "1h", "4h", "1d"]);
 const HISTORY_LOOKBACK_MS = 365 * 24 * 60 * 60 * 1000;
 const EMPTY_LIVE_CONFIG: LiveConfig = {
@@ -322,11 +328,15 @@ function sideLabel(side: "long" | "short"): string {
   return side === "long" ? "Buy" : "Sell";
 }
 
-function tradeSourceTimeframe(trade: BacktestTrade): TradeChartTimeframe {
+function tradeStrategyTimeframe(trade: BacktestTrade): TradeChartTimeframe {
   if (trade.executionTimeframe && TRADE_CHART_TIMEFRAME_VALUES.has(trade.executionTimeframe as TradeChartTimeframe)) {
     return trade.executionTimeframe as TradeChartTimeframe;
   }
   return timeframeFromVariant(trade.variantId, "exec_tf") ?? "1m";
+}
+
+function tradeSourceTimeframe(_trade: BacktestTrade): TradeChartTimeframe {
+  return UNIVERSAL_TRADE_TIMEFRAME;
 }
 
 function timeframeFromVariant(variantId: string | undefined, key = "tf"): TradeChartTimeframe | null {
@@ -481,7 +491,7 @@ async function loadHistoryBarsBySymbol(trades: BacktestTrade[]): Promise<Map<str
   for (const trade of trades) {
     const asset = assetForSymbol(trade.symbol);
     if (!asset) continue;
-    const timeframe = tradeSourceTimeframe(trade);
+    const timeframe = UNIVERSAL_TRADE_TIMEFRAME;
     const key = historyBarsKey(trade.symbol, timeframe);
     const current = rangesBySymbol.get(key) ?? {
       path: `${timeframe}/${asset.dataFile}`,
@@ -1350,7 +1360,7 @@ function resolvedBacktestExit({
   const rMultiple = hasManagedLevels ? trade.rMultiple : riskDollars > 0 ? pnlDollars / riskDollars : trade.rMultiple;
 
   return {
-    barsHeld: hit?.barsHeld ?? trade.barsHeld,
+    barsHeld: hit?.barsHeld ?? oneMinuteBarsHeld(trade.entryTime, trade.exitTime, trade.barsHeld),
     exitIndex: hit?.exitIndex ?? trade.exitIndex,
     exitPrice,
     exitReason: effectiveExitReason(trade.exitReason, boundary),
@@ -1546,13 +1556,6 @@ function liveTradeLatestPriceConfig(trade: TradeAlert, option?: StrategyOption):
     key: `${assetKey}:${timeframe}`,
     timeframe
   };
-}
-
-function approximateBarsHeld(startValue: string, endValue: string, timeframeMinutes = 15): number {
-  const start = Date.parse(startValue);
-  const end = Date.parse(endValue);
-  if (!Number.isFinite(start) || !Number.isFinite(end) || end <= start) return 1;
-  return Math.max(1, Math.round((end - start) / (timeframeMinutes * 60_000)));
 }
 
 export default async function Home({ searchParams }: HomeProps) {
@@ -1816,7 +1819,7 @@ export default async function Home({ searchParams }: HomeProps) {
       signalTime: trade.signalTime,
       entryTime: trade.entryTime,
       exitTime: trade.exitTime,
-      barsHeld: trade.barsHeld,
+      barsHeld: oneMinuteBarsHeld(trade.entryTime, trade.exitTime, trade.barsHeld),
       basePnlDollars: boundedBacktestTradeDollarPnl(trade, sizeMultiplier),
       baseRiskDollars: tradeRiskDollars(trade, sizeMultiplier),
       baseTargetDollars: tradeTargetDollars(trade, sizeMultiplier),
@@ -1890,7 +1893,7 @@ export default async function Home({ searchParams }: HomeProps) {
           label: trade.label,
           phase: trade.phase,
           symbol: trade.symbol,
-          timeframeLabel: tradeSourceTimeframe(trade),
+          timeframeLabel: tradeStrategyTimeframe(trade),
           variantId: trade.variantId
         }),
       marketLabel: marketLabel(trade.market),
@@ -1904,6 +1907,7 @@ export default async function Home({ searchParams }: HomeProps) {
       entryTime: trade.entryTime,
       exitTime: displayExit.exitTime,
       sourceTimeframe: tradeSourceTimeframe(trade),
+      strategyTimeframe: tradeStrategyTimeframe(trade),
       phase: trade.phase,
       variantId: trade.variantId,
       entryType: tradeEntryType(trade),
@@ -1919,7 +1923,7 @@ export default async function Home({ searchParams }: HomeProps) {
       exitPriceLabel: fmtDollarPrice(displayExit.exitPrice),
       targetPriceLabel: fmtDollarPrice(targetPrice),
       stopPriceLabel: fmtDollarPrice(stopPrice),
-      durationLabel: fmtBars(displayExit.barsHeld),
+      durationLabel: fmtBars(oneMinuteBarsHeld(trade.entryTime, displayExit.exitTime, displayExit.barsHeld)),
       durationDetailLabel: fmtDuration(trade.entryTime, displayExit.exitTime),
       exitReasonLabel: fmtExitReason(displayExit.exitReason),
       pnlLabel: fmtMoney(displayExit.pnlDollars, true),
@@ -2028,7 +2032,7 @@ export default async function Home({ searchParams }: HomeProps) {
       const sideMultiplier = trade.side === "long" ? 1 : -1;
       const netUnits = priceUnit > 0 ? ((exitPrice - entryPrice) * sideMultiplier) / priceUnit : 0;
       const unitLabel = instrumentUnitLabel(trade.symbol);
-      const barsHeld = approximateBarsHeld(trade.signalTime, endTime);
+      const barsHeld = oneMinuteBarsHeld(trade.signalTime, endTime);
 
       return {
         id: `live-${trade.id}-${index}`,
@@ -2050,7 +2054,9 @@ export default async function Home({ searchParams }: HomeProps) {
         signalTime: trade.signalTime,
         entryTime: trade.signalTime,
         exitTime: endTime,
-        sourceTimeframe: timeframeFromVariant(option?.variantId, "exec_tf") ?? "1m",
+        sourceTimeframe: UNIVERSAL_TRADE_TIMEFRAME,
+        strategyTimeframe:
+          timeframeFromVariant(option?.variantId, "tf") ?? timeframeFromVariant(option?.variantId, "exec_tf") ?? "1m",
         phase: option?.phase,
         variantId: option?.variantId,
         entryType: trade.entryType ?? "market",
@@ -2105,7 +2111,7 @@ export default async function Home({ searchParams }: HomeProps) {
       signalTime: row.signalTime,
       entryTime: row.entryTime,
       exitTime: row.exitTime,
-      barsHeld: Math.max(0, row.exitIndex - row.entryIndex),
+      barsHeld: oneMinuteBarsHeld(row.entryTime, row.exitTime, row.exitIndex - row.entryIndex),
       basePnlDollars: row.pnlDollars,
       baseRiskDollars: row.riskDollars,
       baseTargetDollars: row.targetDollars,

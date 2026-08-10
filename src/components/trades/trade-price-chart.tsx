@@ -62,6 +62,7 @@ type TradeChartTrade = {
   entryTime: string;
   exitTime: string;
   sourceTimeframe?: TradeChartTimeframe;
+  strategyTimeframe?: TradeChartTimeframe;
   phase?: string;
   variantId?: string;
   label?: string;
@@ -496,7 +497,6 @@ function firstBracketExitCandle(
 ): MappedCandle | null {
   const safeFallbackExitCandle = candleAtOrAfterEntry(candles, entryCandle, fallbackExitCandle);
   if (!entryCandle || !safeFallbackExitCandle || !candles.length) return safeFallbackExitCandle;
-  if (trade.managementEvents?.length) return safeFallbackExitCandle;
 
   const hit = resolveFirstTradeBracketHit(
     {
@@ -505,6 +505,7 @@ function firstBracketExitCandle(
       entryTime: entryCandle.source.time,
       exitIndex: safeFallbackExitCandle.source.index,
       exitTime: safeFallbackExitCandle.source.time,
+      managementEvents: trade.managementEvents,
       side: trade.side,
       stopPrice: trade.stopPrice,
       targetPrice: trade.targetPrice
@@ -1185,8 +1186,8 @@ function chartBarsFromMinutes(minutes: number, dataTimeframe: TradeChartTimefram
 }
 
 function chartBarsFromStrategyBars(strategyBars: number, trade: TradeChartTrade, dataTimeframe: TradeChartTimeframe): number {
-  const sourceTimeframe = trade.sourceTimeframe ?? "1m";
-  return Math.max(1, Math.round((strategyBars * timeframeSeconds(sourceTimeframe)) / timeframeSeconds(dataTimeframe)));
+  const strategyTimeframe = trade.strategyTimeframe ?? trade.sourceTimeframe ?? "1m";
+  return Math.max(1, Math.round((strategyBars * timeframeSeconds(strategyTimeframe)) / timeframeSeconds(dataTimeframe)));
 }
 
 function rangeHighLow(candles: MappedCandle[], start: number, end: number): { high: number; low: number } | null {
@@ -2672,8 +2673,9 @@ export default function TradePriceChart({
   const replayMappedCandles = useMemo(() => mappedCandlesFromBars(replayBars ?? []), [replayBars]);
   const effectiveDataTimeframe = dataTimeframe ?? timeframe;
   const sourceTimeframe = trade.sourceTimeframe ?? effectiveDataTimeframe;
+  const strategyTimeframe = trade.strategyTimeframe ?? sourceTimeframe;
   const strategyStructureTimeframe =
-    timeframeSeconds(sourceTimeframe) > timeframeSeconds(effectiveDataTimeframe) ? sourceTimeframe : effectiveDataTimeframe;
+    timeframeSeconds(strategyTimeframe) > timeframeSeconds(effectiveDataTimeframe) ? strategyTimeframe : effectiveDataTimeframe;
   const effectiveReplayTimeframe = replayTimeframe ?? effectiveDataTimeframe;
   const hasIntrabarReplay =
     replayMappedCandles.length > 0 && timeframeSeconds(effectiveReplayTimeframe) < timeframeSeconds(effectiveDataTimeframe);
@@ -2803,9 +2805,9 @@ export default function TradePriceChart({
   const currentReplayPnlLabel = replayPnlLabel(trade, replayReferencePrice, entryRevealedForReplay, exitRevealedForReplay);
   const currentReplayPnlClass = currentReplayPnlLabel.startsWith("+") ? "up" : currentReplayPnlLabel.startsWith("-") ? "down" : "neutral";
   const timeframeScopeLabel =
-    sourceTimeframe === effectiveDataTimeframe
-      ? `${sourceTimeframe} strategy`
-      : `${sourceTimeframe} strategy / ${effectiveDataTimeframe} view`;
+    strategyTimeframe === effectiveDataTimeframe
+      ? `${strategyTimeframe} strategy`
+      : `${strategyTimeframe} strategy / ${effectiveDataTimeframe} view`;
   const replayProgressPercent = maxReplayPosition > 0 ? (clampedReplayPosition / maxReplayPosition) * 100 : 0;
   const replaySliderStyle = { "--trade-replay-progress": `${replayProgressPercent}%` } as CSSProperties;
   const timeframeControls = (
@@ -3158,6 +3160,7 @@ export default function TradePriceChart({
     trade.side,
     trade.signalTime,
     trade.sourceTimeframe,
+    trade.strategyTimeframe,
     trade.stopPrice,
     trade.targetPrice,
     trade.targetDollars,

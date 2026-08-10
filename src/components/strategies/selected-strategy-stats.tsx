@@ -8,6 +8,7 @@ import {
   useStrategyEdits
 } from "@/components/strategies/strategy-edits-store";
 import { LocalDateTimeStack } from "@/components/ui/local-date-time";
+import { oneMinuteBarsHeld } from "@/lib/trade-bracket-truth";
 
 type BasketTrade = {
   key: string;
@@ -679,7 +680,7 @@ function tradeDurationMs(trade: BasketTrade): number {
   const entry = Date.parse(trade.entryTime);
   const exit = Date.parse(trade.exitTime);
   if (Number.isFinite(entry) && Number.isFinite(exit) && exit > entry) return exit - entry;
-  return Math.max(0, trade.barsHeld) * 15 * 60_000;
+  return Math.max(0, trade.barsHeld) * 60_000;
 }
 
 type SegmentBucket = {
@@ -812,6 +813,7 @@ function makeTradeSnapshots(
 
     return {
       ...trade,
+      barsHeld: oneMinuteBarsHeld(trade.entryTime, trade.exitTime, trade.barsHeld),
       entryMs,
       exitMs,
       pnlDollars: trade.basePnlDollars * scale,
@@ -1921,8 +1923,8 @@ export default function SelectedStrategyStats({
     { label: "Median gap", value: showWhenTrades(stats, fmtDurationMs(stats.medianGapMs)), tone: "tone-neutral" },
     { label: "Shortest gap", value: showWhenTrades(stats, fmtDurationMs(stats.shortestGapMs)), tone: "tone-neutral" },
     { label: "Longest gap", value: showWhenTrades(stats, fmtDurationMs(stats.longestGapMs)), tone: "tone-neutral" },
-    { label: "Avg bars held", value: showWhenTrades(stats, fmtNumber(stats.avgBarsHeld)), tone: "tone-neutral" },
-    { label: "Max bars held", value: showWhenTrades(stats, fmtNumber(stats.maxBarsHeld)), tone: "tone-neutral" },
+    { label: "Avg 1m bars held", value: showWhenTrades(stats, fmtNumber(stats.avgBarsHeld)), tone: "tone-neutral" },
+    { label: "Max 1m bars held", value: showWhenTrades(stats, fmtNumber(stats.maxBarsHeld)), tone: "tone-neutral" },
     { label: "Duration IQR", value: showWhenTrades(stats, fmtDurationMs(stats.durationIqrMs)), tone: "tone-neutral" },
     { label: "Duration std dev", value: showWhenTrades(stats, fmtDurationMs(stats.durationStdDevMs)), tone: "tone-neutral" },
     { label: "Gap IQR", value: showWhenTrades(stats, fmtDurationMs(stats.gapIqrMs)), tone: "tone-neutral" },
@@ -2275,7 +2277,7 @@ export default function SelectedStrategyStats({
         { title: "Weekday activity", subtitle: "Execution frequency by weekday", chart: <BarChart data={weekdayCountData} formatValue={fmtCount} tooltipContext="Weekday trade volume" /> },
         { title: "Monthly activity", subtitle: "Execution count across recent active months", chart: <BarChart data={monthCountData} formatValue={fmtCount} tooltipContext="Monthly trade volume" /> },
         { title: "Entry gaps", subtitle: "Hours between consecutive entries", chart: <LineChart data={gapSequenceData} formatValue={(value) => `${fmtNumber(value)}h`} tooltipContext="Time between entries" /> },
-        { title: "Bars held", subtitle: "Chart bars consumed by each position", chart: <BarChart data={barsHeldData} formatValue={fmtCount} tooltipContext="Bars in position" /> },
+        { title: "1m bars held", subtitle: "One-minute bars consumed by each position", chart: <BarChart data={barsHeldData} formatValue={fmtCount} tooltipContext="One-minute bars in position" /> },
         { title: "Duration by outcome", subtitle: "Average holding hours for each result class", chart: <BarChart data={durationOutcomeData} formatValue={(value) => `${fmtNumber(value)}h`} tooltipContext="Outcome holding time" /> },
         { title: "Daily execution load", subtitle: "Trades entered on each recent active day", chart: <BarChart data={dayActivityData} formatValue={fmtCount} tooltipContext="Daily entry load" /> }
       ]

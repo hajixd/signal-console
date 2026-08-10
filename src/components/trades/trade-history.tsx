@@ -14,7 +14,7 @@ import { createPortal } from "react-dom";
 import { useAutoTradeAdminMode } from "@/components/auto-trading/use-auto-trade-account-mode";
 import TradePriceChart, { TRADE_CHART_TIMEFRAMES, type TradeChartBar, type TradeChartTimeframe } from "@/components/trades/trade-price-chart";
 import LocalDateTime from "@/components/ui/local-date-time";
-import { resolveFirstTradeBracketHit } from "@/lib/trade-bracket-truth";
+import { oneMinuteBarsHeld, resolveFirstTradeBracketHit } from "@/lib/trade-bracket-truth";
 import type { TradeManagementEvent } from "@/lib/types";
 
 export type TradeHistoryRow = {
@@ -38,6 +38,7 @@ export type TradeHistoryRow = {
   entryTime: string;
   exitTime: string;
   sourceTimeframe?: TradeChartTimeframe;
+  strategyTimeframe?: TradeChartTimeframe;
   phase?: string;
   variantId?: string;
   entryType?: "market" | "limit";
@@ -214,32 +215,32 @@ function nearestPositionForAnchor(bars: ChartBar[], indexValue: number, timeValu
 function resolvedTradePathRange(
   trade: TradeHistoryRow,
   bars: ChartBar[]
-): { barsHeld: number; end: number; entryTime: string; exitTime: string; start: number } | null {
+): { barsHeld: number; end: number; entryTime: string; exitPrice: number; exitTime: string; start: number } | null {
   const entryPosition = nearestPositionForAnchor(bars, trade.entryIndex, trade.entryTime);
   const exitPosition = nearestPositionForAnchor(bars, trade.exitIndex, trade.exitTime);
   if (entryPosition == null || exitPosition == null || !bars.length) return null;
 
   const fallbackEnd = Math.max(entryPosition, exitPosition);
-  const bracketHit = trade.managementEvents?.length
-    ? null
-    : resolveFirstTradeBracketHit(
-        {
-          entryIndex: bars[entryPosition]!.index,
-          entryPrice: trade.entryPrice,
-          entryTime: bars[entryPosition]!.time,
-          exitIndex: bars[fallbackEnd]!.index,
-          exitTime: bars[fallbackEnd]!.time,
-          side: trade.side,
-          stopPrice: trade.stopPrice,
-          targetPrice: trade.targetPrice
-        },
-        bars
-      );
+  const bracketHit = resolveFirstTradeBracketHit(
+    {
+      entryIndex: bars[entryPosition]!.index,
+      entryPrice: trade.entryPrice,
+      entryTime: bars[entryPosition]!.time,
+      exitIndex: bars[fallbackEnd]!.index,
+      exitTime: bars[fallbackEnd]!.time,
+      managementEvents: trade.managementEvents,
+      side: trade.side,
+      stopPrice: trade.stopPrice,
+      targetPrice: trade.targetPrice
+    },
+    bars
+  );
   const end = bracketHit?.position ?? fallbackEnd;
   return {
-    barsHeld: bracketHit?.barsHeld ?? Math.max(1, end - entryPosition + 1),
+    barsHeld: bracketHit?.barsHeld ?? oneMinuteBarsHeld(bars[entryPosition]!.time, bars[end]!.time, end - entryPosition + 1),
     end,
     entryTime: bars[entryPosition]!.time,
+    exitPrice: bracketHit?.exitPrice ?? trade.exitPrice,
     exitTime: bars[end]!.time,
     start: entryPosition
   };
@@ -554,8 +555,10 @@ function managementMarkerLabel(event: TradeManagementEvent): string {
 }
 
 function buildMiniChartPoints(trade: TradeHistoryRow, bars: ChartBar[]): MiniChartPoint[] {
+  const resolvedRange = resolvedTradePathRange(trade, bars);
   const entryMs = Date.parse(trade.entryTime);
-  const exitMs = Date.parse(trade.exitTime);
+  const exitMs = Date.parse(resolvedRange?.exitTime ?? trade.exitTime);
+  const resolvedExitPrice = resolvedRange?.exitPrice ?? trade.exitPrice;
   const safeEntryMs = Number.isFinite(entryMs) ? entryMs : Date.now();
   const safeExitMs = Number.isFinite(exitMs) && exitMs > safeEntryMs ? exitMs : safeEntryMs + 60_000;
   const durationMinutes = Math.max(1, Math.ceil((safeExitMs - safeEntryMs) / 60_000));
@@ -573,9 +576,9 @@ function buildMiniChartPoints(trade: TradeHistoryRow, bars: ChartBar[]): MiniCha
         x: 0
       },
       {
-        high: Math.max(trade.entryPrice, trade.exitPrice),
-        low: Math.min(trade.entryPrice, trade.exitPrice),
-        price: trade.exitPrice,
+        high: Math.max(trade.entryPrice, resolvedExitPrice),
+        low: Math.min(trade.entryPrice, resolvedExitPrice),
+        price: resolvedExitPrice,
         relCand: 0,
         timeMs: safeExitMs,
         x: durationMinutes
@@ -583,8 +586,8 @@ function buildMiniChartPoints(trade: TradeHistoryRow, bars: ChartBar[]): MiniCha
     ];
   }
 
-  const start = Math.min(entryPosition, exitPosition);
-  const end = Math.max(entryPosition, exitPosition);
+  const start = resolvedRange?.start ?? Math.min(entryPosition, exitPosition);
+  const end = resolvedRange?.end ?? Math.max(entryPosition, exitPosition);
   const rows: MiniChartPoint[] = [
     {
       high: trade.entryPrice,
@@ -617,17 +620,17 @@ function buildMiniChartPoints(trade: TradeHistoryRow, bars: ChartBar[]): MiniCha
   const last = rows[rows.length - 1];
   if (!last || last.x < durationMinutes) {
     rows.push({
-      high: Math.max(last?.price ?? trade.entryPrice, trade.exitPrice),
-      low: Math.min(last?.price ?? trade.entryPrice, trade.exitPrice),
-      price: trade.exitPrice,
+      high: Math.max(last?.price ?? trade.entryPrice, resolvedExitPrice),
+      low: Math.min(last?.price ?? trade.entryPrice, resolvedExitPrice),
+      price: resolvedExitPrice,
       relCand: Math.max(0, rows.length - 1),
       timeMs: safeExitMs,
       x: durationMinutes
     });
   } else {
-    last.price = trade.exitPrice;
-    last.high = Math.max(last.high, trade.exitPrice);
-    last.low = Math.min(last.low, trade.exitPrice);
+    last.price = resolvedExitPrice;
+    last.high = Math.max(last.high, resolvedExitPrice);
+    last.low = Math.min(last.low, resolvedExitPrice);
     last.timeMs = safeExitMs;
   }
 
@@ -2034,6 +2037,7 @@ export default function TradeHistory({ rows }: TradeHistoryProps) {
             entryTime: activeDisplayTrade.entryTime,
             exitTime: activeDisplayTrade.exitTime,
             sourceTimeframe: activeDisplayTrade.sourceTimeframe,
+            strategyTimeframe: activeDisplayTrade.strategyTimeframe,
             phase: activeDisplayTrade.phase,
             variantId: activeDisplayTrade.variantId,
             modelName: isRestricted ? "Admin only" : activeDisplayTrade.modelName,
@@ -2065,6 +2069,7 @@ export default function TradeHistory({ rows }: TradeHistoryProps) {
       activeDisplayTrade?.side,
       activeDisplayTrade?.signalTime,
       activeDisplayTrade?.sourceTimeframe,
+      activeDisplayTrade?.strategyTimeframe,
       activeDisplayTrade?.stopPrice,
       activeDisplayTrade?.symbol,
       activeDisplayTrade?.targetDollars,

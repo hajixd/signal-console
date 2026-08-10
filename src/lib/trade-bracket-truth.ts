@@ -18,6 +18,15 @@ export type TradeBracketInput = {
   entryPrice: number;
   targetPrice: number;
   stopPrice: number;
+  managementEvents?: TradeBracketManagementEvent[];
+};
+
+export type TradeBracketManagementEvent = {
+  price: number;
+  stopLossPrice?: number;
+  takeProfitPrice?: number;
+  time: string;
+  type: "edit_tp" | "edit_sl" | "edit_limit";
 };
 
 export type TradeBracketHit = {
@@ -30,6 +39,15 @@ export type TradeBracketHit = {
   position: number;
   reason: "take_profit" | "stop_loss";
 };
+
+export function oneMinuteBarsHeld(entryTime: string, exitTime: string, fallback = 1): number {
+  const entryMs = Date.parse(entryTime);
+  const exitMs = Date.parse(exitTime);
+  if (!Number.isFinite(entryMs) || !Number.isFinite(exitMs) || exitMs <= entryMs) {
+    return Math.max(1, Math.round(fallback) || 1);
+  }
+  return Math.max(1, Math.ceil((exitMs - entryMs) / 60_000));
+}
 
 export function nearestTradeBarPosition(bars: TradeBracketBar[], indexValue: number, timeValue?: string): number | null {
   if (!bars.length) return null;
@@ -78,34 +96,60 @@ function bracketHit(
   trade: TradeBracketInput,
   bar: TradeBracketBar,
   entryPosition: number,
-  position: number
+  position: number,
+  stopPrice: number,
+  targetPrice: number
 ): TradeBracketHit | null {
   const long = trade.side === "long";
-  const barsHeld = Math.max(1, position - entryPosition + 1);
+  const barsHeld = oneMinuteBarsHeld(trade.entryTime, bar.time, position - entryPosition + 1);
   const hit = (boundary: "target" | "stop"): TradeBracketHit => ({
     bar,
     barsHeld,
     boundary,
     exitIndex: bar.index,
-    exitPrice: boundary === "target" ? trade.targetPrice : trade.stopPrice,
+    exitPrice: boundary === "target" ? targetPrice : stopPrice,
     exitTime: bar.time,
     position,
     reason: boundary === "target" ? "take_profit" : "stop_loss"
   });
 
   if (position > entryPosition) {
-    if (long && bar.open <= trade.stopPrice) return hit("stop");
-    if (!long && bar.open >= trade.stopPrice) return hit("stop");
-    if (long && bar.open >= trade.targetPrice) return hit("target");
-    if (!long && bar.open <= trade.targetPrice) return hit("target");
+    if (long && bar.open <= stopPrice) return hit("stop");
+    if (!long && bar.open >= stopPrice) return hit("stop");
+    if (long && bar.open >= targetPrice) return hit("target");
+    if (!long && bar.open <= targetPrice) return hit("target");
   }
 
-  const stopHit = long ? bar.low <= trade.stopPrice : bar.high >= trade.stopPrice;
-  const targetHit = long ? bar.high >= trade.targetPrice : bar.low <= trade.targetPrice;
+  const stopHit = long ? bar.low <= stopPrice : bar.high >= stopPrice;
+  const targetHit = long ? bar.high >= targetPrice : bar.low <= targetPrice;
 
   if (stopHit) return hit("stop");
   if (targetHit) return hit("target");
   return null;
+}
+
+function managedBracketLevelsAt(
+  trade: TradeBracketInput,
+  barTime: string
+): { stopPrice: number; targetPrice: number } {
+  const barMs = Date.parse(barTime);
+  let stopPrice = trade.stopPrice;
+  let targetPrice = trade.targetPrice;
+
+  for (const event of [...(trade.managementEvents ?? [])].sort((left, right) => Date.parse(left.time) - Date.parse(right.time))) {
+    const eventMs = Date.parse(event.time);
+    if (!Number.isFinite(eventMs) || !Number.isFinite(barMs) || eventMs > barMs) break;
+    if (event.type === "edit_sl") {
+      const nextStop = event.stopLossPrice ?? event.price;
+      if (Number.isFinite(nextStop)) stopPrice = nextStop;
+    }
+    if (event.type === "edit_tp") {
+      const nextTarget = event.takeProfitPrice ?? event.price;
+      if (Number.isFinite(nextTarget)) targetPrice = nextTarget;
+    }
+  }
+
+  return { stopPrice, targetPrice };
 }
 
 export function resolveFirstTradeBracketHit(trade: TradeBracketInput, bars: TradeBracketBar[]): TradeBracketHit | null {
@@ -120,7 +164,9 @@ export function resolveFirstTradeBracketHit(trade: TradeBracketInput, bars: Trad
   for (let position = start; position <= end; position += 1) {
     const bar = bars[position];
     if (!bar) continue;
-    const hit = bracketHit(trade, bar, entryPosition, position);
+    const levels = managedBracketLevelsAt(trade, bar.time);
+    if (!Number.isFinite(levels.stopPrice) || !Number.isFinite(levels.targetPrice)) continue;
+    const hit = bracketHit(trade, bar, entryPosition, position, levels.stopPrice, levels.targetPrice);
     if (hit) return hit;
   }
 
