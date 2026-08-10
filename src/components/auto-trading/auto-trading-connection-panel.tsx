@@ -17,6 +17,7 @@ import {
   type AutoTradeProvider,
   type AutoTradeProviderId
 } from "@/lib/auto-trade-platforms";
+import { onlyExecutedTradeHistoryRows } from "@/lib/executed-trade-history";
 import type {
   ProjectXAccount,
   ProjectXConnectionStatus,
@@ -394,16 +395,6 @@ function projectXOrderStatusLabel(status: ProjectXOrder["status"]): string {
   return typeof status === "string" && status.trim() ? status.trim() : "Unknown";
 }
 
-function projectXOrderIsFilled(order: ProjectXOrder, tradeOrderIds: Set<number>): boolean {
-  const id = projectXOrderId(order);
-  return projectXOrderStatusValue(order.status) === 2 || Boolean(finiteNumber(order.fillVolume)) || (id !== undefined && tradeOrderIds.has(id));
-}
-
-function projectXOrderIsTerminalFailure(order: ProjectXOrder): boolean {
-  const status = projectXOrderStatusValue(order.status);
-  return status === 3 || status === 4 || status === 5;
-}
-
 function projectXOrderBaseTag(order: Pick<ProjectXOrder, "customTag"> | undefined): string | undefined {
   let tag = order?.customTag?.trim() ?? "";
   if (!tag) return undefined;
@@ -663,65 +654,8 @@ function buildProjectXClosedTradeRows(trades: ProjectXTrade[], orders: ProjectXO
   return [...closedRows, ...rows];
 }
 
-function buildProjectXAttemptRows(orders: ProjectXOrder[], trades: ProjectXTrade[]): ProjectXTradeHistoryRow[] {
-  type AttemptGroup = {
-    hasFill: boolean;
-    key: string;
-    latestOrder?: ProjectXOrder;
-    terminalOrder?: ProjectXOrder;
-  };
-
-  const tradeOrderIds = new Set(
-    trades.map(projectXTradeOrderId).filter((value): value is number => value !== undefined)
-  );
-  const groups = new Map<string, AttemptGroup>();
-
-  for (const order of orders) {
-    const baseTag = projectXOrderBaseTag(order);
-    if (!baseTag?.startsWith("tb_")) continue;
-    const key = `attempt-${baseTag}`;
-    const group = groups.get(key) ?? { hasFill: false, key };
-    group.hasFill = group.hasFill || projectXOrderIsFilled(order, tradeOrderIds);
-    if (!group.latestOrder || projectXOrderTimeMs(order) > projectXOrderTimeMs(group.latestOrder)) group.latestOrder = order;
-    if (projectXOrderIsTerminalFailure(order) && (!group.terminalOrder || projectXOrderTimeMs(order) > projectXOrderTimeMs(group.terminalOrder))) {
-      group.terminalOrder = order;
-    }
-    groups.set(key, group);
-  }
-
-  return [...groups.values()]
-    .filter((group) => !group.hasFill && group.terminalOrder)
-    .map((group) => {
-      const order = group.terminalOrder!;
-      const status = projectXOrderStatusValue(order.status);
-      const orderId = projectXOrderId(order);
-      const price = finiteNumber(order.filledPrice) ?? finiteNumber(order.limitPrice) ?? finiteNumber(order.stopPrice);
-      const size = finiteNumber(order.size);
-      const sideLabel = fmtProjectXSide(order.side);
-      const resultLabel = status === 5 ? "Rejected" : "Did not fill";
-      return {
-        badgeClass: order.side === 0 ? "buy" : order.side === 1 ? "sell" : "neutral",
-        badgeLabel: sideLabel,
-        closedAt: order.updateTimestamp ?? order.creationTimestamp,
-        contractId: order.contractId ?? order.symbolId,
-        fills: 1,
-        key: group.key,
-        openedAt: order.creationTimestamp,
-        orderIds: orderId !== undefined ? [orderId] : [],
-        priceLine: projectXPriceLine(size, price, undefined),
-        resultDetail: undefined,
-        resultLabel,
-        resultTone: status === 5 ? "down" : "warn",
-        size,
-        sortTime: projectXOrderTimeMs(order),
-        statusClass: status === 5 ? "failed" : "warn",
-        statusLabel: status === 5 ? "Rejected" : "Cancelled"
-      } satisfies ProjectXTradeHistoryRow;
-    });
-}
-
 function buildProjectXTradeHistoryRows(trades: ProjectXTrade[], orders: ProjectXOrder[]): ProjectXTradeHistoryRow[] {
-  return [...buildProjectXClosedTradeRows(trades, orders), ...buildProjectXAttemptRows(orders, trades)]
+  return onlyExecutedTradeHistoryRows(buildProjectXClosedTradeRows(trades, orders))
     .sort((left, right) => right.sortTime - left.sortTime)
     .slice(0, 40);
 }
@@ -870,8 +804,7 @@ function ProjectXAccountDetailPanel({ account, state }: { account: ProjectXAccou
 
   const details = state.details!;
   const tradeRows = buildProjectXTradeHistoryRows(details.trades, details.orders);
-  const closedTradeCount = tradeRows.filter((row) => row.profitAndLoss !== undefined).length;
-  const issueCount = tradeRows.filter((row) => row.profitAndLoss === undefined).length;
+  const closedTradeCount = tradeRows.length;
   const netPnl = projectXRowsNetPnl(tradeRows);
   const netTone = projectXToneForAmount(netPnl);
 
@@ -930,9 +863,7 @@ function ProjectXAccountDetailPanel({ account, state }: { account: ProjectXAccou
       <section className="topstepAccountActivitySection" aria-label={`${details.account.name} ProjectX trade history`}>
         <div className="topstepAccountActivitySectionHead">
           <span>Previous trades</span>
-          <strong>
-            {fmtNumber(closedTradeCount, 0)} closed{issueCount ? ` / ${fmtNumber(issueCount, 0)} not filled` : ""}
-          </strong>
+          <strong>{fmtNumber(closedTradeCount, 0)} closed</strong>
         </div>
         <div className="topstepTradeHistorySummary" aria-label={`${details.account.name} ProjectX trade summary`}>
           <span>Net closed P&L</span>
@@ -942,7 +873,7 @@ function ProjectXAccountDetailPanel({ account, state }: { account: ProjectXAccou
         <div className="topstepTradeHistoryList">
           {tradeRows.length ? (
             tradeRows.map((row) => (
-              <div className={`topstepTradeHistoryRow ${row.profitAndLoss === undefined ? "isIssue" : ""}`} key={row.key}>
+              <div className="topstepTradeHistoryRow" key={row.key}>
                 <div className="topstepTradeHistoryMain">
                   <strong>{row.contractId ?? "--"}</strong>
                   <small>
@@ -963,7 +894,7 @@ function ProjectXAccountDetailPanel({ account, state }: { account: ProjectXAccou
               </div>
             ))
           ) : (
-            <ProjectXEmptyDetailRow label="No previous trades found" />
+            <ProjectXEmptyDetailRow label="No completed trades yet" />
           )}
         </div>
       </section>

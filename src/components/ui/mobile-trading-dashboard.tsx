@@ -13,20 +13,17 @@ import {
 } from "@/components/auto-trading/auto-trade-account-mode";
 import { useAutoTradeAdminMode } from "@/components/auto-trading/use-auto-trade-account-mode";
 import {
-  strategyContractScale,
-  type StrategyEditMap,
   type StrategyEditOption,
   type StrategyEditSeedMap,
   useStrategyEdits
 } from "@/components/strategies/strategy-edits-store";
 import { adjustTradeHistoryRows } from "@/components/trades/adjust-trade-history-rows";
 import { BacktestTradeMiniChart, type TradeHistoryRow } from "@/components/trades/trade-history";
-import TradeClusterMap from "@/components/trades/trade-cluster-map";
 import LocalDateTime, { formatLocalDateTimeParts } from "@/components/ui/local-date-time";
 import { type AutoTradeMarket } from "@/lib/auto-trade-platforms";
 import { type TradeChartBar, type TradeChartTimeframe } from "@/components/trades/trade-price-chart";
 
-type MobileTradingTab = "history" | "alerts" | "cluster" | "strategies" | "sync" | "autotrade" | "settings";
+type MobileTradingTab = "history" | "alerts" | "sync" | "autotrade" | "settings";
 
 type MobileTradingDashboardProps = {
   activeMarket: AutoTradeMarket;
@@ -113,8 +110,6 @@ const TRADE_CHART_CONTEXT_CANDLES = 240;
 const mobileTabs: Array<{ id: MobileTradingTab; label: string }> = [
   { id: "alerts", label: "Alerts" },
   { id: "history", label: "History" },
-  { id: "cluster", label: "Map" },
-  { id: "strategies", label: "Strategies" },
   { id: "sync", label: "Sync" },
   { id: "autotrade", label: "Auto" },
   { id: "settings", label: "Settings" }
@@ -154,28 +149,6 @@ function formatMobileRatio(value: number): string {
     maximumFractionDigits: 2,
     minimumFractionDigits: 2
   }).format(value);
-}
-
-function formatMobilePercent(value: number | undefined): string {
-  return Number.isFinite(value) ? `${value!.toFixed(0)}%` : "--";
-}
-
-function formatMobileOptionalRatio(value: number | undefined): string {
-  return typeof value === "number" && Number.isFinite(value) ? formatMobileRatio(value) : "--";
-}
-
-function formatMobileAverageMoney(value: number | undefined, sign: "loss" | "win"): string {
-  if (typeof value !== "number" || !Number.isFinite(value)) return "--";
-  const dollars = sign === "loss" ? -Math.abs(value) : Math.abs(value);
-  return formatMobileMoney(dollars);
-}
-
-function mobileStrategyTone(strategy: StrategyEditOption): "down" | "neutral" | "up" {
-  const profitFactor = strategy.profitFactor;
-  if (typeof profitFactor !== "number" || !Number.isFinite(profitFactor)) return "neutral";
-  if (profitFactor >= 2) return "up";
-  if (profitFactor < 1) return "down";
-  return "neutral";
 }
 
 function mobileHistoryStats(rows: TradeHistoryRow[]): MobileHistoryStats {
@@ -263,17 +236,6 @@ function mobileHistoryDayLabel(dayKey: string): string {
 }
 
 function MobileWorkspaceTabIcon({ tab }: { tab: MobileTradingTab }) {
-  if (tab === "cluster") {
-    return (
-      <svg viewBox="0 0 24 24" aria-hidden>
-        <circle cx="6" cy="8" r="2" fill="currentColor" />
-        <circle cx="17.5" cy="6.5" r="1.7" fill="currentColor" />
-        <circle cx="13" cy="17" r="2.2" fill="currentColor" />
-        <path d="m7.8 8.8 3.8 6.2m1.8-7.4-.2 7.2M8 7.7l7.7-.9" fill="none" opacity="0.65" stroke="currentColor" strokeWidth="1.2" />
-      </svg>
-    );
-  }
-
   if (tab === "history") {
     return (
       <svg viewBox="0 0 24 24" aria-hidden>
@@ -342,27 +304,6 @@ function MobileWorkspaceTabIcon({ tab }: { tab: MobileTradingTab }) {
     );
   }
 
-  if (tab === "strategies") {
-    return (
-      <svg viewBox="0 0 24 24" aria-hidden>
-        <path
-          d="M4.8 6h14.4M4.8 12h14.4M4.8 18h14.4"
-          fill="none"
-          stroke="currentColor"
-          strokeLinecap="round"
-          strokeWidth="1.8"
-        />
-        <path
-          d="M8 4.5v3M14.2 10.5v3M10.6 16.5v3"
-          fill="none"
-          stroke="currentColor"
-          strokeLinecap="round"
-          strokeWidth="1.8"
-        />
-      </svg>
-    );
-  }
-
   if (tab === "sync") {
     return (
       <svg viewBox="0 0 24 24" aria-hidden>
@@ -397,92 +338,6 @@ function MobileWorkspaceTabIcon({ tab }: { tab: MobileTradingTab }) {
       />
       <path d="M4.5 4.5h15v15h-15z" fill="none" opacity="0.45" stroke="currentColor" strokeWidth="1.6" />
     </svg>
-  );
-}
-
-function MobileStrategiesPanel({ edits, strategies }: { edits: StrategyEditMap; strategies: StrategyEditOption[] }) {
-  const sortedStrategies = useMemo(
-    () =>
-      [...strategies].sort((left, right) => {
-        const leftPf = Number.isFinite(left.profitFactor) ? left.profitFactor! : -1;
-        const rightPf = Number.isFinite(right.profitFactor) ? right.profitFactor! : -1;
-        return rightPf - leftPf || (right.trades ?? 0) - (left.trades ?? 0) || left.label.localeCompare(right.label);
-      }),
-    [strategies]
-  );
-  const liveCount = strategies.filter((strategy) => strategy.liveSupported).length;
-  const subTwoCount = strategies.filter((strategy) => typeof strategy.profitFactor === "number" && strategy.profitFactor < 2).length;
-  const bestProfitFactor = sortedStrategies.find((strategy) => typeof strategy.profitFactor === "number")?.profitFactor;
-
-  return (
-    <section className="mobile-phone-card mobile-phone-card-strategies">
-      <div className="mobile-phone-card-head">
-        <div className="mobile-phone-card-copy">
-          <span className="mobile-phone-card-kicker">Strategy Set</span>
-          <h2>Strategies</h2>
-        </div>
-        <span className="mobile-phone-count-chip">{strategies.length.toLocaleString("en-US")}</span>
-      </div>
-
-      <div className="mobile-phone-strategy-summary" aria-label="Strategy summary">
-        <span>
-          <small>Live</small>
-          <strong>{liveCount.toLocaleString("en-US")}</strong>
-        </span>
-        <span>
-          <small>Best PF</small>
-          <strong className="up">{formatMobileOptionalRatio(bestProfitFactor)}</strong>
-        </span>
-        <span>
-          <small>PF &lt; 2</small>
-          <strong className={subTwoCount ? "down" : "up"}>{subTwoCount.toLocaleString("en-US")}</strong>
-        </span>
-      </div>
-
-      {sortedStrategies.length === 0 ? (
-        <div className="mobile-phone-empty-state">
-          <span className="mobile-phone-card-kicker">Strategy Set</span>
-          <h2>No strategies</h2>
-        </div>
-      ) : (
-        <div className="mobile-phone-strategy-list">
-          {sortedStrategies.map((strategy) => {
-            const avgRiskReward = strategy.realizedRiskRewardRatio ?? strategy.riskRewardRatio;
-            const hasBacktestTrades = (strategy.trades ?? 0) > 0;
-            const contractScale = strategyContractScale(strategy, edits);
-            const avgWinDollars = typeof strategy.avgWinDollars === "number" ? strategy.avgWinDollars * contractScale : undefined;
-            const avgLossDollars = typeof strategy.avgLossDollars === "number" ? strategy.avgLossDollars * contractScale : undefined;
-            const tone = mobileStrategyTone(strategy);
-            return (
-              <article className={`mobile-phone-strategy-row tone-${tone}`} key={strategy.key}>
-                <div className="mobile-phone-strategy-main">
-                  <div className="mobile-phone-strategy-copy">
-                    <strong>{strategy.label}</strong>
-                    <span>
-                      {strategy.symbol} | {strategy.timeframeLabel ?? strategy.phase}
-                    </span>
-                  </div>
-                  <div className="mobile-phone-strategy-pf">
-                    <small>PF</small>
-                    <strong className={tone}>{formatMobileOptionalRatio(strategy.profitFactor)}</strong>
-                  </div>
-                </div>
-                <div className="mobile-phone-strategy-meta">
-                  <span>{formatMobilePercent(strategy.winRatePct)} WR</span>
-                  <span>{formatMobileOptionalRatio(avgRiskReward)} avg R:R</span>
-                  <span>{(strategy.trades ?? 0).toLocaleString("en-US")} trades</span>
-                  <span>
-                    {formatMobileAverageMoney(hasBacktestTrades ? avgWinDollars : undefined, "win")} /{" "}
-                    {formatMobileAverageMoney(hasBacktestTrades ? avgLossDollars : undefined, "loss")}
-                  </span>
-                </div>
-                {strategy.liveSupported ? <span className="mobile-phone-strategy-live">Live</span> : null}
-              </article>
-            );
-          })}
-        </div>
-      )}
-    </section>
   );
 }
 
@@ -1018,11 +873,6 @@ export default function MobileTradingDashboard({
     [customScaleRange, edits, historyRows, strategies]
   );
   const adjustedLiveAlertRows = useMemo(() => adjustTradeHistoryRows(liveAlertRows, strategies, edits), [edits, liveAlertRows, strategies]);
-  const adjustedLiveIds = useMemo(() => new Set(adjustedLiveAlertRows.map((row) => row.id)), [adjustedLiveAlertRows]);
-  const clusterHistoryRows = useMemo(
-    () => adjustedHistoryRows.filter((row) => !adjustedLiveIds.has(row.id)),
-    [adjustedHistoryRows, adjustedLiveIds]
-  );
   const activeTrade = useMemo(
     () => [...adjustedLiveAlertRows, ...adjustedHistoryRows].find((row) => row.id === activeTradeId) ?? null,
     [activeTradeId, adjustedHistoryRows, adjustedLiveAlertRows]
@@ -1036,11 +886,7 @@ export default function MobileTradingDashboard({
   const tabTitle =
     activeTab === "alerts"
       ? "Live Alerts"
-      : activeTab === "strategies"
-        ? "Strategies"
-        : activeTab === "cluster"
-          ? "Cluster Map"
-        : activeTab === "sync"
+      : activeTab === "sync"
           ? "Sync"
       : activeTab === "autotrade"
         ? "Auto-Trade"
@@ -1213,12 +1059,6 @@ export default function MobileTradingDashboard({
                 rows={adjustedLiveAlertRows}
                 title="Live Alerts"
               />
-            ) : activeTab === "strategies" ? (
-              <MobileStrategiesPanel edits={edits} strategies={strategies} />
-            ) : activeTab === "cluster" ? (
-              <section className="mobile-phone-card mobile-phone-card-cluster">
-                <TradeClusterMap historyRows={clusterHistoryRows} liveRows={adjustedLiveAlertRows} />
-              </section>
             ) : activeTab === "sync" ? (
               <MobileSyncPanel summary={syncSummary} />
             ) : activeTab === "autotrade" ? (
