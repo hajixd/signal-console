@@ -11,7 +11,8 @@ import {
   verifyAutoTradeConnectionAccessCode
 } from "@/lib/auto-trade-connections";
 import { autoTradeProviderById } from "@/lib/auto-trade-platforms";
-import { mt5CredentialBridgeConfigured, verifyMt5CredentialConnection } from "@/lib/mt5-credential-bridge";
+import { availableMt5ConnectionMode, fieldsForMt5ConnectionMode } from "@/lib/mt5-connection-mode";
+import { verifyMt5CredentialConnection } from "@/lib/mt5-credential-bridge";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -89,7 +90,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Choose a supported auto-trade provider." }, { status: 400 });
   }
 
-  const fields = cleanFields(payload.fields);
+  let fields = cleanFields(payload.fields);
   if (Object.keys(fields).length === 0) {
     return NextResponse.json({ error: "Enter the provider credentials before connecting." }, { status: 400 });
   }
@@ -116,14 +117,21 @@ export async function POST(request: NextRequest) {
   }
 
   if (providerId === "mt5_ea") {
-    if (!mt5CredentialBridgeConfigured()) {
-      return NextResponse.json({ error: "MT5 account connection is temporarily unavailable." }, { status: 503 });
+    const connectionMode = availableMt5ConnectionMode();
+    if (!connectionMode) {
+      return NextResponse.json(
+        { error: "MT5 execution is not configured. Connect the MT5 EA service or credential bridge first." },
+        { status: 503 }
+      );
     }
-    try {
-      await verifyMt5CredentialConnection(fields);
-    } catch (error) {
-      return NextResponse.json({ error: error instanceof Error ? error.message : "MT5 could not verify this account." }, { status: 400 });
+    if (connectionMode === "credential_bridge") {
+      try {
+        await verifyMt5CredentialConnection(fields);
+      } catch (error) {
+        return NextResponse.json({ error: error instanceof Error ? error.message : "MT5 could not verify this account." }, { status: 400 });
+      }
     }
+    fields = fieldsForMt5ConnectionMode(fields, connectionMode);
   }
 
   try {

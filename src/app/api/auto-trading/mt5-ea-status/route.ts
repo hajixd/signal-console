@@ -3,6 +3,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { isAdminAuthorized } from "@/lib/admin-api";
 import { getAutoTradeConnection } from "@/lib/auto-trade-connections";
 import { mt5BridgeAccountId, mt5HeartbeatMismatch } from "@/lib/mt5-ea-account";
+import { storedMt5ConnectionMode } from "@/lib/mt5-connection-mode";
 import { mt5CredentialBridgeConfigured, verifyMt5CredentialConnection } from "@/lib/mt5-credential-bridge";
 import { eaIngestToken, mt5EaConfigured } from "@/lib/mt5-ea-queue";
 import { getAccountState, getHeartbeat, getMt5ExecutionStats, listMt5Orders } from "@/lib/mt5-ea-state";
@@ -20,7 +21,7 @@ export async function GET(request: NextRequest) {
   const connection = await getAutoTradeConnection("mt5_ea").catch(() => null);
   const requestedAccount = request.nextUrl.searchParams.get("account")?.trim();
   const account = requestedAccount || mt5BridgeAccountId(connection?.fields);
-  const executionMode = connection?.fields.password ? "credential_bridge" as const : "terminal_ea" as const;
+  const executionMode = storedMt5ConnectionMode(connection?.fields);
   const backendConfigured = executionMode === "credential_bridge" ? mt5CredentialBridgeConfigured() : mt5EaConfigured();
   const provider = process.env.AUTO_TRADE_FOREX_PROVIDER?.trim() || null;
   const providerSelected = provider === "mt5_ea" || (!provider && Boolean(connection));

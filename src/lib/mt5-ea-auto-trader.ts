@@ -4,6 +4,7 @@ import { tradeLevels } from "@/lib/auto-trade-utils";
 import { getAutoTradeConnection } from "@/lib/auto-trade-connections";
 import { executeMt5CredentialAutoTrade } from "@/lib/bridge-auto-trader";
 import { mt5BridgeAccountId, mt5HeartbeatMismatch } from "@/lib/mt5-ea-account";
+import { storedMt5ConnectionMode } from "@/lib/mt5-connection-mode";
 import { mt5CredentialBridgeConfigured } from "@/lib/mt5-credential-bridge";
 import { enqueueMt5Order, mt5EaConfigured, type Mt5OrderSide } from "@/lib/mt5-ea-queue";
 import { resolveMt5Lots } from "@/lib/mt5-ea-sizing";
@@ -79,7 +80,7 @@ export async function executeMt5EaAutoTrade(trade: TradeAlert): Promise<ProjectX
     return result("skipped", { error: "The connected MT5 account is paused. Enable it before sending trades." });
   }
 
-  if (connection?.fields.password) {
+  if (connection && storedMt5ConnectionMode(connection.fields) === "credential_bridge") {
     if (!mt5CredentialBridgeConfigured()) {
       return result("skipped", { error: "The secure MT5 credential service is not configured." });
     }

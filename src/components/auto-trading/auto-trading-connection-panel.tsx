@@ -1899,7 +1899,8 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
                   <strong>Use the MT5 credentials from {selectedFirm.label}</strong>
                   <span>
                     Enter the login number, master trading password, and exact server from your prop-firm credentials.
-                    Do not use the investor or read-only password. Credentials are encrypted before storage.
+                    Do not use the investor or read-only password. Direct credentials are encrypted when the secure bridge is active;
+                    EA-linked terminals never store the submitted password.
                   </span>
                 </div>
               ) : null}
