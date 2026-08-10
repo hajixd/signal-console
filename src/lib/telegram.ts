@@ -112,12 +112,17 @@ function autoTradeStatusLabel(status: TradeAlert["autoTradeStatus"]): string {
 
 function formatOrderSize(value: number | undefined): string | undefined {
   if (typeof value !== "number" || !Number.isFinite(value)) return undefined;
-  return new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 }).format(value);
+  return new Intl.NumberFormat("en-US", { maximumFractionDigits: 8 }).format(value);
 }
 
-function formatUnits(value: number | undefined): string | undefined {
+function formatUnits(
+  value: number | undefined,
+  sizeUnit?: NonNullable<TradeAlert["autoTradeOrders"]>[number]["sizeUnit"]
+): string | undefined {
   if (typeof value !== "number" || !Number.isFinite(value)) return undefined;
   const formatted = formatOrderSize(value);
+  if (sizeUnit === "lots") return `${formatted} FX lot`;
+  if (sizeUnit === "base_units") return `${formatted} unit${Math.abs(value - 1) < 1e-9 ? "" : "s"}`;
   return `${formatted} unit${Math.abs(value - 1) < 1e-9 ? "" : "s"}`;
 }
 
@@ -148,6 +153,24 @@ function autoTradeNetPnl(orders: TradeAlert["autoTradeOrders"]): number | undefi
 }
 
 function telegramSizeLabel(trade: TradeAlert, instrumentLabel: string, fallbackSizeMultiplier: number): string {
+  const executableOrders = (trade.autoTradeOrders ?? []).filter(
+    (order) =>
+      (order.status === "placed" || order.status === "dry_run") &&
+      typeof order.size === "number" &&
+      Number.isFinite(order.size) &&
+      order.size > 0
+  );
+  if (executableOrders.length) {
+    const sizeUnits = new Set(executableOrders.map((order) => order.sizeUnit ?? "strategy"));
+    if (sizeUnits.size === 1 && sizeUnits.has("lots")) {
+      const lots = executableOrders.reduce((sum, order) => sum + Math.abs(order.size!), 0);
+      return `${formatOrderSize(lots) ?? formatNumber(lots)} FX lot`;
+    }
+    if (sizeUnits.size === 1 && sizeUnits.has("base_units")) {
+      const units = executableOrders.reduce((sum, order) => sum + Math.abs(order.size!), 0);
+      return `${formatOrderSize(units) ?? formatNumber(units)} unit${Math.abs(units - 1) < 1e-9 ? "" : "s"}`;
+    }
+  }
   const lookupSymbol = assetLookupSymbolForSymbol(trade.symbol);
   if (instrumentLabel !== trade.symbol && instrumentLabel !== lookupSymbol) {
     return `${formatOrderSize(fallbackSizeMultiplier) ?? formatNumber(fallbackSizeMultiplier)} ${instrumentLabel}`;
@@ -156,7 +179,7 @@ function telegramSizeLabel(trade: TradeAlert, instrumentLabel: string, fallbackS
 }
 
 function accountOrderLine(order: NonNullable<TradeAlert["autoTradeOrders"]>[number]): string {
-  const formattedSize = formatUnits(order.size);
+  const formattedSize = formatUnits(order.size, order.sizeUnit);
   const parts = [
     orderStatusLabel(order.status),
     typeof order.accountBalance === "number" && Number.isFinite(order.accountBalance) ? `Balance ${formatMoney(order.accountBalance)}` : undefined,
@@ -235,7 +258,7 @@ function possessiveAccountsLabel(value: string | undefined): string | undefined 
 }
 
 function accountExecutionRow(order: NonNullable<TradeAlert["autoTradeOrders"]>[number]): { line: string; name: string } {
-  const formattedSize = formatUnits(order.size);
+  const formattedSize = formatUnits(order.size, order.sizeUnit);
   const account = executionAccountParts(order.accountName, order.accountId);
   const accountLabel = [
     `Account ${order.accountId}`,
@@ -285,11 +308,10 @@ function isNoLoginOrder(order: NonNullable<TradeAlert["autoTradeOrders"]>[number
 }
 
 function executionLines(trade: TradeAlert): string[] {
-  const sizeAdjustment = trade.autoTradeSizeAdjustment ? `- ${trade.autoTradeSizeAdjustment}` : undefined;
   if (trade.autoTradeOrders?.length) {
     const actionableOrders = trade.autoTradeOrders.filter((order) => order.status !== "skipped" || !isNoLoginOrder(order));
     if (!actionableOrders.length) {
-      return [sizeAdjustment, NO_ACCOUNTS_MESSAGE].filter((line): line is string => Boolean(line));
+      return [NO_ACCOUNTS_MESSAGE];
     }
 
     const groups = new Map<string, string[]>();
@@ -300,19 +322,17 @@ function executionLines(trade: TradeAlert): string[] {
       groups.set(row.name, lines);
     }
     return [
-      sizeAdjustment,
       ...[...groups.entries()].flatMap(([name, lines], index) => (index === 0 ? [name, ...lines] : ["", name, ...lines]))
     ].filter((line): line is string => Boolean(line));
   }
 
-  if (!trade.autoTradeStatus && !trade.autoTradeError) return sizeAdjustment ? [sizeAdjustment] : [];
+  if (!trade.autoTradeStatus && !trade.autoTradeError) return [];
 
   if (isNoLoginMessage(trade.autoTradeError)) {
-    return [sizeAdjustment, NO_ACCOUNTS_MESSAGE].filter((line): line is string => Boolean(line));
+    return [NO_ACCOUNTS_MESSAGE];
   }
 
   return [
-    sizeAdjustment,
     `- ${autoTradeStatusLabel(trade.autoTradeStatus)}${
       trade.autoTradeError ? ` | Note: ${truncate(trade.autoTradeError, 90)}` : ""
     }`
