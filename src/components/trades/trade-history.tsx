@@ -14,6 +14,7 @@ import { createPortal } from "react-dom";
 import { useAutoTradeAdminMode } from "@/components/auto-trading/use-auto-trade-account-mode";
 import TradePriceChart, { TRADE_CHART_TIMEFRAMES, type TradeChartBar, type TradeChartTimeframe } from "@/components/trades/trade-price-chart";
 import LocalDateTime from "@/components/ui/local-date-time";
+import { focusedPriceDomain, priceAxisFractionDigits } from "@/lib/chart-scale";
 import { oneMinuteBarsHeld, resolveFirstTradeBracketHit } from "@/lib/trade-bracket-truth";
 import type { TradeManagementEvent } from "@/lib/types";
 
@@ -135,8 +136,14 @@ function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
 }
 
-function formatChartPrice(value: number | null | undefined): string {
+function formatChartPrice(value: number | null | undefined, fractionDigits?: number): string {
   if (value == null || !Number.isFinite(value)) return "--";
+  if (fractionDigits !== undefined) {
+    return Number(value).toLocaleString(undefined, {
+      minimumFractionDigits: fractionDigits,
+      maximumFractionDigits: fractionDigits
+    });
+  }
   return Number(value).toLocaleString(undefined, {
     minimumFractionDigits: Math.abs(value) >= 100 ? 2 : 0,
     maximumFractionDigits: Math.abs(value) < 10 ? 5 : 2
@@ -215,7 +222,15 @@ function nearestPositionForAnchor(bars: ChartBar[], indexValue: number, timeValu
 function resolvedTradePathRange(
   trade: TradeHistoryRow,
   bars: ChartBar[]
-): { barsHeld: number; end: number; entryTime: string; exitPrice: number; exitTime: string; start: number } | null {
+): {
+  barsHeld: number;
+  boundary: "stop" | "target" | null;
+  end: number;
+  entryTime: string;
+  exitPrice: number;
+  exitTime: string;
+  start: number;
+} | null {
   const entryPosition = nearestPositionForAnchor(bars, trade.entryIndex, trade.entryTime);
   const exitPosition = nearestPositionForAnchor(bars, trade.exitIndex, trade.exitTime);
   if (entryPosition == null || exitPosition == null || !bars.length) return null;
@@ -238,6 +253,7 @@ function resolvedTradePathRange(
   const end = bracketHit?.position ?? fallbackEnd;
   return {
     barsHeld: bracketHit?.barsHeld ?? oneMinuteBarsHeld(bars[entryPosition]!.time, bars[end]!.time, end - entryPosition + 1),
+    boundary: bracketHit?.boundary ?? null,
     end,
     entryTime: bars[entryPosition]!.time,
     exitPrice: bracketHit?.exitPrice ?? trade.exitPrice,
@@ -538,9 +554,10 @@ function managedTradeLevelsAt(trade: TradeHistoryRow, timeMs: number): ManagedTr
   return levels;
 }
 
-function managedLevelPrices(trade: TradeHistoryRow): number[] {
+function managedLevelPrices(trade: TradeHistoryRow, throughTimeMs = Number.POSITIVE_INFINITY): number[] {
   const prices = [trade.entryPrice, trade.exitPrice, trade.targetPrice, trade.stopPrice];
   for (const event of orderedManagementEvents(trade)) {
+    if (Date.parse(event.time) > throughTimeMs) break;
     const value = eventPrice(event, event.type);
     if (value != null) prices.push(value);
   }
@@ -606,9 +623,21 @@ function buildMiniChartPoints(trade: TradeHistoryRow, bars: ChartBar[]): MiniCha
     const timeMs = Date.parse(bar.time);
     const minuteIndex = Number.isFinite(timeMs) ? Math.max(1, Math.ceil((timeMs - safeEntryMs) / 60_000)) : rows.length;
     const close = Number.isFinite(bar.close) ? bar.close : previousPrice;
+    let high = Number.isFinite(bar.high) ? bar.high : close;
+    let low = Number.isFinite(bar.low) ? bar.low : close;
+    if (resolvedRange?.boundary && index === end) {
+      if (resolvedRange.boundary === "target") {
+        if (trade.side === "long") high = Math.min(high, resolvedExitPrice);
+        else low = Math.max(low, resolvedExitPrice);
+      } else if (trade.side === "long") {
+        low = Math.max(low, resolvedExitPrice);
+      } else {
+        high = Math.min(high, resolvedExitPrice);
+      }
+    }
     rows.push({
-      high: Number.isFinite(bar.high) ? bar.high : close,
-      low: Number.isFinite(bar.low) ? bar.low : close,
+      high,
+      low,
       price: close,
       relCand: index - start,
       timeMs: Number.isFinite(timeMs) ? timeMs : safeEntryMs + minuteIndex * 60_000,
@@ -677,23 +706,15 @@ export function BacktestTradeMiniChart({
     const margins = width < 640 ? { top: 22, right: 16, bottom: 42, left: 58 } : { top: 24, right: 34, bottom: 46, left: 76 };
     const plotWidth = width - margins.left - margins.right;
     const plotHeight = height - margins.top - margins.bottom;
-    const managedPrices = managedLevelPrices(trade);
-    const plannedUpper = direction === 1 ? Math.max(...managedPrices) : Math.max(...managedPrices);
-    const plannedLower = direction === 1 ? Math.min(...managedPrices) : Math.min(...managedPrices);
-    let low = plannedLower;
-    let high = plannedUpper;
-    if (!Number.isFinite(low) || !Number.isFinite(high) || high <= low) {
-      low = Math.min(...managedPrices);
-      high = Math.max(...managedPrices);
-    }
-    if (!Number.isFinite(low) || !Number.isFinite(high) || high <= low) {
-      low = Math.min(trade.entryPrice, trade.exitPrice);
-      high = Math.max(trade.entryPrice, trade.exitPrice);
-    }
-    const span = Math.max(0.000000001, high - low);
-    const pad = Math.max(span * 0.012, Math.abs(trade.entryPrice) * 0.000025, 0.00002);
-    const yMin = low - pad;
-    const yMax = high + pad;
+    const chartEndMs = data[data.length - 1]?.timeMs ?? Number.POSITIVE_INFINITY;
+    const managedPrices = managedLevelPrices(trade, chartEndMs);
+    const priceDomain = focusedPriceDomain(
+      [...managedPrices, ...data.flatMap((point) => [point.low, point.price, point.high])],
+      trade.entryPrice
+    );
+    const yMin = priceDomain.min;
+    const yMax = priceDomain.max;
+    const yAxisFractionDigits = priceAxisFractionDigits(priceDomain, trade.entryPrice);
     const xMax = Math.max(1, ...data.map((point) => point.x));
     const scaleX = (value: number) => margins.left + (value / xMax) * plotWidth;
     const scaleY = (value: number) => margins.top + ((yMax - value) / Math.max(0.000000001, yMax - yMin)) * plotHeight;
@@ -773,7 +794,9 @@ export function BacktestTradeMiniChart({
       const markers: MiniManagementMarker[] = [];
       let currentValue = initialValue;
       let currentX = 0;
-      for (const event of orderedManagementEvents(trade).filter((candidate) => candidate.type === type)) {
+      for (const event of orderedManagementEvents(trade).filter(
+        (candidate) => candidate.type === type && Date.parse(candidate.time) <= chartEndMs
+      )) {
         const nextValue = eventPrice(event, type);
         const x = eventX(event.time);
         if (nextValue == null || x == null) continue;
@@ -841,6 +864,7 @@ export function BacktestTradeMiniChart({
       scaleX,
       scaleY,
       width,
+      yAxisFractionDigits,
       xMax,
       xTicks
     };
@@ -958,7 +982,7 @@ export function BacktestTradeMiniChart({
             <g key={`mini-grid-${index}`}>
               <line x1={plot.margins.left} x2={plot.width - plot.margins.right} y1={y} y2={y} className="backtest-trade-mini-grid-line" />
               <text x={plot.margins.left - 10} y={y + 4} className="backtest-trade-mini-axis-label y-axis" textAnchor="end">
-                {formatChartPrice(value)}
+                {formatChartPrice(value, plot.yAxisFractionDigits)}
               </text>
             </g>
           );
