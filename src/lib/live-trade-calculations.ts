@@ -60,15 +60,61 @@ export function alertRiskDollars(trade: TradeAlert): number {
   return alertRiskDollarsWithSize(trade, trade.sizeMultiplier ?? 1);
 }
 
-export function liveOpenTradePnlDollars(trade: TradeAlert, priceUnit: number, exitPrice: number, sizeMultiplier: number): number {
+export function liveOpenTradePnlDollars(
+  trade: TradeAlert,
+  priceUnit: number,
+  exitPrice: number,
+  sizeMultiplier: number,
+  entryPrice = trade.entryPrice
+): number {
   if (!Number.isFinite(exitPrice) || priceUnit <= 0) return 0;
   const sideMultiplier = trade.side === "long" ? 1 : -1;
-  const netUnits = ((exitPrice - trade.entryPrice) * sideMultiplier) / priceUnit;
-  return netUnits * dollarPerUnit(trade.symbol, trade.entryPrice) * sizeMultiplier;
+  const netUnits = ((exitPrice - entryPrice) * sideMultiplier) / priceUnit;
+  return netUnits * dollarPerUnit(trade.symbol, entryPrice) * sizeMultiplier;
+}
+
+export type LiveBrokerEntryOutcome = {
+  entryPrice: number;
+  entryTime?: string;
+  sizeMultiplier: number;
+};
+
+function validTimestamp(value: string | undefined): value is string {
+  return typeof value === "string" && Number.isFinite(Date.parse(value));
+}
+
+/** Resolve the actual broker fill while a trade is still open. */
+export function liveBrokerEntryOutcome(trade: TradeAlert): LiveBrokerEntryOutcome | null {
+  const filledOrders = (trade.autoTradeOrders ?? []).filter(
+    (order) => order.status === "placed" && finiteNumber(order.filledPrice)
+  );
+  if (!filledOrders.length) return null;
+
+  let weightedEntryPrice = 0;
+  let totalWeight = 0;
+  let sizeMultiplier = 0;
+  const fillTimes: string[] = [];
+
+  for (const order of filledOrders) {
+    const orderSize = strategySizeFromBrokerOrder(order, trade);
+    const weight = orderSize > 0 ? orderSize : 1;
+    weightedEntryPrice += order.filledPrice! * weight;
+    totalWeight += weight;
+    sizeMultiplier += Math.max(0, orderSize);
+    if (validTimestamp(order.filledTime)) fillTimes.push(order.filledTime);
+  }
+
+  const fallbackTime = [trade.autoTradeCheckedAt, trade.createdAt, trade.signalTime].find(validTimestamp);
+  return {
+    entryPrice: weightedEntryPrice / totalWeight,
+    entryTime: fillTimes.sort((left, right) => Date.parse(left) - Date.parse(right))[0] ?? fallbackTime,
+    sizeMultiplier
+  };
 }
 
 export type LiveBrokerExecutionOutcome = {
   entryPrice?: number;
+  entryTime?: string;
   exitPrice?: number;
   exitTime?: string;
   feesDollars: number;
@@ -137,8 +183,10 @@ export function liveBrokerExecutionOutcome(trade: TradeAlert): LiveBrokerExecuti
     if (exitTime && Number.isFinite(Date.parse(exitTime))) exitTimes.push(exitTime);
   }
 
+  const brokerEntry = liveBrokerEntryOutcome(trade);
   return {
     entryPrice: totalPriceWeight > 0 ? weightedEntryPrice / totalPriceWeight : undefined,
+    entryTime: brokerEntry?.entryTime,
     exitPrice: totalExitPriceWeight > 0 ? weightedExitPrice / totalExitPriceWeight : undefined,
     exitTime: exitTimes.sort((left, right) => Date.parse(right) - Date.parse(left))[0],
     feesDollars,

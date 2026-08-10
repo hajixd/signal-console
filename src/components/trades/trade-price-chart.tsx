@@ -25,7 +25,7 @@ import {
   type WhitespaceData
 } from "lightweight-charts";
 import type { CanvasRenderingTarget2D } from "fancy-canvas";
-import { resolveActiveTradeOverlayEnd } from "@/lib/open-trade-chart";
+import { buildManagedLevelTimeline, resolveActiveTradeOverlayEnd } from "@/lib/open-trade-chart";
 import { resolveFirstTradeBracketHit } from "@/lib/trade-bracket-truth";
 import type { TradeManagementEvent } from "@/lib/types";
 
@@ -69,6 +69,7 @@ type TradeChartTrade = {
   label?: string;
   modelName?: string;
   entryType?: "market" | "limit";
+  plannedEntryPrice?: number;
   entryPrice: number;
   exitPrice: number;
   targetPrice: number;
@@ -137,6 +138,10 @@ type TradeOverlayPoint = {
   x: number;
   y: number;
 };
+type TradeManagedOverlayPath = {
+  changed: boolean;
+  points: Array<{ x: number; y: number }>;
+};
 type TradeDomOverlay = {
   entryLine?: number;
   exitMarker?: TradeOverlayPoint | null;
@@ -146,7 +151,9 @@ type TradeDomOverlay = {
   profit?: { height: number; width: number; x: number; y: number };
   risk?: { height: number; width: number; x: number; y: number };
   startMarker?: TradeOverlayPoint;
+  stopPath?: TradeManagedOverlayPath;
   stopLine?: number;
+  targetPath?: TradeManagedOverlayPath;
   targetLine?: number;
   width: number;
   x1?: number;
@@ -774,19 +781,24 @@ function managedChartLevelsAtTime(trade: TradeChartTrade, time: Time | null | un
 }
 
 function managedLevelPrices(trade: TradeChartTrade): number[] {
-  const prices = [trade.entryPrice, trade.exitPrice, trade.targetPrice, trade.stopPrice];
+  const prices = [trade.entryPrice, trade.plannedEntryPrice, trade.exitPrice, trade.targetPrice, trade.stopPrice];
   for (const event of orderedTradeManagementEvents(trade)) {
     const kind: ManagedLevelKind = event.type === "edit_sl" ? "stop" : event.type === "edit_tp" ? "target" : "limit";
     const price = managementEventPrice(event, kind);
     if (price != null) prices.push(price);
   }
-  return prices.filter((value) => Number.isFinite(value));
+  return prices.filter((value): value is number => typeof value === "number" && Number.isFinite(value));
 }
 
 function managedLevelLineData(trade: TradeChartTrade, kind: ManagedLevelKind, startTime: Time, endTime: Time) {
   const startMs = timeToMs(startTime);
   const endMs = timeToMs(endTime);
-  const initialValue = kind === "stop" ? trade.stopPrice : kind === "target" ? trade.targetPrice : trade.entryPrice;
+  const initialValue =
+    kind === "stop"
+      ? trade.stopPrice
+      : kind === "target"
+        ? trade.targetPrice
+        : trade.plannedEntryPrice ?? trade.entryPrice;
   if (startMs == null || endMs == null || endMs <= startMs) return [{ time: startTime, value: initialValue }];
 
   const relevantEvents = orderedTradeManagementEvents(trade).filter((event) => {
@@ -794,29 +806,14 @@ function managedLevelLineData(trade: TradeChartTrade, kind: ManagedLevelKind, st
     if (kind === "target") return event.type === "edit_tp";
     return event.type === "edit_limit";
   });
-  const data: Array<{ time: Time; value: number }> = [{ time: chartTimeFromMs(startMs), value: initialValue }];
-  let currentValue = initialValue;
-  let lastMs = startMs;
-
-  for (const event of relevantEvents) {
-    const eventMs = Date.parse(event.time);
-    const nextValue = managementEventPrice(event, kind);
-    if (!Number.isFinite(eventMs) || nextValue == null || eventMs < startMs || eventMs > endMs) continue;
-    const stepMs = Math.max(lastMs + 1000, Math.min(eventMs, endMs));
-    if (stepMs > lastMs) data.push({ time: chartTimeFromMs(stepMs), value: currentValue });
-    const adjustedMs = Math.max(stepMs + 1000, Math.min(eventMs + 1000, endMs));
-    currentValue = nextValue;
-    if (adjustedMs > stepMs) {
-      data.push({ time: chartTimeFromMs(adjustedMs), value: currentValue });
-      lastMs = adjustedMs;
-    } else {
-      data[data.length - 1] = { time: chartTimeFromMs(stepMs), value: currentValue };
-      lastMs = stepMs;
-    }
-  }
-
-  if (endMs > lastMs) data.push({ time: chartTimeFromMs(endMs), value: currentValue });
-  return data;
+  return buildManagedLevelTimeline(
+    initialValue,
+    startMs,
+    endMs,
+    relevantEvents
+      .map((event) => ({ timeMs: Date.parse(event.time), value: managementEventPrice(event, kind) }))
+      .filter((event): event is { timeMs: number; value: number } => event.value != null)
+  ).map((point) => ({ time: chartTimeFromMs(point.timeMs), value: point.value }));
 }
 
 function applyTradeOverlay(series: TradeOverlaySeries, snapshot: TradeVisualSnapshot): void {
@@ -833,7 +830,13 @@ function applyTradeOverlay(series: TradeOverlaySeries, snapshot: TradeVisualSnap
       const lineEndTime = candleIsRevealed(snapshot.entryCandle, snapshot.currentReplayCandle)
         ? snapshot.entryCandle.time
         : lineEndCandle.time;
-      series.limitOrderLine.setData(overlayLineData(limitOrderSignal.time as Time, lineEndTime as Time, snapshot.trade.entryPrice));
+      series.limitOrderLine.setData(
+        overlayLineData(
+          limitOrderSignal.time as Time,
+          lineEndTime as Time,
+          snapshot.trade.plannedEntryPrice ?? snapshot.trade.entryPrice
+        )
+      );
     }
   } else {
     series.limitOrderLine.setData([]);
@@ -985,6 +988,7 @@ function tradeDomOverlayGeometry(
   const entryAction = snapshot.trade.side === "long" ? "Buy" : "Sell";
   const entryColor = snapshot.trade.side === "long" ? "#35c971" : "#f0455a";
   const yEntry = series.priceToCoordinate(snapshot.trade.entryPrice);
+  const yPlannedEntry = series.priceToCoordinate(snapshot.trade.plannedEntryPrice ?? snapshot.trade.entryPrice);
   if (!coordinateIsVisible(yEntry)) return null;
 
   const limitSignal =
@@ -1000,12 +1004,12 @@ function tradeDomOverlayGeometry(
       : snapshot.currentReplayTime ?? snapshot.currentReplayCandle.time;
     const limitX1 = chartXForTime(chart, candles, limitSignal.time as Time, dataTimeframe);
     const limitX2 = chartXForTime(chart, candles, lineEndTime as Time, dataTimeframe);
-    if (coordinateIsVisible(limitX1) && coordinateIsVisible(limitX2)) {
+    if (coordinateIsVisible(limitX1) && coordinateIsVisible(limitX2) && coordinateIsVisible(yPlannedEntry)) {
       limitLine = {
         label: `Limit ${entryAction}`,
         x1: clamp(limitX1, 0, size.width),
         x2: clamp(limitX2, 0, size.width),
-        y: yEntry
+        y: yPlannedEntry
       };
     }
   }
@@ -1058,6 +1062,23 @@ function tradeDomOverlayGeometry(
   const clampedX1 = clamp(x1, 0, size.width);
   const clampedMarkerX = clamp(markerX, 0, size.width);
   const clampedAreaX2 = clamp(areaX2, 0, size.width);
+  const managedPath = (kind: "stop" | "target"): TradeManagedOverlayPath | undefined => {
+    const points = managedLevelLineData(snapshot.trade, kind, startTime, endTime)
+      .flatMap((point): Array<{ x: number; y: number }> => {
+        const x = chartXForTime(chart, candles, point.time, dataTimeframe);
+        const y = series.priceToCoordinate(point.value);
+        return coordinateIsVisible(x) && coordinateIsVisible(y)
+          ? [{ x: clamp(x, 0, size.width), y: Number(y) }]
+          : [];
+      });
+    if (!points.length) return undefined;
+    const last = points.at(-1)!;
+    if (clampedAreaX2 > last.x) points.push({ x: clampedAreaX2, y: last.y });
+    return {
+      changed: points.some((point) => Math.abs(point.y - points[0]!.y) > 0.1),
+      points
+    };
+  }
 
   return {
     entryLine: yEntry,
@@ -1089,7 +1110,9 @@ function tradeDomOverlayGeometry(
       x: clampedX1,
       y: yEntry
     },
+    stopPath: managedPath("stop"),
     stopLine: yStop,
+    targetPath: managedPath("target"),
     targetLine: yTarget,
     width: size.width,
     x1: clampedX1,
@@ -2479,9 +2502,38 @@ function drawTradeOverlayGeometry(ctx: CanvasRenderingContext2D, geometry: Trade
     };
 
     drawLevel(geometry.entryLine, "rgba(232, 238, 250, 0.82)");
-    drawLevel(geometry.targetLine, "rgba(53, 201, 113, 0.9)");
-    drawLevel(geometry.stopLine, "rgba(255, 76, 104, 0.9)");
+    if (!geometry.targetPath) drawLevel(geometry.targetLine, "rgba(53, 201, 113, 0.9)");
+    if (!geometry.stopPath) drawLevel(geometry.stopLine, "rgba(255, 76, 104, 0.9)");
   }
+
+  const drawManagedLevelPath = (
+    path: TradeManagedOverlayPath | undefined,
+    color: string,
+    initialLabel?: string
+  ) => {
+    if (!path?.points.length) return;
+    ctx.beginPath();
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([]);
+    ctx.lineJoin = "miter";
+    ctx.moveTo(path.points[0]!.x, path.points[0]!.y);
+    for (const point of path.points.slice(1)) ctx.lineTo(point.x, point.y);
+    ctx.stroke();
+    if (initialLabel && path.changed) {
+      const first = path.points[0]!;
+      drawOverlayText(
+        ctx,
+        initialLabel,
+        clamp(first.x + 6, 6, geometry.width - 80),
+        clamp(first.y - 9, 12, geometry.height - 6),
+        color
+      );
+    }
+  };
+
+  drawManagedLevelPath(geometry.targetPath, "rgba(53, 201, 113, 0.9)");
+  drawManagedLevelPath(geometry.stopPath, "rgba(255, 76, 104, 0.96)", "Initial SL");
 
   if (geometry.path) {
     ctx.beginPath();

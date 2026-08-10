@@ -1090,6 +1090,7 @@ type ProjectXPlacedOrder = {
   customTag?: string;
   filledSize?: number;
   filledPrice?: number;
+  filledTime?: string;
   fillConfirmationLatencyMs?: number;
   note?: string;
   orderId: number;
@@ -1278,6 +1279,9 @@ async function confirmProjectXMarketOrder(
             typeof brokerOrder?.filledPrice === "number" && Number.isFinite(brokerOrder.filledPrice)
               ? brokerOrder.filledPrice
               : undefined,
+          filledTime:
+            [brokerOrder?.updateTimestamp, brokerOrder?.creationTimestamp]
+              .find((value): value is string => typeof value === "string" && Number.isFinite(Date.parse(value))),
           fillConfirmationLatencyMs: Date.now() - confirmationStartedAt,
           note: [order.note, fillNote].filter(Boolean).join(" ")
         };
@@ -1351,6 +1355,7 @@ async function placeProjectXOrderWithAdaptiveFallback(
         customTag: order.customTag ?? attemptSummary.customTag,
         error: [lastSizeError ? undefined : preAdjustmentNote, order.note].filter(Boolean).join(" ") || undefined,
         filledPrice: order.filledPrice,
+        filledTime: order.filledTime,
         fillConfirmationLatencyMs: order.fillConfirmationLatencyMs,
         orderId: order.orderId,
         size: order.filledSize ?? attemptSize,
@@ -1391,6 +1396,7 @@ async function placeProjectXOrderWithAdaptiveFallback(
             customTag: fallbackOrder.customTag ?? fallbackSummary.customTag,
             error: [preAdjustmentNote && !lastSizeError ? preAdjustmentNote : undefined, retryNote, fallbackOrder.note].filter(Boolean).join(" "),
             filledPrice: fallbackOrder.filledPrice,
+            filledTime: fallbackOrder.filledTime,
             fillConfirmationLatencyMs: fallbackOrder.fillConfirmationLatencyMs,
             orderId: fallbackOrder.orderId,
             size: fallbackOrder.filledSize ?? attemptSize,

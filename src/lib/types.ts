@@ -19,6 +19,7 @@ export type AutoTradeOrderSummary = {
   exitPrice?: number;
   exitTime?: string;
   filledPrice?: number;
+  filledTime?: string;
   fillConfirmationLatencyMs?: number;
   feesDollars?: number;
   grossPnlDollars?: number;

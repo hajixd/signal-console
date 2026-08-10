@@ -54,6 +54,7 @@ import {
   alertTargetUnits,
   boundedTradeDollarPnl,
   inferredAlertPriceUnit,
+  liveBrokerEntryOutcome,
   liveBrokerExecutionOutcome,
   liveClosedTradePnlDollars,
   liveOpenTradePnlDollars,
@@ -2013,10 +2014,12 @@ export default async function Home({ searchParams }: HomeProps) {
       const displayContract = liveTradeDisplaySymbol(trade);
       const plannedSizeMultiplier = liveTradeRealSizeMultiplier(trade, option);
       const brokerOutcome = isClosed ? liveBrokerExecutionOutcome(trade) : null;
+      const brokerEntry = liveBrokerEntryOutcome(trade);
       const sizeMultiplier = brokerOutcome?.sizeMultiplier && brokerOutcome.sizeMultiplier > 0
         ? brokerOutcome.sizeMultiplier
         : plannedSizeMultiplier;
-      const entryPrice = brokerOutcome?.entryPrice ?? trade.entryPrice;
+      const entryPrice = brokerOutcome?.entryPrice ?? brokerEntry?.entryPrice ?? trade.entryPrice;
+      const entryTime = brokerOutcome?.entryTime ?? brokerEntry?.entryTime ?? trade.signalTime;
       const entrySlippage = entryPrice - trade.entryPrice;
       const targetPrice = trade.takeProfitPrice + entrySlippage;
       const stopPrice = trade.stopLossPrice + entrySlippage;
@@ -2039,7 +2042,7 @@ export default async function Home({ searchParams }: HomeProps) {
       const rawPnlDollars = isClosed
         ? liveClosedTradePnlDollars(trade, sizeMultiplier, { riskDollars, targetDollars })
         : hasCurrentMark
-          ? liveOpenTradePnlDollars(trade, priceUnit, rawExitPrice, sizeMultiplier)
+          ? liveOpenTradePnlDollars(trade, priceUnit, rawExitPrice, sizeMultiplier, entryPrice)
           : 0;
       const exitBoundary = exitBoundaryFromReason(trade.lifecycleStatus);
       const endTime = isClosed ? brokerOutcome?.exitTime ?? trade.lifecycleTime : latestOpenPrice?.time ?? trade.signalTime;
@@ -2067,7 +2070,7 @@ export default async function Home({ searchParams }: HomeProps) {
       const sideMultiplier = trade.side === "long" ? 1 : -1;
       const netUnits = priceUnit > 0 ? ((exitPrice - entryPrice) * sideMultiplier) / priceUnit : 0;
       const unitLabel = instrumentUnitLabel(trade.symbol);
-      const barsHeld = oneMinuteBarsHeld(trade.signalTime, endTime);
+      const barsHeld = oneMinuteBarsHeld(entryTime, endTime);
 
       return {
         id: `live-${trade.id}-${index}`,
@@ -2087,7 +2090,7 @@ export default async function Home({ searchParams }: HomeProps) {
         entryIndex: 0,
         exitIndex: Math.max(1, barsHeld),
         signalTime: trade.signalTime,
-        entryTime: trade.signalTime,
+        entryTime,
         exitTime: endTime,
         sourceTimeframe: UNIVERSAL_TRADE_TIMEFRAME,
         strategyTimeframe:
@@ -2095,20 +2098,21 @@ export default async function Home({ searchParams }: HomeProps) {
         phase: option?.phase,
         variantId: option?.variantId,
         entryType: trade.entryType ?? "market",
+        plannedEntryPrice: trade.entryPrice,
         entryPrice,
         exitPrice,
         targetPrice,
         stopPrice,
         managementEvents: trade.managementEvents,
         signalTimeLabel: fmtTime(trade.signalTime),
-        entryTimeLabel: fmtTime(trade.signalTime),
+        entryTimeLabel: fmtTime(entryTime),
         exitTimeLabel: isClosed ? fmtTime(endTime) : hasCurrentMark ? fmtTime(endTime) : "Awaiting live mark",
         entryPriceLabel: fmtDollarPrice(entryPrice),
         exitPriceLabel: isClosed || hasCurrentMark ? fmtDollarPrice(exitPrice) : "--",
         targetPriceLabel: fmtDollarPrice(targetPrice),
         stopPriceLabel: fmtDollarPrice(stopPrice),
         durationLabel: fmtBars(barsHeld),
-        durationDetailLabel: fmtDuration(trade.signalTime, endTime),
+        durationDetailLabel: fmtDuration(entryTime, endTime),
         exitReasonLabel: isClosed ? fmtExitReason(consistentExit?.exitReason ?? trade.lifecycleStatus) : "Still Open",
         pnlLabel: isClosed || hasCurrentMark ? fmtMoney(pnlDollars, true) : "--",
         rMultipleLabel: (isClosed || hasCurrentMark) && riskDollars > 0 ? `${fmtNumber(rMultiple)}R` : "--",

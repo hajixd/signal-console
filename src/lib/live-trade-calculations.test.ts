@@ -1,7 +1,12 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { liveBrokerExecutionOutcome, liveClosedTradePnlDollars, liveOpenTradePnlDollars } from "@/lib/live-trade-calculations";
+import {
+  liveBrokerEntryOutcome,
+  liveBrokerExecutionOutcome,
+  liveClosedTradePnlDollars,
+  liveOpenTradePnlDollars
+} from "@/lib/live-trade-calculations";
 import type { TradeAlert } from "@/lib/types";
 
 function projectXCornTrade(): TradeAlert {
@@ -52,6 +57,7 @@ test("broker outcome reconstructs a legacy ProjectX closing price from gross P&L
   assert.ok(outcome);
   assert.equal(outcome.entryPrice, 458.5);
   assert.equal(outcome.exitPrice, 460);
+  assert.equal(outcome.entryTime, "2026-08-06T15:45:00.000Z");
   assert.equal(outcome.exitTime, undefined);
   assert.equal(outcome.grossPnlDollars, 375);
   assert.equal(outcome.netPnlDollars, 364.3);
@@ -70,4 +76,35 @@ test("open mark P&L estimates the full move from entry using the current asset p
 
   assert.equal(liveOpenTradePnlDollars(trade, 0.25, 500, 5), 10_250);
   assert.equal(liveOpenTradePnlDollars(trade, 0.25, 400, 5), -14_750);
+});
+
+test("an open ProjectX trade uses its actual fill price and fill-time fallback", () => {
+  const trade: TradeAlert = {
+    ...projectXCornTrade(),
+    autoTradeCheckedAt: "2026-08-10T19:31:01.701Z",
+    autoTradeOrders: [
+      {
+        accountId: 23187369,
+        contractName: "MGCZ6",
+        filledPrice: 4451.4,
+        size: 3,
+        status: "placed"
+      }
+    ],
+    createdAt: "2026-08-10T19:31:00.015Z",
+    entryPrice: 4449.6,
+    lifecycleStatus: "open",
+    market: "futures",
+    signalTime: "2026-08-10T19:15:00.000Z",
+    stopLossPrice: 4441.4,
+    symbol: "GC",
+    takeProfitPrice: 4466.1
+  };
+
+  assert.deepEqual(liveBrokerEntryOutcome(trade), {
+    entryPrice: 4451.4,
+    entryTime: "2026-08-10T19:31:01.701Z",
+    sizeMultiplier: 3
+  });
+  assert.ok(Math.abs(liveOpenTradePnlDollars(trade, 0.1, 4448.7, 3, 4451.4) + 81) < 0.000001);
 });

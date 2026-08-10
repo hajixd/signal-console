@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   buildManagedLevelStepPath,
+  buildManagedLevelTimeline,
   buildOpenTradeChartPoints,
   latestOpenTradeMark,
   mergeLiveOpenTradeBar,
@@ -63,6 +64,27 @@ test("a break-even stop is rendered as a visible price step at its change time",
   );
 
   assert.equal(path, "M 0.00 558.60 H 350.00 V 550.40 H 620.00 V 548.80 H 900.00");
+});
+
+test("a managed stop timeline retains the initial stop before break-even", () => {
+  const startMs = Date.parse("2026-07-31T19:45:00.000Z");
+  const firstTrailMs = Date.parse("2026-07-31T20:30:00.000Z");
+  const breakEvenMs = Date.parse("2026-07-31T20:45:00.000Z");
+  const endMs = Date.parse("2026-08-02T22:00:00.000Z");
+  const timeline = buildManagedLevelTimeline(106.1640625, startMs, endMs, [
+    { timeMs: firstTrailMs, value: 106.1484375 },
+    { timeMs: breakEvenMs, value: 106.125 }
+  ]);
+
+  assert.deepEqual(timeline.slice(0, 3), [
+    { timeMs: startMs, value: 106.1640625 },
+    { timeMs: firstTrailMs, value: 106.1640625 },
+    { timeMs: firstTrailMs + 1000, value: 106.1484375 }
+  ]);
+  assert.deepEqual(timeline.slice(-2), [
+    { timeMs: breakEvenMs + 1000, value: 106.125 },
+    { timeMs: endMs, value: 106.125 }
+  ]);
 });
 
 test("an active overlay ends at the current candle instead of a stale planned exit", () => {

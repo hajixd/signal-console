@@ -25,6 +25,43 @@ export type OpenTradeChartPoint = {
   x: number;
 };
 
+export type ManagedLevelTimelinePoint = {
+  timeMs: number;
+  value: number;
+};
+
+export function buildManagedLevelTimeline(
+  initialValue: number,
+  startMs: number,
+  endMs: number,
+  changes: ManagedLevelTimelinePoint[]
+): ManagedLevelTimelinePoint[] {
+  if (!Number.isFinite(startMs) || !Number.isFinite(endMs) || endMs <= startMs) {
+    return [{ timeMs: startMs, value: initialValue }];
+  }
+
+  const points: ManagedLevelTimelinePoint[] = [{ timeMs: startMs, value: initialValue }];
+  let currentValue = initialValue;
+  let lastMs = startMs;
+  for (const change of [...changes].sort((left, right) => left.timeMs - right.timeMs)) {
+    if (!Number.isFinite(change.timeMs) || !Number.isFinite(change.value) || change.timeMs < startMs || change.timeMs > endMs) continue;
+    const stepMs = Math.max(lastMs + 1000, Math.min(change.timeMs, endMs));
+    if (stepMs > lastMs) points.push({ timeMs: stepMs, value: currentValue });
+    const adjustedMs = Math.max(stepMs + 1000, Math.min(change.timeMs + 1000, endMs));
+    currentValue = change.value;
+    if (adjustedMs > stepMs) {
+      points.push({ timeMs: adjustedMs, value: currentValue });
+      lastMs = adjustedMs;
+    } else {
+      points[points.length - 1] = { timeMs: stepMs, value: currentValue };
+      lastMs = stepMs;
+    }
+  }
+
+  if (endMs > lastMs) points.push({ timeMs: endMs, value: currentValue });
+  return points;
+}
+
 export function resolveActiveTradeOverlayEnd<T>(
   exitRevealed: boolean,
   exitValue: T | null,

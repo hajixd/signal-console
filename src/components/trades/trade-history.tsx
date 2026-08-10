@@ -50,6 +50,7 @@ export type TradeHistoryRow = {
   phase?: string;
   variantId?: string;
   entryType?: "market" | "limit";
+  plannedEntryPrice?: number;
   entryPrice: number;
   exitPrice: number;
   targetPrice: number;
@@ -2182,6 +2183,7 @@ export default function TradeHistory({ rows }: TradeHistoryProps) {
             variantId: activeDisplayTrade.variantId,
             modelName: isRestricted ? "Admin only" : activeDisplayTrade.modelName,
             entryType: activeDisplayTrade.entryType,
+            plannedEntryPrice: activeDisplayTrade.plannedEntryPrice,
             entryPrice: activeDisplayTrade.entryPrice,
             exitPrice: activeDisplayTrade.exitPrice,
             targetPrice: activeDisplayTrade.targetPrice,
@@ -2199,6 +2201,7 @@ export default function TradeHistory({ rows }: TradeHistoryProps) {
       activeDisplayTrade?.entryPrice,
       activeDisplayTrade?.entryTime,
       activeDisplayTrade?.entryType,
+      activeDisplayTrade?.plannedEntryPrice,
       activeDisplayTrade?.exitIndex,
       activeDisplayTrade?.exitPrice,
       activeDisplayTrade?.exitTime,
