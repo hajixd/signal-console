@@ -59,6 +59,7 @@ import {
   liveOpenTradePnlDollars,
   liveTradeEventAutoTradeOrders
 } from "@/lib/live-trade-calculations";
+import { freshLiveTradeMark } from "@/lib/live-trade-mark";
 import {
   dashboardSelectedStrategyIdsForMarket,
   defaultDatasetStatus,
@@ -1550,7 +1551,7 @@ type LatestLivePriceConfig = {
 function liveTradeLatestPriceConfig(trade: TradeAlert, option?: StrategyOption): LatestLivePriceConfig | null {
   const assetKey = trade.assetKey ?? option?.assetKey ?? assetForSymbol(trade.symbol)?.key;
   if (!assetKey) return null;
-  const timeframe = (timeframeFromVariant(option?.variantId, "tf") ?? "15m") as DataTimeframe;
+  const timeframe = UNIVERSAL_TRADE_TIMEFRAME as DataTimeframe;
   return {
     assetKey,
     key: `${assetKey}:${timeframe}`,
@@ -1996,18 +1997,24 @@ export default async function Home({ searchParams }: HomeProps) {
       const stopPrice = trade.stopLossPrice + entrySlippage;
       const targetDollars = alertTargetDollarsWithSize(trade, sizeMultiplier);
       const riskDollars = alertRiskDollarsWithSize(trade, sizeMultiplier);
-      const latestOpenPrice =
+      const latestOpenPriceCandidate =
         !isClosed
           ? latestLivePriceByConfigKey.get(liveTradeLatestPriceConfig(trade, option)?.key ?? "")
           : undefined;
+      const latestOpenPrice = !isClosed
+        ? freshLiveTradeMark(trade, latestOpenPriceCandidate, now) ?? undefined
+        : undefined;
+      const hasCurrentMark = Boolean(latestOpenPrice);
       const rawExitPrice = isClosed
         ? brokerOutcome?.exitPrice ?? finiteNumberOr(trade.lifecyclePrice, entryPrice)
-        : finiteNumberOr(latestOpenPrice?.price, entryPrice);
+        : latestOpenPrice?.price ?? entryPrice;
       const rawPnlDollars = isClosed
         ? liveClosedTradePnlDollars(trade, sizeMultiplier, { riskDollars, targetDollars })
-        : liveOpenTradePnlDollars(trade, priceUnit, rawExitPrice, sizeMultiplier);
+        : hasCurrentMark
+          ? liveOpenTradePnlDollars(trade, priceUnit, rawExitPrice, sizeMultiplier)
+          : 0;
       const exitBoundary = exitBoundaryFromReason(trade.lifecycleStatus);
-      const endTime = isClosed ? brokerOutcome?.exitTime ?? trade.lifecycleTime : latestOpenPrice?.time ?? now.toISOString();
+      const endTime = isClosed ? brokerOutcome?.exitTime ?? trade.lifecycleTime : latestOpenPrice?.time ?? trade.signalTime;
       const dollarsPerPricePoint = priceUnit > 0
         ? (dollarPerUnit(trade.symbol, entryPrice) * sizeMultiplier) / priceUnit
         : 0;
@@ -2038,7 +2045,7 @@ export default async function Home({ searchParams }: HomeProps) {
         id: `live-${trade.id}-${index}`,
         strategyKey,
         rowClassName: isClosed ? resultRowClass(pnlDollars) : "neutral-row",
-        pnlClassName: isClosed ? resultClass(pnlDollars) : "live-pnl",
+        pnlClassName: isClosed ? resultClass(pnlDollars) : hasCurrentMark ? "live-pnl" : "neutral",
         pnlDollars,
         indexLabel: fmtNumber(index + 1),
         symbol: trade.symbol,
@@ -2067,17 +2074,17 @@ export default async function Home({ searchParams }: HomeProps) {
         managementEvents: trade.managementEvents,
         signalTimeLabel: fmtTime(trade.signalTime),
         entryTimeLabel: fmtTime(trade.signalTime),
-        exitTimeLabel: isClosed ? fmtTime(endTime) : "Still Open",
+        exitTimeLabel: isClosed ? fmtTime(endTime) : hasCurrentMark ? fmtTime(endTime) : "Awaiting live mark",
         entryPriceLabel: fmtDollarPrice(entryPrice),
-        exitPriceLabel: fmtDollarPrice(exitPrice),
+        exitPriceLabel: isClosed || hasCurrentMark ? fmtDollarPrice(exitPrice) : "--",
         targetPriceLabel: fmtDollarPrice(targetPrice),
         stopPriceLabel: fmtDollarPrice(stopPrice),
         durationLabel: fmtBars(barsHeld),
         durationDetailLabel: fmtDuration(trade.signalTime, endTime),
         exitReasonLabel: isClosed ? fmtExitReason(consistentExit?.exitReason ?? trade.lifecycleStatus) : "Still Open",
-        pnlLabel: fmtMoney(pnlDollars, true),
-        rMultipleLabel: riskDollars > 0 ? `${fmtNumber(rMultiple)}R` : "--",
-        netUnitsLabel: `${fmtNumber(netUnits)} ${unitLabel}`,
+        pnlLabel: isClosed || hasCurrentMark ? fmtMoney(pnlDollars, true) : "--",
+        rMultipleLabel: (isClosed || hasCurrentMark) && riskDollars > 0 ? `${fmtNumber(rMultiple)}R` : "--",
+        netUnitsLabel: isClosed || hasCurrentMark ? `${fmtNumber(netUnits)} ${unitLabel}` : "--",
         sizeLabel: liveTradePlannedSizeLabel(trade, displayContract, sizeMultiplier),
         sizeMultiplier,
         targetRiskLabel: `${fmtMoney(targetDollars)} / ${fmtMoney(-riskDollars)}`,
@@ -2088,7 +2095,9 @@ export default async function Home({ searchParams }: HomeProps) {
         dollarsPerPricePoint,
         tpUnitsLabel: `${fmtNumber(trade.tpUnits)} ${unitLabel}`,
         slUnitsLabel: `${fmtNumber(trade.slUnits)} ${unitLabel}`,
-        lockedSize: true
+        lockedSize: true,
+        isOpen: !isClosed,
+        hasCurrentMark
       };
     });
   const visibleLiveHistoryRows = [...liveHistoryRows]
@@ -2105,6 +2114,7 @@ export default async function Home({ searchParams }: HomeProps) {
   const liveHistoryOpenCount = visibleLiveHistoryRows.filter((row) => row.exitReasonLabel === "Still Open").length;
   const liveHistoryClosedCount = visibleLiveHistoryRows.length - liveHistoryOpenCount;
   const activeMarketLiveBasketTrades = visibleLiveHistoryRows
+    .filter((row) => !row.isOpen)
     .map((row) => ({
       key: row.strategyKey,
       lockedSize: true,
@@ -2445,7 +2455,7 @@ export default async function Home({ searchParams }: HomeProps) {
       pnlDollars: boundedBacktestTradeDollarPnl(trade, sizeMultiplier) * (customScale ?? 1)
     };
   });
-  const liveChallengeReplayTrades = visibleLiveHistoryRows.map((trade) => ({
+  const liveChallengeReplayTrades = visibleLiveHistoryRows.filter((trade) => !trade.isOpen).map((trade) => ({
     entryTime: trade.entryTime,
     key: trade.strategyKey,
     lockedSize: true,

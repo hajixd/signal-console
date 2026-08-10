@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { liveBrokerExecutionOutcome, liveClosedTradePnlDollars } from "@/lib/live-trade-calculations";
+import { liveBrokerExecutionOutcome, liveClosedTradePnlDollars, liveOpenTradePnlDollars } from "@/lib/live-trade-calculations";
 import type { TradeAlert } from "@/lib/types";
 
 function projectXCornTrade(): TradeAlert {
@@ -63,4 +63,11 @@ test("broker net P&L is not capped to the signal's planned take-profit dollars",
     liveClosedTradePnlDollars(projectXCornTrade(), 5, { riskDollars: 312.5, targetDollars: 312.5 }),
     364.3
   );
+});
+
+test("open mark P&L cannot run past the trade's take-profit or stop-loss bracket", () => {
+  const trade = { ...projectXCornTrade(), lifecycleStatus: "open" as const };
+
+  assert.equal(liveOpenTradePnlDollars(trade, 0.25, 500, 5), 312.5);
+  assert.equal(liveOpenTradePnlDollars(trade, 0.25, 400, 5), -312.5);
 });

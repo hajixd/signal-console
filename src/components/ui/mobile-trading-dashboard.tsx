@@ -512,17 +512,18 @@ function MobileHistoryList({
                         </span>
                       </div>
                       <div className="mobile-phone-history-values">
-                        <strong className={row.pnlClassName}>{row.pnlLabel}</strong>
+                        <strong className={row.pnlClassName}>{row.isOpen && !row.hasCurrentMark ? "Open" : row.pnlLabel}</strong>
                         <span className="mobile-phone-history-size">{row.sizeLabel}</span>
                       </div>
                     </div>
                     <div className="mobile-phone-history-meta">
                       <span>
-                        <LocalDateTime value={row.exitTime} fallback={row.exitTimeLabel} />
+                        {row.isOpen ? "Opened\u00a0" : null}
+                        <LocalDateTime value={row.isOpen ? row.entryTime : row.exitTime} fallback={row.isOpen ? row.entryTimeLabel : row.exitTimeLabel} />
                       </span>
-                      <span>{row.rMultipleLabel}</span>
+                      {row.rMultipleLabel !== "--" ? <span>{row.rMultipleLabel}</span> : null}
                       <span>Entry {row.entryPriceLabel}</span>
-                      <span>Exit {row.exitPriceLabel}</span>
+                      <span>{row.isOpen ? "Mark" : "Exit"} {row.exitPriceLabel}</span>
                     </div>
                     <span className={`mobile-phone-history-rail ${historyRailTone(row)}`} aria-hidden="true" />
                   </button>
@@ -816,8 +817,8 @@ function MobileTradeChartModal({
         </div>
         <div className="mobile-trade-modal-stats">
           <span>
-            <small>PnL</small>
-            <strong className={trade.pnlClassName}>{trade.pnlLabel}</strong>
+            <small>{trade.isOpen ? "Open PnL" : "PnL"}</small>
+            <strong className={trade.pnlClassName}>{trade.isOpen && !trade.hasCurrentMark ? "--" : trade.pnlLabel}</strong>
           </span>
           <span>
             <small>Size</small>
@@ -828,9 +829,13 @@ function MobileTradeChartModal({
             <strong>{trade.entryPriceLabel}</strong>
           </span>
           <span>
-            <small>Exit</small>
+            <small>{trade.isOpen ? "Mark" : "Exit"}</small>
             <strong>{trade.exitPriceLabel}</strong>
           </span>
+        </div>
+        <div className="mobile-trade-modal-levels" aria-label="Trade protection levels">
+          <span><small>Take Profit</small><strong className="up">{trade.targetPriceLabel}</strong></span>
+          <span><small>Stop Loss</small><strong className="down">{trade.stopPriceLabel}</strong></span>
         </div>
         {chartState.message ? <p className="mobile-trade-modal-note">{chartState.message}</p> : null}
         <div className="mobile-trade-mini-chart-wrap">
@@ -984,6 +989,15 @@ export default function MobileTradingDashboard({
       return undefined;
     }
 
+    if (activeTrade.isOpen && !activeTrade.hasCurrentMark) {
+      setChartState({
+        status: "error",
+        bars: [],
+        message: "A current market mark is not available for this unresolved alert, so Korra will not draw a misleading price path."
+      });
+      return undefined;
+    }
+
     const controller = new AbortController();
     const params = new URLSearchParams({
       symbol: activeTrade.symbol,
@@ -1000,10 +1014,11 @@ export default function MobileTradingDashboard({
     fetch(`/api/trade-chart?${params.toString()}`, { signal: controller.signal })
       .then((response) => (response.ok ? (response.json() as Promise<MobileChartPayload>) : Promise.reject(new Error("Chart unavailable"))))
       .then((payload) => {
+        const bars = payload.bars ?? [];
         setChartState({
-          bars: payload.bars ?? [],
-          message: payload.error,
-          status: "ready"
+          bars,
+          message: payload.error ?? (!bars.length ? "Price movement is not available for this trade." : undefined),
+          status: bars.length ? "ready" : "error"
         });
       })
       .catch((error: Error) => {

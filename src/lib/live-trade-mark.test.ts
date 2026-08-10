@@ -1,0 +1,47 @@
+import assert from "node:assert/strict";
+import test from "node:test";
+import { freshLiveTradeMark } from "./live-trade-mark";
+
+const now = new Date("2026-08-10T19:15:00.000Z");
+
+test("accepts a current mark inside the configured lifecycle", () => {
+  assert.deepEqual(
+    freshLiveTradeMark(
+      { maxBars: 60, signalTime: "2026-08-10T18:45:00.000Z" },
+      { price: 460.25, time: "2026-08-10T19:14:00.000Z" },
+      now
+    ),
+    { price: 460.25, time: "2026-08-10T19:14:00.000Z" }
+  );
+});
+
+test("rejects a fresh market bar for an abandoned old open alert", () => {
+  assert.equal(
+    freshLiveTradeMark(
+      { maxBars: 24, signalTime: "2026-05-11T07:45:00.000Z" },
+      { price: 4676.4, time: "2026-08-10T19:14:00.000Z" },
+      now
+    ),
+    null
+  );
+});
+
+test("rejects a stale or pre-entry mark", () => {
+  assert.equal(
+    freshLiveTradeMark(
+      { maxBars: 60, signalTime: "2026-08-10T18:45:00.000Z" },
+      { price: 460.25, time: "2026-08-10T18:44:00.000Z" },
+      now
+    ),
+    null
+  );
+  assert.equal(
+    freshLiveTradeMark(
+      { maxBars: 60, signalTime: "2026-08-10T18:45:00.000Z" },
+      { price: 460.25, time: "2026-08-10T18:55:00.000Z" },
+      now,
+      { maxMarkLagMinutes: 10 }
+    ),
+    null
+  );
+});

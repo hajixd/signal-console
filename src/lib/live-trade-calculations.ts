@@ -64,7 +64,12 @@ export function liveOpenTradePnlDollars(trade: TradeAlert, priceUnit: number, ex
   if (!Number.isFinite(exitPrice) || priceUnit <= 0) return 0;
   const sideMultiplier = trade.side === "long" ? 1 : -1;
   const netUnits = ((exitPrice - trade.entryPrice) * sideMultiplier) / priceUnit;
-  return netUnits * dollarPerUnit(trade.symbol, trade.entryPrice) * sizeMultiplier;
+  const rawPnlDollars = netUnits * dollarPerUnit(trade.symbol, trade.entryPrice) * sizeMultiplier;
+  return boundedTradeDollarPnl(
+    rawPnlDollars,
+    alertTargetDollarsWithSize(trade, sizeMultiplier),
+    alertRiskDollarsWithSize(trade, sizeMultiplier)
+  );
 }
 
 export type LiveBrokerExecutionOutcome = {

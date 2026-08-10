@@ -72,6 +72,8 @@ export type TradeHistoryRow = {
   tpUnitsLabel: string;
   slUnitsLabel: string;
   lockedSize?: boolean;
+  isOpen?: boolean;
+  hasCurrentMark?: boolean;
 };
 
 type TradeHistoryProps = {
@@ -687,6 +689,7 @@ export function BacktestTradeMiniChart({
   const direction = trade.side === "long" ? 1 : -1;
   const dollarsPerPoint = Math.max(0.000001, Math.abs(trade.dollarsPerPricePoint || 1));
   const entryPrice = trade.entryPrice;
+  const isStillOpen = trade.isOpen ?? trade.exitReasonLabel.trim().toLowerCase().includes("still open");
 
   useEffect(() => {
     const node = chartRef.current;
@@ -702,8 +705,13 @@ export function BacktestTradeMiniChart({
   const plot = useMemo(() => {
     if (data.length < 2) return null;
     const width = Math.max(360, chartWidth);
-    const height = width < 640 ? 250 : 300;
-    const margins = width < 640 ? { top: 22, right: 16, bottom: 42, left: 58 } : { top: 24, right: 34, bottom: 46, left: 76 };
+    const compactMobile = compactTooltip && width < 640;
+    const height = compactMobile ? 194 : width < 640 ? 250 : 300;
+    const margins = compactMobile
+      ? { top: 14, right: 12, bottom: 14, left: 12 }
+      : width < 640
+        ? { top: 22, right: 16, bottom: 42, left: 58 }
+        : { top: 24, right: 34, bottom: 46, left: 76 };
     const plotWidth = width - margins.left - margins.right;
     const plotHeight = height - margins.top - margins.bottom;
     const chartEndMs = data[data.length - 1]?.timeMs ?? Number.POSITIVE_INFINITY;
@@ -838,7 +846,7 @@ export function BacktestTradeMiniChart({
     const xTicks = [
       { label: "Entry", value: 0 },
       { label: formatMinutesCompact(xMax / 2), value: xMax / 2 },
-      { label: "Exit", value: xMax }
+      { label: isStillOpen ? "Mark" : "Exit", value: xMax }
     ];
     const mfeIndex = points.reduce((bestIndex, point, index) => (point.favorablePnl > (points[bestIndex]?.favorablePnl ?? -Infinity) ? index : bestIndex), 0);
     const maeIndex = points.reduce((bestIndex, point, index) => (point.adversePnl < (points[bestIndex]?.adversePnl ?? Infinity) ? index : bestIndex), 0);
@@ -870,10 +878,12 @@ export function BacktestTradeMiniChart({
     };
   }, [
     chartWidth,
+    compactTooltip,
     data,
     direction,
     dollarsPerPoint,
     entryPrice,
+    isStillOpen,
     trade.entryPrice,
     trade.entryTime,
     trade.entryType,
@@ -887,7 +897,7 @@ export function BacktestTradeMiniChart({
     return <div className="backtest-trade-mini-empty">Loading price movement...</div>;
   }
 
-  if (!plot) {
+  if (status === "error" || !plot) {
     return <div className="backtest-trade-mini-empty">Price movement unavailable.</div>;
   }
 
@@ -902,7 +912,6 @@ export function BacktestTradeMiniChart({
   const activeLevels = managedTradeLevelsAt(trade, activePoint.timeMs);
   const targetGapDollars = (activeLevels.targetPrice - activePoint.price) * direction * dollarsPerPoint;
   const stopBufferDollars = (activePoint.price - activeLevels.stopPrice) * direction * dollarsPerPoint;
-  const isStillOpen = trade.exitReasonLabel.trim().toLowerCase().includes("still open");
   const isTradeWinner = trade.pnlDollars >= 0;
   const chartTone = isStillOpen ? "neutral" : isTradeWinner ? "up" : "down";
   const activePnlTone = activePoint.pnlDollars > 0 ? "up" : activePoint.pnlDollars < 0 ? "down" : "neutral";
@@ -1130,7 +1139,7 @@ export function BacktestTradeMiniChart({
         <g className={`backtest-trade-mini-marker exit ${isTradeWinner ? "up" : "down"}`}>
           <circle cx={plot.points[plot.points.length - 1]!.xCoord} cy={plot.points[plot.points.length - 1]!.yCoord} r="5" />
           <text x={plot.points[plot.points.length - 1]!.xCoord - 8} y={plot.points[plot.points.length - 1]!.yCoord - 12} textAnchor="end">
-            Exit {trade.pnlLabel}
+            {isStillOpen ? "Mark" : "Exit"} {trade.pnlLabel}
           </text>
         </g>
 

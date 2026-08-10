@@ -5187,7 +5187,9 @@ html[data-theme="light"] .tradeClusterNode.live {
 
 @media (max-width: 680px) {
   .mobile-phone-tabbar {
-    grid-template-columns: repeat(7, minmax(0, 1fr));
+    width: 100%;
+    min-width: 0;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
   }
 
   .mobile-phone-card.mobile-phone-card-cluster {
@@ -17227,6 +17229,7 @@ html[data-theme="light"] .tradeReplaySlider input::-webkit-slider-thumb {
   }
 
   .mobile-phone-tab {
+    min-width: 0;
     min-height: 44px;
     border: 0;
     border-radius: 12px;
@@ -17409,6 +17412,31 @@ html[data-theme="light"] .tradeReplaySlider input::-webkit-slider-thumb {
     margin-bottom: 0.82rem;
   }
 
+  .mobile-trade-modal-levels {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.45rem;
+    margin: -0.22rem 0 0.72rem;
+  }
+
+  .mobile-trade-modal-levels span {
+    min-width: 0;
+    padding: 0 0.15rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+  }
+
+  .mobile-trade-modal-levels small {
+    color: rgba(228, 234, 227, 0.48);
+    font-size: 0.48rem;
+  }
+
+  .mobile-trade-modal-levels strong {
+    font-size: 0.55rem;
+  }
+
   .mobile-trade-modal-stats span {
     min-width: 0;
     min-height: 52px;
@@ -17435,9 +17463,11 @@ html[data-theme="light"] .tradeReplaySlider input::-webkit-slider-thumb {
   }
 
   .mobile-trade-mini-chart-wrap .backtest-trade-mini-chart {
-    min-height: 250px;
-    border-radius: 16px;
+    min-height: 194px;
+    border: 1px solid rgba(255, 255, 255, 0.075);
+    border-radius: 14px;
     background: #050505;
+    overflow: hidden;
   }
 
   .mobile-trade-mini-chart-wrap .backtest-trade-mini-grid-line,
@@ -17454,12 +17484,10 @@ html[data-theme="light"] .tradeReplaySlider input::-webkit-slider-thumb {
     fill: #050505;
   }
 
-  .mobile-trade-mini-chart-wrap .backtest-trade-mini-axis-label.y-axis {
-    display: block;
-    fill: rgba(249, 252, 248, 0.72);
-    font-size: 11px;
-    stroke: rgba(5, 5, 5, 0.9);
-    stroke-width: 3.5px;
+  .mobile-trade-mini-chart-wrap .backtest-trade-mini-axis-label.y-axis,
+  .mobile-trade-mini-chart-wrap .backtest-trade-mini-level-label,
+  .mobile-trade-mini-chart-wrap .backtest-trade-mini-marker text {
+    display: none;
   }
 
   .mobile-trade-mini-chart-wrap .backtest-trade-mini-level {
@@ -17467,13 +17495,8 @@ html[data-theme="light"] .tradeReplaySlider input::-webkit-slider-thumb {
     stroke-width: 1;
   }
 
-  .mobile-trade-mini-chart-wrap .backtest-trade-mini-level-label,
-  .mobile-trade-mini-chart-wrap .backtest-trade-mini-marker text {
-    font-size: 8px;
-  }
-
   .mobile-trade-mini-chart-wrap .backtest-trade-mini-segment {
-    stroke-width: 3;
+    stroke-width: 2.25;
     filter: none;
   }
 
@@ -17503,9 +17526,13 @@ html[data-theme="light"] .tradeReplaySlider input::-webkit-slider-thumb {
   }
 
   .mobile-trade-mini-chart-wrap .backtest-trade-mini-empty {
-    min-height: 250px;
+    min-height: 154px;
     border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 16px;
+    border-radius: 14px;
+    color: rgba(228, 234, 227, 0.58);
+    background:
+      linear-gradient(135deg, rgba(99, 199, 255, 0.025), transparent 50%),
+      #050505;
   }
 
   html[data-theme="light"] .mobileTradingWorkspace.mobile-phone-shell {
