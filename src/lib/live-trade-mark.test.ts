@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { freshLiveTradeMark } from "./live-trade-mark";
+import { freshLiveTradeMark, liveTradeChartPathIsCurrent } from "./live-trade-mark";
 
 const now = new Date("2026-08-10T19:15:00.000Z");
 
@@ -15,15 +15,16 @@ test("accepts a current mark inside the configured lifecycle", () => {
   );
 });
 
-test("rejects a fresh market bar for an abandoned old open alert", () => {
-  assert.equal(
+test("accepts a fresh current-price estimate for an older open alert", () => {
+  assert.deepEqual(
     freshLiveTradeMark(
       { maxBars: 24, signalTime: "2026-05-11T07:45:00.000Z" },
       { price: 4676.4, time: "2026-08-10T19:14:00.000Z" },
       now
     ),
-    null
+    { price: 4676.4, time: "2026-08-10T19:14:00.000Z" }
   );
+  assert.equal(liveTradeChartPathIsCurrent({ maxBars: 24, signalTime: "2026-05-11T07:45:00.000Z" }, now), false);
 });
 
 test("rejects a stale or pre-entry mark", () => {

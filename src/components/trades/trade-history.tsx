@@ -74,6 +74,9 @@ export type TradeHistoryRow = {
   lockedSize?: boolean;
   isOpen?: boolean;
   hasCurrentMark?: boolean;
+  chartPathAvailable?: boolean;
+  isEstimatedPnl?: boolean;
+  markTime?: string;
 };
 
 type TradeHistoryProps = {
@@ -1447,7 +1450,7 @@ export function TradeHistoryCalendar({ rows }: TradeHistoryProps) {
                         <span className="backtest-calendar-trade-inline-price">@ {formatChartPrice(trade.entryPrice)}</span>
                       </div>
                       <div className="backtest-calendar-trade-inline optional">
-                        <span className="backtest-calendar-trade-inline-label">Exit ({trade.sourceTimeframe ?? "1m"}):</span>
+                        <span className="backtest-calendar-trade-inline-label">{trade.isOpen ? "Mark" : "Exit"} ({trade.sourceTimeframe ?? "1m"}):</span>
                         <span className="backtest-calendar-trade-inline-value">{formatCalendarDateTime(trade.exitTime)}</span>
                         <span className="backtest-calendar-trade-inline-price">@ {formatChartPrice(trade.exitPrice)}</span>
                       </div>
@@ -1458,7 +1461,7 @@ export function TradeHistoryCalendar({ rows }: TradeHistoryProps) {
                     <span className="backtest-calendar-trade-symbol" title={visibleSymbol !== trade.symbol ? `Signal ${trade.symbol}` : undefined}>
                       {visibleSymbol}
                     </span>
-                    <strong className={trade.pnlDollars >= 0 ? "up" : "down"}>{trade.pnlLabel}</strong>
+                    <strong className={trade.pnlDollars >= 0 ? "up" : "down"}>{trade.isEstimatedPnl ? `Est. ${trade.pnlLabel}` : trade.pnlLabel}</strong>
                   </div>
                 </button>
 
@@ -1466,7 +1469,7 @@ export function TradeHistoryCalendar({ rows }: TradeHistoryProps) {
                   <div className="backtest-calendar-trade-expand">
                     <div className="backtest-calendar-trade-summary">
                       <section className="backtest-calendar-trade-outcome" aria-label="Trade outcome">
-                        <span className="backtest-calendar-trade-eyebrow">Realized outcome</span>
+                        <span className="backtest-calendar-trade-eyebrow">{trade.isEstimatedPnl ? "Estimated unrealized" : "Realized outcome"}</span>
                         <strong className={trade.pnlDollars >= 0 ? "up" : "down"}>{trade.pnlLabel}</strong>
                         <div className="backtest-calendar-trade-badges">
                           <span>{displayExitReasonLabel(trade)}</span>
@@ -1482,7 +1485,7 @@ export function TradeHistoryCalendar({ rows }: TradeHistoryProps) {
                         </div>
                         <span className="backtest-calendar-trade-route-arrow" aria-hidden="true">&rarr;</span>
                         <div className="backtest-calendar-trade-route-point exit">
-                          <span>Exit</span>
+                          <span>{trade.isOpen ? "Current Mark" : "Exit"}</span>
                           <strong>{trade.exitPriceLabel}</strong>
                           <small>{formatCalendarDateTime(trade.exitTime)}</small>
                         </div>
@@ -2277,11 +2280,11 @@ export default function TradeHistory({ rows }: TradeHistoryProps) {
             <InfoBox label="Entry Reason" value={`Model: ${isRestricted ? "Admin only" : activeDisplayTrade.modelName}`} tone="blue" />
             <InfoBox label="Entry Price" value={activeDisplayTrade.entryPriceLabel} />
             <InfoBox label="Exit Reason" value={displayExitReasonLabel(activeDisplayTrade)} tone="blue" />
-            <InfoBox label="Exit Price" value={activeDisplayTrade.exitPriceLabel} />
+            <InfoBox label={activeDisplayTrade.isOpen ? "Current Mark" : "Exit Price"} value={activeDisplayTrade.exitPriceLabel} />
           </div>
 
           <div className="tradeModalMetrics six">
-            <InfoBox label="PnL" value={activeDisplayTrade.pnlLabel} valueClassName={activeDisplayTrade.pnlClassName} tone={activeDisplayTrade.pnlClassName === "up" ? "green" : activeDisplayTrade.pnlClassName === "down" ? "red" : "neutral"} />
+            <InfoBox label={activeDisplayTrade.isEstimatedPnl ? "Estimated PnL" : "PnL"} value={activeDisplayTrade.pnlLabel} valueClassName={activeDisplayTrade.pnlClassName} tone={activeDisplayTrade.pnlClassName === "up" ? "green" : activeDisplayTrade.pnlClassName === "down" ? "red" : "neutral"} />
             <InfoBox label="Duration" value={activeDurationLabel} />
             <InfoBox label="Take Profit" value={`${activeDisplayTrade.targetPriceLabel} / ${activeDisplayTrade.targetLabel}`} tone="green" />
             <InfoBox label="Stop Loss" value={`${activeDisplayTrade.stopPriceLabel} / ${activeDisplayTrade.riskLabel}`} tone="red" />
@@ -2375,14 +2378,16 @@ export default function TradeHistory({ rows }: TradeHistoryProps) {
                     <span className={trade.sideClassName}>{trade.sideLabel}</span>
                   </td>
                   <td data-label="Entry">{trade.entryPriceLabel}</td>
-                  <td data-label="Exit">{trade.exitPriceLabel}</td>
+                  <td data-label={trade.isOpen ? "Mark" : "Exit"}>{trade.exitPriceLabel}</td>
                   <td data-label="Duration">
                     {trade.durationLabel} <span className="durationDetail">/ {trade.durationDetailLabel}</span>
                   </td>
                   <td data-label="Exit by">
                     <span className={exitReasonClassName(exitReasonLabel)}>{exitReasonLabel}</span>
                   </td>
-                  <td className={trade.pnlClassName} data-label="P&L $">{trade.pnlLabel}</td>
+                  <td className={trade.pnlClassName} data-label={trade.isEstimatedPnl ? "Est. P&L $" : "P&L $"}>
+                    {trade.isEstimatedPnl ? `Est. ${trade.pnlLabel}` : trade.pnlLabel}
+                  </td>
                   <td className={trade.pnlClassName} data-label="R">{trade.rMultipleLabel}</td>
                   <td data-label="Size">{trade.sizeLabel}</td>
                   <td className="take-profit-cell" data-label="Take Profit $">{trade.targetLabel}</td>

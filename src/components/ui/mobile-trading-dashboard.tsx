@@ -512,7 +512,9 @@ function MobileHistoryList({
                         </span>
                       </div>
                       <div className="mobile-phone-history-values">
-                        <strong className={row.pnlClassName}>{row.isOpen && !row.hasCurrentMark ? "Open" : row.pnlLabel}</strong>
+                        <strong className={row.pnlClassName}>
+                          {row.isOpen && !row.hasCurrentMark ? "Open" : row.isEstimatedPnl ? `Est. ${row.pnlLabel}` : row.pnlLabel}
+                        </strong>
                         <span className="mobile-phone-history-size">{row.sizeLabel}</span>
                       </div>
                     </div>
@@ -817,7 +819,7 @@ function MobileTradeChartModal({
         </div>
         <div className="mobile-trade-modal-stats">
           <span>
-            <small>{trade.isOpen ? "Open PnL" : "PnL"}</small>
+            <small>{trade.isEstimatedPnl ? "Estimated PnL" : trade.isOpen ? "Open PnL" : "PnL"}</small>
             <strong className={trade.pnlClassName}>{trade.isOpen && !trade.hasCurrentMark ? "--" : trade.pnlLabel}</strong>
           </span>
           <span>
@@ -837,6 +839,11 @@ function MobileTradeChartModal({
           <span><small>Take Profit</small><strong className="up">{trade.targetPriceLabel}</strong></span>
           <span><small>Stop Loss</small><strong className="down">{trade.stopPriceLabel}</strong></span>
         </div>
+        {trade.isEstimatedPnl && trade.markTime ? (
+          <p className="mobile-trade-modal-note mobile-trade-modal-estimate-note">
+            Estimated from the latest 1-minute asset price at <LocalDateTime value={trade.markTime} fallback={trade.markTime} />.
+          </p>
+        ) : null}
         {chartState.message ? <p className="mobile-trade-modal-note">{chartState.message}</p> : null}
         <div className="mobile-trade-mini-chart-wrap">
           <BacktestTradeMiniChart bars={chartState.bars} compactTooltip isOpen status={chartState.status} trade={trade} />
@@ -994,6 +1001,15 @@ export default function MobileTradingDashboard({
         status: "error",
         bars: [],
         message: "A current market mark is not available for this unresolved alert, so Korra will not draw a misleading price path."
+      });
+      return undefined;
+    }
+
+    if (activeTrade.isOpen && activeTrade.chartPathAvailable === false) {
+      setChartState({
+        status: "error",
+        bars: [],
+        message: "The estimate is current, but a continuous one-minute chart is not available for this older open alert."
       });
       return undefined;
     }

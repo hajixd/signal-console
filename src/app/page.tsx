@@ -59,7 +59,7 @@ import {
   liveOpenTradePnlDollars,
   liveTradeEventAutoTradeOrders
 } from "@/lib/live-trade-calculations";
-import { freshLiveTradeMark } from "@/lib/live-trade-mark";
+import { freshLiveTradeMark, liveTradeChartPathIsCurrent } from "@/lib/live-trade-mark";
 import {
   dashboardSelectedStrategyIdsForMarket,
   defaultDatasetStatus,
@@ -76,7 +76,7 @@ import { parseStrategySelection, selectionIncludesEveryKey } from "@/lib/strateg
 import { getTrades } from "@/lib/storage";
 import { discordChannelInviteLink, discordConfigured as discordIsConfigured } from "@/lib/discord";
 import { telegramGroupInviteLink } from "@/lib/telegram";
-import { type DataTimeframe } from "@/lib/timeframes";
+import { timeframeSeconds, type DataTimeframe } from "@/lib/timeframes";
 import {
   oneMinuteBarsHeld,
   resolveFirstTradeBracketHit,
@@ -1545,17 +1545,16 @@ type LatestLivePrice = {
 type LatestLivePriceConfig = {
   assetKey: string;
   key: string;
-  timeframe: DataTimeframe;
 };
+
+const LIVE_MARK_TIMEFRAMES: DataTimeframe[] = ["1m", "5m", "15m"];
 
 function liveTradeLatestPriceConfig(trade: TradeAlert, option?: StrategyOption): LatestLivePriceConfig | null {
   const assetKey = trade.assetKey ?? option?.assetKey ?? assetForSymbol(trade.symbol)?.key;
   if (!assetKey) return null;
-  const timeframe = UNIVERSAL_TRADE_TIMEFRAME as DataTimeframe;
   return {
     assetKey,
-    key: `${assetKey}:${timeframe}`,
-    timeframe
+    key: `${assetKey}:latest`
   };
 }
 
@@ -1954,11 +1953,21 @@ export default async function Home({ searchParams }: HomeProps) {
       await Promise.all(
         [...liveOpenPriceConfigs.values()].map(async (config) => {
           try {
-            const bars = await fetchStoredAssetBars(config.assetKey, 5, config.timeframe);
-            const latestBar = [...bars]
-              .reverse()
-              .find((bar) => Number.isFinite(bar.close) && Number.isFinite(Date.parse(bar.time)));
-            return latestBar ? ([config.key, { price: latestBar.close, time: latestBar.time }] as const) : null;
+            const candidates = (
+              await Promise.all(
+                LIVE_MARK_TIMEFRAMES.map(async (timeframe) => {
+                  const bars = await fetchStoredAssetBars(config.assetKey, 5, timeframe).catch(() => []);
+                  const latestBar = [...bars]
+                    .reverse()
+                    .find((bar) => Number.isFinite(bar.close) && Number.isFinite(Date.parse(bar.time)));
+                  if (!latestBar) return null;
+                  const closeTime = new Date(Date.parse(latestBar.time) + timeframeSeconds(timeframe) * 1000).toISOString();
+                  return { price: latestBar.close, time: closeTime };
+                })
+              )
+            ).filter((candidate): candidate is LatestLivePrice => Boolean(candidate));
+            const latestPrice = candidates.sort((left, right) => Date.parse(right.time) - Date.parse(left.time))[0];
+            return latestPrice ? ([config.key, latestPrice] as const) : null;
           } catch {
             return null;
           }
@@ -2005,6 +2014,7 @@ export default async function Home({ searchParams }: HomeProps) {
         ? freshLiveTradeMark(trade, latestOpenPriceCandidate, now) ?? undefined
         : undefined;
       const hasCurrentMark = Boolean(latestOpenPrice);
+      const chartPathAvailable = isClosed || (hasCurrentMark && liveTradeChartPathIsCurrent(trade, now));
       const rawExitPrice = isClosed
         ? brokerOutcome?.exitPrice ?? finiteNumberOr(trade.lifecyclePrice, entryPrice)
         : latestOpenPrice?.price ?? entryPrice;
@@ -2097,7 +2107,10 @@ export default async function Home({ searchParams }: HomeProps) {
         slUnitsLabel: `${fmtNumber(trade.slUnits)} ${unitLabel}`,
         lockedSize: true,
         isOpen: !isClosed,
-        hasCurrentMark
+        hasCurrentMark,
+        chartPathAvailable,
+        isEstimatedPnl: !isClosed && hasCurrentMark,
+        markTime: latestOpenPrice?.time
       };
     });
   const visibleLiveHistoryRows = [...liveHistoryRows]

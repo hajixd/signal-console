@@ -65,9 +65,9 @@ test("broker net P&L is not capped to the signal's planned take-profit dollars",
   );
 });
 
-test("open mark P&L cannot run past the trade's take-profit or stop-loss bracket", () => {
+test("open mark P&L estimates the full move from entry using the current asset price", () => {
   const trade = { ...projectXCornTrade(), lifecycleStatus: "open" as const };
 
-  assert.equal(liveOpenTradePnlDollars(trade, 0.25, 500, 5), 312.5);
-  assert.equal(liveOpenTradePnlDollars(trade, 0.25, 400, 5), -312.5);
+  assert.equal(liveOpenTradePnlDollars(trade, 0.25, 500, 5), 10_250);
+  assert.equal(liveOpenTradePnlDollars(trade, 0.25, 400, 5), -14_750);
 });
