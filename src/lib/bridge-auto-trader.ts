@@ -14,6 +14,7 @@ import {
   type ProviderPrefix
 } from "@/lib/auto-trade-utils";
 import { getAutoTradeConnection, type AutoTradeConnection } from "@/lib/auto-trade-connections";
+import { mt5CredentialBridgeEndpoint } from "@/lib/mt5-credential-bridge";
 import type { AutoTradeProviderId } from "@/lib/auto-trade-platforms";
 import type { ProjectXAutoTradeResult } from "@/lib/projectx-auto-trader";
 import type { TradeAlert } from "@/lib/types";
@@ -87,7 +88,11 @@ async function executeBridgeAutoTrade(
     const timeout = setTimeout(() => controller.abort(), 30_000);
     let response: Response;
     try {
-      response = await fetch(fieldText(fields, "bridgeUrl", provider.urlEnv)!, {
+      const configuredBridgeUrl = fieldText(fields, "bridgeUrl", provider.urlEnv)!;
+      const bridgeUrl = provider.providerId === "mt5_ea"
+        ? mt5CredentialBridgeEndpoint(configuredBridgeUrl, "place-order")
+        : configuredBridgeUrl;
+      response = await fetch(bridgeUrl, {
         body: JSON.stringify({
           accessToken: fields?.accessToken,
           accountId: request.accountId,

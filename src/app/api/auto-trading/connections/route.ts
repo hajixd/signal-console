@@ -3,6 +3,7 @@ import { isValidAccessCode } from "@/lib/account-access-code";
 import { isAdminAuthorized } from "@/lib/admin-api";
 import {
   autoTradeConnectionStoreMode,
+  autoTradeConnectionRecordId,
   deleteAutoTradeConnection,
   getAutoTradeConnectionById,
   listAutoTradeConnections,
@@ -12,8 +13,13 @@ import {
   verifyAutoTradeConnectionAccessCode
 } from "@/lib/auto-trade-connections";
 import { autoTradeProviderById } from "@/lib/auto-trade-platforms";
-import { fieldsForMt5ConnectionMode } from "@/lib/mt5-connection-mode";
-import { mt5CredentialBridgeConfigured, verifyMt5CredentialConnection } from "@/lib/mt5-credential-bridge";
+import {
+  availableMt5ConnectionMode,
+  fieldsForMt5ConnectionMode,
+  storedMt5ConnectionMode,
+  type Mt5ConnectionMode
+} from "@/lib/mt5-connection-mode";
+import { verifyMt5CredentialConnection } from "@/lib/mt5-credential-bridge";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -56,8 +62,8 @@ function connectionId(value: unknown): string | undefined {
   return typeof value === "string" && /^[0-9A-Za-z_-]{3,80}$/.test(value.trim()) ? value.trim() : undefined;
 }
 
-function mt5ConnectionMode(): "credential_bridge" | null {
-  return mt5CredentialBridgeConfigured() ? "credential_bridge" : null;
+function mt5ConnectionMode(): Mt5ConnectionMode | null {
+  return availableMt5ConnectionMode();
 }
 
 async function authorizeProviderMutation(request: NextRequest, savedConnectionId: string, accessCode: unknown) {
@@ -79,6 +85,7 @@ function publicConnection(connection: Awaited<ReturnType<typeof listAutoTradeCon
     firmLabel: connection.firmLabel,
     id: connection.id,
     eaConnectionId: connection.providerId === "mt5_ea" ? connection.fields.bridgeAccountId ?? connection.accountId : undefined,
+    executionMode: connection.providerId === "mt5_ea" ? storedMt5ConnectionMode(connection.fields) : undefined,
     marketLabels: provider?.markets ?? [],
     paused: connection.paused,
     providerId: connection.providerId,
@@ -161,9 +168,13 @@ export async function POST(request: NextRequest) {
       accessCode,
       accountId: providerId === "mt5_ea" ? fields.login : text(payload.accountId),
       accountName,
+      connectionId: providerId === "mt5_ea"
+        ? autoTradeConnectionRecordId(providerId, fields.login, fields.server)
+        : undefined,
       fields,
       firmId: text(payload.firmId),
       firmLabel: text(payload.firmLabel),
+      initialPaused: providerId === "mt5_ea" ? false : undefined,
       providerId
     });
     return NextResponse.json({

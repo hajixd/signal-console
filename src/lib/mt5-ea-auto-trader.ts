@@ -214,6 +214,18 @@ export function aggregateMt5Results(
   });
 }
 
+export async function executeMt5TradesForConnections(
+  trade: TradeAlert,
+  connections: AutoTradeConnection[]
+): Promise<ProjectXAutoTradeResult> {
+  const executionTargets: Array<AutoTradeConnection | null> = connections.length ? connections : [null];
+  const executions: Array<{ connection: AutoTradeConnection | null; execution: ProjectXAutoTradeResult }> = [];
+  for (const connection of executionTargets) {
+    executions.push({ connection, execution: await executeMt5TradeForConnection(trade, connection) });
+  }
+  return aggregateMt5Results(executions);
+}
+
 export async function executeMt5EaAutoTrade(
   trade: TradeAlert,
   options: { connectionId?: string } = {}
@@ -231,10 +243,5 @@ export async function executeMt5EaAutoTrade(
     return result("skipped", { error: "This MT5 account connection no longer exists." });
   }
 
-  const executionTargets: Array<AutoTradeConnection | null> = connections.length ? connections : [null];
-  const executions: Array<{ connection: AutoTradeConnection | null; execution: ProjectXAutoTradeResult }> = [];
-  for (const connection of executionTargets) {
-    executions.push({ connection, execution: await executeMt5TradeForConnection(trade, connection) });
-  }
-  return aggregateMt5Results(executions);
+  return executeMt5TradesForConnections(trade, connections);
 }

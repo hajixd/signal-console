@@ -136,6 +136,25 @@ class CredentialBridgeTests(unittest.TestCase):
         self.assertEqual(FAKE_MT5.initialize_options[-1]["login"], 87654321)
         self.assertEqual(FAKE_MT5.initialize_options[-1]["server"], "Firm-Server")
 
+    def test_keeps_multiple_accounts_independent(self) -> None:
+        first = SERVER.verify_account(
+            {"login": "11111111", "password": "first-master", "server": "First-Broker"},
+            "Bearer test-secret",
+        )
+        second = SERVER.verify_account(
+            {"login": "22222222", "password": "second-master", "server": "Second-Broker"},
+            "Bearer test-secret",
+        )
+
+        self.assertEqual(first["accountId"], 11111111)
+        self.assertEqual(first["server"], "First-Broker")
+        self.assertEqual(second["accountId"], 22222222)
+        self.assertEqual(second["server"], "Second-Broker")
+        self.assertEqual(FAKE_MT5.initialize_options[-2]["login"], 11111111)
+        self.assertEqual(FAKE_MT5.initialize_options[-2]["password"], "first-master")
+        self.assertEqual(FAKE_MT5.initialize_options[-1]["login"], 22222222)
+        self.assertEqual(FAKE_MT5.initialize_options[-1]["password"], "second-master")
+
     def test_auto_maps_symbol_reduces_size_and_deduplicates_retries(self) -> None:
         payload = {
             "action": "buy",

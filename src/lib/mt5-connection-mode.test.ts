@@ -78,5 +78,13 @@ test("each MT5 login receives its own stable saved connection record", () => {
   assert.equal(autoTradeConnectionRecordId("mt5_ea", "1600170125"), "mt5_ea_1600170125");
   assert.equal(autoTradeConnectionRecordId("mt5_ea", "24009991"), "mt5_ea_24009991");
   assert.notEqual(autoTradeConnectionRecordId("mt5_ea", "1600170125"), autoTradeConnectionRecordId("mt5_ea", "24009991"));
+  assert.equal(
+    autoTradeConnectionRecordId("mt5_ea", "1600170125", "Broker-Demo"),
+    autoTradeConnectionRecordId("mt5_ea", "1600170125", "broker-demo")
+  );
+  assert.notEqual(
+    autoTradeConnectionRecordId("mt5_ea", "1600170125", "Broker-Demo"),
+    autoTradeConnectionRecordId("mt5_ea", "1600170125", "OtherBroker-Demo")
+  );
   assert.equal(autoTradeConnectionRecordId("tradelocker", "ignored"), "tradelocker");
 });

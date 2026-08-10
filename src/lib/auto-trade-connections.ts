@@ -148,13 +148,19 @@ export function autoTradeConnectionStoreMode(): AutoTradeConnectionStoreMode {
   return hasFirebaseAdmin() ? "firebase" : "local";
 }
 
-export function autoTradeConnectionRecordId(providerId: AutoTradeProviderId, accountId?: string): string {
+export function autoTradeConnectionRecordId(providerId: AutoTradeProviderId, accountId?: string, accountScope?: string): string {
   const normalizedAccountId = accountId?.trim().replace(/[^0-9A-Za-z_-]/g, "");
-  return providerId === "mt5_ea" && normalizedAccountId ? `mt5_ea_${normalizedAccountId}` : providerId;
+  if (providerId !== "mt5_ea" || !normalizedAccountId) return providerId;
+  const normalizedScope = accountScope?.trim().toLowerCase();
+  if (!normalizedScope) return `mt5_ea_${normalizedAccountId}`;
+  const scopeHash = createHash("sha256").update(normalizedScope).digest("hex").slice(0, 12);
+  return `mt5_ea_${normalizedAccountId}_${scopeHash}`;
 }
 
 function mt5ConnectionIdentity(connection: AutoTradeConnection): string {
-  return (connection.fields.bridgeAccountId ?? connection.fields.login ?? connection.accountId ?? connection.id).trim();
+  const login = (connection.fields.bridgeAccountId ?? connection.fields.login ?? connection.accountId ?? connection.id).trim();
+  const server = connection.fields.server?.trim().toLowerCase();
+  return server ? `${login}@${server}` : login;
 }
 
 function dedupeAutoTradeConnections(connections: AutoTradeConnection[]): AutoTradeConnection[] {
@@ -247,18 +253,34 @@ export async function saveAutoTradeConnection(input: {
   firmId?: string;
   firmLabel?: string;
   connectionId?: string;
+  initialPaused?: boolean;
   providerId: AutoTradeProviderId;
 }): Promise<AutoTradeConnection> {
   const provider = autoTradeProviderById(input.providerId);
   if (!provider) throw new Error("Unknown auto-trade provider.");
-  let connectionId = input.connectionId?.trim() || autoTradeConnectionRecordId(input.providerId, input.accountId);
+  let connectionId = input.connectionId?.trim() || autoTradeConnectionRecordId(
+    input.providerId,
+    input.accountId,
+    input.providerId === "mt5_ea" ? input.fields.server : undefined
+  );
   let existing = await getAutoTradeConnection(input.providerId, connectionId);
-  if (!input.connectionId && input.providerId === "mt5_ea" && !existing) {
-    const legacy = await getAutoTradeConnectionById("mt5_ea");
+  if (input.providerId === "mt5_ea" && !existing) {
     const incomingIdentity = (input.fields.bridgeAccountId ?? input.fields.login ?? input.accountId ?? "").trim();
-    if (legacy?.providerId === "mt5_ea" && mt5ConnectionIdentity(legacy) === incomingIdentity) {
-      connectionId = legacy.id;
-      existing = legacy;
+    const incomingServer = input.fields.server?.trim().toLowerCase();
+    const legacyIds = [autoTradeConnectionRecordId("mt5_ea", input.accountId), "mt5_ea"];
+    for (const legacyId of legacyIds) {
+      const legacy = await getAutoTradeConnectionById(legacyId);
+      const legacyLogin = legacy ? (legacy.fields.bridgeAccountId ?? legacy.fields.login ?? legacy.accountId ?? "").trim() : "";
+      const legacyServer = legacy?.fields.server?.trim().toLowerCase();
+      if (
+        legacy?.providerId === "mt5_ea"
+        && legacyLogin === incomingIdentity
+        && (!legacyServer || !incomingServer || legacyServer === incomingServer)
+      ) {
+        connectionId = legacy.id;
+        existing = legacy;
+        break;
+      }
     }
   }
   const now = new Date().toISOString();
@@ -273,7 +295,7 @@ export async function saveAutoTradeConnection(input: {
     firmLabel: input.firmLabel,
     id: connectionId,
     lastCheckedAt: now,
-    paused: existing?.paused ?? true,
+    paused: existing?.paused ?? input.initialPaused ?? true,
     providerId: input.providerId,
     providerLabel: provider.label,
     status: "connected",

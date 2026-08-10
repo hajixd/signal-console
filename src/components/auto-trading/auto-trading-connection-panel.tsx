@@ -42,6 +42,7 @@ type SavedAutoTradeConnection = {
   connected: boolean;
   connectedAt: string;
   eaConnectionId?: string;
+  executionMode?: "credential_bridge" | "terminal_ea";
   firmId?: string;
   firmLabel?: string;
   id: string;
@@ -2226,7 +2227,7 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
                     </div>
                     {canManageAutoTrade ? (
                       <div className="topstepAccountControls">
-                        {connection.providerId === "mt5_ea" ? (
+                        {connection.providerId === "mt5_ea" && connection.executionMode !== "credential_bridge" ? (
                           <a className="mt5EaDownloadLink" download href="/mt5/KorraMT5ExecutionEA.mq5">
                             Download EA
                           </a>

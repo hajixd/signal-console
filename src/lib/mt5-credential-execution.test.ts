@@ -56,9 +56,11 @@ test("credential execution authenticates the bridge and records its final reduce
   const originalFetch = globalThis.fetch;
   const originalEnabled = process.env.MT5_AUTO_TRADE_ENABLED;
   let request: RequestInit | undefined;
+  let requestUrl = "";
   try {
     process.env.MT5_AUTO_TRADE_ENABLED = "true";
-    globalThis.fetch = async (_input, init) => {
+    globalThis.fetch = async (input, init) => {
+      requestUrl = String(input);
       request = init;
       return new Response(
         JSON.stringify({
@@ -81,6 +83,7 @@ test("credential execution authenticates the bridge and records its final reduce
     const headers = new Headers(request?.headers);
     const body = JSON.parse(String(request?.body)) as Record<string, unknown>;
 
+    assert.equal(requestUrl, "https://bridge.example.com/place-order");
     assert.equal(headers.get("authorization"), "Bearer bridge-test-secret");
     assert.equal(body.login, "12345678");
     assert.equal(body.password, "master-password");

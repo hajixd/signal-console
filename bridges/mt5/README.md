@@ -6,7 +6,7 @@ The service must run continuously on one Windows VM with MetaTrader 5 installed.
 
 ## What it handles
 
-- switches safely between saved MT5 accounts, one request at a time;
+- switches safely between every saved MT5 login and broker server, one request at a time;
 - verifies the exact login and server and rejects investor/read-only credentials;
 - discovers broker symbol suffixes such as `EURUSD.a` automatically;
 - respects broker lot minimums, maximums, steps, and fill modes;
@@ -17,7 +17,7 @@ The service must run continuously on one Windows VM with MetaTrader 5 installed.
 
 ## One-time VM setup
 
-1. Install the broker-compatible MetaTrader 5 terminal on a Windows VM and open it once.
+1. Install the broker-compatible MetaTrader 5 terminal on a Windows VM, open it once, and enable Algo Trading.
 2. Install Python 3.11 or newer.
 3. Copy `.env.example` to `.env`.
 4. Set a long random `MT5_BRIDGE_SECRET` and the full `MT5_PATH` to `terminal64.exe`.
