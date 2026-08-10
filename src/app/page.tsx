@@ -42,7 +42,7 @@ import {
   type BacktestStat,
   type BacktestTrade
 } from "@/lib/backtest";
-import { assetDisplayNameForSymbol, assetForSymbol, assetLookupSymbolForSymbol } from "@/lib/assets";
+import { assetDisplayNameForSymbol, assetForKey, assetForSymbol, assetLookupSymbolForSymbol } from "@/lib/assets";
 import { executableOrderSizeMultiplier, plannedAutoTradeSizeForTrade } from "@/lib/auto-trade-utils";
 import { DEFAULT_CHALLENGE_RULES, type ChallengeRules } from "@/lib/challenge";
 import { analyzeBacktestDataValidity, dataValidityClass, type DataValidityResult, type DataValidityTone } from "@/lib/data-validity";
@@ -70,6 +70,7 @@ import {
   type LiveConfig
 } from "@/lib/live-config";
 import { allRules } from "@/lib/live-signals";
+import { fetchMarketSourceBars } from "@/lib/market-data";
 import { fetchStoredAssetBars } from "@/lib/market-data-store";
 import { readDataText } from "@/lib/project-data";
 import { parseStrategySelection, selectionIncludesEveryKey } from "@/lib/strategy-selection";
@@ -1966,8 +1967,23 @@ export default async function Home({ searchParams }: HomeProps) {
                 })
               )
             ).filter((candidate): candidate is LatestLivePrice => Boolean(candidate));
-            const latestPrice = candidates.sort((left, right) => Date.parse(right.time) - Date.parse(left.time))[0];
-            return latestPrice ? ([config.key, latestPrice] as const) : null;
+            const latestStoredPrice = candidates.sort((left, right) => Date.parse(right.time) - Date.parse(left.time))[0];
+            const latestStoredTimeMs = Date.parse(latestStoredPrice?.time ?? "");
+            const storedPriceIsFresh = Number.isFinite(latestStoredTimeMs) && now.getTime() - latestStoredTimeMs <= 15 * 60_000;
+            if (latestStoredPrice && storedPriceIsFresh) return [config.key, latestStoredPrice] as const;
+
+            const liveBars = await fetchMarketSourceBars(assetForKey(config.assetKey), {
+              afterSeconds: Math.floor(now.getTime() / 1000) - 3 * 60 * 60
+            }).catch(() => []);
+            const latestLiveBar = [...liveBars]
+              .reverse()
+              .find((bar) => Number.isFinite(bar.close) && Number.isFinite(Date.parse(bar.time)));
+            if (latestLiveBar) {
+              const liveCloseTime = new Date(Date.parse(latestLiveBar.time) + timeframeSeconds(UNIVERSAL_TRADE_TIMEFRAME) * 1000).toISOString();
+              return [config.key, { price: latestLiveBar.close, time: liveCloseTime }] as const;
+            }
+
+            return latestStoredPrice ? ([config.key, latestStoredPrice] as const) : null;
           } catch {
             return null;
           }
