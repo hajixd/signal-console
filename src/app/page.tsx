@@ -2027,7 +2027,9 @@ export default async function Home({ searchParams }: HomeProps) {
           ? latestLivePriceByConfigKey.get(liveTradeLatestPriceConfig(trade, option)?.key ?? "")
           : undefined;
       const latestOpenPrice = !isClosed
-        ? freshLiveTradeMark(trade, latestOpenPriceCandidate, now) ?? undefined
+        ? freshLiveTradeMark(trade, latestOpenPriceCandidate, now, {
+            maxMarkLagMinutes: trade.market === "futures" ? 90 : 15
+          }) ?? undefined
         : undefined;
       const hasCurrentMark = Boolean(latestOpenPrice);
       const chartPathAvailable = isClosed || (hasCurrentMark && liveTradeChartPathIsCurrent(trade, now));

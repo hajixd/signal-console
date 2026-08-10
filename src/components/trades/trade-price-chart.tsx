@@ -2742,6 +2742,8 @@ export default function TradePriceChart({
     () => new Map(mappedCandles.map((candle) => [Number(candle.time), candle.source])),
     [mappedCandles]
   );
+  const sourceByTimeRef = useRef(sourceByTime);
+  sourceByTimeRef.current = sourceByTime;
   const selectionCandle = useMemo(
     () => (selectPreviewTime == null ? null : replayCandleForTime(mappedCandles, selectPreviewTime)),
     [mappedCandles, selectPreviewTime]
@@ -2891,6 +2893,8 @@ export default function TradePriceChart({
     return () => window.clearTimeout(timer);
   }, [clampedReplayPosition, isPlaying, maxReplayPosition, replaySpeed]);
 
+  // Create the chart only when its identity or fixed range inputs change. Live candles,
+  // marks, PnL, and management levels are applied in-place by the update effect below.
   useEffect(() => {
     const container = containerRef.current;
     if (!container || status !== "ready" || !candleData.length) return undefined;
@@ -3117,7 +3121,7 @@ export default function TradePriceChart({
         if (selectingReplayStartRef.current) setSelectPreviewTime(null);
         return;
       }
-      const source = sourceByTime.get(param.time);
+      const source = sourceByTimeRef.current.get(param.time);
       if (source) {
         setActiveBar((current) => (current?.time === source.time ? current : source));
       }
@@ -3155,30 +3159,13 @@ export default function TradePriceChart({
     };
   }, [
     chartTheme,
-    entryCandle,
     effectiveDataTimeframe,
-    exitCandle,
-    mappedCandles,
-    signalCandle,
-    sourceByTime,
     status,
-    trade.entryType,
     trade.entryPrice,
-    trade.exitPrice,
     trade.id,
-    trade.managementEvents,
-    trade.modelName,
-    trade.pnlLabel,
-    trade.phase,
     trade.side,
-    trade.signalTime,
-    trade.sourceTimeframe,
-    trade.strategyTimeframe,
     trade.stopPrice,
-    trade.targetPrice,
-    trade.targetDollars,
-    trade.riskDollars,
-    trade.dollarsPerPricePoint
+    trade.targetPrice
   ]);
 
   useEffect(() => {

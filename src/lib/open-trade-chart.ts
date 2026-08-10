@@ -43,6 +43,13 @@ export function mergeLiveOpenTradeBar(
   const existingPosition = bars.findIndex((bar) => Date.parse(bar.time) === liveTimeMs);
   if (existingPosition >= 0) {
     const existing = bars[existingPosition]!;
+    const unchanged =
+      existing.open === liveBar.open &&
+      existing.high === liveBar.high &&
+      existing.low === liveBar.low &&
+      existing.close === liveBar.close &&
+      existing.volume === liveBar.volume;
+    if (unchanged) return bars;
     const next = bars.slice();
     next[existingPosition] = { ...liveBar, index: existing.index };
     return next;

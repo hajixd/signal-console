@@ -93,3 +93,16 @@ test("a ProjectX partial bar replaces the current minute and appends the next mi
   assert.equal(appended.at(-1)?.index, 13);
   assert.equal(appended.at(-1)?.close, 4453.5);
 });
+
+test("an unchanged ProjectX partial bar preserves chart identity", () => {
+  const unchanged = mergeLiveOpenTradeBar(bars, {
+    time: bars.at(-1)!.time,
+    open: bars.at(-1)!.open,
+    high: bars.at(-1)!.high,
+    low: bars.at(-1)!.low,
+    close: bars.at(-1)!.close,
+    volume: bars.at(-1)!.volume
+  });
+
+  assert.equal(unchanged, bars);
+});

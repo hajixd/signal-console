@@ -46,3 +46,15 @@ test("rejects a stale or pre-entry mark", () => {
     null
   );
 });
+
+test("accepts the last genuine futures mark through the daily maintenance pause", () => {
+  assert.deepEqual(
+    freshLiveTradeMark(
+      { maxBars: 240, signalTime: "2026-08-10T19:15:00.000Z" },
+      { price: 4448.7, time: "2026-08-10T20:59:00.000Z" },
+      new Date("2026-08-10T21:42:00.000Z"),
+      { maxMarkLagMinutes: 90 }
+    ),
+    { price: 4448.7, time: "2026-08-10T20:59:00.000Z" }
+  );
+});
