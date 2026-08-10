@@ -22,6 +22,7 @@ import {
   mergeLiveOpenTradeBar,
   resolveOpenTradePathRange
 } from "@/lib/open-trade-chart";
+import { liveTradeEstimate } from "@/lib/live-trade-estimate";
 import { oneMinuteBarsHeld, resolveFirstTradeBracketHit } from "@/lib/trade-bracket-truth";
 import type { TradeManagementEvent } from "@/lib/types";
 
@@ -118,6 +119,9 @@ type ChartPayload = {
 type ProjectXLiveQuotePayload = {
   bar?: Omit<ChartBar, "index"> & { index?: number };
 };
+
+type ProjectXLiveBar = NonNullable<ProjectXLiveQuotePayload["bar"]>;
+type ProjectXLiveBarsBySymbol = Record<string, ProjectXLiveBar>;
 
 type CandleMenuState = {
   clientX: number;
@@ -728,6 +732,132 @@ export function withOpenTradeChartMark(trade: TradeHistoryRow, bars: ChartBar[])
     pnlLabel: formatSignedMoney(pnlDollars),
     rMultipleLabel: riskDollars > 0 ? `${(pnlDollars / riskDollars).toFixed(2)}R` : "--"
   };
+}
+
+function isOpenFuturesTrade(trade: TradeHistoryRow): boolean {
+  return Boolean(
+    trade.isOpen &&
+      (trade.market?.toLowerCase() === "futures" || trade.marketLabel.toLowerCase().includes("futures"))
+  );
+}
+
+function projectXQuoteSymbol(trade: TradeHistoryRow): string {
+  return trade.symbol.trim().toUpperCase();
+}
+
+function withProjectXLiveQuote(trade: TradeHistoryRow, liveBar: ProjectXLiveBar | undefined): TradeHistoryRow {
+  if (!isOpenFuturesTrade(trade) || !liveBar) return trade;
+  const estimate = liveTradeEstimate({
+    dollarsPerPricePoint: trade.dollarsPerPricePoint,
+    entryPrice: trade.entryPrice,
+    entryTime: trade.entryTime,
+    fallbackBarsHeld: Math.max(1, trade.exitIndex - trade.entryIndex),
+    markPrice: liveBar.close,
+    markTime: liveBar.time,
+    riskDollars: trade.riskDollars,
+    side: trade.side
+  });
+  if (!estimate) return trade;
+
+  const exitPriceLabel = `${trade.exitPriceLabel.trim().startsWith("$") ? "$" : ""}${formatChartPrice(estimate.markPrice)}`;
+  return {
+    ...trade,
+    durationDetailLabel: formatMinutesCompact(estimate.elapsedMinutes),
+    durationLabel: `${estimate.barsHeld} ${estimate.barsHeld === 1 ? "bar" : "bars"}`,
+    exitPrice: estimate.markPrice,
+    exitPriceLabel,
+    exitTime: estimate.markTime,
+    exitTimeLabel: timeLabel(estimate.markTime),
+    hasCurrentMark: true,
+    isEstimatedPnl: true,
+    markTime: estimate.markTime,
+    pnlClassName: "live-pnl",
+    pnlDollars: estimate.pnlDollars,
+    pnlLabel: formatSignedMoney(estimate.pnlDollars),
+    rMultipleLabel: estimate.rMultiple == null ? "--" : `${estimate.rMultiple.toFixed(2)}R`
+  };
+}
+
+function useProjectXOpenTradeRows(rows: TradeHistoryRow[]): {
+  liveBarsBySymbol: ProjectXLiveBarsBySymbol;
+  liveRows: TradeHistoryRow[];
+} {
+  const symbolKey = useMemo(
+    () =>
+      Array.from(new Set(rows.filter(isOpenFuturesTrade).map(projectXQuoteSymbol)))
+        .sort()
+        .join("|"),
+    [rows]
+  );
+  const [liveBarsBySymbol, setLiveBarsBySymbol] = useState<ProjectXLiveBarsBySymbol>({});
+
+  useEffect(() => {
+    const symbols = symbolKey ? symbolKey.split("|") : [];
+    if (!symbols.length) {
+      setLiveBarsBySymbol({});
+      return undefined;
+    }
+
+    const controller = new AbortController();
+    let inFlight = false;
+    const refreshQuotes = async () => {
+      if (inFlight || controller.signal.aborted || document.visibilityState === "hidden") return;
+      inFlight = true;
+      try {
+        const results = await Promise.all(
+          symbols.map(async (symbol) => {
+            try {
+              const params = new URLSearchParams({ market: "futures", symbol });
+              const response = await fetch(`/api/projectx-live-quote?${params.toString()}`, {
+                cache: "no-store",
+                signal: controller.signal
+              });
+              if (!response.ok) return null;
+              const payload = (await response.json()) as ProjectXLiveQuotePayload;
+              return payload.bar ? ([symbol, payload.bar] as const) : null;
+            } catch (error) {
+              if (error instanceof Error && error.name === "AbortError") return null;
+              return null;
+            }
+          })
+        );
+        if (controller.signal.aborted) return;
+        setLiveBarsBySymbol((current) => {
+          const next = { ...current };
+          let changed = false;
+          for (const result of results) {
+            if (!result) continue;
+            const [symbol, bar] = result;
+            const previous = current[symbol];
+            if (previous?.time === bar.time && previous.close === bar.close) continue;
+            next[symbol] = bar;
+            changed = true;
+          }
+          return changed ? next : current;
+        });
+      } finally {
+        inFlight = false;
+      }
+    };
+
+    const refreshWhenVisible = () => {
+      if (document.visibilityState === "visible") void refreshQuotes();
+    };
+    void refreshQuotes();
+    const intervalId = window.setInterval(() => void refreshQuotes(), PROJECTX_LIVE_QUOTE_REFRESH_MS);
+    document.addEventListener("visibilitychange", refreshWhenVisible);
+    return () => {
+      controller.abort();
+      window.clearInterval(intervalId);
+      document.removeEventListener("visibilitychange", refreshWhenVisible);
+    };
+  }, [symbolKey]);
+
+  const liveRows = useMemo(
+    () => rows.map((trade) => withProjectXLiveQuote(trade, liveBarsBySymbol[projectXQuoteSymbol(trade)])),
+    [liveBarsBySymbol, rows]
+  );
+  return { liveBarsBySymbol, liveRows };
 }
 
 export function BacktestTradeMiniChart({
@@ -2156,14 +2286,20 @@ export default function TradeHistory({ rows }: TradeHistoryProps) {
   const modalRef = useRef<HTMLElement>(null);
   const previousFocusRef = useRef<HTMLElement | null>(null);
   const isRestricted = !useAutoTradeAdminMode();
+  const { liveBarsBySymbol, liveRows } = useProjectXOpenTradeRows(rows);
   const activeTrade = useMemo(
     () => (activeTradeId ? rows.find((row) => row.id === activeTradeId) ?? null : null),
     [activeTradeId, rows]
   );
+  const activeLiveTrade = useMemo(
+    () => (activeTradeId ? liveRows.find((row) => row.id === activeTradeId) ?? null : null),
+    [activeTradeId, liveRows]
+  );
+  const activeLiveBar = activeTrade ? liveBarsBySymbol[projectXQuoteSymbol(activeTrade)] : undefined;
   const activeSourceBars = chartState.sourceBars?.length ? chartState.sourceBars : chartState.bars;
   const activeDisplayTrade = useMemo(
-    () => (activeTrade ? withOpenTradeChartMark(activeTrade, activeSourceBars) : null),
-    [activeSourceBars, activeTrade]
+    () => (activeLiveTrade ? withOpenTradeChartMark(activeLiveTrade, activeSourceBars) : null),
+    [activeLiveTrade, activeSourceBars]
   );
   const activeChartTrade = useMemo(
     () =>
@@ -2305,7 +2441,6 @@ export default function TradeHistory({ rows }: TradeHistoryProps) {
 
     setChartState({ status: "loading", bars: [] });
     let inFlight = false;
-    let quoteInFlight = false;
     const refreshChart = async () => {
       if (inFlight || controller.signal.aborted) return;
       inFlight = true;
@@ -2353,54 +2488,11 @@ export default function TradeHistory({ rows }: TradeHistoryProps) {
       }
     };
 
-    const refreshLiveQuote = async () => {
-      if (
-        !isOpen ||
-        (activeTrade.market && activeTrade.market.toLowerCase() !== "futures") ||
-        quoteInFlight ||
-        controller.signal.aborted
-      ) return;
-      quoteInFlight = true;
-      try {
-        const quoteParams = new URLSearchParams({ market: "futures", symbol: activeTrade.symbol });
-        const response = await fetch(`/api/projectx-live-quote?${quoteParams.toString()}`, {
-          cache: "no-store",
-          signal: controller.signal
-        });
-        if (!response.ok) return;
-        const payload = (await response.json()) as ProjectXLiveQuotePayload;
-        const liveBar = payload.bar;
-        if (!liveBar) return;
-        setChartState((current) => {
-          if (!current.bars.length) return current;
-          const sourceBars = mergeLiveOpenTradeBar(current.sourceBars?.length ? current.sourceBars : current.bars, liveBar);
-          return {
-            ...current,
-            bars: chartTimeframe === "1m" ? mergeLiveOpenTradeBar(current.bars, liveBar) : current.bars,
-            replayBars:
-              current.replayTimeframe === "1m" && current.replayBars?.length
-                ? mergeLiveOpenTradeBar(current.replayBars, liveBar)
-                : current.replayBars,
-            sourceBars
-          };
-        });
-      } catch (error) {
-        if (!(error instanceof Error && error.name === "AbortError")) console.warn("ProjectX live quote unavailable", error);
-      } finally {
-        quoteInFlight = false;
-      }
-    };
-
     void refreshChart();
-    void refreshLiveQuote();
     const intervalId = isOpen ? window.setInterval(() => void refreshChart(), OPEN_TRADE_CHART_REFRESH_MS) : null;
-    const quoteIntervalId = isOpen
-      ? window.setInterval(() => void refreshLiveQuote(), PROJECTX_LIVE_QUOTE_REFRESH_MS)
-      : null;
     return () => {
       controller.abort();
       if (intervalId !== null) window.clearInterval(intervalId);
-      if (quoteIntervalId !== null) window.clearInterval(quoteIntervalId);
     };
   }, [
     activeTrade?.entryIndex,
@@ -2414,6 +2506,23 @@ export default function TradeHistory({ rows }: TradeHistoryProps) {
     activeTrade?.symbol,
     chartTimeframe
   ]);
+
+  useEffect(() => {
+    if (!activeTrade?.isOpen || !activeLiveBar || !chartState.bars.length) return;
+    setChartState((current) => {
+      if (!current.bars.length) return current;
+      const sourceBars = mergeLiveOpenTradeBar(current.sourceBars?.length ? current.sourceBars : current.bars, activeLiveBar);
+      return {
+        ...current,
+        bars: chartTimeframe === "1m" ? mergeLiveOpenTradeBar(current.bars, activeLiveBar) : current.bars,
+        replayBars:
+          current.replayTimeframe === "1m" && current.replayBars?.length
+            ? mergeLiveOpenTradeBar(current.replayBars, activeLiveBar)
+            : current.replayBars,
+        sourceBars
+      };
+    });
+  }, [activeLiveBar, activeTrade?.id, activeTrade?.isOpen, chartState.bars.length, chartTimeframe]);
 
   const chartNotice =
     chartState.fallback && chartState.requestedTimeframe && chartState.timeframe
@@ -2523,7 +2632,7 @@ export default function TradeHistory({ rows }: TradeHistoryProps) {
             </tr>
           </thead>
           <tbody>
-            {rows.map((trade) => {
+            {liveRows.map((trade) => {
               const displayedModelName = isRestricted ? "Admin only" : trade.modelName;
               const exitReasonLabel = displayExitReasonLabel(trade);
               const visibleSymbol = displaySymbol(trade);
