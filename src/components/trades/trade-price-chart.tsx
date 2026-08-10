@@ -2473,7 +2473,19 @@ function drawStructureVisuals(
 function drawTradeOverlayGeometry(ctx: CanvasRenderingContext2D, geometry: TradeDomOverlay): void {
   ctx.save();
 
-  if (geometry.risk) {
+  const managedStopPoints = geometry.stopPath?.points ?? [];
+  if (geometry.entryLine != null && managedStopPoints.length) {
+    const first = managedStopPoints[0]!;
+    const last = managedStopPoints.at(-1)!;
+    ctx.beginPath();
+    ctx.fillStyle = "rgba(240, 69, 90, 0.26)";
+    ctx.moveTo(first.x, geometry.entryLine);
+    ctx.lineTo(first.x, first.y);
+    for (const point of managedStopPoints.slice(1)) ctx.lineTo(point.x, point.y);
+    ctx.lineTo(last.x, geometry.entryLine);
+    ctx.closePath();
+    ctx.fill();
+  } else if (geometry.risk) {
     ctx.fillStyle = "rgba(240, 69, 90, 0.26)";
     ctx.strokeStyle = "rgba(255, 76, 104, 0.78)";
     ctx.lineWidth = 1;
@@ -2509,7 +2521,7 @@ function drawTradeOverlayGeometry(ctx: CanvasRenderingContext2D, geometry: Trade
   const drawManagedLevelPath = (
     path: TradeManagedOverlayPath | undefined,
     color: string,
-    initialLabel?: string
+    label?: string
   ) => {
     if (!path?.points.length) return;
     ctx.beginPath();
@@ -2520,11 +2532,11 @@ function drawTradeOverlayGeometry(ctx: CanvasRenderingContext2D, geometry: Trade
     ctx.moveTo(path.points[0]!.x, path.points[0]!.y);
     for (const point of path.points.slice(1)) ctx.lineTo(point.x, point.y);
     ctx.stroke();
-    if (initialLabel && path.changed) {
+    if (label && path.changed) {
       const first = path.points[0]!;
       drawOverlayText(
         ctx,
-        initialLabel,
+        label,
         clamp(first.x + 6, 6, geometry.width - 80),
         clamp(first.y - 9, 12, geometry.height - 6),
         color
@@ -2533,7 +2545,7 @@ function drawTradeOverlayGeometry(ctx: CanvasRenderingContext2D, geometry: Trade
   };
 
   drawManagedLevelPath(geometry.targetPath, "rgba(53, 201, 113, 0.9)");
-  drawManagedLevelPath(geometry.stopPath, "rgba(255, 76, 104, 0.96)", "Initial SL");
+  drawManagedLevelPath(geometry.stopPath, "rgba(255, 76, 104, 0.96)", "SL");
 
   if (geometry.path) {
     ctx.beginPath();
