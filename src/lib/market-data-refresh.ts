@@ -11,6 +11,7 @@ import {
   twelveDataAvailable,
   twelveDataCooldownRemainingMs
 } from "@/lib/market-data-provider-health";
+import { sharedTwelveDataKeyRotation } from "@/lib/twelve-data-key-rotation";
 import { r2AppendText, r2Configured, r2GetTailText, r2HeadObject, r2PutText } from "@/lib/r2";
 import {
   DATA_TIMEFRAMES,
@@ -477,8 +478,8 @@ async function fetchOandaOneMinuteBars(instrument: string, options: OneMinuteFet
 async function fetchTwelveDataTimeframeBars(symbol: string, interval: "1min" | "5min", options: OneMinuteFetchOptions = {}): Promise<CsvBar[]> {
   const keys = (process.env.TWELVEDATA_API_KEYS ?? "").split(",").map((item) => item.trim()).filter(Boolean);
   if (!keys.length) throw new Error("Missing TWELVEDATA_API_KEYS");
-  const startIndex = Math.floor(Date.now() / 60_000) % keys.length;
-  const orderedKeys = keys.map((_, index) => keys[(startIndex + index) % keys.length]!);
+  const orderedKeys = sharedTwelveDataKeyRotation.orderedKeys(keys);
+  if (!orderedKeys.length) throw new Error("All configured TwelveData API keys are cooling down for the current minute.");
   const failures: string[] = [];
 
   for (const apiKey of orderedKeys) {
@@ -506,10 +507,12 @@ async function fetchTwelveDataTimeframeBars(symbol: string, interval: "1min" | "
     }
 
     if (response.ok && data.values?.length) {
+      sharedTwelveDataKeyRotation.markSuccess(apiKey);
       return parseTwelveDataBars(data.values, interval === "1min" ? ONE_MINUTE_SECONDS : FIVE_MINUTE_SECONDS);
     }
 
     const reason = data.message ?? data.status ?? `HTTP ${response.status}`;
+    sharedTwelveDataKeyRotation.markFailure(apiKey, `${response.status}: ${reason}`);
     failures.push(`...${apiKey.slice(-4)}: ${reason}`);
   }
 

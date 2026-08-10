@@ -13,6 +13,7 @@ import {
   twelveDataAvailable,
   twelveDataCooldownRemainingMs
 } from "@/lib/market-data-provider-health";
+import { sharedTwelveDataKeyRotation } from "@/lib/twelve-data-key-rotation";
 import type { Bar, StrategyRule } from "@/lib/types";
 
 type OandaCandle = {
@@ -160,8 +161,8 @@ async function fetchProjectXFuturesBars(asset: ReturnType<typeof assetForKey>, o
 async function fetchTwelveDataBars(symbol: string, options: MarketBarsOptions): Promise<Bar[]> {
   const keys = (process.env.TWELVEDATA_API_KEYS ?? "").split(",").map((item) => item.trim()).filter(Boolean);
   if (!keys.length) throw new Error("Missing TWELVEDATA_API_KEYS");
-  const startIndex = Math.floor(Date.now() / 60_000) % keys.length;
-  const orderedKeys = keys.map((_, index) => keys[(startIndex + index) % keys.length]!);
+  const orderedKeys = sharedTwelveDataKeyRotation.orderedKeys(keys);
+  if (!orderedKeys.length) throw new Error("All configured TwelveData API keys are cooling down for the current minute.");
   const failures: string[] = [];
 
   for (const apiKey of orderedKeys) {
@@ -192,6 +193,7 @@ async function fetchTwelveDataBars(symbol: string, options: MarketBarsOptions): 
     }
 
     if (response.ok && data.values?.length) {
+      sharedTwelveDataKeyRotation.markSuccess(apiKey);
       return filterClosedTimeframeBars(
         data.values
           .map((item) => ({
@@ -209,6 +211,7 @@ async function fetchTwelveDataBars(symbol: string, options: MarketBarsOptions): 
     }
 
     const reason = data.message ?? data.status ?? `HTTP ${response.status}`;
+    sharedTwelveDataKeyRotation.markFailure(apiKey, `${response.status}: ${reason}`);
     failures.push(`...${apiKey.slice(-4)}: ${reason}`);
   }
 

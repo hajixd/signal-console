@@ -1,4 +1,4 @@
-const RATE_LIMIT_COOLDOWN_MS = 15 * 60_000;
+const RATE_LIMIT_COOLDOWN_MS = 75_000;
 const DAILY_RESET_BUFFER_MS = 5 * 60_000;
 
 let twelveDataUnavailableUntil = 0;
@@ -17,8 +17,10 @@ export function twelveDataCooldownRemainingMs(now = Date.now()): number {
 
 export function markTwelveDataProviderFailure(error: unknown, now = Date.now()): void {
   const message = errorText(error).toLowerCase();
-  const dailyQuotaFailure = /run out of api credits|credits for the day|daily.*(?:credit|limit)|next day/.test(message);
-  const rateLimitFailure = dailyQuotaFailure || /(?:^|\D)429(?:\D|$)|rate.?limit|too many requests/.test(message);
+  const minuteQuotaFailure = /current minute|per[- ]minute|next minute|api credits.*minute/.test(message);
+  const dailyQuotaFailure = !minuteQuotaFailure && /credits for the day|daily.*(?:credit|limit)|next day/.test(message);
+  const rateLimitFailure =
+    minuteQuotaFailure || dailyQuotaFailure || /(?:^|\D)429(?:\D|$)|rate.?limit|too many requests/.test(message);
   if (!rateLimitFailure) return;
 
   if (dailyQuotaFailure) {

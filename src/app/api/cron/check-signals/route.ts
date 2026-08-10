@@ -40,7 +40,7 @@ function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : "Unknown signal check error";
 }
 
-async function directCheckSummaries(): Promise<{ dailySummary: unknown; weeklySummary: unknown }> {
+export async function runDueTradeSummaries(): Promise<{ dailySummary: unknown; weeklySummary: unknown }> {
   const [dailySummary, weeklySummary] = await Promise.all([
     sendDueDailyTradeSummaries().catch((error) => ({
       checkedAt: new Date().toISOString(),
@@ -1305,7 +1305,7 @@ export async function GET(request: NextRequest) {
   const directCheckSignalsRequest = isDirectCheckSignalsRequest(request);
   const weekendPause = cronWeekendPause();
   if (weekendPause.paused) {
-    const summaries = directCheckSignalsRequest ? await directCheckSummaries() : {};
+    const summaries = directCheckSignalsRequest ? await runDueTradeSummaries() : {};
     return NextResponse.json({
       ok: true,
       route: "/api/cron/check-signals",
@@ -1348,7 +1348,7 @@ export async function GET(request: NextRequest) {
       skippedDuplicates: result.skippedDuplicates.length,
       skippedRisk: result.skippedRisk.length
     });
-    if (directCheckSignalsRequest) await directCheckSummaries();
+    if (directCheckSignalsRequest) await runDueTradeSummaries();
     return NextResponse.json(result);
   } catch (error) {
     const durationMs = Date.now() - startedAt;

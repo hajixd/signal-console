@@ -29,6 +29,15 @@ test("HTTP 429 uses a short cooldown", () => {
   const now = Date.UTC(2026, 7, 4, 17, 10, 0);
   markTwelveDataProviderFailure(new Error("TwelveData 429: too many requests"), now);
   assert.equal(twelveDataAvailable(now), false);
-  assert.equal(twelveDataAvailable(now + 16 * 60_000), true);
+  assert.equal(twelveDataAvailable(now + 76_000), true);
+  resetMarketDataProviderHealthForTests();
+});
+
+test("per-minute credit exhaustion never creates an all-day cooldown", () => {
+  resetMarketDataProviderHealthForTests();
+  const now = Date.UTC(2026, 7, 4, 17, 10, 0);
+  markTwelveDataProviderFailure(new Error("You have run out of API credits for the current minute. Wait for the next minute."), now);
+  assert.equal(twelveDataAvailable(now), false);
+  assert.equal(twelveDataAvailable(now + 76_000), true);
   resetMarketDataProviderHealthForTests();
 });

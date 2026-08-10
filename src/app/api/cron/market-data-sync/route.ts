@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { runSignalCheck } from "@/app/api/cron/check-signals/route";
+import { runDueTradeSummaries, runSignalCheck } from "@/app/api/cron/check-signals/route";
 import { saveCronRun, updateDatasetSyncRunStatus } from "@/lib/live-config";
 import { activeRules } from "@/lib/live-signals";
 import { cronWeekendPause, marketOpenForSignal } from "@/lib/market-schedule";
@@ -174,6 +174,7 @@ export async function GET(request: NextRequest) {
       ok: false,
       status: 0
     }));
+    const summaries = await runDueTradeSummaries().catch((error) => ({ error: errorMessage(error) }));
 
     await saveMarketDataRefreshStatus(result.summary);
 
@@ -197,6 +198,7 @@ export async function GET(request: NextRequest) {
       errors: result.summary.errors.length,
       errorSummary: failureMessage || undefined,
       signalCheck,
+      summaries,
       totalDurationMs: result.summary.totalDurationMs,
       uploadedFiles: result.summary.uploadedFiles
     });
@@ -204,6 +206,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       rules: rules.length,
       signalCheck,
+      summaries,
       ...result.summary
     });
   } catch (error) {
