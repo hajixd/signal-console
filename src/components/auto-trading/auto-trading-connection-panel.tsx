@@ -208,9 +208,7 @@ const CONNECTION_FIELDS: Record<AutoTradeProviderId, ConnectionField[]> = {
   mt5_ea: [
     { key: "login", label: "MT5 account login", placeholder: "12345678", required: true },
     { key: "password", label: "MT5 master password", placeholder: "Trading password", required: true, secret: true },
-    { key: "server", label: "MT5 broker server", placeholder: "Broker-Server", required: true },
-    { advanced: true, key: "accountSize", label: "Account size", placeholder: "100000" },
-    { advanced: true, key: "symbolMap", label: "Symbol map", placeholder: "EURUSD:EURUSD.,XAUUSD:XAUUSDm" }
+    { key: "server", label: "MT5 broker server", placeholder: "Broker-Server", required: true }
   ],
   ctrader: [
     { key: "accountId", label: "cTrader account ID", required: true },
@@ -998,7 +996,6 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
   const [isAccountModeReady, setIsAccountModeReady] = useState(false);
   const [savedConnections, setSavedConnections] = useState<SavedAutoTradeConnection[]>([]);
   const [genericFields, setGenericFields] = useState<Record<string, string>>(() => defaultConnectionFields(selectedProviderId));
-  const [showAdvancedFields, setShowAdvancedFields] = useState(false);
   const [activeProjectXFolderId, setActiveProjectXFolderId] = useState<string | null>(null);
   const [pendingProjectXFolder, setPendingProjectXFolder] = useState<ProjectXConnectionSummary | null>(null);
   const [pendingProjectXFolderAction, setPendingProjectXFolderAction] = useState<PendingProjectXFolderAction | null>(null);
@@ -1058,7 +1055,6 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
   const activeProjectXFolder = projectXAccountFolders.find((folder) => folder.id === activeProjectXFolderId);
   const selectedProviderFields = CONNECTION_FIELDS[selectedProvider.id] ?? [];
   const primaryProviderFields = selectedProviderFields.filter((field) => !field.advanced);
-  const advancedProviderFields = selectedProviderFields.filter((field) => field.advanced);
   const canManageAutoTrade = Boolean(accountMode);
   const canTestAutoTrade = Boolean(accountMode);
 
@@ -1129,7 +1125,6 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
     setProjectXAccountDetails({});
     setSelectedFirmId(firstPropFirmId(market));
     setGenericFields(defaultConnectionFields(firstProviderId(providers)));
-    setShowAdvancedFields(false);
   }, [market]);
 
   useEffect(() => {
@@ -1148,7 +1143,6 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
 
   useEffect(() => {
     setGenericFields(defaultConnectionFields(selectedProviderId));
-    setShowAdvancedFields(false);
   }, [selectedProviderId]);
 
   useEffect(() => {
@@ -1921,6 +1915,7 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
                     Enter the login number, master trading password, and exact server from your prop-firm credentials.
                     Do not use the investor or read-only password. Direct credentials are encrypted when the secure bridge is active;
                     EA-linked terminals never store the submitted password. The MT5 login is automatically saved as that account's EA Connection ID.
+                    Account balance and broker-specific symbol names are detected automatically by the EA.
                   </span>
                 </div>
               ) : null}
@@ -1936,7 +1931,7 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
                   value={accountDisplayName}
                 />
               </label>
-              {[...primaryProviderFields, ...(showAdvancedFields ? advancedProviderFields : [])].map((field) => (
+              {primaryProviderFields.map((field) => (
                   <label key={field.key}>
                     <span>{field.label}</span>
                     <input
@@ -1972,11 +1967,6 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
                   value={genericAccessCode}
                 />
               </label>
-              {advancedProviderFields.length ? (
-                <button type="button" onClick={() => setShowAdvancedFields((current) => !current)}>
-                  {showAdvancedFields ? "Hide Advanced" : "Advanced Settings"}
-                </button>
-              ) : null}
               <button type="submit" disabled={isConnecting}>
                 {isConnecting ? "Connecting..." : selectedProvider.id === "mt5_ea" ? "Link MT5 Account" : "Connect Account"}
               </button>

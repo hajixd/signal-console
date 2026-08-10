@@ -1,5 +1,5 @@
 #property strict
-#property version   "1.00"
+#property version   "1.01"
 #property description "Korra MT5 execution EA. Polls korra.space and executes queued forex orders."
 
 #include <Trade/Trade.mqh>
@@ -13,7 +13,6 @@ input int HeartbeatSeconds = 10;
 input int RequestTimeoutMs = 8000;
 input long MagicNumber = 260809;
 input int SlippagePoints = 20;
-input string SymbolMap = "";
 
 CTrade g_trade;
 string g_base_url = "";
@@ -73,7 +72,7 @@ bool HttpRequest(const string method, const string path, const string body, stri
       "Authorization: Bearer " + IngestToken + "\r\n" +
       "Accept: application/json\r\n" +
       "Content-Type: application/json\r\n" +
-      "X-EA-Version: 1.00\r\n";
+      "X-EA-Version: 1.01\r\n";
 
    ArrayResize(request_data, 0);
    ArrayResize(response_data, 0);
@@ -186,19 +185,54 @@ double JsonNumber(const string json, const string key, const double fallback = 0
    return MathIsValidNumber(parsed) ? parsed : fallback;
 }
 
+string NormalizedSymbolName(string value)
+{
+   StringToUpper(value);
+   string normalized = "";
+   for(int index = 0; index < StringLen(value); index++)
+   {
+      const ushort ch = (ushort)StringGetCharacter(value, index);
+      if((ch >= 'A' && ch <= 'Z') || (ch >= '0' && ch <= '9'))
+         normalized += StringSubstr(value, index, 1);
+   }
+   return normalized;
+}
+
 string ResolveSymbol(const string requested)
 {
-   string pairs[];
-   const int pair_count = StringSplit(SymbolMap, ',', pairs);
-   for(int index = 0; index < pair_count; index++)
+   const string clean_requested = Trim(requested);
+   if(StringLen(clean_requested) == 0)
+      return "";
+
+   // Exact broker symbols remain the preferred path.
+   if(SymbolSelect(clean_requested, true))
+      return clean_requested;
+
+   // Prop brokers commonly add prefixes or suffixes (EURUSD.a, EURUSDm,
+   // pro_EURUSD). Find the closest server symbol automatically so users do
+   // not need to maintain a manual symbol map for every account.
+   const string normalized_requested = NormalizedSymbolName(clean_requested);
+   string best = "";
+   int best_extra_characters = 2147483647;
+   int best_offset = 2147483647;
+   const int symbol_count = SymbolsTotal(false);
+   for(int index = 0; index < symbol_count; index++)
    {
-      string parts[];
-      if(StringSplit(pairs[index], ':', parts) != 2)
+      const string candidate = SymbolName(index, false);
+      const string normalized_candidate = NormalizedSymbolName(candidate);
+      const int offset = StringFind(normalized_candidate, normalized_requested);
+      if(offset < 0)
          continue;
-      if(Trim(parts[0]) == requested)
-         return Trim(parts[1]);
+      const int extra_characters = StringLen(normalized_candidate) - StringLen(normalized_requested);
+      if(extra_characters < best_extra_characters ||
+         (extra_characters == best_extra_characters && offset < best_offset))
+      {
+         best = candidate;
+         best_extra_characters = extra_characters;
+         best_offset = offset;
+      }
    }
-   return requested;
+   return StringLen(best) > 0 ? best : clean_requested;
 }
 
 double NormalizeVolume(const string symbol, const double requested)
@@ -382,7 +416,7 @@ void SendHeartbeatAndState()
    const long login = AccountInfoInteger(ACCOUNT_LOGIN);
    const string server = AccountInfoString(ACCOUNT_SERVER);
    const string heartbeat =
-      "{\"eaVersion\":\"1.00\"" +
+      "{\"eaVersion\":\"1.01\"" +
       ",\"terminalBuild\":" + IntegerToString((int)TerminalInfoInteger(TERMINAL_BUILD)) +
       ",\"terminalConnected\":" + (terminal_connected ? "true" : "false") +
       ",\"tradeAllowed\":" + (trade_allowed ? "true" : "false") +

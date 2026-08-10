@@ -9,7 +9,10 @@ test("downloadable MT5 EA uses the signed-in login and the production queue cont
   const source = await readFile(eaPath, "utf8");
 
   assert.match(source, /input string ConnectionId = "";/);
+  assert.doesNotMatch(source, /input string SymbolMap/);
   assert.match(source, /AccountInfoInteger\(ACCOUNT_LOGIN\)/);
+  assert.match(source, /SymbolsTotal\(false\)/);
+  assert.match(source, /SymbolName\(index, false\)/);
   assert.match(source, /\/api\/ea\/heartbeat\//);
   assert.match(source, /\/api\/ea\/state\//);
   assert.match(source, /\/api\/ea\/orders\/pending\//);
