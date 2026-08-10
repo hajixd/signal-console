@@ -162,6 +162,7 @@ const PROP_FIRM_OPTIONS: PropFirmOption[] = [
   { id: "leeloo", label: "Leeloo Trading", markets: ["futures"], platformIds: ["rithmic"] },
   { id: "bulenox", label: "Bulenox", markets: ["futures"], platformIds: ["rithmic"] },
   { id: "oneup", label: "OneUp Trader", markets: ["futures"], platformIds: ["rithmic"] },
+  { id: "atlas-funded", label: "Atlas Funded", markets: ["forex"], platformIds: ["tradelocker", "mt5_ea", "matchtrader"] },
   { id: "e8", label: "E8 Markets", markets: ["forex"], platformIds: ["tradelocker", "matchtrader", "ctrader", "mt5_ea"] },
   { id: "ftmo", label: "FTMO", markets: ["forex"], platformIds: ["mt5_ea", "ctrader"] },
   { id: "the5ers", label: "The5ers", markets: ["forex"], platformIds: ["mt5_ea", "ctrader"] },
@@ -1838,6 +1839,21 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
               </select>
             </label>
           </div>
+
+          {selectedFirm.id === "atlas-funded" ? (
+            <div className="mt5ConnectNotice">
+              <strong>Atlas Funded automation rules</strong>
+              <span>
+                Atlas Funded permits EAs and automated strategies, but prohibits trades held for less than three minutes,
+                HFT or latency exploitation, account sharing, and copying between different traders. Only connect an Atlas
+                account you personally own. {" "}
+                <a href="https://help.atlasfunded.com/en/articles/9904237-what-are-the-prohibited-trading-activities-at-atlas-funded" rel="noreferrer" target="_blank">
+                  Review the official rules
+                </a>
+                .
+              </span>
+            </div>
+          ) : null}
 
           {canConnectSelectedProvider ? (
             <form className="topstepConnectForm" onSubmit={handleConnect}>
