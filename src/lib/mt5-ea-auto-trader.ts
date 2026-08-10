@@ -105,7 +105,7 @@ async function executeMt5TradeForConnection(
   const heartbeatError = mt5HeartbeatMismatch(connectionFields, heartbeat);
   if (heartbeatError) {
     return result("skipped", {
-      error: `${heartbeatError} In the EA settings, set Connection ID to ${account} and attach it to the saved account.`
+      error: `${heartbeatError} Start the Korra MT5 EA on login ${account}; it uses the signed-in MT5 login as the Connection ID automatically.`
     });
   }
 

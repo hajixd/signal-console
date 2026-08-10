@@ -54,14 +54,14 @@ The existing `AUTO_TRADE_MAX_ALERTS_PER_CHECK` (2) and `AUTO_TRADE_MAX_RISK_PER_
 
 ### 2. Point the EA at this app
 
-In `PartnerProTradingEA.mq5` inputs:
+Download `public/mt5/KorraMT5ExecutionEA.mq5` from the website's MT5 Execution panel. In its inputs:
 
-- `BackendBaseUrl` = the deployed app URL (no trailing slash)
+- `BackendBaseUrl` = `https://www.korra.space`
 - `IngestToken` = the **same** value as `EA_INGEST_TOKEN`
-- `BridgeAccountId` = the same value as `MT5_EA_DEMO_ACCOUNT_ID` (e.g. `mt5-demo-100k`)
+- `ConnectionId` can stay blank. The EA automatically uses the signed-in MT5 account login, matching the ID created when the account was added on the website.
 
 In MT5: **Tools → Options → Expert Advisors** → enable algo trading + **Allow
-WebRequest for listed URL** and add the app domain. No `.mq5` code changes — the
+WebRequest for listed URL** and add `https://www.korra.space`. No `.mq5` code changes — the
 EA speaks this contract already.
 
 ### 3. Verify (before flipping dry-run off)

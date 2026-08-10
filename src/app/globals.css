@@ -17616,6 +17616,46 @@ html[data-theme="light"] .tradeReplaySlider input::-webkit-slider-thumb {
   color: var(--text);
 }
 
+.mt5EaSetup {
+  display: grid;
+  gap: 0.55rem;
+  padding: 0.7rem;
+  border: 1px solid var(--line-soft);
+  border-radius: 9px;
+  color: var(--text-dim);
+  line-height: 1.45;
+}
+
+.mt5EaSetup ol {
+  display: grid;
+  gap: 0.25rem;
+  margin: 0;
+  padding-left: 1.15rem;
+}
+
+.mt5EaSetup code {
+  color: var(--text);
+  font-family: var(--font-geist-mono), monospace;
+  font-size: 0.74rem;
+}
+
+.mt5EaDownloadLink {
+  width: fit-content;
+  padding: 0.4rem 0.65rem;
+  border: 1px solid color-mix(in srgb, var(--accent) 55%, var(--line));
+  border-radius: 7px;
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+  font-size: 0.72rem;
+  font-weight: 650;
+  text-decoration: none;
+}
+
+.mt5EaDownloadLink:hover {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+}
+
 .mt5EaMeta {
   display: flex;
   flex-wrap: wrap;

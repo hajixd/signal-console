@@ -2274,6 +2274,11 @@ export default function AutoTradingConnectionPanel({ market }: AutoTradingConnec
                     </div>
                     {canManageAutoTrade ? (
                       <div className="topstepAccountControls">
+                        {connection.providerId === "mt5_ea" ? (
+                          <a className="mt5EaDownloadLink" download href="/mt5/KorraMT5ExecutionEA.mq5">
+                            Download EA
+                          </a>
+                        ) : null}
                         <button
                           className={connection.paused ? "playButton" : "pauseButton"}
                           type="button"

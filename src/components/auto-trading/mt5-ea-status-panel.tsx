@@ -127,6 +127,22 @@ function pnlClass(value: number | undefined): string | undefined {
   return value > 0 ? "mt5EaOk" : "mt5EaWarn";
 }
 
+function Mt5EaSetup({ connectionId }: { connectionId?: string }) {
+  return (
+    <div className="mt5EaSetup">
+      <ol>
+        <li>Download the Korra EA and place it in MT5&apos;s <code>MQL5/Experts</code> folder.</li>
+        <li>Compile it in MetaEditor, then attach it to any chart on the saved account.</li>
+        <li>Enter the EA Ingest Token and allow WebRequest access to <code>https://www.korra.space</code>.</li>
+        <li>Turn on Algo Trading. The EA automatically uses login <code>{connectionId ?? "your MT5 login"}</code> as its Connection ID.</li>
+      </ol>
+      <a className="mt5EaDownloadLink" download href="/mt5/KorraMT5ExecutionEA.mq5">
+        Download Korra MT5 EA
+      </a>
+    </div>
+  );
+}
+
 export default function Mt5EaStatusPanel() {
   const [data, setData] = useState<StatusResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -238,13 +254,17 @@ export default function Mt5EaStatusPanel() {
           ) : null}
         </>
       ) : data?.accountMismatch ? (
-        <p className="mt5EaNote mt5EaWarn">
-          {data.accountMismatch} Open the EA settings and set Connection ID to <code>{data.bridgeAccountId}</code>.
-        </p>
+        <>
+          <p className="mt5EaNote mt5EaWarn">{data.accountMismatch}</p>
+          <Mt5EaSetup connectionId={data.bridgeAccountId} />
+        </>
       ) : !hb ? (
-        <p className="mt5EaNote">
-          Waiting for the EA — no heartbeat yet for <code>{data?.bridgeAccountId}</code>. Start the EA on the MT5 terminal and confirm the green smiley.
-        </p>
+        <>
+          <p className="mt5EaNote">
+            Waiting for the EA — no heartbeat yet for <code>{data?.bridgeAccountId}</code>.
+          </p>
+          <Mt5EaSetup connectionId={data?.bridgeAccountId} />
+        </>
       ) : (
         <>
           <div className="mt5EaMeta">
