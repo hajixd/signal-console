@@ -274,6 +274,17 @@ function tradePathStats(trade: TradeHistoryRow, bars: ChartBar[]): { mfe: number
   };
 }
 
+function tradePathDurationLabel(trade: TradeHistoryRow, bars: ChartBar[]): string {
+  const range = resolvedTradePathRange(trade, bars);
+  if (!range) return `${trade.durationLabel} / ${trade.durationDetailLabel}`;
+  const entryMs = Date.parse(range.entryTime);
+  const exitMs = Date.parse(range.exitTime);
+  const elapsedLabel = !Number.isFinite(entryMs) || !Number.isFinite(exitMs) || exitMs <= entryMs
+    ? "<1m"
+    : formatMinutesCompact((exitMs - entryMs) / 60_000);
+  return `${range.barsHeld} ${range.barsHeld === 1 ? "bar" : "bars"} / ${elapsedLabel}`;
+}
+
 function InfoBox({
   label,
   value,
@@ -1376,11 +1387,14 @@ export function TradeHistoryCalendar({ rows }: TradeHistoryProps) {
             const chartState = chartStates[trade.id] ?? { status: "idle", bars: [] };
             const displayedModelName = isRestricted ? "Admin only" : trade.modelName;
             const visibleSymbol = displaySymbol(trade);
+            const resolvedDurationLabel = tradePathDurationLabel(trade, chartState.bars);
             return (
               <div key={`${trade.id}-calendar`} className={`backtest-calendar-trade ${isExpanded ? "expanded" : ""}`}>
                 <button
                   type="button"
                   className="backtest-calendar-trade-toggle"
+                  aria-expanded={isExpanded}
+                  aria-label={`${isExpanded ? "Collapse" : "Expand"} ${visibleSymbol} trade details`}
                   onClick={() => setExpandedTradeId((current) => (current === trade.id ? null : trade.id))}
                 >
                   <div className="backtest-calendar-trade-main">
@@ -1414,39 +1428,66 @@ export function TradeHistoryCalendar({ rows }: TradeHistoryProps) {
 
                 {isExpanded ? (
                   <div className="backtest-calendar-trade-expand">
-                    <div className="backtest-calendar-trade-stat-grid">
-                      <div className="backtest-calendar-trade-stat">
-                        <span>Duration</span>
-                        <strong>{formatMinutesCompact(durationMinutes)}</strong>
+                    <div className="backtest-calendar-trade-summary">
+                      <section className="backtest-calendar-trade-outcome" aria-label="Trade outcome">
+                        <span className="backtest-calendar-trade-eyebrow">Realized outcome</span>
+                        <strong className={trade.pnlDollars >= 0 ? "up" : "down"}>{trade.pnlLabel}</strong>
+                        <div className="backtest-calendar-trade-badges">
+                          <span>{displayExitReasonLabel(trade)}</span>
+                          <span>{trade.rMultipleLabel}</span>
+                        </div>
+                      </section>
+
+                      <section className="backtest-calendar-trade-route" aria-label="Entry and exit">
+                        <div className="backtest-calendar-trade-route-point">
+                          <span>Entry</span>
+                          <strong>{trade.entryPriceLabel}</strong>
+                          <small>{formatCalendarDateTime(trade.entryTime)}</small>
+                        </div>
+                        <span className="backtest-calendar-trade-route-arrow" aria-hidden="true">&rarr;</span>
+                        <div className="backtest-calendar-trade-route-point exit">
+                          <span>Exit</span>
+                          <strong>{trade.exitPriceLabel}</strong>
+                          <small>{formatCalendarDateTime(trade.exitTime)}</small>
+                        </div>
+                      </section>
+
+                      <section className="backtest-calendar-trade-position" aria-label="Position details">
+                        <span className="backtest-calendar-trade-eyebrow">Position</span>
+                        <strong>
+                          <span className={trade.side === "long" ? "up" : "down"}>{trade.side === "long" ? "BUY" : "SELL"}</span>
+                          <span aria-hidden="true">{" / "}</span>
+                          {trade.sizeLabel}
+                        </strong>
+                        <small>{resolvedDurationLabel}</small>
+                      </section>
+                    </div>
+
+                    <div className="backtest-calendar-trade-brackets" aria-label="Planned trade levels">
+                      <div className="backtest-calendar-trade-bracket tp">
+                        <span>Profit target</span>
+                        <strong>{trade.targetPriceLabel}</strong>
+                        <small>{trade.targetLabel}</small>
                       </div>
-                      <div className="backtest-calendar-trade-stat">
-                        <span>Size</span>
-                        <strong>{trade.sizeLabel}</strong>
-                      </div>
-                      <div className="backtest-calendar-trade-stat">
-                        <span>TP Price</span>
-                        <strong className="backtest-calendar-trade-stat-value tp">{trade.targetPriceLabel}</strong>
-                      </div>
-                      <div className="backtest-calendar-trade-stat">
-                        <span>TP $</span>
-                        <strong className="backtest-calendar-trade-stat-value tp">{trade.targetLabel}</strong>
-                      </div>
-                      <div className="backtest-calendar-trade-stat">
-                        <span>SL Price</span>
-                        <strong className="backtest-calendar-trade-stat-value sl">{trade.stopPriceLabel}</strong>
-                      </div>
-                      <div className="backtest-calendar-trade-stat">
-                        <span>SL $</span>
-                        <strong className="backtest-calendar-trade-stat-value sl">{trade.riskLabel}</strong>
+                      <div className="backtest-calendar-trade-bracket sl">
+                        <span>Protective stop</span>
+                        <strong>{trade.stopPriceLabel}</strong>
+                        <small>{trade.riskLabel}</small>
                       </div>
                     </div>
 
-                    <div className="backtest-calendar-trade-panel">
-                      <div className="backtest-calendar-trade-meta">
-                        <div>Session: {sessionLabel(trade.entryTime)}</div>
-                        <div>Entry Model: {displayedModelName}</div>
-                        <div>Exit Reason: {displayExitReasonLabel(trade)}</div>
-                        <div>R: {trade.rMultipleLabel}</div>
+                    <div className="backtest-calendar-trade-context" aria-label="Trade context">
+                      <div>
+                        <span>Session</span>
+                        <strong>{sessionLabel(trade.entryTime)}</strong>
+                      </div>
+                      <div className="model" title={displayedModelName}>
+                        <span>Entry model</span>
+                        <strong>{displayedModelName}</strong>
+                      </div>
+                      <div>
+                        <span>Timeframe</span>
+                        <strong>{trade.sourceTimeframe ?? "1m"}</strong>
                       </div>
                     </div>
 
@@ -2034,20 +2075,8 @@ export default function TradeHistory({ rows }: TradeHistoryProps) {
       isRestricted
     ]
   );
-  const activePathRange = useMemo(
-    () => (activeDisplayTrade ? resolvedTradePathRange(activeDisplayTrade, activeSourceBars) : null),
-    [activeDisplayTrade, activeSourceBars]
-  );
   const activeStats = activeDisplayTrade ? tradePathStats(activeDisplayTrade, activeSourceBars) : { mfe: null, mae: null };
-  const activeDurationLabel = activeDisplayTrade
-    ? activePathRange
-      ? `${activePathRange.barsHeld} ${activePathRange.barsHeld === 1 ? "bar" : "bars"} / ${
-          Date.parse(activePathRange.exitTime) <= Date.parse(activePathRange.entryTime)
-            ? "<1m"
-            : formatMinutesCompact((Date.parse(activePathRange.exitTime) - Date.parse(activePathRange.entryTime)) / 60_000)
-        }`
-      : `${activeDisplayTrade.durationLabel} / ${activeDisplayTrade.durationDetailLabel}`
-    : "";
+  const activeDurationLabel = activeDisplayTrade ? tradePathDurationLabel(activeDisplayTrade, activeSourceBars) : "";
 
   function openTrade(trade: TradeHistoryRow, opener?: HTMLElement) {
     previousFocusRef.current = opener ?? (document.activeElement instanceof HTMLElement ? document.activeElement : null);
