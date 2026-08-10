@@ -54,6 +54,7 @@ import {
   alertTargetUnits,
   boundedTradeDollarPnl,
   inferredAlertPriceUnit,
+  liveBrokerExecutionOutcome,
   liveClosedTradePnlDollars,
   liveOpenTradePnlDollars,
   liveTradeEventAutoTradeOrders
@@ -76,6 +77,7 @@ import { discordChannelInviteLink, discordConfigured as discordIsConfigured } fr
 import { telegramGroupInviteLink } from "@/lib/telegram";
 import { type DataTimeframe } from "@/lib/timeframes";
 import { resolveFirstTradeBracketHit, type TradeBracketBar, type TradeBracketHit } from "@/lib/trade-bracket-truth";
+import { consistentTradeOutcome } from "@/lib/trade-outcome-consistency";
 import { conciseStrategyName } from "@/lib/strategy-names";
 import type { NotificationStatus, TradeAlert, TradeManagementEvent } from "@/lib/types";
 
@@ -999,6 +1001,8 @@ function liveTradeModelLabel(trade: TradeAlert, option?: StrategyOption): string
 }
 
 function liveRowClass(trade: TradeAlert): string {
+  const brokerOutcome = liveBrokerExecutionOutcome(trade);
+  if (brokerOutcome) return resultRowClass(brokerOutcome.netPnlDollars);
   if (Number.isFinite(trade.lifecyclePnlDollars)) {
     return resultRowClass(trade.lifecyclePnlDollars!);
   }
@@ -1021,6 +1025,19 @@ function liveTradeHasLimitOrder(trade: TradeAlert): boolean {
 
 function liveTradeExitReasonLabel(trade: TradeAlert): string {
   return isClosedLifecycleStatus(trade.lifecycleStatus) ? fmtExitReason(trade.lifecycleStatus) : "--";
+}
+
+function fmtBars(value: number): string {
+  const rounded = Math.max(0, Math.round(value));
+  return `${fmtNumber(rounded)} ${rounded === 1 ? "bar" : "bars"}`;
+}
+
+function liveTradeExitPrice(trade: TradeAlert): number {
+  return liveBrokerExecutionOutcome(trade)?.exitPrice ?? finiteNumberOr(trade.lifecyclePrice, trade.entryPrice);
+}
+
+function liveTradeExitTime(trade: TradeAlert): string {
+  return liveBrokerExecutionOutcome(trade)?.exitTime ?? trade.lifecycleTime ?? trade.signalTime;
 }
 
 function isManagementLiveTradeEvent(event: LiveTradeEvent): event is LiveTradeEvent & { managementEvent: TradeManagementEvent } {
@@ -1091,7 +1108,7 @@ function liveTradeEvents(trade: TradeAlert): LiveTradeEvent[] {
       className: exitClass,
       kind: "exit",
       label: "Trade Exit",
-      title: `${liveTradeExitReasonLabel(trade)} at ${fmtPrice(finiteNumberOr(trade.lifecyclePrice, trade.entryPrice))}`
+      title: `${liveTradeExitReasonLabel(trade)} at ${fmtPrice(liveTradeExitPrice(trade))}`
     });
   }
 
@@ -1100,7 +1117,7 @@ function liveTradeEvents(trade: TradeAlert): LiveTradeEvent[] {
 
 function liveTradeEventTime(trade: TradeAlert, event: LiveTradeEvent): string {
   if (isManagementLiveTradeEvent(event)) return event.managementEvent.time;
-  return event.kind === "exit" && liveTradeClosed(trade) ? trade.lifecycleTime : trade.signalTime;
+  return event.kind === "exit" && liveTradeClosed(trade) ? liveTradeExitTime(trade) : trade.signalTime;
 }
 
 function liveTradeEventTelegramStatus(trade: TradeAlert, event: LiveTradeEvent): TradeAlert["telegramStatus"] {
@@ -1208,7 +1225,7 @@ function liveTradeEventAutoTradeStatusLabel(trade: TradeAlert, event: LiveTradeE
 
 function liveTradeExitLine(trade: TradeAlert): string {
   if (!liveTradeClosed(trade)) return "Open";
-  return `${liveTradeExitReasonLabel(trade)} ${fmtDollarPrice(finiteNumberOr(trade.lifecyclePrice, trade.entryPrice))}`;
+  return `${liveTradeExitReasonLabel(trade)} ${fmtDollarPrice(liveTradeExitPrice(trade))}`;
 }
 
 function liveTradeEventPriceLine(trade: TradeAlert, event: LiveTradeEvent): string {
@@ -1838,12 +1855,31 @@ export default async function Home({ searchParams }: HomeProps) {
       targetPrice,
       trade
     });
+    const consistentExit = consistentTradeOutcome({
+      dollarsPerPricePoint,
+      entryPrice: trade.entryPrice,
+      exitPrice: resolvedExit.exitPrice,
+      exitReason: resolvedExit.exitReason,
+      exitTime: resolvedExit.exitTime,
+      managementEvents: trade.managementEvents,
+      pnlDollars: resolvedExit.pnlDollars,
+      priceTolerance: priceUnit / 2,
+      side: trade.side,
+      stopPrice,
+      targetPrice
+    });
+    const displayExit = {
+      ...resolvedExit,
+      exitReason: consistentExit.exitReason,
+      pnlDollars: consistentExit.pnlDollars,
+      rMultiple: riskDollars > 0 ? consistentExit.pnlDollars / riskDollars : resolvedExit.rMultiple
+    };
     return {
       id: `${trade.key}-${trade.entryTime}-${index}`,
       strategyKey: trade.datasetId,
-      rowClassName: resultRowClass(resolvedExit.pnlDollars),
-      pnlClassName: resultClass(resolvedExit.pnlDollars),
-      pnlDollars: resolvedExit.pnlDollars,
+      rowClassName: resultRowClass(displayExit.pnlDollars),
+      pnlClassName: resultClass(displayExit.pnlDollars),
+      pnlDollars: displayExit.pnlDollars,
       indexLabel: fmtNumber(index + 1),
       symbol: trade.symbol,
       displaySymbol: assetLookupSymbolForSymbol(trade.symbol),
@@ -1863,32 +1899,32 @@ export default async function Home({ searchParams }: HomeProps) {
       sideLabel: sideLabel(trade.side),
       sideClassName: sideClass(trade.side),
       entryIndex: trade.entryIndex,
-      exitIndex: resolvedExit.exitIndex,
+      exitIndex: displayExit.exitIndex,
       signalTime: trade.signalTime,
       entryTime: trade.entryTime,
-      exitTime: resolvedExit.exitTime,
+      exitTime: displayExit.exitTime,
       sourceTimeframe: tradeSourceTimeframe(trade),
       phase: trade.phase,
       variantId: trade.variantId,
       entryType: tradeEntryType(trade),
       entryPrice: trade.entryPrice,
-      exitPrice: resolvedExit.exitPrice,
+      exitPrice: displayExit.exitPrice,
       targetPrice,
       stopPrice,
       managementEvents: trade.managementEvents,
       signalTimeLabel: fmtTime(trade.signalTime),
       entryTimeLabel: fmtTime(trade.entryTime),
-      exitTimeLabel: fmtTime(resolvedExit.exitTime),
+      exitTimeLabel: fmtTime(displayExit.exitTime),
       entryPriceLabel: fmtDollarPrice(trade.entryPrice),
-      exitPriceLabel: fmtDollarPrice(resolvedExit.exitPrice),
+      exitPriceLabel: fmtDollarPrice(displayExit.exitPrice),
       targetPriceLabel: fmtDollarPrice(targetPrice),
       stopPriceLabel: fmtDollarPrice(stopPrice),
-      durationLabel: `${fmtNumber(resolvedExit.barsHeld)} bars`,
-      durationDetailLabel: fmtDuration(trade.entryTime, resolvedExit.exitTime),
-      exitReasonLabel: fmtExitReason(resolvedExit.exitReason),
-      pnlLabel: fmtMoney(resolvedExit.pnlDollars, true),
-      rMultipleLabel: `${fmtNumber(resolvedExit.rMultiple)}R`,
-      netUnitsLabel: `${fmtNumber(resolvedExit.netUnits)} ${unitLabel}`,
+      durationLabel: fmtBars(displayExit.barsHeld),
+      durationDetailLabel: fmtDuration(trade.entryTime, displayExit.exitTime),
+      exitReasonLabel: fmtExitReason(displayExit.exitReason),
+      pnlLabel: fmtMoney(displayExit.pnlDollars, true),
+      rMultipleLabel: `${fmtNumber(displayExit.rMultiple)}R`,
+      netUnitsLabel: `${fmtNumber(displayExit.netUnits)} ${unitLabel}`,
       sizeLabel: instrumentSizeLabel(trade.symbol, tradeMultiplier),
       sizeMultiplier: tradeMultiplier,
       targetRiskLabel: `${fmtMoney(targetDollars)} / ${fmtMoney(-riskDollars)}`,
@@ -1934,7 +1970,7 @@ export default async function Home({ searchParams }: HomeProps) {
         trade.entryPrice > 0 &&
         Number.isFinite(finiteNumberOr(trade.lifecyclePrice, trade.entryPrice)) &&
         Date.parse(trade.signalTime) > 0 &&
-        (!isClosed || Date.parse(trade.lifecycleTime) > 0)
+        (!isClosed || Date.parse(liveBrokerExecutionOutcome(trade)?.exitTime ?? trade.lifecycleTime) > 0)
       );
     })
     .map((trade, index) => {
@@ -1945,7 +1981,15 @@ export default async function Home({ searchParams }: HomeProps) {
       const ruleTickSize = liveRuleByKey.get(ruleKey)?.tickSize;
       const priceUnit = inferredAlertPriceUnit(trade, ruleTickSize);
       const displayContract = liveTradeDisplaySymbol(trade);
-      const sizeMultiplier = liveTradeRealSizeMultiplier(trade, option);
+      const plannedSizeMultiplier = liveTradeRealSizeMultiplier(trade, option);
+      const brokerOutcome = isClosed ? liveBrokerExecutionOutcome(trade) : null;
+      const sizeMultiplier = brokerOutcome?.sizeMultiplier && brokerOutcome.sizeMultiplier > 0
+        ? brokerOutcome.sizeMultiplier
+        : plannedSizeMultiplier;
+      const entryPrice = brokerOutcome?.entryPrice ?? trade.entryPrice;
+      const entrySlippage = entryPrice - trade.entryPrice;
+      const targetPrice = trade.takeProfitPrice + entrySlippage;
+      const stopPrice = trade.stopLossPrice + entrySlippage;
       const targetDollars = alertTargetDollarsWithSize(trade, sizeMultiplier);
       const riskDollars = alertRiskDollarsWithSize(trade, sizeMultiplier);
       const latestOpenPrice =
@@ -1953,23 +1997,37 @@ export default async function Home({ searchParams }: HomeProps) {
           ? latestLivePriceByConfigKey.get(liveTradeLatestPriceConfig(trade, option)?.key ?? "")
           : undefined;
       const rawExitPrice = isClosed
-        ? finiteNumberOr(trade.lifecyclePrice, trade.entryPrice)
-        : finiteNumberOr(latestOpenPrice?.price, trade.entryPrice);
-      const pnlDollars = isClosed
+        ? brokerOutcome?.exitPrice ?? finiteNumberOr(trade.lifecyclePrice, entryPrice)
+        : finiteNumberOr(latestOpenPrice?.price, entryPrice);
+      const rawPnlDollars = isClosed
         ? liveClosedTradePnlDollars(trade, sizeMultiplier, { riskDollars, targetDollars })
         : liveOpenTradePnlDollars(trade, priceUnit, rawExitPrice, sizeMultiplier);
-      const rMultiple = riskDollars > 0 ? pnlDollars / riskDollars : finiteNumberOr(trade.lifecycleRMultiple, 0);
       const exitBoundary = exitBoundaryFromReason(trade.lifecycleStatus);
-      const exitPrice =
-        isClosed && exitBoundary === "target"
-          ? finiteNumberOr(trade.lifecyclePrice, trade.takeProfitPrice)
-          : isClosed && exitBoundary === "stop"
-            ? finiteNumberOr(trade.lifecyclePrice, trade.stopLossPrice)
-            : rawExitPrice;
+      const endTime = isClosed ? brokerOutcome?.exitTime ?? trade.lifecycleTime : latestOpenPrice?.time ?? now.toISOString();
+      const dollarsPerPricePoint = priceUnit > 0
+        ? (dollarPerUnit(trade.symbol, entryPrice) * sizeMultiplier) / priceUnit
+        : 0;
+      const consistentExit = isClosed
+        ? consistentTradeOutcome({
+            dollarsPerPricePoint,
+            entryPrice,
+            exitPrice: rawExitPrice,
+            exitReason: effectiveExitReason(trade.lifecycleStatus, exitBoundary),
+            exitTime: endTime,
+            managementEvents: trade.managementEvents,
+            pnlDollars: rawPnlDollars,
+            priceTolerance: priceUnit / 2,
+            side: trade.side,
+            stopPrice,
+            targetPrice
+          })
+        : null;
+      const pnlDollars = consistentExit?.pnlDollars ?? rawPnlDollars;
+      const rMultiple = riskDollars > 0 ? pnlDollars / riskDollars : finiteNumberOr(trade.lifecycleRMultiple, 0);
+      const exitPrice = rawExitPrice;
       const sideMultiplier = trade.side === "long" ? 1 : -1;
-      const netUnits = priceUnit > 0 ? ((exitPrice - trade.entryPrice) * sideMultiplier) / priceUnit : 0;
+      const netUnits = priceUnit > 0 ? ((exitPrice - entryPrice) * sideMultiplier) / priceUnit : 0;
       const unitLabel = instrumentUnitLabel(trade.symbol);
-      const endTime = isClosed ? trade.lifecycleTime : latestOpenPrice?.time ?? now.toISOString();
       const barsHeld = approximateBarsHeld(trade.signalTime, endTime);
 
       return {
@@ -1996,21 +2054,21 @@ export default async function Home({ searchParams }: HomeProps) {
         phase: option?.phase,
         variantId: option?.variantId,
         entryType: trade.entryType ?? "market",
-        entryPrice: trade.entryPrice,
+        entryPrice,
         exitPrice,
-        targetPrice: trade.takeProfitPrice,
-        stopPrice: trade.stopLossPrice,
+        targetPrice,
+        stopPrice,
         managementEvents: trade.managementEvents,
         signalTimeLabel: fmtTime(trade.signalTime),
         entryTimeLabel: fmtTime(trade.signalTime),
-        exitTimeLabel: isClosed ? fmtTime(trade.lifecycleTime) : "Still Open",
-        entryPriceLabel: fmtDollarPrice(trade.entryPrice),
+        exitTimeLabel: isClosed ? fmtTime(endTime) : "Still Open",
+        entryPriceLabel: fmtDollarPrice(entryPrice),
         exitPriceLabel: fmtDollarPrice(exitPrice),
-        targetPriceLabel: fmtDollarPrice(trade.takeProfitPrice),
-        stopPriceLabel: fmtDollarPrice(trade.stopLossPrice),
-        durationLabel: `${fmtNumber(barsHeld)} bars`,
+        targetPriceLabel: fmtDollarPrice(targetPrice),
+        stopPriceLabel: fmtDollarPrice(stopPrice),
+        durationLabel: fmtBars(barsHeld),
         durationDetailLabel: fmtDuration(trade.signalTime, endTime),
-        exitReasonLabel: isClosed ? fmtExitReason(effectiveExitReason(trade.lifecycleStatus, exitBoundary)) : "Still Open",
+        exitReasonLabel: isClosed ? fmtExitReason(consistentExit?.exitReason ?? trade.lifecycleStatus) : "Still Open",
         pnlLabel: fmtMoney(pnlDollars, true),
         rMultipleLabel: riskDollars > 0 ? `${fmtNumber(rMultiple)}R` : "--",
         netUnitsLabel: `${fmtNumber(netUnits)} ${unitLabel}`,
@@ -2021,7 +2079,7 @@ export default async function Home({ searchParams }: HomeProps) {
         riskLabel: fmtMoney(-riskDollars),
         targetDollars,
         riskDollars,
-        dollarsPerPricePoint: priceUnit > 0 ? (dollarPerUnit(trade.symbol, trade.entryPrice) * sizeMultiplier) / priceUnit : 0,
+        dollarsPerPricePoint,
         tpUnitsLabel: `${fmtNumber(trade.tpUnits)} ${unitLabel}`,
         slUnitsLabel: `${fmtNumber(trade.slUnits)} ${unitLabel}`,
         lockedSize: true

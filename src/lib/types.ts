@@ -16,6 +16,8 @@ export type AutoTradeOrderSummary = {
   contractName?: string;
   customTag?: string;
   error?: string;
+  exitPrice?: number;
+  exitTime?: string;
   filledPrice?: number;
   fillConfirmationLatencyMs?: number;
   feesDollars?: number;

@@ -4,6 +4,7 @@ import { buildAutoTradeTestTrade } from "@/lib/auto-trade-test";
 import { autoTradeAccountSizeScale, plannedAutoTradeSizeForTrade, scaledAutoTradeSizeForTrade } from "@/lib/auto-trade-utils";
 import { customUnitSizeMultiplierForTrade } from "@/lib/custom-unit-sizing";
 import { dollarPerUnit } from "@/lib/instruments";
+import { liveBrokerExecutionOutcome } from "@/lib/live-trade-calculations";
 import {
   getStoredProjectXConnections,
   markStoredProjectXConnectionExpired,
@@ -1709,7 +1710,7 @@ function projectXResolvedLifecycleFields(
   trade: TradeAlert,
   resultOrders: AutoTradeOrderSummary[],
   netPnl: number
-): Pick<TradeAlert, "lifecyclePnlDollars" | "lifecycleRMultiple" | "lifecycleStatus"> {
+): Pick<TradeAlert, "lifecyclePnlDollars" | "lifecyclePrice" | "lifecycleRMultiple" | "lifecycleStatus" | "lifecycleTime"> {
   const tradedSize = resultOrders.reduce(
     (sum, order) => sum + (typeof order.size === "number" && Number.isFinite(order.size) ? Math.abs(order.size) : 0),
     0
@@ -1717,11 +1718,14 @@ function projectXResolvedLifecycleFields(
   const riskDollars = Math.abs(trade.slUnits * dollarPerUnit(trade.symbol, trade.entryPrice) * tradedSize);
   const resolvedStatus =
     netPnl > 0 ? "take_profit" : netPnl < 0 ? "stop_loss" : trade.lifecycleStatus;
+  const brokerOutcome = liveBrokerExecutionOutcome({ ...trade, autoTradeOrders: resultOrders });
 
   return {
     lifecyclePnlDollars: netPnl,
+    lifecyclePrice: brokerOutcome?.exitPrice ?? trade.lifecyclePrice,
     lifecycleRMultiple: riskDollars > 0 ? netPnl / riskDollars : trade.lifecycleRMultiple,
-    lifecycleStatus: resolvedStatus
+    lifecycleStatus: resolvedStatus,
+    lifecycleTime: brokerOutcome?.exitTime ?? trade.lifecycleTime
   };
 }
 
@@ -1793,6 +1797,8 @@ export async function enrichProjectXTradeOutcome(trade: TradeAlert): Promise<Tra
         if (!resultTrade || !pnl) return { ...order, resultCheckedAt, resultError: "Topstep result pending." };
         return {
           ...order,
+          exitPrice: finiteNumber(resultTrade.price),
+          exitTime: resultTrade.creationTimestamp,
           feesDollars: pnl.fees,
           grossPnlDollars: pnl.gross,
           netPnlDollars: pnl.net,

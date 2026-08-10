@@ -1,4 +1,5 @@
 import { assetForSymbol } from "@/lib/assets";
+import { executableOrderSizeMultiplier } from "@/lib/auto-trade-utils";
 import { dollarPerUnit } from "@/lib/instruments";
 import type { AutoTradeOrderSummary, TradeAlert, TradeManagementEvent } from "@/lib/types";
 
@@ -66,11 +67,95 @@ export function liveOpenTradePnlDollars(trade: TradeAlert, priceUnit: number, ex
   return netUnits * dollarPerUnit(trade.symbol, trade.entryPrice) * sizeMultiplier;
 }
 
+export type LiveBrokerExecutionOutcome = {
+  entryPrice?: number;
+  exitPrice?: number;
+  exitTime?: string;
+  feesDollars: number;
+  grossPnlDollars: number;
+  netPnlDollars: number;
+  sizeMultiplier: number;
+};
+
+function strategySizeFromBrokerOrder(order: AutoTradeOrderSummary, trade: TradeAlert): number {
+  return executableOrderSizeMultiplier([order], trade) ?? 0;
+}
+
+/**
+ * Resolve the broker-reported result into chart coordinates. New execution
+ * records carry the closing fill directly. Older ProjectX records can still
+ * recover it from the opening fill, gross P&L, contract size, and tick value.
+ */
+export function liveBrokerExecutionOutcome(trade: TradeAlert): LiveBrokerExecutionOutcome | null {
+  const resultOrders = (trade.autoTradeOrders ?? []).filter(
+    (order) => order.status === "placed" && finiteNumber(order.netPnlDollars)
+  );
+  if (!resultOrders.length) return null;
+
+  const priceUnit = inferredAlertPriceUnit(trade, 0);
+  const dollarsPerPointPerStrategyUnit = priceUnit > 0
+    ? dollarPerUnit(trade.symbol, trade.entryPrice) / priceUnit
+    : 0;
+  const direction = trade.side === "long" ? 1 : -1;
+  let feesDollars = 0;
+  let grossPnlDollars = 0;
+  let netPnlDollars = 0;
+  let sizeMultiplier = 0;
+  let weightedEntryPrice = 0;
+  let weightedExitPrice = 0;
+  let totalPriceWeight = 0;
+  let totalExitPriceWeight = 0;
+  const exitTimes: string[] = [];
+
+  for (const order of resultOrders) {
+    const net = order.netPnlDollars!;
+    const fees = finiteNumber(order.feesDollars) ? order.feesDollars : 0;
+    const gross = finiteNumber(order.grossPnlDollars) ? order.grossPnlDollars : net + fees;
+    const orderSize = strategySizeFromBrokerOrder(order, trade);
+    const entryPrice = finiteNumber(order.filledPrice) ? order.filledPrice : trade.entryPrice;
+    const priceWeight = orderSize * dollarsPerPointPerStrategyUnit;
+    const inferredExitPrice =
+      finiteNumber(order.exitPrice)
+        ? order.exitPrice
+        : priceWeight > 0
+          ? entryPrice + direction * (gross / priceWeight)
+          : undefined;
+
+    feesDollars += fees;
+    grossPnlDollars += gross;
+    netPnlDollars += net;
+    sizeMultiplier += orderSize;
+    if (priceWeight > 0) {
+      weightedEntryPrice += entryPrice * priceWeight;
+      if (finiteNumber(inferredExitPrice)) {
+        weightedExitPrice += inferredExitPrice * priceWeight;
+        totalExitPriceWeight += priceWeight;
+      }
+      totalPriceWeight += priceWeight;
+    }
+    const exitTime = order.exitTime?.trim();
+    if (exitTime && Number.isFinite(Date.parse(exitTime))) exitTimes.push(exitTime);
+  }
+
+  return {
+    entryPrice: totalPriceWeight > 0 ? weightedEntryPrice / totalPriceWeight : undefined,
+    exitPrice: totalExitPriceWeight > 0 ? weightedExitPrice / totalExitPriceWeight : undefined,
+    exitTime: exitTimes.sort((left, right) => Date.parse(right) - Date.parse(left))[0],
+    feesDollars,
+    grossPnlDollars,
+    netPnlDollars,
+    sizeMultiplier
+  };
+}
+
 export function liveClosedTradePnlDollars(
   trade: TradeAlert,
   sizeMultiplier: number,
   dollars: { riskDollars?: number; targetDollars?: number } = {}
 ): number {
+  const brokerOutcome = liveBrokerExecutionOutcome(trade);
+  if (brokerOutcome) return brokerOutcome.netPnlDollars;
+
   const targetDollars = dollars.targetDollars ?? alertTargetDollarsWithSize(trade, sizeMultiplier);
   const riskDollars = dollars.riskDollars ?? alertRiskDollarsWithSize(trade, sizeMultiplier);
   const rawPnlDollars =

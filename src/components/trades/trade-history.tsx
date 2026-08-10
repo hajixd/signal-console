@@ -14,6 +14,7 @@ import { createPortal } from "react-dom";
 import { useAutoTradeAdminMode } from "@/components/auto-trading/use-auto-trade-account-mode";
 import TradePriceChart, { TRADE_CHART_TIMEFRAMES, type TradeChartBar, type TradeChartTimeframe } from "@/components/trades/trade-price-chart";
 import LocalDateTime from "@/components/ui/local-date-time";
+import { resolveFirstTradeBracketHit } from "@/lib/trade-bracket-truth";
 import type { TradeManagementEvent } from "@/lib/types";
 
 export type TradeHistoryRow = {
@@ -150,6 +151,7 @@ function formatSignedMoney(value: number): string {
 
 function formatLossMoney(value: number): string {
   if (!Number.isFinite(value)) return "--";
+  if (Math.abs(value) < 0.005) return "$0";
   return `-$${Math.abs(value).toLocaleString(undefined, {
     maximumFractionDigits: Math.abs(value) < 100 ? 2 : 0
   })}`;
@@ -209,19 +211,50 @@ function nearestPositionForAnchor(bars: ChartBar[], indexValue: number, timeValu
   return bestPosition;
 }
 
-function tradePathStats(trade: TradeHistoryRow, bars: ChartBar[]): { mfe: number | null; mae: number | null } {
+function resolvedTradePathRange(
+  trade: TradeHistoryRow,
+  bars: ChartBar[]
+): { barsHeld: number; end: number; entryTime: string; exitTime: string; start: number } | null {
   const entryPosition = nearestPositionForAnchor(bars, trade.entryIndex, trade.entryTime);
   const exitPosition = nearestPositionForAnchor(bars, trade.exitIndex, trade.exitTime);
-  if (entryPosition == null || exitPosition == null || !bars.length) return { mfe: null, mae: null };
+  if (entryPosition == null || exitPosition == null || !bars.length) return null;
 
-  const start = Math.min(entryPosition, exitPosition);
-  const end = Math.max(entryPosition, exitPosition);
+  const fallbackEnd = Math.max(entryPosition, exitPosition);
+  const bracketHit = trade.managementEvents?.length
+    ? null
+    : resolveFirstTradeBracketHit(
+        {
+          entryIndex: bars[entryPosition]!.index,
+          entryPrice: trade.entryPrice,
+          entryTime: bars[entryPosition]!.time,
+          exitIndex: bars[fallbackEnd]!.index,
+          exitTime: bars[fallbackEnd]!.time,
+          side: trade.side,
+          stopPrice: trade.stopPrice,
+          targetPrice: trade.targetPrice
+        },
+        bars
+      );
+  const end = bracketHit?.position ?? fallbackEnd;
+  return {
+    barsHeld: bracketHit?.barsHeld ?? Math.max(1, end - entryPosition + 1),
+    end,
+    entryTime: bars[entryPosition]!.time,
+    exitTime: bars[end]!.time,
+    start: entryPosition
+  };
+}
+
+function tradePathStats(trade: TradeHistoryRow, bars: ChartBar[]): { mfe: number | null; mae: number | null } {
+  const range = resolvedTradePathRange(trade, bars);
+  if (!range) return { mfe: null, mae: null };
+
   const direction = trade.side === "long" ? 1 : -1;
   const dollarsPerPoint = Math.max(0, trade.dollarsPerPricePoint || 0);
   let maxFavorable = 0;
   let maxAdverse = 0;
 
-  for (let position = start; position <= end; position += 1) {
+  for (let position = range.start; position <= range.end; position += 1) {
     const bar = bars[position];
     if (!bar) continue;
     const favorablePrice = direction === 1 ? bar.high : bar.low;
@@ -1971,6 +2004,7 @@ export default function TradeHistory({ rows }: TradeHistoryProps) {
             targetDollars: activeDisplayTrade.targetDollars,
             riskDollars: activeDisplayTrade.riskDollars,
             dollarsPerPricePoint: activeDisplayTrade.dollarsPerPricePoint,
+            managementEvents: activeDisplayTrade.managementEvents,
             pnlLabel: activeDisplayTrade.pnlLabel
           }
         : null,
@@ -1983,6 +2017,7 @@ export default function TradeHistory({ rows }: TradeHistoryProps) {
       activeDisplayTrade?.exitPrice,
       activeDisplayTrade?.exitTime,
       activeDisplayTrade?.id,
+      activeDisplayTrade?.managementEvents,
       activeDisplayTrade?.modelName,
       activeDisplayTrade?.phase,
       activeDisplayTrade?.pnlLabel,
@@ -1999,8 +2034,20 @@ export default function TradeHistory({ rows }: TradeHistoryProps) {
       isRestricted
     ]
   );
+  const activePathRange = useMemo(
+    () => (activeDisplayTrade ? resolvedTradePathRange(activeDisplayTrade, activeSourceBars) : null),
+    [activeDisplayTrade, activeSourceBars]
+  );
   const activeStats = activeDisplayTrade ? tradePathStats(activeDisplayTrade, activeSourceBars) : { mfe: null, mae: null };
-  const activeDurationLabel = activeDisplayTrade ? `${activeDisplayTrade.durationLabel} / ${activeDisplayTrade.durationDetailLabel}` : "";
+  const activeDurationLabel = activeDisplayTrade
+    ? activePathRange
+      ? `${activePathRange.barsHeld} ${activePathRange.barsHeld === 1 ? "bar" : "bars"} / ${
+          Date.parse(activePathRange.exitTime) <= Date.parse(activePathRange.entryTime)
+            ? "<1m"
+            : formatMinutesCompact((Date.parse(activePathRange.exitTime) - Date.parse(activePathRange.entryTime)) / 60_000)
+        }`
+      : `${activeDisplayTrade.durationLabel} / ${activeDisplayTrade.durationDetailLabel}`
+    : "";
 
   function openTrade(trade: TradeHistoryRow, opener?: HTMLElement) {
     previousFocusRef.current = opener ?? (document.activeElement instanceof HTMLElement ? document.activeElement : null);

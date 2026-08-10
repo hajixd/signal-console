@@ -4,6 +4,7 @@ import { NextResponse } from "next/server";
 import { assetForSymbol, isMarket } from "@/lib/assets";
 import { fetchMarketSourceBars } from "@/lib/market-data";
 import { readDataText } from "@/lib/project-data";
+import { fetchProjectXMarketDataBars } from "@/lib/projectx-market-data";
 import {
   LIVE_SOURCE_TIMEFRAME,
   floorToTimeframeSeconds,
@@ -537,6 +538,23 @@ function aggregateProviderBars(
 }
 
 function yahooChartSymbol(asset: NonNullable<ReturnType<typeof assetForSymbol>>): string | null {
+  if (asset.market === "futures") {
+    const root = asset.symbol.replace(/[^A-Z0-9]/gi, "").toUpperCase();
+    const parentRoot: Record<string, string> = {
+      M2K: "RTY",
+      MBT: "BTC",
+      MCL: "CL",
+      MES: "ES",
+      MET: "ETH",
+      MGC: "GC",
+      MHG: "HG",
+      MNQ: "NQ",
+      MNG: "NG",
+      MYM: "YM",
+      SIL: "SI"
+    };
+    return root ? `${parentRoot[root] ?? root}=F` : null;
+  }
   if (asset.market !== "forex" && asset.market !== "gold_spot") return null;
 
   const compactSymbol = asset.symbol.replace(/[^A-Z]/gi, "").toUpperCase();
@@ -546,7 +564,8 @@ function yahooChartSymbol(asset: NonNullable<ReturnType<typeof assetForSymbol>>)
 async function fetchYahooChartBars(
   asset: NonNullable<ReturnType<typeof assetForSymbol>>,
   startSeconds: number,
-  endSeconds: number
+  endSeconds: number,
+  sourceTimeframe: "1m" | "5m" = "5m"
 ): Promise<Array<{ time: string; open: number; high: number; low: number; close: number; volume?: number }>> {
   const symbol = yahooChartSymbol(asset);
   if (!symbol) return [];
@@ -556,7 +575,7 @@ async function fetchYahooChartBars(
   const url = new URL(`https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}`);
   url.searchParams.set("period1", String(period1));
   url.searchParams.set("period2", String(period2));
-  url.searchParams.set("interval", LIVE_SOURCE_TIMEFRAME);
+  url.searchParams.set("interval", sourceTimeframe);
   url.searchParams.set("includePrePost", "true");
   url.searchParams.set("events", "div,splits");
 
@@ -630,7 +649,7 @@ async function recentProviderBars({
   entryTime: string | null;
   exitTime: string | null;
   requestedTimeframe: string;
-}): Promise<{ bars: MarketBar[]; timeframe: DataTimeframe; replayBars?: MarketBar[] } | null> {
+}): Promise<{ bars: MarketBar[]; timeframe: DataTimeframe; replayBars?: MarketBar[]; replayTimeframe?: DataTimeframe } | null> {
   const entrySeconds = secondsFromSearchTime(entryTime);
   const exitSeconds = secondsFromSearchTime(exitTime);
   if (entrySeconds == null || exitSeconds == null) return null;
@@ -640,17 +659,39 @@ async function recentProviderBars({
   const tradeEnd = Math.max(entrySeconds, exitSeconds);
   if (tradeEnd < nowSeconds - LIVE_FALLBACK_MAX_AGE_SECONDS || tradeStart > nowSeconds + 24 * 60 * 60) return null;
 
-  const resolvedTimeframe = isDataTimeframe(requestedTimeframe) && timeframeSeconds(requestedTimeframe) >= timeframeSeconds(LIVE_SOURCE_TIMEFRAME)
-    ? requestedTimeframe
-    : LIVE_SOURCE_TIMEFRAME;
+  const sourceTimeframe: "1m" | "5m" = requestedTimeframe === "1m" ? "1m" : "5m";
+  const resolvedTimeframe = requestedTimeframe === "1m"
+    ? "1m"
+    : isDataTimeframe(requestedTimeframe) && timeframeSeconds(requestedTimeframe) >= timeframeSeconds(LIVE_SOURCE_TIMEFRAME)
+      ? requestedTimeframe
+      : LIVE_SOURCE_TIMEFRAME;
   const requestedContextSeconds = context * timeframeSeconds(resolvedTimeframe);
   const contextSeconds = Math.min(7 * 24 * 60 * 60, Math.max(3 * 60 * 60, requestedContextSeconds));
   const windowStart = Math.max(nowSeconds - LIVE_FALLBACK_MAX_AGE_SECONDS, tradeStart - contextSeconds);
   const windowEnd = tradeEnd + contextSeconds;
-  const providerStart = windowStart - timeframeSeconds(LIVE_SOURCE_TIMEFRAME);
+  const providerStart = windowStart - timeframeSeconds(sourceTimeframe);
   let sourceBars: Array<{ time: string; open: number; high: number; low: number; close: number; volume?: number }> = [];
   let primaryProviderError: unknown;
-  if (Date.now() >= primaryProviderUnavailableUntil) {
+  if (sourceTimeframe === "1m" && asset.market === "futures") {
+    try {
+      sourceBars = (await fetchProjectXMarketDataBars(asset, {
+        endSeconds: windowEnd,
+        limit: 20_000,
+        startSeconds: providerStart,
+        unit: 2,
+        unitNumber: 1
+      })).map((bar) => ({
+        close: bar.close,
+        high: bar.high,
+        low: bar.low,
+        open: bar.open,
+        time: new Date(bar.time * 1000).toISOString(),
+        volume: bar.volume
+      }));
+    } catch (error) {
+      primaryProviderError = error;
+    }
+  } else if (sourceTimeframe === LIVE_SOURCE_TIMEFRAME && Date.now() >= primaryProviderUnavailableUntil) {
     try {
       sourceBars = await fetchMarketSourceBars(asset, { afterSeconds: providerStart });
     } catch (error) {
@@ -660,7 +701,7 @@ async function recentProviderBars({
   }
   if (!sourceBars.length) {
     try {
-      sourceBars = await fetchYahooChartBars(asset, providerStart, windowEnd);
+      sourceBars = await fetchYahooChartBars(asset, providerStart, windowEnd, sourceTimeframe);
     } catch (fallbackError) {
       if (primaryProviderError) throw primaryProviderError;
       throw fallbackError;
@@ -672,15 +713,16 @@ async function recentProviderBars({
   });
   if (!sourceWindow.length) return null;
 
-  const replayBars = aggregateProviderBars(sourceWindow, LIVE_SOURCE_TIMEFRAME);
-  const bars = resolvedTimeframe === LIVE_SOURCE_TIMEFRAME
+  const replayBars = aggregateProviderBars(sourceWindow, sourceTimeframe);
+  const bars = resolvedTimeframe === sourceTimeframe
     ? replayBars
     : aggregateProviderBars(sourceWindow, resolvedTimeframe);
   if (!bars.length) return null;
 
   return {
     bars,
-    replayBars: resolvedTimeframe === LIVE_SOURCE_TIMEFRAME ? undefined : replayBars,
+    replayBars: resolvedTimeframe === sourceTimeframe ? undefined : replayBars,
+    replayTimeframe: resolvedTimeframe === sourceTimeframe ? undefined : sourceTimeframe,
     timeframe: resolvedTimeframe
   };
 }
@@ -700,7 +742,8 @@ export async function GET(request: Request) {
     return NextResponse.json({ bars: [], error: "Missing symbol" }, { status: 400 });
   }
 
-  for (const candidate of timeframeCandidates(timeframe)) {
+  const candidates = timeframeCandidates(timeframe);
+  const localPayloadForCandidate = async (candidate: string) => {
     const filePath = `${candidate}/${asset.dataFile}`;
     try {
       const bars = await barsForTimeframe({
@@ -720,18 +763,24 @@ export async function GET(request: Request) {
           exitTime: searchParams.get("exitTime"),
           selectedTimeframe: candidate
         });
-        return NextResponse.json({
+        return {
           bars,
           fallback: candidate !== timeframe,
           replayBars: replayBars ?? undefined,
           replayTimeframe: replayBars?.length ? "1m" : undefined,
           requestedTimeframe: timeframe,
           timeframe: candidate
-        });
+        };
       }
     } catch {
-      continue;
+      return null;
     }
+    return null;
+  };
+
+  const exactLocalPayload = await localPayloadForCandidate(candidates[0]);
+  if (exactLocalPayload) {
+    return NextResponse.json(exactLocalPayload);
   }
 
   try {
@@ -748,13 +797,18 @@ export async function GET(request: Request) {
         fallback: providerResult.timeframe !== timeframe,
         liveSource: true,
         replayBars: providerResult.replayBars,
-        replayTimeframe: providerResult.replayBars?.length ? LIVE_SOURCE_TIMEFRAME : undefined,
+        replayTimeframe: providerResult.replayTimeframe,
         requestedTimeframe: timeframe,
         timeframe: providerResult.timeframe
       });
     }
   } catch (error) {
     console.warn("Trade chart live fallback failed", error instanceof Error ? error.message : error);
+  }
+
+  for (const candidate of candidates.slice(1)) {
+    const fallbackPayload = await localPayloadForCandidate(candidate);
+    if (fallbackPayload) return NextResponse.json(fallbackPayload);
   }
 
   return NextResponse.json({
