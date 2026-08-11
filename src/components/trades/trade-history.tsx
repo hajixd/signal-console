@@ -745,7 +745,19 @@ export function withOpenTradeChartMark(trade: TradeHistoryRow, bars: ChartBar[])
  */
 export function withClosedTradeChartTruth(trade: TradeHistoryRow, bars: ChartBar[]): TradeHistoryRow {
   if (trade.isOpen || trade.hasBrokerOutcome || !bars.length) return trade;
-  const range = resolvedTradePathRange(trade, bars);
+  // Legacy live alerts may have been closed from the old fallback feed a few
+  // minutes before the primary Forex candles actually reached the bracket.
+  // Search the chart's post-trade context for their first real touch. Stored
+  // backtests keep their original replay boundary and broker fills remain
+  // authoritative via the guard above.
+  const replayTrade = trade.includeEntryBar === false
+    ? {
+        ...trade,
+        exitIndex: bars[bars.length - 1]!.index,
+        exitTime: bars[bars.length - 1]!.time
+      }
+    : trade;
+  const range = resolvedTradePathRange(replayTrade, bars);
   if (!range?.boundary) return trade;
 
   const direction = trade.side === "long" ? 1 : -1;
