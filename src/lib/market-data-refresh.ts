@@ -96,7 +96,7 @@ export type MarketDataRefreshOptions = {
   saveStatus?: boolean;
 };
 
-type OneMinuteFetchOptions = {
+export type OneMinuteFetchOptions = {
   afterSeconds?: number;
   beforeSeconds?: number;
 };
@@ -549,6 +549,29 @@ async function fetchOneMinuteBars(asset: AssetDefinition, options: OneMinuteFetc
   }
 
   throw new Error(`Configured market data providers failed for ${asset.symbol}: ${failures.join(" | ")}`);
+}
+
+/**
+ * Fetches an explicit historical chart window from Twelve Data. This is kept
+ * separate from the normal futures refresh path because continuous crypto
+ * futures can be charted from their underlying spot pair after the broker's
+ * expired contract has disappeared from ProjectX.
+ */
+export async function fetchTwelveDataChartBars(
+  symbol: string,
+  interval: "1min" | "5min",
+  options: OneMinuteFetchOptions = {}
+): Promise<Bar[]> {
+  if (!twelveDataAvailable()) {
+    throw new Error(`TwelveData quota cooldown (${Math.ceil(twelveDataCooldownRemainingMs() / 60_000)}m remaining)`);
+  }
+
+  try {
+    return (await fetchTwelveDataTimeframeBars(symbol, interval, options)).map(liveBarFromCsvBar);
+  } catch (error) {
+    markTwelveDataProviderFailure(error);
+    throw error;
+  }
 }
 
 /**

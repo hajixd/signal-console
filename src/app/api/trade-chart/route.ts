@@ -3,7 +3,7 @@ import path from "node:path";
 import { NextResponse } from "next/server";
 import { assetForSymbol, isMarket } from "@/lib/assets";
 import { fetchMarketSourceBars } from "@/lib/market-data";
-import { fetchLiveOneMinuteBars } from "@/lib/market-data-refresh";
+import { fetchLiveOneMinuteBars, fetchTwelveDataChartBars } from "@/lib/market-data-refresh";
 import { readDataText } from "@/lib/project-data";
 import { fetchProjectXMarketDataBars } from "@/lib/projectx-market-data";
 import {
@@ -566,7 +566,7 @@ async function fetchYahooChartBars(
   asset: NonNullable<ReturnType<typeof assetForSymbol>>,
   startSeconds: number,
   endSeconds: number,
-  sourceTimeframe: "1m" | "5m" = "5m"
+  sourceTimeframe: "1m" | "5m" | "1h" | "1d" = "5m"
 ): Promise<Array<{ time: string; open: number; high: number; low: number; close: number; volume?: number }>> {
   const symbol = yahooChartSymbol(asset);
   if (!symbol) return [];
@@ -636,6 +636,98 @@ async function fetchYahooChartBars(
   }
 
   return bars;
+}
+
+export function historicalTwelveDataChartSymbol(
+  asset: NonNullable<ReturnType<typeof assetForSymbol>>
+): string | null {
+  const underlyingByFuturesRoot: Record<string, string> = {
+    MBT: "BTC/USD",
+    MET: "ETH/USD"
+  };
+  if (asset.market === "futures") return underlyingByFuturesRoot[asset.symbol] ?? null;
+  if (asset.market === "forex" || asset.market === "gold_spot" || asset.market === "crypto") {
+    return asset.twelveDataSymbol ?? asset.symbol;
+  }
+  return null;
+}
+
+async function historicalProviderBars({
+  asset,
+  context,
+  entryTime,
+  exitTime,
+  requestedTimeframe
+}: {
+  asset: NonNullable<ReturnType<typeof assetForSymbol>>;
+  context: number;
+  entryTime: string | null;
+  exitTime: string | null;
+  requestedTimeframe: string;
+}): Promise<{ bars: MarketBar[]; timeframe: DataTimeframe; replayBars?: MarketBar[]; replayTimeframe?: DataTimeframe } | null> {
+  const entrySeconds = secondsFromSearchTime(entryTime);
+  const exitSeconds = secondsFromSearchTime(exitTime);
+  if (entrySeconds == null || exitSeconds == null) return null;
+
+  const tradeStart = Math.min(entrySeconds, exitSeconds);
+  const tradeEnd = Math.max(entrySeconds, exitSeconds);
+  const requested = isDataTimeframe(requestedTimeframe) ? requestedTimeframe : "1m";
+  const contextSeconds = Math.min(
+    16 * 24 * 60 * 60,
+    Math.max(3 * 60 * 60, context * timeframeSeconds(requested))
+  );
+  const windowStart = tradeStart - contextSeconds;
+  const windowEnd = tradeEnd + contextSeconds;
+  const twelveDataSymbol = historicalTwelveDataChartSymbol(asset);
+
+  if (twelveDataSymbol) {
+    const sourceTimeframe: "1m" | "5m" = requested === "1m" ? "1m" : "5m";
+    const resolvedTimeframe = timeframeSeconds(requested) >= timeframeSeconds(sourceTimeframe)
+      ? requested
+      : sourceTimeframe;
+    try {
+      const sourceBars = await fetchTwelveDataChartBars(
+        twelveDataSymbol,
+        sourceTimeframe === "1m" ? "1min" : "5min",
+        { afterSeconds: windowStart, beforeSeconds: windowEnd }
+      );
+      const sourceWindow = sourceBars.filter((bar) => {
+        const seconds = Math.floor(Date.parse(bar.time) / 1000);
+        return Number.isFinite(seconds) && seconds >= windowStart && seconds <= windowEnd;
+      });
+      if (sourceWindow.length) {
+        const replayBars = aggregateProviderBars(sourceWindow, sourceTimeframe);
+        const bars = resolvedTimeframe === sourceTimeframe
+          ? replayBars
+          : aggregateProviderBars(sourceWindow, resolvedTimeframe);
+        if (bars.length) {
+          return {
+            bars,
+            replayBars: resolvedTimeframe === sourceTimeframe ? undefined : replayBars,
+            replayTimeframe: resolvedTimeframe === sourceTimeframe ? undefined : sourceTimeframe,
+            timeframe: resolvedTimeframe
+          };
+        }
+      }
+    } catch (error) {
+      console.warn("TwelveData historical chart fallback failed", error instanceof Error ? error.message : error);
+    }
+  }
+
+  // Yahoo retains hourly candles much longer than minute candles. It is a
+  // final visual fallback for expired contracts when no exact stored feed is
+  // reachable, and is deliberately labelled as a timeframe fallback.
+  try {
+    const yahooSource = "1h" as const;
+    const yahooContextSeconds = Math.min(30 * 24 * 60 * 60, Math.max(12 * 60 * 60, context * timeframeSeconds(yahooSource)));
+    const yahooStart = tradeStart - yahooContextSeconds;
+    const yahooEnd = tradeEnd + yahooContextSeconds;
+    const sourceBars = await fetchYahooChartBars(asset, yahooStart, yahooEnd, yahooSource);
+    const bars = aggregateProviderBars(sourceBars, yahooSource);
+    return bars.length ? { bars, timeframe: yahooSource } : null;
+  } catch {
+    return null;
+  }
 }
 
 async function recentProviderBars({
@@ -817,6 +909,26 @@ export async function GET(request: Request) {
     return null;
   };
 
+  const historicalProviderPayload = async () => {
+    const providerResult = await historicalProviderBars({
+      asset,
+      context,
+      entryTime: searchParams.get("entryTime"),
+      exitTime: searchParams.get("exitTime"),
+      requestedTimeframe: timeframe
+    });
+    if (!providerResult) return null;
+    return {
+      bars: providerResult.bars,
+      fallback: providerResult.timeframe !== timeframe,
+      providerSource: true,
+      replayBars: providerResult.replayBars,
+      replayTimeframe: providerResult.replayTimeframe,
+      requestedTimeframe: timeframe,
+      timeframe: providerResult.timeframe
+    };
+  };
+
   if (isOpen) {
     try {
       const livePayload = await providerPayload();
@@ -841,6 +953,13 @@ export async function GET(request: Request) {
       if (livePayload) return NextResponse.json(livePayload);
     } catch (error) {
       console.warn("Trade chart live fallback failed", error instanceof Error ? error.message : error);
+    }
+
+    try {
+      const historicalPayload = await historicalProviderPayload();
+      if (historicalPayload) return NextResponse.json(historicalPayload);
+    } catch (error) {
+      console.warn("Trade chart historical fallback failed", error instanceof Error ? error.message : error);
     }
   }
 
