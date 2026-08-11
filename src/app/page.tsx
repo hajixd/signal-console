@@ -488,7 +488,9 @@ function historyBarsKey(symbol: string, timeframe: TradeChartTimeframe): string 
   return `${symbol}\t${timeframe}`;
 }
 
-async function loadHistoryBarsBySymbol(trades: BacktestTrade[]): Promise<Map<string, TradeBracketBar[]>> {
+type HistoryBarTradeRange = Pick<BacktestTrade, "entryIndex" | "entryTime" | "exitIndex" | "exitTime" | "symbol">;
+
+async function loadHistoryBarsBySymbol(trades: HistoryBarTradeRange[]): Promise<Map<string, TradeBracketBar[]>> {
   const rangesBySymbol = new Map<string, { path: string; ranges: TradeHistoryBarRange[] }>();
 
   for (const trade of trades) {
@@ -1333,7 +1335,7 @@ function resolvedBacktestExit({
   trade: BacktestTrade;
 }): ResolvedBacktestExit {
   const hasManagedLevels = Boolean(trade.managementEvents?.length);
-  const hit: TradeBracketHit | null = !hasManagedLevels && bars?.length
+  const hit: TradeBracketHit | null = bars?.length
     ? resolveFirstTradeBracketHit(
         {
           entryIndex: trade.entryIndex,
@@ -1343,7 +1345,8 @@ function resolvedBacktestExit({
           exitTime: trade.exitTime,
           side: trade.side,
           stopPrice,
-          targetPrice
+          targetPrice,
+          managementEvents: trade.managementEvents
         },
         bars
       )
@@ -1353,14 +1356,18 @@ function resolvedBacktestExit({
   const exitPrice = hit?.exitPrice ?? (hasManagedLevels ? trade.exitPrice : effectiveBacktestExitPrice(trade, targetPrice, stopPrice, boundary));
   const direction = trade.side === "long" ? 1 : -1;
   const netUnits = priceUnit > 0 ? ((exitPrice - trade.entryPrice) * direction) / priceUnit : trade.netUnits;
-  const pnlDollars = hasManagedLevels
+  const initialRiskDistance = Math.abs(trade.entryPrice - stopPrice);
+  const firstTouchPnlDollars = hit && initialRiskDistance > 0
+    ? ((hit.exitPrice - trade.entryPrice) * direction * riskDollars) / initialRiskDistance
+    : null;
+  const pnlDollars = firstTouchPnlDollars ?? (hasManagedLevels
     ? rawPnlDollars
     : boundary === "target"
       ? Math.abs(targetDollars)
       : boundary === "stop"
         ? -Math.abs(riskDollars)
-        : boundedTradeDollarPnl(rawPnlDollars, targetDollars, riskDollars);
-  const rMultiple = hasManagedLevels ? trade.rMultiple : riskDollars > 0 ? pnlDollars / riskDollars : trade.rMultiple;
+        : boundedTradeDollarPnl(rawPnlDollars, targetDollars, riskDollars));
+  const rMultiple = riskDollars > 0 ? pnlDollars / riskDollars : trade.rMultiple;
 
   return {
     barsHeld: hit?.barsHeld ?? oneMinuteBarsHeld(trade.entryTime, trade.exitTime, trade.barsHeld),
@@ -1836,9 +1843,23 @@ export default async function Home({ searchParams }: HomeProps) {
   });
   const visibleStoredBacktestHistoryTrades = historyBacktestTrades;
   const shouldResolveHistoryBrackets = visibleStoredBacktestHistoryTrades.length <= 120;
-  const historyTradeBarsBySymbol = shouldResolveHistoryBrackets
-    ? await loadHistoryBarsBySymbol(visibleStoredBacktestHistoryTrades)
-    : new Map<string, TradeBracketBar[]>();
+  const liveHistoryBarRanges: HistoryBarTradeRange[] = activeMarketLiveTrades.flatMap((trade) => {
+    if (!liveTradeClosed(trade) || liveBrokerExecutionOutcome(trade)) return [];
+    const brokerEntry = liveBrokerEntryOutcome(trade);
+    const entryTime = brokerEntry?.entryTime ?? trade.signalTime;
+    const exitTime = trade.lifecycleTime;
+    return [{
+      entryIndex: 0,
+      entryTime,
+      exitIndex: oneMinuteBarsHeld(entryTime, exitTime),
+      exitTime,
+      symbol: trade.symbol
+    }];
+  });
+  const historyTradeBarsBySymbol = await loadHistoryBarsBySymbol([
+    ...(shouldResolveHistoryBrackets ? visibleStoredBacktestHistoryTrades : []),
+    ...liveHistoryBarRanges
+  ]);
   const storedBacktestHistoryRows: TradeHistoryRow[] = visibleStoredBacktestHistoryTrades.map((trade, index) => {
     const sizeMultiplier = optionByKey.get(trade.datasetId)?.sizeMultiplier ?? 1;
     const tradeMultiplier = tradeSizeMultiplier(trade, sizeMultiplier);
@@ -1939,6 +1960,7 @@ export default async function Home({ searchParams }: HomeProps) {
       targetDollars,
       riskDollars,
       dollarsPerPricePoint,
+      priceUnit,
       tpUnitsLabel: `${fmtNumber(trade.tpUnits)} ${unitLabel}`,
       slUnitsLabel: `${fmtNumber(trade.slUnits)} ${unitLabel}`
     };
@@ -2036,25 +2058,49 @@ export default async function Home({ searchParams }: HomeProps) {
         : undefined;
       const hasCurrentMark = Boolean(latestOpenPrice);
       const chartPathAvailable = isClosed || (hasCurrentMark && liveTradeChartPathIsCurrent(trade, now));
-      const rawExitPrice = isClosed
+      const lifecycleEndTime = isClosed ? brokerOutcome?.exitTime ?? trade.lifecycleTime : latestOpenPrice?.time ?? trade.signalTime;
+      const lifecycleExitPrice = isClosed
         ? brokerOutcome?.exitPrice ?? finiteNumberOr(trade.lifecyclePrice, entryPrice)
         : latestOpenPrice?.price ?? entryPrice;
-      const rawPnlDollars = isClosed
-        ? liveClosedTradePnlDollars(trade, sizeMultiplier, { riskDollars, targetDollars })
-        : hasCurrentMark
-          ? liveOpenTradePnlDollars(trade, priceUnit, rawExitPrice, sizeMultiplier, entryPrice)
-          : 0;
-      const exitBoundary = exitBoundaryFromReason(trade.lifecycleStatus);
-      const endTime = isClosed ? brokerOutcome?.exitTime ?? trade.lifecycleTime : latestOpenPrice?.time ?? trade.signalTime;
+      const lifecycleBars = historyTradeBarsBySymbol.get(historyBarsKey(trade.symbol, UNIVERSAL_TRADE_TIMEFRAME));
+      const firstTouch = isClosed && !brokerOutcome && lifecycleBars?.length
+        ? resolveFirstTradeBracketHit(
+            {
+              entryIndex: 0,
+              entryPrice,
+              entryTime,
+              exitIndex: oneMinuteBarsHeld(entryTime, lifecycleEndTime),
+              exitTime: lifecycleEndTime,
+              includeEntryBar: false,
+              managementEvents: trade.managementEvents,
+              side: trade.side,
+              stopPrice,
+              targetPrice
+            },
+            lifecycleBars
+          )
+        : null;
+      const endTime = firstTouch?.exitTime ?? lifecycleEndTime;
+      const rawExitPrice = isClosed
+        ? firstTouch?.exitPrice ?? lifecycleExitPrice
+        : lifecycleExitPrice;
       const dollarsPerPricePoint = priceUnit > 0
         ? (dollarPerUnit(trade.symbol, entryPrice) * sizeMultiplier) / priceUnit
         : 0;
+      const rawPnlDollars = isClosed
+        ? firstTouch
+          ? (firstTouch.exitPrice - entryPrice) * (trade.side === "long" ? 1 : -1) * dollarsPerPricePoint
+          : liveClosedTradePnlDollars(trade, sizeMultiplier, { riskDollars, targetDollars })
+        : hasCurrentMark
+          ? liveOpenTradePnlDollars(trade, priceUnit, rawExitPrice, sizeMultiplier, entryPrice)
+          : 0;
+      const exitBoundary = firstTouch?.boundary ?? exitBoundaryFromReason(trade.lifecycleStatus);
       const consistentExit = isClosed
         ? consistentTradeOutcome({
             dollarsPerPricePoint,
             entryPrice,
             exitPrice: rawExitPrice,
-            exitReason: effectiveExitReason(trade.lifecycleStatus, exitBoundary),
+            exitReason: firstTouch?.reason ?? effectiveExitReason(trade.lifecycleStatus, exitBoundary),
             exitTime: endTime,
             managementEvents: trade.managementEvents,
             pnlDollars: rawPnlDollars,
@@ -2125,6 +2171,7 @@ export default async function Home({ searchParams }: HomeProps) {
         targetDollars,
         riskDollars,
         dollarsPerPricePoint,
+        priceUnit,
         tpUnitsLabel: `${fmtNumber(trade.tpUnits)} ${unitLabel}`,
         slUnitsLabel: `${fmtNumber(trade.slUnits)} ${unitLabel}`,
         lockedSize: true,
@@ -2132,6 +2179,8 @@ export default async function Home({ searchParams }: HomeProps) {
         hasCurrentMark,
         chartPathAvailable,
         isEstimatedPnl: !isClosed && hasCurrentMark,
+        hasBrokerOutcome: Boolean(brokerOutcome),
+        includeEntryBar: false,
         markTime: latestOpenPrice?.time
       };
     });

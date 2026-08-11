@@ -73,12 +73,13 @@ test("moving stop levels also end the path on their first one-minute touch", () 
   const bars = [
     bar(0, 100, 100.5, 99.5, 100.2),
     bar(1, 100.2, 101.5, 100.1, 101.3),
-    bar(2, 101.3, 101.4, 100.8, 101)
+    bar(2, 101.3, 101.4, 100.8, 101),
+    bar(3, 101, 101.2, 100.9, 101.1)
   ];
   const hit = resolveFirstTradeBracketHit(
     longTrade({
-      exitIndex: 2,
-      exitTime: "2026-08-06T16:02:00.000Z",
+      exitIndex: 3,
+      exitTime: "2026-08-06T16:03:00.000Z",
       managementEvents: [
         {
           price: 101,
@@ -93,5 +94,20 @@ test("moving stop levels also end the path on their first one-minute touch", () 
 
   assert.equal(hit?.boundary, "stop");
   assert.equal(hit?.exitPrice, 101);
+  assert.equal(hit?.exitTime, "2026-08-06T16:03:00.000Z");
+});
+
+test("a live alert ignores movement inside the signal candle before it became actionable", () => {
+  const bars = [
+    bar(0, 100, 100.5, 97.5, 100.2),
+    bar(1, 100.2, 101.2, 99.5, 101),
+    bar(2, 101, 102.2, 100.8, 102)
+  ];
+  const hit = resolveFirstTradeBracketHit(
+    longTrade({ includeEntryBar: false, exitIndex: 2, exitTime: "2026-08-06T16:02:00.000Z" }),
+    bars
+  );
+
+  assert.equal(hit?.boundary, "target");
   assert.equal(hit?.exitTime, "2026-08-06T16:02:00.000Z");
 });

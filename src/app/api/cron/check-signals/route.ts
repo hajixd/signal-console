@@ -708,7 +708,11 @@ function evaluateTradeLifecycleAndManagement(
   return { hit: null, managementEvents: newManagementEvents };
 }
 
-async function notifyTradeLifecycles(result: CronResult, barsByAssetKey: Map<string, Bar[]>, rules: StrategyRule[]): Promise<void> {
+async function notifyTradeLifecycles(
+  result: CronResult,
+  rules: StrategyRule[],
+  refreshedBarsByTimeframeKey?: Map<string, Bar[]>
+): Promise<void> {
   const oldestSignalTime = Date.now() - lifecycleLookbackMs();
   const openTrades = (await getTrades()).filter(
     (trade) =>
@@ -728,10 +732,10 @@ async function notifyTradeLifecycles(result: CronResult, barsByAssetKey: Map<str
       const assetKey = trade.assetKey!;
       let bars = lifecycleBarsByAssetKey.get(assetKey);
       if (!bars) {
-        bars = await fetchStoredAssetBars(assetKey, 5_000, "1m").catch(async () => {
-          const cached = barsByAssetKey.get(assetKey);
-          return cached?.length ? cached : fetchStoredAssetBars(assetKey);
-        });
+        const freshlySyncedOneMinuteBars = refreshedBarsByTimeframeKey?.get(assetTimeframeBarsKey(assetKey, "1m"));
+        bars = freshlySyncedOneMinuteBars?.length
+          ? freshlySyncedOneMinuteBars
+          : await fetchStoredAssetBars(assetKey, 5_000, "1m").catch(() => []);
         lifecycleBarsByAssetKey.set(assetKey, bars);
       }
       let hourlyBars = hourlyBarsByAssetKey.get(assetKey);
@@ -1282,7 +1286,7 @@ export async function runSignalCheck(options: RunSignalCheckOptions = {}): Promi
     if (outcome.trade) result.generated.push(outcome.trade);
   }
 
-  await notifyTradeLifecycles(result, barsByAssetKey, rules);
+  await notifyTradeLifecycles(result, rules, options.initialBarsByTimeframeKey);
 
   return result;
 }

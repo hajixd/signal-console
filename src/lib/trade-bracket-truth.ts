@@ -11,6 +11,13 @@ export type TradeBracketBar = {
 
 export type TradeBracketInput = {
   side: TradeBracketSide;
+  /**
+   * Historical backtests enter at the opening of their entry bar, while live
+   * alerts become actionable only after the signal bar closes. Set this to
+   * false for live alerts so pre-entry movement inside the signal candle can
+   * never stop out a trade retroactively.
+   */
+  includeEntryBar?: boolean;
   entryIndex: number;
   exitIndex: number;
   entryTime: string;
@@ -138,7 +145,10 @@ function managedBracketLevelsAt(
 
   for (const event of [...(trade.managementEvents ?? [])].sort((left, right) => Date.parse(left.time) - Date.parse(right.time))) {
     const eventMs = Date.parse(event.time);
-    if (!Number.isFinite(eventMs) || !Number.isFinite(barMs) || eventMs > barMs) break;
+    // Management decisions are made from a completed candle. A stop edited at
+    // that candle's timestamp becomes active on the next candle, matching the
+    // live lifecycle engine and avoiding same-bar lookahead.
+    if (!Number.isFinite(eventMs) || !Number.isFinite(barMs) || eventMs >= barMs) break;
     if (event.type === "edit_sl") {
       const nextStop = event.stopLossPrice ?? event.price;
       if (Number.isFinite(nextStop)) stopPrice = nextStop;
@@ -158,8 +168,9 @@ export function resolveFirstTradeBracketHit(trade: TradeBracketInput, bars: Trad
   const exitPosition = nearestTradeBarPosition(bars, trade.exitIndex, trade.exitTime);
   if (entryPosition == null || exitPosition == null) return null;
 
-  const start = entryPosition;
   const end = Math.max(entryPosition, exitPosition);
+  const start = entryPosition + (trade.includeEntryBar === false ? 1 : 0);
+  if (start > end) return null;
 
   for (let position = start; position <= end; position += 1) {
     const bar = bars[position];

@@ -75,6 +75,7 @@ type TradeChartTrade = {
   targetPrice: number;
   stopPrice: number;
   managementEvents?: TradeManagementEvent[];
+  includeEntryBar?: boolean;
   targetDollars?: number;
   riskDollars?: number;
   dollarsPerPricePoint?: number;
@@ -518,6 +519,7 @@ function firstBracketExitCandle(
       exitIndex: safeFallbackExitCandle.source.index,
       exitTime: safeFallbackExitCandle.source.time,
       managementEvents: trade.managementEvents,
+      includeEntryBar: trade.includeEntryBar,
       side: trade.side,
       stopPrice: trade.stopPrice,
       targetPrice: trade.targetPrice

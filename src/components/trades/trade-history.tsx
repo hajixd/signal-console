@@ -78,6 +78,7 @@ export type TradeHistoryRow = {
   targetDollars: number;
   riskDollars: number;
   dollarsPerPricePoint: number;
+  priceUnit?: number;
   tpUnitsLabel: string;
   slUnitsLabel: string;
   lockedSize?: boolean;
@@ -85,6 +86,8 @@ export type TradeHistoryRow = {
   hasCurrentMark?: boolean;
   chartPathAvailable?: boolean;
   isEstimatedPnl?: boolean;
+  hasBrokerOutcome?: boolean;
+  includeEntryBar?: boolean;
   markTime?: string;
 };
 
@@ -286,6 +289,7 @@ export function resolvedTradePathRange(
       exitIndex: bars[fallbackEnd]!.index,
       exitTime: bars[fallbackEnd]!.time,
       managementEvents: trade.managementEvents,
+      includeEntryBar: trade.includeEntryBar,
       side: trade.side,
       stopPrice: trade.stopPrice,
       targetPrice: trade.targetPrice
@@ -732,6 +736,52 @@ export function withOpenTradeChartMark(trade: TradeHistoryRow, bars: ChartBar[])
     pnlLabel: formatSignedMoney(pnlDollars),
     rMultipleLabel: riskDollars > 0 ? `${(pnlDollars / riskDollars).toFixed(2)}R` : "--"
   };
+}
+
+/**
+ * Reconciles a closed alert with the exact candles currently displayed. This
+ * is intentionally skipped for broker-reported fills, which remain the source
+ * of truth even when a third-party quote feed differs slightly.
+ */
+export function withClosedTradeChartTruth(trade: TradeHistoryRow, bars: ChartBar[]): TradeHistoryRow {
+  if (trade.isOpen || trade.hasBrokerOutcome || !bars.length) return trade;
+  const range = resolvedTradePathRange(trade, bars);
+  if (!range?.boundary) return trade;
+
+  const direction = trade.side === "long" ? 1 : -1;
+  const pnlDollars = (range.exitPrice - trade.entryPrice) * direction * Math.max(0, trade.dollarsPerPricePoint);
+  const riskDollars = Math.max(0, Math.abs(trade.riskDollars));
+  const unitLabel = trade.netUnitsLabel.trim().split(/\s+/).slice(1).join(" ") || "units";
+  const netUnits = trade.priceUnit && trade.priceUnit > 0
+    ? ((range.exitPrice - trade.entryPrice) * direction) / trade.priceUnit
+    : null;
+  const elapsedMs = Math.max(0, Date.parse(range.exitTime) - Date.parse(range.entryTime));
+  const durationMinutes = Number.isFinite(elapsedMs) ? elapsedMs / 60_000 : range.barsHeld;
+  const pricePrefix = trade.exitPriceLabel.includes("$") ? "$" : "";
+  const pnlClassName = pnlDollars > 0 ? "up" : pnlDollars < 0 ? "down" : "neutral";
+
+  return {
+    ...trade,
+    durationDetailLabel: durationMinutes < 1 ? "<1m" : formatMinutesCompact(durationMinutes),
+    durationLabel: `${range.barsHeld} ${range.barsHeld === 1 ? "bar" : "bars"}`,
+    exitIndex: trade.entryIndex + range.barsHeld,
+    exitPrice: range.exitPrice,
+    exitPriceLabel: `${pricePrefix}${formatChartPrice(range.exitPrice)}`,
+    exitReasonLabel: range.boundary === "target" ? "Take Profit" : "Stop Loss",
+    exitTime: range.exitTime,
+    exitTimeLabel: timeLabel(range.exitTime),
+    isEstimatedPnl: false,
+    netUnitsLabel: netUnits == null ? trade.netUnitsLabel : `${formatChartPrice(netUnits, 2)} ${unitLabel}`,
+    pnlClassName,
+    pnlDollars,
+    pnlLabel: formatSignedMoney(pnlDollars),
+    rMultipleLabel: riskDollars > 0 ? `${(pnlDollars / riskDollars).toFixed(2)}R` : "--",
+    rowClassName: pnlDollars > 0 ? "up-row" : pnlDollars < 0 ? "down-row" : "neutral-row"
+  };
+}
+
+function withTradeChartTruth(trade: TradeHistoryRow, bars: ChartBar[]): TradeHistoryRow {
+  return trade.isOpen ? withOpenTradeChartMark(trade, bars) : withClosedTradeChartTruth(trade, bars);
 }
 
 function isOpenFuturesTrade(trade: TradeHistoryRow): boolean {
@@ -1654,7 +1704,7 @@ export function TradeHistoryCalendar({ rows }: TradeHistoryProps) {
           {selectedDayTrades.map((sourceTrade) => {
             const isExpanded = expandedTradeId === sourceTrade.id;
             const chartState = chartStates[sourceTrade.id] ?? { status: "idle", bars: [] };
-            const trade = withOpenTradeChartMark(sourceTrade, chartState.bars);
+            const trade = withTradeChartTruth(sourceTrade, chartState.bars);
             const durationMinutes = tradeDurationMinutes(trade);
             const displayedModelName = isRestricted ? "Admin only" : trade.modelName;
             const visibleSymbol = displaySymbol(trade);
@@ -2298,7 +2348,7 @@ export default function TradeHistory({ rows }: TradeHistoryProps) {
   const activeLiveBar = activeTrade ? liveBarsBySymbol[projectXQuoteSymbol(activeTrade)] : undefined;
   const activeSourceBars = chartState.sourceBars?.length ? chartState.sourceBars : chartState.bars;
   const activeDisplayTrade = useMemo(
-    () => (activeLiveTrade ? withOpenTradeChartMark(activeLiveTrade, activeSourceBars) : null),
+    () => (activeLiveTrade ? withTradeChartTruth(activeLiveTrade, activeSourceBars) : null),
     [activeLiveTrade, activeSourceBars]
   );
   const activeChartTrade = useMemo(
@@ -2328,6 +2378,7 @@ export default function TradeHistory({ rows }: TradeHistoryProps) {
             riskDollars: activeDisplayTrade.riskDollars,
             dollarsPerPricePoint: activeDisplayTrade.dollarsPerPricePoint,
             managementEvents: activeDisplayTrade.managementEvents,
+            includeEntryBar: activeDisplayTrade.includeEntryBar,
             pnlLabel: activeDisplayTrade.pnlLabel,
             isOpen: activeDisplayTrade.isOpen
           }

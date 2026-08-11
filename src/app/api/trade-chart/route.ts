@@ -3,6 +3,7 @@ import path from "node:path";
 import { NextResponse } from "next/server";
 import { assetForSymbol, isMarket } from "@/lib/assets";
 import { fetchMarketSourceBars } from "@/lib/market-data";
+import { fetchLiveOneMinuteBars } from "@/lib/market-data-refresh";
 import { readDataText } from "@/lib/project-data";
 import { fetchProjectXMarketDataBars } from "@/lib/projectx-market-data";
 import {
@@ -693,6 +694,15 @@ async function recentProviderBars({
         time: new Date(bar.time * 1000).toISOString(),
         volume: bar.volume
       }));
+    } catch (error) {
+      primaryProviderError = error;
+    }
+  } else if (sourceTimeframe === "1m" && (asset.market === "forex" || asset.market === "gold_spot")) {
+    try {
+      sourceBars = await fetchLiveOneMinuteBars(asset, {
+        afterSeconds: providerStart,
+        beforeSeconds: windowEnd
+      });
     } catch (error) {
       primaryProviderError = error;
     }

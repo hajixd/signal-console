@@ -98,6 +98,7 @@ export type MarketDataRefreshOptions = {
 
 type OneMinuteFetchOptions = {
   afterSeconds?: number;
+  beforeSeconds?: number;
 };
 
 const DEFAULT_MARKET_DATA_REFRESH_CONCURRENCY = 4;
@@ -412,8 +413,8 @@ function oneMinuteProviderStartDate(options: OneMinuteFetchOptions, fallbackLook
   return start;
 }
 
-function oneMinuteProviderEndDate(): Date {
-  const end = new Date();
+function oneMinuteProviderEndDate(options: OneMinuteFetchOptions = {}): Date {
+  const end = options.beforeSeconds ? new Date(options.beforeSeconds * 1000) : new Date();
   end.setUTCSeconds(0, 0);
   return end;
 }
@@ -424,7 +425,7 @@ function providerDateParam(value: Date): string {
 
 async function fetchProjectXOneMinuteBars(asset: AssetDefinition, options: OneMinuteFetchOptions = {}): Promise<CsvBar[]> {
   const start = oneMinuteProviderStartDate(options, 12 * 24 * 60 * 60 * 1000);
-  const end = oneMinuteProviderEndDate();
+  const end = oneMinuteProviderEndDate(options);
   const bars = await fetchProjectXMarketDataBars(asset, {
     endSeconds: Math.floor(end.getTime() / 1000),
     limit: 20_000,
@@ -460,7 +461,7 @@ async function fetchOandaOneMinuteBars(instrument: string, options: OneMinuteFet
   });
   if (options.afterSeconds) {
     params.set("from", oneMinuteProviderStartDate(options, 0).toISOString());
-    params.set("to", oneMinuteProviderEndDate().toISOString());
+    params.set("to", oneMinuteProviderEndDate(options).toISOString());
   } else {
     params.set("count", "1500");
   }
@@ -493,7 +494,7 @@ async function fetchTwelveDataTimeframeBars(symbol: string, interval: "1min" | "
     });
     if (options.afterSeconds) {
       params.set("start_date", providerDateParam(oneMinuteProviderStartDate(options, 0)));
-      params.set("end_date", providerDateParam(oneMinuteProviderEndDate()));
+      params.set("end_date", providerDateParam(oneMinuteProviderEndDate(options)));
     }
     const response = await fetch(`https://api.twelvedata.com/time_series?${params.toString()}`, { cache: "no-store" });
     const raw = await response.text();
@@ -548,6 +549,18 @@ async function fetchOneMinuteBars(asset: AssetDefinition, options: OneMinuteFetc
   }
 
   throw new Error(`Configured market data providers failed for ${asset.symbol}: ${failures.join(" | ")}`);
+}
+
+/**
+ * Returns the same broker-grade one-minute feed used by the sync and lifecycle
+ * jobs. Trade charts use this instead of a different public quote feed so a
+ * candle cannot visually contradict the recorded TP/SL result.
+ */
+export async function fetchLiveOneMinuteBars(
+  asset: AssetDefinition,
+  options: OneMinuteFetchOptions = {}
+): Promise<Bar[]> {
+  return (await fetchOneMinuteBars(asset, options)).map(liveBarFromCsvBar);
 }
 
 async function writeLocalText(relativePath: string, text: string): Promise<void> {
