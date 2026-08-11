@@ -54,6 +54,17 @@ const AUTO_TRADE_CONNECTORS: AutoTradeConnector[] = [
     providerId: "rithmic"
   },
   {
+    execute: executeMt5EaAutoTrade,
+    // A configured EA queue IS a live connection: the bridge heartbeats into
+    // this app, so when the lane is enabled it must win the forex fallback.
+    // Listed before tradelocker/mt5_bridge on purpose — a stale TradeLocker
+    // connection record used to capture every forex signal and swallow it
+    // (orders errored server-side; the EA queue never saw them).
+    hasConnection: async () => mt5EaConfigured() || mt5CredentialBridgeConfigured(),
+    isConfigured: () => mt5EaConfigured() || mt5CredentialBridgeConfigured(),
+    providerId: "mt5_ea"
+  },
+  {
     execute: executeTradeLockerAutoTrade,
     isConfigured: tradeLockerConfigured,
     providerId: "tradelocker"
@@ -62,11 +73,6 @@ const AUTO_TRADE_CONNECTORS: AutoTradeConnector[] = [
     execute: executeMt5BridgeAutoTrade,
     isConfigured: mt5BridgeConfigured,
     providerId: "mt5_bridge"
-  },
-  {
-    execute: executeMt5EaAutoTrade,
-    isConfigured: () => mt5EaConfigured() || mt5CredentialBridgeConfigured(),
-    providerId: "mt5_ea"
   },
   {
     execute: executeCTraderBridgeAutoTrade,
