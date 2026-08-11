@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
+  brokerExecutionLifecycleStatus,
   liveBrokerEntryOutcome,
   liveBrokerExecutionOutcome,
   liveClosedTradePnlDollars,
@@ -107,4 +108,66 @@ test("an open ProjectX trade uses its actual fill price and fill-time fallback",
     sizeMultiplier: 3
   });
   assert.ok(Math.abs(liveOpenTradePnlDollars(trade, 0.1, 4448.7, 3, 4451.4) + 81) < 0.000001);
+});
+
+test("a losing broker close above a long stop is not labeled stop loss", () => {
+  const trade: TradeAlert = {
+    ...projectXCornTrade(),
+    autoTradeOrders: [
+      {
+        accountId: 23187369,
+        exitPrice: 6.6315,
+        exitTime: "2026-08-10T20:11:56.093Z",
+        feesDollars: 1.42,
+        filledPrice: 6.635,
+        grossPnlDollars: -17.5,
+        netPnlDollars: -18.92,
+        size: 2,
+        status: "placed"
+      }
+    ],
+    entryPrice: 6.635,
+    lifecycleStatus: "stop_loss",
+    side: "long",
+    stopLossPrice: 6.625,
+    symbol: "HG",
+    takeProfitPrice: 6.684
+  };
+
+  const outcome = liveBrokerExecutionOutcome(trade);
+  assert.equal(brokerExecutionLifecycleStatus(trade, outcome), "broker_close");
+});
+
+test("broker fills at or beyond the bracket retain their TP and SL labels", () => {
+  const baseTrade: TradeAlert = {
+    ...projectXCornTrade(),
+    entryPrice: 6.635,
+    side: "long",
+    stopLossPrice: 6.625,
+    symbol: "HG",
+    takeProfitPrice: 6.684
+  };
+
+  assert.equal(
+    brokerExecutionLifecycleStatus(baseTrade, {
+      entryPrice: 6.635,
+      exitPrice: 6.6245,
+      feesDollars: 0,
+      grossPnlDollars: -52.5,
+      netPnlDollars: -52.5,
+      sizeMultiplier: 2
+    }),
+    "stop_loss"
+  );
+  assert.equal(
+    brokerExecutionLifecycleStatus(baseTrade, {
+      entryPrice: 6.635,
+      exitPrice: 6.684,
+      feesDollars: 0,
+      grossPnlDollars: 245,
+      netPnlDollars: 245,
+      sizeMultiplier: 2
+    }),
+    "take_profit"
+  );
 });

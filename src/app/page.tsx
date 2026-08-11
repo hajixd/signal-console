@@ -52,6 +52,7 @@ import {
   alertRiskUnits,
   alertTargetDollarsWithSize,
   alertTargetUnits,
+  brokerExecutionLifecycleStatus,
   boundedTradeDollarPnl,
   inferredAlertPriceUnit,
   liveBrokerEntryOutcome,
@@ -1027,7 +1028,7 @@ function liveRowClass(trade: TradeAlert): string {
 }
 
 function isClosedLifecycleStatus(status: TradeAlert["lifecycleStatus"]): status is ClosedLiveLifecycleStatus {
-  return status === "take_profit" || status === "stop_loss" || status === "max_bars";
+  return status === "take_profit" || status === "stop_loss" || status === "max_bars" || status === "broker_close";
 }
 
 function liveTradeClosed(trade: TradeAlert): trade is TradeAlert & { lifecycleStatus: ClosedLiveLifecycleStatus; lifecycleTime: string } {
@@ -1039,7 +1040,9 @@ function liveTradeHasLimitOrder(trade: TradeAlert): boolean {
 }
 
 function liveTradeExitReasonLabel(trade: TradeAlert): string {
-  return isClosedLifecycleStatus(trade.lifecycleStatus) ? fmtExitReason(trade.lifecycleStatus) : "--";
+  const brokerOutcome = liveBrokerExecutionOutcome(trade);
+  const status = brokerOutcome ? brokerExecutionLifecycleStatus(trade, brokerOutcome) : trade.lifecycleStatus;
+  return isClosedLifecycleStatus(status) ? fmtExitReason(status) : "--";
 }
 
 function fmtBars(value: number): string {
@@ -2036,6 +2039,9 @@ export default async function Home({ searchParams }: HomeProps) {
       const displayContract = liveTradeDisplaySymbol(trade);
       const plannedSizeMultiplier = liveTradeRealSizeMultiplier(trade, option);
       const brokerOutcome = isClosed ? liveBrokerExecutionOutcome(trade) : null;
+      const resolvedLifecycleStatus = brokerOutcome
+        ? brokerExecutionLifecycleStatus(trade, brokerOutcome)
+        : trade.lifecycleStatus ?? "broker_close";
       const brokerEntry = liveBrokerEntryOutcome(trade);
       const sizeMultiplier = brokerOutcome?.sizeMultiplier && brokerOutcome.sizeMultiplier > 0
         ? brokerOutcome.sizeMultiplier
@@ -2094,13 +2100,13 @@ export default async function Home({ searchParams }: HomeProps) {
         : hasCurrentMark
           ? liveOpenTradePnlDollars(trade, priceUnit, rawExitPrice, sizeMultiplier, entryPrice)
           : 0;
-      const exitBoundary = firstTouch?.boundary ?? exitBoundaryFromReason(trade.lifecycleStatus);
+      const exitBoundary = firstTouch?.boundary ?? exitBoundaryFromReason(resolvedLifecycleStatus);
       const consistentExit = isClosed
         ? consistentTradeOutcome({
             dollarsPerPricePoint,
             entryPrice,
             exitPrice: rawExitPrice,
-            exitReason: firstTouch?.reason ?? effectiveExitReason(trade.lifecycleStatus, exitBoundary),
+            exitReason: firstTouch?.reason ?? effectiveExitReason(resolvedLifecycleStatus, exitBoundary),
             exitTime: endTime,
             managementEvents: trade.managementEvents,
             pnlDollars: rawPnlDollars,
@@ -2159,7 +2165,7 @@ export default async function Home({ searchParams }: HomeProps) {
         stopPriceLabel: fmtDollarPrice(stopPrice),
         durationLabel: fmtBars(barsHeld),
         durationDetailLabel: fmtDuration(entryTime, endTime),
-        exitReasonLabel: isClosed ? fmtExitReason(consistentExit?.exitReason ?? trade.lifecycleStatus) : "Still Open",
+        exitReasonLabel: isClosed ? fmtExitReason(consistentExit?.exitReason ?? resolvedLifecycleStatus) : "Still Open",
         pnlLabel: isClosed || hasCurrentMark ? fmtMoney(pnlDollars, true) : "--",
         rMultipleLabel: (isClosed || hasCurrentMark) && riskDollars > 0 ? `${fmtNumber(rMultiple)}R` : "--",
         netUnitsLabel: isClosed || hasCurrentMark ? `${fmtNumber(netUnits)} ${unitLabel}` : "--",

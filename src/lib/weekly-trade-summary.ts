@@ -417,6 +417,7 @@ function outcomeLabel(trade: TradeAlert): string {
   if (trade.lifecycleStatus === "take_profit") return "TP";
   if (trade.lifecycleStatus === "stop_loss") return "SL";
   if (trade.lifecycleStatus === "max_bars") return "Max bars";
+  if (trade.lifecycleStatus === "broker_close") return "Broker close";
   return "Open";
 }
 

@@ -123,6 +123,52 @@ export type LiveBrokerExecutionOutcome = {
   sizeMultiplier: number;
 };
 
+export type BrokerExecutionLifecycleStatus = Exclude<NonNullable<TradeAlert["lifecycleStatus"]>, "open">;
+
+function brokerExitLevels(trade: TradeAlert, exitTime: string | undefined): { stopPrice: number; targetPrice: number } {
+  const exitMs = Date.parse(exitTime ?? "");
+  let stopPrice = trade.stopLossPrice;
+  let targetPrice = trade.takeProfitPrice;
+
+  for (const event of [...(trade.managementEvents ?? [])].sort((left, right) => Date.parse(left.time) - Date.parse(right.time))) {
+    const eventMs = Date.parse(event.time);
+    if (!Number.isFinite(eventMs) || !Number.isFinite(exitMs) || eventMs > exitMs) break;
+    if (event.type === "edit_sl") stopPrice = event.stopLossPrice ?? event.price;
+    if (event.type === "edit_tp") targetPrice = event.takeProfitPrice ?? event.price;
+  }
+
+  return { stopPrice, targetPrice };
+}
+
+/**
+ * Classify the actual broker exit by the price level it reached, never by the
+ * sign of its P&L. A manual, risk-system, or externally initiated close can be
+ * a loss without ever touching the strategy stop.
+ */
+export function brokerExecutionLifecycleStatus(
+  trade: TradeAlert,
+  outcome: LiveBrokerExecutionOutcome | null = liveBrokerExecutionOutcome(trade)
+): BrokerExecutionLifecycleStatus {
+  const exitPrice = outcome?.exitPrice;
+  if (!finiteNumber(exitPrice)) {
+    return trade.lifecycleStatus && trade.lifecycleStatus !== "open" ? trade.lifecycleStatus : "broker_close";
+  }
+
+  const levels = brokerExitLevels(trade, outcome?.exitTime);
+  const tolerance = Math.max(Number.EPSILON, inferredAlertPriceUnit(trade, 0) / 2);
+  const targetHit = trade.side === "long"
+    ? exitPrice >= levels.targetPrice - tolerance
+    : exitPrice <= levels.targetPrice + tolerance;
+  const stopHit = trade.side === "long"
+    ? exitPrice <= levels.stopPrice + tolerance
+    : exitPrice >= levels.stopPrice - tolerance;
+
+  if (stopHit) return "stop_loss";
+  if (targetHit) return "take_profit";
+  if (trade.lifecycleStatus === "max_bars") return "max_bars";
+  return "broker_close";
+}
+
 function strategySizeFromBrokerOrder(order: AutoTradeOrderSummary, trade: TradeAlert): number {
   return executableOrderSizeMultiplier([order], trade) ?? 0;
 }

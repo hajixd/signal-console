@@ -234,7 +234,7 @@ export type TradeAlert = {
   lifecyclePnlDollars?: number;
   lifecyclePrice?: number;
   lifecycleRMultiple?: number;
-  lifecycleStatus?: "open" | "take_profit" | "stop_loss" | "max_bars";
+  lifecycleStatus?: "open" | "take_profit" | "stop_loss" | "max_bars" | "broker_close";
   lifecycleTime?: string;
   managementEvents?: TradeManagementEvent[];
   maxBars?: number;

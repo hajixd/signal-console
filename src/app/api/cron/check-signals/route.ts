@@ -721,6 +721,7 @@ async function notifyTradeLifecycles(
       trade.lifecycleStatus !== "take_profit" &&
       trade.lifecycleStatus !== "stop_loss" &&
       trade.lifecycleStatus !== "max_bars" &&
+      trade.lifecycleStatus !== "broker_close" &&
       (Date.parse(trade.signalTime) || 0) >= oldestSignalTime &&
       Boolean(trade.assetKey)
   );

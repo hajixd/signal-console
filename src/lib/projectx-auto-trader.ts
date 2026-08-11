@@ -4,7 +4,7 @@ import { buildAutoTradeTestTrade } from "@/lib/auto-trade-test";
 import { autoTradeAccountSizeScale, plannedAutoTradeSizeForTrade, scaledAutoTradeSizeForTrade } from "@/lib/auto-trade-utils";
 import { customUnitSizeMultiplierForTrade } from "@/lib/custom-unit-sizing";
 import { dollarPerUnit } from "@/lib/instruments";
-import { liveBrokerExecutionOutcome } from "@/lib/live-trade-calculations";
+import { brokerExecutionLifecycleStatus, liveBrokerExecutionOutcome } from "@/lib/live-trade-calculations";
 import {
   getStoredProjectXConnections,
   markStoredProjectXConnectionExpired,
@@ -1722,9 +1722,8 @@ function projectXResolvedLifecycleFields(
     0
   );
   const riskDollars = Math.abs(trade.slUnits * dollarPerUnit(trade.symbol, trade.entryPrice) * tradedSize);
-  const resolvedStatus =
-    netPnl > 0 ? "take_profit" : netPnl < 0 ? "stop_loss" : trade.lifecycleStatus;
   const brokerOutcome = liveBrokerExecutionOutcome({ ...trade, autoTradeOrders: resultOrders });
+  const resolvedStatus = brokerExecutionLifecycleStatus(trade, brokerOutcome);
 
   return {
     lifecyclePnlDollars: netPnl,
