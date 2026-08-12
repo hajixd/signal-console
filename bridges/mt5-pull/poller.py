@@ -392,6 +392,24 @@ def execute(order: dict) -> None:
         log(f"REJECTED {kind} {side} {symbol}: {result.retcode} {result.comment}")
 
 
+def close_test_positions() -> None:
+    """Close any leftover self-test positions (magic 999999) from prior runs."""
+    for p in mt5.positions_get() or []:
+        if p.magic != 999999:
+            continue
+        info = mt5.symbol_info(p.symbol)
+        tick = mt5.symbol_info_tick(p.symbol)
+        fok = getattr(mt5, "SYMBOL_FILLING_FOK", 1)
+        filling = mt5.ORDER_FILLING_FOK if info and info.filling_mode & fok else mt5.ORDER_FILLING_IOC
+        sell = p.type == mt5.POSITION_TYPE_BUY
+        c = mt5.order_send({"action": mt5.TRADE_ACTION_DEAL, "symbol": p.symbol, "volume": p.volume,
+                            "type": mt5.ORDER_TYPE_SELL if sell else mt5.ORDER_TYPE_BUY,
+                            "position": p.ticket, "price": tick.bid if sell else tick.ask,
+                            "deviation": 20, "magic": 999999, "type_filling": filling,
+                            "comment": "self-test-cleanup"})
+        log(f"SELF-TEST cleanup {p.symbol} {p.volume}: retcode={c.retcode if c else None}")
+
+
 def self_test() -> None:
     """One-shot pipe test: open+close a tiny position with a non-korra magic
     so neither fills reporter picks it up. Enabled by SELF_TEST_LOT env."""
@@ -443,6 +461,7 @@ def main() -> int:
                     ti = mt5.terminal_info()
                     if ti and ti.trade_allowed:
                         tested = True
+                        close_test_positions()
                         self_test()
                 if not CONNECTION_ID:
                     a = mt5.account_info()
