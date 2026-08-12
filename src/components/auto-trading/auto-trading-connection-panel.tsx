@@ -164,49 +164,23 @@ const PROP_FIRM_OPTIONS: PropFirmOption[] = [
   { id: "leeloo", label: "Leeloo Trading", markets: ["futures"], platformIds: ["rithmic"] },
   { id: "bulenox", label: "Bulenox", markets: ["futures"], platformIds: ["rithmic"] },
   { id: "oneup", label: "OneUp Trader", markets: ["futures"], platformIds: ["rithmic"] },
-  { id: "atlas-funded", label: "Atlas Funded", markets: ["forex"], platformIds: ["tradelocker", "mt5_ea", "matchtrader"] },
-  { id: "e8", label: "E8 Markets", markets: ["forex"], platformIds: ["tradelocker", "matchtrader", "ctrader", "mt5_ea"] },
+  { id: "atlas-funded", label: "Atlas Funded", markets: ["forex"], platformIds: ["mt5_ea", "matchtrader"] },
+  { id: "e8", label: "E8 Markets", markets: ["forex"], platformIds: ["matchtrader", "ctrader", "mt5_ea"] },
   { id: "ftmo", label: "FTMO", markets: ["forex"], platformIds: ["mt5_ea", "ctrader"] },
   { id: "the5ers", label: "The5ers", markets: ["forex"], platformIds: ["mt5_ea", "ctrader"] },
   { id: "fundednext", label: "FundedNext", markets: ["forex"], platformIds: ["mt5_ea", "ctrader", "matchtrader"] },
   { id: "fundingpips", label: "FundingPips", markets: ["forex"], platformIds: ["mt5_ea", "ctrader", "matchtrader"] },
   { id: "funded-trading-plus", label: "Funded Trading Plus", markets: ["forex"], platformIds: ["mt5_ea", "ctrader", "matchtrader"] },
-  { id: "alpha-capital", label: "Alpha Capital Group", markets: ["forex"], platformIds: ["mt5_ea", "ctrader", "tradelocker"] },
-  { id: "blue-guardian", label: "Blue Guardian", markets: ["forex"], platformIds: ["matchtrader", "tradelocker", "mt5_ea"] },
-  { id: "goat-funded-trader", label: "GOAT Funded Trader", markets: ["forex"], platformIds: ["ctrader", "tradelocker", "matchtrader", "mt5_ea"] },
+  { id: "alpha-capital", label: "Alpha Capital Group", markets: ["forex"], platformIds: ["mt5_ea", "ctrader"] },
+  { id: "blue-guardian", label: "Blue Guardian", markets: ["forex"], platformIds: ["matchtrader", "mt5_ea"] },
+  { id: "goat-funded-trader", label: "GOAT Funded Trader", markets: ["forex"], platformIds: ["ctrader", "matchtrader", "mt5_ea"] },
   { id: "brightfunded", label: "BrightFunded", markets: ["forex"], platformIds: ["mt5_ea", "ctrader"] },
   { id: "fxify", label: "FXIFY", markets: ["forex"], platformIds: ["mt5_ea"] },
-  { id: "funderpro", label: "FunderPro", markets: ["forex"], platformIds: ["mt5_ea", "ctrader", "tradelocker"] }
+  { id: "funderpro", label: "FunderPro", markets: ["forex"], platformIds: ["mt5_ea", "ctrader"] }
 ];
 
 const CONNECTION_FIELDS: Record<AutoTradeProviderId, ConnectionField[]> = {
   projectx: [],
-  tradelocker: [
-    { key: "email", label: "TradeLocker email", placeholder: "trader@example.com", required: true },
-    { key: "password", label: "TradeLocker password", required: true, secret: true },
-    { key: "server", label: "TradeLocker server", defaultValue: "demo", placeholder: "demo / E8 / FPR", required: true },
-    { advanced: true, key: "accountId", label: "Account ID" },
-    { advanced: true, key: "accountSize", label: "Account size", placeholder: "50000" },
-    { advanced: true, key: "accNum", label: "Account number" },
-    { advanced: true, key: "tradableInstrumentId", label: "Instrument ID", placeholder: "auto-discovered when possible" },
-    { advanced: true, defaultValue: "TRADE", key: "routeId", label: "Route ID", placeholder: "TRADE" },
-    { advanced: true, key: "apiBaseUrl", label: "API base URL", placeholder: "https://demo.tradelocker.com/backend-api" },
-    { advanced: true, key: "symbolMap", label: "Symbol map", placeholder: "EURUSD:EURUSD,XAUUSD:XAUUSD" },
-    { advanced: true, key: "sizeMap", label: "Size map", placeholder: "EURUSD:0.1,XAUUSD:0.05" },
-    { advanced: true, defaultValue: "0.01", key: "volumeStep", label: "Volume step", placeholder: "0.01" }
-  ],
-  mt5_bridge: [
-    { key: "login", label: "MT5 username / login", placeholder: "318747699", required: true },
-    { key: "password", label: "MT5 password", required: true, secret: true },
-    { key: "server", label: "MT5 server", placeholder: "FTMO-Server", required: true },
-    { advanced: true, key: "bridgeUrl", label: "Bridge URL", placeholder: "https://your-vps/place-order" },
-    { advanced: true, key: "bridgeSecret", label: "Bridge secret", secret: true },
-    { advanced: true, key: "accountId", label: "Account ID" },
-    { advanced: true, key: "accountSize", label: "Account size", placeholder: "50000" },
-    { advanced: true, key: "symbolMap", label: "Symbol map", placeholder: "EURUSD:EURUSD.,XAUUSD:XAUUSDm" },
-    { advanced: true, key: "lotMap", label: "Lot map", placeholder: "EURUSD:0.1,XAUUSD:0.05" },
-    { advanced: true, defaultValue: "0.01", key: "lotStep", label: "Lot step", placeholder: "0.01" }
-  ],
   mt5_ea: [
     { key: "login", label: "MT5 account login", placeholder: "12345678", required: true },
     { key: "password", label: "MT5 master password", placeholder: "Trading password", required: true, secret: true },

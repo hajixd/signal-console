@@ -14,7 +14,6 @@ import {
   type ProviderPrefix
 } from "@/lib/auto-trade-utils";
 import { getAutoTradeConnection, type AutoTradeConnection } from "@/lib/auto-trade-connections";
-import { mt5CredentialBridgeEndpoint } from "@/lib/mt5-credential-bridge";
 import type { AutoTradeProviderId } from "@/lib/auto-trade-platforms";
 import type { ProjectXAutoTradeResult } from "@/lib/projectx-auto-trader";
 import type { TradeAlert } from "@/lib/types";
@@ -88,10 +87,7 @@ async function executeBridgeAutoTrade(
     const timeout = setTimeout(() => controller.abort(), 30_000);
     let response: Response;
     try {
-      const configuredBridgeUrl = fieldText(fields, "bridgeUrl", provider.urlEnv)!;
-      const bridgeUrl = provider.providerId === "mt5_ea"
-        ? mt5CredentialBridgeEndpoint(configuredBridgeUrl, "place-order")
-        : configuredBridgeUrl;
+      const bridgeUrl = fieldText(fields, "bridgeUrl", provider.urlEnv)!;
       response = await fetch(bridgeUrl, {
         body: JSON.stringify({
           accessToken: fields?.accessToken,
@@ -159,52 +155,12 @@ async function executeBridgeAutoTrade(
   }
 }
 
-export function mt5BridgeConfigured(): boolean {
-  return requiredEnv(["MT5_BRIDGE_URL", "MT5_BRIDGE_SECRET"]).length === 0;
-}
-
 export function rithmicBridgeConfigured(): boolean {
   return requiredEnv(["RITHMIC_BRIDGE_URL", "RITHMIC_BRIDGE_SECRET"]).length === 0;
 }
 
 export function cTraderBridgeConfigured(): boolean {
   return requiredEnv(["CTRADER_BRIDGE_URL", "CTRADER_BRIDGE_SECRET"]).length === 0;
-}
-
-export function executeMt5BridgeAutoTrade(trade: TradeAlert): Promise<ProjectXAutoTradeResult> {
-  return executeBridgeAutoTrade(
-    {
-      accountEnv: "MT5_ACCOUNT_ID",
-      dryRunEnv: "MT5_AUTO_TRADE_DRY_RUN",
-      enabledEnv: "MT5_AUTO_TRADE_ENABLED",
-      name: "MetaTrader 5 Bridge",
-      prefix: "MT5",
-      providerId: "mt5_bridge",
-      secretEnv: "MT5_BRIDGE_SECRET",
-      urlEnv: "MT5_BRIDGE_URL"
-    },
-    trade
-  );
-}
-
-export function executeMt5CredentialAutoTrade(
-  trade: TradeAlert,
-  connection?: AutoTradeConnection | null
-): Promise<ProjectXAutoTradeResult> {
-  return executeBridgeAutoTrade(
-    {
-      accountEnv: "MT5_ACCOUNT_ID",
-      dryRunEnv: "MT5_AUTO_TRADE_DRY_RUN",
-      enabledEnv: "MT5_AUTO_TRADE_ENABLED",
-      name: "MetaTrader 5",
-      prefix: "MT5",
-      providerId: "mt5_ea",
-      secretEnv: "MT5_BRIDGE_SECRET",
-      urlEnv: "MT5_BRIDGE_URL"
-    },
-    trade,
-    connection
-  );
 }
 
 export function executeRithmicBridgeAutoTrade(trade: TradeAlert): Promise<ProjectXAutoTradeResult> {

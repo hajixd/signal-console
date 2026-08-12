@@ -4,7 +4,7 @@ import { customUnitSizeMultiplierForTrade } from "@/lib/custom-unit-sizing";
 import type { ProjectXAutoTradeResult, ProjectXAutoTradeStatus } from "@/lib/projectx-auto-trader";
 import type { AutoTradeOrderSummary, TradeAlert } from "@/lib/types";
 
-export type ProviderPrefix = "CTRADER" | "MATCHTRADER" | "MT5" | "RITHMIC" | "TRADELOCKER" | "TRADOVATE";
+export type ProviderPrefix = "CTRADER" | "MATCHTRADER" | "MT5" | "RITHMIC" | "TRADOVATE";
 
 export type AutoTradeRequest = {
   accountId?: number | string;
@@ -290,7 +290,7 @@ export function mappedSymbolWithFields(prefix: ProviderPrefix, trade: TradeAlert
 
 function providerSizeUnit(prefix: ProviderPrefix): NonNullable<AutoTradeOrderSummary["sizeUnit"]> {
   if (prefix === "CTRADER") return "base_units";
-  if (prefix === "MATCHTRADER" || prefix === "MT5" || prefix === "TRADELOCKER") return "lots";
+  if (prefix === "MATCHTRADER" || prefix === "MT5") return "lots";
   return "strategy";
 }
 

@@ -316,11 +316,11 @@ test("a per-check risk budget reduces forex units instead of rejecting the trade
 test("lot-based forex connectors receive actual lots after the shared size cap", () => {
   const forexTrade = mt5ForexTrade();
 
-  assert.equal(mappedSize("TRADELOCKER", forexTrade), 0.84);
+  assert.equal(mappedSize("MATCHTRADER", forexTrade), 0.84);
   assert.equal(mappedSize("MATCHTRADER", forexTrade), 0.84);
   assert.equal(mappedSize("MT5", forexTrade), 0.84);
   assert.deepEqual(
-    { size: autoTradeRequest("TRADELOCKER", forexTrade).size, sizeUnit: autoTradeRequest("TRADELOCKER", forexTrade).sizeUnit },
+    { size: autoTradeRequest("MATCHTRADER", forexTrade).size, sizeUnit: autoTradeRequest("MATCHTRADER", forexTrade).sizeUnit },
     { size: 0.84, sizeUnit: "lots" }
   );
 });
@@ -335,9 +335,9 @@ test("cTrader forex bridge receives base units while retaining the same risk cap
 test("provider lot maps remain broker quantities but cannot bypass the shared cap", () => {
   const forexTrade = mt5ForexTrade();
 
-  assert.equal(mappedSize("TRADELOCKER", forexTrade, undefined, { sizeMap: '{"AUDNZD":"5"}' }), 0.84);
+  assert.equal(mappedSize("MATCHTRADER", forexTrade, undefined, { sizeMap: '{"AUDNZD":"5"}' }), 0.84);
   assert.equal(
-    mappedSize("TRADELOCKER", forexTrade, undefined, { sizeMap: '{"AUDNZD":"0.5"}', volumeStep: "0.01" }),
+    mappedSize("MATCHTRADER", forexTrade, undefined, { sizeMap: '{"AUDNZD":"0.5"}', volumeStep: "0.01" }),
     0.5
   );
 });

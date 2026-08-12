@@ -3,18 +3,14 @@ import { buildAutoTradeTestTrade } from "@/lib/auto-trade-test";
 import {
   cTraderBridgeConfigured,
   executeCTraderBridgeAutoTrade,
-  executeMt5BridgeAutoTrade,
   executeRithmicBridgeAutoTrade,
-  mt5BridgeConfigured,
   rithmicBridgeConfigured
 } from "@/lib/bridge-auto-trader";
 import { executeMatchTraderAutoTrade, matchTraderConfigured } from "@/lib/matchtrader-auto-trader";
 import { executeMt5EaAutoTrade, mt5EaConfigured } from "@/lib/mt5-ea-auto-trader";
-import { mt5CredentialBridgeConfigured } from "@/lib/mt5-credential-bridge";
 import { getAutoTradeConnection } from "@/lib/auto-trade-connections";
 import { getLatestStoredProjectXConnection } from "@/lib/projectx-connections";
 import { executeProjectXAutoTrade, executeProjectXManagementTrade, executeProjectXTestTrade, type ProjectXAutoTradeResult } from "@/lib/projectx-auto-trader";
-import { executeTradeLockerAutoTrade, tradeLockerConfigured } from "@/lib/tradelocker-auto-trader";
 import { executeTradovateAutoTrade, tradovateConfigured } from "@/lib/tradovate-auto-trader";
 import type { AutoTradeOrderSummary, TradeAlert, TradeManagementEvent } from "@/lib/types";
 
@@ -55,24 +51,14 @@ const AUTO_TRADE_CONNECTORS: AutoTradeConnector[] = [
   },
   {
     execute: executeMt5EaAutoTrade,
-    // A configured EA queue IS a live connection: the bridge heartbeats into
-    // this app, so when the lane is enabled it must win the forex fallback.
-    // Listed before tradelocker/mt5_bridge on purpose — a stale TradeLocker
-    // connection record used to capture every forex signal and swallow it
-    // (orders errored server-side; the EA queue never saw them).
-    hasConnection: async () => mt5EaConfigured() || mt5CredentialBridgeConfigured(),
-    isConfigured: () => mt5EaConfigured() || mt5CredentialBridgeConfigured(),
+    // A configured EA queue IS a live connection: the pull bridge heartbeats
+    // into this app, so when the lane is enabled it wins the forex fallback.
+    // This is the ONLY MT5 forex lane — the TradeLocker and push-bridge
+    // connectors were removed after a stale TradeLocker connection record
+    // silently swallowed every forex signal for weeks.
+    hasConnection: async () => mt5EaConfigured(),
+    isConfigured: mt5EaConfigured,
     providerId: "mt5_ea"
-  },
-  {
-    execute: executeTradeLockerAutoTrade,
-    isConfigured: tradeLockerConfigured,
-    providerId: "tradelocker"
-  },
-  {
-    execute: executeMt5BridgeAutoTrade,
-    isConfigured: mt5BridgeConfigured,
-    providerId: "mt5_bridge"
   },
   {
     execute: executeCTraderBridgeAutoTrade,

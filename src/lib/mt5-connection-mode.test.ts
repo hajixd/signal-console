@@ -52,7 +52,7 @@ test("MT5 account linking falls back to the configured terminal EA", async () =>
   );
 });
 
-test("MT5 direct credential linking stays preferred when its bridge is configured", async () => {
+test("terminal EA is the only MT5 mode even when legacy bridge env is present", async () => {
   await withEnv(
     {
       EA_INGEST_TOKEN: "ea-token",
@@ -62,14 +62,15 @@ test("MT5 direct credential linking stays preferred when its bridge is configure
       TURSO_DATABASE_URL: "libsql://example.turso.io"
     },
     () => {
-      assert.equal(availableMt5ConnectionMode(), "credential_bridge");
-      assert.equal(fieldsForMt5ConnectionMode({ password: "encrypted-later" }, "credential_bridge").password, "encrypted-later");
+      assert.equal(availableMt5ConnectionMode(), "terminal_ea");
+      // terminal_ea mode strips stored passwords — credentials never persist.
+      assert.equal(fieldsForMt5ConnectionMode({ password: "encrypted-later" }, "terminal_ea").password, undefined);
     }
   );
 });
 
-test("stored MT5 mode remains compatible with existing connections", () => {
-  assert.equal(storedMt5ConnectionMode({ password: "legacy" }), "credential_bridge");
+test("stored MT5 mode resolves to terminal EA for every legacy connection shape", () => {
+  assert.equal(storedMt5ConnectionMode({ password: "legacy" }), "terminal_ea");
   assert.equal(storedMt5ConnectionMode({ login: "1600170125" }), "terminal_ea");
   assert.equal(storedMt5ConnectionMode({ executionMode: "terminal_ea", password: "ignored" }), "terminal_ea");
 });
@@ -86,5 +87,5 @@ test("each MT5 login receives its own stable saved connection record", () => {
     autoTradeConnectionRecordId("mt5_ea", "1600170125", "Broker-Demo"),
     autoTradeConnectionRecordId("mt5_ea", "1600170125", "OtherBroker-Demo")
   );
-  assert.equal(autoTradeConnectionRecordId("tradelocker", "ignored"), "tradelocker");
+  assert.equal(autoTradeConnectionRecordId("matchtrader", "ignored"), "matchtrader");
 });

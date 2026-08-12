@@ -2,8 +2,6 @@ export type AutoTradeMarket = "forex" | "futures";
 
 export type AutoTradeProviderId =
   | "projectx"
-  | "tradelocker"
-  | "mt5_bridge"
   | "mt5_ea"
   | "ctrader"
   | "matchtrader"
@@ -57,17 +55,6 @@ export const AUTO_TRADE_PROVIDERS: AutoTradeProvider[] = [
     coverage: "Lucid Rithmic, Quantower, MotiveWave, Sierra Chart, R|Trader Pro, and related futures platforms.",
     connectionMode: "Desktop or VPS bridge",
     description: "Bridge adapter for Rithmic accounts where direct broker API access is not exposed."
-  },
-  {
-    id: "tradelocker",
-    label: "TradeLocker",
-    shortLabel: "TradeLocker",
-    markets: ["forex"],
-    status: "adapter_ready",
-    statusLabel: "Limited",
-    coverage: "E8 US, Blue Guardian, FunderPro, and other TradeLocker prop accounts.",
-    connectionMode: "REST API",
-    description: "Direct API route using the email, password, and server issued with a TradeLocker account."
   },
   {
     id: "mt5_ea",

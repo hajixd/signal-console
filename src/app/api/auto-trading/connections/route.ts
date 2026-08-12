@@ -17,7 +17,6 @@ import {
   fieldsForMt5ConnectionMode,
   storedMt5ConnectionMode
 } from "@/lib/mt5-connection-mode";
-import { mt5CredentialBridgeConfigured, verifyMt5CredentialConnection } from "@/lib/mt5-credential-bridge";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -60,8 +59,9 @@ function connectionId(value: unknown): string | undefined {
   return typeof value === "string" && /^[0-9A-Za-z_-]{3,80}$/.test(value.trim()) ? value.trim() : undefined;
 }
 
-function mt5ConnectionMode(): "credential_bridge" | null {
-  return mt5CredentialBridgeConfigured() ? "credential_bridge" : null;
+function mt5ConnectionMode(): "terminal_ea" {
+  // Terminal EA/pull is the only MT5 execution mode (credential bridge removed).
+  return "terminal_ea";
 }
 
 async function authorizeProviderMutation(request: NextRequest, savedConnectionId: string, accessCode: unknown) {
@@ -135,28 +135,8 @@ export async function POST(request: NextRequest) {
   }
 
   if (providerId === "mt5_ea") {
-    const connectionMode = mt5ConnectionMode();
-    if (!connectionMode) {
-      return NextResponse.json(
-        {
-          error: "Korra's central MT5 connection is being completed. You do not need to install anything; try again once it is online."
-        },
-        { status: 503 }
-      );
-    }
-    if (connectionMode === "credential_bridge") {
-      try {
-        const verification = await verifyMt5CredentialConnection(fields);
-        accountName ||= verification.accountName?.trim();
-        if (typeof verification.balance === "number" && Number.isFinite(verification.balance) && verification.balance > 0) {
-          fields.accountSize = String(verification.balance);
-        }
-      } catch (error) {
-        return NextResponse.json({ error: error instanceof Error ? error.message : "MT5 could not verify this account." }, { status: 400 });
-      }
-    }
     accountName ||= `${text(payload.firmLabel) ?? "MT5"} ${fields.login}`;
-    fields = fieldsForMt5ConnectionMode(fields, connectionMode);
+    fields = fieldsForMt5ConnectionMode(fields, mt5ConnectionMode());
   }
 
   if (!accountName) {

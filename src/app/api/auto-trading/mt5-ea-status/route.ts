@@ -4,7 +4,6 @@ import { isAdminAuthorized } from "@/lib/admin-api";
 import { listAutoTradeConnectionsForProvider } from "@/lib/auto-trade-connections";
 import { mt5BridgeAccountId, mt5HeartbeatMismatch } from "@/lib/mt5-ea-account";
 import { availableMt5ConnectionMode, storedMt5ConnectionMode } from "@/lib/mt5-connection-mode";
-import { mt5CredentialBridgeConfigured, verifyMt5CredentialConnection } from "@/lib/mt5-credential-bridge";
 import { eaIngestToken, mt5EaConfigured } from "@/lib/mt5-ea-queue";
 import { getAccountState, getHeartbeat, getMt5ExecutionStats, listMt5Orders } from "@/lib/mt5-ea-state";
 import { tursoConfigured } from "@/lib/turso";
@@ -29,7 +28,7 @@ export async function GET(request: NextRequest) {
   const executionMode = connection
     ? storedMt5ConnectionMode(connection.fields)
     : availableMt5ConnectionMode() ?? "terminal_ea";
-  const backendConfigured = executionMode === "credential_bridge" ? mt5CredentialBridgeConfigured() : mt5EaConfigured();
+  const backendConfigured = mt5EaConfigured();
   const provider = process.env.AUTO_TRADE_FOREX_PROVIDER?.trim() || null;
   const providerSelected = provider === "mt5_ea" || (!provider && connections.length > 0);
   const connectedAccounts = connections.map((item) => ({
@@ -73,33 +72,6 @@ export async function GET(request: NextRequest) {
       stats: null,
       orders: []
     });
-  }
-
-  if (executionMode === "credential_bridge" && connection) {
-    try {
-      const verification = await verifyMt5CredentialConnection(connection.fields);
-      return NextResponse.json({
-        ...configuration,
-        accountMismatch: null,
-        bridgeAccountId: account,
-        credentialVerified: true,
-        heartbeat: null,
-        orders: [],
-        state: { balance: verification.balance, equity: verification.equity },
-        stats: null
-      });
-    } catch (error: unknown) {
-      return NextResponse.json({
-        ...configuration,
-        bridgeAccountId: account,
-        credentialVerified: false,
-        error: error instanceof Error ? error.message : String(error),
-        heartbeat: null,
-        orders: [],
-        state: null,
-        stats: null
-      });
-    }
   }
 
   try {
