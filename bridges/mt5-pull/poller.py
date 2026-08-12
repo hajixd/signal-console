@@ -107,7 +107,9 @@ def ensure_mt5() -> bool:
         log(f"mt5 initialize failed: {mt5.last_error()}")
         return False
     a = mt5.account_info()
-    log(f"mt5 attached: login={a.login if a else None} server={a.server if a else None}")
+    t = mt5.terminal_info()
+    log(f"mt5 attached: login={a.login if a else None} server={a.server if a else None} "
+        f"algo_trading={'ON' if t and t.trade_allowed else 'OFF'}")
     return True
 
 
