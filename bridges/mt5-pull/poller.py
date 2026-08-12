@@ -362,9 +362,12 @@ def execute(order: dict) -> None:
 
     info = mt5.symbol_info(symbol)
     if info is not None:
-        allowed = info.filling_mode
+        # filling_mode is a bitmask: 1 = FOK allowed, 2 = IOC allowed. Older
+        # MetaTrader5 packages don't export SYMBOL_FILLING_* constants, so use
+        # getattr with the documented values rather than the attributes.
+        fok = getattr(mt5, "SYMBOL_FILLING_FOK", 1)
         request["type_filling"] = (mt5.ORDER_FILLING_FOK
-                                   if allowed & mt5.SYMBOL_FILLING_FOK else mt5.ORDER_FILLING_IOC)
+                                   if info.filling_mode & fok else mt5.ORDER_FILLING_IOC)
 
     result = mt5.order_send(request)
     if result is None:
