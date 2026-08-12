@@ -392,6 +392,35 @@ def execute(order: dict) -> None:
         log(f"REJECTED {kind} {side} {symbol}: {result.retcode} {result.comment}")
 
 
+def self_test() -> None:
+    """One-shot pipe test: open+close a tiny position with a non-korra magic
+    so neither fills reporter picks it up. Enabled by SELF_TEST_LOT env."""
+    lot = float(os.environ.get("SELF_TEST_LOT", "0") or 0)
+    if lot <= 0:
+        return
+    sym = "EURUSD.sim"
+    if not mt5.symbol_select(sym, True):
+        log("SELF-TEST: symbol select failed")
+        return
+    info = mt5.symbol_info(sym)
+    tick = mt5.symbol_info_tick(sym)
+    fok = getattr(mt5, "SYMBOL_FILLING_FOK", 1)
+    filling = mt5.ORDER_FILLING_FOK if info and info.filling_mode & fok else mt5.ORDER_FILLING_IOC
+    r = mt5.order_send({"action": mt5.TRADE_ACTION_DEAL, "symbol": sym, "volume": lot,
+                        "type": mt5.ORDER_TYPE_BUY, "price": tick.ask, "deviation": 20,
+                        "magic": 999999, "type_filling": filling, "comment": "self-test"})
+    log(f"SELF-TEST open: retcode={r.retcode if r else None} {getattr(r, 'comment', '')}")
+    if r and r.retcode == mt5.TRADE_RETCODE_DONE:
+        ours = [p for p in mt5.positions_get(symbol=sym) or [] if p.magic == 999999]
+        if ours:
+            t2 = mt5.symbol_info_tick(sym)
+            c = mt5.order_send({"action": mt5.TRADE_ACTION_DEAL, "symbol": sym, "volume": lot,
+                                "type": mt5.ORDER_TYPE_SELL, "position": ours[0].ticket,
+                                "price": t2.bid, "deviation": 20, "magic": 999999,
+                                "type_filling": filling, "comment": "self-test-close"})
+            log(f"SELF-TEST close: retcode={c.retcode if c else None}")
+
+
 # --- main loop ---------------------------------------------------------------
 
 def main() -> int:
@@ -401,9 +430,15 @@ def main() -> int:
         return 2
     log(f"korra-poller starting connection={CONNECTION_ID or '(account login)'} dry_run={DRY_RUN} url={BRIDGE_URL}")
     last_heartbeat = 0.0
+    tested = False
     while True:
         try:
             if ensure_mt5():
+                if not tested:
+                    ti = mt5.terminal_info()
+                    if ti and ti.trade_allowed:
+                        tested = True
+                        self_test()
                 if not CONNECTION_ID:
                     a = mt5.account_info()
                     CONNECTION_ID = str(a.login) if a else ""
