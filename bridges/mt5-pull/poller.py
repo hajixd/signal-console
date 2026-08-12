@@ -411,7 +411,12 @@ def self_test() -> None:
                         "magic": 999999, "type_filling": filling, "comment": "self-test"})
     log(f"SELF-TEST open: retcode={r.retcode if r else None} {getattr(r, 'comment', '')}")
     if r and r.retcode == mt5.TRADE_RETCODE_DONE:
-        ours = [p for p in mt5.positions_get(symbol=sym) or [] if p.magic == 999999]
+        ours = []
+        for _ in range(10):  # fills can take a moment to appear as positions
+            ours = [p for p in mt5.positions_get(symbol=sym) or [] if p.magic == 999999]
+            if ours:
+                break
+            time.sleep(0.5)
         if ours:
             t2 = mt5.symbol_info_tick(sym)
             c = mt5.order_send({"action": mt5.TRADE_ACTION_DEAL, "symbol": sym, "volume": lot,
