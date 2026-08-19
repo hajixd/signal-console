@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 
 import { requireEaAuth } from "@/lib/ea-http";
+import { FEATURE_AVAILABILITY } from "@/lib/feature-availability";
 import { claimPendingOrders } from "@/lib/mt5-ea-queue";
 
 export const dynamic = "force-dynamic";
@@ -12,6 +13,10 @@ type RouteContext = { params: Promise<{ bridgeAccountId: string }> | { bridgeAcc
 export async function GET(request: NextRequest, context: RouteContext) {
   const auth = requireEaAuth(request);
   if (!auth.ok) return auth.response;
+
+  if (!FEATURE_AVAILABILITY.forex) {
+    return NextResponse.json({ orders: [], disabled: true });
+  }
 
   const { bridgeAccountId } = await Promise.resolve(context.params);
   const includeStaleClaimed = request.nextUrl.searchParams.get("includeStaleClaimed") === "true";

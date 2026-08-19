@@ -1,6 +1,7 @@
 import { enrichBars } from "@/lib/indicators";
 import { assetForKey, defaultTickSize } from "@/lib/assets";
 import { getBacktestStats, type BacktestStat } from "@/lib/backtest";
+import { marketFeatureEnabled } from "@/lib/feature-availability";
 import { instrumentSizeLabel, recommendedSizeMultiplier } from "@/lib/instruments";
 import { getLiveConfig, selectedLiveStrategyIds, type SavedCustomScaleRanges, type SavedStrategyEdit } from "@/lib/live-config";
 import { STRATEGY_DEFINITIONS } from "@/lib/strategy-loader";
@@ -244,7 +245,13 @@ export async function activeRules(): Promise<StrategyRule[]> {
   if (!selectedDatasetIds.length) return [];
 
   const enabled = new Set(selectedDatasetIds);
-  return rules.filter((rule) => rule.datasetId && enabled.has(rule.datasetId) && isSupportedLiveTimeframe(rule));
+  return rules.filter(
+    (rule) =>
+      marketFeatureEnabled(rule.market) &&
+      rule.datasetId &&
+      enabled.has(rule.datasetId) &&
+      isSupportedLiveTimeframe(rule)
+  );
 }
 
 export function evaluateLatestSignal(rule: StrategyRule, rawBars: Bar[]): TradeAlert | null {

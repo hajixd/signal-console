@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { redirect } from "next/navigation";
+import { FEATURE_AVAILABILITY } from "@/lib/feature-availability";
 
 export const metadata: Metadata = {
   description:
@@ -16,5 +18,7 @@ export const metadata: Metadata = {
 };
 
 export default function TourLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+  if (!FEATURE_AVAILABILITY.productTour) redirect("/");
+
   return children;
 }

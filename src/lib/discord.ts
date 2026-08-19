@@ -1,5 +1,6 @@
 import type { NotificationStatus, TradeAlert, TradeManagementEvent } from "./types";
 import { formatTelegramManagementMessage, formatTelegramMessage, formatTelegramOutcomeMessage } from "./telegram";
+import { marketFeatureEnabled } from "./feature-availability";
 
 const DISCORD_MAX_CONTENT_LENGTH = 1900;
 const DISCORD_SEND_TIMEOUT_MS = 10_000;
@@ -111,13 +112,16 @@ export async function sendDiscordText(text: string): Promise<NotificationResult>
 }
 
 export async function sendDiscord(trade: TradeAlert): Promise<NotificationResult> {
+  if (!marketFeatureEnabled(trade.market)) return { status: "skipped" };
   return postDiscordContent(formatDiscordMessage(trade));
 }
 
 export async function sendDiscordOutcome(trade: TradeAlert): Promise<NotificationResult> {
+  if (!marketFeatureEnabled(trade.market)) return { status: "skipped" };
   return postDiscordContent(formatDiscordOutcomeMessage(trade));
 }
 
 export async function sendDiscordManagement(trade: TradeAlert, event: TradeManagementEvent): Promise<NotificationResult> {
+  if (!marketFeatureEnabled(trade.market)) return { status: "skipped" };
   return postDiscordContent(formatDiscordManagementMessage(trade, event));
 }

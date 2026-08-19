@@ -2,6 +2,7 @@ import type { TradeAlert, TradeManagementEvent } from "./types";
 import { realAutoTradeSizeForTrade } from "./auto-trade-utils";
 import { assetLookupSymbolForSymbol } from "./assets";
 import { dollarPerUnit, instrumentSizeLabel } from "./instruments";
+import { marketFeatureEnabled } from "./feature-availability";
 
 const TELEGRAM_MAX_TEXT_LENGTH = 3900;
 const TELEGRAM_SEND_TIMEOUT_MS = 10_000;
@@ -533,10 +534,12 @@ export async function sendTelegramText(text: string): Promise<{ status: "sent" |
 }
 
 export async function sendTelegram(trade: TradeAlert): Promise<{ status: "sent" | "skipped" | "failed"; error?: string }> {
+  if (!marketFeatureEnabled(trade.market)) return { status: "skipped" };
   return sendTelegramText(formatTelegramMessage(trade));
 }
 
 export async function sendTelegramOutcome(trade: TradeAlert): Promise<{ status: "sent" | "skipped" | "failed"; error?: string }> {
+  if (!marketFeatureEnabled(trade.market)) return { status: "skipped" };
   return sendTelegramText(formatTelegramOutcomeMessage(trade));
 }
 
@@ -544,5 +547,6 @@ export async function sendTelegramManagement(
   trade: TradeAlert,
   event: TradeManagementEvent
 ): Promise<{ status: "sent" | "skipped" | "failed"; error?: string }> {
+  if (!marketFeatureEnabled(trade.market)) return { status: "skipped" };
   return sendTelegramText(formatTelegramManagementMessage(trade, event));
 }

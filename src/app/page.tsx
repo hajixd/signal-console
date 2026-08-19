@@ -43,6 +43,7 @@ import {
   type BacktestTrade
 } from "@/lib/backtest";
 import { assetDisplayNameForSymbol, assetForKey, assetForSymbol, assetLookupSymbolForSymbol } from "@/lib/assets";
+import { FEATURE_AVAILABILITY } from "@/lib/feature-availability";
 import { executableOrderSizeMultiplier, plannedAutoTradeSizeForTrade } from "@/lib/auto-trade-utils";
 import { DEFAULT_CHALLENGE_RULES, type ChallengeRules } from "@/lib/challenge";
 import { analyzeBacktestDataValidity, dataValidityClass, type DataValidityResult, type DataValidityTone } from "@/lib/data-validity";
@@ -132,7 +133,7 @@ type TradeHistoryBarRange = {
 };
 
 const MARKET_TABS: Array<{ key: MarketTabKey; label: string }> = [
-  { key: "forex", label: "Forex" },
+  ...(FEATURE_AVAILABILITY.forex ? [{ key: "forex" as const, label: "Forex" }] : []),
   { key: "futures", label: "Futures" }
 ];
 
@@ -562,8 +563,9 @@ function dedupeTradeHistoryRows(rows: TradeHistoryRow[]): TradeHistoryRow[] {
 }
 
 function validMarketTab(value: string | undefined): MarketTabKey | undefined {
-  if (value === "gold_spot") return "forex";
-  return value === "forex" || value === "futures" ? value : undefined;
+  if (value === "futures") return "futures";
+  if (FEATURE_AVAILABILITY.forex && (value === "forex" || value === "gold_spot")) return "forex";
+  return undefined;
 }
 
 function parseMarketTab(value: string | undefined, fallback?: string): MarketTabKey {
@@ -2630,14 +2632,20 @@ export default async function Home({ searchParams }: HomeProps) {
         <div className="marketTopShell">
           <div className="marketTopRow">
             <AutoTradeAccountModeSwitch />
-            <Link className="autoTradeResearchLink marketTopNavLink" href="/tour">
-              Product Tour
-            </Link>
-            <Link className="autoTradeResearchLink marketTopNavLink" href="/research">
-              Research
-            </Link>
+            {FEATURE_AVAILABILITY.productTour ? (
+              <Link className="autoTradeResearchLink marketTopNavLink" href="/tour">
+                Product Tour
+              </Link>
+            ) : null}
+            {FEATURE_AVAILABILITY.research ? (
+              <Link className="autoTradeResearchLink marketTopNavLink" href="/research">
+                Research
+              </Link>
+            ) : null}
           </div>
-          <MarketSwitchTabs activeMarket={activeMarket} tabs={MARKET_TABS} persistActiveMarket={syncActiveMarket} />
+          {MARKET_TABS.length > 1 ? (
+            <MarketSwitchTabs activeMarket={activeMarket} tabs={MARKET_TABS} persistActiveMarket={syncActiveMarket} />
+          ) : null}
         </div>
         <header className="terminal-head">
           <div className="asset-meta">

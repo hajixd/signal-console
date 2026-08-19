@@ -28,6 +28,7 @@ import {
 import LocalDateTime, { formatLocalDateTimeParts } from "@/components/ui/local-date-time";
 import { type AutoTradeMarket } from "@/lib/auto-trade-platforms";
 import { type TradeChartBar, type TradeChartTimeframe } from "@/components/trades/trade-price-chart";
+import { FEATURE_AVAILABILITY } from "@/lib/feature-availability";
 import { mergeLiveOpenTradeBar } from "@/lib/open-trade-chart";
 
 type MobileTradingTab = "history" | "alerts" | "sync" | "autotrade" | "settings";
@@ -1178,12 +1179,14 @@ export default function MobileTradingDashboard({
 
                 <div className="mobile-phone-action-list">
                   <MobileAccountModeControl showLoading={showLoading} />
-                  <MobileMarketModeControl
-                    activeMarket={activeMarket}
-                    hideLoading={hideLoading}
-                    persistActiveMarket={persistActiveMarket}
-                    showLoading={showLoading}
-                  />
+                  {FEATURE_AVAILABILITY.forex ? (
+                    <MobileMarketModeControl
+                      activeMarket={activeMarket}
+                      hideLoading={hideLoading}
+                      persistActiveMarket={persistActiveMarket}
+                      showLoading={showLoading}
+                    />
+                  ) : null}
                   <MobileThemeModeControl initialTheme={initialTheme} persistTheme={persistTheme} showLoading={showLoading} />
                   {telegramGroupLink ? (
                     <a className="mobile-phone-action-btn mobile-phone-telegram-link" href={telegramGroupLink} rel="noreferrer" target="_blank">

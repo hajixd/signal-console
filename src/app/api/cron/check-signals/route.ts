@@ -5,6 +5,7 @@ import { adjustAutoTradeSizeToLimits } from "@/lib/auto-trade-risk";
 import { plannedAutoTradeSizeForTrade } from "@/lib/auto-trade-utils";
 import { dollarPerUnit, instrumentSizeLabel } from "@/lib/instruments";
 import { sendDiscord } from "@/lib/discord";
+import { marketFeatureEnabled } from "@/lib/feature-availability";
 import { assetTimeframeBarsKey } from "@/lib/market-data-refresh";
 import { fetchStoredAssetBars, fetchStoredMarketBars } from "@/lib/market-data-store";
 import { saveCronRun, updateDatasetSyncRunStatus } from "@/lib/live-config";
@@ -46,10 +47,6 @@ export async function runDueTradeSummaries(): Promise<{ dailySummary: unknown; w
       checkedAt: new Date().toISOString(),
       sent: [],
       skipped: [
-        {
-          market: "forex" as const,
-          reason: errorMessage(error)
-        },
         {
           market: "futures" as const,
           reason: errorMessage(error)
@@ -723,6 +720,7 @@ async function notifyTradeLifecycles(
       trade.lifecycleStatus !== "max_bars" &&
       trade.lifecycleStatus !== "broker_close" &&
       (Date.parse(trade.signalTime) || 0) >= oldestSignalTime &&
+      marketFeatureEnabled(trade.market) &&
       Boolean(trade.assetKey)
   );
   const lifecycleBarsByAssetKey = new Map<string, Bar[]>();
@@ -992,6 +990,7 @@ async function recoverRecentNotificationFailures(
 ): Promise<void> {
   const now = Date.now();
   const recoverable = trades.filter((trade) => {
+    if (!marketFeatureEnabled(trade.market)) return false;
     const signalAt = signalTimeMs(trade);
     if (signalAt === null || now - signalAt > actionableAgeMs) return false;
     return isQueuedTradeClaim(trade) || trade.telegramStatus === "failed" || trade.discordStatus === "failed";

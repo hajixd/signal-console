@@ -4,6 +4,7 @@ import path from "node:path";
 import { FieldValue } from "firebase-admin/firestore";
 import { autoTradeMarketForSignal, type AutoTradeMarket } from "@/lib/auto-trade-platforms";
 import { realAutoTradeSizeForTrade } from "@/lib/auto-trade-utils";
+import { FEATURE_AVAILABILITY } from "@/lib/feature-availability";
 import { firebaseDb, firebaseLocalFallbackEnabled, hasFirebaseAdmin, withFirebaseTimeout } from "@/lib/firebase-admin";
 import { omitUndefinedDeep } from "@/lib/firestore-utils";
 import { createTursoDocument, getTursoDocument, saveTursoDocument, tursoConfigured } from "@/lib/turso";
@@ -99,7 +100,10 @@ const DAILY_SUMMARY_COLLECTION = "signalConsoleDailySummaries";
 const LOCAL_RUNTIME_ROOT = process.env.VERCEL === "1" ? path.join(tmpdir(), "signal-console") : path.join(/*turbopackIgnore: true*/ process.cwd(), ".local");
 const LOCAL_WEEKLY_SUMMARY_PATH = path.join(LOCAL_RUNTIME_ROOT, "signal-console-weekly-summaries.json");
 const LOCAL_DAILY_SUMMARY_PATH = path.join(LOCAL_RUNTIME_ROOT, "signal-console-daily-summaries.json");
-const SUMMARY_MARKETS: AutoTradeMarket[] = ["forex", "futures"];
+const SUMMARY_MARKETS: AutoTradeMarket[] = [
+  ...(FEATURE_AVAILABILITY.forex ? (["forex"] as const) : []),
+  "futures"
+];
 const MAX_TRADE_LINES = 8;
 
 function escapeHtml(value: string): string {

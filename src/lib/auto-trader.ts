@@ -12,6 +12,7 @@ import { getAutoTradeConnection } from "@/lib/auto-trade-connections";
 import { getLatestStoredProjectXConnection } from "@/lib/projectx-connections";
 import { executeProjectXAutoTrade, executeProjectXManagementTrade, executeProjectXTestTrade, type ProjectXAutoTradeResult } from "@/lib/projectx-auto-trader";
 import { executeTradovateAutoTrade, tradovateConfigured } from "@/lib/tradovate-auto-trader";
+import { marketFeatureEnabled } from "@/lib/feature-availability";
 import type { AutoTradeOrderSummary, TradeAlert, TradeManagementEvent } from "@/lib/types";
 
 export type AutoTradeExecutionResult = ProjectXAutoTradeResult & {
@@ -109,6 +110,12 @@ export async function executeAutoTrade(trade: TradeAlert): Promise<AutoTradeExec
   if (!market) {
     return result("skipped", { error: `No auto-trade market route exists for ${trade.market}.` });
   }
+  if (!marketFeatureEnabled(market)) {
+    return result("disabled", {
+      error: "Forex execution is temporarily disabled.",
+      providerName: "Forex execution router"
+    });
+  }
   const executionTrade: TradeAlert =
     market === "futures" && trade.entryType === "limit"
       ? {
@@ -161,6 +168,13 @@ export async function executeAutoTrade(trade: TradeAlert): Promise<AutoTradeExec
 }
 
 export async function executeAutoTradeManagement(trade: TradeAlert, event: TradeManagementEvent): Promise<AutoTradeExecutionResult> {
+  if (!marketFeatureEnabled(trade.market)) {
+    return result("disabled", {
+      error: "Forex execution management is temporarily disabled.",
+      providerName: "Forex execution router"
+    });
+  }
+
   const providerId = (trade.autoTradeProviderId ?? process.env.AUTO_TRADE_FUTURES_PROVIDER ?? "projectx").trim() as AutoTradeProviderId;
   const connector = AUTO_TRADE_CONNECTORS.find((candidate) => candidate.providerId === providerId) ?? AUTO_TRADE_CONNECTORS[0];
   const provider = connector ? autoTradeProviderById(connector.providerId) : undefined;
@@ -206,6 +220,14 @@ export async function executeAutoTradeTest(input: {
 }): Promise<AutoTradeExecutionResult> {
   const provider = autoTradeProviderById(input.providerId);
   const providerName = provider?.label ?? input.providerId;
+
+  if (provider?.markets.length && provider.markets.every((market) => !marketFeatureEnabled(market))) {
+    return result("disabled", {
+      error: "Forex execution is temporarily disabled.",
+      providerId: input.providerId,
+      providerName
+    });
+  }
 
   if (input.providerId === "projectx") {
     if (!input.connectionId || typeof input.accountId !== "number") {

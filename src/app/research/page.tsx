@@ -1,6 +1,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import AutoTradeAccountGate from "@/components/auto-trading/auto-trade-account-gate";
 import AutoTradeAccountModeSwitch from "@/components/auto-trading/auto-trade-account-mode-switch";
 import ResearchBacktestTable, { type ResearchBacktestMetrics } from "@/components/research/research-backtest-table";
@@ -11,6 +12,7 @@ import AutoRefresh from "@/components/ui/auto-refresh";
 import LocalDateTime from "@/components/ui/local-date-time";
 import ThemeToggle from "@/components/ui/theme-toggle";
 import { getDatasetStatus } from "@/lib/live-config";
+import { FEATURE_AVAILABILITY } from "@/lib/feature-availability";
 
 export const dynamic = "force-dynamic";
 
@@ -1027,6 +1029,8 @@ function ResearchWorkSync({ snapshot }: { snapshot: ResearchSnapshot }) {
 }
 
 export default async function ResearchPage() {
+  if (!FEATURE_AVAILABILITY.research) redirect("/");
+
   const [snapshot, assetOptions] = await Promise.all([getResearchSnapshot(), readResearchAssetOptions()]);
   const newIdeas = [...snapshot.inboxIdeas].sort((left, right) => ideaTime(right) - ideaTime(left)).slice(0, 12);
   const formalizedIdeas = [...snapshot.approvedIdeas].sort((left, right) => ideaTime(right) - ideaTime(left)).slice(0, 12);
