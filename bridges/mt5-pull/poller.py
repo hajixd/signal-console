@@ -197,7 +197,7 @@ def push_heartbeat_state() -> None:
 
 def push_fills() -> None:
     """Report closing deals for our magic, once each (EA OnTradeTransaction parity)."""
-    deals = mt5.history_deals_get(datetime.now() - timedelta(days=2), datetime.now() + timedelta(days=1))
+    deals = mt5.history_deals_get(datetime.now() - timedelta(days=14), datetime.now() + timedelta(days=1))
     if not deals:
         return
     reported = set(STATE.get("reported_deals", []))
@@ -233,7 +233,7 @@ def push_v2_journal() -> None:
     """Report each closed position once to the V2 external-book journal."""
     if not V2_URL or len(V2_TOKEN) < 16:
         return
-    deals = mt5.history_deals_get(datetime.now() - timedelta(days=2), datetime.now() + timedelta(days=1))
+    deals = mt5.history_deals_get(datetime.now() - timedelta(days=14), datetime.now() + timedelta(days=1))
     if not deals:
         return
     reported = set(STATE.get("v2_deals", []))
