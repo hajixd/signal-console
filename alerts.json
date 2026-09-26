@@ -1,12 +1,12 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-26T16:42:12Z",
+  "updatedAt": "2026-09-26T16:50:07Z",
   "alerts": [],
   "scanners": {
     "penny": {
-      "checkedAt": "2026-09-26T15:29:40Z",
+      "checkedAt": "2026-09-26T16:50:07Z",
       "status": "market_closed",
-      "summary": "U.S. equities were closed Saturday and there were no open penny paper trades. FTHM's official issuer feed still showed September 24 as its latest news and no newer SEC filing surfaced; fresh live price/volume were unavailable, so no entry, exit or mark was created."
+      "summary": "U.S. equities were closed Saturday and the ledger contained no open penny paper trades. FTHM's September 25 SEC 8-K confirmed the previously surfaced restructuring catalyst, but no fresh executable price or live volume was available; the unchanged research alert was not duplicated and no entry, exit or mark was created."
     },
     "options": {
       "checkedAt": "2026-09-26T16:42:12Z",
