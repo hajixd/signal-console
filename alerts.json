@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-26T17:22:38Z",
+  "updatedAt": "2026-09-26T17:26:01Z",
   "alerts": [],
   "scanners": {
     "penny": {
@@ -14,9 +14,9 @@
       "summary": "Cboe's current U.S. options materials were checked and show weekday trading sessions only; no Saturday contract market was available. The ledger had no open options paper trades, so no entry, exit or mark was created."
     },
     "meme": {
-      "checkedAt": "2026-09-26T16:24:01Z",
+      "checkedAt": "2026-09-26T17:26:01Z",
       "status": "data_limited",
-      "summary": "No open meme paper trades. Kolscan's live index surfaced current leaderboard/trade snippets including Daumen, but its token-level page timed out and accessible sources did not establish tracked-wallet persistence, remaining size, convergence, liquidity/holder quality, deployer/bundler risk and spam-filtered X velocity together; no entry, exit or mark was created."
+      "summary": "No open meme paper trades. Kolscan's live leaderboard showed Daumen at rank 36, but the tracked account page timed out and accessible wallet/token sources did not establish a current position with required persistence, remaining size, convergence, liquidity/holder quality, deployer/bundler risk and spam-filtered X velocity; no entry, exit or mark was created."
     }
   }
 }
