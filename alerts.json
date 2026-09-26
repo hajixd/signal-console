@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-26T18:06:03Z",
+  "updatedAt": "2026-09-26T18:24:42Z",
   "alerts": [],
   "scanners": {
     "penny": {
@@ -14,9 +14,9 @@
       "summary": "Cboe's current U.S. options materials were checked and confirm weekday sessions only, with no Saturday contract market. The ledger contained no open options paper trades, so no entry, exit or mark was created."
     },
     "meme": {
-      "checkedAt": "2026-09-26T17:26:01Z",
+      "checkedAt": "2026-09-26T18:24:42Z",
       "status": "data_limited",
-      "summary": "No open meme paper trades. Kolscan's live leaderboard showed Daumen at rank 36, but the tracked account page timed out and accessible wallet/token sources did not establish a current position with required persistence, remaining size, convergence, liquidity/holder quality, deployer/bundler risk and spam-filtered X velocity; no entry, exit or mark was created."
+      "summary": "No open meme paper trades. Kolscan, Cielo and Dexscreener were checked: Idontpaytaxes showed a multi-hour Just a Backpack holding, but no verified tracked-wallet convergence or spam-filtered X acceleration was available, while the token was down about 32% over 24 hours despite roughly $319K liquidity. Other tracked-wallet position pages remained incomplete or inaccessible, so no entry, exit or mark was created."
     }
   }
 }
