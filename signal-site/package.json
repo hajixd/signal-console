@@ -1,0 +1,7 @@
+{
+  "name": "signal-static-site",
+  "private": true,
+  "scripts": {
+    "build": "node build.mjs"
+  }
+}
