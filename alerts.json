@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-26T09:44:55Z",
+  "updatedAt": "2026-09-26T09:54:10Z",
   "alerts": [],
   "scanners": {
     "penny": {
@@ -9,9 +9,9 @@
       "summary": "U.S. markets closed Saturday. Rechecked Friday microcap movers plus late SEC and issuer disclosures; no open penny trades and no new setup passed catalyst, continuation, liquidity and dilution-risk filters."
     },
     "options": {
-      "checkedAt": "2026-09-26T08:33:49Z",
+      "checkedAt": "2026-09-26T09:54:10Z",
       "status": "market_closed",
-      "summary": "U.S. options market closed Saturday. No open options paper trades; live contract quotes, Greeks and buyer-initiated flow were unavailable, so no new entry was opened."
+      "summary": "U.S. options market closed Saturday. No open options paper trades; current contract quotes, Greeks, IV term structure and buyer-initiated flow were unavailable, so no new entry was opened."
     },
     "meme": {
       "checkedAt": "2026-09-26T09:05:23Z",
