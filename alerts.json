@@ -1,12 +1,12 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-26T09:05:23Z",
+  "updatedAt": "2026-09-26T09:44:55Z",
   "alerts": [],
   "scanners": {
     "penny": {
-      "checkedAt": "2026-09-26T08:27:45Z",
+      "checkedAt": "2026-09-26T09:44:55Z",
       "status": "market_closed",
-      "summary": "U.S. markets closed Saturday; checked current Friday quotes, September 25 issuer news and recent SEC/IR dilution and listing-risk disclosures. No open penny trades and no new setup passed catalyst, volume, continuation and dilution filters."
+      "summary": "U.S. markets closed Saturday. Rechecked Friday microcap movers plus late SEC and issuer disclosures; no open penny trades and no new setup passed catalyst, continuation, liquidity and dilution-risk filters."
     },
     "options": {
       "checkedAt": "2026-09-26T08:33:49Z",
