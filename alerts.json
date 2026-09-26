@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-26T22:38:23Z",
+  "updatedAt": "2026-09-26T22:46:45Z",
   "alerts": [],
   "scanners": {
     "penny": {
@@ -10,8 +10,11 @@
     },
     "options": {
       "checkedAt": "2026-09-26T22:38:23Z",
-      "status": "market_closed",
-      "summary": "Cboe's official trading-hours and current-market-statistics pages were rechecked. The latest U.S. options data remains Friday, September 25, and Saturday has no live contract market. The ledger contained no open options paper trades, so no entry, exit or mark was created."
+      "startedAt": "2026-09-26T22:46:45Z",
+      "scheduledFor": "2026-09-26T22:00:00Z",
+      "nextScheduledAt": "2026-09-26T23:00:00Z",
+      "status": "running",
+      "summary": "Swing-options scan started; checking the latest ledger and official U.S. options market status."
     },
     "meme": {
       "checkedAt": "2026-09-26T19:16:27Z",
