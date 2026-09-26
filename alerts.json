@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-26T10:29:42Z",
+  "updatedAt": "2026-09-26T10:33:58Z",
   "alerts": [],
   "scanners": {
     "penny": {
@@ -9,9 +9,9 @@
       "summary": "U.S. markets closed Saturday. Rechecked Friday unusual-volume names plus official issuer and SEC disclosures; no open penny trades, and FTHM remained excluded by its Nasdaq bid-price deficiency and preliminary catalyst."
     },
     "options": {
-      "checkedAt": "2026-09-26T09:54:10Z",
+      "checkedAt": "2026-09-26T10:33:58Z",
       "status": "market_closed",
-      "summary": "U.S. options market closed Saturday. No open options paper trades; current contract quotes, Greeks, IV term structure and buyer-initiated flow were unavailable, so no new entry was opened."
+      "summary": "U.S. listed options were closed Saturday. No open options paper trades; live contract quotes, Greeks, IV term structure and buyer-initiated flow were unavailable, so no entry or mark was created."
     },
     "meme": {
       "checkedAt": "2026-09-26T10:03:12Z",
