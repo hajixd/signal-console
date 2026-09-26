@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-26T13:03:41Z",
+  "updatedAt": "2026-09-26T13:11:41Z",
   "alerts": [],
   "scanners": {
     "penny": {
@@ -14,9 +14,9 @@
       "summary": "Confirmed current Cboe U.S. options hours; listed options were outside trading sessions Saturday. No open options paper trades and no live contract data, so no entry, exit or mark was created."
     },
     "meme": {
-      "checkedAt": "2026-09-26T12:10:17Z",
+      "checkedAt": "2026-09-26T13:11:41Z",
       "status": "data_limited",
-      "summary": "No open meme paper trades. Daumen's live KOLscan account page loaded but exposed no token-level positions or trades, while the leaderboard and IdontPayTaxes page timed out; persistence, convergence, liquidity, risk and spam-filtered X momentum could not be verified, so no entry was opened."
+      "summary": "No open meme paper trades. Kolscan's current leaderboard showed Daumen and IdontPayTaxes activity, but accessible feeds exposed no token-level holdings, trade timestamps, remaining-size history, wallet convergence, or spam-filtered X momentum for the five tracked wallets; no entry was opened."
     }
   }
 }
