@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-26T12:10:17Z",
+  "updatedAt": "2026-09-26T12:18:45Z",
   "alerts": [],
   "scanners": {
     "penny": {
@@ -9,9 +9,9 @@
       "summary": "U.S. markets closed Saturday. No open penny trades; Friday unusual-volume screens and FTHM's September 25 Form 8-K remained unchanged, with FTHM excluded by its exploratory catalyst and Nasdaq bid-price deficiency."
     },
     "options": {
-      "checkedAt": "2026-09-26T11:32:04Z",
+      "checkedAt": "2026-09-26T12:18:45Z",
       "status": "market_closed",
-      "summary": "Confirmed Cboe U.S. listed options were outside trading sessions Saturday. No open options paper trades; no live contract quotes, Greeks, IV term structure or buyer-initiated flow were available, so no entry or mark was created."
+      "summary": "Confirmed current Cboe U.S. options hours; listed options were outside trading sessions Saturday. No open options paper trades and no live contract data, so no entry, exit or mark was created."
     },
     "meme": {
       "checkedAt": "2026-09-26T12:10:17Z",
