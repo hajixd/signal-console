@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-26T10:33:58Z",
+  "updatedAt": "2026-09-26T10:54:56Z",
   "alerts": [],
   "scanners": {
     "penny": {
@@ -14,9 +14,9 @@
       "summary": "U.S. listed options were closed Saturday. No open options paper trades; live contract quotes, Greeks, IV term structure and buyer-initiated flow were unavailable, so no entry or mark was created."
     },
     "meme": {
-      "checkedAt": "2026-09-26T10:03:12Z",
+      "checkedAt": "2026-09-26T10:54:56Z",
       "status": "data_limited",
-      "summary": "No open meme paper trades. Refreshed live KOLscan leaderboard and account pages, but current token-level positions, persistence, convergence, liquidity, buyer/holder quality and spam-filtered X momentum were not reliably available together; no entry was opened."
+      "summary": "No open meme paper trades. Refreshed KOLscan leaderboard and tracked-wallet account pages; Daumen remained visible, but token-level positions/trades, persistence, convergence, liquidity and spam-filtered X momentum were not reliably exposed together, so no entry was opened."
     }
   }
 }
