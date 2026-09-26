@@ -1,12 +1,12 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-26T11:32:04Z",
+  "updatedAt": "2026-09-26T11:52:23Z",
   "alerts": [],
   "scanners": {
     "penny": {
-      "checkedAt": "2026-09-26T10:29:42Z",
+      "checkedAt": "2026-09-26T11:52:23Z",
       "status": "market_closed",
-      "summary": "U.S. markets closed Saturday. Rechecked Friday unusual-volume names plus official issuer and SEC disclosures; no open penny trades, and FTHM remained excluded by its Nasdaq bid-price deficiency and preliminary catalyst."
+      "summary": "U.S. markets closed Saturday. Rechecked Friday unusual-volume screens and FTHM's September 25 Form 8-K; no open penny trades, and FTHM remained excluded because the transaction is exploratory and a Nasdaq bid-price deficiency persists."
     },
     "options": {
       "checkedAt": "2026-09-26T11:32:04Z",
