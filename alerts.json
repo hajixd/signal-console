@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-27T04:45:49Z",
+  "updatedAt": "2026-09-27T04:53:04Z",
   "alerts": [],
   "scanners": {
     "penny": {
@@ -21,11 +21,11 @@
     },
     "meme": {
       "checkedAt": "2026-09-27T04:13:24Z",
-      "startedAt": "2026-09-27T04:12:31Z",
+      "startedAt": "2026-09-27T04:53:04Z",
       "scheduledFor": "2026-09-27T04:00:00Z",
       "nextScheduledAt": "2026-09-27T05:00:00Z",
-      "status": "data_limited",
-      "summary": "No open meme paper trades. Kolscan, Dexscreener, official-account searches and current reputable news were checked. No verified new Musk/Trump token launch or endorsement appeared; a viral Solana Musk-named token was explicitly unaffiliated. Current tracked-wallet persistence/convergence and spam-filtered X unique-author acceleration could not be verified, so no entry, exit or mark was created."
+      "status": "running",
+      "summary": "Meme-coin scan started; rechecking current liquidity, tracked-wallet activity, social momentum and verified public-figure token news."
     }
   }
 }
