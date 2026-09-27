@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-27T11:25:21Z",
+  "updatedAt": "2026-09-27T12:02:13Z",
   "alerts": [
     {
       "id": "options-bb-fy27q2-20260924",
@@ -237,11 +237,11 @@
       }
     },
     "options": {
-      "startedAt": "2026-09-27T11:09:50Z",
+      "startedAt": "2026-09-27T12:02:13Z",
       "checkedAt": "2026-09-27T11:10:45Z",
-      "scheduledFor": "2026-09-27T11:00:00Z",
-      "nextScheduledAt": "2026-09-27T12:00:00Z",
-      "status": "market_closed",
+      "scheduledFor": "2026-09-27T12:00:00Z",
+      "nextScheduledAt": "2026-09-27T13:00:00Z",
+      "status": "running",
       "summary": "No open options paper trades were present. Cboe session guidance, the current earnings calendar and fresh SEC/issuer checks for BB, COST and other recent reporters were reviewed. The options market remained closed, no material new primary evidence changed the existing BB or COST research, and no reliable live exact-contract quote, IV, Greeks, spread, OI or directional flow was available. No new research, entry, exit or mark was created.",
       "sources": [
         {
