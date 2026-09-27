@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-27T12:07:40Z",
+  "updatedAt": "2026-09-27T12:16:59Z",
   "alerts": [
     {
       "id": "options-bb-fy27q2-20260924",
@@ -183,11 +183,11 @@
     "penny": {
       "id": "penny-scan-20260927T110000Z",
       "system": "penny",
-      "startedAt": "2026-09-27T11:24:07Z",
+      "startedAt": "2026-09-27T12:16:59Z",
       "checkedAt": "2026-09-27T11:25:21Z",
-      "scheduledFor": "2026-09-27T11:00:00Z",
-      "nextScheduledAt": "2026-09-27T12:00:00Z",
-      "status": "market_closed",
+      "scheduledFor": "2026-09-27T12:00:00Z",
+      "nextScheduledAt": "2026-09-27T13:00:00Z",
+      "status": "running",
       "summary": "No open penny paper trades were present. Nasdaq's published schedule confirms U.S. stock trading is Monday through Friday, so no reliable live quote, fresh volume, mark, exit or paper entry was available Sunday. FTHM's September 24 issuer news and Form 8-K were rechecked; no newer issuer disclosure or material new primary evidence changed the existing research. No research, entry, exit or mark was created.",
       "sources": [
         {
