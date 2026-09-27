@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-27T09:50:35Z",
+  "updatedAt": "2026-09-27T09:51:11Z",
   "alerts": [
     {
       "id": "options-bb-fy27q2-20260924",
@@ -116,28 +116,28 @@
     },
     "options": {
       "startedAt": "2026-09-27T09:50:35Z",
-      "checkedAt": "2026-09-27T09:02:58Z",
+      "checkedAt": "2026-09-27T09:51:11Z",
       "scheduledFor": "2026-09-27T09:00:00Z",
       "nextScheduledAt": "2026-09-27T10:00:00Z",
-      "status": "running",
-      "summary": "Options scanner started; checking the ledger, official session status and fresh primary evidence without duplicating existing research.",
+      "status": "market_closed",
+      "summary": "No open options paper trades were present. Cboe's current equity-options session guidance and fresh SEC searches for BB, COST and newer material filings were rechecked. The market remained closed, no material new evidence changed the existing BB or COST research, and no reliable live exact-contract quote, IV, Greeks, spread, OI or flow was available. No research, entry, exit or mark was created.",
       "sources": [
         {
           "name": "Cboe equity-options extended-hours FAQ",
           "url": "https://www.cboe.com/document/tech-spec/content/technical-specifications/equity-options-extended-trading-hours-faq/",
-          "checkedAt": "2026-09-27T09:02:58Z",
+          "checkedAt": "2026-09-27T09:51:11Z",
           "status": "checked"
         },
         {
-          "name": "BlackBerry Q2 FY2027 SEC earnings exhibit",
-          "url": "https://www.sec.gov/Archives/edgar/data/1070235/000107023526000112/q2fy27ex-991.htm",
-          "checkedAt": "2026-09-27T09:02:58Z",
+          "name": "BlackBerry SEC filing search",
+          "url": "https://www.sec.gov/edgar/browse/?CIK=1070235",
+          "checkedAt": "2026-09-27T09:51:11Z",
           "status": "checked"
         },
         {
-          "name": "Costco Q4 FY2026 SEC earnings exhibit",
-          "url": "https://www.sec.gov/Archives/edgar/data/909832/000090983226000084/costex9918-k92426.htm",
-          "checkedAt": "2026-09-27T09:02:58Z",
+          "name": "Costco SEC filing search",
+          "url": "https://www.sec.gov/edgar/browse/?CIK=909832",
+          "checkedAt": "2026-09-27T09:51:11Z",
           "status": "checked"
         }
       ],
@@ -149,7 +149,7 @@
         "post-reopening underlying and sector confirmation"
       ],
       "counts": {
-        "research": 2,
+        "research": 0,
         "entries": 0,
         "exits": 0
       }
@@ -210,48 +210,6 @@
   },
   "scanHistory": [
     {
-      "id": "options-scan-20260927T090000Z",
-      "system": "options",
-      "startedAt": "2026-09-27T09:01:24Z",
-      "checkedAt": "2026-09-27T09:02:58Z",
-      "scheduledFor": "2026-09-27T09:00:00Z",
-      "nextScheduledAt": "2026-09-27T10:00:00Z",
-      "status": "market_closed",
-      "summary": "No open options paper trades were present. Cboe session hours and primary SEC filings were checked. Sunday pre-session trading was closed, so no reliable live exact-contract quote, IV, Greeks, spread, OI or flow was available. Two new research-only post-earnings catalysts were published for BB and COST; no entry, exit or mark was created.",
-      "sources": [
-        {
-          "name": "Cboe equity-options extended-hours FAQ",
-          "url": "https://www.cboe.com/document/tech-spec/content/technical-specifications/equity-options-extended-trading-hours-faq/",
-          "checkedAt": "2026-09-27T09:02:58Z",
-          "status": "checked"
-        },
-        {
-          "name": "BlackBerry Q2 FY2027 SEC earnings exhibit",
-          "url": "https://www.sec.gov/Archives/edgar/data/1070235/000107023526000112/q2fy27ex-991.htm",
-          "checkedAt": "2026-09-27T09:02:58Z",
-          "status": "checked"
-        },
-        {
-          "name": "Costco Q4 FY2026 SEC earnings exhibit",
-          "url": "https://www.sec.gov/Archives/edgar/data/909832/000090983226000084/costex9918-k92426.htm",
-          "checkedAt": "2026-09-27T09:02:58Z",
-          "status": "checked"
-        }
-      ],
-      "missingData": [
-        "live exact-contract quotes",
-        "current contract IV and Greeks",
-        "contract volume, open interest and spreads",
-        "buyer-initiated opening flow",
-        "post-reopening underlying and sector confirmation"
-      ],
-      "counts": {
-        "research": 2,
-        "entries": 0,
-        "exits": 0
-      }
-    },
-    {
       "id": "meme-scan-20260927T090000Z",
       "system": "meme",
       "startedAt": "2026-09-27T09:30:39Z",
@@ -299,6 +257,48 @@
         "current holder, deployer, insider, bundler and wash-trading analysis",
         "spam-filtered X mention velocity and unique-author acceleration",
         "fully live Dexscreener pair liquidity, buyers and price structure"
+      ],
+      "counts": {
+        "research": 0,
+        "entries": 0,
+        "exits": 0
+      }
+    },
+    {
+      "id": "options-scan-20260927T090000Z",
+      "system": "options",
+      "startedAt": "2026-09-27T09:50:35Z",
+      "checkedAt": "2026-09-27T09:51:11Z",
+      "scheduledFor": "2026-09-27T09:00:00Z",
+      "nextScheduledAt": "2026-09-27T10:00:00Z",
+      "status": "market_closed",
+      "summary": "No open options paper trades were present. Cboe's current equity-options session guidance and fresh SEC searches for BB, COST and newer material filings were rechecked. The market remained closed, no material new evidence changed the existing BB or COST research, and no reliable live exact-contract quote, IV, Greeks, spread, OI or flow was available. No research, entry, exit or mark was created.",
+      "sources": [
+        {
+          "name": "Cboe equity-options extended-hours FAQ",
+          "url": "https://www.cboe.com/document/tech-spec/content/technical-specifications/equity-options-extended-trading-hours-faq/",
+          "checkedAt": "2026-09-27T09:51:11Z",
+          "status": "checked"
+        },
+        {
+          "name": "BlackBerry SEC filing search",
+          "url": "https://www.sec.gov/edgar/browse/?CIK=1070235",
+          "checkedAt": "2026-09-27T09:51:11Z",
+          "status": "checked"
+        },
+        {
+          "name": "Costco SEC filing search",
+          "url": "https://www.sec.gov/edgar/browse/?CIK=909832",
+          "checkedAt": "2026-09-27T09:51:11Z",
+          "status": "checked"
+        }
+      ],
+      "missingData": [
+        "live exact-contract quotes",
+        "current contract IV and Greeks",
+        "contract volume, open interest and spreads",
+        "buyer-initiated opening flow",
+        "post-reopening underlying and sector confirmation"
       ],
       "counts": {
         "research": 0,
