@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-27T05:11:07Z",
+  "updatedAt": "2026-09-27T09:01:24Z",
   "alerts": [],
   "scanners": {
     "penny": {
@@ -13,11 +13,11 @@
     },
     "options": {
       "checkedAt": "2026-09-27T04:45:49Z",
-      "startedAt": "2026-09-27T04:45:20Z",
-      "scheduledFor": "2026-09-27T04:00:00Z",
-      "nextScheduledAt": "2026-09-27T05:00:00Z",
-      "status": "market_closed",
-      "summary": "Cboe's official U.S. options hours and 24x5 FAQ were rechecked. The first weekly GTH session begins Sunday and the last Curb session ends Friday, so Saturday has no live option market. The ledger contained no open options paper trades; no entry, exit or mark was created."
+      "startedAt": "2026-09-27T09:01:24Z",
+      "scheduledFor": "2026-09-27T09:00:00Z",
+      "nextScheduledAt": "2026-09-27T10:00:00Z",
+      "status": "running",
+      "summary": "Options scan started; checking open trades, official session hours, current primary catalysts and contract-data availability."
     },
     "meme": {
       "checkedAt": "2026-09-27T04:53:29Z",
