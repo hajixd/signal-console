@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-27T09:30:39Z",
+  "updatedAt": "2026-09-27T09:32:20Z",
   "alerts": [
     {
       "id": "options-bb-fy27q2-20260924",
@@ -155,12 +155,57 @@
       }
     },
     "meme": {
-      "checkedAt": "2026-09-27T04:53:29Z",
       "startedAt": "2026-09-27T09:30:39Z",
+      "checkedAt": "2026-09-27T09:32:20Z",
       "scheduledFor": "2026-09-27T09:00:00Z",
       "nextScheduledAt": "2026-09-27T10:00:00Z",
-      "status": "running",
-      "summary": "Meme scanner started; checking the ledger, tracked-wallet discovery, current on-chain/liquidity data, social evidence and public-figure launch claims."
+      "status": "data_limited",
+      "summary": "No open meme paper trades were present. Current public-figure/news searches found no verified new Musk, Trump or other prominent-person token launch or endorsement. Just a Backpack surfaced in DEX discovery, but the accessible snapshot was stale and exact contract identity, tracked-wallet convergence/persistence, holder/deployer risk and spam-filtered X unique-author acceleration could not be verified. No research, entry, exit or mark was created.",
+      "sources": [
+        {
+          "name": "Dexscreener Solana market",
+          "url": "https://dexscreener.com/solana",
+          "checkedAt": "2026-09-27T09:32:20Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "Kolscan tracked-wallet discovery",
+          "url": "https://kolscan.io/",
+          "checkedAt": "2026-09-27T09:32:20Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "Elon Musk public X profile",
+          "url": "https://x.com/elonmusk",
+          "checkedAt": "2026-09-27T09:32:20Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "Reuters Trump crypto investigation and current-news check",
+          "url": "https://www.reuters.com/investigations/under-trump-crypto-playbook-family-always-wins-investors-dont-2026-06-09/",
+          "checkedAt": "2026-09-27T09:32:20Z",
+          "status": "checked"
+        },
+        {
+          "name": "Solana official ecosystem page",
+          "url": "https://solana.com/",
+          "checkedAt": "2026-09-27T09:32:20Z",
+          "status": "checked"
+        }
+      ],
+      "missingData": [
+        "current tracked-wallet positions for IdontPayTaxes, Daumen, Frank DeGods, Numero and verified Clukz",
+        "wallet-entry timestamps and percent position remaining",
+        "live exact contract address verification for surfaced candidates",
+        "current holder, deployer, insider, bundler and wash-trading analysis",
+        "spam-filtered X mention velocity and unique-author acceleration",
+        "fully live Dexscreener pair liquidity, buyers and price structure"
+      ],
+      "counts": {
+        "research": 0,
+        "entries": 0,
+        "exits": 0
+      }
     }
   },
   "scanHistory": [
@@ -202,6 +247,61 @@
       ],
       "counts": {
         "research": 2,
+        "entries": 0,
+        "exits": 0
+      }
+    },
+    {
+      "id": "meme-scan-20260927T090000Z",
+      "system": "meme",
+      "startedAt": "2026-09-27T09:30:39Z",
+      "checkedAt": "2026-09-27T09:32:20Z",
+      "scheduledFor": "2026-09-27T09:00:00Z",
+      "nextScheduledAt": "2026-09-27T10:00:00Z",
+      "status": "data_limited",
+      "summary": "No open meme paper trades were present. Current public-figure/news searches found no verified new Musk, Trump or other prominent-person token launch or endorsement. Just a Backpack surfaced in DEX discovery, but the accessible snapshot was stale and exact contract identity, tracked-wallet convergence/persistence, holder/deployer risk and spam-filtered X unique-author acceleration could not be verified. No research, entry, exit or mark was created.",
+      "sources": [
+        {
+          "name": "Dexscreener Solana market",
+          "url": "https://dexscreener.com/solana",
+          "checkedAt": "2026-09-27T09:32:20Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "Kolscan tracked-wallet discovery",
+          "url": "https://kolscan.io/",
+          "checkedAt": "2026-09-27T09:32:20Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "Elon Musk public X profile",
+          "url": "https://x.com/elonmusk",
+          "checkedAt": "2026-09-27T09:32:20Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "Reuters Trump crypto investigation and current-news check",
+          "url": "https://www.reuters.com/investigations/under-trump-crypto-playbook-family-always-wins-investors-dont-2026-06-09/",
+          "checkedAt": "2026-09-27T09:32:20Z",
+          "status": "checked"
+        },
+        {
+          "name": "Solana official ecosystem page",
+          "url": "https://solana.com/",
+          "checkedAt": "2026-09-27T09:32:20Z",
+          "status": "checked"
+        }
+      ],
+      "missingData": [
+        "current tracked-wallet positions for IdontPayTaxes, Daumen, Frank DeGods, Numero and verified Clukz",
+        "wallet-entry timestamps and percent position remaining",
+        "live exact contract address verification for surfaced candidates",
+        "current holder, deployer, insider, bundler and wash-trading analysis",
+        "spam-filtered X mention velocity and unique-author acceleration",
+        "fully live Dexscreener pair liquidity, buyers and price structure"
+      ],
+      "counts": {
+        "research": 0,
         "entries": 0,
         "exits": 0
       }
