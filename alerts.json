@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-27T12:45:33.233Z",
+  "updatedAt": "2026-09-27T14:05:01.913Z",
   "alerts": [
     {
       "id": "options-bb-fy27q2-20260924",
@@ -181,14 +181,14 @@
   ],
   "scanners": {
     "penny": {
-      "id": "penny-scan-20260927T120000Z",
+      "id": "penny-scan-20260927T140000Z",
       "system": "penny",
-      "startedAt": "2026-09-27T12:43:52Z",
+      "startedAt": "2026-09-27T14:05:01.913Z",
       "checkedAt": "2026-09-27T12:44:14Z",
-      "scheduledFor": "2026-09-27T12:00:00Z",
-      "nextScheduledAt": "2026-09-27T13:00:00Z",
-      "status": "market_closed",
-      "summary": "No open penny paper trades were present. Nasdaq confirms U.S. stock trading is Monday through Friday. FTHM's issuer news and filing index still show September 24/25 as the newest disclosure, so the existing research is unchanged. With no reliable live quote, fresh volume, technical structure or social confirmation, no mark, exit, entry or new research event was created.",
+      "scheduledFor": "2026-09-27T14:00:00Z",
+      "nextScheduledAt": "2026-09-27T15:00:00Z",
+      "status": "running",
+      "summary": "Penny scanner is running; open trades are being managed before new-candidate research.",
       "sources": [
         {
           "name": "Nasdaq U.S. trading schedule",
