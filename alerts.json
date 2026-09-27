@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-27T20:09:29.400Z",
+  "updatedAt": "2026-09-27T20:41:05.097Z",
   "alerts": [
     {
       "id": "options-bb-fy27q2-20260924",
@@ -372,6 +372,112 @@
         "research": 0,
         "entries": 0,
         "exits": 0
+      }
+    },
+    "futures": {
+      "id": "futures-scan-20260927203939926",
+      "system": "futures",
+      "startedAt": "2026-09-27T20:39:39.926Z",
+      "checkedAt": "2026-09-27T20:41:05.097Z",
+      "scheduledFor": "2026-09-27T21:00:00.000Z",
+      "nextScheduledAt": "2026-09-27T21:00:00.000Z",
+      "status": "data_limited",
+      "summary": "No open futures paper trades were present. CME product and holiday pages were checked before the normal Sunday evening session, but no qualifying fresh exact-contract quote, spread, volume structure or initial margin was available. The September 16 Fed statement and upcoming September 30 BEA releases were reviewed as context. EIA's September 23 release showed a commercial crude build alongside gasoline and distillate draws, providing mixed oil evidence rather than a confirmed directional trigger. No research setup met the evidence threshold and no entry, exit or mark was created.",
+      "sources": [
+        {
+          "name": "CME Nasdaq futures",
+          "url": "https://www.cmegroup.com/markets/equities/nasdaq/e-mini-nasdaq-100.html",
+          "status": "checked; fresh dated-contract quote not available",
+          "checkedAt": "2026-09-27T20:41:05.097Z"
+        },
+        {
+          "name": "CME Micro Nasdaq futures",
+          "url": "https://www.cmegroup.com/markets/equities/nasdaq/micro-e-mini-nasdaq-100.html",
+          "status": "checked; public quotes explicitly delayed",
+          "checkedAt": "2026-09-27T20:41:05.097Z"
+        },
+        {
+          "name": "CME S&P futures",
+          "url": "https://www.cmegroup.com/markets/equities/sp/e-mini-sandp500.html",
+          "status": "checked; fresh dated-contract quote not available",
+          "checkedAt": "2026-09-27T20:41:05.097Z"
+        },
+        {
+          "name": "CME Micro S&P futures",
+          "url": "https://www.cmegroup.com/markets/equities/sp/micro-e-mini-sandp-500.html",
+          "status": "checked; fresh dated-contract quote not available",
+          "checkedAt": "2026-09-27T20:41:05.097Z"
+        },
+        {
+          "name": "CME gold futures",
+          "url": "https://www.cmegroup.com/markets/metals/precious/gold.html",
+          "status": "checked; fresh dated-contract quote not available",
+          "checkedAt": "2026-09-27T20:41:05.097Z"
+        },
+        {
+          "name": "CME Micro Gold specifications",
+          "url": "https://www.cmegroup.com/markets/metals/precious/e-micro-gold.contractSpecs.html",
+          "status": "checked; dynamic specifications incomplete",
+          "checkedAt": "2026-09-27T20:41:05.097Z"
+        },
+        {
+          "name": "CME WTI futures",
+          "url": "https://www.cmegroup.com/markets/energy/crude-oil/light-sweet-crude.html",
+          "status": "checked; fresh dated-contract quote not available",
+          "checkedAt": "2026-09-27T20:41:05.097Z"
+        },
+        {
+          "name": "CME Micro WTI futures",
+          "url": "https://www.cmegroup.com/markets/energy/crude-oil/micro-wti-crude-oil.html",
+          "status": "checked; fresh dated-contract quote not available",
+          "checkedAt": "2026-09-27T20:41:05.097Z"
+        },
+        {
+          "name": "CME holiday schedule",
+          "url": "https://www.cmegroup.com/trading-hours.html",
+          "status": "checked",
+          "checkedAt": "2026-09-27T20:41:05.097Z"
+        },
+        {
+          "name": "Federal Reserve September 16 statement",
+          "url": "https://www.federalreserve.gov/newsevents/pressreleases/monetary20260916a.htm",
+          "status": "checked",
+          "checkedAt": "2026-09-27T20:41:05.097Z"
+        },
+        {
+          "name": "BEA release calendar",
+          "url": "https://www.bea.gov/news/schedule",
+          "status": "checked",
+          "checkedAt": "2026-09-27T20:41:05.097Z"
+        },
+        {
+          "name": "BLS September calendar",
+          "url": "https://www.bls.gov/schedule/2026/09_sched.htm",
+          "status": "checked",
+          "checkedAt": "2026-09-27T20:41:05.097Z"
+        },
+        {
+          "name": "EIA weekly petroleum summary, week ending September 18",
+          "url": "https://ir.eia.gov/wpsr/summary.txt",
+          "status": "checked",
+          "checkedAt": "2026-09-27T20:41:05.097Z"
+        }
+      ],
+      "missingData": [
+        "dated active contract and expiry/roll confirmation for each family",
+        "exact-contract quote timestamped within five minutes",
+        "current bid/ask, spread, volume and confirmed break/retest structure",
+        "verified initial margin and tick-aligned risk/reward levels",
+        "current USD and Treasury-yield confirmation",
+        "complete high-impact release and speaker timing checks",
+        "current independently verified OPEC/supply catalyst"
+      ],
+      "counts": {
+        "openPositions": 0,
+        "research": 0,
+        "entries": 0,
+        "exits": 0,
+        "marks": 0
       }
     }
   },
@@ -1237,6 +1343,112 @@
         "research": 0,
         "entries": 0,
         "exits": 0
+      }
+    },
+    {
+      "id": "futures-scan-20260927203939926",
+      "system": "futures",
+      "startedAt": "2026-09-27T20:39:39.926Z",
+      "checkedAt": "2026-09-27T20:41:05.097Z",
+      "scheduledFor": "2026-09-27T21:00:00.000Z",
+      "nextScheduledAt": "2026-09-27T21:00:00.000Z",
+      "status": "data_limited",
+      "summary": "No open futures paper trades were present. CME product and holiday pages were checked before the normal Sunday evening session, but no qualifying fresh exact-contract quote, spread, volume structure or initial margin was available. The September 16 Fed statement and upcoming September 30 BEA releases were reviewed as context. EIA's September 23 release showed a commercial crude build alongside gasoline and distillate draws, providing mixed oil evidence rather than a confirmed directional trigger. No research setup met the evidence threshold and no entry, exit or mark was created.",
+      "sources": [
+        {
+          "name": "CME Nasdaq futures",
+          "url": "https://www.cmegroup.com/markets/equities/nasdaq/e-mini-nasdaq-100.html",
+          "status": "checked; fresh dated-contract quote not available",
+          "checkedAt": "2026-09-27T20:41:05.097Z"
+        },
+        {
+          "name": "CME Micro Nasdaq futures",
+          "url": "https://www.cmegroup.com/markets/equities/nasdaq/micro-e-mini-nasdaq-100.html",
+          "status": "checked; public quotes explicitly delayed",
+          "checkedAt": "2026-09-27T20:41:05.097Z"
+        },
+        {
+          "name": "CME S&P futures",
+          "url": "https://www.cmegroup.com/markets/equities/sp/e-mini-sandp500.html",
+          "status": "checked; fresh dated-contract quote not available",
+          "checkedAt": "2026-09-27T20:41:05.097Z"
+        },
+        {
+          "name": "CME Micro S&P futures",
+          "url": "https://www.cmegroup.com/markets/equities/sp/micro-e-mini-sandp-500.html",
+          "status": "checked; fresh dated-contract quote not available",
+          "checkedAt": "2026-09-27T20:41:05.097Z"
+        },
+        {
+          "name": "CME gold futures",
+          "url": "https://www.cmegroup.com/markets/metals/precious/gold.html",
+          "status": "checked; fresh dated-contract quote not available",
+          "checkedAt": "2026-09-27T20:41:05.097Z"
+        },
+        {
+          "name": "CME Micro Gold specifications",
+          "url": "https://www.cmegroup.com/markets/metals/precious/e-micro-gold.contractSpecs.html",
+          "status": "checked; dynamic specifications incomplete",
+          "checkedAt": "2026-09-27T20:41:05.097Z"
+        },
+        {
+          "name": "CME WTI futures",
+          "url": "https://www.cmegroup.com/markets/energy/crude-oil/light-sweet-crude.html",
+          "status": "checked; fresh dated-contract quote not available",
+          "checkedAt": "2026-09-27T20:41:05.097Z"
+        },
+        {
+          "name": "CME Micro WTI futures",
+          "url": "https://www.cmegroup.com/markets/energy/crude-oil/micro-wti-crude-oil.html",
+          "status": "checked; fresh dated-contract quote not available",
+          "checkedAt": "2026-09-27T20:41:05.097Z"
+        },
+        {
+          "name": "CME holiday schedule",
+          "url": "https://www.cmegroup.com/trading-hours.html",
+          "status": "checked",
+          "checkedAt": "2026-09-27T20:41:05.097Z"
+        },
+        {
+          "name": "Federal Reserve September 16 statement",
+          "url": "https://www.federalreserve.gov/newsevents/pressreleases/monetary20260916a.htm",
+          "status": "checked",
+          "checkedAt": "2026-09-27T20:41:05.097Z"
+        },
+        {
+          "name": "BEA release calendar",
+          "url": "https://www.bea.gov/news/schedule",
+          "status": "checked",
+          "checkedAt": "2026-09-27T20:41:05.097Z"
+        },
+        {
+          "name": "BLS September calendar",
+          "url": "https://www.bls.gov/schedule/2026/09_sched.htm",
+          "status": "checked",
+          "checkedAt": "2026-09-27T20:41:05.097Z"
+        },
+        {
+          "name": "EIA weekly petroleum summary, week ending September 18",
+          "url": "https://ir.eia.gov/wpsr/summary.txt",
+          "status": "checked",
+          "checkedAt": "2026-09-27T20:41:05.097Z"
+        }
+      ],
+      "missingData": [
+        "dated active contract and expiry/roll confirmation for each family",
+        "exact-contract quote timestamped within five minutes",
+        "current bid/ask, spread, volume and confirmed break/retest structure",
+        "verified initial margin and tick-aligned risk/reward levels",
+        "current USD and Treasury-yield confirmation",
+        "complete high-impact release and speaker timing checks",
+        "current independently verified OPEC/supply catalyst"
+      ],
+      "counts": {
+        "openPositions": 0,
+        "research": 0,
+        "entries": 0,
+        "exits": 0,
+        "marks": 0
       }
     }
   ]
