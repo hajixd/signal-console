@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-27T11:10:45Z",
+  "updatedAt": "2026-09-27T11:24:07Z",
   "alerts": [
     {
       "id": "options-bb-fy27q2-20260924",
@@ -181,11 +181,11 @@
   ],
   "scanners": {
     "penny": {
-      "startedAt": "2026-09-27T10:10:21Z",
+      "startedAt": "2026-09-27T11:24:07Z",
       "checkedAt": "2026-09-27T10:12:54Z",
-      "scheduledFor": "2026-09-27T10:00:00Z",
-      "nextScheduledAt": "2026-09-27T11:00:00Z",
-      "status": "market_closed",
+      "scheduledFor": "2026-09-27T11:00:00Z",
+      "nextScheduledAt": "2026-09-27T12:00:00Z",
+      "status": "running",
       "summary": "No open penny paper trades were present. U.S. equities were closed Sunday, so no reliable live quote, mark, exit or new paper entry was available. FTHM's September 24 issuer/SEC disclosure of a proposed digital-asset restructuring was verified and published as new research only. Entry remains blocked by the non-definitive structure, expected new-share issuance, active Nasdaq minimum-bid deficiency and missing live price, volume, technical and social confirmation.",
       "sources": [
         {
