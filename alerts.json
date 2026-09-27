@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-27T12:44:14Z",
+  "updatedAt": "2026-09-27T12:45:33.233Z",
   "alerts": [
     {
       "id": "options-bb-fy27q2-20260924",
@@ -298,12 +298,12 @@
     "meme": {
       "id": "meme-scan-20260927T120000Z",
       "system": "meme",
-      "startedAt": "2026-09-27T12:06:04Z",
+      "startedAt": "2026-09-27T12:45:33.233Z",
       "checkedAt": "2026-09-27T12:07:40Z",
       "scheduledFor": "2026-09-27T12:00:00Z",
       "nextScheduledAt": "2026-09-27T13:00:00Z",
-      "status": "data_limited",
-      "summary": "No open meme paper trades were present. DEX Screener's live Solana page, token-profile feed and boost feeds were checked. They surfaced new self-promoted and boosted tokens, including Elon-themed narratives, but none supplied an original public-figure launch or endorsement with an official project domain and independently verified contract. Kolscan wallet holdings/persistence, deployer and holder concentration, and spam-filtered X unique-author momentum were not verifiable. The official TRUMP site showed the existing 2025 Solana launch, not a new catalyst. No research, entry, exit or mark was created.",
+      "status": "running",
+      "summary": "Meme scanner is running; open trades are being managed before new-candidate research.",
       "sources": [
         {
           "name": "DEX Screener Solana market",
