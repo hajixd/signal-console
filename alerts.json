@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-27T04:19:34Z",
+  "updatedAt": "2026-09-27T04:45:20Z",
   "alerts": [],
   "scanners": {
     "penny": {
@@ -13,11 +13,11 @@
     },
     "options": {
       "checkedAt": "2026-09-27T04:19:34Z",
-      "startedAt": "2026-09-27T04:19:11Z",
+      "startedAt": "2026-09-27T04:45:20Z",
       "scheduledFor": "2026-09-27T04:00:00Z",
       "nextScheduledAt": "2026-09-27T05:00:00Z",
-      "status": "market_closed",
-      "summary": "Cboe's official U.S. options hours and extended-hours materials were rechecked. Saturday has no live contract market, and the ledger contained no open options paper trades. No reliable current contract quote existed for entry, exit or mark creation."
+      "status": "running",
+      "summary": "Swing-options scan started; rechecking the ledger and official U.S. options market status."
     },
     "meme": {
       "checkedAt": "2026-09-27T04:13:24Z",
