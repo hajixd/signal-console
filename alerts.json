@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-27T09:02:58Z",
+  "updatedAt": "2026-09-27T09:30:39Z",
   "alerts": [
     {
       "id": "options-bb-fy27q2-20260924",
@@ -156,11 +156,11 @@
     },
     "meme": {
       "checkedAt": "2026-09-27T04:53:29Z",
-      "startedAt": "2026-09-27T04:53:04Z",
-      "scheduledFor": "2026-09-27T04:00:00Z",
-      "nextScheduledAt": "2026-09-27T05:00:00Z",
-      "status": "data_limited",
-      "summary": "No open meme paper trades. Dexscreener, Kolscan discovery, current reputable news and public-figure launch searches were rechecked. Just a Backpack showed weakening six-hour momentum and modest liquidity, while tracked-wallet convergence, exact position persistence and spam-filtered X unique-author acceleration remained unverifiable. No verified new Musk/Trump launch or endorsement appeared; no entry, exit or mark was created."
+      "startedAt": "2026-09-27T09:30:39Z",
+      "scheduledFor": "2026-09-27T09:00:00Z",
+      "nextScheduledAt": "2026-09-27T10:00:00Z",
+      "status": "running",
+      "summary": "Meme scanner started; checking the ledger, tracked-wallet discovery, current on-chain/liquidity data, social evidence and public-figure launch claims."
     }
   },
   "scanHistory": [
