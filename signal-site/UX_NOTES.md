@@ -17,3 +17,11 @@ Local DOM tests cover seven-page navigation, chart range input and reset, per-ca
 
 ## Alert limitations
 Scheduled tasks and completed feed writes are distinct. A last_run timestamp alone is not proof that a final report was saved. Revised scanner instructions avoid preliminary running writes, bound unavailable-source retries, and require a final merged report or explicit sync-failure notification. Live wallet/social/option-flow coverage and exact hourly execution remain external dependencies.
+
+
+## Futures opportunities (2026-09-27)
+- Preserve Investing/Discover/navigation; add Futures to existing category controls and scanner health. No fabricated positions or prices.
+- NQ/MNQ, ES/MES, GC/MGC and CL/MCL require exact dated contracts, supported point values, integer size, direction and reported initial margin before paper inclusion. P&L uses price difference × direction × point value × contracts; buying power reserves margin rather than notional. Display returns as percentage of notional, not leveraged margin return.
+- Research details show trigger, invalidation, targets, dated sources and missing evidence. Hourly scans cannot simulate real-time stop execution or guarantee directional outcomes.
+- Official contract references: https://www.cmegroup.com/education/courses/micro-e-mini-futures/micro-e-mini-futures-products-overview ; https://www.cmegroup.com/markets/metals/precious/e-micro-gold.contractSpecs.html ; https://www.cmegroup.com/markets/metals/precious/gold-futures.html ; https://www.cmegroup.com/education/courses/understanding-micro-futures-contracts-at-cme-group/micro-crude-futures/micro-wti-crude-oil-futures-overview
+- Verification: node signal-site/tests/futures.cjs. No fixtures are placed in the live alert feed.
