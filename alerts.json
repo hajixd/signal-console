@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-27T19:36:12.818Z",
+  "updatedAt": "2026-09-27T19:44:41.881Z",
   "alerts": [
     {
       "id": "options-bb-fy27q2-20260924",
@@ -181,49 +181,43 @@
   ],
   "scanners": {
     "penny": {
-      "id": "penny-scan-20260927T140000Z",
+      "id": "penny-scan-20260927T190000Z",
       "system": "penny",
-      "startedAt": "2026-09-27T14:05:01.913Z",
-      "checkedAt": "2026-09-27T14:05:52.618Z",
-      "scheduledFor": "2026-09-27T14:00:00Z",
-      "nextScheduledAt": "2026-09-27T15:00:00Z",
+      "startedAt": "2026-09-27T19:44:41.467Z",
+      "checkedAt": "2026-09-27T19:44:41.881Z",
+      "scheduledFor": "2026-09-27T19:00:00.000Z",
+      "nextScheduledAt": "2026-09-27T20:00:00.000Z",
       "status": "market_closed",
-      "summary": "No open penny paper trades were present. Nasdaq confirms U.S. stock trading is Monday through Friday. FTHM's issuer news and filing index still show September 24/25 as the newest disclosure, so its existing research is unchanged. The FDA press-announcement list had no newer approval catalyst, and ASLE's September 25 Form 8-K concerned an administrative redomestication rather than a growth catalyst. With no reliable live quote, volume, technical structure or social confirmation, no mark, exit, entry or new research event was created.",
+      "summary": "No open penny paper trades were present. Nasdaq confirms regular U.S. stock trading is Monday through Friday. FTHM's issuer news and filing index remain unchanged at September 24/25, FDA's announcement list has no newer approval catalyst, and the bounded SEC/issuer search produced no new verified qualifying microcap catalyst. With no live quote, volume, technical structure or social confirmation, no research, entry, exit or mark was created.",
       "sources": [
         {
           "name": "Nasdaq U.S. trading schedule",
           "url": "https://www.nasdaq.com/market-activity/stock-market-holiday-schedule",
-          "checkedAt": "2026-09-27T14:05:52.618Z",
+          "checkedAt": "2026-09-27T19:44:41.881Z",
           "status": "checked"
         },
         {
           "name": "Fathom issuer news page",
           "url": "https://ir.fathominc.com/news-events",
-          "checkedAt": "2026-09-27T14:05:52.618Z",
+          "checkedAt": "2026-09-27T19:44:41.881Z",
           "status": "checked"
         },
         {
           "name": "Fathom issuer SEC filing index",
           "url": "https://ir.fathominc.com/sec-filings/sec-filings",
-          "checkedAt": "2026-09-27T14:05:52.618Z",
-          "status": "checked"
-        },
-        {
-          "name": "Fathom September 24 Form 8-K",
-          "url": "https://ir.fathominc.com/sec-filings/sec-filings/content/0001628280-26-063504/fthm-20260924.htm",
-          "checkedAt": "2026-09-27T14:05:52.618Z",
+          "checkedAt": "2026-09-27T19:44:41.881Z",
           "status": "checked"
         },
         {
           "name": "FDA press announcements",
           "url": "https://www.fda.gov/news-events/fda-newsroom/press-announcements",
-          "checkedAt": "2026-09-27T14:05:52.618Z",
+          "checkedAt": "2026-09-27T19:44:41.881Z",
           "status": "checked"
         },
         {
-          "name": "AerSale September 25 Form 8-K",
-          "url": "https://www.sec.gov/Archives/edgar/data/1754170/000110465926111023/asle-20260925x8k.htm",
-          "checkedAt": "2026-09-27T14:05:52.618Z",
+          "name": "SEC/issuer catalyst search for September 25 microcap filings",
+          "url": "https://www.sec.gov/edgar/search/",
+          "checkedAt": "2026-09-27T19:44:41.881Z",
           "status": "checked"
         }
       ],
@@ -1129,6 +1123,61 @@
         "spam-filtered X mention velocity and unique-author acceleration",
         "original public-figure posts and official project domains for surfaced narrative tokens",
         "complete pair-level quote, liquidity, buyer and holder data for newly surfaced tokens"
+      ],
+      "counts": {
+        "research": 0,
+        "entries": 0,
+        "exits": 0
+      }
+    },
+    {
+      "id": "penny-scan-20260927T190000Z",
+      "system": "penny",
+      "startedAt": "2026-09-27T19:44:41.467Z",
+      "checkedAt": "2026-09-27T19:44:41.881Z",
+      "scheduledFor": "2026-09-27T19:00:00.000Z",
+      "nextScheduledAt": "2026-09-27T20:00:00.000Z",
+      "status": "market_closed",
+      "summary": "No open penny paper trades were present. Nasdaq confirms regular U.S. stock trading is Monday through Friday. FTHM's issuer news and filing index remain unchanged at September 24/25, FDA's announcement list has no newer approval catalyst, and the bounded SEC/issuer search produced no new verified qualifying microcap catalyst. With no live quote, volume, technical structure or social confirmation, no research, entry, exit or mark was created.",
+      "sources": [
+        {
+          "name": "Nasdaq U.S. trading schedule",
+          "url": "https://www.nasdaq.com/market-activity/stock-market-holiday-schedule",
+          "checkedAt": "2026-09-27T19:44:41.881Z",
+          "status": "checked"
+        },
+        {
+          "name": "Fathom issuer news page",
+          "url": "https://ir.fathominc.com/news-events",
+          "checkedAt": "2026-09-27T19:44:41.881Z",
+          "status": "checked"
+        },
+        {
+          "name": "Fathom issuer SEC filing index",
+          "url": "https://ir.fathominc.com/sec-filings/sec-filings",
+          "checkedAt": "2026-09-27T19:44:41.881Z",
+          "status": "checked"
+        },
+        {
+          "name": "FDA press announcements",
+          "url": "https://www.fda.gov/news-events/fda-newsroom/press-announcements",
+          "checkedAt": "2026-09-27T19:44:41.881Z",
+          "status": "checked"
+        },
+        {
+          "name": "SEC/issuer catalyst search for September 25 microcap filings",
+          "url": "https://www.sec.gov/edgar/search/",
+          "checkedAt": "2026-09-27T19:44:41.881Z",
+          "status": "checked"
+        }
+      ],
+      "missingData": [
+        "live penny-stock quotes while the U.S. equity market is closed",
+        "fresh relative and dollar volume",
+        "post-reopening technical structure and sector confirmation",
+        "spam-filtered X unique-author acceleration",
+        "current insider activity across the candidate universe",
+        "complete real-time microcap universe coverage"
       ],
       "counts": {
         "research": 0,
