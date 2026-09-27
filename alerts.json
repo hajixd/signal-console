@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-27T11:24:07Z",
+  "updatedAt": "2026-09-27T11:25:21Z",
   "alerts": [
     {
       "id": "options-bb-fy27q2-20260924",
@@ -181,42 +181,44 @@
   ],
   "scanners": {
     "penny": {
+      "id": "penny-scan-20260927T110000Z",
+      "system": "penny",
       "startedAt": "2026-09-27T11:24:07Z",
-      "checkedAt": "2026-09-27T10:12:54Z",
+      "checkedAt": "2026-09-27T11:25:21Z",
       "scheduledFor": "2026-09-27T11:00:00Z",
       "nextScheduledAt": "2026-09-27T12:00:00Z",
-      "status": "running",
-      "summary": "No open penny paper trades were present. U.S. equities were closed Sunday, so no reliable live quote, mark, exit or new paper entry was available. FTHM's September 24 issuer/SEC disclosure of a proposed digital-asset restructuring was verified and published as new research only. Entry remains blocked by the non-definitive structure, expected new-share issuance, active Nasdaq minimum-bid deficiency and missing live price, volume, technical and social confirmation.",
+      "status": "market_closed",
+      "summary": "No open penny paper trades were present. Nasdaq's published schedule confirms U.S. stock trading is Monday through Friday, so no reliable live quote, fresh volume, mark, exit or paper entry was available Sunday. FTHM's September 24 issuer news and Form 8-K were rechecked; no newer issuer disclosure or material new primary evidence changed the existing research. No research, entry, exit or mark was created.",
       "sources": [
         {
-          "name": "Nasdaq U.S. market-hours and holiday schedule",
+          "name": "Nasdaq U.S. trading schedule",
           "url": "https://www.nasdaq.com/market-activity/stock-market-holiday-schedule",
-          "checkedAt": "2026-09-27T10:12:54Z",
+          "checkedAt": "2026-09-27T11:25:21Z",
           "status": "checked"
         },
         {
-          "name": "Fathom issuer announcement",
-          "url": "https://ir.fathominc.com/news-events/press-releases/detail/181/fathom-holdings-and-neighborhood-intelligence-announce",
-          "checkedAt": "2026-09-27T10:12:54Z",
+          "name": "Fathom issuer news page",
+          "url": "https://ir.fathominc.com/news-events",
+          "checkedAt": "2026-09-27T11:25:21Z",
           "status": "checked"
         },
         {
           "name": "Fathom September 24 Form 8-K",
           "url": "https://ir.fathominc.com/sec-filings/sec-filings/content/0001628280-26-063504/fthm-20260924.htm",
-          "checkedAt": "2026-09-27T10:12:54Z",
+          "checkedAt": "2026-09-27T11:25:21Z",
           "status": "checked"
         },
         {
           "name": "Fathom August 21 minimum-bid deficiency Form 8-K",
           "url": "https://www.sec.gov/Archives/edgar/data/1753162/000162828026058728/fthm-20260821.htm",
-          "checkedAt": "2026-09-27T10:12:54Z",
+          "checkedAt": "2026-09-27T11:25:21Z",
           "status": "checked"
         },
         {
-          "name": "Fathom July 17 filing-compliance Form 8-K",
-          "url": "https://www.sec.gov/Archives/edgar/data/1753162/000162828026048813/fthm-20260717.htm",
-          "checkedAt": "2026-09-27T10:12:54Z",
-          "status": "checked"
+          "name": "SEC Fathom company filing page",
+          "url": "https://www.sec.gov/edgar/browse/?CIK=1753162",
+          "checkedAt": "2026-09-27T11:25:21Z",
+          "status": "unavailable"
         }
       ],
       "missingData": [
@@ -224,11 +226,12 @@
         "fresh relative and dollar volume",
         "post-reopening technical structure and sector confirmation",
         "spam-filtered X unique-author acceleration",
-        "current insider activity",
-        "complete real-time microcap universe coverage"
+        "current insider activity across the candidate universe",
+        "complete real-time microcap universe coverage",
+        "dynamic SEC filing table on the Fathom company page"
       ],
       "counts": {
-        "research": 1,
+        "research": 0,
         "entries": 0,
         "exits": 0
       }
@@ -630,6 +633,62 @@
         "contract volume, open interest and spread",
         "reliable buyer-initiated opening-flow confirmation",
         "post-reopening underlying, sector and broad-market structure"
+      ],
+      "counts": {
+        "research": 0,
+        "entries": 0,
+        "exits": 0
+      }
+    },
+    {
+      "id": "penny-scan-20260927T110000Z",
+      "system": "penny",
+      "startedAt": "2026-09-27T11:24:07Z",
+      "checkedAt": "2026-09-27T11:25:21Z",
+      "scheduledFor": "2026-09-27T11:00:00Z",
+      "nextScheduledAt": "2026-09-27T12:00:00Z",
+      "status": "market_closed",
+      "summary": "No open penny paper trades were present. Nasdaq's published schedule confirms U.S. stock trading is Monday through Friday, so no reliable live quote, fresh volume, mark, exit or paper entry was available Sunday. FTHM's September 24 issuer news and Form 8-K were rechecked; no newer issuer disclosure or material new primary evidence changed the existing research. No research, entry, exit or mark was created.",
+      "sources": [
+        {
+          "name": "Nasdaq U.S. trading schedule",
+          "url": "https://www.nasdaq.com/market-activity/stock-market-holiday-schedule",
+          "checkedAt": "2026-09-27T11:25:21Z",
+          "status": "checked"
+        },
+        {
+          "name": "Fathom issuer news page",
+          "url": "https://ir.fathominc.com/news-events",
+          "checkedAt": "2026-09-27T11:25:21Z",
+          "status": "checked"
+        },
+        {
+          "name": "Fathom September 24 Form 8-K",
+          "url": "https://ir.fathominc.com/sec-filings/sec-filings/content/0001628280-26-063504/fthm-20260924.htm",
+          "checkedAt": "2026-09-27T11:25:21Z",
+          "status": "checked"
+        },
+        {
+          "name": "Fathom August 21 minimum-bid deficiency Form 8-K",
+          "url": "https://www.sec.gov/Archives/edgar/data/1753162/000162828026058728/fthm-20260821.htm",
+          "checkedAt": "2026-09-27T11:25:21Z",
+          "status": "checked"
+        },
+        {
+          "name": "SEC Fathom company filing page",
+          "url": "https://www.sec.gov/edgar/browse/?CIK=1753162",
+          "checkedAt": "2026-09-27T11:25:21Z",
+          "status": "unavailable"
+        }
+      ],
+      "missingData": [
+        "live penny-stock quotes while the U.S. equity market is closed",
+        "fresh relative and dollar volume",
+        "post-reopening technical structure and sector confirmation",
+        "spam-filtered X unique-author acceleration",
+        "current insider activity across the candidate universe",
+        "complete real-time microcap universe coverage",
+        "dynamic SEC filing table on the Fathom company page"
       ],
       "counts": {
         "research": 0,
