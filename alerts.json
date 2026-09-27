@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-27T12:03:23Z",
+  "updatedAt": "2026-09-27T12:06:04Z",
   "alerts": [
     {
       "id": "options-bb-fy27q2-20260924",
@@ -303,11 +303,11 @@
       }
     },
     "meme": {
-      "startedAt": "2026-09-27T11:01:40Z",
+      "startedAt": "2026-09-27T12:06:04Z",
       "checkedAt": "2026-09-27T11:03:48Z",
-      "scheduledFor": "2026-09-27T11:00:00Z",
-      "nextScheduledAt": "2026-09-27T12:00:00Z",
-      "status": "data_limited",
+      "scheduledFor": "2026-09-27T12:00:00Z",
+      "nextScheduledAt": "2026-09-27T13:00:00Z",
+      "status": "running",
       "summary": "No open meme paper trades were present. DEX Screener's Solana market and Kolscan's public leaderboard were reachable, but the live token table and required named-wallet holdings/persistence were not verifiable. Current public-figure/news checks found no new launch or endorsement with an original post, official domain, exact contract address, explorer confirmation and liquidity validation. The older LAPTOP report and a secondary Black Bull listing were rejected as new research candidates because they lacked current primary-source/contract verification and the required wallet, ownership and social gates. No research, entry, exit or mark was created.",
       "sources": [
         {
