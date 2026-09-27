@@ -1,7 +1,110 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-27T09:01:24Z",
-  "alerts": [],
+  "updatedAt": "2026-09-27T09:02:58Z",
+  "alerts": [
+    {
+      "id": "options-bb-fy27q2-20260924",
+      "eventType": "research",
+      "system": "options",
+      "timestamp": "2026-09-27T09:02:58Z",
+      "asset": "BB",
+      "title": "Research: BB raised outlook after record QNX quarter",
+      "summary": "BlackBerry reported 26% year-over-year revenue growth, 81% adjusted EBITDA growth, positive operating cash flow and raised FY2027 revenue and adjusted EBITDA guidance. This is a credible post-earnings continuation catalyst, but no paper option entry is permitted until the market reopens and the exact contract, price action, IV, Greeks, spread, OI and buyer-initiated flow are verified.",
+      "reasons": [
+        "Q2 FY2027 revenue increased 26% year over year to $163.3 million.",
+        "Adjusted EBITDA increased 81% year over year and operating cash flow was $29.3 million.",
+        "QNX secured its largest design win to date, adding more than $100 million to royalty backlog.",
+        "Management raised full-year revenue and adjusted EBITDA outlook."
+      ],
+      "href": "https://www.sec.gov/Archives/edgar/data/1070235/000107023526000112/q2fy27ex-991.htm",
+      "missingData": [
+        "live underlying quote and Monday continuation structure",
+        "exact 21-60 DTE contract bid, ask and midpoint",
+        "contract IV, IV rank and term structure",
+        "delta and remaining Greeks",
+        "contract volume, open interest and spread",
+        "reliable buyer-initiated opening-flow confirmation",
+        "sector and broad-market confirmation after reopening"
+      ],
+      "risk": "Research only. Post-earnings gaps can reverse; Secure Communications EBITDA declined 18% year over year and DBNRR was 91%. Do not enter without liquid contract confirmation and a defined underlying invalidation.",
+      "details": {
+        "verificationStatus": "primary catalyst verified; trade eligibility pending live market and options checks",
+        "evidenceSources": [
+          {
+            "name": "BlackBerry Q2 FY2027 earnings release filed with SEC",
+            "url": "https://www.sec.gov/Archives/edgar/data/1070235/000107023526000112/q2fy27ex-991.htm",
+            "publishedAt": "2026-09-24",
+            "checkedAt": "2026-09-27T09:02:58Z",
+            "status": "checked"
+          },
+          {
+            "name": "BlackBerry Form 8-K",
+            "url": "https://www.sec.gov/Archives/edgar/data/1070235/000107023526000112/bbry-20260924.htm",
+            "publishedAt": "2026-09-24",
+            "checkedAt": "2026-09-27T09:02:58Z",
+            "status": "checked"
+          }
+        ],
+        "rejectionReasons": [
+          "U.S. options market closed at scan time",
+          "no reliable live exact-contract quote",
+          "no verified current IV, Greeks, OI, spread or buyer-initiated flow",
+          "post-earnings continuation structure not yet confirmed"
+        ]
+      }
+    },
+    {
+      "id": "options-cost-fy26q4-20260924",
+      "eventType": "research",
+      "system": "options",
+      "timestamp": "2026-09-27T09:02:58Z",
+      "asset": "COST",
+      "title": "Research: COST double-digit sales and earnings growth",
+      "summary": "Costco reported fourth-quarter net sales growth of 11.2%, adjusted comparable sales growth of 6.7%, digitally enabled comparable growth of 19.8% and diluted EPS of $6.75 versus $5.87 a year earlier. The results support a possible post-earnings drift setup, but an exact option entry requires live price structure, volatility and liquidity checks after reopening.",
+      "reasons": [
+        "Fourth-quarter net sales rose 11.2% year over year to $93.9 billion.",
+        "Adjusted total-company comparable sales increased 6.7%.",
+        "Digitally enabled comparable sales increased 19.8%.",
+        "Diluted EPS increased to $6.75 from $5.87."
+      ],
+      "href": "https://www.sec.gov/Archives/edgar/data/909832/000090983226000084/costex9918-k92426.htm",
+      "missingData": [
+        "live underlying quote and post-earnings continuation structure",
+        "exact 21-60 DTE contract bid, ask and midpoint",
+        "contract IV, IV rank and term structure",
+        "delta and remaining Greeks",
+        "contract volume, open interest and spread",
+        "reliable buyer-initiated opening-flow confirmation",
+        "consumer-defensive sector and broad-market confirmation after reopening"
+      ],
+      "risk": "Research only. Results included a $0.15-per-share nonrecurring tariff-refund benefit, and premium may remain elevated after earnings. Do not enter without a favorable live volatility/reward profile and defined invalidation.",
+      "details": {
+        "verificationStatus": "primary catalyst verified; trade eligibility pending live market and options checks",
+        "evidenceSources": [
+          {
+            "name": "Costco Q4 and FY2026 earnings release filed with SEC",
+            "url": "https://www.sec.gov/Archives/edgar/data/909832/000090983226000084/costex9918-k92426.htm",
+            "publishedAt": "2026-09-24",
+            "checkedAt": "2026-09-27T09:02:58Z",
+            "status": "checked"
+          },
+          {
+            "name": "Costco Form 8-K",
+            "url": "https://www.sec.gov/Archives/edgar/data/909832/000090983226000084/cost-20260924.htm",
+            "publishedAt": "2026-09-24",
+            "checkedAt": "2026-09-27T09:02:58Z",
+            "status": "checked"
+          }
+        ],
+        "rejectionReasons": [
+          "U.S. options market closed at scan time",
+          "no reliable live exact-contract quote",
+          "no verified current IV, Greeks, OI, spread or buyer-initiated flow",
+          "post-earnings continuation structure not yet confirmed"
+        ]
+      }
+    }
+  ],
   "scanners": {
     "penny": {
       "checkedAt": "2026-09-27T05:11:07Z",
@@ -12,12 +115,44 @@
       "summary": "Nasdaq's official market-hours page and FTHM SEC/IR sources were rechecked. U.S. equities were closed Saturday and the ledger contained no open penny paper trades. FTHM's September 24 restructuring catalyst was offset by unresolved late-filing and minimum-bid listing risk, and no reliable live quote or volume confirmation was available. No entry, exit or mark was created."
     },
     "options": {
-      "checkedAt": "2026-09-27T04:45:49Z",
       "startedAt": "2026-09-27T09:01:24Z",
+      "checkedAt": "2026-09-27T09:02:58Z",
       "scheduledFor": "2026-09-27T09:00:00Z",
       "nextScheduledAt": "2026-09-27T10:00:00Z",
-      "status": "running",
-      "summary": "Options scan started; checking open trades, official session hours, current primary catalysts and contract-data availability."
+      "status": "market_closed",
+      "summary": "No open options paper trades were present. Cboe session hours and primary SEC filings were checked. Sunday pre-session trading was closed, so no reliable live exact-contract quote, IV, Greeks, spread, OI or flow was available. Two new research-only post-earnings catalysts were published for BB and COST; no entry, exit or mark was created.",
+      "sources": [
+        {
+          "name": "Cboe equity-options extended-hours FAQ",
+          "url": "https://www.cboe.com/document/tech-spec/content/technical-specifications/equity-options-extended-trading-hours-faq/",
+          "checkedAt": "2026-09-27T09:02:58Z",
+          "status": "checked"
+        },
+        {
+          "name": "BlackBerry Q2 FY2027 SEC earnings exhibit",
+          "url": "https://www.sec.gov/Archives/edgar/data/1070235/000107023526000112/q2fy27ex-991.htm",
+          "checkedAt": "2026-09-27T09:02:58Z",
+          "status": "checked"
+        },
+        {
+          "name": "Costco Q4 FY2026 SEC earnings exhibit",
+          "url": "https://www.sec.gov/Archives/edgar/data/909832/000090983226000084/costex9918-k92426.htm",
+          "checkedAt": "2026-09-27T09:02:58Z",
+          "status": "checked"
+        }
+      ],
+      "missingData": [
+        "live exact-contract quotes",
+        "current contract IV and Greeks",
+        "contract volume, open interest and spreads",
+        "buyer-initiated opening flow",
+        "post-reopening underlying and sector confirmation"
+      ],
+      "counts": {
+        "research": 2,
+        "entries": 0,
+        "exits": 0
+      }
     },
     "meme": {
       "checkedAt": "2026-09-27T04:53:29Z",
@@ -27,5 +162,49 @@
       "status": "data_limited",
       "summary": "No open meme paper trades. Dexscreener, Kolscan discovery, current reputable news and public-figure launch searches were rechecked. Just a Backpack showed weakening six-hour momentum and modest liquidity, while tracked-wallet convergence, exact position persistence and spam-filtered X unique-author acceleration remained unverifiable. No verified new Musk/Trump launch or endorsement appeared; no entry, exit or mark was created."
     }
-  }
+  },
+  "scanHistory": [
+    {
+      "id": "options-scan-20260927T090000Z",
+      "system": "options",
+      "startedAt": "2026-09-27T09:01:24Z",
+      "checkedAt": "2026-09-27T09:02:58Z",
+      "scheduledFor": "2026-09-27T09:00:00Z",
+      "nextScheduledAt": "2026-09-27T10:00:00Z",
+      "status": "market_closed",
+      "summary": "No open options paper trades were present. Cboe session hours and primary SEC filings were checked. Sunday pre-session trading was closed, so no reliable live exact-contract quote, IV, Greeks, spread, OI or flow was available. Two new research-only post-earnings catalysts were published for BB and COST; no entry, exit or mark was created.",
+      "sources": [
+        {
+          "name": "Cboe equity-options extended-hours FAQ",
+          "url": "https://www.cboe.com/document/tech-spec/content/technical-specifications/equity-options-extended-trading-hours-faq/",
+          "checkedAt": "2026-09-27T09:02:58Z",
+          "status": "checked"
+        },
+        {
+          "name": "BlackBerry Q2 FY2027 SEC earnings exhibit",
+          "url": "https://www.sec.gov/Archives/edgar/data/1070235/000107023526000112/q2fy27ex-991.htm",
+          "checkedAt": "2026-09-27T09:02:58Z",
+          "status": "checked"
+        },
+        {
+          "name": "Costco Q4 FY2026 SEC earnings exhibit",
+          "url": "https://www.sec.gov/Archives/edgar/data/909832/000090983226000084/costex9918-k92426.htm",
+          "checkedAt": "2026-09-27T09:02:58Z",
+          "status": "checked"
+        }
+      ],
+      "missingData": [
+        "live exact-contract quotes",
+        "current contract IV and Greeks",
+        "contract volume, open interest and spreads",
+        "buyer-initiated opening flow",
+        "post-reopening underlying and sector confirmation"
+      ],
+      "counts": {
+        "research": 2,
+        "entries": 0,
+        "exits": 0
+      }
+    }
+  ]
 }
