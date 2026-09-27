@@ -1,15 +1,15 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-27T03:55:03Z",
+  "updatedAt": "2026-09-27T03:55:38Z",
   "alerts": [],
   "scanners": {
     "penny": {
-      "checkedAt": "2026-09-26T19:08:26Z",
+      "checkedAt": "2026-09-27T03:55:38Z",
       "startedAt": "2026-09-27T03:55:03Z",
       "scheduledFor": "2026-09-27T03:00:00Z",
       "nextScheduledAt": "2026-09-27T04:00:00Z",
-      "status": "running",
-      "summary": "Penny-stock scan started; checking the latest ledger, official filings and U.S. market status."
+      "status": "market_closed",
+      "summary": "Nasdaq's official market-hours page and FTHM SEC/IR sources were rechecked. U.S. equities were closed Saturday, the ledger contained no open penny paper trades, and no reliable live quote or new qualifying catalyst-volume setup was available. No entry, exit or mark was created."
     },
     "options": {
       "checkedAt": "2026-09-26T22:38:23Z",
