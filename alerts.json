@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-27T10:10:21Z",
+  "updatedAt": "2026-09-27T10:12:54Z",
   "alerts": [
     {
       "id": "options-bb-fy27q2-20260924",
@@ -103,16 +103,135 @@
           "post-earnings continuation structure not yet confirmed"
         ]
       }
+    },
+    {
+      "id": "penny-fthm-restructured-transaction-20260924",
+      "eventType": "research",
+      "system": "penny",
+      "timestamp": "2026-09-27T10:12:54Z",
+      "asset": "FTHM",
+      "title": "Research: FTHM proposed digital-asset restructuring",
+      "summary": "Fathom and Neighborhood Intelligence disclosed a proposed alternative transaction that would place substantially all of NXH's digital-asset holdings into Fathom, including an approximately 38.8% direct and indirect interest in tZERO, Medici-related fund assets and GrainChain. The companies describe at least $130 million of contributed-asset value, subject to Fathom validation and definitive agreements. This is research only: the market is closed and entry eligibility cannot be established without a fresh quote, volume/structure confirmation and updated dilution-risk checks.",
+      "reasons": [
+        "The September 24 Form 8-K confirms the parties agreed to explore an alternative structure replacing the previously announced merger structure.",
+        "The issuer release says NXH would contribute its approximately 38.8% direct and indirect tZERO interest, Medici-related assets and GrainChain investment.",
+        "The proposed contributed assets are described as worth no less than $130 million, subject to due diligence and definitive documentation.",
+        "The catalyst is recent, issuer-confirmed and potentially material relative to a microcap issuer, but remains preliminary."
+      ],
+      "href": "https://ir.fathominc.com/news-events/press-releases/detail/181/fathom-holdings-and-neighborhood-intelligence-announce",
+      "missingData": [
+        "reliable live quote after the U.S. equity market reopens",
+        "fresh relative volume and dollar-volume confirmation",
+        "constructive continuation structure and technical invalidation",
+        "post-announcement market capitalization",
+        "current dilution, ATM, offering, warrant and convertible review after the latest filing",
+        "spam-filtered X unique-author acceleration",
+        "current insider alignment"
+      ],
+      "risk": "Research only, not a paper entry. The transaction is exploratory, requires definitive agreements, valuation validation, board and Fathom stockholder approvals, a fairness opinion and other approvals, and may not close. Consideration would be newly issued Fathom shares and NXH is expected to retain control, creating substantial dilution/control risk. FTHM also received an August 21 Nasdaq minimum-bid deficiency notice with a February 17, 2027 compliance deadline.",
+      "details": {
+        "verificationStatus": "primary catalyst and active listing risk verified; trade eligibility pending live market, volume, structure, dilution and social checks",
+        "evidenceSources": [
+          {
+            "name": "Fathom issuer announcement",
+            "url": "https://ir.fathominc.com/news-events/press-releases/detail/181/fathom-holdings-and-neighborhood-intelligence-announce",
+            "publishedAt": "2026-09-24T16:44:00-04:00",
+            "checkedAt": "2026-09-27T10:12:54Z",
+            "status": "checked"
+          },
+          {
+            "name": "Fathom September 24 Form 8-K",
+            "url": "https://ir.fathominc.com/sec-filings/sec-filings/content/0001628280-26-063504/fthm-20260924.htm",
+            "publishedAt": "2026-09-25",
+            "checkedAt": "2026-09-27T10:12:54Z",
+            "status": "checked"
+          },
+          {
+            "name": "Fathom August 21 minimum-bid deficiency Form 8-K",
+            "url": "https://www.sec.gov/Archives/edgar/data/1753162/000162828026058728/fthm-20260821.htm",
+            "publishedAt": "2026-08-24",
+            "checkedAt": "2026-09-27T10:12:54Z",
+            "status": "checked"
+          },
+          {
+            "name": "Fathom July 17 filing-compliance Form 8-K",
+            "url": "https://www.sec.gov/Archives/edgar/data/1753162/000162828026048813/fthm-20260717.htm",
+            "publishedAt": "2026-07-20",
+            "checkedAt": "2026-09-27T10:12:54Z",
+            "status": "checked"
+          }
+        ],
+        "catalystVerification": {
+          "status": "confirmed issuer and SEC disclosure",
+          "announcedAt": "2026-09-24T16:44:00-04:00",
+          "definitiveAgreement": false,
+          "statedAssetValue": "at least $130 million, subject to validation",
+          "expectedConsideration": "newly issued FTHM shares",
+          "expectedControl": "NXH expected to maintain a controlling interest"
+        },
+        "rejectionReasons": [
+          "U.S. equity market closed at scan time",
+          "no reliable live quote or current relative-volume confirmation",
+          "no confirmed post-catalyst continuation structure",
+          "active Nasdaq minimum-bid deficiency",
+          "proposed transaction is non-definitive and would involve newly issued shares"
+        ]
+      }
     }
   ],
   "scanners": {
     "penny": {
-      "checkedAt": "2026-09-27T05:11:07Z",
       "startedAt": "2026-09-27T10:10:21Z",
+      "checkedAt": "2026-09-27T10:12:54Z",
       "scheduledFor": "2026-09-27T10:00:00Z",
       "nextScheduledAt": "2026-09-27T11:00:00Z",
-      "status": "running",
-      "summary": "Penny scanner is checking the current ledger first, then market status, primary catalysts, filings and eligibility gates."
+      "status": "market_closed",
+      "summary": "No open penny paper trades were present. U.S. equities were closed Sunday, so no reliable live quote, mark, exit or new paper entry was available. FTHM's September 24 issuer/SEC disclosure of a proposed digital-asset restructuring was verified and published as new research only. Entry remains blocked by the non-definitive structure, expected new-share issuance, active Nasdaq minimum-bid deficiency and missing live price, volume, technical and social confirmation.",
+      "sources": [
+        {
+          "name": "Nasdaq U.S. market-hours and holiday schedule",
+          "url": "https://www.nasdaq.com/market-activity/stock-market-holiday-schedule",
+          "checkedAt": "2026-09-27T10:12:54Z",
+          "status": "checked"
+        },
+        {
+          "name": "Fathom issuer announcement",
+          "url": "https://ir.fathominc.com/news-events/press-releases/detail/181/fathom-holdings-and-neighborhood-intelligence-announce",
+          "checkedAt": "2026-09-27T10:12:54Z",
+          "status": "checked"
+        },
+        {
+          "name": "Fathom September 24 Form 8-K",
+          "url": "https://ir.fathominc.com/sec-filings/sec-filings/content/0001628280-26-063504/fthm-20260924.htm",
+          "checkedAt": "2026-09-27T10:12:54Z",
+          "status": "checked"
+        },
+        {
+          "name": "Fathom August 21 minimum-bid deficiency Form 8-K",
+          "url": "https://www.sec.gov/Archives/edgar/data/1753162/000162828026058728/fthm-20260821.htm",
+          "checkedAt": "2026-09-27T10:12:54Z",
+          "status": "checked"
+        },
+        {
+          "name": "Fathom July 17 filing-compliance Form 8-K",
+          "url": "https://www.sec.gov/Archives/edgar/data/1753162/000162828026048813/fthm-20260717.htm",
+          "checkedAt": "2026-09-27T10:12:54Z",
+          "status": "checked"
+        }
+      ],
+      "missingData": [
+        "live penny-stock quotes while the U.S. equity market is closed",
+        "fresh relative and dollar volume",
+        "post-reopening technical structure and sector confirmation",
+        "spam-filtered X unique-author acceleration",
+        "current insider activity",
+        "complete real-time microcap universe coverage"
+      ],
+      "counts": {
+        "research": 1,
+        "entries": 0,
+        "exits": 0
+      }
     },
     "options": {
       "startedAt": "2026-09-27T09:50:35Z",
@@ -302,6 +421,61 @@
       ],
       "counts": {
         "research": 0,
+        "entries": 0,
+        "exits": 0
+      }
+    },
+    {
+      "id": "penny-scan-20260927T100000Z",
+      "system": "penny",
+      "startedAt": "2026-09-27T10:10:21Z",
+      "checkedAt": "2026-09-27T10:12:54Z",
+      "scheduledFor": "2026-09-27T10:00:00Z",
+      "nextScheduledAt": "2026-09-27T11:00:00Z",
+      "status": "market_closed",
+      "summary": "No open penny paper trades were present. U.S. equities were closed Sunday, so no reliable live quote, mark, exit or new paper entry was available. FTHM's September 24 issuer/SEC disclosure of a proposed digital-asset restructuring was verified and published as new research only. Entry remains blocked by the non-definitive structure, expected new-share issuance, active Nasdaq minimum-bid deficiency and missing live price, volume, technical and social confirmation.",
+      "sources": [
+        {
+          "name": "Nasdaq U.S. market-hours and holiday schedule",
+          "url": "https://www.nasdaq.com/market-activity/stock-market-holiday-schedule",
+          "checkedAt": "2026-09-27T10:12:54Z",
+          "status": "checked"
+        },
+        {
+          "name": "Fathom issuer announcement",
+          "url": "https://ir.fathominc.com/news-events/press-releases/detail/181/fathom-holdings-and-neighborhood-intelligence-announce",
+          "checkedAt": "2026-09-27T10:12:54Z",
+          "status": "checked"
+        },
+        {
+          "name": "Fathom September 24 Form 8-K",
+          "url": "https://ir.fathominc.com/sec-filings/sec-filings/content/0001628280-26-063504/fthm-20260924.htm",
+          "checkedAt": "2026-09-27T10:12:54Z",
+          "status": "checked"
+        },
+        {
+          "name": "Fathom August 21 minimum-bid deficiency Form 8-K",
+          "url": "https://www.sec.gov/Archives/edgar/data/1753162/000162828026058728/fthm-20260821.htm",
+          "checkedAt": "2026-09-27T10:12:54Z",
+          "status": "checked"
+        },
+        {
+          "name": "Fathom July 17 filing-compliance Form 8-K",
+          "url": "https://www.sec.gov/Archives/edgar/data/1753162/000162828026048813/fthm-20260717.htm",
+          "checkedAt": "2026-09-27T10:12:54Z",
+          "status": "checked"
+        }
+      ],
+      "missingData": [
+        "live penny-stock quotes while the U.S. equity market is closed",
+        "fresh relative and dollar volume",
+        "post-reopening technical structure and sector confirmation",
+        "spam-filtered X unique-author acceleration",
+        "current insider activity",
+        "complete real-time microcap universe coverage"
+      ],
+      "counts": {
+        "research": 1,
         "entries": 0,
         "exits": 0
       }
