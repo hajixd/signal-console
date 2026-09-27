@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-27T14:05:52.618Z",
+  "updatedAt": "2026-09-27T14:11:58.936Z",
   "alerts": [
     {
       "id": "options-bb-fy27q2-20260924",
@@ -308,12 +308,12 @@
       }
     },
     "meme": {
-      "id": "meme-scan-20260927T120000Z",
+      "id": "meme-scan-20260927T140000Z",
       "system": "meme",
-      "startedAt": "2026-09-27T12:45:33.233Z",
+      "startedAt": "2026-09-27T14:11:58.936Z",
       "checkedAt": "2026-09-27T12:07:40Z",
-      "scheduledFor": "2026-09-27T12:00:00Z",
-      "nextScheduledAt": "2026-09-27T13:00:00Z",
+      "scheduledFor": "2026-09-27T14:00:00Z",
+      "nextScheduledAt": "2026-09-27T15:00:00Z",
       "status": "running",
       "summary": "Meme scanner is running; open trades are being managed before new-candidate research.",
       "sources": [
