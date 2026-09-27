@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-27T04:53:04Z",
+  "updatedAt": "2026-09-27T04:53:29Z",
   "alerts": [],
   "scanners": {
     "penny": {
@@ -20,12 +20,12 @@
       "summary": "Cboe's official U.S. options hours and 24x5 FAQ were rechecked. The first weekly GTH session begins Sunday and the last Curb session ends Friday, so Saturday has no live option market. The ledger contained no open options paper trades; no entry, exit or mark was created."
     },
     "meme": {
-      "checkedAt": "2026-09-27T04:13:24Z",
+      "checkedAt": "2026-09-27T04:53:29Z",
       "startedAt": "2026-09-27T04:53:04Z",
       "scheduledFor": "2026-09-27T04:00:00Z",
       "nextScheduledAt": "2026-09-27T05:00:00Z",
-      "status": "running",
-      "summary": "Meme-coin scan started; rechecking current liquidity, tracked-wallet activity, social momentum and verified public-figure token news."
+      "status": "data_limited",
+      "summary": "No open meme paper trades. Dexscreener, Kolscan discovery, current reputable news and public-figure launch searches were rechecked. Just a Backpack showed weakening six-hour momentum and modest liquidity, while tracked-wallet convergence, exact position persistence and spam-filtered X unique-author acceleration remained unverifiable. No verified new Musk/Trump launch or endorsement appeared; no entry, exit or mark was created."
     }
   }
 }
