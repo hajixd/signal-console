@@ -95,7 +95,7 @@ function renderSelectedPortfolio(){const selected=accountFilter==='all'?trades:t
 $$('[data-discover]').forEach(b=>b.onclick=()=>{signalCategory=b.dataset.discover;$$('[data-signal-category]').forEach(x=>{x.classList.toggle('active',x.dataset.signalCategory===signalCategory);x.setAttribute('aria-pressed',String(x.dataset.signalCategory===signalCategory))});setPage('research')});
 document.addEventListener('visibilitychange' ,()=>{if(!document.hidden)load()});
 
-let hapticsEnabled=false;try{hapticsEnabled=localStorage.getItem('signal-haptics')==='on'}catch{}
+let hapticsEnabled=true;try{hapticsEnabled=localStorage.getItem('signal-haptics')!=='off'}catch{}
 const supportsHaptics=typeof navigator.vibrate==='function';
 function renderHaptics(){const b=$('#hapticToggle');b.disabled=!supportsHaptics;b.setAttribute('aria-checked',String(hapticsEnabled&&supportsHaptics));b.textContent=supportsHaptics?(hapticsEnabled?'On':'Off'):'Unavailable';$('#hapticHelp').textContent=supportsHaptics?'Light feedback for selections; device settings may mute it.':'This browser does not provide web vibration. Visual feedback stays on.'}
 $('#hapticToggle').onclick=()=>{hapticsEnabled=!hapticsEnabled;try{localStorage.setItem('signal-haptics',hapticsEnabled?'on':'off')}catch{}renderHaptics();haptic()};renderHaptics();
