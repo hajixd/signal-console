@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-27T09:51:11Z",
+  "updatedAt": "2026-09-27T10:10:21Z",
   "alerts": [
     {
       "id": "options-bb-fy27q2-20260924",
@@ -108,11 +108,11 @@
   "scanners": {
     "penny": {
       "checkedAt": "2026-09-27T05:11:07Z",
-      "startedAt": "2026-09-27T05:10:29Z",
-      "scheduledFor": "2026-09-27T05:00:00Z",
-      "nextScheduledAt": "2026-09-27T06:00:00Z",
-      "status": "market_closed",
-      "summary": "Nasdaq's official market-hours page and FTHM SEC/IR sources were rechecked. U.S. equities were closed Saturday and the ledger contained no open penny paper trades. FTHM's September 24 restructuring catalyst was offset by unresolved late-filing and minimum-bid listing risk, and no reliable live quote or volume confirmation was available. No entry, exit or mark was created."
+      "startedAt": "2026-09-27T10:10:21Z",
+      "scheduledFor": "2026-09-27T10:00:00Z",
+      "nextScheduledAt": "2026-09-27T11:00:00Z",
+      "status": "running",
+      "summary": "Penny scanner is checking the current ledger first, then market status, primary catalysts, filings and eligibility gates."
     },
     "options": {
       "startedAt": "2026-09-27T09:50:35Z",
