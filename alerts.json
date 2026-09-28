@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-28T19:40:01.903Z",
+  "updatedAt": "2026-09-28T19:44:19.207Z",
   "alerts": [
     {
       "id": "options-bb-fy27q2-20260924",
@@ -332,49 +332,49 @@
       }
     },
     "options": {
-      "id": "options-scan-20260928T192735Z",
+      "id": "options-scan-20260928T194313Z",
       "system": "options",
-      "startedAt": "2026-09-28T19:27:35.000Z",
-      "checkedAt": "2026-09-28T19:29:25.173Z",
+      "startedAt": "2026-09-28T19:43:13.000Z",
+      "checkedAt": "2026-09-28T19:44:19.207Z",
       "scheduledFor": "2026-09-28T19:00:00.000Z",
       "nextScheduledAt": "2026-09-28T20:00:00.000Z",
       "status": "data_limited",
-      "summary": "No open options paper trades were present. BB was $8.905 at 19:12:34 UTC, up 8.47%, after trading from $7.87 to $8.965 on 24.05M shares while QQQ was down 0.99%. This continued the already-published BB breakout research, but the incremental advance from $8.775 did not materially change the research decision. COST was $921.16, down 0.17%, and did not materially change its existing post-earnings setup. Nasdaq explicitly reported both BB and COST option chains unavailable, preventing exact 21–60 DTE midpoint, delta, IV, spread, volume, open interest and buyer-initiated-flow validation. A bounded SEC search returned stale or unrelated filings. No new research, entry, exit or mark was created.",
+      "summary": "No open options paper trades were present. BB was $8.875 at 19:27:57 UTC, up 8.10%, after trading from $7.87 to $8.965 on 24.84M shares while QQQ was down 0.98%. This remained strong follow-through from the already-published BB breakout research but did not materially change the prior $8.905 research decision. COST was $920.87, down 0.21%, and did not materially improve its existing post-earnings setup. Nasdaq explicitly reported both BB and COST option chains unavailable, preventing exact 21–60 DTE midpoint, delta, IV, spread, volume, open interest and buyer-initiated-flow validation. A bounded SEC discovery search returned no qualifying fresh primary-source catalyst. No new research, entry, exit or mark was created.",
       "sources": [
         {
           "name": "Market data — BB",
           "url": "https://www.nasdaq.com/market-activity/stocks/bb",
-          "checkedAt": "2026-09-28T19:29:25.173Z",
+          "checkedAt": "2026-09-28T19:44:19.207Z",
           "status": "checked"
         },
         {
           "name": "Market data — COST",
           "url": "https://www.nasdaq.com/market-activity/stocks/cost",
-          "checkedAt": "2026-09-28T19:29:25.173Z",
+          "checkedAt": "2026-09-28T19:44:19.207Z",
           "status": "checked"
         },
         {
           "name": "Market regime — QQQ",
           "url": "https://www.nasdaq.com/market-activity/etf/qqq",
-          "checkedAt": "2026-09-28T19:29:25.173Z",
+          "checkedAt": "2026-09-28T19:44:19.207Z",
           "status": "checked"
         },
         {
           "name": "Nasdaq BB option chain",
           "url": "https://www.nasdaq.com/market-activity/stocks/bb/option-chain",
-          "checkedAt": "2026-09-28T19:29:25.173Z",
+          "checkedAt": "2026-09-28T19:44:19.207Z",
           "status": "unavailable"
         },
         {
           "name": "Nasdaq COST option chain",
           "url": "https://www.nasdaq.com/market-activity/stocks/cost/option-chain",
-          "checkedAt": "2026-09-28T19:29:25.173Z",
+          "checkedAt": "2026-09-28T19:44:19.207Z",
           "status": "unavailable"
         },
         {
           "name": "SEC EDGAR catalyst discovery",
           "url": "https://www.sec.gov/edgar/search/",
-          "checkedAt": "2026-09-28T19:29:25.173Z",
+          "checkedAt": "2026-09-28T19:44:19.207Z",
           "status": "checked"
         }
       ],
@@ -5812,6 +5812,70 @@
       },
       "deliveryDiagnostics": {
         "repair20260928ReportedAt": "2026-09-28T02:04:42.735Z"
+      }
+    },
+    {
+      "id": "options-scan-20260928T194313Z",
+      "system": "options",
+      "startedAt": "2026-09-28T19:43:13.000Z",
+      "checkedAt": "2026-09-28T19:44:19.207Z",
+      "scheduledFor": "2026-09-28T19:00:00.000Z",
+      "nextScheduledAt": "2026-09-28T20:00:00.000Z",
+      "status": "data_limited",
+      "summary": "No open options paper trades were present. BB was $8.875 at 19:27:57 UTC, up 8.10%, after trading from $7.87 to $8.965 on 24.84M shares while QQQ was down 0.98%. This remained strong follow-through from the already-published BB breakout research but did not materially change the prior $8.905 research decision. COST was $920.87, down 0.21%, and did not materially improve its existing post-earnings setup. Nasdaq explicitly reported both BB and COST option chains unavailable, preventing exact 21–60 DTE midpoint, delta, IV, spread, volume, open interest and buyer-initiated-flow validation. A bounded SEC discovery search returned no qualifying fresh primary-source catalyst. No new research, entry, exit or mark was created.",
+      "sources": [
+        {
+          "name": "Market data — BB",
+          "url": "https://www.nasdaq.com/market-activity/stocks/bb",
+          "checkedAt": "2026-09-28T19:44:19.207Z",
+          "status": "checked"
+        },
+        {
+          "name": "Market data — COST",
+          "url": "https://www.nasdaq.com/market-activity/stocks/cost",
+          "checkedAt": "2026-09-28T19:44:19.207Z",
+          "status": "checked"
+        },
+        {
+          "name": "Market regime — QQQ",
+          "url": "https://www.nasdaq.com/market-activity/etf/qqq",
+          "checkedAt": "2026-09-28T19:44:19.207Z",
+          "status": "checked"
+        },
+        {
+          "name": "Nasdaq BB option chain",
+          "url": "https://www.nasdaq.com/market-activity/stocks/bb/option-chain",
+          "checkedAt": "2026-09-28T19:44:19.207Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "Nasdaq COST option chain",
+          "url": "https://www.nasdaq.com/market-activity/stocks/cost/option-chain",
+          "checkedAt": "2026-09-28T19:44:19.207Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "SEC EDGAR catalyst discovery",
+          "url": "https://www.sec.gov/edgar/search/",
+          "checkedAt": "2026-09-28T19:44:19.207Z",
+          "status": "checked"
+        }
+      ],
+      "missingData": [
+        "Exact 21–60 DTE option bid, ask and midpoint",
+        "Contract delta, Greeks, implied volatility, IV rank and term structure",
+        "Contract volume, open interest and spread quality",
+        "Directional buyer-initiated/opening options flow",
+        "Complete real-time U.S. options candidate universe",
+        "Fresh qualifying primary-source catalyst beyond already-published research"
+      ],
+      "counts": {
+        "research": 0,
+        "entries": 0,
+        "exits": 0
+      },
+      "deliveryDiagnostics": {
+        "repair20260928ReportedAt": "2026-09-28T00:50:48.883Z"
       }
     }
   ]
