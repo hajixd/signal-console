@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-28T09:26:59.299Z",
+  "updatedAt": "2026-09-28T09:40:26.525Z",
   "alerts": [
     {
       "id": "options-bb-fy27q2-20260924",
@@ -234,49 +234,49 @@
       }
     },
     "options": {
-      "id": "options-scan-20260928T092127Z",
+      "id": "options-scan-20260928T093920Z",
       "system": "options",
-      "startedAt": "2026-09-28T09:21:27.000Z",
-      "checkedAt": "2026-09-28T09:22:21.918Z",
+      "startedAt": "2026-09-28T09:39:20.000Z",
+      "checkedAt": "2026-09-28T09:40:26.525Z",
       "scheduledFor": "2026-09-28T09:00:00.000Z",
       "nextScheduledAt": "2026-09-28T10:00:00.000Z",
       "status": "market_closed",
-      "summary": "No open options paper trades were present. Nasdaq confirms listed U.S. options open at 9:30 a.m. ET Monday through Friday, and this scan completed before the September 28 session opened. BlackBerry and Costco's September 24 SEC earnings exhibits and BlackBerry's SEC issuer page were checked; no material new primary evidence changed the existing BB or COST research. Costco's dynamic SEC issuer landing page and Nasdaq's earnings calendar did not return usable current filing/calendar data. Without reliable live exact-contract midpoint, IV, Greeks, spread, open interest or buyer-initiated flow, no research, entry, exit or mark was created.",
+      "summary": "No open options paper trades were present. Nasdaq confirms listed U.S. options open at 9:30 a.m. ET Monday through Friday, and this scan completed before the September 28 session opened. BlackBerry and Costco's September 24 SEC earnings exhibits were checked and supplied no material new evidence beyond the existing BB and COST research. The dynamic SEC issuer landing pages and Nasdaq earnings calendar did not expose usable current filing or calendar rows. Without live exact-contract midpoint, IV, Greeks, spread, open interest, buyer-initiated flow or post-open price structure, no research, entry, exit or mark was created.",
       "sources": [
         {
           "name": "Nasdaq U.S. trading and options schedule",
           "url": "https://www.nasdaq.com/market-activity/stock-market-holiday-schedule",
-          "checkedAt": "2026-09-28T09:22:21.918Z",
+          "checkedAt": "2026-09-28T09:40:26.525Z",
           "status": "checked"
         },
         {
           "name": "BlackBerry Q2 FY2027 earnings release filed with SEC",
           "url": "https://www.sec.gov/Archives/edgar/data/1070235/000107023526000112/q2fy27ex-991.htm",
-          "checkedAt": "2026-09-28T09:22:21.918Z",
+          "checkedAt": "2026-09-28T09:40:26.525Z",
           "status": "checked"
         },
         {
           "name": "BlackBerry SEC filing page",
           "url": "https://www.sec.gov/edgar/browse/?CIK=1070235",
-          "checkedAt": "2026-09-28T09:22:21.918Z",
-          "status": "checked"
+          "checkedAt": "2026-09-28T09:40:26.525Z",
+          "status": "unavailable"
         },
         {
           "name": "Costco Q4 FY2026 earnings release filed with SEC",
           "url": "https://www.sec.gov/Archives/edgar/data/909832/000090983226000084/costex9918-k92426.htm",
-          "checkedAt": "2026-09-28T09:22:21.918Z",
+          "checkedAt": "2026-09-28T09:40:26.525Z",
           "status": "checked"
         },
         {
           "name": "Costco SEC filing page",
           "url": "https://www.sec.gov/edgar/browse/?CIK=909832",
-          "checkedAt": "2026-09-28T09:22:21.918Z",
+          "checkedAt": "2026-09-28T09:40:26.525Z",
           "status": "unavailable"
         },
         {
           "name": "Nasdaq earnings calendar",
           "url": "https://www.nasdaq.com/market-activity/earnings",
-          "checkedAt": "2026-09-28T09:22:21.918Z",
+          "checkedAt": "2026-09-28T09:40:26.525Z",
           "status": "unavailable"
         }
       ],
@@ -286,8 +286,8 @@
         "contract volume, open interest and spread",
         "reliable buyer-initiated opening-flow confirmation",
         "post-open underlying, sector and broad-market structure",
-        "usable current Costco SEC issuer landing-page data",
-        "usable Nasdaq earnings-calendar data"
+        "usable current BlackBerry and Costco SEC issuer landing-page rows",
+        "usable current Nasdaq earnings-calendar rows"
       ],
       "counts": {
         "research": 0,
@@ -3120,6 +3120,71 @@
       },
       "deliveryDiagnostics": {
         "repair20260928ReportedAt": "2026-09-28T01:51:49.985Z"
+      }
+    },
+    {
+      "id": "options-scan-20260928T093920Z",
+      "system": "options",
+      "startedAt": "2026-09-28T09:39:20.000Z",
+      "checkedAt": "2026-09-28T09:40:26.525Z",
+      "scheduledFor": "2026-09-28T09:00:00.000Z",
+      "nextScheduledAt": "2026-09-28T10:00:00.000Z",
+      "status": "market_closed",
+      "summary": "No open options paper trades were present. Nasdaq confirms listed U.S. options open at 9:30 a.m. ET Monday through Friday, and this scan completed before the September 28 session opened. BlackBerry and Costco's September 24 SEC earnings exhibits were checked and supplied no material new evidence beyond the existing BB and COST research. The dynamic SEC issuer landing pages and Nasdaq earnings calendar did not expose usable current filing or calendar rows. Without live exact-contract midpoint, IV, Greeks, spread, open interest, buyer-initiated flow or post-open price structure, no research, entry, exit or mark was created.",
+      "sources": [
+        {
+          "name": "Nasdaq U.S. trading and options schedule",
+          "url": "https://www.nasdaq.com/market-activity/stock-market-holiday-schedule",
+          "checkedAt": "2026-09-28T09:40:26.525Z",
+          "status": "checked"
+        },
+        {
+          "name": "BlackBerry Q2 FY2027 earnings release filed with SEC",
+          "url": "https://www.sec.gov/Archives/edgar/data/1070235/000107023526000112/q2fy27ex-991.htm",
+          "checkedAt": "2026-09-28T09:40:26.525Z",
+          "status": "checked"
+        },
+        {
+          "name": "BlackBerry SEC filing page",
+          "url": "https://www.sec.gov/edgar/browse/?CIK=1070235",
+          "checkedAt": "2026-09-28T09:40:26.525Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "Costco Q4 FY2026 earnings release filed with SEC",
+          "url": "https://www.sec.gov/Archives/edgar/data/909832/000090983226000084/costex9918-k92426.htm",
+          "checkedAt": "2026-09-28T09:40:26.525Z",
+          "status": "checked"
+        },
+        {
+          "name": "Costco SEC filing page",
+          "url": "https://www.sec.gov/edgar/browse/?CIK=909832",
+          "checkedAt": "2026-09-28T09:40:26.525Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "Nasdaq earnings calendar",
+          "url": "https://www.nasdaq.com/market-activity/earnings",
+          "checkedAt": "2026-09-28T09:40:26.525Z",
+          "status": "unavailable"
+        }
+      ],
+      "missingData": [
+        "live exact-contract bid, ask and midpoint before the listed-options session opens",
+        "current contract IV, IV rank, term structure and Greeks",
+        "contract volume, open interest and spread",
+        "reliable buyer-initiated opening-flow confirmation",
+        "post-open underlying, sector and broad-market structure",
+        "usable current BlackBerry and Costco SEC issuer landing-page rows",
+        "usable current Nasdaq earnings-calendar rows"
+      ],
+      "counts": {
+        "research": 0,
+        "entries": 0,
+        "exits": 0
+      },
+      "deliveryDiagnostics": {
+        "repair20260928ReportedAt": "2026-09-28T00:50:48.883Z"
       }
     }
   ]
