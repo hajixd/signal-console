@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-28T22:46:00.195Z",
+  "updatedAt": "2026-09-28T23:16:07.908Z",
   "alerts": [
     {
       "id": "options-bb-fy27q2-20260924",
@@ -338,59 +338,57 @@
       }
     },
     "options": {
-      "id": "options-scan-20260928T222003Z",
+      "id": "options-scan-20260928T231435Z",
       "system": "options",
-      "startedAt": "2026-09-28T22:20:03.000Z",
-      "checkedAt": "2026-09-28T22:21:09.026Z",
-      "scheduledFor": "2026-09-28T22:00:00.000Z",
-      "nextScheduledAt": "2026-09-28T23:00:00.000Z",
+      "startedAt": "2026-09-28T23:14:35.000Z",
+      "checkedAt": "2026-09-28T23:16:07.908Z",
+      "scheduledFor": "2026-09-28T23:00:00.000Z",
+      "nextScheduledAt": "2026-09-29T00:00:00.000Z",
       "status": "market_closed",
-      "summary": "No open options paper trades were present. BB’s post-close quote remained $8.80, up 7.37%, after a $7.87–$8.98 session on 30.49 million shares while QQQ remained down 1.07%. This confirmed the already-published BB closing-breakout research but added no material new evidence. COST remained $922.92, up 0.04%, with no material change to its existing post-earnings setup. Nasdaq’s BB and COST option-chain pages again provided no usable contract data, preventing exact 21–60 DTE midpoint, delta, IV, spread, volume, open-interest and buyer-initiated-flow validation. A bounded SEC catalyst search returned unrelated award pages rather than a fresh qualifying primary-source filing. No research, entry, exit or mark was created.",
+      "summary": "No open options paper trades required management. After the U.S. close, BB finished at $8.80 (+7.37%) on 30.51M shares, COST at $922.92 (+0.04%), and QQQ at $736.53 (-1.07%). BB and COST research remained unchanged: the bounded primary-source check found no material new evidence, and Nasdaq exact option chains were unavailable, preventing reliable contract quotes, Greeks, IV, flow, spread and open-interest validation. No new research, entry, mark or exit was published.",
       "sources": [
         {
-          "name": "BlackBerry post-close market data",
-          "url": "https://www.nasdaq.com/market-activity/stocks/bb",
-          "checkedAt": "2026-09-28T22:21:09.026Z",
+          "name": "Market quotes (BB, COST, QQQ)",
+          "url": "https://finance.yahoo.com/",
+          "checkedAt": "2026-09-28T23:16:07.908Z",
           "status": "checked"
         },
         {
-          "name": "Costco post-close market data",
-          "url": "https://www.nasdaq.com/market-activity/stocks/cost",
-          "checkedAt": "2026-09-28T22:21:09.026Z",
+          "name": "BlackBerry Investor Relations",
+          "url": "https://investors.blackberry.com/",
+          "checkedAt": "2026-09-28T23:16:07.908Z",
           "status": "checked"
         },
         {
-          "name": "QQQ post-close market data",
-          "url": "https://www.nasdaq.com/market-activity/etf/qqq",
-          "checkedAt": "2026-09-28T22:21:09.026Z",
+          "name": "BlackBerry SEC filings",
+          "url": "https://www.sec.gov/edgar/browse/?CIK=1070235&owner=exclude",
+          "checkedAt": "2026-09-28T23:16:07.908Z",
           "status": "checked"
         },
         {
-          "name": "BlackBerry Nasdaq option chain",
+          "name": "Costco SEC filings",
+          "url": "https://www.sec.gov/edgar/browse/?CIK=909832&owner=exclude",
+          "checkedAt": "2026-09-28T23:16:07.908Z",
+          "status": "checked"
+        },
+        {
+          "name": "Nasdaq BB option chain",
           "url": "https://www.nasdaq.com/market-activity/stocks/bb/option-chain",
-          "checkedAt": "2026-09-28T22:21:09.026Z",
+          "checkedAt": "2026-09-28T23:16:07.908Z",
           "status": "unavailable"
         },
         {
-          "name": "Costco Nasdaq option chain",
+          "name": "Nasdaq COST option chain",
           "url": "https://www.nasdaq.com/market-activity/stocks/cost/option-chain",
-          "checkedAt": "2026-09-28T22:21:09.026Z",
-          "status": "unavailable"
-        },
-        {
-          "name": "Current SEC catalyst discovery",
-          "url": "https://www.sec.gov/edgar/search/",
-          "checkedAt": "2026-09-28T22:21:09.026Z",
+          "checkedAt": "2026-09-28T23:16:07.908Z",
           "status": "unavailable"
         }
       ],
       "missingData": [
-        "exact 21-60 DTE contract bid, ask and midpoint for BB and COST",
-        "current contract IV, IV rank, term structure and Greeks",
-        "contract volume, open interest and executable spread",
-        "reliable buyer-initiated opening-flow confirmation",
-        "complete real-time U.S. options candidate-universe coverage",
-        "usable fresh primary-source catalyst rows from the bounded discovery search"
+        "Reliable exact BB and COST option contract bid/ask, midpoint, volume and open interest",
+        "Contract Greeks and implied volatility",
+        "Buyer-initiated opening options flow and IV term structure",
+        "A complete current-market candidate screen beyond the bounded BB/COST follow-up"
       ],
       "counts": {
         "research": 0,
@@ -6778,6 +6776,68 @@
       },
       "deliveryDiagnostics": {
         "repair20260928ReportedAt": "2026-09-28T01:51:49.985Z"
+      }
+    },
+    {
+      "id": "options-scan-20260928T231435Z",
+      "system": "options",
+      "startedAt": "2026-09-28T23:14:35.000Z",
+      "checkedAt": "2026-09-28T23:16:07.908Z",
+      "scheduledFor": "2026-09-28T23:00:00.000Z",
+      "nextScheduledAt": "2026-09-29T00:00:00.000Z",
+      "status": "market_closed",
+      "summary": "No open options paper trades required management. After the U.S. close, BB finished at $8.80 (+7.37%) on 30.51M shares, COST at $922.92 (+0.04%), and QQQ at $736.53 (-1.07%). BB and COST research remained unchanged: the bounded primary-source check found no material new evidence, and Nasdaq exact option chains were unavailable, preventing reliable contract quotes, Greeks, IV, flow, spread and open-interest validation. No new research, entry, mark or exit was published.",
+      "sources": [
+        {
+          "name": "Market quotes (BB, COST, QQQ)",
+          "url": "https://finance.yahoo.com/",
+          "checkedAt": "2026-09-28T23:16:07.908Z",
+          "status": "checked"
+        },
+        {
+          "name": "BlackBerry Investor Relations",
+          "url": "https://investors.blackberry.com/",
+          "checkedAt": "2026-09-28T23:16:07.908Z",
+          "status": "checked"
+        },
+        {
+          "name": "BlackBerry SEC filings",
+          "url": "https://www.sec.gov/edgar/browse/?CIK=1070235&owner=exclude",
+          "checkedAt": "2026-09-28T23:16:07.908Z",
+          "status": "checked"
+        },
+        {
+          "name": "Costco SEC filings",
+          "url": "https://www.sec.gov/edgar/browse/?CIK=909832&owner=exclude",
+          "checkedAt": "2026-09-28T23:16:07.908Z",
+          "status": "checked"
+        },
+        {
+          "name": "Nasdaq BB option chain",
+          "url": "https://www.nasdaq.com/market-activity/stocks/bb/option-chain",
+          "checkedAt": "2026-09-28T23:16:07.908Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "Nasdaq COST option chain",
+          "url": "https://www.nasdaq.com/market-activity/stocks/cost/option-chain",
+          "checkedAt": "2026-09-28T23:16:07.908Z",
+          "status": "unavailable"
+        }
+      ],
+      "missingData": [
+        "Reliable exact BB and COST option contract bid/ask, midpoint, volume and open interest",
+        "Contract Greeks and implied volatility",
+        "Buyer-initiated opening options flow and IV term structure",
+        "A complete current-market candidate screen beyond the bounded BB/COST follow-up"
+      ],
+      "counts": {
+        "research": 0,
+        "entries": 0,
+        "exits": 0
+      },
+      "deliveryDiagnostics": {
+        "repair20260928ReportedAt": "2026-09-28T00:50:48.883Z"
       }
     }
   ]
