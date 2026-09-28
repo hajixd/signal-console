@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-28T17:03:16.699Z",
+  "updatedAt": "2026-09-28T17:09:31.730Z",
   "alerts": [
     {
       "id": "options-bb-fy27q2-20260924",
@@ -440,113 +440,107 @@
       }
     },
     "futures": {
-      "id": "futures-scan-20260928161826086",
+      "id": "futures-scan-20260928170842315",
       "system": "futures",
-      "startedAt": "2026-09-28T16:18:26.086Z",
-      "checkedAt": "2026-09-28T16:20:01.616Z",
-      "scheduledFor": "2026-09-28T16:00:00.000Z",
-      "nextScheduledAt": "2026-09-28T17:00:00.000Z",
+      "startedAt": "2026-09-28T17:08:42.315Z",
+      "checkedAt": "2026-09-28T17:09:31.730Z",
+      "scheduledFor": "2026-09-28T17:00:00.000Z",
+      "nextScheduledAt": "2026-09-28T18:00:00.000Z",
       "status": "data_limited",
-      "summary": "No new futures entry or material research update. There are no open futures paper positions. MGCZ26 was quoted at 4,156.6 at 11:38 a.m. EDT on September 28 with 328.97K volume, but MarketWatch explicitly labels the quote delayed; it was excluded from executable pricing. Exact current MNQZ26, MESZ26 and MCLX26 quotes, spreads, current structure and source-verified initial margins were not available. The existing MGC research item remains unchanged.",
+      "summary": "No new futures entry or material research update. There are no open futures paper positions. MGCZ26 was quoted at 4,153.3 at 12:09 p.m. EDT on September 28 on 336.85K volume, but MarketWatch explicitly labeled it a delayed quote, so it was excluded from executable pricing. Exact current MNQZ26, MESZ26 and MCLX26 quotes were unavailable. CME public MNQ/MES data are delayed. Required spreads, live structure, source-verified initial margins and trigger confirmation remain unresolved. The existing MGC research note remains unchanged.",
       "sources": [
         {
           "name": "CME Micro E-mini Nasdaq-100 futures",
           "url": "https://www.cmegroup.com/markets/equities/nasdaq/micro-e-mini-nasdaq-100.html",
-          "checkedAt": "2026-09-28T16:20:01.616Z",
-          "status": "checked_public_quotes_delayed"
+          "checkedAt": "2026-09-28T17:09:31.730Z",
+          "status": "checked_public_data_delayed"
         },
         {
           "name": "CME Micro E-mini S&P 500 futures",
           "url": "https://www.cmegroup.com/markets/equities/sp/micro-e-mini-sandp-500.html",
-          "checkedAt": "2026-09-28T16:20:01.616Z",
-          "status": "checked_public_quotes_delayed"
+          "checkedAt": "2026-09-28T17:09:31.730Z",
+          "status": "checked_public_data_delayed"
         },
         {
           "name": "CME Micro Gold futures",
           "url": "https://www.cmegroup.com/markets/metals/precious/e-micro-gold.html",
-          "checkedAt": "2026-09-28T16:20:01.616Z",
+          "checkedAt": "2026-09-28T17:09:31.730Z",
           "status": "checked_specs_only"
         },
         {
           "name": "CME Micro WTI Crude Oil futures",
           "url": "https://www.cmegroup.com/markets/energy/crude-oil/micro-wti-crude-oil.html",
-          "checkedAt": "2026-09-28T16:20:01.616Z",
-          "status": "checked_no_qualifying_live_quote"
+          "checkedAt": "2026-09-28T17:09:31.730Z",
+          "status": "checked_specs_only"
         },
         {
           "name": "CME trading hours",
           "url": "https://www.cmegroup.com/trading-hours.html",
-          "checkedAt": "2026-09-28T16:20:01.616Z",
+          "checkedAt": "2026-09-28T17:09:31.730Z",
           "status": "checked_contract_session_clearance_unresolved"
+        },
+        {
+          "name": "BLS September 2026 schedule",
+          "url": "https://www.bls.gov/schedule/2026/09_sched.htm",
+          "checkedAt": "2026-09-28T17:09:31.730Z",
+          "status": "checked"
         },
         {
           "name": "BEA release schedule",
           "url": "https://www.bea.gov/news/schedule",
-          "checkedAt": "2026-09-28T16:20:01.616Z",
-          "status": "checked"
-        },
-        {
-          "name": "BLS release calendar",
-          "url": "https://www.bls.gov/schedule/",
-          "checkedAt": "2026-09-28T16:20:01.616Z",
+          "checkedAt": "2026-09-28T17:09:31.730Z",
           "status": "checked"
         },
         {
           "name": "Federal Reserve calendar",
           "url": "https://www.federalreserve.gov/newsevents/calendar.htm",
-          "checkedAt": "2026-09-28T16:20:01.616Z",
+          "checkedAt": "2026-09-28T17:09:31.730Z",
           "status": "checked"
         },
         {
-          "name": "EIA petroleum data",
+          "name": "EIA Weekly Petroleum Status Report",
           "url": "https://www.eia.gov/petroleum/supply/weekly/",
-          "checkedAt": "2026-09-28T16:20:01.616Z",
-          "status": "unavailable"
+          "checkedAt": "2026-09-28T17:09:31.730Z",
+          "status": "checked"
         },
         {
           "name": "OPEC news",
-          "url": "https://www.opec.org/opec_web/en/press_room/28.htm",
-          "checkedAt": "2026-09-28T16:20:01.616Z",
-          "status": "unavailable"
+          "url": "https://www.opec.org/",
+          "checkedAt": "2026-09-28T17:09:31.730Z",
+          "status": "checked"
         },
         {
           "name": "MarketWatch MNQZ26",
           "url": "https://www.marketwatch.com/investing/future/mnqz26",
-          "checkedAt": "2026-09-28T16:20:01.616Z",
+          "checkedAt": "2026-09-28T17:09:31.730Z",
           "status": "unavailable"
         },
         {
           "name": "MarketWatch MESZ26",
           "url": "https://www.marketwatch.com/investing/future/mesz26",
-          "checkedAt": "2026-09-28T16:20:01.616Z",
+          "checkedAt": "2026-09-28T17:09:31.730Z",
           "status": "unavailable"
         },
         {
           "name": "MarketWatch MGCZ26",
           "url": "https://www.marketwatch.com/investing/future/mgcz26",
-          "checkedAt": "2026-09-28T16:20:01.616Z",
+          "checkedAt": "2026-09-28T17:09:31.730Z",
           "status": "checked_delayed_quote_excluded"
         },
         {
           "name": "MarketWatch MCLX26",
           "url": "https://www.marketwatch.com/investing/future/mclx26",
-          "checkedAt": "2026-09-28T16:20:01.616Z",
-          "status": "unavailable"
-        },
-        {
-          "name": "Reuters markets",
-          "url": "https://www.reuters.com/markets/",
-          "checkedAt": "2026-09-28T16:20:01.616Z",
+          "checkedAt": "2026-09-28T17:09:31.730Z",
           "status": "unavailable"
         }
       ],
       "missingData": [
         "Non-delayed exact dated quotes no older than five minutes for MNQZ26, MESZ26, MGCZ26 and MCLX26",
-        "Verified bid/ask spreads, liquidity and current intraday price/volume structure for each micro contract",
+        "Verified bid/ask spreads, liquidity and current intraday price/volume structure for every micro contract",
         "Exact contract expiry/roll and session/holiday clearance for every candidate",
-        "Source-verified initial margin per contract and remaining paper equity",
+        "Source-verified initial margin per contract and sufficient remaining paper equity",
         "Observed tick-aligned triggers, invalidations and targets meeting at least 2:1 reward-to-risk and the $100 risk cap",
-        "Complete EIA/OPEC catalyst coverage and high-impact release clearance"
+        "Complete high-impact release clearance within the required 30-minute window"
       ],
       "counts": {
         "openPositions": 0,
@@ -3556,6 +3550,110 @@
       }
     },
     {
+      "id": "penny-scan-20260928T165344Z",
+      "system": "penny",
+      "startedAt": "2026-09-28T16:53:44.000Z",
+      "checkedAt": "2026-09-28T16:54:42.334Z",
+      "scheduledFor": "2026-09-28T16:00:00.000Z",
+      "nextScheduledAt": "2026-09-28T17:00:00.000Z",
+      "status": "data_limited",
+      "summary": "No open penny paper trades were present. FTHM was $0.4958 at 16:29:23 UTC, down 14.96% from the prior close, with a $0.4810-$0.5903 session range and 3,284,602 shares traded. The small bounce from the prior quote did not repair the failed post-catalyst structure or change the existing rejection. Fathom’s issuer-news page showed no announcement newer than the September 24 proposed restructuring. A bounded SEC catalyst search returned unrelated or stale filings and no fresh primary-source microcap setup that passed the catalyst, dilution, liquidity and constructive-structure gates. The existing FTHM research record was left unchanged; no research, entry, exit or mark was created.",
+      "sources": [
+        {
+          "name": "FTHM regular-session market data",
+          "url": "https://www.nasdaq.com/market-activity/stocks/fthm",
+          "checkedAt": "2026-09-28T16:54:42.334Z",
+          "status": "checked"
+        },
+        {
+          "name": "IWM small-cap market data",
+          "url": "https://www.nasdaq.com/market-activity/etf/iwm",
+          "checkedAt": "2026-09-28T16:54:42.334Z",
+          "status": "checked"
+        },
+        {
+          "name": "Fathom current issuer press releases",
+          "url": "https://ir.fathominc.com/news-events/press-releases",
+          "checkedAt": "2026-09-28T16:54:42.334Z",
+          "status": "checked"
+        },
+        {
+          "name": "Current SEC microcap catalyst search",
+          "url": "https://www.sec.gov/edgar/search/",
+          "checkedAt": "2026-09-28T16:54:42.334Z",
+          "status": "unavailable"
+        }
+      ],
+      "missingData": [
+        "complete real-time microcap universe coverage",
+        "current relative-volume baselines and full intraday technical structure across the candidate universe",
+        "complete current dilution, ATM, offering, warrant and convertible sweep across the candidate universe",
+        "spam-filtered X unique-author acceleration",
+        "current insider activity across the candidate universe",
+        "usable fresh primary catalyst rows from the SEC discovery search"
+      ],
+      "counts": {
+        "research": 0,
+        "entries": 0,
+        "exits": 0
+      },
+      "deliveryDiagnostics": {
+        "repair20260928ReportedAt": "2026-09-28T01:47:21.040Z"
+      }
+    },
+    {
+      "id": "meme-scan-20260928T170219Z",
+      "system": "meme",
+      "startedAt": "2026-09-28T17:02:19.000Z",
+      "checkedAt": "2026-09-28T17:03:16.699Z",
+      "scheduledFor": "2026-09-28T17:00:00.000Z",
+      "nextScheduledAt": "2026-09-28T18:00:00.000Z",
+      "status": "data_limited",
+      "summary": "No open meme paper trades were present. DEX Screener’s latest Solana profiles and boost feeds showed a fresh rotation of self-submitted promotions, including tPAID, HOODRICH, Snake Game paired to Nokia and BAYPAY. Their profile text and linked social accounts did not establish tracked-wallet participation, greater-than-one-hour persistence, percent remaining, holder/deployer/bundler safety or spam-filtered social acceleration; one promoted profile also contained a malformed duplicated social URL. Public-figure discovery resurfaced the long-existing official TRUMP token and unrelated or historical references, but no independently verified new Elon Musk, Donald Trump or other prominent-figure launch or endorsement. No candidate satisfied the research or entry gates, so no research, entry, exit or mark was created.",
+      "sources": [
+        {
+          "name": "DEX Screener latest token profiles API",
+          "url": "https://api.dexscreener.com/token-profiles/latest/v1",
+          "checkedAt": "2026-09-28T17:03:16.699Z",
+          "status": "checked"
+        },
+        {
+          "name": "DEX Screener top token boosts API",
+          "url": "https://api.dexscreener.com/token-boosts/top/v1",
+          "checkedAt": "2026-09-28T17:03:16.699Z",
+          "status": "checked"
+        },
+        {
+          "name": "DEX Screener latest token boosts API",
+          "url": "https://api.dexscreener.com/token-boosts/latest/v1",
+          "checkedAt": "2026-09-28T17:03:16.699Z",
+          "status": "checked"
+        },
+        {
+          "name": "Current public-figure and Solana token web search",
+          "url": "https://www.google.com/search?q=September+28+2026+official+meme+token+launch+Elon+Musk+Donald+Trump+Solana+contract",
+          "checkedAt": "2026-09-28T17:03:16.699Z",
+          "status": "checked"
+        }
+      ],
+      "missingData": [
+        "Current holdings, entry timestamps and percent remaining for IdontPayTaxes, Daumen, Frank DeGods, Numero and verified Clukz",
+        "Independent confirmation of two-wallet convergence and greater-than-one-hour persistence",
+        "Complete deployer, insider, bundler, holder-concentration and wash-trading analysis for promoted tokens",
+        "Spam-filtered X/Twitter mention velocity and unique-author acceleration",
+        "Complete live pair price, liquidity, unique-buyer and holder metrics for every promoted token",
+        "Independent official affiliation for promoted public-figure or narrative tokens"
+      ],
+      "counts": {
+        "research": 0,
+        "entries": 0,
+        "exits": 0
+      },
+      "deliveryDiagnostics": {
+        "repair20260928ReportedAt": "2026-09-28T02:04:42.735Z"
+      }
+    },
+    {
       "id": "futures-scan-20260927203939926",
       "system": "futures",
       "startedAt": "2026-09-27T20:39:39.926Z",
@@ -4915,107 +5013,117 @@
       }
     },
     {
-      "id": "penny-scan-20260928T165344Z",
-      "system": "penny",
-      "startedAt": "2026-09-28T16:53:44.000Z",
-      "checkedAt": "2026-09-28T16:54:42.334Z",
-      "scheduledFor": "2026-09-28T16:00:00.000Z",
-      "nextScheduledAt": "2026-09-28T17:00:00.000Z",
+      "id": "futures-scan-20260928170842315",
+      "system": "futures",
+      "startedAt": "2026-09-28T17:08:42.315Z",
+      "checkedAt": "2026-09-28T17:09:31.730Z",
+      "scheduledFor": "2026-09-28T17:00:00.000Z",
+      "nextScheduledAt": "2026-09-28T18:00:00.000Z",
       "status": "data_limited",
-      "summary": "No open penny paper trades were present. FTHM was $0.4958 at 16:29:23 UTC, down 14.96% from the prior close, with a $0.4810-$0.5903 session range and 3,284,602 shares traded. The small bounce from the prior quote did not repair the failed post-catalyst structure or change the existing rejection. Fathom’s issuer-news page showed no announcement newer than the September 24 proposed restructuring. A bounded SEC catalyst search returned unrelated or stale filings and no fresh primary-source microcap setup that passed the catalyst, dilution, liquidity and constructive-structure gates. The existing FTHM research record was left unchanged; no research, entry, exit or mark was created.",
+      "summary": "No new futures entry or material research update. There are no open futures paper positions. MGCZ26 was quoted at 4,153.3 at 12:09 p.m. EDT on September 28 on 336.85K volume, but MarketWatch explicitly labeled it a delayed quote, so it was excluded from executable pricing. Exact current MNQZ26, MESZ26 and MCLX26 quotes were unavailable. CME public MNQ/MES data are delayed. Required spreads, live structure, source-verified initial margins and trigger confirmation remain unresolved. The existing MGC research note remains unchanged.",
       "sources": [
         {
-          "name": "FTHM regular-session market data",
-          "url": "https://www.nasdaq.com/market-activity/stocks/fthm",
-          "checkedAt": "2026-09-28T16:54:42.334Z",
+          "name": "CME Micro E-mini Nasdaq-100 futures",
+          "url": "https://www.cmegroup.com/markets/equities/nasdaq/micro-e-mini-nasdaq-100.html",
+          "checkedAt": "2026-09-28T17:09:31.730Z",
+          "status": "checked_public_data_delayed"
+        },
+        {
+          "name": "CME Micro E-mini S&P 500 futures",
+          "url": "https://www.cmegroup.com/markets/equities/sp/micro-e-mini-sandp-500.html",
+          "checkedAt": "2026-09-28T17:09:31.730Z",
+          "status": "checked_public_data_delayed"
+        },
+        {
+          "name": "CME Micro Gold futures",
+          "url": "https://www.cmegroup.com/markets/metals/precious/e-micro-gold.html",
+          "checkedAt": "2026-09-28T17:09:31.730Z",
+          "status": "checked_specs_only"
+        },
+        {
+          "name": "CME Micro WTI Crude Oil futures",
+          "url": "https://www.cmegroup.com/markets/energy/crude-oil/micro-wti-crude-oil.html",
+          "checkedAt": "2026-09-28T17:09:31.730Z",
+          "status": "checked_specs_only"
+        },
+        {
+          "name": "CME trading hours",
+          "url": "https://www.cmegroup.com/trading-hours.html",
+          "checkedAt": "2026-09-28T17:09:31.730Z",
+          "status": "checked_contract_session_clearance_unresolved"
+        },
+        {
+          "name": "BLS September 2026 schedule",
+          "url": "https://www.bls.gov/schedule/2026/09_sched.htm",
+          "checkedAt": "2026-09-28T17:09:31.730Z",
           "status": "checked"
         },
         {
-          "name": "IWM small-cap market data",
-          "url": "https://www.nasdaq.com/market-activity/etf/iwm",
-          "checkedAt": "2026-09-28T16:54:42.334Z",
+          "name": "BEA release schedule",
+          "url": "https://www.bea.gov/news/schedule",
+          "checkedAt": "2026-09-28T17:09:31.730Z",
           "status": "checked"
         },
         {
-          "name": "Fathom current issuer press releases",
-          "url": "https://ir.fathominc.com/news-events/press-releases",
-          "checkedAt": "2026-09-28T16:54:42.334Z",
+          "name": "Federal Reserve calendar",
+          "url": "https://www.federalreserve.gov/newsevents/calendar.htm",
+          "checkedAt": "2026-09-28T17:09:31.730Z",
           "status": "checked"
         },
         {
-          "name": "Current SEC microcap catalyst search",
-          "url": "https://www.sec.gov/edgar/search/",
-          "checkedAt": "2026-09-28T16:54:42.334Z",
+          "name": "EIA Weekly Petroleum Status Report",
+          "url": "https://www.eia.gov/petroleum/supply/weekly/",
+          "checkedAt": "2026-09-28T17:09:31.730Z",
+          "status": "checked"
+        },
+        {
+          "name": "OPEC news",
+          "url": "https://www.opec.org/",
+          "checkedAt": "2026-09-28T17:09:31.730Z",
+          "status": "checked"
+        },
+        {
+          "name": "MarketWatch MNQZ26",
+          "url": "https://www.marketwatch.com/investing/future/mnqz26",
+          "checkedAt": "2026-09-28T17:09:31.730Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "MarketWatch MESZ26",
+          "url": "https://www.marketwatch.com/investing/future/mesz26",
+          "checkedAt": "2026-09-28T17:09:31.730Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "MarketWatch MGCZ26",
+          "url": "https://www.marketwatch.com/investing/future/mgcz26",
+          "checkedAt": "2026-09-28T17:09:31.730Z",
+          "status": "checked_delayed_quote_excluded"
+        },
+        {
+          "name": "MarketWatch MCLX26",
+          "url": "https://www.marketwatch.com/investing/future/mclx26",
+          "checkedAt": "2026-09-28T17:09:31.730Z",
           "status": "unavailable"
         }
       ],
       "missingData": [
-        "complete real-time microcap universe coverage",
-        "current relative-volume baselines and full intraday technical structure across the candidate universe",
-        "complete current dilution, ATM, offering, warrant and convertible sweep across the candidate universe",
-        "spam-filtered X unique-author acceleration",
-        "current insider activity across the candidate universe",
-        "usable fresh primary catalyst rows from the SEC discovery search"
+        "Non-delayed exact dated quotes no older than five minutes for MNQZ26, MESZ26, MGCZ26 and MCLX26",
+        "Verified bid/ask spreads, liquidity and current intraday price/volume structure for every micro contract",
+        "Exact contract expiry/roll and session/holiday clearance for every candidate",
+        "Source-verified initial margin per contract and sufficient remaining paper equity",
+        "Observed tick-aligned triggers, invalidations and targets meeting at least 2:1 reward-to-risk and the $100 risk cap",
+        "Complete high-impact release clearance within the required 30-minute window"
       ],
       "counts": {
+        "openPositions": 0,
         "research": 0,
         "entries": 0,
-        "exits": 0
+        "exits": 0,
+        "marks": 0
       },
       "deliveryDiagnostics": {
-        "repair20260928ReportedAt": "2026-09-28T01:47:21.040Z"
-      }
-    },
-    {
-      "id": "meme-scan-20260928T170219Z",
-      "system": "meme",
-      "startedAt": "2026-09-28T17:02:19.000Z",
-      "checkedAt": "2026-09-28T17:03:16.699Z",
-      "scheduledFor": "2026-09-28T17:00:00.000Z",
-      "nextScheduledAt": "2026-09-28T18:00:00.000Z",
-      "status": "data_limited",
-      "summary": "No open meme paper trades were present. DEX Screener’s latest Solana profiles and boost feeds showed a fresh rotation of self-submitted promotions, including tPAID, HOODRICH, Snake Game paired to Nokia and BAYPAY. Their profile text and linked social accounts did not establish tracked-wallet participation, greater-than-one-hour persistence, percent remaining, holder/deployer/bundler safety or spam-filtered social acceleration; one promoted profile also contained a malformed duplicated social URL. Public-figure discovery resurfaced the long-existing official TRUMP token and unrelated or historical references, but no independently verified new Elon Musk, Donald Trump or other prominent-figure launch or endorsement. No candidate satisfied the research or entry gates, so no research, entry, exit or mark was created.",
-      "sources": [
-        {
-          "name": "DEX Screener latest token profiles API",
-          "url": "https://api.dexscreener.com/token-profiles/latest/v1",
-          "checkedAt": "2026-09-28T17:03:16.699Z",
-          "status": "checked"
-        },
-        {
-          "name": "DEX Screener top token boosts API",
-          "url": "https://api.dexscreener.com/token-boosts/top/v1",
-          "checkedAt": "2026-09-28T17:03:16.699Z",
-          "status": "checked"
-        },
-        {
-          "name": "DEX Screener latest token boosts API",
-          "url": "https://api.dexscreener.com/token-boosts/latest/v1",
-          "checkedAt": "2026-09-28T17:03:16.699Z",
-          "status": "checked"
-        },
-        {
-          "name": "Current public-figure and Solana token web search",
-          "url": "https://www.google.com/search?q=September+28+2026+official+meme+token+launch+Elon+Musk+Donald+Trump+Solana+contract",
-          "checkedAt": "2026-09-28T17:03:16.699Z",
-          "status": "checked"
-        }
-      ],
-      "missingData": [
-        "Current holdings, entry timestamps and percent remaining for IdontPayTaxes, Daumen, Frank DeGods, Numero and verified Clukz",
-        "Independent confirmation of two-wallet convergence and greater-than-one-hour persistence",
-        "Complete deployer, insider, bundler, holder-concentration and wash-trading analysis for promoted tokens",
-        "Spam-filtered X/Twitter mention velocity and unique-author acceleration",
-        "Complete live pair price, liquidity, unique-buyer and holder metrics for every promoted token",
-        "Independent official affiliation for promoted public-figure or narrative tokens"
-      ],
-      "counts": {
-        "research": 0,
-        "entries": 0,
-        "exits": 0
-      },
-      "deliveryDiagnostics": {
-        "repair20260928ReportedAt": "2026-09-28T02:04:42.735Z"
+        "repair20260928ReportedAt": "2026-09-28T01:51:49.985Z"
       }
     }
   ]
