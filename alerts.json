@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-28T12:28:22.903Z",
+  "updatedAt": "2026-09-28T12:44:10.808Z",
   "alerts": [
     {
       "id": "options-bb-fy27q2-20260924",
@@ -206,44 +206,57 @@
   ],
   "scanners": {
     "penny": {
-      "id": "penny-scan-20260928T095534Z",
+      "id": "penny-scan-20260928T124304Z",
       "system": "penny",
-      "startedAt": "2026-09-28T09:55:34.000Z",
-      "checkedAt": "2026-09-28T09:56:24.577Z",
-      "scheduledFor": "2026-09-28T09:00:00.000Z",
-      "nextScheduledAt": "2026-09-28T10:00:00.000Z",
-      "status": "market_closed",
-      "summary": "No open penny paper trades were present. Nasdaq confirms regular U.S. stock trading opens at 9:30 a.m. ET Monday through Friday, and this scan completed before the September 28 regular session opened. FTHM's issuer news page and SEC filing index remain unchanged since the September 24 proposed restructuring disclosure, while FDA's current announcement list contains no newer verified catalyst. Premarket conditions do not provide the reliable regular-session quote, fresh relative volume, continuation structure, dilution refresh or spam-filtered social confirmation required for an entry, so no research, entry, exit or mark was created.",
+      "startedAt": "2026-09-28T12:43:04.000Z",
+      "checkedAt": "2026-09-28T12:44:10.808Z",
+      "scheduledFor": "2026-09-28T12:00:00.000Z",
+      "nextScheduledAt": "2026-09-28T13:00:00.000Z",
+      "status": "data_limited",
+      "summary": "No open penny paper trades were present. The scan completed before the September 28 regular U.S. equity session opened. A current FTHM pre-market indication was $0.583 at 12:26:49 UTC with no reported intraday high or low, so it did not provide the regular-session volume, dollar-volume or continuation structure required to promote the existing FTHM research into a paper entry. The bounded SEC/issuer/FDA primary-source refresh returned an internal source error and supplied no verifiable new catalyst rows. No research, entry, exit or mark was created.",
       "sources": [
         {
-          "name": "Nasdaq U.S. trading schedule",
-          "url": "https://www.nasdaq.com/market-activity/stock-market-holiday-schedule",
-          "checkedAt": "2026-09-28T09:56:24.577Z",
+          "name": "FTHM current market indication",
+          "url": "https://www.nasdaq.com/market-activity/stocks/fthm",
+          "checkedAt": "2026-09-28T12:44:10.808Z",
           "status": "checked"
+        },
+        {
+          "name": "IWM small-cap market indication",
+          "url": "https://www.nasdaq.com/market-activity/etf/iwm",
+          "checkedAt": "2026-09-28T12:44:10.808Z",
+          "status": "checked"
+        },
+        {
+          "name": "SEC current microcap 8-K search",
+          "url": "https://www.sec.gov/edgar/search/",
+          "checkedAt": "2026-09-28T12:44:10.808Z",
+          "status": "unavailable"
         },
         {
           "name": "Fathom issuer news page",
           "url": "https://ir.fathominc.com/news-events",
-          "checkedAt": "2026-09-28T09:56:24.577Z",
-          "status": "checked"
+          "checkedAt": "2026-09-28T12:44:10.808Z",
+          "status": "unavailable"
         },
         {
           "name": "Fathom issuer SEC filing index",
           "url": "https://ir.fathominc.com/sec-filings/sec-filings",
-          "checkedAt": "2026-09-28T09:56:24.577Z",
-          "status": "checked"
+          "checkedAt": "2026-09-28T12:44:10.808Z",
+          "status": "unavailable"
         },
         {
           "name": "FDA press announcements",
           "url": "https://www.fda.gov/news-events/fda-newsroom/press-announcements",
-          "checkedAt": "2026-09-28T09:56:24.577Z",
-          "status": "checked"
+          "checkedAt": "2026-09-28T12:44:10.808Z",
+          "status": "unavailable"
         }
       ],
       "missingData": [
         "reliable regular-session penny-stock quotes before the U.S. equity market opens",
         "fresh regular-session relative and dollar volume",
         "post-open technical structure and sector confirmation",
+        "current primary-source catalyst rows because the SEC, issuer and FDA refresh failed",
         "current dilution, ATM, offering, warrant and convertible review across the candidate universe",
         "spam-filtered X unique-author acceleration",
         "current insider activity across the candidate universe",
@@ -3657,6 +3670,72 @@
       },
       "deliveryDiagnostics": {
         "repair20260928ReportedAt": "2026-09-28T02:04:42.735Z"
+      }
+    },
+    {
+      "id": "penny-scan-20260928T124304Z",
+      "system": "penny",
+      "startedAt": "2026-09-28T12:43:04.000Z",
+      "checkedAt": "2026-09-28T12:44:10.808Z",
+      "scheduledFor": "2026-09-28T12:00:00.000Z",
+      "nextScheduledAt": "2026-09-28T13:00:00.000Z",
+      "status": "data_limited",
+      "summary": "No open penny paper trades were present. The scan completed before the September 28 regular U.S. equity session opened. A current FTHM pre-market indication was $0.583 at 12:26:49 UTC with no reported intraday high or low, so it did not provide the regular-session volume, dollar-volume or continuation structure required to promote the existing FTHM research into a paper entry. The bounded SEC/issuer/FDA primary-source refresh returned an internal source error and supplied no verifiable new catalyst rows. No research, entry, exit or mark was created.",
+      "sources": [
+        {
+          "name": "FTHM current market indication",
+          "url": "https://www.nasdaq.com/market-activity/stocks/fthm",
+          "checkedAt": "2026-09-28T12:44:10.808Z",
+          "status": "checked"
+        },
+        {
+          "name": "IWM small-cap market indication",
+          "url": "https://www.nasdaq.com/market-activity/etf/iwm",
+          "checkedAt": "2026-09-28T12:44:10.808Z",
+          "status": "checked"
+        },
+        {
+          "name": "SEC current microcap 8-K search",
+          "url": "https://www.sec.gov/edgar/search/",
+          "checkedAt": "2026-09-28T12:44:10.808Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "Fathom issuer news page",
+          "url": "https://ir.fathominc.com/news-events",
+          "checkedAt": "2026-09-28T12:44:10.808Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "Fathom issuer SEC filing index",
+          "url": "https://ir.fathominc.com/sec-filings/sec-filings",
+          "checkedAt": "2026-09-28T12:44:10.808Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "FDA press announcements",
+          "url": "https://www.fda.gov/news-events/fda-newsroom/press-announcements",
+          "checkedAt": "2026-09-28T12:44:10.808Z",
+          "status": "unavailable"
+        }
+      ],
+      "missingData": [
+        "reliable regular-session penny-stock quotes before the U.S. equity market opens",
+        "fresh regular-session relative and dollar volume",
+        "post-open technical structure and sector confirmation",
+        "current primary-source catalyst rows because the SEC, issuer and FDA refresh failed",
+        "current dilution, ATM, offering, warrant and convertible review across the candidate universe",
+        "spam-filtered X unique-author acceleration",
+        "current insider activity across the candidate universe",
+        "complete real-time microcap universe coverage"
+      ],
+      "counts": {
+        "research": 0,
+        "entries": 0,
+        "exits": 0
+      },
+      "deliveryDiagnostics": {
+        "repair20260928ReportedAt": "2026-09-28T01:47:21.040Z"
       }
     }
   ]
