@@ -1,16 +1,17 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-28T13:01:54.974Z",
+  "updatedAt": "2026-09-28T13:05:47.915Z",
   "alerts": [
     {
       "id": "options-bb-fy27q2-20260924",
       "eventType": "research",
       "system": "options",
-      "timestamp": "2026-09-27T09:02:58Z",
+      "timestamp": "2026-09-28T13:05:47.915Z",
       "asset": "BB",
       "title": "Research: BB raised outlook after record QNX quarter",
-      "summary": "BlackBerry reported 26% year-over-year revenue growth, 81% adjusted EBITDA growth, positive operating cash flow and raised FY2027 revenue and adjusted EBITDA guidance. This is a credible post-earnings continuation catalyst, but no paper option entry is permitted until the market reopens and the exact contract, price action, IV, Greeks, spread, OI and buyer-initiated flow are verified.",
+      "summary": "BlackBerry's strong September 24 earnings and raised outlook remain verified, but the September 28 pre-market indication was $8.21, down about 6.0% from the prior close. That adverse reaction materially weakens the bullish post-earnings continuation thesis. This remains research only until regular-session price structure and a liquid 21–60 DTE contract with acceptable IV, Greeks, spread, OI and buyer-initiated flow are verified.",
       "reasons": [
+        "September 28 pre-market indication: $8.21 at 12:48:22 UTC, approximately 6.0% below the prior close; no intraday high or low was yet available.",
         "Q2 FY2027 revenue increased 26% year over year to $163.3 million.",
         "Adjusted EBITDA increased 81% year over year and operating cash flow was $29.3 million.",
         "QNX secured its largest design win to date, adding more than $100 million to royalty backlog.",
@@ -18,17 +19,17 @@
       ],
       "href": "https://www.sec.gov/Archives/edgar/data/1070235/000107023526000112/q2fy27ex-991.htm",
       "missingData": [
-        "live underlying quote and Monday continuation structure",
+        "regular-session continuation or failure structure after the market opens",
         "exact 21-60 DTE contract bid, ask and midpoint",
         "contract IV, IV rank and term structure",
         "delta and remaining Greeks",
         "contract volume, open interest and spread",
         "reliable buyer-initiated opening-flow confirmation",
-        "sector and broad-market confirmation after reopening"
+        "sector and broad-market confirmation"
       ],
-      "risk": "Research only. Post-earnings gaps can reverse; Secure Communications EBITDA declined 18% year over year and DBNRR was 91%. Do not enter without liquid contract confirmation and a defined underlying invalidation.",
+      "risk": "Research only; the roughly 6% adverse pre-market reaction weakens the bullish setup and may signal that the earnings beat was already priced in. Extended-hours liquidity is thinner and the move can change after the open. Do not enter without a regular-session reclaim/structure, liquid contract confirmation and defined invalidation.",
       "details": {
-        "verificationStatus": "primary catalyst verified; trade eligibility pending live market and options checks",
+        "verificationStatus": "primary catalyst verified; bullish continuation weakened by adverse pre-market reaction; trade eligibility pending regular-session and options checks",
         "evidenceSources": [
           {
             "name": "BlackBerry Q2 FY2027 earnings release filed with SEC",
@@ -43,25 +44,42 @@
             "publishedAt": "2026-09-24",
             "checkedAt": "2026-09-27T09:02:58Z",
             "status": "checked"
+          },
+          {
+            "name": "BlackBerry September 28 pre-market indication",
+            "url": "https://www.nasdaq.com/market-activity/stocks/bb",
+            "publishedAt": "2026-09-28T12:48:22Z",
+            "checkedAt": "2026-09-28T13:05:47.915Z",
+            "status": "checked"
           }
         ],
         "rejectionReasons": [
-          "U.S. options market closed at scan time",
+          "listed options session not yet open",
+          "roughly 6% adverse pre-market gap weakens bullish continuation",
           "no reliable live exact-contract quote",
           "no verified current IV, Greeks, OI, spread or buyer-initiated flow",
-          "post-earnings continuation structure not yet confirmed"
-        ]
+          "regular-session structure not yet confirmed"
+        ],
+        "marketReaction": {
+          "session": "pre-market",
+          "price": 8.21,
+          "changePercent": -6.01375,
+          "quoteTimestamp": "2026-09-28T12:48:22Z",
+          "intradayRangeAvailable": false,
+          "status": "material adverse reaction"
+        }
       }
     },
     {
       "id": "options-cost-fy26q4-20260924",
       "eventType": "research",
       "system": "options",
-      "timestamp": "2026-09-27T09:02:58Z",
+      "timestamp": "2026-09-28T13:05:47.915Z",
       "asset": "COST",
       "title": "Research: COST double-digit sales and earnings growth",
-      "summary": "Costco reported fourth-quarter net sales growth of 11.2%, adjusted comparable sales growth of 6.7%, digitally enabled comparable growth of 19.8% and diluted EPS of $6.75 versus $5.87 a year earlier. The results support a possible post-earnings drift setup, but an exact option entry requires live price structure, volatility and liquidity checks after reopening.",
+      "summary": "Costco's September 24 results remain verified, and the September 28 pre-market indication was $922.765, up about 2.9% from the prior close. The favorable reaction supports the post-earnings drift thesis but does not establish an entry before regular-session structure and exact option economics are available.",
       "reasons": [
+        "September 28 pre-market indication: $922.765 at 12:48:05 UTC, approximately 2.9% above the prior close; no intraday high or low was yet available.",
         "Fourth-quarter net sales rose 11.2% year over year to $93.9 billion.",
         "Adjusted total-company comparable sales increased 6.7%.",
         "Digitally enabled comparable sales increased 19.8%.",
@@ -69,17 +87,17 @@
       ],
       "href": "https://www.sec.gov/Archives/edgar/data/909832/000090983226000084/costex9918-k92426.htm",
       "missingData": [
-        "live underlying quote and post-earnings continuation structure",
+        "regular-session continuation structure after the market opens",
         "exact 21-60 DTE contract bid, ask and midpoint",
         "contract IV, IV rank and term structure",
         "delta and remaining Greeks",
         "contract volume, open interest and spread",
         "reliable buyer-initiated opening-flow confirmation",
-        "consumer-defensive sector and broad-market confirmation after reopening"
+        "consumer-defensive sector and broad-market confirmation"
       ],
-      "risk": "Research only. Results included a $0.15-per-share nonrecurring tariff-refund benefit, and premium may remain elevated after earnings. Do not enter without a favorable live volatility/reward profile and defined invalidation.",
+      "risk": "Research only. The favorable pre-market gap can fade in thinner extended-hours liquidity, results included a $0.15-per-share nonrecurring tariff-refund benefit, and option premium may remain elevated after earnings. Do not enter without favorable regular-session structure, volatility/reward and defined invalidation.",
       "details": {
-        "verificationStatus": "primary catalyst verified; trade eligibility pending live market and options checks",
+        "verificationStatus": "primary catalyst verified; favorable pre-market reaction observed; trade eligibility pending regular-session and options checks",
         "evidenceSources": [
           {
             "name": "Costco Q4 and FY2026 earnings release filed with SEC",
@@ -94,14 +112,29 @@
             "publishedAt": "2026-09-24",
             "checkedAt": "2026-09-27T09:02:58Z",
             "status": "checked"
+          },
+          {
+            "name": "Costco September 28 pre-market indication",
+            "url": "https://www.nasdaq.com/market-activity/stocks/cost",
+            "publishedAt": "2026-09-28T12:48:05Z",
+            "checkedAt": "2026-09-28T13:05:47.915Z",
+            "status": "checked"
           }
         ],
         "rejectionReasons": [
-          "U.S. options market closed at scan time",
+          "listed options session not yet open",
           "no reliable live exact-contract quote",
           "no verified current IV, Greeks, OI, spread or buyer-initiated flow",
-          "post-earnings continuation structure not yet confirmed"
-        ]
+          "regular-session continuation not yet confirmed"
+        ],
+        "marketReaction": {
+          "session": "pre-market",
+          "price": 922.765,
+          "changePercent": 2.91696,
+          "quoteTimestamp": "2026-09-28T12:48:05Z",
+          "intradayRangeAvailable": false,
+          "status": "supportive but unconfirmed"
+        }
       }
     },
     {
@@ -272,50 +305,56 @@
       }
     },
     "options": {
-      "id": "options-scan-20260928T121629Z",
+      "id": "options-scan-20260928T130403Z",
       "system": "options",
-      "startedAt": "2026-09-28T12:16:29.000Z",
-      "checkedAt": "2026-09-28T12:17:57.736Z",
-      "scheduledFor": "2026-09-28T12:00:00.000Z",
-      "nextScheduledAt": "2026-09-28T13:00:00.000Z",
+      "startedAt": "2026-09-28T13:04:03.000Z",
+      "checkedAt": "2026-09-28T13:05:47.915Z",
+      "scheduledFor": "2026-09-28T13:00:00.000Z",
+      "nextScheduledAt": "2026-09-28T14:00:00.000Z",
       "status": "market_closed",
-      "summary": "No open options paper trades were present. Nasdaq confirms listed U.S. options open at 9:30 a.m. ET Monday through Friday, and this scan completed before the September 28 session opened. BlackBerry and Costco's September 24 SEC earnings exhibits were checked and supplied no material new evidence beyond the existing BB and COST research. The dynamic SEC issuer landing pages and Nasdaq earnings calendar did not expose usable current filing or calendar rows. Without live exact-contract midpoint, IV, Greeks, spread, open interest, buyer-initiated flow or post-open price structure, no research, entry, exit or mark was created.",
+      "summary": "No open options paper trades were present. Before the September 28 listed-options session opened, BB was indicated at $8.21, down about 6.0%, materially weakening its bullish continuation thesis; COST was indicated at $922.765, up about 2.9%, supporting but not confirming its post-earnings drift thesis. Nasdaq confirms listed options open at 9:30 a.m. ET. Both September 24 SEC earnings exhibits and current issuer landing pages were checked, with no newer material catalyst found. The two existing research records were updated, but without live exact-contract midpoint, IV, Greeks, spread, open interest, buyer-initiated flow or regular-session structure, no entry, exit or mark was created.",
       "sources": [
         {
           "name": "Nasdaq U.S. trading and options schedule",
           "url": "https://www.nasdaq.com/market-activity/stock-market-holiday-schedule",
-          "checkedAt": "2026-09-28T12:17:57.736Z",
+          "checkedAt": "2026-09-28T13:05:47.915Z",
+          "status": "checked"
+        },
+        {
+          "name": "BlackBerry pre-market indication",
+          "url": "https://www.nasdaq.com/market-activity/stocks/bb",
+          "checkedAt": "2026-09-28T13:05:47.915Z",
           "status": "checked"
         },
         {
           "name": "BlackBerry Q2 FY2027 earnings release filed with SEC",
           "url": "https://www.sec.gov/Archives/edgar/data/1070235/000107023526000112/q2fy27ex-991.htm",
-          "checkedAt": "2026-09-28T12:17:57.736Z",
+          "checkedAt": "2026-09-28T13:05:47.915Z",
           "status": "checked"
         },
         {
           "name": "BlackBerry SEC filing page",
           "url": "https://www.sec.gov/edgar/browse/?CIK=1070235",
-          "checkedAt": "2026-09-28T12:17:57.736Z",
-          "status": "unavailable"
+          "checkedAt": "2026-09-28T13:05:47.915Z",
+          "status": "checked"
+        },
+        {
+          "name": "Costco pre-market indication",
+          "url": "https://www.nasdaq.com/market-activity/stocks/cost",
+          "checkedAt": "2026-09-28T13:05:47.915Z",
+          "status": "checked"
         },
         {
           "name": "Costco Q4 FY2026 earnings release filed with SEC",
           "url": "https://www.sec.gov/Archives/edgar/data/909832/000090983226000084/costex9918-k92426.htm",
-          "checkedAt": "2026-09-28T12:17:57.736Z",
+          "checkedAt": "2026-09-28T13:05:47.915Z",
           "status": "checked"
         },
         {
           "name": "Costco SEC filing page",
           "url": "https://www.sec.gov/edgar/browse/?CIK=909832",
-          "checkedAt": "2026-09-28T12:17:57.736Z",
-          "status": "unavailable"
-        },
-        {
-          "name": "Nasdaq earnings calendar",
-          "url": "https://www.nasdaq.com/market-activity/earnings",
-          "checkedAt": "2026-09-28T12:17:57.736Z",
-          "status": "unavailable"
+          "checkedAt": "2026-09-28T13:05:47.915Z",
+          "status": "checked"
         }
       ],
       "missingData": [
@@ -323,12 +362,10 @@
         "current contract IV, IV rank, term structure and Greeks",
         "contract volume, open interest and spread",
         "reliable buyer-initiated opening-flow confirmation",
-        "post-open underlying, sector and broad-market structure",
-        "usable current BlackBerry and Costco SEC issuer landing-page rows",
-        "usable current Nasdaq earnings-calendar rows"
+        "regular-session underlying, sector and broad-market structure"
       ],
       "counts": {
-        "research": 0,
+        "research": 2,
         "entries": 0,
         "exits": 0
       },
@@ -3953,6 +3990,75 @@
       },
       "deliveryDiagnostics": {
         "repair20260928ReportedAt": "2026-09-28T01:51:49.985Z"
+      }
+    },
+    {
+      "id": "options-scan-20260928T130403Z",
+      "system": "options",
+      "startedAt": "2026-09-28T13:04:03.000Z",
+      "checkedAt": "2026-09-28T13:05:47.915Z",
+      "scheduledFor": "2026-09-28T13:00:00.000Z",
+      "nextScheduledAt": "2026-09-28T14:00:00.000Z",
+      "status": "market_closed",
+      "summary": "No open options paper trades were present. Before the September 28 listed-options session opened, BB was indicated at $8.21, down about 6.0%, materially weakening its bullish continuation thesis; COST was indicated at $922.765, up about 2.9%, supporting but not confirming its post-earnings drift thesis. Nasdaq confirms listed options open at 9:30 a.m. ET. Both September 24 SEC earnings exhibits and current issuer landing pages were checked, with no newer material catalyst found. The two existing research records were updated, but without live exact-contract midpoint, IV, Greeks, spread, open interest, buyer-initiated flow or regular-session structure, no entry, exit or mark was created.",
+      "sources": [
+        {
+          "name": "Nasdaq U.S. trading and options schedule",
+          "url": "https://www.nasdaq.com/market-activity/stock-market-holiday-schedule",
+          "checkedAt": "2026-09-28T13:05:47.915Z",
+          "status": "checked"
+        },
+        {
+          "name": "BlackBerry pre-market indication",
+          "url": "https://www.nasdaq.com/market-activity/stocks/bb",
+          "checkedAt": "2026-09-28T13:05:47.915Z",
+          "status": "checked"
+        },
+        {
+          "name": "BlackBerry Q2 FY2027 earnings release filed with SEC",
+          "url": "https://www.sec.gov/Archives/edgar/data/1070235/000107023526000112/q2fy27ex-991.htm",
+          "checkedAt": "2026-09-28T13:05:47.915Z",
+          "status": "checked"
+        },
+        {
+          "name": "BlackBerry SEC filing page",
+          "url": "https://www.sec.gov/edgar/browse/?CIK=1070235",
+          "checkedAt": "2026-09-28T13:05:47.915Z",
+          "status": "checked"
+        },
+        {
+          "name": "Costco pre-market indication",
+          "url": "https://www.nasdaq.com/market-activity/stocks/cost",
+          "checkedAt": "2026-09-28T13:05:47.915Z",
+          "status": "checked"
+        },
+        {
+          "name": "Costco Q4 FY2026 earnings release filed with SEC",
+          "url": "https://www.sec.gov/Archives/edgar/data/909832/000090983226000084/costex9918-k92426.htm",
+          "checkedAt": "2026-09-28T13:05:47.915Z",
+          "status": "checked"
+        },
+        {
+          "name": "Costco SEC filing page",
+          "url": "https://www.sec.gov/edgar/browse/?CIK=909832",
+          "checkedAt": "2026-09-28T13:05:47.915Z",
+          "status": "checked"
+        }
+      ],
+      "missingData": [
+        "live exact-contract bid, ask and midpoint before the listed-options session opens",
+        "current contract IV, IV rank, term structure and Greeks",
+        "contract volume, open interest and spread",
+        "reliable buyer-initiated opening-flow confirmation",
+        "regular-session underlying, sector and broad-market structure"
+      ],
+      "counts": {
+        "research": 2,
+        "entries": 0,
+        "exits": 0
+      },
+      "deliveryDiagnostics": {
+        "repair20260928ReportedAt": "2026-09-28T00:50:48.883Z"
       }
     }
   ]
