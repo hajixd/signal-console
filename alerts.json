@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-28T01:49:55.384Z",
+  "updatedAt": "2026-09-28T01:49:57.233Z",
   "alerts": [
     {
       "id": "options-bb-fy27q2-20260924",
@@ -242,7 +242,7 @@
       "id": "options-scan-20260928T014908Z",
       "system": "options",
       "startedAt": "2026-09-28T01:49:08.433Z",
-      "checkedAt": "2026-09-28T01:49:55.384Z",
+      "checkedAt": "2026-09-28T01:49:57.233Z",
       "scheduledFor": "2026-09-28T01:00:00.000Z",
       "nextScheduledAt": "2026-09-28T02:00:00.000Z",
       "status": "market_closed",
@@ -251,37 +251,37 @@
         {
           "name": "Nasdaq U.S. trading and options schedule",
           "url": "https://www.nasdaq.com/market-activity/stock-market-holiday-schedule",
-          "checkedAt": "2026-09-28T01:49:55.384Z",
+          "checkedAt": "2026-09-28T01:49:57.233Z",
           "status": "checked"
         },
         {
           "name": "BlackBerry Q2 FY2027 earnings release filed with SEC",
           "url": "https://www.sec.gov/Archives/edgar/data/1070235/000107023526000112/q2fy27ex-991.htm",
-          "checkedAt": "2026-09-28T01:49:55.384Z",
+          "checkedAt": "2026-09-28T01:49:57.233Z",
           "status": "checked"
         },
         {
           "name": "BlackBerry SEC filing page",
           "url": "https://www.sec.gov/edgar/browse/?CIK=1070235",
-          "checkedAt": "2026-09-28T01:49:55.384Z",
+          "checkedAt": "2026-09-28T01:49:57.233Z",
           "status": "checked"
         },
         {
           "name": "Costco Q4 FY2026 earnings release filed with SEC",
           "url": "https://www.sec.gov/Archives/edgar/data/909832/000090983226000084/costex9918-k92426.htm",
-          "checkedAt": "2026-09-28T01:49:55.384Z",
+          "checkedAt": "2026-09-28T01:49:57.233Z",
           "status": "checked"
         },
         {
           "name": "Costco SEC filing page",
           "url": "https://www.sec.gov/edgar/browse/?CIK=909832",
-          "checkedAt": "2026-09-28T01:49:55.384Z",
+          "checkedAt": "2026-09-28T01:49:57.233Z",
           "status": "checked"
         },
         {
           "name": "Nasdaq earnings calendar",
           "url": "https://www.nasdaq.com/market-activity/earnings",
-          "checkedAt": "2026-09-28T01:49:55.384Z",
+          "checkedAt": "2026-09-28T01:49:57.233Z",
           "status": "checked"
         }
       ],
@@ -1830,7 +1830,7 @@
       "id": "options-scan-20260928T014908Z",
       "system": "options",
       "startedAt": "2026-09-28T01:49:08.433Z",
-      "checkedAt": "2026-09-28T01:49:55.384Z",
+      "checkedAt": "2026-09-28T01:49:57.233Z",
       "scheduledFor": "2026-09-28T01:00:00.000Z",
       "nextScheduledAt": "2026-09-28T02:00:00.000Z",
       "status": "market_closed",
@@ -1839,37 +1839,37 @@
         {
           "name": "Nasdaq U.S. trading and options schedule",
           "url": "https://www.nasdaq.com/market-activity/stock-market-holiday-schedule",
-          "checkedAt": "2026-09-28T01:49:55.384Z",
+          "checkedAt": "2026-09-28T01:49:57.233Z",
           "status": "checked"
         },
         {
           "name": "BlackBerry Q2 FY2027 earnings release filed with SEC",
           "url": "https://www.sec.gov/Archives/edgar/data/1070235/000107023526000112/q2fy27ex-991.htm",
-          "checkedAt": "2026-09-28T01:49:55.384Z",
+          "checkedAt": "2026-09-28T01:49:57.233Z",
           "status": "checked"
         },
         {
           "name": "BlackBerry SEC filing page",
           "url": "https://www.sec.gov/edgar/browse/?CIK=1070235",
-          "checkedAt": "2026-09-28T01:49:55.384Z",
+          "checkedAt": "2026-09-28T01:49:57.233Z",
           "status": "checked"
         },
         {
           "name": "Costco Q4 FY2026 earnings release filed with SEC",
           "url": "https://www.sec.gov/Archives/edgar/data/909832/000090983226000084/costex9918-k92426.htm",
-          "checkedAt": "2026-09-28T01:49:55.384Z",
+          "checkedAt": "2026-09-28T01:49:57.233Z",
           "status": "checked"
         },
         {
           "name": "Costco SEC filing page",
           "url": "https://www.sec.gov/edgar/browse/?CIK=909832",
-          "checkedAt": "2026-09-28T01:49:55.384Z",
+          "checkedAt": "2026-09-28T01:49:57.233Z",
           "status": "checked"
         },
         {
           "name": "Nasdaq earnings calendar",
           "url": "https://www.nasdaq.com/market-activity/earnings",
-          "checkedAt": "2026-09-28T01:49:55.384Z",
+          "checkedAt": "2026-09-28T01:49:57.233Z",
           "status": "checked"
         }
       ],
