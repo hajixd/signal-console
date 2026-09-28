@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-28T18:31:13.106Z",
+  "updatedAt": "2026-09-28T18:43:15.687Z",
   "alerts": [
     {
       "id": "options-bb-fy27q2-20260924",
@@ -280,37 +280,37 @@
   ],
   "scanners": {
     "penny": {
-      "id": "penny-scan-20260928T182842Z",
+      "id": "penny-scan-20260928T184222Z",
       "system": "penny",
-      "startedAt": "2026-09-28T18:28:42.000Z",
-      "checkedAt": "2026-09-28T18:29:39.152Z",
+      "startedAt": "2026-09-28T18:42:22.000Z",
+      "checkedAt": "2026-09-28T18:43:15.687Z",
       "scheduledFor": "2026-09-28T18:00:00.000Z",
       "nextScheduledAt": "2026-09-28T19:00:00.000Z",
       "status": "data_limited",
-      "summary": "No open penny paper trades were present. FTHM was $0.492 at 18:02:06 UTC, down 15.61% from the prior close, after trading between $0.4810 and $0.5903 on 3,554,529 shares. The stock remained near the lower end of its range while IWM was down 0.44%, so the failed post-catalyst structure and existing entry rejection were unchanged. Fathom’s issuer-news page showed no announcement newer than the September 24 proposed restructuring. A bounded SEC catalyst and dilution search returned stale or incomplete leads and no fresh primary-source microcap setup that could pass the catalyst, dilution, liquidity and constructive-structure gates. The existing FTHM research record was left unchanged; no research, entry, exit or mark was created.",
+      "summary": "No open penny paper trades were present. FTHM was $0.4902 at 18:21:33 UTC, down 15.92% from the prior close, after trading between $0.4810 and $0.5903 on 3,563,998 shares. The stock remained near the session low while IWM was down 0.44%, leaving the failed post-catalyst structure and existing entry rejection unchanged. Fathom’s issuer-news page still showed no announcement newer than September 24. A bounded SEC catalyst search returned stale merger, financing or unrelated filings rather than a fresh primary-source microcap setup passing the catalyst, dilution, liquidity and constructive-structure gates. The existing FTHM research record was left unchanged; no research, entry, exit or mark was created.",
       "sources": [
         {
           "name": "FTHM regular-session market data",
           "url": "https://www.nasdaq.com/market-activity/stocks/fthm",
-          "checkedAt": "2026-09-28T18:29:39.152Z",
+          "checkedAt": "2026-09-28T18:43:15.687Z",
           "status": "checked"
         },
         {
           "name": "IWM small-cap market data",
           "url": "https://www.nasdaq.com/market-activity/etf/iwm",
-          "checkedAt": "2026-09-28T18:29:39.152Z",
+          "checkedAt": "2026-09-28T18:43:15.687Z",
           "status": "checked"
         },
         {
           "name": "Fathom current issuer press releases",
           "url": "https://ir.fathominc.com/news-events/press-releases",
-          "checkedAt": "2026-09-28T18:29:39.152Z",
+          "checkedAt": "2026-09-28T18:43:15.687Z",
           "status": "checked"
         },
         {
-          "name": "Current SEC microcap catalyst and dilution search",
+          "name": "Current SEC microcap catalyst search",
           "url": "https://www.sec.gov/edgar/search/",
-          "checkedAt": "2026-09-28T18:29:39.152Z",
+          "checkedAt": "2026-09-28T18:43:15.687Z",
           "status": "checked"
         }
       ],
@@ -5478,6 +5478,58 @@
       },
       "deliveryDiagnostics": {
         "repair20260928ReportedAt": "2026-09-28T01:51:49.985Z"
+      }
+    },
+    {
+      "id": "penny-scan-20260928T184222Z",
+      "system": "penny",
+      "startedAt": "2026-09-28T18:42:22.000Z",
+      "checkedAt": "2026-09-28T18:43:15.687Z",
+      "scheduledFor": "2026-09-28T18:00:00.000Z",
+      "nextScheduledAt": "2026-09-28T19:00:00.000Z",
+      "status": "data_limited",
+      "summary": "No open penny paper trades were present. FTHM was $0.4902 at 18:21:33 UTC, down 15.92% from the prior close, after trading between $0.4810 and $0.5903 on 3,563,998 shares. The stock remained near the session low while IWM was down 0.44%, leaving the failed post-catalyst structure and existing entry rejection unchanged. Fathom’s issuer-news page still showed no announcement newer than September 24. A bounded SEC catalyst search returned stale merger, financing or unrelated filings rather than a fresh primary-source microcap setup passing the catalyst, dilution, liquidity and constructive-structure gates. The existing FTHM research record was left unchanged; no research, entry, exit or mark was created.",
+      "sources": [
+        {
+          "name": "FTHM regular-session market data",
+          "url": "https://www.nasdaq.com/market-activity/stocks/fthm",
+          "checkedAt": "2026-09-28T18:43:15.687Z",
+          "status": "checked"
+        },
+        {
+          "name": "IWM small-cap market data",
+          "url": "https://www.nasdaq.com/market-activity/etf/iwm",
+          "checkedAt": "2026-09-28T18:43:15.687Z",
+          "status": "checked"
+        },
+        {
+          "name": "Fathom current issuer press releases",
+          "url": "https://ir.fathominc.com/news-events/press-releases",
+          "checkedAt": "2026-09-28T18:43:15.687Z",
+          "status": "checked"
+        },
+        {
+          "name": "Current SEC microcap catalyst search",
+          "url": "https://www.sec.gov/edgar/search/",
+          "checkedAt": "2026-09-28T18:43:15.687Z",
+          "status": "checked"
+        }
+      ],
+      "missingData": [
+        "complete real-time microcap universe coverage",
+        "current relative-volume baselines and full intraday technical structure across the candidate universe",
+        "complete current dilution, ATM, offering, warrant and convertible sweep across the candidate universe",
+        "spam-filtered X unique-author acceleration",
+        "current insider activity across the candidate universe",
+        "a usable fresh primary catalyst from the bounded SEC discovery search"
+      ],
+      "counts": {
+        "research": 0,
+        "entries": 0,
+        "exits": 0
+      },
+      "deliveryDiagnostics": {
+        "repair20260928ReportedAt": "2026-09-28T01:47:21.040Z"
       }
     }
   ]
