@@ -1,21 +1,21 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-28T21:18:00.405Z",
+  "updatedAt": "2026-09-28T21:19:52.420Z",
   "alerts": [
     {
       "id": "options-bb-fy27q2-20260924",
       "eventType": "research",
       "system": "options",
-      "timestamp": "2026-09-28T18:22:30.823Z",
+      "timestamp": "2026-09-28T21:19:52.420Z",
       "asset": "BB",
-      "title": "Research update: BB extends breakout to session high",
-      "summary": "BlackBerry’s September 24 earnings and raised outlook remain verified. At 18:06:28 UTC on September 28, BB traded at $8.775, up 6.88%, essentially at its $8.78 session high after opening at $7.89 and reversing from $7.87 on 18.74 million shares. This is material follow-through from the earlier $8.51 research update and substantial relative strength versus QQQ at -0.84%. No exact qualifying option contract could be validated because Nasdaq’s live chain continued to report the option chain unavailable.",
+      "title": "Research update: BB confirms breakout into the close",
+      "summary": "BlackBerry’s September 24 earnings and raised outlook remain verified. The final available September 28 quote was $8.80 at 21:02:19 UTC, up 7.37%, after trading between $7.87 and $8.98 on 30.09 million shares. BB closed near the session high and showed strong relative strength versus QQQ at -1.07%, confirming that the post-earnings breakout held through the close. No exact qualifying option contract could be validated because Nasdaq’s live BB chain still reported the option chain unavailable.",
       "reasons": [
-        "At 18:06:28 UTC, BB traded at $8.775, up 6.88%, only $0.005 below its session high.",
-        "The stock extended materially from the earlier $8.51 research update on 18,744,256 shares while QQQ remained down 0.84%.",
+        "The final available September 28 quote was $8.80, up 7.37%, only $0.18 below the $8.98 session high.",
+        "Volume reached 30,092,342 shares and the breakout held into the close after a $7.87 session low.",
+        "BB materially outperformed QQQ, which finished down 1.07%.",
         "Q2 FY2027 revenue increased 26% year over year to $163.3 million.",
-        "Adjusted EBITDA increased 81% year over year and operating cash flow was $29.3 million.",
-        "QNX secured its largest design win to date and management raised full-year revenue and adjusted EBITDA outlook."
+        "Adjusted EBITDA increased 81% year over year; management raised full-year revenue and adjusted EBITDA outlook."
       ],
       "href": "https://www.sec.gov/Archives/edgar/data/1070235/000107023526000112/q2fy27ex-991.htm",
       "missingData": [
@@ -23,12 +23,11 @@
         "contract IV, IV rank and term structure",
         "delta and remaining Greeks",
         "contract volume, open interest and executable spread",
-        "reliable buyer-initiated opening-flow confirmation",
-        "closing confirmation that the breakout holds"
+        "reliable buyer-initiated opening-flow confirmation"
       ],
-      "risk": "Research only. BB has extended sharply from the session low and is vulnerable to a late-session reversal or premium overpayment. Do not enter without a liquid 21-60 DTE contract, acceptable volatility/reward, directional opening-flow confirmation and a defined underlying invalidation.",
+      "risk": "Research only. BB confirmed a strong breakout but is extended after a 7.37% session gain and may retrace or expose buyers to inflated premium. Do not enter without a liquid 21-60 DTE contract, acceptable volatility/reward, directional opening-flow confirmation and a defined underlying invalidation.",
       "details": {
-        "verificationStatus": "primary catalyst verified; material regular-session breakout follow-through observed; exact-contract eligibility unavailable",
+        "verificationStatus": "primary catalyst verified; closing breakout and relative strength confirmed; exact-contract eligibility unavailable",
         "evidenceSources": [
           {
             "name": "BlackBerry Q2 FY2027 earnings release filed with SEC",
@@ -64,31 +63,38 @@
             "publishedAt": "2026-09-28T18:06:28Z",
             "checkedAt": "2026-09-28T18:22:30.823Z",
             "status": "checked"
+          },
+          {
+            "name": "BlackBerry September 28 closing quote",
+            "url": "https://www.nasdaq.com/market-activity/stocks/bb",
+            "publishedAt": "2026-09-28T21:02:19Z",
+            "checkedAt": "2026-09-28T21:19:52.420Z",
+            "status": "checked"
           }
         ],
         "rejectionReasons": [
           "Nasdaq reports the option chain unavailable",
           "no reliable live exact-contract quote",
-          "no verified current IV, Greeks, open interest, executable spread or buyer-initiated flow",
-          "closing continuation has not yet been confirmed"
+          "no verified current IV, Greeks, open interest, executable spread or buyer-initiated opening flow",
+          "the underlying is extended after a 7.37% session gain"
         ],
         "marketReaction": {
-          "session": "regular",
-          "price": 8.775,
-          "changePercent": 6.88185,
+          "session": "closing",
+          "price": 8.8,
+          "changePercent": 7.36906,
           "open": 7.89,
-          "high": 8.78,
+          "high": 8.98,
           "low": 7.87,
-          "volume": 18744256,
-          "marketCap": 5151208248,
-          "quoteTimestamp": "2026-09-28T18:06:28Z",
+          "volume": 30092342,
+          "marketCap": 5165884055,
+          "quoteTimestamp": "2026-09-28T21:02:19Z",
           "broadMarket": {
             "asset": "QQQ",
-            "price": 738.23,
-            "changePercent": -0.84218,
-            "quoteTimestamp": "2026-09-28T18:06:33Z"
+            "price": 736.53,
+            "changePercent": -1.06783,
+            "quoteTimestamp": "2026-09-28T21:03:44Z"
           },
-          "status": "material breakout follow-through and strong relative strength, pending exact-contract validation and closing confirmation"
+          "status": "breakout held into the close with strong relative strength; exact-contract validation still unavailable"
         }
       }
     },
@@ -332,62 +338,62 @@
       }
     },
     "options": {
-      "id": "options-scan-20260928T194313Z",
+      "id": "options-scan-20260928T211722Z",
       "system": "options",
-      "startedAt": "2026-09-28T19:43:13.000Z",
-      "checkedAt": "2026-09-28T19:44:19.207Z",
-      "scheduledFor": "2026-09-28T19:00:00.000Z",
-      "nextScheduledAt": "2026-09-28T20:00:00.000Z",
-      "status": "data_limited",
-      "summary": "No open options paper trades were present. BB was $8.875 at 19:27:57 UTC, up 8.10%, after trading from $7.87 to $8.965 on 24.84M shares while QQQ was down 0.98%. This remained strong follow-through from the already-published BB breakout research but did not materially change the prior $8.905 research decision. COST was $920.87, down 0.21%, and did not materially improve its existing post-earnings setup. Nasdaq explicitly reported both BB and COST option chains unavailable, preventing exact 21–60 DTE midpoint, delta, IV, spread, volume, open interest and buyer-initiated-flow validation. A bounded SEC discovery search returned no qualifying fresh primary-source catalyst. No new research, entry, exit or mark was created.",
+      "startedAt": "2026-09-28T21:17:22.000Z",
+      "checkedAt": "2026-09-28T21:19:52.420Z",
+      "scheduledFor": "2026-09-28T21:00:00.000Z",
+      "nextScheduledAt": "2026-09-28T22:00:00.000Z",
+      "status": "market_closed",
+      "summary": "No open options paper trades were present. BB’s final available September 28 quote was $8.80 at 21:02:19 UTC, up 7.37%, after trading from $7.87 to $8.98 on 30.09 million shares while QQQ finished down 1.07%. Holding near the high through the close materially confirmed the existing post-earnings breakout research, so that research record was updated. COST finished at $922.92, up 0.04%, and did not materially change its existing post-earnings setup. Nasdaq’s BB and COST option-chain pages provided no usable contracts, preventing exact 21–60 DTE midpoint, delta, IV, spread, volume, open-interest and buyer-initiated-flow validation. A bounded SEC discovery search returned a stale unrelated filing rather than a fresh qualifying primary-source catalyst. One research item was updated; no entry, exit or mark was created.",
       "sources": [
         {
-          "name": "Market data — BB",
+          "name": "BlackBerry closing market data",
           "url": "https://www.nasdaq.com/market-activity/stocks/bb",
-          "checkedAt": "2026-09-28T19:44:19.207Z",
+          "checkedAt": "2026-09-28T21:19:52.420Z",
           "status": "checked"
         },
         {
-          "name": "Market data — COST",
+          "name": "Costco closing market data",
           "url": "https://www.nasdaq.com/market-activity/stocks/cost",
-          "checkedAt": "2026-09-28T19:44:19.207Z",
+          "checkedAt": "2026-09-28T21:19:52.420Z",
           "status": "checked"
         },
         {
-          "name": "Market regime — QQQ",
+          "name": "QQQ closing market data",
           "url": "https://www.nasdaq.com/market-activity/etf/qqq",
-          "checkedAt": "2026-09-28T19:44:19.207Z",
+          "checkedAt": "2026-09-28T21:19:52.420Z",
           "status": "checked"
         },
         {
-          "name": "Nasdaq BB option chain",
+          "name": "BlackBerry Nasdaq option chain",
           "url": "https://www.nasdaq.com/market-activity/stocks/bb/option-chain",
-          "checkedAt": "2026-09-28T19:44:19.207Z",
+          "checkedAt": "2026-09-28T21:19:52.420Z",
           "status": "unavailable"
         },
         {
-          "name": "Nasdaq COST option chain",
+          "name": "Costco Nasdaq option chain",
           "url": "https://www.nasdaq.com/market-activity/stocks/cost/option-chain",
-          "checkedAt": "2026-09-28T19:44:19.207Z",
+          "checkedAt": "2026-09-28T21:19:52.420Z",
           "status": "unavailable"
         },
         {
-          "name": "SEC EDGAR catalyst discovery",
+          "name": "Current SEC catalyst discovery",
           "url": "https://www.sec.gov/edgar/search/",
-          "checkedAt": "2026-09-28T19:44:19.207Z",
+          "checkedAt": "2026-09-28T21:19:52.420Z",
           "status": "checked"
         }
       ],
       "missingData": [
-        "Exact 21–60 DTE option bid, ask and midpoint",
-        "Contract delta, Greeks, implied volatility, IV rank and term structure",
-        "Contract volume, open interest and spread quality",
-        "Directional buyer-initiated/opening options flow",
-        "Complete real-time U.S. options candidate universe",
-        "Fresh qualifying primary-source catalyst beyond already-published research"
+        "exact 21-60 DTE contract bid, ask and midpoint for BB and COST",
+        "current contract IV, IV rank, term structure and Greeks",
+        "contract volume, open interest and executable spread",
+        "reliable buyer-initiated opening-flow confirmation",
+        "complete real-time U.S. options candidate-universe coverage",
+        "fresh qualifying primary-source catalyst beyond already-published research"
       ],
       "counts": {
-        "research": 0,
+        "research": 1,
         "entries": 0,
         "exits": 0
       },
@@ -6146,6 +6152,70 @@
       },
       "deliveryDiagnostics": {
         "repair20260928ReportedAt": "2026-09-28T01:47:21.040Z"
+      }
+    },
+    {
+      "id": "options-scan-20260928T211722Z",
+      "system": "options",
+      "startedAt": "2026-09-28T21:17:22.000Z",
+      "checkedAt": "2026-09-28T21:19:52.420Z",
+      "scheduledFor": "2026-09-28T21:00:00.000Z",
+      "nextScheduledAt": "2026-09-28T22:00:00.000Z",
+      "status": "market_closed",
+      "summary": "No open options paper trades were present. BB’s final available September 28 quote was $8.80 at 21:02:19 UTC, up 7.37%, after trading from $7.87 to $8.98 on 30.09 million shares while QQQ finished down 1.07%. Holding near the high through the close materially confirmed the existing post-earnings breakout research, so that research record was updated. COST finished at $922.92, up 0.04%, and did not materially change its existing post-earnings setup. Nasdaq’s BB and COST option-chain pages provided no usable contracts, preventing exact 21–60 DTE midpoint, delta, IV, spread, volume, open-interest and buyer-initiated-flow validation. A bounded SEC discovery search returned a stale unrelated filing rather than a fresh qualifying primary-source catalyst. One research item was updated; no entry, exit or mark was created.",
+      "sources": [
+        {
+          "name": "BlackBerry closing market data",
+          "url": "https://www.nasdaq.com/market-activity/stocks/bb",
+          "checkedAt": "2026-09-28T21:19:52.420Z",
+          "status": "checked"
+        },
+        {
+          "name": "Costco closing market data",
+          "url": "https://www.nasdaq.com/market-activity/stocks/cost",
+          "checkedAt": "2026-09-28T21:19:52.420Z",
+          "status": "checked"
+        },
+        {
+          "name": "QQQ closing market data",
+          "url": "https://www.nasdaq.com/market-activity/etf/qqq",
+          "checkedAt": "2026-09-28T21:19:52.420Z",
+          "status": "checked"
+        },
+        {
+          "name": "BlackBerry Nasdaq option chain",
+          "url": "https://www.nasdaq.com/market-activity/stocks/bb/option-chain",
+          "checkedAt": "2026-09-28T21:19:52.420Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "Costco Nasdaq option chain",
+          "url": "https://www.nasdaq.com/market-activity/stocks/cost/option-chain",
+          "checkedAt": "2026-09-28T21:19:52.420Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "Current SEC catalyst discovery",
+          "url": "https://www.sec.gov/edgar/search/",
+          "checkedAt": "2026-09-28T21:19:52.420Z",
+          "status": "checked"
+        }
+      ],
+      "missingData": [
+        "exact 21-60 DTE contract bid, ask and midpoint for BB and COST",
+        "current contract IV, IV rank, term structure and Greeks",
+        "contract volume, open interest and executable spread",
+        "reliable buyer-initiated opening-flow confirmation",
+        "complete real-time U.S. options candidate-universe coverage",
+        "fresh qualifying primary-source catalyst beyond already-published research"
+      ],
+      "counts": {
+        "research": 1,
+        "entries": 0,
+        "exits": 0
+      },
+      "deliveryDiagnostics": {
+        "repair20260928ReportedAt": "2026-09-28T00:50:48.883Z"
       }
     }
   ]
