@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-28T03:19:56.959Z",
+  "updatedAt": "2026-09-28T03:25:36.448Z",
   "alerts": [
     {
       "id": "options-bb-fy27q2-20260924",
@@ -239,49 +239,49 @@
       }
     },
     "options": {
-      "id": "options-scan-20260928T014908Z",
+      "id": "options-scan-20260928T032501Z",
       "system": "options",
-      "startedAt": "2026-09-28T01:49:08.433Z",
-      "checkedAt": "2026-09-28T01:49:57.233Z",
-      "scheduledFor": "2026-09-28T01:00:00.000Z",
-      "nextScheduledAt": "2026-09-28T02:00:00.000Z",
+      "startedAt": "2026-09-28T03:25:01.442Z",
+      "checkedAt": "2026-09-28T03:25:36.448Z",
+      "scheduledFor": "2026-09-28T03:00:00.000Z",
+      "nextScheduledAt": "2026-09-28T04:00:00.000Z",
       "status": "market_closed",
       "summary": "No open options paper trades were present. Nasdaq confirms U.S. listed options trade Monday through Friday. BlackBerry and Costco's September 24 SEC earnings exhibits, current SEC issuer pages and Nasdaq's earnings calendar were checked; no material new primary evidence changed the existing BB or COST research. With the listed-options market closed and no reliable live exact-contract midpoint, IV, Greeks, spread, open interest or buyer-initiated flow, no research, entry, exit or mark was created.",
       "sources": [
         {
           "name": "Nasdaq U.S. trading and options schedule",
           "url": "https://www.nasdaq.com/market-activity/stock-market-holiday-schedule",
-          "checkedAt": "2026-09-28T01:49:57.233Z",
+          "checkedAt": "2026-09-28T03:25:36.448Z",
           "status": "checked"
         },
         {
           "name": "BlackBerry Q2 FY2027 earnings release filed with SEC",
           "url": "https://www.sec.gov/Archives/edgar/data/1070235/000107023526000112/q2fy27ex-991.htm",
-          "checkedAt": "2026-09-28T01:49:57.233Z",
+          "checkedAt": "2026-09-28T03:25:36.448Z",
           "status": "checked"
         },
         {
           "name": "BlackBerry SEC filing page",
           "url": "https://www.sec.gov/edgar/browse/?CIK=1070235",
-          "checkedAt": "2026-09-28T01:49:57.233Z",
+          "checkedAt": "2026-09-28T03:25:36.448Z",
           "status": "checked"
         },
         {
           "name": "Costco Q4 FY2026 earnings release filed with SEC",
           "url": "https://www.sec.gov/Archives/edgar/data/909832/000090983226000084/costex9918-k92426.htm",
-          "checkedAt": "2026-09-28T01:49:57.233Z",
+          "checkedAt": "2026-09-28T03:25:36.448Z",
           "status": "checked"
         },
         {
           "name": "Costco SEC filing page",
           "url": "https://www.sec.gov/edgar/browse/?CIK=909832",
-          "checkedAt": "2026-09-28T01:49:57.233Z",
+          "checkedAt": "2026-09-28T03:25:36.448Z",
           "status": "checked"
         },
         {
           "name": "Nasdaq earnings calendar",
           "url": "https://www.nasdaq.com/market-activity/earnings",
-          "checkedAt": "2026-09-28T01:49:57.233Z",
+          "checkedAt": "2026-09-28T03:25:36.448Z",
           "status": "checked"
         }
       ],
@@ -2217,6 +2217,69 @@
       },
       "deliveryDiagnostics": {
         "repair20260928ReportedAt": "2026-09-28T02:04:42.735Z"
+      }
+    },
+    {
+      "id": "options-scan-20260928T032501Z",
+      "system": "options",
+      "startedAt": "2026-09-28T03:25:01.442Z",
+      "checkedAt": "2026-09-28T03:25:36.448Z",
+      "scheduledFor": "2026-09-28T03:00:00.000Z",
+      "nextScheduledAt": "2026-09-28T04:00:00.000Z",
+      "status": "market_closed",
+      "summary": "No open options paper trades were present. Nasdaq confirms U.S. listed options trade Monday through Friday. BlackBerry and Costco's September 24 SEC earnings exhibits, current SEC issuer pages and Nasdaq's earnings calendar were checked; no material new primary evidence changed the existing BB or COST research. With the listed-options market closed and no reliable live exact-contract midpoint, IV, Greeks, spread, open interest or buyer-initiated flow, no research, entry, exit or mark was created.",
+      "sources": [
+        {
+          "name": "Nasdaq U.S. trading and options schedule",
+          "url": "https://www.nasdaq.com/market-activity/stock-market-holiday-schedule",
+          "checkedAt": "2026-09-28T03:25:36.448Z",
+          "status": "checked"
+        },
+        {
+          "name": "BlackBerry Q2 FY2027 earnings release filed with SEC",
+          "url": "https://www.sec.gov/Archives/edgar/data/1070235/000107023526000112/q2fy27ex-991.htm",
+          "checkedAt": "2026-09-28T03:25:36.448Z",
+          "status": "checked"
+        },
+        {
+          "name": "BlackBerry SEC filing page",
+          "url": "https://www.sec.gov/edgar/browse/?CIK=1070235",
+          "checkedAt": "2026-09-28T03:25:36.448Z",
+          "status": "checked"
+        },
+        {
+          "name": "Costco Q4 FY2026 earnings release filed with SEC",
+          "url": "https://www.sec.gov/Archives/edgar/data/909832/000090983226000084/costex9918-k92426.htm",
+          "checkedAt": "2026-09-28T03:25:36.448Z",
+          "status": "checked"
+        },
+        {
+          "name": "Costco SEC filing page",
+          "url": "https://www.sec.gov/edgar/browse/?CIK=909832",
+          "checkedAt": "2026-09-28T03:25:36.448Z",
+          "status": "checked"
+        },
+        {
+          "name": "Nasdaq earnings calendar",
+          "url": "https://www.nasdaq.com/market-activity/earnings",
+          "checkedAt": "2026-09-28T03:25:36.448Z",
+          "status": "checked"
+        }
+      ],
+      "missingData": [
+        "live exact-contract bid, ask and midpoint while the listed-options market is closed",
+        "current contract IV, IV rank, term structure and Greeks",
+        "contract volume, open interest and spread",
+        "reliable buyer-initiated opening-flow confirmation",
+        "post-reopening underlying, sector and broad-market structure"
+      ],
+      "counts": {
+        "research": 0,
+        "entries": 0,
+        "exits": 0
+      },
+      "deliveryDiagnostics": {
+        "repair20260928ReportedAt": "2026-09-28T00:50:48.883Z"
       }
     }
   ]
