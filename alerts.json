@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-28T19:10:58.780Z",
+  "updatedAt": "2026-09-28T19:29:25.173Z",
   "alerts": [
     {
       "id": "options-bb-fy27q2-20260924",
@@ -332,62 +332,62 @@
       }
     },
     "options": {
-      "id": "options-scan-20260928T182054Z",
+      "id": "options-scan-20260928T192735Z",
       "system": "options",
-      "startedAt": "2026-09-28T18:20:54.000Z",
-      "checkedAt": "2026-09-28T18:22:30.823Z",
-      "scheduledFor": "2026-09-28T18:00:00.000Z",
-      "nextScheduledAt": "2026-09-28T19:00:00.000Z",
+      "startedAt": "2026-09-28T19:27:35.000Z",
+      "checkedAt": "2026-09-28T19:29:25.173Z",
+      "scheduledFor": "2026-09-28T19:00:00.000Z",
+      "nextScheduledAt": "2026-09-28T20:00:00.000Z",
       "status": "data_limited",
-      "summary": "No open options paper trades were present. BB materially extended its bullish post-earnings reversal: at 18:06:28 UTC it traded at $8.775, up 6.88%, essentially at the $8.78 session high after rebounding from $7.87 on 18.74 million shares while QQQ was down 0.84%. The existing BB research record was materially updated. COST was $923.16, up 0.04%, and did not materially change its existing setup. Nasdaq explicitly reported both BB and COST option chains unavailable, preventing exact 21-60 DTE midpoint, delta, IV, spread, volume, open-interest and buyer-initiated-flow validation. The current SEC catalyst search returned stale or unrelated filings rather than a new qualifying setup. No entry, exit or mark was created.",
+      "summary": "No open options paper trades were present. BB was $8.905 at 19:12:34 UTC, up 8.47%, after trading from $7.87 to $8.965 on 24.05M shares while QQQ was down 0.99%. This continued the already-published BB breakout research, but the incremental advance from $8.775 did not materially change the research decision. COST was $921.16, down 0.17%, and did not materially change its existing post-earnings setup. Nasdaq explicitly reported both BB and COST option chains unavailable, preventing exact 21–60 DTE midpoint, delta, IV, spread, volume, open interest and buyer-initiated-flow validation. A bounded SEC search returned stale or unrelated filings. No new research, entry, exit or mark was created.",
       "sources": [
         {
-          "name": "BlackBerry regular-session market data",
+          "name": "Market data — BB",
           "url": "https://www.nasdaq.com/market-activity/stocks/bb",
-          "checkedAt": "2026-09-28T18:22:30.823Z",
+          "checkedAt": "2026-09-28T19:29:25.173Z",
           "status": "checked"
         },
         {
-          "name": "Costco regular-session market data",
+          "name": "Market data — COST",
           "url": "https://www.nasdaq.com/market-activity/stocks/cost",
-          "checkedAt": "2026-09-28T18:22:30.823Z",
+          "checkedAt": "2026-09-28T19:29:25.173Z",
           "status": "checked"
         },
         {
-          "name": "QQQ broad-market quote feed",
+          "name": "Market regime — QQQ",
           "url": "https://www.nasdaq.com/market-activity/etf/qqq",
-          "checkedAt": "2026-09-28T18:22:30.823Z",
+          "checkedAt": "2026-09-28T19:29:25.173Z",
           "status": "checked"
         },
         {
-          "name": "BlackBerry Nasdaq option chain",
+          "name": "Nasdaq BB option chain",
           "url": "https://www.nasdaq.com/market-activity/stocks/bb/option-chain",
-          "checkedAt": "2026-09-28T18:22:30.823Z",
+          "checkedAt": "2026-09-28T19:29:25.173Z",
           "status": "unavailable"
         },
         {
-          "name": "Costco Nasdaq option chain",
+          "name": "Nasdaq COST option chain",
           "url": "https://www.nasdaq.com/market-activity/stocks/cost/option-chain",
-          "checkedAt": "2026-09-28T18:22:30.823Z",
+          "checkedAt": "2026-09-28T19:29:25.173Z",
           "status": "unavailable"
         },
         {
-          "name": "Current SEC catalyst discovery",
+          "name": "SEC EDGAR catalyst discovery",
           "url": "https://www.sec.gov/edgar/search/",
-          "checkedAt": "2026-09-28T18:22:30.823Z",
+          "checkedAt": "2026-09-28T19:29:25.173Z",
           "status": "checked"
         }
       ],
       "missingData": [
-        "exact 21-60 DTE contract bid, ask and midpoint for BB and COST",
-        "current contract IV, IV rank, term structure and Greeks",
-        "contract volume, open interest and executable spread",
-        "reliable buyer-initiated opening-flow confirmation",
-        "complete real-time options candidate-universe coverage",
-        "a usable new primary filing from broad current catalyst discovery"
+        "Exact 21–60 DTE option bid, ask and midpoint",
+        "Contract delta, Greeks, implied volatility, IV rank and term structure",
+        "Contract volume, open interest and spread quality",
+        "Directional buyer-initiated/opening options flow",
+        "Complete real-time U.S. options candidate universe",
+        "Fresh qualifying primary-source catalyst beyond already-published research"
       ],
       "counts": {
-        "research": 1,
+        "research": 0,
         "entries": 0,
         "exits": 0
       },
@@ -5696,6 +5696,70 @@
       },
       "deliveryDiagnostics": {
         "repair20260928ReportedAt": "2026-09-28T02:04:42.735Z"
+      }
+    },
+    {
+      "id": "options-scan-20260928T192735Z",
+      "system": "options",
+      "startedAt": "2026-09-28T19:27:35.000Z",
+      "checkedAt": "2026-09-28T19:29:25.173Z",
+      "scheduledFor": "2026-09-28T19:00:00.000Z",
+      "nextScheduledAt": "2026-09-28T20:00:00.000Z",
+      "status": "data_limited",
+      "summary": "No open options paper trades were present. BB was $8.905 at 19:12:34 UTC, up 8.47%, after trading from $7.87 to $8.965 on 24.05M shares while QQQ was down 0.99%. This continued the already-published BB breakout research, but the incremental advance from $8.775 did not materially change the research decision. COST was $921.16, down 0.17%, and did not materially change its existing post-earnings setup. Nasdaq explicitly reported both BB and COST option chains unavailable, preventing exact 21–60 DTE midpoint, delta, IV, spread, volume, open interest and buyer-initiated-flow validation. A bounded SEC search returned stale or unrelated filings. No new research, entry, exit or mark was created.",
+      "sources": [
+        {
+          "name": "Market data — BB",
+          "url": "https://www.nasdaq.com/market-activity/stocks/bb",
+          "checkedAt": "2026-09-28T19:29:25.173Z",
+          "status": "checked"
+        },
+        {
+          "name": "Market data — COST",
+          "url": "https://www.nasdaq.com/market-activity/stocks/cost",
+          "checkedAt": "2026-09-28T19:29:25.173Z",
+          "status": "checked"
+        },
+        {
+          "name": "Market regime — QQQ",
+          "url": "https://www.nasdaq.com/market-activity/etf/qqq",
+          "checkedAt": "2026-09-28T19:29:25.173Z",
+          "status": "checked"
+        },
+        {
+          "name": "Nasdaq BB option chain",
+          "url": "https://www.nasdaq.com/market-activity/stocks/bb/option-chain",
+          "checkedAt": "2026-09-28T19:29:25.173Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "Nasdaq COST option chain",
+          "url": "https://www.nasdaq.com/market-activity/stocks/cost/option-chain",
+          "checkedAt": "2026-09-28T19:29:25.173Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "SEC EDGAR catalyst discovery",
+          "url": "https://www.sec.gov/edgar/search/",
+          "checkedAt": "2026-09-28T19:29:25.173Z",
+          "status": "checked"
+        }
+      ],
+      "missingData": [
+        "Exact 21–60 DTE option bid, ask and midpoint",
+        "Contract delta, Greeks, implied volatility, IV rank and term structure",
+        "Contract volume, open interest and spread quality",
+        "Directional buyer-initiated/opening options flow",
+        "Complete real-time U.S. options candidate universe",
+        "Fresh qualifying primary-source catalyst beyond already-published research"
+      ],
+      "counts": {
+        "research": 0,
+        "entries": 0,
+        "exits": 0
+      },
+      "deliveryDiagnostics": {
+        "repair20260928ReportedAt": "2026-09-28T00:50:48.883Z"
       }
     }
   ]
