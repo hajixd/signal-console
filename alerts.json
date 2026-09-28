@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-28T16:13:29.947Z",
+  "updatedAt": "2026-09-28T16:16:36.151Z",
   "alerts": [
     {
       "id": "options-bb-fy27q2-20260924",
@@ -272,38 +272,44 @@
   ],
   "scanners": {
     "penny": {
-      "id": "penny-scan-20260928T150853Z",
+      "id": "penny-scan-20260928T161530Z",
       "system": "penny",
-      "startedAt": "2026-09-28T15:08:53.000Z",
-      "checkedAt": "2026-09-28T15:09:41.229Z",
-      "scheduledFor": "2026-09-28T15:00:00.000Z",
-      "nextScheduledAt": "2026-09-28T16:00:00.000Z",
+      "startedAt": "2026-09-28T16:15:30.000Z",
+      "checkedAt": "2026-09-28T16:16:36.151Z",
+      "scheduledFor": "2026-09-28T16:00:00.000Z",
+      "nextScheduledAt": "2026-09-28T17:00:00.000Z",
       "status": "data_limited",
-      "summary": "No open penny paper trades were present. FTHM was $0.516 at 14:52:31 UTC, down 11.49% from the prior close, with a $0.4901-$0.5903 session range and 2,553,176 shares traded. The slight deterioration from the prior scan confirms the existing post-catalyst failure and rejection, but does not constitute a distinct new research development, so the existing record was left unchanged and no paper entry was opened. A bounded SEC and official press-release refresh surfaced schedules, older filings and reverse/share-consolidation names, but no new candidate passed the fresh-catalyst, dilution, liquidity and constructive-structure gates. No research, entry, exit or mark was created.",
+      "summary": "No open penny paper trades were present. FTHM was $0.4877 at 15:58:21 UTC, down 16.35% from the prior close, after trading between $0.4810 and $0.5903 on 3,139,454 shares. It was near the session low while IWM was down 0.98%, further confirming the existing failed-continuation rejection. This worsening does not represent a new catalyst or a changed trade decision, so the existing FTHM research record was left unchanged and no duplicate research alert was created. A bounded refresh of Fathom issuer news, SEC microcap filings and official press-release discovery produced no usable fresh primary catalyst that passed the dilution, liquidity and constructive-structure gates. No research, entry, exit or mark was created.",
       "sources": [
         {
           "name": "FTHM regular-session market data",
           "url": "https://www.nasdaq.com/market-activity/stocks/fthm",
-          "checkedAt": "2026-09-28T15:09:41.229Z",
+          "checkedAt": "2026-09-28T16:16:36.151Z",
           "status": "checked"
         },
         {
           "name": "IWM small-cap market data",
           "url": "https://www.nasdaq.com/market-activity/etf/iwm",
-          "checkedAt": "2026-09-28T15:09:41.229Z",
+          "checkedAt": "2026-09-28T16:16:36.151Z",
           "status": "checked"
+        },
+        {
+          "name": "Fathom current issuer-news search",
+          "url": "https://ir.fathominc.com/news-events/press-releases",
+          "checkedAt": "2026-09-28T16:16:36.151Z",
+          "status": "unavailable"
         },
         {
           "name": "Current SEC microcap catalyst search",
           "url": "https://www.sec.gov/edgar/search/",
-          "checkedAt": "2026-09-28T15:09:41.229Z",
-          "status": "checked"
+          "checkedAt": "2026-09-28T16:16:36.151Z",
+          "status": "unavailable"
         },
         {
           "name": "Current official Nasdaq press-release discovery",
           "url": "https://www.nasdaq.com/market-activity/stocks/screener",
-          "checkedAt": "2026-09-28T15:09:41.229Z",
-          "status": "checked"
+          "checkedAt": "2026-09-28T16:16:36.151Z",
+          "status": "unavailable"
         }
       ],
       "missingData": [
@@ -311,7 +317,8 @@
         "current relative-volume baselines and full intraday technical structure across the candidate universe",
         "complete current dilution, ATM, offering, warrant and convertible sweep across the candidate universe",
         "spam-filtered X unique-author acceleration",
-        "current insider activity across the candidate universe"
+        "current insider activity across the candidate universe",
+        "usable fresh primary catalyst rows from issuer, SEC and official press-release discovery"
       ],
       "counts": {
         "research": 0,
@@ -4733,6 +4740,64 @@
       },
       "deliveryDiagnostics": {
         "repair20260928ReportedAt": "2026-09-28T00:50:48.883Z"
+      }
+    },
+    {
+      "id": "penny-scan-20260928T161530Z",
+      "system": "penny",
+      "startedAt": "2026-09-28T16:15:30.000Z",
+      "checkedAt": "2026-09-28T16:16:36.151Z",
+      "scheduledFor": "2026-09-28T16:00:00.000Z",
+      "nextScheduledAt": "2026-09-28T17:00:00.000Z",
+      "status": "data_limited",
+      "summary": "No open penny paper trades were present. FTHM was $0.4877 at 15:58:21 UTC, down 16.35% from the prior close, after trading between $0.4810 and $0.5903 on 3,139,454 shares. It was near the session low while IWM was down 0.98%, further confirming the existing failed-continuation rejection. This worsening does not represent a new catalyst or a changed trade decision, so the existing FTHM research record was left unchanged and no duplicate research alert was created. A bounded refresh of Fathom issuer news, SEC microcap filings and official press-release discovery produced no usable fresh primary catalyst that passed the dilution, liquidity and constructive-structure gates. No research, entry, exit or mark was created.",
+      "sources": [
+        {
+          "name": "FTHM regular-session market data",
+          "url": "https://www.nasdaq.com/market-activity/stocks/fthm",
+          "checkedAt": "2026-09-28T16:16:36.151Z",
+          "status": "checked"
+        },
+        {
+          "name": "IWM small-cap market data",
+          "url": "https://www.nasdaq.com/market-activity/etf/iwm",
+          "checkedAt": "2026-09-28T16:16:36.151Z",
+          "status": "checked"
+        },
+        {
+          "name": "Fathom current issuer-news search",
+          "url": "https://ir.fathominc.com/news-events/press-releases",
+          "checkedAt": "2026-09-28T16:16:36.151Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "Current SEC microcap catalyst search",
+          "url": "https://www.sec.gov/edgar/search/",
+          "checkedAt": "2026-09-28T16:16:36.151Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "Current official Nasdaq press-release discovery",
+          "url": "https://www.nasdaq.com/market-activity/stocks/screener",
+          "checkedAt": "2026-09-28T16:16:36.151Z",
+          "status": "unavailable"
+        }
+      ],
+      "missingData": [
+        "complete real-time microcap universe coverage",
+        "current relative-volume baselines and full intraday technical structure across the candidate universe",
+        "complete current dilution, ATM, offering, warrant and convertible sweep across the candidate universe",
+        "spam-filtered X unique-author acceleration",
+        "current insider activity across the candidate universe",
+        "usable fresh primary catalyst rows from issuer, SEC and official press-release discovery"
+      ],
+      "counts": {
+        "research": 0,
+        "entries": 0,
+        "exits": 0
+      },
+      "deliveryDiagnostics": {
+        "repair20260928ReportedAt": "2026-09-28T01:47:21.040Z"
       }
     }
   ]
