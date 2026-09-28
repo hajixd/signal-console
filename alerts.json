@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-28T03:25:36.448Z",
+  "updatedAt": "2026-09-28T06:57:37.087Z",
   "alerts": [
     {
       "id": "options-bb-fy27q2-20260924",
@@ -385,74 +385,104 @@
       }
     },
     "futures": {
-      "id": "futures-scan-20260928024336539",
+      "id": "futures-scan-20260928065631706",
       "system": "futures",
-      "startedAt": "2026-09-28T02:43:36.539Z",
-      "checkedAt": "2026-09-28T02:44:24.111Z",
-      "scheduledFor": "2026-09-28T02:00:00.000Z",
-      "nextScheduledAt": "2026-09-28T03:00:00.000Z",
+      "startedAt": "2026-09-28T06:56:31.706Z",
+      "checkedAt": "2026-09-28T06:57:37.087Z",
+      "scheduledFor": "2026-09-28T06:00:00.000Z",
+      "nextScheduledAt": "2026-09-28T07:00:00.000Z",
       "status": "data_limited",
-      "summary": "No open futures paper trades were present. CME product and hours pages were checked, but no qualifying fresh dated-contract quotes, spreads, confirmed directional structure or initial margins were available. The additional MNQZ26 quote search returned delayed and inconsistent snapshots, excluded from execution. BLS lists September 29 JOLTS at 10:00 AM Eastern; BEA lists September 30 GDP and personal income/outlays. Calendar catalysts alone do not establish direction. EIA summary retrieval failed and no current primary OPEC announcement was verified. Current price/volume, USD and yields remain insufficient to assess confirming or contradictory evidence. No new research, entry, mark or exit was created.",
+      "summary": "No open futures paper positions were present. All eight CME product pages and the holiday schedule were checked; fresh executable dated-contract quotes, spreads, confirmed intraday triggers and initial margins were unavailable. A delayed MGCZ26 snapshot timestamped September 28 at 1:47 AM EDT showed a decline, but was more than an hour old and was not used as an entry or mark. Without current yields/USD and a confirmed break/retest, continuation versus reversal cannot be resolved. BLS and BEA calendars were reviewed; OPEC's latest listed releases were September 23 and 22 dialogues, not a newly verified supply shock. EIA summary retrieval failed. No new source-backed directional setup qualified for publication; no research, entry, exit or mark was created.",
       "sources": [
         {
           "name": "CME Micro Nasdaq",
           "url": "https://www.cmegroup.com/markets/equities/nasdaq/micro-e-mini-nasdaq-100.html",
-          "checkedAt": "2026-09-28T02:44:24.111Z",
+          "checkedAt": "2026-09-28T06:57:37.087Z",
           "status": "checked; qualifying live contract data unavailable"
         },
         {
           "name": "CME Micro S&P",
           "url": "https://www.cmegroup.com/markets/equities/sp/micro-e-mini-sandp-500.html",
-          "checkedAt": "2026-09-28T02:44:24.111Z",
+          "checkedAt": "2026-09-28T06:57:37.087Z",
           "status": "checked; qualifying live contract data unavailable"
         },
         {
           "name": "CME Micro Gold",
           "url": "https://www.cmegroup.com/markets/metals/precious/e-micro-gold.contractSpecs.html",
-          "checkedAt": "2026-09-28T02:44:24.111Z",
+          "checkedAt": "2026-09-28T06:57:37.087Z",
           "status": "checked; qualifying live contract data unavailable"
         },
         {
           "name": "CME Micro WTI",
           "url": "https://www.cmegroup.com/markets/energy/crude-oil/micro-wti-crude-oil.html",
-          "checkedAt": "2026-09-28T02:44:24.111Z",
+          "checkedAt": "2026-09-28T06:57:37.087Z",
           "status": "checked; qualifying live contract data unavailable"
         },
         {
           "name": "CME trading hours",
           "url": "https://www.cmegroup.com/trading-hours.html",
-          "checkedAt": "2026-09-28T02:44:24.111Z",
+          "checkedAt": "2026-09-28T06:57:37.087Z",
           "status": "checked"
         },
         {
           "name": "BEA calendar",
           "url": "https://www.bea.gov/news/schedule",
-          "checkedAt": "2026-09-28T02:44:24.111Z",
+          "checkedAt": "2026-09-28T06:57:37.087Z",
           "status": "checked"
         },
         {
           "name": "BLS calendar",
           "url": "https://www.bls.gov/schedule/2026/09_sched.htm",
-          "checkedAt": "2026-09-28T02:44:24.111Z",
+          "checkedAt": "2026-09-28T06:57:37.087Z",
           "status": "checked"
         },
         {
           "name": "EIA weekly summary",
           "url": "https://ir.eia.gov/wpsr/summary.txt",
-          "checkedAt": "2026-09-28T02:44:24.111Z",
+          "checkedAt": "2026-09-28T06:57:37.087Z",
           "status": "unavailable"
         },
         {
           "name": "Fed September statement",
           "url": "https://www.federalreserve.gov/newsevents/pressreleases/monetary20260916a.htm",
-          "checkedAt": "2026-09-28T02:44:24.111Z",
+          "checkedAt": "2026-09-28T06:57:37.087Z",
           "status": "checked"
         },
         {
-          "name": "MNQZ26 quote search",
-          "url": "https://finance.yahoo.com/quote/MNQZ26.CME/",
-          "checkedAt": "2026-09-28T02:44:24.111Z",
-          "status": "search result only; delayed quote excluded"
+          "name": "CME NQ",
+          "url": "https://www.cmegroup.com/markets/equities/nasdaq/e-mini-nasdaq-100.html",
+          "checkedAt": "2026-09-28T06:57:37.087Z",
+          "status": "checked"
+        },
+        {
+          "name": "CME ES",
+          "url": "https://www.cmegroup.com/markets/equities/sp/e-mini-sandp500.html",
+          "checkedAt": "2026-09-28T06:57:37.087Z",
+          "status": "checked"
+        },
+        {
+          "name": "CME GC",
+          "url": "https://www.cmegroup.com/markets/metals/precious/gold.html",
+          "checkedAt": "2026-09-28T06:57:37.087Z",
+          "status": "checked"
+        },
+        {
+          "name": "CME CL",
+          "url": "https://www.cmegroup.com/markets/energy/crude-oil/light-sweet-crude.html",
+          "checkedAt": "2026-09-28T06:57:37.087Z",
+          "status": "checked"
+        },
+        {
+          "name": "OPEC releases",
+          "url": "https://www.opec.org/press-releases.html",
+          "checkedAt": "2026-09-28T06:57:37.087Z",
+          "status": "checked"
+        },
+        {
+          "name": "MGCZ26 delayed quote",
+          "url": "https://www.marketwatch.com/investing/future/mgcz26",
+          "checkedAt": "2026-09-28T06:57:37.087Z",
+          "status": "checked; stale delayed quote excluded"
         }
       ],
       "missingData": [
@@ -2280,6 +2310,127 @@
       },
       "deliveryDiagnostics": {
         "repair20260928ReportedAt": "2026-09-28T00:50:48.883Z"
+      }
+    },
+    {
+      "id": "futures-scan-20260928065631706",
+      "system": "futures",
+      "startedAt": "2026-09-28T06:56:31.706Z",
+      "checkedAt": "2026-09-28T06:57:37.087Z",
+      "scheduledFor": "2026-09-28T06:00:00.000Z",
+      "nextScheduledAt": "2026-09-28T07:00:00.000Z",
+      "status": "data_limited",
+      "summary": "No open futures paper positions were present. All eight CME product pages and the holiday schedule were checked; fresh executable dated-contract quotes, spreads, confirmed intraday triggers and initial margins were unavailable. A delayed MGCZ26 snapshot timestamped September 28 at 1:47 AM EDT showed a decline, but was more than an hour old and was not used as an entry or mark. Without current yields/USD and a confirmed break/retest, continuation versus reversal cannot be resolved. BLS and BEA calendars were reviewed; OPEC's latest listed releases were September 23 and 22 dialogues, not a newly verified supply shock. EIA summary retrieval failed. No new source-backed directional setup qualified for publication; no research, entry, exit or mark was created.",
+      "missingData": [
+        "exact active contract, expiry/roll and session confirmation",
+        "timestamped exact-contract quotes no older than five minutes",
+        "bid/ask spread, liquidity and observed directional trigger",
+        "source-verified initial margin and risk/reward levels",
+        "current USD/yields and contradictory price evidence",
+        "complete high-impact release/speaker timing",
+        "current EIA inventory and verified OPEC/supply news"
+      ],
+      "counts": {
+        "openPositions": 0,
+        "research": 0,
+        "entries": 0,
+        "exits": 0,
+        "marks": 0
+      },
+      "sources": [
+        {
+          "name": "CME Micro Nasdaq",
+          "url": "https://www.cmegroup.com/markets/equities/nasdaq/micro-e-mini-nasdaq-100.html",
+          "checkedAt": "2026-09-28T06:57:37.087Z",
+          "status": "checked; qualifying live contract data unavailable"
+        },
+        {
+          "name": "CME Micro S&P",
+          "url": "https://www.cmegroup.com/markets/equities/sp/micro-e-mini-sandp-500.html",
+          "checkedAt": "2026-09-28T06:57:37.087Z",
+          "status": "checked; qualifying live contract data unavailable"
+        },
+        {
+          "name": "CME Micro Gold",
+          "url": "https://www.cmegroup.com/markets/metals/precious/e-micro-gold.contractSpecs.html",
+          "checkedAt": "2026-09-28T06:57:37.087Z",
+          "status": "checked; qualifying live contract data unavailable"
+        },
+        {
+          "name": "CME Micro WTI",
+          "url": "https://www.cmegroup.com/markets/energy/crude-oil/micro-wti-crude-oil.html",
+          "checkedAt": "2026-09-28T06:57:37.087Z",
+          "status": "checked; qualifying live contract data unavailable"
+        },
+        {
+          "name": "CME trading hours",
+          "url": "https://www.cmegroup.com/trading-hours.html",
+          "checkedAt": "2026-09-28T06:57:37.087Z",
+          "status": "checked"
+        },
+        {
+          "name": "BEA calendar",
+          "url": "https://www.bea.gov/news/schedule",
+          "checkedAt": "2026-09-28T06:57:37.087Z",
+          "status": "checked"
+        },
+        {
+          "name": "BLS calendar",
+          "url": "https://www.bls.gov/schedule/2026/09_sched.htm",
+          "checkedAt": "2026-09-28T06:57:37.087Z",
+          "status": "checked"
+        },
+        {
+          "name": "EIA weekly summary",
+          "url": "https://ir.eia.gov/wpsr/summary.txt",
+          "checkedAt": "2026-09-28T06:57:37.087Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "Fed September statement",
+          "url": "https://www.federalreserve.gov/newsevents/pressreleases/monetary20260916a.htm",
+          "checkedAt": "2026-09-28T06:57:37.087Z",
+          "status": "checked"
+        },
+        {
+          "name": "CME NQ",
+          "url": "https://www.cmegroup.com/markets/equities/nasdaq/e-mini-nasdaq-100.html",
+          "checkedAt": "2026-09-28T06:57:37.087Z",
+          "status": "checked"
+        },
+        {
+          "name": "CME ES",
+          "url": "https://www.cmegroup.com/markets/equities/sp/e-mini-sandp500.html",
+          "checkedAt": "2026-09-28T06:57:37.087Z",
+          "status": "checked"
+        },
+        {
+          "name": "CME GC",
+          "url": "https://www.cmegroup.com/markets/metals/precious/gold.html",
+          "checkedAt": "2026-09-28T06:57:37.087Z",
+          "status": "checked"
+        },
+        {
+          "name": "CME CL",
+          "url": "https://www.cmegroup.com/markets/energy/crude-oil/light-sweet-crude.html",
+          "checkedAt": "2026-09-28T06:57:37.087Z",
+          "status": "checked"
+        },
+        {
+          "name": "OPEC releases",
+          "url": "https://www.opec.org/press-releases.html",
+          "checkedAt": "2026-09-28T06:57:37.087Z",
+          "status": "checked"
+        },
+        {
+          "name": "MGCZ26 delayed quote",
+          "url": "https://www.marketwatch.com/investing/future/mgcz26",
+          "checkedAt": "2026-09-28T06:57:37.087Z",
+          "status": "checked; stale delayed quote excluded"
+        }
+      ],
+      "deliveryDiagnostics": {
+        "repair20260928ReportedAt": "2026-09-28T01:51:49.985Z"
       }
     }
   ]
