@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-28T00:50:48.883Z",
+  "updatedAt": "2026-09-28T01:47:21.040Z",
   "alerts": [
     {
       "id": "options-bb-fy27q2-20260924",
@@ -181,37 +181,43 @@
   ],
   "scanners": {
     "penny": {
-      "id": "penny-scan-20260927T200000Z",
+      "id": "penny-scan-20260928T014631Z",
       "system": "penny",
-      "startedAt": "2026-09-27T20:41:46.715Z",
-      "checkedAt": "2026-09-27T20:41:47.006Z",
-      "scheduledFor": "2026-09-27T20:00:00.000Z",
-      "nextScheduledAt": "2026-09-27T21:00:00.000Z",
+      "startedAt": "2026-09-28T01:46:31.000Z",
+      "checkedAt": "2026-09-28T01:47:21.040Z",
+      "scheduledFor": "2026-09-28T01:00:00.000Z",
+      "nextScheduledAt": "2026-09-28T02:00:00.000Z",
       "status": "market_closed",
-      "summary": "No open penny paper trades were present. Nasdaq confirms regular U.S. stock trading is Monday through Friday. FTHM's issuer news and filing index remain unchanged at September 24/25, and FDA's announcement list contains no newer approval catalyst. With no live quote, volume, technical structure or social confirmation, no research, entry, exit or mark was created.",
+      "summary": "No open penny paper trades were present. Nasdaq confirms regular U.S. stock trading is Monday through Friday. FTHM's issuer news, primary transaction announcement and filing index were checked and remain unchanged; FDA's announcement list contained no newer verified catalyst. With no live quote, fresh relative volume, technical continuation or spam-filtered social confirmation, no research, entry, exit or mark was created. The delivery-repair report was saved and is subject to read-back verification.",
       "sources": [
         {
           "name": "Nasdaq U.S. trading schedule",
           "url": "https://www.nasdaq.com/market-activity/stock-market-holiday-schedule",
-          "checkedAt": "2026-09-27T20:41:47.006Z",
+          "checkedAt": "2026-09-28T01:47:21.040Z",
           "status": "checked"
         },
         {
           "name": "Fathom issuer news page",
           "url": "https://ir.fathominc.com/news-events",
-          "checkedAt": "2026-09-27T20:41:47.006Z",
+          "checkedAt": "2026-09-28T01:47:21.040Z",
+          "status": "checked"
+        },
+        {
+          "name": "Fathom proposed restructured transaction announcement",
+          "url": "https://ir.fathominc.com/news-events/press-releases/detail/181/fathom-holdings-and-neighborhood-intelligence-announce",
+          "checkedAt": "2026-09-28T01:47:21.040Z",
           "status": "checked"
         },
         {
           "name": "Fathom issuer SEC filing index",
           "url": "https://ir.fathominc.com/sec-filings/sec-filings",
-          "checkedAt": "2026-09-27T20:41:47.006Z",
+          "checkedAt": "2026-09-28T01:47:21.040Z",
           "status": "checked"
         },
         {
           "name": "FDA press announcements",
           "url": "https://www.fda.gov/news-events/fda-newsroom/press-announcements",
-          "checkedAt": "2026-09-27T20:41:47.006Z",
+          "checkedAt": "2026-09-28T01:47:21.040Z",
           "status": "checked"
         }
       ],
@@ -227,6 +233,9 @@
         "research": 0,
         "entries": 0,
         "exits": 0
+      },
+      "deliveryDiagnostics": {
+        "repair20260928ReportedAt": "2026-09-28T01:47:21.040Z"
       }
     },
     "options": {
@@ -1757,6 +1766,64 @@
       },
       "deliveryDiagnostics": {
         "repair20260928ReportedAt": "2026-09-28T00:50:48.883Z"
+      }
+    },
+    {
+      "id": "penny-scan-20260928T014631Z",
+      "system": "penny",
+      "startedAt": "2026-09-28T01:46:31.000Z",
+      "checkedAt": "2026-09-28T01:47:21.040Z",
+      "scheduledFor": "2026-09-28T01:00:00.000Z",
+      "nextScheduledAt": "2026-09-28T02:00:00.000Z",
+      "status": "market_closed",
+      "summary": "No open penny paper trades were present. Nasdaq confirms regular U.S. stock trading is Monday through Friday. FTHM's issuer news, primary transaction announcement and filing index were checked and remain unchanged; FDA's announcement list contained no newer verified catalyst. With no live quote, fresh relative volume, technical continuation or spam-filtered social confirmation, no research, entry, exit or mark was created. The delivery-repair report was saved and is subject to read-back verification.",
+      "sources": [
+        {
+          "name": "Nasdaq U.S. trading schedule",
+          "url": "https://www.nasdaq.com/market-activity/stock-market-holiday-schedule",
+          "checkedAt": "2026-09-28T01:47:21.040Z",
+          "status": "checked"
+        },
+        {
+          "name": "Fathom issuer news page",
+          "url": "https://ir.fathominc.com/news-events",
+          "checkedAt": "2026-09-28T01:47:21.040Z",
+          "status": "checked"
+        },
+        {
+          "name": "Fathom proposed restructured transaction announcement",
+          "url": "https://ir.fathominc.com/news-events/press-releases/detail/181/fathom-holdings-and-neighborhood-intelligence-announce",
+          "checkedAt": "2026-09-28T01:47:21.040Z",
+          "status": "checked"
+        },
+        {
+          "name": "Fathom issuer SEC filing index",
+          "url": "https://ir.fathominc.com/sec-filings/sec-filings",
+          "checkedAt": "2026-09-28T01:47:21.040Z",
+          "status": "checked"
+        },
+        {
+          "name": "FDA press announcements",
+          "url": "https://www.fda.gov/news-events/fda-newsroom/press-announcements",
+          "checkedAt": "2026-09-28T01:47:21.040Z",
+          "status": "checked"
+        }
+      ],
+      "missingData": [
+        "live penny-stock quotes while the U.S. equity market is closed",
+        "fresh relative and dollar volume",
+        "post-reopening technical structure and sector confirmation",
+        "spam-filtered X unique-author acceleration",
+        "current insider activity across the candidate universe",
+        "complete real-time microcap universe coverage"
+      ],
+      "counts": {
+        "research": 0,
+        "entries": 0,
+        "exits": 0
+      },
+      "deliveryDiagnostics": {
+        "repair20260928ReportedAt": "2026-09-28T01:47:21.040Z"
       }
     }
   ]
