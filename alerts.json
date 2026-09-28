@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-28T09:22:21.918Z",
+  "updatedAt": "2026-09-28T09:25:50.744Z",
   "alerts": [
     {
       "id": "options-bb-fy27q2-20260924",
@@ -299,67 +299,67 @@
       }
     },
     "meme": {
-      "id": "meme-scan-20260928T081252Z",
+      "id": "meme-scan-20260928T092350Z",
       "system": "meme",
-      "startedAt": "2026-09-28T08:12:52.000Z",
-      "checkedAt": "2026-09-28T08:13:58.696Z",
-      "scheduledFor": "2026-09-28T08:00:00.000Z",
-      "nextScheduledAt": "2026-09-28T09:00:00.000Z",
+      "startedAt": "2026-09-28T09:23:50.000Z",
+      "checkedAt": "2026-09-28T09:25:50.744Z",
+      "scheduledFor": "2026-09-28T09:00:00.000Z",
+      "nextScheduledAt": "2026-09-28T10:00:00.000Z",
       "status": "data_limited",
-      "summary": "No open meme paper trades were present. DEX Screener's live Solana market, latest token-profile feed and boost feeds were checked; surfaced profiles were self-submitted and none had verified named-wallet persistence/convergence, ownership or bundler-risk clearance, or spam-filtered social acceleration. Kolscan returned page shells with zeroed/default data rather than reliable wallet-specific holdings for IdontPayTaxes and Daumen, and Elon Musk's public X profile was unavailable. The official TRUMP site showed the existing token and contract, while a current news search surfaced no independently verified new public-figure launch with an original announcement, exact contract, explorer confirmation and live liquidity. No research, entry, exit or mark was created.",
+      "summary": "No open meme paper trades were present. DEX Screener's current Solana market, latest token-profile feed and boost feeds were checked; the market page was live, while the profile and boost feeds did not supply enough independently verified named-wallet, ownership, bundler-risk or spam-filtered social evidence for an eligible setup. Kolscan again returned zeroed/default page shells rather than reliable wallet-specific holdings for IdontPayTaxes and Daumen, and Elon Musk's public X profile was unavailable. The official TRUMP site showed the existing Solana/TRON token and contract disclosures, while a current public-figure and tracked-wallet search found no independently verified new launch with an original announcement, exact contract, explorer confirmation and live liquidity. No research, entry, exit or mark was created.",
       "sources": [
         {
           "name": "DEX Screener Solana market",
           "url": "https://dexscreener.com/solana",
-          "checkedAt": "2026-09-28T08:13:58.696Z",
+          "checkedAt": "2026-09-28T09:25:50.744Z",
           "status": "checked"
         },
         {
           "name": "DEX Screener latest token profiles API",
           "url": "https://api.dexscreener.com/token-profiles/latest/v1",
-          "checkedAt": "2026-09-28T08:13:58.696Z",
+          "checkedAt": "2026-09-28T09:25:50.744Z",
           "status": "checked"
         },
         {
           "name": "DEX Screener top token boosts API",
           "url": "https://api.dexscreener.com/token-boosts/top/v1",
-          "checkedAt": "2026-09-28T08:13:58.696Z",
+          "checkedAt": "2026-09-28T09:25:50.744Z",
           "status": "checked"
         },
         {
           "name": "DEX Screener latest token boosts API",
           "url": "https://api.dexscreener.com/token-boosts/latest/v1",
-          "checkedAt": "2026-09-28T08:13:58.696Z",
+          "checkedAt": "2026-09-28T09:25:50.744Z",
           "status": "checked"
         },
         {
           "name": "Kolscan IdontPayTaxes wallet page",
           "url": "https://kolscan.io/account/2T5NgDDidkvhJQg8AHDi74uCFwgp25pYFMRZXBaCUNBH?timeframe=1",
-          "checkedAt": "2026-09-28T08:13:58.696Z",
+          "checkedAt": "2026-09-28T09:25:50.744Z",
           "status": "unavailable"
         },
         {
           "name": "Kolscan Daumen wallet page",
           "url": "https://kolscan.io/account/8MaVa9kdt3NW4Q5HyNAm1X5LbR8PQRVDc1W8NMVK88D5?timeframe=1",
-          "checkedAt": "2026-09-28T08:13:58.696Z",
+          "checkedAt": "2026-09-28T09:25:50.744Z",
           "status": "unavailable"
         },
         {
           "name": "Elon Musk public X profile",
           "url": "https://x.com/elonmusk",
-          "checkedAt": "2026-09-28T08:13:58.696Z",
+          "checkedAt": "2026-09-28T09:25:50.744Z",
           "status": "unavailable"
         },
         {
           "name": "Official TRUMP meme site",
           "url": "https://gettrumpmemes.com/",
-          "checkedAt": "2026-09-28T08:13:58.696Z",
+          "checkedAt": "2026-09-28T09:25:50.744Z",
           "status": "checked"
         },
         {
-          "name": "WSJ report on Hunter Biden LAPTOP token",
-          "url": "https://www.wsj.com/finance/currencies/hunter-biden-and-his-laptop-enter-the-cryptosphere-with-new-meme-coin-4d46fc9c",
-          "checkedAt": "2026-09-28T08:13:58.696Z",
+          "name": "Current public-figure and tracked-wallet web search",
+          "url": "https://www.google.com/search?q=September+28+2026+public+figure+meme+coin+launch+Solana+smart+wallet",
+          "checkedAt": "2026-09-28T09:25:50.744Z",
           "status": "checked"
         }
       ],
@@ -369,7 +369,7 @@
         "current deployer, insider, bundler, holder-concentration and wash-trading analysis",
         "spam-filtered X mention velocity and unique-author acceleration",
         "accessible original public-figure posts for current narrative candidates",
-        "independently verified exact contract, explorer and live liquidity evidence for the reported LAPTOP launch",
+        "independently verified exact contract, explorer and live liquidity evidence for any newly reported public-figure launch",
         "complete pair-level unique-buyer and holder data for newly surfaced tokens"
       ],
       "counts": {
@@ -2927,6 +2927,89 @@
       },
       "deliveryDiagnostics": {
         "repair20260928ReportedAt": "2026-09-28T00:50:48.883Z"
+      }
+    },
+    {
+      "id": "meme-scan-20260928T092350Z",
+      "system": "meme",
+      "startedAt": "2026-09-28T09:23:50.000Z",
+      "checkedAt": "2026-09-28T09:25:50.744Z",
+      "scheduledFor": "2026-09-28T09:00:00.000Z",
+      "nextScheduledAt": "2026-09-28T10:00:00.000Z",
+      "status": "data_limited",
+      "summary": "No open meme paper trades were present. DEX Screener's current Solana market, latest token-profile feed and boost feeds were checked; the market page was live, while the profile and boost feeds did not supply enough independently verified named-wallet, ownership, bundler-risk or spam-filtered social evidence for an eligible setup. Kolscan again returned zeroed/default page shells rather than reliable wallet-specific holdings for IdontPayTaxes and Daumen, and Elon Musk's public X profile was unavailable. The official TRUMP site showed the existing Solana/TRON token and contract disclosures, while a current public-figure and tracked-wallet search found no independently verified new launch with an original announcement, exact contract, explorer confirmation and live liquidity. No research, entry, exit or mark was created.",
+      "sources": [
+        {
+          "name": "DEX Screener Solana market",
+          "url": "https://dexscreener.com/solana",
+          "checkedAt": "2026-09-28T09:25:50.744Z",
+          "status": "checked"
+        },
+        {
+          "name": "DEX Screener latest token profiles API",
+          "url": "https://api.dexscreener.com/token-profiles/latest/v1",
+          "checkedAt": "2026-09-28T09:25:50.744Z",
+          "status": "checked"
+        },
+        {
+          "name": "DEX Screener top token boosts API",
+          "url": "https://api.dexscreener.com/token-boosts/top/v1",
+          "checkedAt": "2026-09-28T09:25:50.744Z",
+          "status": "checked"
+        },
+        {
+          "name": "DEX Screener latest token boosts API",
+          "url": "https://api.dexscreener.com/token-boosts/latest/v1",
+          "checkedAt": "2026-09-28T09:25:50.744Z",
+          "status": "checked"
+        },
+        {
+          "name": "Kolscan IdontPayTaxes wallet page",
+          "url": "https://kolscan.io/account/2T5NgDDidkvhJQg8AHDi74uCFwgp25pYFMRZXBaCUNBH?timeframe=1",
+          "checkedAt": "2026-09-28T09:25:50.744Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "Kolscan Daumen wallet page",
+          "url": "https://kolscan.io/account/8MaVa9kdt3NW4Q5HyNAm1X5LbR8PQRVDc1W8NMVK88D5?timeframe=1",
+          "checkedAt": "2026-09-28T09:25:50.744Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "Elon Musk public X profile",
+          "url": "https://x.com/elonmusk",
+          "checkedAt": "2026-09-28T09:25:50.744Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "Official TRUMP meme site",
+          "url": "https://gettrumpmemes.com/",
+          "checkedAt": "2026-09-28T09:25:50.744Z",
+          "status": "checked"
+        },
+        {
+          "name": "Current public-figure and tracked-wallet web search",
+          "url": "https://www.google.com/search?q=September+28+2026+public+figure+meme+coin+launch+Solana+smart+wallet",
+          "checkedAt": "2026-09-28T09:25:50.744Z",
+          "status": "checked"
+        }
+      ],
+      "missingData": [
+        "current token holdings, entry timestamps and percent remaining for IdontPayTaxes, Daumen, Frank DeGods, Numero and verified Clukz",
+        "two-wallet convergence and greater-than-one-hour persistence for any candidate",
+        "current deployer, insider, bundler, holder-concentration and wash-trading analysis",
+        "spam-filtered X mention velocity and unique-author acceleration",
+        "accessible original public-figure posts for current narrative candidates",
+        "independently verified exact contract, explorer and live liquidity evidence for any newly reported public-figure launch",
+        "complete pair-level unique-buyer and holder data for newly surfaced tokens"
+      ],
+      "counts": {
+        "research": 0,
+        "entries": 0,
+        "exits": 0
+      },
+      "deliveryDiagnostics": {
+        "repair20260928ReportedAt": "2026-09-28T02:04:42.735Z"
       }
     }
   ]
