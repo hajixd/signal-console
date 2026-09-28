@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-28T18:43:15.687Z",
+  "updatedAt": "2026-09-28T18:49:54.797Z",
   "alerts": [
     {
       "id": "options-bb-fy27q2-20260924",
@@ -448,97 +448,97 @@
       }
     },
     "futures": {
-      "id": "futures-scan-20260928183035085",
+      "id": "futures-scan-20260928184915381",
       "system": "futures",
-      "startedAt": "2026-09-28T18:30:35.085Z",
-      "checkedAt": "2026-09-28T18:31:13.106Z",
+      "startedAt": "2026-09-28T18:49:15.381Z",
+      "checkedAt": "2026-09-28T18:49:54.797Z",
       "scheduledFor": "2026-09-28T18:00:00.000Z",
       "nextScheduledAt": "2026-09-28T19:00:00.000Z",
       "status": "data_limited",
-      "summary": "No new futures entry or material research update. There are no open futures paper positions. The only exact micro quote returned was MGCZ26 at 4,153.3 timestamped 12:09 p.m. EDT on September 28 with 336.85K volume; MarketWatch labels it delayed and the page had not refreshed for this scan, so it was excluded. Exact current MNQZ26, MESZ26 and MCLX26 quotes were unavailable. CME public MNQ/MES data are delayed. Spreads, live structure, source-verified initial margins, expiry/session clearance and trigger confirmation remain incomplete. The existing MGC research note is unchanged.",
+      "summary": "No new futures entry or material research event. There are no open futures paper positions. Delayed MGCZ26 data showed 4,169.1 at 1:23 p.m. EDT on September 28, down 3.52%, with 377.61K volume and a 4,143.0–4,320.0 range. The rebound from the session low is contradictory evidence against chasing the existing bearish research thesis, but the quote is explicitly delayed and no failed rebound or break/retest was verified. Exact current MNQZ26, MESZ26 and MCLX26 quotes were unavailable. Live spreads, margins, expiry/session clearance and trigger confirmation remain unresolved.",
       "sources": [
         {
           "name": "CME Micro E-mini Nasdaq-100 futures",
           "url": "https://www.cmegroup.com/markets/equities/nasdaq/micro-e-mini-nasdaq-100.html",
-          "checkedAt": "2026-09-28T18:31:13.106Z",
+          "checkedAt": "2026-09-28T18:49:54.797Z",
           "status": "checked_public_data_delayed"
         },
         {
           "name": "CME Micro E-mini S&P 500 futures",
           "url": "https://www.cmegroup.com/markets/equities/sp/micro-e-mini-sandp-500.html",
-          "checkedAt": "2026-09-28T18:31:13.106Z",
+          "checkedAt": "2026-09-28T18:49:54.797Z",
           "status": "checked_public_data_delayed"
         },
         {
           "name": "CME Micro Gold futures",
           "url": "https://www.cmegroup.com/markets/metals/precious/e-micro-gold.html",
-          "checkedAt": "2026-09-28T18:31:13.106Z",
+          "checkedAt": "2026-09-28T18:49:54.797Z",
           "status": "checked_specs_only"
         },
         {
           "name": "CME Micro WTI Crude Oil futures",
           "url": "https://www.cmegroup.com/markets/energy/crude-oil/micro-wti-crude-oil.html",
-          "checkedAt": "2026-09-28T18:31:13.106Z",
+          "checkedAt": "2026-09-28T18:49:54.797Z",
           "status": "checked_specs_only"
         },
         {
           "name": "CME trading hours",
           "url": "https://www.cmegroup.com/trading-hours.html",
-          "checkedAt": "2026-09-28T18:31:13.106Z",
+          "checkedAt": "2026-09-28T18:49:54.797Z",
           "status": "checked_contract_session_clearance_unresolved"
         },
         {
           "name": "BLS September 2026 schedule",
           "url": "https://www.bls.gov/schedule/2026/09_sched.htm",
-          "checkedAt": "2026-09-28T18:31:13.106Z",
+          "checkedAt": "2026-09-28T18:49:54.797Z",
           "status": "checked"
         },
         {
           "name": "BEA release schedule",
           "url": "https://www.bea.gov/news/schedule",
-          "checkedAt": "2026-09-28T18:31:13.106Z",
+          "checkedAt": "2026-09-28T18:49:54.797Z",
           "status": "checked"
         },
         {
           "name": "Federal Reserve calendar",
           "url": "https://www.federalreserve.gov/newsevents/calendar.htm",
-          "checkedAt": "2026-09-28T18:31:13.106Z",
+          "checkedAt": "2026-09-28T18:49:54.797Z",
           "status": "checked"
         },
         {
           "name": "EIA Weekly Petroleum Status Report",
           "url": "https://www.eia.gov/petroleum/supply/weekly/",
-          "checkedAt": "2026-09-28T18:31:13.106Z",
+          "checkedAt": "2026-09-28T18:49:54.797Z",
           "status": "checked"
         },
         {
           "name": "OPEC news",
           "url": "https://www.opec.org/",
-          "checkedAt": "2026-09-28T18:31:13.106Z",
+          "checkedAt": "2026-09-28T18:49:54.797Z",
           "status": "checked"
         },
         {
           "name": "MarketWatch MNQZ26",
           "url": "https://www.marketwatch.com/investing/future/mnqz26",
-          "checkedAt": "2026-09-28T18:31:13.106Z",
+          "checkedAt": "2026-09-28T18:49:54.797Z",
           "status": "unavailable"
         },
         {
           "name": "MarketWatch MESZ26",
           "url": "https://www.marketwatch.com/investing/future/mesz26",
-          "checkedAt": "2026-09-28T18:31:13.106Z",
+          "checkedAt": "2026-09-28T18:49:54.797Z",
           "status": "unavailable"
         },
         {
           "name": "MarketWatch MGCZ26",
           "url": "https://www.marketwatch.com/investing/future/mgcz26",
-          "checkedAt": "2026-09-28T18:31:13.106Z",
-          "status": "checked_delayed_stale_quote_excluded"
+          "checkedAt": "2026-09-28T18:49:54.797Z",
+          "status": "checked_delayed_quote_excluded"
         },
         {
           "name": "MarketWatch MCLX26",
           "url": "https://www.marketwatch.com/investing/future/mclx26",
-          "checkedAt": "2026-09-28T18:31:13.106Z",
+          "checkedAt": "2026-09-28T18:49:54.797Z",
           "status": "unavailable"
         }
       ],
@@ -3894,6 +3894,58 @@
       }
     },
     {
+      "id": "penny-scan-20260928T184222Z",
+      "system": "penny",
+      "startedAt": "2026-09-28T18:42:22.000Z",
+      "checkedAt": "2026-09-28T18:43:15.687Z",
+      "scheduledFor": "2026-09-28T18:00:00.000Z",
+      "nextScheduledAt": "2026-09-28T19:00:00.000Z",
+      "status": "data_limited",
+      "summary": "No open penny paper trades were present. FTHM was $0.4902 at 18:21:33 UTC, down 15.92% from the prior close, after trading between $0.4810 and $0.5903 on 3,563,998 shares. The stock remained near the session low while IWM was down 0.44%, leaving the failed post-catalyst structure and existing entry rejection unchanged. Fathom’s issuer-news page still showed no announcement newer than September 24. A bounded SEC catalyst search returned stale merger, financing or unrelated filings rather than a fresh primary-source microcap setup passing the catalyst, dilution, liquidity and constructive-structure gates. The existing FTHM research record was left unchanged; no research, entry, exit or mark was created.",
+      "sources": [
+        {
+          "name": "FTHM regular-session market data",
+          "url": "https://www.nasdaq.com/market-activity/stocks/fthm",
+          "checkedAt": "2026-09-28T18:43:15.687Z",
+          "status": "checked"
+        },
+        {
+          "name": "IWM small-cap market data",
+          "url": "https://www.nasdaq.com/market-activity/etf/iwm",
+          "checkedAt": "2026-09-28T18:43:15.687Z",
+          "status": "checked"
+        },
+        {
+          "name": "Fathom current issuer press releases",
+          "url": "https://ir.fathominc.com/news-events/press-releases",
+          "checkedAt": "2026-09-28T18:43:15.687Z",
+          "status": "checked"
+        },
+        {
+          "name": "Current SEC microcap catalyst search",
+          "url": "https://www.sec.gov/edgar/search/",
+          "checkedAt": "2026-09-28T18:43:15.687Z",
+          "status": "checked"
+        }
+      ],
+      "missingData": [
+        "complete real-time microcap universe coverage",
+        "current relative-volume baselines and full intraday technical structure across the candidate universe",
+        "complete current dilution, ATM, offering, warrant and convertible sweep across the candidate universe",
+        "spam-filtered X unique-author acceleration",
+        "current insider activity across the candidate universe",
+        "a usable fresh primary catalyst from the bounded SEC discovery search"
+      ],
+      "counts": {
+        "research": 0,
+        "entries": 0,
+        "exits": 0
+      },
+      "deliveryDiagnostics": {
+        "repair20260928ReportedAt": "2026-09-28T01:47:21.040Z"
+      }
+    },
+    {
       "id": "futures-scan-20260927203939926",
       "system": "futures",
       "startedAt": "2026-09-27T20:39:39.926Z",
@@ -5481,55 +5533,117 @@
       }
     },
     {
-      "id": "penny-scan-20260928T184222Z",
-      "system": "penny",
-      "startedAt": "2026-09-28T18:42:22.000Z",
-      "checkedAt": "2026-09-28T18:43:15.687Z",
+      "id": "futures-scan-20260928184915381",
+      "system": "futures",
+      "startedAt": "2026-09-28T18:49:15.381Z",
+      "checkedAt": "2026-09-28T18:49:54.797Z",
       "scheduledFor": "2026-09-28T18:00:00.000Z",
       "nextScheduledAt": "2026-09-28T19:00:00.000Z",
       "status": "data_limited",
-      "summary": "No open penny paper trades were present. FTHM was $0.4902 at 18:21:33 UTC, down 15.92% from the prior close, after trading between $0.4810 and $0.5903 on 3,563,998 shares. The stock remained near the session low while IWM was down 0.44%, leaving the failed post-catalyst structure and existing entry rejection unchanged. Fathom’s issuer-news page still showed no announcement newer than September 24. A bounded SEC catalyst search returned stale merger, financing or unrelated filings rather than a fresh primary-source microcap setup passing the catalyst, dilution, liquidity and constructive-structure gates. The existing FTHM research record was left unchanged; no research, entry, exit or mark was created.",
+      "summary": "No new futures entry or material research event. There are no open futures paper positions. Delayed MGCZ26 data showed 4,169.1 at 1:23 p.m. EDT on September 28, down 3.52%, with 377.61K volume and a 4,143.0–4,320.0 range. The rebound from the session low is contradictory evidence against chasing the existing bearish research thesis, but the quote is explicitly delayed and no failed rebound or break/retest was verified. Exact current MNQZ26, MESZ26 and MCLX26 quotes were unavailable. Live spreads, margins, expiry/session clearance and trigger confirmation remain unresolved.",
       "sources": [
         {
-          "name": "FTHM regular-session market data",
-          "url": "https://www.nasdaq.com/market-activity/stocks/fthm",
-          "checkedAt": "2026-09-28T18:43:15.687Z",
+          "name": "CME Micro E-mini Nasdaq-100 futures",
+          "url": "https://www.cmegroup.com/markets/equities/nasdaq/micro-e-mini-nasdaq-100.html",
+          "checkedAt": "2026-09-28T18:49:54.797Z",
+          "status": "checked_public_data_delayed"
+        },
+        {
+          "name": "CME Micro E-mini S&P 500 futures",
+          "url": "https://www.cmegroup.com/markets/equities/sp/micro-e-mini-sandp-500.html",
+          "checkedAt": "2026-09-28T18:49:54.797Z",
+          "status": "checked_public_data_delayed"
+        },
+        {
+          "name": "CME Micro Gold futures",
+          "url": "https://www.cmegroup.com/markets/metals/precious/e-micro-gold.html",
+          "checkedAt": "2026-09-28T18:49:54.797Z",
+          "status": "checked_specs_only"
+        },
+        {
+          "name": "CME Micro WTI Crude Oil futures",
+          "url": "https://www.cmegroup.com/markets/energy/crude-oil/micro-wti-crude-oil.html",
+          "checkedAt": "2026-09-28T18:49:54.797Z",
+          "status": "checked_specs_only"
+        },
+        {
+          "name": "CME trading hours",
+          "url": "https://www.cmegroup.com/trading-hours.html",
+          "checkedAt": "2026-09-28T18:49:54.797Z",
+          "status": "checked_contract_session_clearance_unresolved"
+        },
+        {
+          "name": "BLS September 2026 schedule",
+          "url": "https://www.bls.gov/schedule/2026/09_sched.htm",
+          "checkedAt": "2026-09-28T18:49:54.797Z",
           "status": "checked"
         },
         {
-          "name": "IWM small-cap market data",
-          "url": "https://www.nasdaq.com/market-activity/etf/iwm",
-          "checkedAt": "2026-09-28T18:43:15.687Z",
+          "name": "BEA release schedule",
+          "url": "https://www.bea.gov/news/schedule",
+          "checkedAt": "2026-09-28T18:49:54.797Z",
           "status": "checked"
         },
         {
-          "name": "Fathom current issuer press releases",
-          "url": "https://ir.fathominc.com/news-events/press-releases",
-          "checkedAt": "2026-09-28T18:43:15.687Z",
+          "name": "Federal Reserve calendar",
+          "url": "https://www.federalreserve.gov/newsevents/calendar.htm",
+          "checkedAt": "2026-09-28T18:49:54.797Z",
           "status": "checked"
         },
         {
-          "name": "Current SEC microcap catalyst search",
-          "url": "https://www.sec.gov/edgar/search/",
-          "checkedAt": "2026-09-28T18:43:15.687Z",
+          "name": "EIA Weekly Petroleum Status Report",
+          "url": "https://www.eia.gov/petroleum/supply/weekly/",
+          "checkedAt": "2026-09-28T18:49:54.797Z",
           "status": "checked"
+        },
+        {
+          "name": "OPEC news",
+          "url": "https://www.opec.org/",
+          "checkedAt": "2026-09-28T18:49:54.797Z",
+          "status": "checked"
+        },
+        {
+          "name": "MarketWatch MNQZ26",
+          "url": "https://www.marketwatch.com/investing/future/mnqz26",
+          "checkedAt": "2026-09-28T18:49:54.797Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "MarketWatch MESZ26",
+          "url": "https://www.marketwatch.com/investing/future/mesz26",
+          "checkedAt": "2026-09-28T18:49:54.797Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "MarketWatch MGCZ26",
+          "url": "https://www.marketwatch.com/investing/future/mgcz26",
+          "checkedAt": "2026-09-28T18:49:54.797Z",
+          "status": "checked_delayed_quote_excluded"
+        },
+        {
+          "name": "MarketWatch MCLX26",
+          "url": "https://www.marketwatch.com/investing/future/mclx26",
+          "checkedAt": "2026-09-28T18:49:54.797Z",
+          "status": "unavailable"
         }
       ],
       "missingData": [
-        "complete real-time microcap universe coverage",
-        "current relative-volume baselines and full intraday technical structure across the candidate universe",
-        "complete current dilution, ATM, offering, warrant and convertible sweep across the candidate universe",
-        "spam-filtered X unique-author acceleration",
-        "current insider activity across the candidate universe",
-        "a usable fresh primary catalyst from the bounded SEC discovery search"
+        "Non-delayed exact dated quotes no older than five minutes for MNQZ26, MESZ26, MGCZ26 and MCLX26",
+        "Verified bid/ask spreads, liquidity and current intraday price/volume structure for every micro contract",
+        "Exact expiry/roll and session/holiday clearance for every candidate",
+        "Source-verified initial margin per contract and sufficient remaining paper equity",
+        "Observed tick-aligned triggers, invalidations and targets meeting at least 2:1 reward-to-risk and the $100 risk cap",
+        "Complete high-impact release clearance within the required 30-minute window"
       ],
       "counts": {
+        "openPositions": 0,
         "research": 0,
         "entries": 0,
-        "exits": 0
+        "exits": 0,
+        "marks": 0
       },
       "deliveryDiagnostics": {
-        "repair20260928ReportedAt": "2026-09-28T01:47:21.040Z"
+        "repair20260928ReportedAt": "2026-09-28T01:51:49.985Z"
       }
     }
   ]
