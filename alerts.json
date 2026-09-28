@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-28T16:54:42.334Z",
+  "updatedAt": "2026-09-28T17:03:16.699Z",
   "alerts": [
     {
       "id": "options-bb-fy27q2-20260924",
@@ -388,37 +388,37 @@
       }
     },
     "meme": {
-      "id": "meme-scan-20260928T155050Z",
+      "id": "meme-scan-20260928T170219Z",
       "system": "meme",
-      "startedAt": "2026-09-28T15:50:50.000Z",
-      "checkedAt": "2026-09-28T15:52:21.630Z",
-      "scheduledFor": "2026-09-28T15:00:00.000Z",
-      "nextScheduledAt": "2026-09-28T16:00:00.000Z",
+      "startedAt": "2026-09-28T17:02:19.000Z",
+      "checkedAt": "2026-09-28T17:03:16.699Z",
+      "scheduledFor": "2026-09-28T17:00:00.000Z",
+      "nextScheduledAt": "2026-09-28T18:00:00.000Z",
       "status": "data_limited",
-      "summary": "No open meme paper trades were present. DEX Screener’s latest profile and boost feeds were checked roughly 42 minutes after the prior scan and showed a new rotation of self-submitted Solana promotions. Profile text and linked posts did not establish tracked-wallet quality, affiliation or safety. The public-figure search returned recycled, unaffiliated or explicitly community-made tokens and no independently verified new launch or endorsement by Elon Musk, Donald Trump or another prominent figure. No candidate had verified greater-than-one-hour tracked-wallet persistence, two-wallet convergence, percent remaining, holder/deployer/bundler clearance or spam-filtered social acceleration. No research, entry, exit or mark was created.",
+      "summary": "No open meme paper trades were present. DEX Screener’s latest Solana profiles and boost feeds showed a fresh rotation of self-submitted promotions, including tPAID, HOODRICH, Snake Game paired to Nokia and BAYPAY. Their profile text and linked social accounts did not establish tracked-wallet participation, greater-than-one-hour persistence, percent remaining, holder/deployer/bundler safety or spam-filtered social acceleration; one promoted profile also contained a malformed duplicated social URL. Public-figure discovery resurfaced the long-existing official TRUMP token and unrelated or historical references, but no independently verified new Elon Musk, Donald Trump or other prominent-figure launch or endorsement. No candidate satisfied the research or entry gates, so no research, entry, exit or mark was created.",
       "sources": [
         {
           "name": "DEX Screener latest token profiles API",
           "url": "https://api.dexscreener.com/token-profiles/latest/v1",
-          "checkedAt": "2026-09-28T15:52:21.630Z",
+          "checkedAt": "2026-09-28T17:03:16.699Z",
           "status": "checked"
         },
         {
           "name": "DEX Screener top token boosts API",
           "url": "https://api.dexscreener.com/token-boosts/top/v1",
-          "checkedAt": "2026-09-28T15:52:21.630Z",
+          "checkedAt": "2026-09-28T17:03:16.699Z",
           "status": "checked"
         },
         {
           "name": "DEX Screener latest token boosts API",
           "url": "https://api.dexscreener.com/token-boosts/latest/v1",
-          "checkedAt": "2026-09-28T15:52:21.630Z",
+          "checkedAt": "2026-09-28T17:03:16.699Z",
           "status": "checked"
         },
         {
           "name": "Current public-figure and Solana token web search",
-          "url": "https://www.google.com/search?q=September+28+2026+official+meme+token+launch+Elon+Musk+Donald+Trump+Solana",
-          "checkedAt": "2026-09-28T15:52:21.630Z",
+          "url": "https://www.google.com/search?q=September+28+2026+official+meme+token+launch+Elon+Musk+Donald+Trump+Solana+contract",
+          "checkedAt": "2026-09-28T17:03:16.699Z",
           "status": "checked"
         }
       ],
@@ -4964,6 +4964,58 @@
       },
       "deliveryDiagnostics": {
         "repair20260928ReportedAt": "2026-09-28T01:47:21.040Z"
+      }
+    },
+    {
+      "id": "meme-scan-20260928T170219Z",
+      "system": "meme",
+      "startedAt": "2026-09-28T17:02:19.000Z",
+      "checkedAt": "2026-09-28T17:03:16.699Z",
+      "scheduledFor": "2026-09-28T17:00:00.000Z",
+      "nextScheduledAt": "2026-09-28T18:00:00.000Z",
+      "status": "data_limited",
+      "summary": "No open meme paper trades were present. DEX Screener’s latest Solana profiles and boost feeds showed a fresh rotation of self-submitted promotions, including tPAID, HOODRICH, Snake Game paired to Nokia and BAYPAY. Their profile text and linked social accounts did not establish tracked-wallet participation, greater-than-one-hour persistence, percent remaining, holder/deployer/bundler safety or spam-filtered social acceleration; one promoted profile also contained a malformed duplicated social URL. Public-figure discovery resurfaced the long-existing official TRUMP token and unrelated or historical references, but no independently verified new Elon Musk, Donald Trump or other prominent-figure launch or endorsement. No candidate satisfied the research or entry gates, so no research, entry, exit or mark was created.",
+      "sources": [
+        {
+          "name": "DEX Screener latest token profiles API",
+          "url": "https://api.dexscreener.com/token-profiles/latest/v1",
+          "checkedAt": "2026-09-28T17:03:16.699Z",
+          "status": "checked"
+        },
+        {
+          "name": "DEX Screener top token boosts API",
+          "url": "https://api.dexscreener.com/token-boosts/top/v1",
+          "checkedAt": "2026-09-28T17:03:16.699Z",
+          "status": "checked"
+        },
+        {
+          "name": "DEX Screener latest token boosts API",
+          "url": "https://api.dexscreener.com/token-boosts/latest/v1",
+          "checkedAt": "2026-09-28T17:03:16.699Z",
+          "status": "checked"
+        },
+        {
+          "name": "Current public-figure and Solana token web search",
+          "url": "https://www.google.com/search?q=September+28+2026+official+meme+token+launch+Elon+Musk+Donald+Trump+Solana+contract",
+          "checkedAt": "2026-09-28T17:03:16.699Z",
+          "status": "checked"
+        }
+      ],
+      "missingData": [
+        "Current holdings, entry timestamps and percent remaining for IdontPayTaxes, Daumen, Frank DeGods, Numero and verified Clukz",
+        "Independent confirmation of two-wallet convergence and greater-than-one-hour persistence",
+        "Complete deployer, insider, bundler, holder-concentration and wash-trading analysis for promoted tokens",
+        "Spam-filtered X/Twitter mention velocity and unique-author acceleration",
+        "Complete live pair price, liquidity, unique-buyer and holder metrics for every promoted token",
+        "Independent official affiliation for promoted public-figure or narrative tokens"
+      ],
+      "counts": {
+        "research": 0,
+        "entries": 0,
+        "exits": 0
+      },
+      "deliveryDiagnostics": {
+        "repair20260928ReportedAt": "2026-09-28T02:04:42.735Z"
       }
     }
   ]
