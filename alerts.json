@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-29T05:32:36.395Z",
+  "updatedAt": "2026-09-29T05:32:51.010Z",
   "alerts": [
     {
       "id": "options-bb-fy27q2-20260924",
@@ -470,109 +470,109 @@
       }
     },
     "futures": {
-      "id": "futures-scan-20260929051025352",
+      "id": "futures-scan-20260929053210020",
       "system": "futures",
-      "startedAt": "2026-09-29T05:10:25.352Z",
-      "checkedAt": "2026-09-29T05:11:10.092Z",
+      "startedAt": "2026-09-29T05:32:10.020Z",
+      "checkedAt": "2026-09-29T05:32:51.010Z",
       "scheduledFor": "2026-09-29T05:00:00.000Z",
       "nextScheduledAt": "2026-09-29T06:00:00.000Z",
       "status": "data_limited",
-      "summary": "No new futures entry or material research event. There are no open futures paper positions. All accessible exact-contract data remained delayed and too old for an executable setup: MNQZ26 was 30,423.75 at 11:51 p.m. EDT, MESZ26 7,727.00 at 11:11 p.m., and MGCZ26 4,162.60 at 12:11 a.m. EDT, below the 4,168.4 settlement after a 4,145.0–4,171.7 range. The gold reversal from the earlier rebound was not validated with live data, spreads or current USD/yield confirmation. MCLX26 remained unavailable. No qualifying trigger, margin verification or complete expiry/release clearance was established.",
+      "summary": "No new futures entry or material research event. There are no open futures paper positions. Freshly retrieved public boards remained delayed: MNQZ26 was 30,423.75 at 11:51 p.m. EDT, MESZ26 7,728.00 at 12:00 a.m., and MGCZ26 4,157.60 at 1:00 a.m. EDT, down 0.26% from the 4,168.4 settlement after a 4,145.0–4,171.7 range. These timestamps were about 32–101 minutes old and the source explicitly labels the data delayed, so no executable trigger was inferred. MCLX26 remained unavailable. Live spreads, current structure, initial margins, expiry/roll clearance and risk-qualified levels remain unresolved.",
       "sources": [
         {
           "name": "CME Micro E-mini Nasdaq-100 futures",
           "url": "https://www.cmegroup.com/markets/equities/nasdaq/micro-e-mini-nasdaq-100.html",
-          "checkedAt": "2026-09-29T05:11:10.092Z",
+          "checkedAt": "2026-09-29T05:32:51.010Z",
           "status": "checked_public_data_delayed"
         },
         {
           "name": "CME Micro E-mini S&P 500 futures",
           "url": "https://www.cmegroup.com/markets/equities/sp/micro-e-mini-sandp-500.html",
-          "checkedAt": "2026-09-29T05:11:10.092Z",
+          "checkedAt": "2026-09-29T05:32:51.010Z",
           "status": "checked_public_data_delayed"
         },
         {
           "name": "CME Micro Gold futures",
           "url": "https://www.cmegroup.com/markets/metals/precious/e-micro-gold.html",
-          "checkedAt": "2026-09-29T05:11:10.092Z",
+          "checkedAt": "2026-09-29T05:32:51.010Z",
           "status": "checked_specs_only"
         },
         {
           "name": "CME Micro WTI Crude Oil futures",
           "url": "https://www.cmegroup.com/markets/energy/crude-oil/micro-wti-crude-oil.html",
-          "checkedAt": "2026-09-29T05:11:10.092Z",
+          "checkedAt": "2026-09-29T05:32:51.010Z",
           "status": "checked_specs_only"
         },
         {
           "name": "CME trading and holiday hours",
           "url": "https://www.cmegroup.com/trading-hours.html",
-          "checkedAt": "2026-09-29T05:11:10.092Z",
+          "checkedAt": "2026-09-29T05:32:51.010Z",
           "status": "checked_session_open_expected"
         },
         {
           "name": "BLS September 2026 schedule",
           "url": "https://www.bls.gov/schedule/2026/09_sched.htm",
-          "checkedAt": "2026-09-29T05:11:10.092Z",
+          "checkedAt": "2026-09-29T05:32:51.010Z",
           "status": "checked"
         },
         {
           "name": "BEA release schedule",
           "url": "https://www.bea.gov/news/schedule",
-          "checkedAt": "2026-09-29T05:11:10.092Z",
+          "checkedAt": "2026-09-29T05:32:51.010Z",
           "status": "checked"
         },
         {
           "name": "Federal Reserve calendar",
           "url": "https://www.federalreserve.gov/newsevents/calendar.htm",
-          "checkedAt": "2026-09-29T05:11:10.092Z",
+          "checkedAt": "2026-09-29T05:32:51.010Z",
           "status": "checked"
         },
         {
           "name": "EIA Weekly Petroleum Status Report",
           "url": "https://www.eia.gov/petroleum/supply/weekly/",
-          "checkedAt": "2026-09-29T05:11:10.092Z",
+          "checkedAt": "2026-09-29T05:32:51.010Z",
           "status": "checked"
         },
         {
           "name": "OPEC news",
           "url": "https://www.opec.org/",
-          "checkedAt": "2026-09-29T05:11:10.092Z",
+          "checkedAt": "2026-09-29T05:32:51.010Z",
           "status": "checked"
         },
         {
           "name": "eSignal MNQZ26",
           "url": "https://quotes.esignal.com/esignalprod/quote.action?symbol=MNQ",
-          "checkedAt": "2026-09-29T05:11:10.092Z",
+          "checkedAt": "2026-09-29T05:32:51.010Z",
           "status": "checked_stale_delayed_quote_excluded"
         },
         {
           "name": "eSignal MESZ26",
           "url": "https://quotes.esignal.com/esignalprod/quote.action?symbol=MES",
-          "checkedAt": "2026-09-29T05:11:10.092Z",
+          "checkedAt": "2026-09-29T05:32:51.010Z",
           "status": "checked_stale_delayed_quote_excluded"
         },
         {
           "name": "eSignal MGCZ26",
           "url": "https://quotes.esignal.com/esignalprod/quote.action?symbol=MGC",
-          "checkedAt": "2026-09-29T05:11:10.092Z",
+          "checkedAt": "2026-09-29T05:32:51.010Z",
           "status": "checked_stale_delayed_quote_excluded"
         },
         {
           "name": "eSignal MCLX26",
           "url": "https://quotes.esignal.com/esignalprod/quote.action?symbol=MCL",
-          "checkedAt": "2026-09-29T05:11:10.092Z",
+          "checkedAt": "2026-09-29T05:32:51.010Z",
           "status": "unavailable"
         },
         {
           "name": "MarketWatch MGCZ26",
           "url": "https://www.marketwatch.com/investing/future/mgcz26",
-          "checkedAt": "2026-09-29T05:11:10.092Z",
+          "checkedAt": "2026-09-29T05:32:51.010Z",
           "status": "checked_stale_delayed_quote_excluded"
         },
         {
           "name": "MarketWatch MCLX26",
           "url": "https://www.marketwatch.com/investing/future/mclx26",
-          "checkedAt": "2026-09-29T05:11:10.092Z",
+          "checkedAt": "2026-09-29T05:32:51.010Z",
           "status": "unavailable"
         }
       ],
@@ -5702,6 +5702,124 @@
       }
     },
     {
+      "id": "penny-scan-20260929T052439Z",
+      "system": "penny",
+      "startedAt": "2026-09-29T05:24:39.000Z",
+      "checkedAt": "2026-09-29T05:25:47.760Z",
+      "scheduledFor": "2026-09-29T05:00:00.000Z",
+      "nextScheduledAt": "2026-09-29T06:00:00.000Z",
+      "status": "market_closed",
+      "summary": "No open penny-stock paper trades required management. The U.S. cash market was closed. FTHM's final available quote remained $0.5374, down 7.82%, after a $0.4810-$0.5903 session on 4,888,931 shares; IWM closed down 0.68%. Fathom's issuer page still showed September 24 as its newest announcement, so the existing setup remains rejected for entry because constructive continuation failed, the proposed transaction remains preliminary and share-based, and listing-compliance risk persists. A fresh bounded post-close catalyst and dilution search produced no current primary-source microcap setup that passed catalyst, liquidity, structure and financing-risk gates. The SEC entity page timed out on its single check and was recorded unavailable. No research, entry, exit or mark event was added.",
+      "sources": [
+        {
+          "name": "FTHM and IWM post-close market data",
+          "url": "https://finance.yahoo.com/",
+          "checkedAt": "2026-09-29T05:25:47.760Z",
+          "status": "checked"
+        },
+        {
+          "name": "Fathom issuer press releases",
+          "url": "https://ir.fathominc.com/news-events/press-releases",
+          "checkedAt": "2026-09-29T05:25:47.760Z",
+          "status": "checked"
+        },
+        {
+          "name": "Fathom SEC entity filings page",
+          "url": "https://www.sec.gov/edgar/browse/?CIK=1753162&owner=exclude",
+          "checkedAt": "2026-09-29T05:25:47.760Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "Current post-close microcap catalyst discovery",
+          "url": "https://www.google.com/search?q=September+28+2026+after+hours+Nasdaq+microcap+official+press+release+partnership+contract+FDA+merger",
+          "checkedAt": "2026-09-29T05:25:47.760Z",
+          "status": "checked"
+        },
+        {
+          "name": "Current microcap dilution and corporate-action discovery",
+          "url": "https://www.google.com/search?q=September+28+2026+microcap+after+hours+offering+ATM+PIPE+424B+reverse+split+SEC",
+          "checkedAt": "2026-09-29T05:25:47.760Z",
+          "status": "checked"
+        }
+      ],
+      "missingData": [
+        "fresh executable overnight liquidity and spread for FTHM",
+        "complete real-time microcap universe coverage",
+        "complete current SEC dilution, ATM, offering, warrant and convertible sweep across the candidate universe",
+        "Fathom SEC entity-page read-back because the current request timed out",
+        "spam-filtered X unique-author acceleration",
+        "current insider activity across the candidate universe",
+        "a fresh unextended primary-source catalyst meeting all entry gates"
+      ],
+      "counts": {
+        "research": 0,
+        "entries": 0,
+        "exits": 0
+      },
+      "deliveryDiagnostics": {
+        "repair20260928ReportedAt": "2026-09-28T01:47:21.040Z"
+      }
+    },
+    {
+      "id": "penny-scan-20260929T053129Z",
+      "system": "penny",
+      "startedAt": "2026-09-29T05:31:29.000Z",
+      "checkedAt": "2026-09-29T05:32:36.395Z",
+      "scheduledFor": "2026-09-29T05:00:00.000Z",
+      "nextScheduledAt": "2026-09-29T06:00:00.000Z",
+      "status": "market_closed",
+      "summary": "No open penny-stock paper trades required management. The U.S. cash market was closed, and no market data changed during this fresh pass: FTHM remained $0.5374, down 7.82%, on 4,888,931 shares while IWM remained down 0.68%. Fathom's issuer page still listed September 24 as its newest release. The existing FTHM research remains rejected because continuation failed, the proposed transaction remains preliminary and share-based, and listing-compliance risk persists. A fresh bounded catalyst and dilution search produced no new primary-source microcap setup meeting liquidity, constructive-structure and financing-risk gates. The SEC entity page loaded but did not expose dependable current filing rows in the retrieved view, so filing-universe completeness remains limited. No research, entry, exit or mark event was added.",
+      "sources": [
+        {
+          "name": "FTHM and IWM post-close market data",
+          "url": "https://finance.yahoo.com/",
+          "checkedAt": "2026-09-29T05:32:36.395Z",
+          "status": "checked"
+        },
+        {
+          "name": "Fathom issuer press releases",
+          "url": "https://ir.fathominc.com/news-events/press-releases",
+          "checkedAt": "2026-09-29T05:32:36.395Z",
+          "status": "checked"
+        },
+        {
+          "name": "Fathom SEC entity filings page",
+          "url": "https://www.sec.gov/edgar/browse/?CIK=1753162&owner=exclude",
+          "checkedAt": "2026-09-29T05:32:36.395Z",
+          "status": "checked"
+        },
+        {
+          "name": "Current post-close microcap catalyst discovery",
+          "url": "https://www.google.com/search?q=September+28+2026+after+hours+Nasdaq+microcap+official+press+release+partnership+contract+FDA+merger",
+          "checkedAt": "2026-09-29T05:32:36.395Z",
+          "status": "checked"
+        },
+        {
+          "name": "Current microcap dilution and corporate-action discovery",
+          "url": "https://www.google.com/search?q=September+28+2026+microcap+after+hours+offering+ATM+PIPE+424B+reverse+split+SEC",
+          "checkedAt": "2026-09-29T05:32:36.395Z",
+          "status": "checked"
+        }
+      ],
+      "missingData": [
+        "fresh executable overnight liquidity and spread for FTHM",
+        "complete real-time microcap universe coverage",
+        "dependable current filing rows from the SEC entity-page retrieval",
+        "complete current dilution, ATM, offering, warrant and convertible sweep across the candidate universe",
+        "spam-filtered X unique-author acceleration",
+        "current insider activity across the candidate universe",
+        "a fresh unextended primary-source catalyst meeting all entry gates"
+      ],
+      "counts": {
+        "research": 0,
+        "entries": 0,
+        "exits": 0
+      },
+      "deliveryDiagnostics": {
+        "repair20260928ReportedAt": "2026-09-28T01:47:21.040Z"
+      }
+    },
+    {
       "id": "futures-scan-20260927203939926",
       "system": "futures",
       "startedAt": "2026-09-27T20:39:39.926Z",
@@ -8567,121 +8685,129 @@
       }
     },
     {
-      "id": "penny-scan-20260929T052439Z",
-      "system": "penny",
-      "startedAt": "2026-09-29T05:24:39.000Z",
-      "checkedAt": "2026-09-29T05:25:47.760Z",
+      "id": "futures-scan-20260929053210020",
+      "system": "futures",
+      "startedAt": "2026-09-29T05:32:10.020Z",
+      "checkedAt": "2026-09-29T05:32:51.010Z",
       "scheduledFor": "2026-09-29T05:00:00.000Z",
       "nextScheduledAt": "2026-09-29T06:00:00.000Z",
-      "status": "market_closed",
-      "summary": "No open penny-stock paper trades required management. The U.S. cash market was closed. FTHM's final available quote remained $0.5374, down 7.82%, after a $0.4810-$0.5903 session on 4,888,931 shares; IWM closed down 0.68%. Fathom's issuer page still showed September 24 as its newest announcement, so the existing setup remains rejected for entry because constructive continuation failed, the proposed transaction remains preliminary and share-based, and listing-compliance risk persists. A fresh bounded post-close catalyst and dilution search produced no current primary-source microcap setup that passed catalyst, liquidity, structure and financing-risk gates. The SEC entity page timed out on its single check and was recorded unavailable. No research, entry, exit or mark event was added.",
+      "status": "data_limited",
+      "summary": "No new futures entry or material research event. There are no open futures paper positions. Freshly retrieved public boards remained delayed: MNQZ26 was 30,423.75 at 11:51 p.m. EDT, MESZ26 7,728.00 at 12:00 a.m., and MGCZ26 4,157.60 at 1:00 a.m. EDT, down 0.26% from the 4,168.4 settlement after a 4,145.0–4,171.7 range. These timestamps were about 32–101 minutes old and the source explicitly labels the data delayed, so no executable trigger was inferred. MCLX26 remained unavailable. Live spreads, current structure, initial margins, expiry/roll clearance and risk-qualified levels remain unresolved.",
       "sources": [
         {
-          "name": "FTHM and IWM post-close market data",
-          "url": "https://finance.yahoo.com/",
-          "checkedAt": "2026-09-29T05:25:47.760Z",
+          "name": "CME Micro E-mini Nasdaq-100 futures",
+          "url": "https://www.cmegroup.com/markets/equities/nasdaq/micro-e-mini-nasdaq-100.html",
+          "checkedAt": "2026-09-29T05:32:51.010Z",
+          "status": "checked_public_data_delayed"
+        },
+        {
+          "name": "CME Micro E-mini S&P 500 futures",
+          "url": "https://www.cmegroup.com/markets/equities/sp/micro-e-mini-sandp-500.html",
+          "checkedAt": "2026-09-29T05:32:51.010Z",
+          "status": "checked_public_data_delayed"
+        },
+        {
+          "name": "CME Micro Gold futures",
+          "url": "https://www.cmegroup.com/markets/metals/precious/e-micro-gold.html",
+          "checkedAt": "2026-09-29T05:32:51.010Z",
+          "status": "checked_specs_only"
+        },
+        {
+          "name": "CME Micro WTI Crude Oil futures",
+          "url": "https://www.cmegroup.com/markets/energy/crude-oil/micro-wti-crude-oil.html",
+          "checkedAt": "2026-09-29T05:32:51.010Z",
+          "status": "checked_specs_only"
+        },
+        {
+          "name": "CME trading and holiday hours",
+          "url": "https://www.cmegroup.com/trading-hours.html",
+          "checkedAt": "2026-09-29T05:32:51.010Z",
+          "status": "checked_session_open_expected"
+        },
+        {
+          "name": "BLS September 2026 schedule",
+          "url": "https://www.bls.gov/schedule/2026/09_sched.htm",
+          "checkedAt": "2026-09-29T05:32:51.010Z",
           "status": "checked"
         },
         {
-          "name": "Fathom issuer press releases",
-          "url": "https://ir.fathominc.com/news-events/press-releases",
-          "checkedAt": "2026-09-29T05:25:47.760Z",
+          "name": "BEA release schedule",
+          "url": "https://www.bea.gov/news/schedule",
+          "checkedAt": "2026-09-29T05:32:51.010Z",
           "status": "checked"
         },
         {
-          "name": "Fathom SEC entity filings page",
-          "url": "https://www.sec.gov/edgar/browse/?CIK=1753162&owner=exclude",
-          "checkedAt": "2026-09-29T05:25:47.760Z",
+          "name": "Federal Reserve calendar",
+          "url": "https://www.federalreserve.gov/newsevents/calendar.htm",
+          "checkedAt": "2026-09-29T05:32:51.010Z",
+          "status": "checked"
+        },
+        {
+          "name": "EIA Weekly Petroleum Status Report",
+          "url": "https://www.eia.gov/petroleum/supply/weekly/",
+          "checkedAt": "2026-09-29T05:32:51.010Z",
+          "status": "checked"
+        },
+        {
+          "name": "OPEC news",
+          "url": "https://www.opec.org/",
+          "checkedAt": "2026-09-29T05:32:51.010Z",
+          "status": "checked"
+        },
+        {
+          "name": "eSignal MNQZ26",
+          "url": "https://quotes.esignal.com/esignalprod/quote.action?symbol=MNQ",
+          "checkedAt": "2026-09-29T05:32:51.010Z",
+          "status": "checked_stale_delayed_quote_excluded"
+        },
+        {
+          "name": "eSignal MESZ26",
+          "url": "https://quotes.esignal.com/esignalprod/quote.action?symbol=MES",
+          "checkedAt": "2026-09-29T05:32:51.010Z",
+          "status": "checked_stale_delayed_quote_excluded"
+        },
+        {
+          "name": "eSignal MGCZ26",
+          "url": "https://quotes.esignal.com/esignalprod/quote.action?symbol=MGC",
+          "checkedAt": "2026-09-29T05:32:51.010Z",
+          "status": "checked_stale_delayed_quote_excluded"
+        },
+        {
+          "name": "eSignal MCLX26",
+          "url": "https://quotes.esignal.com/esignalprod/quote.action?symbol=MCL",
+          "checkedAt": "2026-09-29T05:32:51.010Z",
           "status": "unavailable"
         },
         {
-          "name": "Current post-close microcap catalyst discovery",
-          "url": "https://www.google.com/search?q=September+28+2026+after+hours+Nasdaq+microcap+official+press+release+partnership+contract+FDA+merger",
-          "checkedAt": "2026-09-29T05:25:47.760Z",
-          "status": "checked"
+          "name": "MarketWatch MGCZ26",
+          "url": "https://www.marketwatch.com/investing/future/mgcz26",
+          "checkedAt": "2026-09-29T05:32:51.010Z",
+          "status": "checked_stale_delayed_quote_excluded"
         },
         {
-          "name": "Current microcap dilution and corporate-action discovery",
-          "url": "https://www.google.com/search?q=September+28+2026+microcap+after+hours+offering+ATM+PIPE+424B+reverse+split+SEC",
-          "checkedAt": "2026-09-29T05:25:47.760Z",
-          "status": "checked"
+          "name": "MarketWatch MCLX26",
+          "url": "https://www.marketwatch.com/investing/future/mclx26",
+          "checkedAt": "2026-09-29T05:32:51.010Z",
+          "status": "unavailable"
         }
       ],
       "missingData": [
-        "fresh executable overnight liquidity and spread for FTHM",
-        "complete real-time microcap universe coverage",
-        "complete current SEC dilution, ATM, offering, warrant and convertible sweep across the candidate universe",
-        "Fathom SEC entity-page read-back because the current request timed out",
-        "spam-filtered X unique-author acceleration",
-        "current insider activity across the candidate universe",
-        "a fresh unextended primary-source catalyst meeting all entry gates"
+        "Non-delayed exact dated quotes no older than five minutes for MNQZ26, MESZ26, MGCZ26 and MCLX26",
+        "Verified bid/ask spreads, liquidity and current intraday price/volume structure for every micro contract",
+        "Exact expiry/roll and session/holiday clearance for every candidate",
+        "Source-verified initial margin per contract and sufficient remaining paper equity",
+        "Observed tick-aligned triggers, invalidations and targets meeting at least 2:1 reward-to-risk and the $100 risk cap",
+        "Complete high-impact release clearance within the required 30-minute window"
       ],
       "counts": {
+        "openPositions": 0,
         "research": 0,
         "entries": 0,
-        "exits": 0
+        "exits": 0,
+        "marks": 0
       },
       "deliveryDiagnostics": {
-        "repair20260928ReportedAt": "2026-09-28T01:47:21.040Z"
-      }
-    },
-    {
-      "id": "penny-scan-20260929T053129Z",
-      "system": "penny",
-      "startedAt": "2026-09-29T05:31:29.000Z",
-      "checkedAt": "2026-09-29T05:32:36.395Z",
-      "scheduledFor": "2026-09-29T05:00:00.000Z",
-      "nextScheduledAt": "2026-09-29T06:00:00.000Z",
-      "status": "market_closed",
-      "summary": "No open penny-stock paper trades required management. The U.S. cash market was closed, and no market data changed during this fresh pass: FTHM remained $0.5374, down 7.82%, on 4,888,931 shares while IWM remained down 0.68%. Fathom's issuer page still listed September 24 as its newest release. The existing FTHM research remains rejected because continuation failed, the proposed transaction remains preliminary and share-based, and listing-compliance risk persists. A fresh bounded catalyst and dilution search produced no new primary-source microcap setup meeting liquidity, constructive-structure and financing-risk gates. The SEC entity page loaded but did not expose dependable current filing rows in the retrieved view, so filing-universe completeness remains limited. No research, entry, exit or mark event was added.",
-      "sources": [
-        {
-          "name": "FTHM and IWM post-close market data",
-          "url": "https://finance.yahoo.com/",
-          "checkedAt": "2026-09-29T05:32:36.395Z",
-          "status": "checked"
-        },
-        {
-          "name": "Fathom issuer press releases",
-          "url": "https://ir.fathominc.com/news-events/press-releases",
-          "checkedAt": "2026-09-29T05:32:36.395Z",
-          "status": "checked"
-        },
-        {
-          "name": "Fathom SEC entity filings page",
-          "url": "https://www.sec.gov/edgar/browse/?CIK=1753162&owner=exclude",
-          "checkedAt": "2026-09-29T05:32:36.395Z",
-          "status": "checked"
-        },
-        {
-          "name": "Current post-close microcap catalyst discovery",
-          "url": "https://www.google.com/search?q=September+28+2026+after+hours+Nasdaq+microcap+official+press+release+partnership+contract+FDA+merger",
-          "checkedAt": "2026-09-29T05:32:36.395Z",
-          "status": "checked"
-        },
-        {
-          "name": "Current microcap dilution and corporate-action discovery",
-          "url": "https://www.google.com/search?q=September+28+2026+microcap+after+hours+offering+ATM+PIPE+424B+reverse+split+SEC",
-          "checkedAt": "2026-09-29T05:32:36.395Z",
-          "status": "checked"
-        }
-      ],
-      "missingData": [
-        "fresh executable overnight liquidity and spread for FTHM",
-        "complete real-time microcap universe coverage",
-        "dependable current filing rows from the SEC entity-page retrieval",
-        "complete current dilution, ATM, offering, warrant and convertible sweep across the candidate universe",
-        "spam-filtered X unique-author acceleration",
-        "current insider activity across the candidate universe",
-        "a fresh unextended primary-source catalyst meeting all entry gates"
-      ],
-      "counts": {
-        "research": 0,
-        "entries": 0,
-        "exits": 0
-      },
-      "deliveryDiagnostics": {
-        "repair20260928ReportedAt": "2026-09-28T01:47:21.040Z"
+        "repair20260928ReportedAt": "2026-09-28T01:51:49.985Z"
       }
     }
   ]
