@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-29T03:10:45.274Z",
+  "updatedAt": "2026-09-29T03:42:56.973Z",
   "alerts": [
     {
       "id": "options-bb-fy27q2-20260924",
@@ -390,54 +390,60 @@
       }
     },
     "meme": {
-      "id": "meme-scan-20260929T023442Z",
+      "id": "meme-scan-20260929T034139Z",
       "system": "meme",
-      "startedAt": "2026-09-29T02:34:42.000Z",
-      "checkedAt": "2026-09-29T02:36:38.376Z",
-      "scheduledFor": "2026-09-29T02:00:00.000Z",
-      "nextScheduledAt": "2026-09-29T03:00:00.000Z",
+      "startedAt": "2026-09-29T03:41:39.000Z",
+      "checkedAt": "2026-09-29T03:42:56.973Z",
+      "scheduledFor": "2026-09-29T03:00:00.000Z",
+      "nextScheduledAt": "2026-09-29T04:00:00.000Z",
       "status": "data_limited",
-      "summary": "No open meme-coin paper trades required management. A fresh DEX Screener pass surfaced newly submitted and boosted tokens, including a token profile that linked to a White House post, but paid/profile placement and a matching narrative did not establish official token affiliation. The bounded public-figure search found no independently verified new launch or endorsement with an official project domain, chain and exact contract address. Tracked-wallet alias-to-address mappings, position persistence and convergence could not be verified; X original-post and spam-filtered unique-author checks were unavailable. Without those gates, holder/buyer persistence, deployer/insider/bundler safety and reliable social acceleration could not be confirmed. No research, entry, exit or mark was created.",
+      "summary": "No open meme-coin paper trades required management. The fresh DEX Screener profile/boost pass surfaced newly submitted and promoted tokens, but profile placement and paid boosts are not evidence of smart-wallet quality. A bounded current-news search surfaced a third-party MrBeast-named Solana token listing and older public-figure narratives, but no independently verified current launch or endorsement with an original official post, official project domain, chain and exact contract address. The tracked-wallet alias search did not produce trustworthy address mappings, and X original-post access was unavailable, preventing wallet persistence/convergence and spam-filtered unique-author checks. Without those gates, token-holder/buyer persistence and deployer/insider/bundler safety could not be confirmed. No research, entry, exit or mark was created.",
       "sources": [
         {
           "name": "DEX Screener latest token profiles",
           "url": "https://api.dexscreener.com/token-profiles/latest/v1",
-          "checkedAt": "2026-09-29T02:36:38.376Z",
+          "checkedAt": "2026-09-29T03:42:56.973Z",
           "status": "checked"
         },
         {
           "name": "DEX Screener latest and top boosts",
           "url": "https://api.dexscreener.com/token-boosts/latest/v1",
-          "checkedAt": "2026-09-29T02:36:38.376Z",
+          "checkedAt": "2026-09-29T03:42:56.973Z",
           "status": "checked"
         },
         {
-          "name": "Current public-figure token-launch discovery",
-          "url": "https://www.google.com/search?q=September+28+2026+official+meme+token+launch+Elon+Musk+Donald+Trump+contract+address",
-          "checkedAt": "2026-09-29T02:36:38.376Z",
+          "name": "Current public-figure and celebrity token-launch discovery",
+          "url": "https://www.google.com/search?q=September+28+2026+official+meme+coin+token+launch+Elon+Musk+Donald+Trump+contract+address",
+          "checkedAt": "2026-09-29T03:42:56.973Z",
+          "status": "checked"
+        },
+        {
+          "name": "Tracked-wallet alias/address discovery",
+          "url": "https://www.google.com/search?q=IdontPayTaxes+Daumen+Frank+DeGods+Numero+Clukz+Solana+wallet+address",
+          "checkedAt": "2026-09-29T03:42:56.973Z",
           "status": "checked"
         },
         {
           "name": "X original posts and unique-author momentum",
           "url": "https://x.com/",
-          "checkedAt": "2026-09-29T02:36:38.376Z",
+          "checkedAt": "2026-09-29T03:42:56.973Z",
           "status": "unavailable"
         },
         {
-          "name": "Tracked-wallet holdings and persistence",
+          "name": "Tracked-wallet holdings and persistence on Solscan",
           "url": "https://solscan.io/",
-          "checkedAt": "2026-09-29T02:36:38.376Z",
+          "checkedAt": "2026-09-29T03:42:56.973Z",
           "status": "unavailable"
         }
       ],
       "missingData": [
         "verified on-chain addresses for IdontPayTaxes, Daumen, Frank DeGods, Numero and Clukz",
         "tracked-wallet position sizes, holding duration, remaining-position percentages and multi-wallet convergence",
-        "token-holder and unique-buyer acceleration for the newly surfaced profiles",
+        "holder and unique-buyer acceleration for newly surfaced tokens",
         "deployer, insider, bundler, concentration and wash-trading analysis",
         "X original-post verification, mention velocity, unique-author acceleration and spam filtering",
-        "independent confirmation of official public-figure affiliation for narrative-linked tokens",
-        "reliable entry-price and liquidity validation for any candidate that could pass the unavailable gates"
+        "independent official-affiliation confirmation for narrative-linked or celebrity-named tokens",
+        "reliable price, liquidity and overextension checks for any token that could pass the unavailable gates"
       ],
       "counts": {
         "research": 0,
@@ -7978,6 +7984,71 @@
       },
       "deliveryDiagnostics": {
         "repair20260928ReportedAt": "2026-09-28T01:51:49.985Z"
+      }
+    },
+    {
+      "id": "meme-scan-20260929T034139Z",
+      "system": "meme",
+      "startedAt": "2026-09-29T03:41:39.000Z",
+      "checkedAt": "2026-09-29T03:42:56.973Z",
+      "scheduledFor": "2026-09-29T03:00:00.000Z",
+      "nextScheduledAt": "2026-09-29T04:00:00.000Z",
+      "status": "data_limited",
+      "summary": "No open meme-coin paper trades required management. The fresh DEX Screener profile/boost pass surfaced newly submitted and promoted tokens, but profile placement and paid boosts are not evidence of smart-wallet quality. A bounded current-news search surfaced a third-party MrBeast-named Solana token listing and older public-figure narratives, but no independently verified current launch or endorsement with an original official post, official project domain, chain and exact contract address. The tracked-wallet alias search did not produce trustworthy address mappings, and X original-post access was unavailable, preventing wallet persistence/convergence and spam-filtered unique-author checks. Without those gates, token-holder/buyer persistence and deployer/insider/bundler safety could not be confirmed. No research, entry, exit or mark was created.",
+      "sources": [
+        {
+          "name": "DEX Screener latest token profiles",
+          "url": "https://api.dexscreener.com/token-profiles/latest/v1",
+          "checkedAt": "2026-09-29T03:42:56.973Z",
+          "status": "checked"
+        },
+        {
+          "name": "DEX Screener latest and top boosts",
+          "url": "https://api.dexscreener.com/token-boosts/latest/v1",
+          "checkedAt": "2026-09-29T03:42:56.973Z",
+          "status": "checked"
+        },
+        {
+          "name": "Current public-figure and celebrity token-launch discovery",
+          "url": "https://www.google.com/search?q=September+28+2026+official+meme+coin+token+launch+Elon+Musk+Donald+Trump+contract+address",
+          "checkedAt": "2026-09-29T03:42:56.973Z",
+          "status": "checked"
+        },
+        {
+          "name": "Tracked-wallet alias/address discovery",
+          "url": "https://www.google.com/search?q=IdontPayTaxes+Daumen+Frank+DeGods+Numero+Clukz+Solana+wallet+address",
+          "checkedAt": "2026-09-29T03:42:56.973Z",
+          "status": "checked"
+        },
+        {
+          "name": "X original posts and unique-author momentum",
+          "url": "https://x.com/",
+          "checkedAt": "2026-09-29T03:42:56.973Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "Tracked-wallet holdings and persistence on Solscan",
+          "url": "https://solscan.io/",
+          "checkedAt": "2026-09-29T03:42:56.973Z",
+          "status": "unavailable"
+        }
+      ],
+      "missingData": [
+        "verified on-chain addresses for IdontPayTaxes, Daumen, Frank DeGods, Numero and Clukz",
+        "tracked-wallet position sizes, holding duration, remaining-position percentages and multi-wallet convergence",
+        "holder and unique-buyer acceleration for newly surfaced tokens",
+        "deployer, insider, bundler, concentration and wash-trading analysis",
+        "X original-post verification, mention velocity, unique-author acceleration and spam filtering",
+        "independent official-affiliation confirmation for narrative-linked or celebrity-named tokens",
+        "reliable price, liquidity and overextension checks for any token that could pass the unavailable gates"
+      ],
+      "counts": {
+        "research": 0,
+        "entries": 0,
+        "exits": 0
+      },
+      "deliveryDiagnostics": {
+        "repair20260928ReportedAt": "2026-09-28T02:04:42.735Z"
       }
     }
   ]
