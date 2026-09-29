@@ -643,110 +643,104 @@
       }
     },
     "futures": {
-      "id": "futures-scan-20260929081756874",
+      "id": "futures-scan-20260929084845376",
       "system": "futures",
-      "startedAt": "2026-09-29T08:17:56.874Z",
-      "checkedAt": "2026-09-29T08:19:27.665Z",
+      "startedAt": "2026-09-29T08:48:45.376Z",
+      "checkedAt": "2026-09-29T08:49:57.040Z",
       "scheduledFor": "2026-09-29T08:00:00.000Z",
       "nextScheduledAt": "2026-09-29T09:00:00.000Z",
       "status": "data_limited",
-      "summary": "No new futures entry or material research event. There are no open futures paper positions. Public exact-contract snapshots were explicitly delayed and roughly 77–138 minutes old: MNQZ26 30,540.00 at 2:00:54 a.m. EDT, MESZ26 7,741.50 at 2:00:54 a.m., and MGCZ26 4,169.90 at 3:00:54 a.m. versus the 4,168.4 settlement, after a 4,145.0–4,179.5 range. The delayed MGC rebound contradicts immediate continuation of the existing bearish watch but cannot establish a live reversal or entry. MCLX26 remained unavailable. Live spreads, current structure, margin, expiry/roll clearance and risk-qualified triggers remain unresolved.",
+      "summary": "No new futures entry or material research event. There are no open futures paper positions. Exact-contract public snapshots were delayed or stale: MNQZ26 30,573.25 at 3:08:04 a.m. EDT, MESZ26 7,740.75 at 3:08:03 a.m., and MGCZ26 4,171.30 at 4:39:04 a.m.; the MGC source explicitly labels exchange data delayed. MGCZ26 was only 2.90 above the prior settlement after a 4,145.00–4,180.90 range, which does not verify either the existing bearish watch trigger or a reversal. MCLX26 remained unavailable. Live spreads, current structure, margin, roll clearance and risk-qualified triggers remain unresolved.",
       "sources": [
         {
           "name": "CME Micro E-mini Nasdaq-100 futures",
           "url": "https://www.cmegroup.com/markets/equities/nasdaq/micro-e-mini-nasdaq-100.html",
-          "checkedAt": "2026-09-29T08:19:27.665Z",
-          "status": "checked_public_data_delayed"
+          "checkedAt": "2026-09-29T08:49:57.040Z",
+          "status": "checked_specs_only"
         },
         {
           "name": "CME Micro E-mini S&P 500 futures",
           "url": "https://www.cmegroup.com/markets/equities/sp/micro-e-mini-sandp-500.html",
-          "checkedAt": "2026-09-29T08:19:27.665Z",
-          "status": "checked_public_data_delayed"
+          "checkedAt": "2026-09-29T08:49:57.040Z",
+          "status": "checked_specs_only"
         },
         {
           "name": "CME Micro Gold futures",
           "url": "https://www.cmegroup.com/markets/metals/precious/e-micro-gold.html",
-          "checkedAt": "2026-09-29T08:19:27.665Z",
+          "checkedAt": "2026-09-29T08:49:57.040Z",
           "status": "checked_specs_only"
         },
         {
           "name": "CME Micro WTI Crude Oil futures",
           "url": "https://www.cmegroup.com/markets/energy/crude-oil/micro-wti-crude-oil.html",
-          "checkedAt": "2026-09-29T08:19:27.665Z",
+          "checkedAt": "2026-09-29T08:49:57.040Z",
           "status": "checked_specs_only"
         },
         {
           "name": "CME trading hours",
           "url": "https://www.cmegroup.com/trading-hours.html",
-          "checkedAt": "2026-09-29T08:19:27.665Z",
+          "checkedAt": "2026-09-29T08:49:57.040Z",
           "status": "checked_session_open_expected"
-        },
-        {
-          "name": "BLS release calendar",
-          "url": "https://www.bls.gov/schedule/2026/09_sched.htm",
-          "checkedAt": "2026-09-29T08:19:27.665Z",
-          "status": "checked"
-        },
-        {
-          "name": "BEA release schedule",
-          "url": "https://www.bea.gov/news/schedule",
-          "checkedAt": "2026-09-29T08:19:27.665Z",
-          "status": "checked"
-        },
-        {
-          "name": "Federal Reserve calendar",
-          "url": "https://www.federalreserve.gov/newsevents/calendar.htm",
-          "checkedAt": "2026-09-29T08:19:27.665Z",
-          "status": "checked"
-        },
-        {
-          "name": "EIA Weekly Petroleum Status Report",
-          "url": "https://www.eia.gov/petroleum/supply/weekly/",
-          "checkedAt": "2026-09-29T08:19:27.665Z",
-          "status": "checked"
-        },
-        {
-          "name": "OPEC",
-          "url": "https://www.opec.org/",
-          "checkedAt": "2026-09-29T08:19:27.665Z",
-          "status": "checked"
         },
         {
           "name": "eSignal MNQ futures board",
           "url": "https://quotes.esignal.com/esignalprod/quote.action?symbol=MNQ",
-          "checkedAt": "2026-09-29T08:19:27.665Z",
+          "checkedAt": "2026-09-29T08:49:57.040Z",
           "status": "checked_stale_delayed_quote_excluded"
         },
         {
           "name": "eSignal MES futures board",
           "url": "https://quotes.esignal.com/esignalprod/quote.action?symbol=MES",
-          "checkedAt": "2026-09-29T08:19:27.665Z",
+          "checkedAt": "2026-09-29T08:49:57.040Z",
           "status": "checked_stale_delayed_quote_excluded"
         },
         {
           "name": "eSignal MGC futures board",
           "url": "https://quotes.esignal.com/esignalprod/quote.action?symbol=MGC",
-          "checkedAt": "2026-09-29T08:19:27.665Z",
-          "status": "checked_stale_delayed_quote_excluded"
+          "checkedAt": "2026-09-29T08:49:57.040Z",
+          "status": "checked_delayed_quote_excluded"
         },
         {
           "name": "eSignal MCL futures board",
           "url": "https://quotes.esignal.com/esignalprod/quote.action?symbol=MCL",
-          "checkedAt": "2026-09-29T08:19:27.665Z",
+          "checkedAt": "2026-09-29T08:49:57.040Z",
           "status": "unavailable"
         },
         {
           "name": "MarketWatch MGCZ26",
           "url": "https://www.marketwatch.com/investing/future/mgcz26",
-          "checkedAt": "2026-09-29T08:19:27.665Z",
-          "status": "checked_stale_delayed_quote_excluded"
+          "checkedAt": "2026-09-29T08:49:57.040Z",
+          "status": "checked_delayed_quote_excluded"
         },
         {
-          "name": "MarketWatch MCLX26",
-          "url": "https://www.marketwatch.com/investing/future/mclx26",
-          "checkedAt": "2026-09-29T08:19:27.665Z",
-          "status": "unavailable"
+          "name": "BLS release calendar",
+          "url": "https://www.bls.gov/schedule/2026/09_sched.htm",
+          "checkedAt": "2026-09-29T08:49:57.040Z",
+          "status": "checked"
+        },
+        {
+          "name": "BEA release schedule",
+          "url": "https://www.bea.gov/news/schedule",
+          "checkedAt": "2026-09-29T08:49:57.040Z",
+          "status": "checked"
+        },
+        {
+          "name": "Federal Reserve calendar",
+          "url": "https://www.federalreserve.gov/newsevents/calendar.htm",
+          "checkedAt": "2026-09-29T08:49:57.040Z",
+          "status": "checked"
+        },
+        {
+          "name": "EIA Weekly Petroleum Status Report",
+          "url": "https://www.eia.gov/petroleum/supply/weekly/",
+          "checkedAt": "2026-09-29T08:49:57.040Z",
+          "status": "checked"
+        },
+        {
+          "name": "OPEC",
+          "url": "https://www.opec.org/",
+          "checkedAt": "2026-09-29T08:49:57.040Z",
+          "status": "checked"
         }
       ],
       "missingData": [
@@ -9718,6 +9712,126 @@
           "url": "https://www.marketwatch.com/investing/future/mclx26",
           "checkedAt": "2026-09-29T08:19:27.665Z",
           "status": "unavailable"
+        }
+      ],
+      "missingData": [
+        "Non-delayed exact dated quotes no older than five minutes for MNQZ26, MESZ26, MGCZ26 and MCLX26",
+        "Verified bid/ask spreads, liquidity and current intraday price/volume structure for every micro contract",
+        "Exact expiry/roll and session/holiday clearance for every candidate",
+        "Source-verified initial margin per contract and sufficient remaining paper equity",
+        "Observed tick-aligned triggers, invalidations and targets meeting at least 2:1 reward-to-risk and the $100 risk cap",
+        "Complete high-impact release clearance within the required 30-minute window"
+      ],
+      "counts": {
+        "openPositions": 0,
+        "research": 0,
+        "entries": 0,
+        "exits": 0,
+        "marks": 0
+      },
+      "deliveryDiagnostics": {
+        "repair20260928ReportedAt": "2026-09-28T01:51:49.985Z"
+      }
+    },
+    {
+      "id": "futures-scan-20260929084845376",
+      "system": "futures",
+      "startedAt": "2026-09-29T08:48:45.376Z",
+      "checkedAt": "2026-09-29T08:49:57.040Z",
+      "scheduledFor": "2026-09-29T08:00:00.000Z",
+      "nextScheduledAt": "2026-09-29T09:00:00.000Z",
+      "status": "data_limited",
+      "summary": "No new futures entry or material research event. There are no open futures paper positions. Exact-contract public snapshots were delayed or stale: MNQZ26 30,573.25 at 3:08:04 a.m. EDT, MESZ26 7,740.75 at 3:08:03 a.m., and MGCZ26 4,171.30 at 4:39:04 a.m.; the MGC source explicitly labels exchange data delayed. MGCZ26 was only 2.90 above the prior settlement after a 4,145.00–4,180.90 range, which does not verify either the existing bearish watch trigger or a reversal. MCLX26 remained unavailable. Live spreads, current structure, margin, roll clearance and risk-qualified triggers remain unresolved.",
+      "sources": [
+        {
+          "name": "CME Micro E-mini Nasdaq-100 futures",
+          "url": "https://www.cmegroup.com/markets/equities/nasdaq/micro-e-mini-nasdaq-100.html",
+          "checkedAt": "2026-09-29T08:49:57.040Z",
+          "status": "checked_specs_only"
+        },
+        {
+          "name": "CME Micro E-mini S&P 500 futures",
+          "url": "https://www.cmegroup.com/markets/equities/sp/micro-e-mini-sandp-500.html",
+          "checkedAt": "2026-09-29T08:49:57.040Z",
+          "status": "checked_specs_only"
+        },
+        {
+          "name": "CME Micro Gold futures",
+          "url": "https://www.cmegroup.com/markets/metals/precious/e-micro-gold.html",
+          "checkedAt": "2026-09-29T08:49:57.040Z",
+          "status": "checked_specs_only"
+        },
+        {
+          "name": "CME Micro WTI Crude Oil futures",
+          "url": "https://www.cmegroup.com/markets/energy/crude-oil/micro-wti-crude-oil.html",
+          "checkedAt": "2026-09-29T08:49:57.040Z",
+          "status": "checked_specs_only"
+        },
+        {
+          "name": "CME trading hours",
+          "url": "https://www.cmegroup.com/trading-hours.html",
+          "checkedAt": "2026-09-29T08:49:57.040Z",
+          "status": "checked_session_open_expected"
+        },
+        {
+          "name": "eSignal MNQ futures board",
+          "url": "https://quotes.esignal.com/esignalprod/quote.action?symbol=MNQ",
+          "checkedAt": "2026-09-29T08:49:57.040Z",
+          "status": "checked_stale_delayed_quote_excluded"
+        },
+        {
+          "name": "eSignal MES futures board",
+          "url": "https://quotes.esignal.com/esignalprod/quote.action?symbol=MES",
+          "checkedAt": "2026-09-29T08:49:57.040Z",
+          "status": "checked_stale_delayed_quote_excluded"
+        },
+        {
+          "name": "eSignal MGC futures board",
+          "url": "https://quotes.esignal.com/esignalprod/quote.action?symbol=MGC",
+          "checkedAt": "2026-09-29T08:49:57.040Z",
+          "status": "checked_delayed_quote_excluded"
+        },
+        {
+          "name": "eSignal MCL futures board",
+          "url": "https://quotes.esignal.com/esignalprod/quote.action?symbol=MCL",
+          "checkedAt": "2026-09-29T08:49:57.040Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "MarketWatch MGCZ26",
+          "url": "https://www.marketwatch.com/investing/future/mgcz26",
+          "checkedAt": "2026-09-29T08:49:57.040Z",
+          "status": "checked_delayed_quote_excluded"
+        },
+        {
+          "name": "BLS release calendar",
+          "url": "https://www.bls.gov/schedule/2026/09_sched.htm",
+          "checkedAt": "2026-09-29T08:49:57.040Z",
+          "status": "checked"
+        },
+        {
+          "name": "BEA release schedule",
+          "url": "https://www.bea.gov/news/schedule",
+          "checkedAt": "2026-09-29T08:49:57.040Z",
+          "status": "checked"
+        },
+        {
+          "name": "Federal Reserve calendar",
+          "url": "https://www.federalreserve.gov/newsevents/calendar.htm",
+          "checkedAt": "2026-09-29T08:49:57.040Z",
+          "status": "checked"
+        },
+        {
+          "name": "EIA Weekly Petroleum Status Report",
+          "url": "https://www.eia.gov/petroleum/supply/weekly/",
+          "checkedAt": "2026-09-29T08:49:57.040Z",
+          "status": "checked"
+        },
+        {
+          "name": "OPEC",
+          "url": "https://www.opec.org/",
+          "checkedAt": "2026-09-29T08:49:57.040Z",
+          "status": "checked"
         }
       ],
       "missingData": [
