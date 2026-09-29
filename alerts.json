@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-29T05:25:47.760Z",
+  "updatedAt": "2026-09-29T05:32:36.395Z",
   "alerts": [
     {
       "id": "options-bb-fy27q2-20260924",
@@ -286,51 +286,51 @@
   ],
   "scanners": {
     "penny": {
-      "id": "penny-scan-20260929T052439Z",
+      "id": "penny-scan-20260929T053129Z",
       "system": "penny",
-      "startedAt": "2026-09-29T05:24:39.000Z",
-      "checkedAt": "2026-09-29T05:25:47.760Z",
+      "startedAt": "2026-09-29T05:31:29.000Z",
+      "checkedAt": "2026-09-29T05:32:36.395Z",
       "scheduledFor": "2026-09-29T05:00:00.000Z",
       "nextScheduledAt": "2026-09-29T06:00:00.000Z",
       "status": "market_closed",
-      "summary": "No open penny-stock paper trades required management. The U.S. cash market was closed. FTHM's final available quote remained $0.5374, down 7.82%, after a $0.4810-$0.5903 session on 4,888,931 shares; IWM closed down 0.68%. Fathom's issuer page still showed September 24 as its newest announcement, so the existing setup remains rejected for entry because constructive continuation failed, the proposed transaction remains preliminary and share-based, and listing-compliance risk persists. A fresh bounded post-close catalyst and dilution search produced no current primary-source microcap setup that passed catalyst, liquidity, structure and financing-risk gates. The SEC entity page timed out on its single check and was recorded unavailable. No research, entry, exit or mark event was added.",
+      "summary": "No open penny-stock paper trades required management. The U.S. cash market was closed, and no market data changed during this fresh pass: FTHM remained $0.5374, down 7.82%, on 4,888,931 shares while IWM remained down 0.68%. Fathom's issuer page still listed September 24 as its newest release. The existing FTHM research remains rejected because continuation failed, the proposed transaction remains preliminary and share-based, and listing-compliance risk persists. A fresh bounded catalyst and dilution search produced no new primary-source microcap setup meeting liquidity, constructive-structure and financing-risk gates. The SEC entity page loaded but did not expose dependable current filing rows in the retrieved view, so filing-universe completeness remains limited. No research, entry, exit or mark event was added.",
       "sources": [
         {
           "name": "FTHM and IWM post-close market data",
           "url": "https://finance.yahoo.com/",
-          "checkedAt": "2026-09-29T05:25:47.760Z",
+          "checkedAt": "2026-09-29T05:32:36.395Z",
           "status": "checked"
         },
         {
           "name": "Fathom issuer press releases",
           "url": "https://ir.fathominc.com/news-events/press-releases",
-          "checkedAt": "2026-09-29T05:25:47.760Z",
+          "checkedAt": "2026-09-29T05:32:36.395Z",
           "status": "checked"
         },
         {
           "name": "Fathom SEC entity filings page",
           "url": "https://www.sec.gov/edgar/browse/?CIK=1753162&owner=exclude",
-          "checkedAt": "2026-09-29T05:25:47.760Z",
-          "status": "unavailable"
+          "checkedAt": "2026-09-29T05:32:36.395Z",
+          "status": "checked"
         },
         {
           "name": "Current post-close microcap catalyst discovery",
           "url": "https://www.google.com/search?q=September+28+2026+after+hours+Nasdaq+microcap+official+press+release+partnership+contract+FDA+merger",
-          "checkedAt": "2026-09-29T05:25:47.760Z",
+          "checkedAt": "2026-09-29T05:32:36.395Z",
           "status": "checked"
         },
         {
           "name": "Current microcap dilution and corporate-action discovery",
           "url": "https://www.google.com/search?q=September+28+2026+microcap+after+hours+offering+ATM+PIPE+424B+reverse+split+SEC",
-          "checkedAt": "2026-09-29T05:25:47.760Z",
+          "checkedAt": "2026-09-29T05:32:36.395Z",
           "status": "checked"
         }
       ],
       "missingData": [
         "fresh executable overnight liquidity and spread for FTHM",
         "complete real-time microcap universe coverage",
-        "complete current SEC dilution, ATM, offering, warrant and convertible sweep across the candidate universe",
-        "Fathom SEC entity-page read-back because the current request timed out",
+        "dependable current filing rows from the SEC entity-page retrieval",
+        "complete current dilution, ATM, offering, warrant and convertible sweep across the candidate universe",
         "spam-filtered X unique-author acceleration",
         "current insider activity across the candidate universe",
         "a fresh unextended primary-source catalyst meeting all entry gates"
@@ -8612,6 +8612,65 @@
         "complete real-time microcap universe coverage",
         "complete current SEC dilution, ATM, offering, warrant and convertible sweep across the candidate universe",
         "Fathom SEC entity-page read-back because the current request timed out",
+        "spam-filtered X unique-author acceleration",
+        "current insider activity across the candidate universe",
+        "a fresh unextended primary-source catalyst meeting all entry gates"
+      ],
+      "counts": {
+        "research": 0,
+        "entries": 0,
+        "exits": 0
+      },
+      "deliveryDiagnostics": {
+        "repair20260928ReportedAt": "2026-09-28T01:47:21.040Z"
+      }
+    },
+    {
+      "id": "penny-scan-20260929T053129Z",
+      "system": "penny",
+      "startedAt": "2026-09-29T05:31:29.000Z",
+      "checkedAt": "2026-09-29T05:32:36.395Z",
+      "scheduledFor": "2026-09-29T05:00:00.000Z",
+      "nextScheduledAt": "2026-09-29T06:00:00.000Z",
+      "status": "market_closed",
+      "summary": "No open penny-stock paper trades required management. The U.S. cash market was closed, and no market data changed during this fresh pass: FTHM remained $0.5374, down 7.82%, on 4,888,931 shares while IWM remained down 0.68%. Fathom's issuer page still listed September 24 as its newest release. The existing FTHM research remains rejected because continuation failed, the proposed transaction remains preliminary and share-based, and listing-compliance risk persists. A fresh bounded catalyst and dilution search produced no new primary-source microcap setup meeting liquidity, constructive-structure and financing-risk gates. The SEC entity page loaded but did not expose dependable current filing rows in the retrieved view, so filing-universe completeness remains limited. No research, entry, exit or mark event was added.",
+      "sources": [
+        {
+          "name": "FTHM and IWM post-close market data",
+          "url": "https://finance.yahoo.com/",
+          "checkedAt": "2026-09-29T05:32:36.395Z",
+          "status": "checked"
+        },
+        {
+          "name": "Fathom issuer press releases",
+          "url": "https://ir.fathominc.com/news-events/press-releases",
+          "checkedAt": "2026-09-29T05:32:36.395Z",
+          "status": "checked"
+        },
+        {
+          "name": "Fathom SEC entity filings page",
+          "url": "https://www.sec.gov/edgar/browse/?CIK=1753162&owner=exclude",
+          "checkedAt": "2026-09-29T05:32:36.395Z",
+          "status": "checked"
+        },
+        {
+          "name": "Current post-close microcap catalyst discovery",
+          "url": "https://www.google.com/search?q=September+28+2026+after+hours+Nasdaq+microcap+official+press+release+partnership+contract+FDA+merger",
+          "checkedAt": "2026-09-29T05:32:36.395Z",
+          "status": "checked"
+        },
+        {
+          "name": "Current microcap dilution and corporate-action discovery",
+          "url": "https://www.google.com/search?q=September+28+2026+microcap+after+hours+offering+ATM+PIPE+424B+reverse+split+SEC",
+          "checkedAt": "2026-09-29T05:32:36.395Z",
+          "status": "checked"
+        }
+      ],
+      "missingData": [
+        "fresh executable overnight liquidity and spread for FTHM",
+        "complete real-time microcap universe coverage",
+        "dependable current filing rows from the SEC entity-page retrieval",
+        "complete current dilution, ATM, offering, warrant and convertible sweep across the candidate universe",
         "spam-filtered X unique-author acceleration",
         "current insider activity across the candidate universe",
         "a fresh unextended primary-source catalyst meeting all entry gates"
