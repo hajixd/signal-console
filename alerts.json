@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-29T08:54:23.093Z",
+  "updatedAt": "2026-09-29T09:14:35.026Z",
   "alerts": [
     {
       "id": "options-bb-fy27q2-20260924",
@@ -519,49 +519,61 @@
       }
     },
     "options": {
-      "id": "options-scan-20260929T073121Z",
+      "id": "options-scan-20260929T091221Z",
       "system": "options",
-      "startedAt": "2026-09-29T07:31:21.000Z",
-      "checkedAt": "2026-09-29T07:32:59.437Z",
-      "scheduledFor": "2026-09-29T07:00:00.000Z",
-      "nextScheduledAt": "2026-09-29T08:00:00.000Z",
+      "startedAt": "2026-09-29T09:12:21.000Z",
+      "checkedAt": "2026-09-29T09:14:35.026Z",
+      "scheduledFor": "2026-09-29T09:00:00.000Z",
+      "nextScheduledAt": "2026-09-29T10:00:00.000Z",
       "status": "market_closed",
-      "summary": "No open options paper trades required management. U.S. listed options were closed. SMMT's AstraZeneca investment catalyst remains primary-source verified, but the stock finished at $15.48 after an intraday range of $15.19-$19.37 and no usable exact-contract chain was available; BB closed at $8.80, COST at $922.92 and QQQ at $736.53. A bounded after-hours catalyst check found no new primary-source development that changed the existing SMMT, BB or COST research thesis. No entry, exit, mark or materially new research event was added.",
+      "summary": "No new options event. There are no open options paper trades to mark or exit. The latest available BB ($8.80), COST ($922.92), SMMT ($15.48) and QQQ ($736.53) prints were unchanged after the September 28 close and were not treated as fresh premarket structure. BlackBerry and Costco primary earnings evidence remains verified, while the existing SMMT research has no newly verified material development. Nasdaq's SMMT option-chain page reported that the chain is unavailable. A bounded current-catalyst scan found no new primary-source setup that could pass the exact-contract, liquidity, volatility and directional-flow gates before listed options reopen. No research, entry or exit record was added.",
       "sources": [
         {
-          "name": "AstraZeneca / Summit Therapeutics strategic investment announcement",
-          "url": "https://www.astrazeneca.com/media-centre/press-releases/2026/astrazeneca-to-make-strategic-investment-in-summit-therapeutics.html",
-          "checkedAt": "2026-09-29T07:32:59.437Z",
+          "name": "BlackBerry Q2 FY2027 earnings release filed with SEC",
+          "url": "https://www.sec.gov/Archives/edgar/data/1070235/000107023526000112/q2fy27ex-991.htm",
+          "checkedAt": "2026-09-29T09:14:35.026Z",
           "status": "checked"
         },
         {
-          "name": "Post-close market data for SMMT, BB, COST and QQQ",
-          "url": "https://www.nasdaq.com/market-activity/stocks/smmt",
-          "checkedAt": "2026-09-29T07:32:59.437Z",
+          "name": "Costco Q4 and FY2026 earnings release",
+          "url": "https://investor.costco.com/news/news-details/2026/Costco-Wholesale-Corporation-Reports-Fourth-Quarter-and-Fiscal-Year-2026-Operating-Results/default.aspx",
+          "checkedAt": "2026-09-29T09:14:35.026Z",
+          "status": "checked"
+        },
+        {
+          "name": "Latest available BB, COST, SMMT and QQQ market data",
+          "url": "https://finance.yahoo.com/",
+          "checkedAt": "2026-09-29T09:14:35.026Z",
           "status": "checked"
         },
         {
           "name": "Nasdaq SMMT option chain",
           "url": "https://www.nasdaq.com/market-activity/stocks/smmt/option-chain",
-          "checkedAt": "2026-09-29T07:32:59.437Z",
+          "checkedAt": "2026-09-29T09:14:35.026Z",
           "status": "unavailable"
         },
         {
-          "name": "Current after-hours catalyst discovery",
+          "name": "Current catalyst and market-regime discovery",
           "url": "https://www.sec.gov/edgar/search/",
-          "checkedAt": "2026-09-29T07:32:59.437Z",
+          "checkedAt": "2026-09-29T09:14:35.026Z",
           "status": "checked"
+        },
+        {
+          "name": "AstraZeneca SMMT investment release",
+          "url": "https://www.astrazeneca.com/media-centre/press-releases/2026/astrazeneca-makes-strategic-investment-in-summit-therapeutics.html",
+          "checkedAt": "2026-09-29T09:14:35.026Z",
+          "status": "unavailable"
         }
       ],
       "missingData": [
-        "exact 21-60 DTE contract bid, ask and midpoint for SMMT, BB and COST",
-        "current contract Greeks",
-        "IV rank and term structure",
+        "fresh executable premarket underlying prints and trend structure",
+        "exact 21-60 DTE contract bid, ask and midpoint",
+        "contract delta and remaining Greeks",
+        "contract IV, IV rank and term structure",
         "contract volume, open interest and executable spread",
         "reliable buyer-initiated opening-flow confirmation",
-        "regular-session SMMT structure after the new catalyst",
-        "confirmation that AstraZeneca's $2 billion SMMT investment has closed",
-        "executable overnight options quotes while the listed market is closed"
+        "confirmation that AstraZeneca's announced SMMT investment has closed",
+        "executable listed-options quotes while the market is closed"
       ],
       "counts": {
         "research": 0,
@@ -9931,6 +9943,72 @@
       },
       "deliveryDiagnostics": {
         "repair20260928ReportedAt": "2026-09-28T02:04:42.735Z"
+      }
+    },
+    {
+      "id": "options-scan-20260929T091221Z",
+      "system": "options",
+      "startedAt": "2026-09-29T09:12:21.000Z",
+      "checkedAt": "2026-09-29T09:14:35.026Z",
+      "scheduledFor": "2026-09-29T09:00:00.000Z",
+      "nextScheduledAt": "2026-09-29T10:00:00.000Z",
+      "status": "market_closed",
+      "summary": "No new options event. There are no open options paper trades to mark or exit. The latest available BB ($8.80), COST ($922.92), SMMT ($15.48) and QQQ ($736.53) prints were unchanged after the September 28 close and were not treated as fresh premarket structure. BlackBerry and Costco primary earnings evidence remains verified, while the existing SMMT research has no newly verified material development. Nasdaq's SMMT option-chain page reported that the chain is unavailable. A bounded current-catalyst scan found no new primary-source setup that could pass the exact-contract, liquidity, volatility and directional-flow gates before listed options reopen. No research, entry or exit record was added.",
+      "sources": [
+        {
+          "name": "BlackBerry Q2 FY2027 earnings release filed with SEC",
+          "url": "https://www.sec.gov/Archives/edgar/data/1070235/000107023526000112/q2fy27ex-991.htm",
+          "checkedAt": "2026-09-29T09:14:35.026Z",
+          "status": "checked"
+        },
+        {
+          "name": "Costco Q4 and FY2026 earnings release",
+          "url": "https://investor.costco.com/news/news-details/2026/Costco-Wholesale-Corporation-Reports-Fourth-Quarter-and-Fiscal-Year-2026-Operating-Results/default.aspx",
+          "checkedAt": "2026-09-29T09:14:35.026Z",
+          "status": "checked"
+        },
+        {
+          "name": "Latest available BB, COST, SMMT and QQQ market data",
+          "url": "https://finance.yahoo.com/",
+          "checkedAt": "2026-09-29T09:14:35.026Z",
+          "status": "checked"
+        },
+        {
+          "name": "Nasdaq SMMT option chain",
+          "url": "https://www.nasdaq.com/market-activity/stocks/smmt/option-chain",
+          "checkedAt": "2026-09-29T09:14:35.026Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "Current catalyst and market-regime discovery",
+          "url": "https://www.sec.gov/edgar/search/",
+          "checkedAt": "2026-09-29T09:14:35.026Z",
+          "status": "checked"
+        },
+        {
+          "name": "AstraZeneca SMMT investment release",
+          "url": "https://www.astrazeneca.com/media-centre/press-releases/2026/astrazeneca-makes-strategic-investment-in-summit-therapeutics.html",
+          "checkedAt": "2026-09-29T09:14:35.026Z",
+          "status": "unavailable"
+        }
+      ],
+      "missingData": [
+        "fresh executable premarket underlying prints and trend structure",
+        "exact 21-60 DTE contract bid, ask and midpoint",
+        "contract delta and remaining Greeks",
+        "contract IV, IV rank and term structure",
+        "contract volume, open interest and executable spread",
+        "reliable buyer-initiated opening-flow confirmation",
+        "confirmation that AstraZeneca's announced SMMT investment has closed",
+        "executable listed-options quotes while the market is closed"
+      ],
+      "counts": {
+        "research": 0,
+        "entries": 0,
+        "exits": 0
+      },
+      "deliveryDiagnostics": {
+        "repair20260928ReportedAt": "2026-09-28T00:50:48.883Z"
       }
     }
   ]
