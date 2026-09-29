@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-29T01:13:54.006Z",
+  "updatedAt": "2026-09-29T01:20:25.336Z",
   "alerts": [
     {
       "id": "options-bb-fy27q2-20260924",
@@ -286,43 +286,43 @@
   ],
   "scanners": {
     "penny": {
-      "id": "penny-scan-20260928T233142Z",
+      "id": "penny-scan-20260929T011911Z",
       "system": "penny",
-      "startedAt": "2026-09-28T23:31:42.000Z",
-      "checkedAt": "2026-09-28T23:32:58.470Z",
-      "scheduledFor": "2026-09-28T23:00:00.000Z",
-      "nextScheduledAt": "2026-09-29T00:00:00.000Z",
+      "startedAt": "2026-09-29T01:19:11.000Z",
+      "checkedAt": "2026-09-29T01:20:25.336Z",
+      "scheduledFor": "2026-09-29T01:00:00.000Z",
+      "nextScheduledAt": "2026-09-29T02:00:00.000Z",
       "status": "market_closed",
-      "summary": "No open penny paper trades required management. FTHM's final available September 28 quote was $0.5374, down 7.82%, after trading between $0.4810 and $0.5903 on 4,880,825 shares; IWM finished down 0.68%. The existing FTHM research remains rejected for entry because the post-catalyst session failed to establish constructive continuation, the transaction is preliminary and share-based, and listing-compliance risk persists. Fathom's issuer page showed no announcement newer than September 24. A bounded SEC and press-wire discovery search produced no usable new primary-source microcap setup passing the catalyst, dilution, liquidity and technical gates. No research, entry, exit or mark was created.",
+      "summary": "No open penny paper trades required management. FTHM remained at $0.5374, down 7.82%, after trading between $0.4810 and $0.5903 on 4,888,931 shares; IWM finished down 0.68%. Fathom's issuer page still showed no announcement newer than September 24, and the existing FTHM research remains rejected for entry because continuation failed, the proposed transaction is preliminary and share-based, and listing-compliance risk persists. A bounded discovery sweep surfaced KOD's already-extreme greater-than-170% biotech move and larger or non-penny issuers, but no fresh microcap setup passed the catalyst, dilution, liquidity, extension and constructive-structure gates. No research, entry, exit or mark was created.",
       "sources": [
         {
           "name": "FTHM post-close market data",
           "url": "https://finance.yahoo.com/quote/FTHM/",
-          "checkedAt": "2026-09-28T23:32:58.470Z",
+          "checkedAt": "2026-09-29T01:20:25.336Z",
           "status": "checked"
         },
         {
           "name": "IWM post-close small-cap market data",
           "url": "https://finance.yahoo.com/quote/IWM/",
-          "checkedAt": "2026-09-28T23:32:58.470Z",
+          "checkedAt": "2026-09-29T01:20:25.336Z",
           "status": "checked"
         },
         {
           "name": "Fathom issuer press releases",
           "url": "https://ir.fathominc.com/news-events/press-releases",
-          "checkedAt": "2026-09-28T23:32:58.470Z",
+          "checkedAt": "2026-09-29T01:20:25.336Z",
           "status": "checked"
         },
         {
-          "name": "SEC current microcap catalyst discovery",
-          "url": "https://www.sec.gov/edgar/search/",
-          "checkedAt": "2026-09-28T23:32:58.470Z",
-          "status": "unavailable"
+          "name": "Current microcap catalyst discovery",
+          "url": "https://www.google.com/search?q=September+28+2026+Nasdaq+microcap+contract+partnership+FDA+approval",
+          "checkedAt": "2026-09-29T01:20:25.336Z",
+          "status": "checked"
         },
         {
-          "name": "Current press-wire microcap discovery",
-          "url": "https://www.businesswire.com/",
-          "checkedAt": "2026-09-28T23:32:58.470Z",
+          "name": "Complete SEC microcap filing sweep",
+          "url": "https://www.sec.gov/edgar/search/",
+          "checkedAt": "2026-09-29T01:20:25.336Z",
           "status": "unavailable"
         }
       ],
@@ -7298,6 +7298,64 @@
       },
       "deliveryDiagnostics": {
         "repair20260928ReportedAt": "2026-09-28T02:04:42.735Z"
+      }
+    },
+    {
+      "id": "penny-scan-20260929T011911Z",
+      "system": "penny",
+      "startedAt": "2026-09-29T01:19:11.000Z",
+      "checkedAt": "2026-09-29T01:20:25.336Z",
+      "scheduledFor": "2026-09-29T01:00:00.000Z",
+      "nextScheduledAt": "2026-09-29T02:00:00.000Z",
+      "status": "market_closed",
+      "summary": "No open penny paper trades required management. FTHM remained at $0.5374, down 7.82%, after trading between $0.4810 and $0.5903 on 4,888,931 shares; IWM finished down 0.68%. Fathom's issuer page still showed no announcement newer than September 24, and the existing FTHM research remains rejected for entry because continuation failed, the proposed transaction is preliminary and share-based, and listing-compliance risk persists. A bounded discovery sweep surfaced KOD's already-extreme greater-than-170% biotech move and larger or non-penny issuers, but no fresh microcap setup passed the catalyst, dilution, liquidity, extension and constructive-structure gates. No research, entry, exit or mark was created.",
+      "sources": [
+        {
+          "name": "FTHM post-close market data",
+          "url": "https://finance.yahoo.com/quote/FTHM/",
+          "checkedAt": "2026-09-29T01:20:25.336Z",
+          "status": "checked"
+        },
+        {
+          "name": "IWM post-close small-cap market data",
+          "url": "https://finance.yahoo.com/quote/IWM/",
+          "checkedAt": "2026-09-29T01:20:25.336Z",
+          "status": "checked"
+        },
+        {
+          "name": "Fathom issuer press releases",
+          "url": "https://ir.fathominc.com/news-events/press-releases",
+          "checkedAt": "2026-09-29T01:20:25.336Z",
+          "status": "checked"
+        },
+        {
+          "name": "Current microcap catalyst discovery",
+          "url": "https://www.google.com/search?q=September+28+2026+Nasdaq+microcap+contract+partnership+FDA+approval",
+          "checkedAt": "2026-09-29T01:20:25.336Z",
+          "status": "checked"
+        },
+        {
+          "name": "Complete SEC microcap filing sweep",
+          "url": "https://www.sec.gov/edgar/search/",
+          "checkedAt": "2026-09-29T01:20:25.336Z",
+          "status": "unavailable"
+        }
+      ],
+      "missingData": [
+        "complete real-time microcap universe coverage",
+        "complete current dilution, ATM, offering, warrant and convertible sweep across the candidate universe",
+        "spam-filtered X unique-author acceleration",
+        "current insider activity across the candidate universe",
+        "a usable fresh primary catalyst from the bounded discovery search",
+        "post-close liquidity and technical confirmation for any new candidate"
+      ],
+      "counts": {
+        "research": 0,
+        "entries": 0,
+        "exits": 0
+      },
+      "deliveryDiagnostics": {
+        "repair20260928ReportedAt": "2026-09-28T01:47:21.040Z"
       }
     }
   ]
