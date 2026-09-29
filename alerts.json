@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-29T12:10:45.000Z",
+  "updatedAt": "2026-09-29T12:27:10.296Z",
   "alerts": [
     {
       "id": "options-bb-fy27q2-20260924",
@@ -481,16 +481,16 @@
       "id": "meme-research-psoq-soq-migration-20260929",
       "eventType": "research",
       "system": "meme",
-      "timestamp": "2026-09-29T10:43:15.735Z",
+      "timestamp": "2026-09-29T12:27:10.296Z",
       "asset": "pSOQ / SOQ",
-      "title": "Research: official pSOQ-to-SOQ migration window opens September 29",
-      "summary": "Research only, not a paper entry. Soqucoin's official documentation says a one-time 1:1 migration window opens September 29, 2026 at 12:00 UTC and closes October 5 at 12:00 UTC, with Soqucoin mainnet block 1 planned for October 8. The official Solana mint matches the SoQuBit token shown by Solscan and DEX Screener. Current entry gates are not met because tracked-wallet persistence, current holder and insider concentration, live social quality, and a fresh executable market quote were not verified.",
+      "title": "Research update: pSOQ migration list is live with zero allocations",
+      "summary": "Research only, not a paper entry. Soqucoin's official migration window opened at 12:00 UTC and its provisional allocation system is publishing hashed runs. The latest accessible official run covered finalized slots through 12:16:06 UTC and reported zero allocation addresses and zero migrated SOQ. This confirms the mechanism is live, but it does not create an entry: tracked-wallet persistence, holder and bundler safety, spam-filtered social momentum and a fresh executable quote remain unverified.",
       "reasons": [
-        "Official project documentation was updated September 29 and specifies a fixed, non-repeating migration window.",
-        "The published Solana Token-2022 mint is 6NX2MWBuJM2Fn63K4hUgMPivLXHV8pwsU1yTdmjKpump.",
-        "Solscan identifies that mint as SoQuBit, and DEX Screener independently maps it to the pSOQ/SOL PumpSwap pair.",
-        "DEX Screener's accessible page showed meaningful but thin liquidity and increased 24-hour activity; its crawl freshness was insufficient for an entry quote.",
-        "The conversion requires an irreversible burn with an exact memo and can be withheld or excluded, making execution and counterparty/protocol risk unusually high."
+        "The official provisional-list system published hashed runs after the scheduled 12:00 UTC opening.",
+        "The latest accessible run was published at 12:16:17 UTC and covered finalized slots through 12:16:06 UTC.",
+        "That run showed zero allocation addresses and zero total SOQ migrated, so early participation was not yet demonstrated.",
+        "The official one-time 1:1 window still closes October 5 at 12:00 UTC, with SOQ mainnet block 1 planned for October 8.",
+        "No paper entry is permitted without a fresh executable quote plus wallet persistence, concentration/bundler safety and social-quality confirmation."
       ],
       "href": "https://soqucoin.org/migration",
       "missingData": [
@@ -499,10 +499,10 @@
         "two-wallet convergence on pSOQ",
         "current holder concentration, deployer, insider, bundler and wash-trading analysis",
         "X unique-author mention velocity, acceleration and spam filtering",
-        "independent validation of the future SOQ mainnet market, liquidity and custody",
-        "confirmation after 12:00 UTC that the live migration list opened and is updating as described"
+        "independent validation of future SOQ mainnet market, liquidity and custody",
+        "later migration participation and successful credited allocations beyond the zero-allocation 12:16 UTC run"
       ],
-      "risk": "Very high. This is a time-limited token migration, not an entry signal. The burn is irreversible if the memo or destination is wrong; screening and exclusion rules can deny allocation; current liquidity and social/wallet confirmation are incomplete; and SOQ mainnet price discovery is unverified.",
+      "risk": "Very high. The live migration list confirms the process has started, but the latest accessible run showed no credited allocations. Burns are irreversible if the memo or destination is wrong; screening can exclude allocations; current market, wallet and social confirmation is incomplete; and SOQ mainnet liquidity remains unverified.",
       "details": {
         "chain": "Solana (pSOQ) to Soqucoin mainnet (SOQ)",
         "catalystType": "one-time token migration and mainnet launch",
@@ -512,7 +512,9 @@
           "exactMint": "confirmed by official migration notice and independently matched by Solscan and DEX Screener",
           "migrationWindow": "2026-09-29T12:00:00Z to 2026-10-05T12:00:00Z",
           "plannedMainnetBlock1": "2026-10-08",
-          "verificationStatus": "official catalyst and Solana mint verified; market, wallet, holder-risk and social entry gates incomplete"
+          "verificationStatus": "official catalyst, mint and live-list operation verified; market, wallet, holder-risk and social entry gates incomplete",
+          "liveList": "confirmed publishing hashed runs after the 12:00 UTC opening",
+          "latestAccessibleRun": "published 2026-09-29T12:16:17Z; cutoff block time 2026-09-29T12:16:06Z; allocation_count 0; n_migration_total 0"
         },
         "newsSources": [
           {
@@ -535,6 +537,12 @@
             "name": "DEX Screener pSOQ/SOL pair page",
             "url": "https://dexscreener.com/solana/6NX2MWBuJM2Fn63K4hUgMPivLXHV8pwsU1yTdmjKpump",
             "checkedAt": "2026-09-29T10:43:15.735Z"
+          },
+          {
+            "name": "Soqucoin provisional allocation run history",
+            "url": "https://soqucoin.org/migration/list/runs.json",
+            "publishedOrUpdatedAt": "2026-09-29T12:16:17Z",
+            "checkedAt": "2026-09-29T12:27:10.296Z"
           }
         ],
         "marketSnapshot": {
@@ -544,7 +552,9 @@
           "observedMarketCapUsd": 799000,
           "observed24hVolumeUsd": 44000,
           "observed24hChangePct": 36.17,
-          "freshness": "Page accessed during this scan but search crawl indicated five-day-old indexing; values are contextual only and were not used as a reliable entry quote."
+          "freshness": "Page accessed during this scan but search crawl indicated five-day-old indexing; values are contextual only and were not used as a reliable entry quote.",
+          "verificationAt": "2026-09-29T12:27:10.296Z",
+          "currentQuoteStatus": "Unavailable: accessible search results contained conflicting, stale indexed values and were not treated as an executable quote."
         },
         "rejectionReasons": [
           "no verified tracked-wallet persistence or convergence",
@@ -552,8 +562,20 @@
           "no current independent holder, insider, bundler or wash-trading risk report",
           "no spam-filtered unique-author social acceleration",
           "future SOQ mainnet liquidity and price discovery are unverified",
+          "latest accessible official migration run showed zero credited allocations",
           "migration execution is irreversible and subject to screening and exclusion rules"
-        ]
+        ],
+        "firstPublishedAt": "2026-09-29T10:43:15.735Z",
+        "liveListStatus": {
+          "source": "https://soqucoin.org/migration/list/runs.json",
+          "checkedAt": "2026-09-29T12:27:10.296Z",
+          "cutoffSlot": 451639118,
+          "cutoffBlockTime": "2026-09-29T12:16:06Z",
+          "publishedAt": "2026-09-29T12:16:17Z",
+          "outputHash": "9a538906e6466ebd2617d321f71bc94e56056ce213d366773699e28158e00614",
+          "allocationCount": 0,
+          "migrationTotalSOQ": 0
+        }
       }
     },
     {
@@ -804,56 +826,50 @@
       }
     },
     "meme": {
-      "id": "meme-scan-20260929T104057Z",
+      "id": "meme-scan-20260929T122539Z",
       "system": "meme",
-      "startedAt": "2026-09-29T10:40:57.000Z",
-      "checkedAt": "2026-09-29T10:43:15.735Z",
-      "scheduledFor": "2026-09-29T10:00:00.000Z",
-      "nextScheduledAt": "2026-09-29T11:00:00.000Z",
+      "startedAt": "2026-09-29T12:25:39.000Z",
+      "checkedAt": "2026-09-29T12:27:10.296Z",
+      "scheduledFor": "2026-09-29T12:00:00.000Z",
+      "nextScheduledAt": "2026-09-29T13:00:00.000Z",
       "status": "data_limited",
-      "summary": "No open meme paper trades required management. One new research-only catalyst was published for pSOQ/SOQ: official project documentation updated September 29 confirms a one-time 1:1 migration window from September 29 at 12:00 UTC through October 5, with block 1 planned for October 8. The official Solana mint independently matches SoQuBit on Solscan and the pSOQ/SOL PumpSwap pair on DEX Screener. No paper entry was opened because live quote freshness, named tracked-wallet persistence and convergence, current holder/insider/bundler risk, spam-filtered X momentum and future SOQ liquidity were not verified. Current public-figure discovery found no verified new token launch or endorsement by Elon Musk or Donald Trump.",
+      "summary": "No open meme paper trades required management. The existing pSOQ/SOQ research record was materially updated after the one-time migration window opened: the official provisional allocation system is live and published hashed runs, with the latest accessible run at 12:16:17 UTC covering finalized slots through 12:16:06 UTC. It reported zero allocation addresses and zero migrated SOQ. No paper entry was opened because a fresh executable quote, named tracked-wallet persistence/convergence, current holder/insider/bundler safety and spam-filtered X momentum were not verified. Current public-figure and Solana launch discovery produced no separately verified new catalyst.",
       "sources": [
         {
           "name": "Soqucoin Foundation migration notice",
           "url": "https://soqucoin.org/migration",
-          "checkedAt": "2026-09-29T10:43:15.735Z",
+          "checkedAt": "2026-09-29T12:27:10.296Z",
           "status": "checked"
         },
         {
-          "name": "Soqucoin Foundation transparency page",
-          "url": "https://soqucoin.org/transparency",
-          "checkedAt": "2026-09-29T10:43:15.735Z",
+          "name": "Soqucoin provisional allocation run history",
+          "url": "https://soqucoin.org/migration/list/runs.json",
+          "checkedAt": "2026-09-29T12:27:10.296Z",
           "status": "checked"
         },
         {
-          "name": "Solscan SoQuBit token page",
-          "url": "https://solscan.io/token/6NX2MWBuJM2Fn63K4hUgMPivLXHV8pwsU1yTdmjKpump",
-          "checkedAt": "2026-09-29T10:43:15.735Z",
+          "name": "DEX Screener pSOQ/SOL pair and current discovery",
+          "url": "https://dexscreener.com/solana/EM9NyPqcByrz8zBxZUi2LazBTCY2zbVJa49nTXHi3Pq8",
+          "checkedAt": "2026-09-29T12:27:10.296Z",
           "status": "checked"
         },
         {
-          "name": "DEX Screener pSOQ/SOL pair and current discovery feeds",
-          "url": "https://dexscreener.com/solana/6NX2MWBuJM2Fn63K4hUgMPivLXHV8pwsU1yTdmjKpump",
-          "checkedAt": "2026-09-29T10:43:15.735Z",
+          "name": "Current official-launch and public-figure discovery",
+          "url": "https://www.google.com/search?q=September+29+2026+official+meme+coin+launch+Elon+Musk+Donald+Trump+contract",
+          "checkedAt": "2026-09-29T12:27:10.296Z",
           "status": "checked"
         },
         {
           "name": "KOL Explorer tracked-wallet profiles and holdings",
           "url": "https://kolexplorer.com/",
-          "checkedAt": "2026-09-29T10:43:15.735Z",
+          "checkedAt": "2026-09-29T12:27:10.296Z",
           "status": "unavailable"
         },
         {
           "name": "X live unique-author search",
           "url": "https://x.com/search",
-          "checkedAt": "2026-09-29T10:43:15.735Z",
+          "checkedAt": "2026-09-29T12:27:10.296Z",
           "status": "unavailable"
-        },
-        {
-          "name": "Current official-launch and public-figure discovery",
-          "url": "https://www.google.com/search?q=September+29+2026+Solana+meme+coin+official+launch+Elon+Musk+Donald+Trump",
-          "checkedAt": "2026-09-29T10:43:15.735Z",
-          "status": "checked"
         }
       ],
       "missingData": [
@@ -863,7 +879,7 @@
         "current deployer, insider, bundler, holder-concentration and wash-trading analysis",
         "X unique-author mention velocity, acceleration and spam filtering",
         "future SOQ mainnet price, liquidity and custody verification",
-        "post-open confirmation that the migration live list is functioning",
+        "successful credited allocations after the zero-allocation 12:16 UTC official run",
         "complete real-time coverage of all Solana launches, holders, buyers and liquidity venues"
       ],
       "counts": {
@@ -11168,6 +11184,72 @@
       },
       "deliveryDiagnostics": {
         "repair20260928ReportedAt": "2026-09-28T01:51:49.985Z"
+      }
+    },
+    {
+      "id": "meme-scan-20260929T122539Z",
+      "system": "meme",
+      "startedAt": "2026-09-29T12:25:39.000Z",
+      "checkedAt": "2026-09-29T12:27:10.296Z",
+      "scheduledFor": "2026-09-29T12:00:00.000Z",
+      "nextScheduledAt": "2026-09-29T13:00:00.000Z",
+      "status": "data_limited",
+      "summary": "No open meme paper trades required management. The existing pSOQ/SOQ research record was materially updated after the one-time migration window opened: the official provisional allocation system is live and published hashed runs, with the latest accessible run at 12:16:17 UTC covering finalized slots through 12:16:06 UTC. It reported zero allocation addresses and zero migrated SOQ. No paper entry was opened because a fresh executable quote, named tracked-wallet persistence/convergence, current holder/insider/bundler safety and spam-filtered X momentum were not verified. Current public-figure and Solana launch discovery produced no separately verified new catalyst.",
+      "sources": [
+        {
+          "name": "Soqucoin Foundation migration notice",
+          "url": "https://soqucoin.org/migration",
+          "checkedAt": "2026-09-29T12:27:10.296Z",
+          "status": "checked"
+        },
+        {
+          "name": "Soqucoin provisional allocation run history",
+          "url": "https://soqucoin.org/migration/list/runs.json",
+          "checkedAt": "2026-09-29T12:27:10.296Z",
+          "status": "checked"
+        },
+        {
+          "name": "DEX Screener pSOQ/SOL pair and current discovery",
+          "url": "https://dexscreener.com/solana/EM9NyPqcByrz8zBxZUi2LazBTCY2zbVJa49nTXHi3Pq8",
+          "checkedAt": "2026-09-29T12:27:10.296Z",
+          "status": "checked"
+        },
+        {
+          "name": "Current official-launch and public-figure discovery",
+          "url": "https://www.google.com/search?q=September+29+2026+official+meme+coin+launch+Elon+Musk+Donald+Trump+contract",
+          "checkedAt": "2026-09-29T12:27:10.296Z",
+          "status": "checked"
+        },
+        {
+          "name": "KOL Explorer tracked-wallet profiles and holdings",
+          "url": "https://kolexplorer.com/",
+          "checkedAt": "2026-09-29T12:27:10.296Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "X live unique-author search",
+          "url": "https://x.com/search",
+          "checkedAt": "2026-09-29T12:27:10.296Z",
+          "status": "unavailable"
+        }
+      ],
+      "missingData": [
+        "fresh executable pSOQ quote and slippage at completion",
+        "current token-specific holdings and remaining-position percentages for all five named tracked wallets",
+        "verified two-wallet convergence and greater-than-one-hour persistence",
+        "current deployer, insider, bundler, holder-concentration and wash-trading analysis",
+        "X unique-author mention velocity, acceleration and spam filtering",
+        "future SOQ mainnet price, liquidity and custody verification",
+        "successful credited allocations after the zero-allocation 12:16 UTC official run",
+        "complete real-time coverage of all Solana launches, holders, buyers and liquidity venues"
+      ],
+      "counts": {
+        "research": 1,
+        "entries": 0,
+        "exits": 0
+      },
+      "deliveryDiagnostics": {
+        "repair20260928ReportedAt": "2026-09-28T02:04:42.735Z"
       }
     }
   ]
