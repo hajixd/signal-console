@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-29T00:09:22.642Z",
+  "updatedAt": "2026-09-29T00:29:18.531Z",
   "alerts": [
     {
       "id": "options-bb-fy27q2-20260924",
@@ -344,49 +344,43 @@
       }
     },
     "options": {
-      "id": "options-scan-20260928T231435Z",
+      "id": "options-scan-20260929T002818Z",
       "system": "options",
-      "startedAt": "2026-09-28T23:14:35.000Z",
-      "checkedAt": "2026-09-28T23:16:07.908Z",
-      "scheduledFor": "2026-09-28T23:00:00.000Z",
-      "nextScheduledAt": "2026-09-29T00:00:00.000Z",
+      "startedAt": "2026-09-29T00:28:18.000Z",
+      "checkedAt": "2026-09-29T00:29:18.531Z",
+      "scheduledFor": "2026-09-29T00:00:00.000Z",
+      "nextScheduledAt": "2026-09-29T01:00:00.000Z",
       "status": "market_closed",
-      "summary": "No open options paper trades required management. After the U.S. close, BB finished at $8.80 (+7.37%) on 30.51M shares, COST at $922.92 (+0.04%), and QQQ at $736.53 (-1.07%). BB and COST research remained unchanged: the bounded primary-source check found no material new evidence, and Nasdaq exact option chains were unavailable, preventing reliable contract quotes, Greeks, IV, flow, spread and open-interest validation. No new research, entry, mark or exit was published.",
+      "summary": "No open options paper trades required management. After the U.S. close, BB remained at $8.80 (+7.37%) on 30.56M shares, COST at $922.92 (+0.04%), and QQQ at $736.53 (-1.07%). The existing BB and COST research remained unchanged, with no material new issuer evidence. Nasdaq's exact option chains remained unavailable for both symbols, preventing reliable contract quotes, Greeks, IV, flow, spread and open-interest validation. No new research, entry, mark or exit was published.",
       "sources": [
         {
           "name": "Market quotes (BB, COST, QQQ)",
           "url": "https://finance.yahoo.com/",
-          "checkedAt": "2026-09-28T23:16:07.908Z",
+          "checkedAt": "2026-09-29T00:29:18.531Z",
           "status": "checked"
         },
         {
           "name": "BlackBerry Investor Relations",
-          "url": "https://investors.blackberry.com/",
-          "checkedAt": "2026-09-28T23:16:07.908Z",
+          "url": "https://investors.blackberry.com/press-releases",
+          "checkedAt": "2026-09-29T00:29:18.531Z",
           "status": "checked"
         },
         {
-          "name": "BlackBerry SEC filings",
-          "url": "https://www.sec.gov/edgar/browse/?CIK=1070235&owner=exclude",
-          "checkedAt": "2026-09-28T23:16:07.908Z",
-          "status": "checked"
-        },
-        {
-          "name": "Costco SEC filings",
-          "url": "https://www.sec.gov/edgar/browse/?CIK=909832&owner=exclude",
-          "checkedAt": "2026-09-28T23:16:07.908Z",
+          "name": "Costco Investor Relations",
+          "url": "https://investor.costco.com/news/default.aspx",
+          "checkedAt": "2026-09-29T00:29:18.531Z",
           "status": "checked"
         },
         {
           "name": "Nasdaq BB option chain",
           "url": "https://www.nasdaq.com/market-activity/stocks/bb/option-chain",
-          "checkedAt": "2026-09-28T23:16:07.908Z",
+          "checkedAt": "2026-09-29T00:29:18.531Z",
           "status": "unavailable"
         },
         {
           "name": "Nasdaq COST option chain",
           "url": "https://www.nasdaq.com/market-activity/stocks/cost/option-chain",
-          "checkedAt": "2026-09-28T23:16:07.908Z",
+          "checkedAt": "2026-09-29T00:29:18.531Z",
           "status": "unavailable"
         }
       ],
@@ -7080,6 +7074,62 @@
       },
       "deliveryDiagnostics": {
         "repair20260928ReportedAt": "2026-09-28T02:04:42.735Z"
+      }
+    },
+    {
+      "id": "options-scan-20260929T002818Z",
+      "system": "options",
+      "startedAt": "2026-09-29T00:28:18.000Z",
+      "checkedAt": "2026-09-29T00:29:18.531Z",
+      "scheduledFor": "2026-09-29T00:00:00.000Z",
+      "nextScheduledAt": "2026-09-29T01:00:00.000Z",
+      "status": "market_closed",
+      "summary": "No open options paper trades required management. After the U.S. close, BB remained at $8.80 (+7.37%) on 30.56M shares, COST at $922.92 (+0.04%), and QQQ at $736.53 (-1.07%). The existing BB and COST research remained unchanged, with no material new issuer evidence. Nasdaq's exact option chains remained unavailable for both symbols, preventing reliable contract quotes, Greeks, IV, flow, spread and open-interest validation. No new research, entry, mark or exit was published.",
+      "sources": [
+        {
+          "name": "Market quotes (BB, COST, QQQ)",
+          "url": "https://finance.yahoo.com/",
+          "checkedAt": "2026-09-29T00:29:18.531Z",
+          "status": "checked"
+        },
+        {
+          "name": "BlackBerry Investor Relations",
+          "url": "https://investors.blackberry.com/press-releases",
+          "checkedAt": "2026-09-29T00:29:18.531Z",
+          "status": "checked"
+        },
+        {
+          "name": "Costco Investor Relations",
+          "url": "https://investor.costco.com/news/default.aspx",
+          "checkedAt": "2026-09-29T00:29:18.531Z",
+          "status": "checked"
+        },
+        {
+          "name": "Nasdaq BB option chain",
+          "url": "https://www.nasdaq.com/market-activity/stocks/bb/option-chain",
+          "checkedAt": "2026-09-29T00:29:18.531Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "Nasdaq COST option chain",
+          "url": "https://www.nasdaq.com/market-activity/stocks/cost/option-chain",
+          "checkedAt": "2026-09-29T00:29:18.531Z",
+          "status": "unavailable"
+        }
+      ],
+      "missingData": [
+        "Reliable exact BB and COST option contract bid/ask, midpoint, volume and open interest",
+        "Contract Greeks and implied volatility",
+        "Buyer-initiated opening options flow and IV term structure",
+        "A complete current-market candidate screen beyond the bounded BB/COST follow-up"
+      ],
+      "counts": {
+        "research": 0,
+        "entries": 0,
+        "exits": 0
+      },
+      "deliveryDiagnostics": {
+        "repair20260928ReportedAt": "2026-09-28T00:50:48.883Z"
       }
     }
   ]
