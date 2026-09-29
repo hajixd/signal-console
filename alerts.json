@@ -1,33 +1,33 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-29T13:23:50.569Z",
+  "updatedAt": "2026-09-29T13:37:58.202Z",
   "alerts": [
     {
       "id": "options-bb-fy27q2-20260924",
       "eventType": "research",
       "system": "options",
-      "timestamp": "2026-09-28T21:19:52.420Z",
+      "timestamp": "2026-09-29T13:37:58.202Z",
       "asset": "BB",
-      "title": "Research update: BB confirms breakout into the close",
-      "summary": "BlackBerry’s September 24 earnings and raised outlook remain verified. The final available September 28 quote was $8.80 at 21:02:19 UTC, up 7.37%, after trading between $7.87 and $8.98 on 30.09 million shares. BB closed near the session high and showed strong relative strength versus QQQ at -1.07%, confirming that the post-earnings breakout held through the close. No exact qualifying option contract could be validated because Nasdaq’s live BB chain still reported the option chain unavailable.",
+      "title": "Research update: BB reverses below prior close after breakout",
+      "summary": "BlackBerry's September 24 earnings catalyst remains verified, but the follow-through weakened materially after the open. Public showed BB at $8.58, down 2.50% from the prior $8.80 close, reversing part of September 28's breakout. The November 6 chain displayed only delayed ask prices and thin near-the-money open interest: the $8 call ask was $1.38 with OI 4 and the $8.50 call ask was $1.08 with OI 29. Without a reliable live bid, midpoint, delta, complete Greeks, IV term structure, contract volume, executable spread or buyer-initiated opening-flow confirmation, no paper entry qualifies.",
       "reasons": [
-        "The final available September 28 quote was $8.80, up 7.37%, only $0.18 below the $8.98 session high.",
-        "Volume reached 30,092,342 shares and the breakout held into the close after a $7.87 session low.",
-        "BB materially outperformed QQQ, which finished down 1.07%.",
-        "Q2 FY2027 revenue increased 26% year over year to $163.3 million.",
-        "Adjusted EBITDA increased 81% year over year; management raised full-year revenue and adjusted EBITDA outlook."
+        "September 24 earnings and raised outlook remain the primary bullish catalyst",
+        "BB fell below the prior $8.80 breakout close shortly after the open",
+        "visible 38-DTE near-the-money open interest was thin",
+        "the delayed chain omitted a reliable executable bid, midpoint, Greeks, IV and directional opening flow"
       ],
       "href": "https://www.sec.gov/Archives/edgar/data/1070235/000107023526000112/q2fy27ex-991.htm",
       "missingData": [
-        "exact 21-60 DTE contract bid, ask and midpoint",
-        "contract IV, IV rank and term structure",
-        "delta and remaining Greeks",
-        "contract volume, open interest and executable spread",
-        "reliable buyer-initiated opening-flow confirmation"
+        "reliable live bid and midpoint for the November 6 $8.00 and $8.50 calls",
+        "verified delta and remaining Greeks",
+        "current IV rank and term structure",
+        "contract volume and executable spread",
+        "buyer-initiated opening-flow confirmation",
+        "evidence that BB can reclaim and hold the prior $8.80 breakout close"
       ],
-      "risk": "Research only. BB confirmed a strong breakout but is extended after a 7.37% session gain and may retrace or expose buyers to inflated premium. Do not enter without a liquid 21-60 DTE contract, acceptable volatility/reward, directional opening-flow confirmation and a defined underlying invalidation.",
+      "risk": "High. The earnings catalyst is real, but early-session reversal below the breakout close and thin visible option liquidity materially weaken the entry case.",
       "details": {
-        "verificationStatus": "primary catalyst verified; closing breakout and relative strength confirmed; exact-contract eligibility unavailable",
+        "verificationStatus": "primary catalyst verified; breakout follow-through weakened; exact-contract eligibility failed",
         "evidenceSources": [
           {
             "name": "BlackBerry Q2 FY2027 earnings release filed with SEC",
@@ -70,31 +70,47 @@
             "publishedAt": "2026-09-28T21:02:19Z",
             "checkedAt": "2026-09-28T21:19:52.420Z",
             "status": "checked"
+          },
+          {
+            "name": "Public BB regular-session price and November 6 option-chain snapshot",
+            "url": "https://public.com/stocks/bb/options-chain?expiration=2026-11-06",
+            "publishedAt": "2026-09-29T13:36:00Z",
+            "checkedAt": "2026-09-29T13:37:58.202Z",
+            "status": "checked"
           }
         ],
         "rejectionReasons": [
-          "Nasdaq reports the option chain unavailable",
-          "no reliable live exact-contract quote",
-          "no verified current IV, Greeks, open interest, executable spread or buyer-initiated opening flow",
-          "the underlying is extended after a 7.37% session gain"
+          "BB reversed below the prior $8.80 breakout close after the open",
+          "November 6 near-the-money open interest was thin in the visible delayed chain",
+          "no reliable live bid or midpoint",
+          "no verified delta, remaining Greeks, IV term structure, contract volume, executable spread or buyer-initiated opening flow"
         ],
         "marketReaction": {
-          "session": "closing",
-          "price": 8.8,
-          "changePercent": 7.36906,
-          "open": 7.89,
-          "high": 8.98,
-          "low": 7.87,
-          "volume": 30092342,
-          "marketCap": 5165884055,
-          "quoteTimestamp": "2026-09-28T21:02:19Z",
-          "broadMarket": {
-            "asset": "QQQ",
-            "price": 736.53,
-            "changePercent": -1.06783,
-            "quoteTimestamp": "2026-09-28T21:03:44Z"
-          },
-          "status": "breakout held into the close with strong relative strength; exact-contract validation still unavailable"
+          "session": "regular",
+          "price": 8.58,
+          "changePercent": -2.5,
+          "priorClose": 8.8,
+          "quoteTimestamp": "2026-09-29T13:36:00Z",
+          "status": "early reversal materially weakens bullish continuation"
+        },
+        "contractChecks": {
+          "expiration": "2026-11-06",
+          "dte": 38,
+          "candidates": [
+            {
+              "strike": 8,
+              "side": "call",
+              "ask": 1.38,
+              "openInterest": 4
+            },
+            {
+              "strike": 8.5,
+              "side": "call",
+              "ask": 1.08,
+              "openInterest": 29
+            }
+          ],
+          "verificationStatus": "rejected: delayed ask-only data, thin OI and missing executable bid/midpoint, Greeks, IV, volume and flow"
         }
       }
     },
@@ -371,32 +387,29 @@
       "id": "options-smmt-azn-investment-20260928",
       "eventType": "research",
       "system": "options",
-      "timestamp": "2026-09-29T10:09:47.623Z",
+      "timestamp": "2026-09-29T13:37:58.202Z",
       "asset": "SMMT",
-      "title": "Research update: SMMT surges over 22% premarket after AstraZeneca investment",
-      "summary": "AstraZeneca's primary-source announcement confirms a $2 billion strategic equity investment and oncology collaborations around ivonescimab. Reuters reported on September 29 that SMMT surged more than 22% premarket, materially confirming market demand for the catalyst despite flat-to-cautious U.S. index futures, rising oil and elevated Treasury yields. This remains research-only: the listed options market is closed and Nasdaq reports the SMMT option chain unavailable, so no exact 21-60 DTE contract's midpoint, delta, Greeks, IV, spread, volume, open interest or buyer-initiated flow can be verified.",
+      "title": "Research update: SMMT gap fades sharply after the open",
+      "summary": "AstraZeneca's $2 billion strategic investment and oncology collaboration remain verified, but SMMT's initial reaction weakened materially after the open. At 9:33:17 a.m. ET, Investing.com showed $17.55, up 13.37%, after an early $19.07 high—well below the greater-than-22% premarket gain. The October 23 chain displayed delayed ask prices and generally modest open interest but no reliable live bid, midpoint, full Greeks, IV term structure, contract volume, executable spread or directional opening flow. The sharp gap fade and incomplete contract data make this research-only; no paper entry qualifies.",
       "reasons": [
-        "AstraZeneca's September 28 primary-source release confirms a $2 billion equity investment in newly issued Summit securities.",
-        "Following completion, AstraZeneca would hold rights equivalent to approximately 12.0% of Summit's outstanding common stock, or about 10.6% on a fully diluted basis.",
-        "Reuters reported SMMT up more than 22% premarket on September 29, confirming a strong initial market reaction.",
-        "The companies entered a clinical collaboration to evaluate sonesitatug vedotin with ivonescimab and outlined broader combination studies.",
-        "The positive reaction occurred while U.S. stock-index futures were roughly flat and high oil and Treasury yields constrained risk appetite."
+        "AstraZeneca's announced $2 billion investment remains a strong verified catalyst",
+        "SMMT faded from an early $19.07 high to $17.55 by 9:33 a.m. ET",
+        "the gain compressed from more than 22% premarket to 13.37%",
+        "the 24-DTE chain lacked complete executable and flow data"
       ],
       "href": "https://www.astrazeneca.com/media-centre/press-releases/2026/astrazeneca-announces-equity-investment-summit.html",
       "missingData": [
-        "reliable numeric executable premarket SMMT bid, ask and last trade",
-        "exact 21-60 DTE SMMT option contract bid, ask and midpoint",
-        "contract delta and remaining Greeks",
-        "contract implied volatility, IV rank and term structure",
-        "contract volume, open interest and executable spread",
+        "reliable live bid and midpoint for an eligible October 23 call",
+        "verified delta and remaining Greeks",
+        "current IV rank and maturity term structure",
+        "contract volume and executable spread",
         "buyer-initiated opening-flow confirmation",
-        "regular-session continuation and technical invalidation after the premarket gap",
-        "independent confirmation that the $2 billion investment has closed",
-        "updated earnings and binary-event calendar relative to the chosen expiration"
+        "evidence that SMMT can stabilize after the opening gap fade",
+        "confirmation that AstraZeneca's announced investment has closed"
       ],
-      "risk": "Research only, not a paper entry. A greater-than-22% premarket gap creates substantial chase, reversal and IV-crush risk. The investment is expected to close within one week, future conversion of preferred shares is subject to customary regulatory clearances, and SMMT remains exposed to clinical, FDA, commercialization and concentration risks around ivonescimab. Do not enter without post-open structure and a liquid exact contract with favorable volatility/reward.",
+      "risk": "Very high. The catalyst is verified, but the opening gap is fading, event volatility is elevated, and the visible options data are incomplete and illiquid.",
       "details": {
-        "verificationStatus": "primary catalyst verified; greater-than-22% premarket reaction reported; exact-contract eligibility unavailable before the options open",
+        "verificationStatus": "primary catalyst verified; regular-session gap fade confirmed; exact-contract eligibility failed",
         "evidenceSources": [
           {
             "name": "AstraZeneca strategic investment and collaboration announcement",
@@ -439,15 +452,28 @@
             "publishedAt": "2026-09-29T10:09:47.623Z",
             "checkedAt": "2026-09-29T10:09:47.623Z",
             "status": "unavailable"
+          },
+          {
+            "name": "Investing.com SMMT regular-session market snapshot",
+            "url": "https://www.investing.com/equities/summit-therapeutics-plc-options",
+            "publishedAt": "2026-09-29T13:33:17Z",
+            "checkedAt": "2026-09-29T13:37:58.202Z",
+            "status": "checked"
+          },
+          {
+            "name": "Public SMMT October 23 option-chain snapshot",
+            "url": "https://public.com/stocks/smmt/options-chain?expiration=2026-10-23",
+            "publishedAt": "2026-09-29T13:36:00Z",
+            "checkedAt": "2026-09-29T13:37:58.202Z",
+            "status": "checked"
           }
         ],
         "rejectionReasons": [
-          "listed options market closed",
-          "Nasdaq reports the SMMT option chain unavailable",
-          "no reliable exact-contract quote, Greeks, IV, OI, executable spread or opening flow",
-          "greater-than-22% premarket gap creates extension, reversal and volatility risk",
-          "post-catalyst regular-session trend structure is not yet established",
-          "investment closing and future preferred-share conversion remain subject to stated conditions"
+          "opening gap faded materially from the early high",
+          "no reliable live bid or midpoint for the 24-DTE calls",
+          "no verified full Greeks, IV term structure, contract volume, executable spread or buyer-initiated opening flow",
+          "visible open interest was generally modest around relevant strikes",
+          "investment closing remains subject to stated conditions"
         ],
         "catalyst": {
           "investmentAmount": 2000000000,
@@ -462,18 +488,54 @@
           "regularSessionHigh": 19.37,
           "regularSessionLow": 15.19,
           "regularSessionVolume": 6151131,
-          "quoteTimestamp": "2026-09-29T00:15:00Z",
+          "quoteTimestamp": "2026-09-29T13:33:17Z",
           "broadMarket": {
             "asset": "U.S. stock-index futures",
             "status": "roughly flat with rising oil and elevated Treasury yields constraining risk appetite",
             "reportedAt": "2026-09-29T09:57:54Z"
           },
-          "status": "strong premarket catalyst confirmation; exact contract and post-open structure still unavailable",
-          "session": "premarket",
+          "status": "strong catalyst remains, but the opening gap faded sharply and continuation is unconfirmed",
+          "session": "regular",
           "premarketChangePercent": "greater than 22%",
           "premarketPrice": null,
           "reportedAt": "2026-09-29T09:57:54Z",
-          "source": "Reuters"
+          "source": "Reuters",
+          "price": 17.55,
+          "changePercent": 13.37,
+          "high": 19.07,
+          "low": 17.5,
+          "volume": 4573199
+        },
+        "contractChecks": {
+          "expiration": "2026-10-23",
+          "dte": 24,
+          "candidates": [
+            {
+              "strike": 14,
+              "side": "call",
+              "ask": 4.5,
+              "openInterest": 125
+            },
+            {
+              "strike": 15,
+              "side": "call",
+              "ask": 4.5,
+              "openInterest": 75
+            },
+            {
+              "strike": 16,
+              "side": "call",
+              "ask": 3.6,
+              "openInterest": 314
+            },
+            {
+              "strike": 17,
+              "side": "call",
+              "ask": 4,
+              "openInterest": 12
+            }
+          ],
+          "verificationStatus": "rejected: delayed ask-only data, inconsistent pricing and missing executable bid/midpoint, Greeks, IV, volume and flow"
         }
       }
     },
@@ -822,65 +884,64 @@
       }
     },
     "options": {
-      "id": "options-scan-20260929T132217Z",
+      "id": "options-scan-20260929T133524Z",
       "system": "options",
-      "startedAt": "2026-09-29T13:22:17.000Z",
-      "checkedAt": "2026-09-29T13:23:50.569Z",
+      "startedAt": "2026-09-29T13:35:24.000Z",
+      "checkedAt": "2026-09-29T13:37:58.202Z",
       "scheduledFor": "2026-09-29T13:00:00.000Z",
       "nextScheduledAt": "2026-09-29T14:00:00.000Z",
-      "status": "market_closed",
-      "summary": "No open options paper trades required management. SMMT remained roughly 21%-23% above the prior close in fresh premarket reporting after AstraZeneca's $2 billion strategic investment, confirming the already-published catalyst but leaving the underlying substantially gap-extended before the regular session. No newly verified material catalyst change was found for BB or COST, and the structured BB, COST, SMMT and QQQ market displays still reflected prior-session values rather than executable premarket quotes. Nasdaq reported the BB, COST and SMMT option chains unavailable, so no exact 21-60 DTE contract could be verified for bid, ask, midpoint, delta, remaining Greeks, IV, spread, volume, open interest or buyer-initiated opening flow. No research, entry, exit or mark event was added.",
+      "status": "data_limited",
+      "summary": "No open options paper trades required management. Two existing research records were materially updated after the open: BB fell to $8.58, 2.50% below the prior $8.80 breakout close, while SMMT faded from an early $19.07 high to $17.55 (+13.37%), compressing a greater-than-22% premarket gain. COST was roughly flat near $923.18 and did not produce a material thesis change. Public displayed delayed 24-38 DTE asks and open interest, but the relevant pages lacked reliable live bids, midpoints, full Greeks, IV term structures, contract volumes, executable spreads and buyer-initiated opening-flow confirmation; visible BB near-the-money OI was also thin. No entry, exit or mark event was added.",
       "sources": [
         {
-          "name": "Reuters September 29 premarket market and SMMT report",
-          "url": "https://www.reuters.com/business/us-stock-futures-flat-tech-bounce-meets-crude-driven-caution-2026-09-29/",
-          "checkedAt": "2026-09-29T13:23:50.569Z",
-          "status": "checked"
-        },
-        {
-          "name": "Current SMMT premarket quote context",
-          "url": "https://marketchameleon.com/Overview/SMMT/Stock-Price-Action/Pre-Market-VWAP",
-          "checkedAt": "2026-09-29T13:23:50.569Z",
-          "status": "checked"
-        },
-        {
-          "name": "Latest available BB, COST, SMMT and QQQ market data",
+          "name": "Latest BB, COST, SMMT and QQQ market data",
           "url": "https://finance.yahoo.com/",
-          "checkedAt": "2026-09-29T13:23:50.569Z",
+          "checkedAt": "2026-09-29T13:37:58.202Z",
           "status": "checked"
         },
         {
-          "name": "Nasdaq SMMT option chain",
-          "url": "https://www.nasdaq.com/market-activity/stocks/smmt/option-chain",
-          "checkedAt": "2026-09-29T13:23:50.569Z",
-          "status": "unavailable"
+          "name": "Public BB November 6 option chain",
+          "url": "https://public.com/stocks/bb/options-chain?expiration=2026-11-06",
+          "checkedAt": "2026-09-29T13:37:58.202Z",
+          "status": "checked"
         },
         {
-          "name": "Nasdaq BB option chain",
-          "url": "https://www.nasdaq.com/market-activity/stocks/bb/option-chain",
-          "checkedAt": "2026-09-29T13:23:50.569Z",
-          "status": "unavailable"
+          "name": "Public COST October 23 and November 6 option chains",
+          "url": "https://public.com/stocks/cost/options-chain?expiration=2026-10-23",
+          "checkedAt": "2026-09-29T13:37:58.202Z",
+          "status": "checked"
         },
         {
-          "name": "Nasdaq COST option chain",
-          "url": "https://www.nasdaq.com/market-activity/stocks/cost/option-chain",
-          "checkedAt": "2026-09-29T13:23:50.569Z",
+          "name": "Investing.com SMMT regular-session quote",
+          "url": "https://www.investing.com/equities/summit-therapeutics-plc-options",
+          "checkedAt": "2026-09-29T13:37:58.202Z",
+          "status": "checked"
+        },
+        {
+          "name": "Public SMMT October 23 option chain",
+          "url": "https://public.com/stocks/smmt/options-chain?expiration=2026-10-23",
+          "checkedAt": "2026-09-29T13:37:58.202Z",
+          "status": "checked"
+        },
+        {
+          "name": "Reliable complete executable 21-60 DTE option data and opening flow",
+          "url": "https://www.nasdaq.com/market-activity/quotes/option-chain",
+          "checkedAt": "2026-09-29T13:37:58.202Z",
           "status": "unavailable"
         }
       ],
       "missingData": [
-        "reliable executable premarket bid, ask and last trade for BB, COST and SMMT",
-        "exact 21-60 DTE contract bid, ask and midpoint",
-        "contract delta and remaining Greeks",
-        "contract IV, IV rank and term structure",
-        "contract volume, open interest and executable spread",
-        "reliable buyer-initiated opening-flow confirmation",
-        "regular-session continuation and technical invalidation after SMMT's premarket gap",
-        "confirmation that AstraZeneca's announced SMMT investment has closed",
-        "executable listed-options quotes while the market is closed"
+        "reliable live bid and midpoint for eligible BB, COST and SMMT contracts",
+        "complete delta and remaining Greeks",
+        "current IV rank and maturity term structure",
+        "contract volume and executable bid-ask spread",
+        "buyer-initiated opening-flow confirmation",
+        "confirmation that BB can reclaim the prior breakout close",
+        "confirmation that SMMT can stabilize after its opening gap fade",
+        "confirmation that AstraZeneca's announced SMMT investment has closed"
       ],
       "counts": {
-        "research": 0,
+        "research": 2,
         "entries": 0,
         "exits": 0
       },
@@ -11619,6 +11680,72 @@
       ],
       "counts": {
         "research": 0,
+        "entries": 0,
+        "exits": 0
+      },
+      "deliveryDiagnostics": {
+        "repair20260928ReportedAt": "2026-09-28T00:50:48.883Z"
+      }
+    },
+    {
+      "id": "options-scan-20260929T133524Z",
+      "system": "options",
+      "startedAt": "2026-09-29T13:35:24.000Z",
+      "checkedAt": "2026-09-29T13:37:58.202Z",
+      "scheduledFor": "2026-09-29T13:00:00.000Z",
+      "nextScheduledAt": "2026-09-29T14:00:00.000Z",
+      "status": "data_limited",
+      "summary": "No open options paper trades required management. Two existing research records were materially updated after the open: BB fell to $8.58, 2.50% below the prior $8.80 breakout close, while SMMT faded from an early $19.07 high to $17.55 (+13.37%), compressing a greater-than-22% premarket gain. COST was roughly flat near $923.18 and did not produce a material thesis change. Public displayed delayed 24-38 DTE asks and open interest, but the relevant pages lacked reliable live bids, midpoints, full Greeks, IV term structures, contract volumes, executable spreads and buyer-initiated opening-flow confirmation; visible BB near-the-money OI was also thin. No entry, exit or mark event was added.",
+      "sources": [
+        {
+          "name": "Latest BB, COST, SMMT and QQQ market data",
+          "url": "https://finance.yahoo.com/",
+          "checkedAt": "2026-09-29T13:37:58.202Z",
+          "status": "checked"
+        },
+        {
+          "name": "Public BB November 6 option chain",
+          "url": "https://public.com/stocks/bb/options-chain?expiration=2026-11-06",
+          "checkedAt": "2026-09-29T13:37:58.202Z",
+          "status": "checked"
+        },
+        {
+          "name": "Public COST October 23 and November 6 option chains",
+          "url": "https://public.com/stocks/cost/options-chain?expiration=2026-10-23",
+          "checkedAt": "2026-09-29T13:37:58.202Z",
+          "status": "checked"
+        },
+        {
+          "name": "Investing.com SMMT regular-session quote",
+          "url": "https://www.investing.com/equities/summit-therapeutics-plc-options",
+          "checkedAt": "2026-09-29T13:37:58.202Z",
+          "status": "checked"
+        },
+        {
+          "name": "Public SMMT October 23 option chain",
+          "url": "https://public.com/stocks/smmt/options-chain?expiration=2026-10-23",
+          "checkedAt": "2026-09-29T13:37:58.202Z",
+          "status": "checked"
+        },
+        {
+          "name": "Reliable complete executable 21-60 DTE option data and opening flow",
+          "url": "https://www.nasdaq.com/market-activity/quotes/option-chain",
+          "checkedAt": "2026-09-29T13:37:58.202Z",
+          "status": "unavailable"
+        }
+      ],
+      "missingData": [
+        "reliable live bid and midpoint for eligible BB, COST and SMMT contracts",
+        "complete delta and remaining Greeks",
+        "current IV rank and maturity term structure",
+        "contract volume and executable bid-ask spread",
+        "buyer-initiated opening-flow confirmation",
+        "confirmation that BB can reclaim the prior breakout close",
+        "confirmation that SMMT can stabilize after its opening gap fade",
+        "confirmation that AstraZeneca's announced SMMT investment has closed"
+      ],
+      "counts": {
+        "research": 2,
         "entries": 0,
         "exits": 0
       },
