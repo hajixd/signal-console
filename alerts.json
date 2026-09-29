@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-29T12:27:10.296Z",
+  "updatedAt": "2026-09-29T12:32:30.190Z",
   "alerts": [
     {
       "id": "options-bb-fy27q2-20260924",
@@ -826,49 +826,49 @@
       }
     },
     "meme": {
-      "id": "meme-scan-20260929T122539Z",
+      "id": "meme-scan-20260929T123156Z",
       "system": "meme",
-      "startedAt": "2026-09-29T12:25:39.000Z",
-      "checkedAt": "2026-09-29T12:27:10.296Z",
+      "startedAt": "2026-09-29T12:31:56.000Z",
+      "checkedAt": "2026-09-29T12:32:30.190Z",
       "scheduledFor": "2026-09-29T12:00:00.000Z",
       "nextScheduledAt": "2026-09-29T13:00:00.000Z",
       "status": "data_limited",
-      "summary": "No open meme paper trades required management. The existing pSOQ/SOQ research record was materially updated after the one-time migration window opened: the official provisional allocation system is live and published hashed runs, with the latest accessible run at 12:16:17 UTC covering finalized slots through 12:16:06 UTC. It reported zero allocation addresses and zero migrated SOQ. No paper entry was opened because a fresh executable quote, named tracked-wallet persistence/convergence, current holder/insider/bundler safety and spam-filtered X momentum were not verified. Current public-figure and Solana launch discovery produced no separately verified new catalyst.",
+      "summary": "No open meme paper trades required management. The pSOQ/SOQ official run history remained unchanged from the just-completed prior check: the latest accessible run was published at 12:16:17 UTC, covered finalized slots through 12:16:06 UTC, and showed zero allocation addresses and zero migrated SOQ. No new primary-source public-figure launch or endorsement was verified. KOL Explorer and X live search remained unavailable, and no fresh executable pSOQ quote was obtained. No research record changed materially and no entry, exit or mark event was added.",
       "sources": [
         {
           "name": "Soqucoin Foundation migration notice",
           "url": "https://soqucoin.org/migration",
-          "checkedAt": "2026-09-29T12:27:10.296Z",
+          "checkedAt": "2026-09-29T12:32:30.190Z",
           "status": "checked"
         },
         {
           "name": "Soqucoin provisional allocation run history",
           "url": "https://soqucoin.org/migration/list/runs.json",
-          "checkedAt": "2026-09-29T12:27:10.296Z",
-          "status": "checked"
-        },
-        {
-          "name": "DEX Screener pSOQ/SOL pair and current discovery",
-          "url": "https://dexscreener.com/solana/EM9NyPqcByrz8zBxZUi2LazBTCY2zbVJa49nTXHi3Pq8",
-          "checkedAt": "2026-09-29T12:27:10.296Z",
+          "checkedAt": "2026-09-29T12:32:30.190Z",
           "status": "checked"
         },
         {
           "name": "Current official-launch and public-figure discovery",
           "url": "https://www.google.com/search?q=September+29+2026+official+meme+coin+launch+Elon+Musk+Donald+Trump+contract",
-          "checkedAt": "2026-09-29T12:27:10.296Z",
+          "checkedAt": "2026-09-29T12:32:30.190Z",
           "status": "checked"
         },
         {
           "name": "KOL Explorer tracked-wallet profiles and holdings",
           "url": "https://kolexplorer.com/",
-          "checkedAt": "2026-09-29T12:27:10.296Z",
+          "checkedAt": "2026-09-29T12:32:30.190Z",
           "status": "unavailable"
         },
         {
           "name": "X live unique-author search",
           "url": "https://x.com/search",
-          "checkedAt": "2026-09-29T12:27:10.296Z",
+          "checkedAt": "2026-09-29T12:32:30.190Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "Fresh executable pSOQ market data",
+          "url": "https://dexscreener.com/solana/EM9NyPqcByrz8zBxZUi2LazBTCY2zbVJa49nTXHi3Pq8",
+          "checkedAt": "2026-09-29T12:32:30.190Z",
           "status": "unavailable"
         }
       ],
@@ -883,7 +883,7 @@
         "complete real-time coverage of all Solana launches, holders, buyers and liquidity venues"
       ],
       "counts": {
-        "research": 1,
+        "research": 0,
         "entries": 0,
         "exits": 0
       },
@@ -11245,6 +11245,72 @@
       ],
       "counts": {
         "research": 1,
+        "entries": 0,
+        "exits": 0
+      },
+      "deliveryDiagnostics": {
+        "repair20260928ReportedAt": "2026-09-28T02:04:42.735Z"
+      }
+    },
+    {
+      "id": "meme-scan-20260929T123156Z",
+      "system": "meme",
+      "startedAt": "2026-09-29T12:31:56.000Z",
+      "checkedAt": "2026-09-29T12:32:30.190Z",
+      "scheduledFor": "2026-09-29T12:00:00.000Z",
+      "nextScheduledAt": "2026-09-29T13:00:00.000Z",
+      "status": "data_limited",
+      "summary": "No open meme paper trades required management. The pSOQ/SOQ official run history remained unchanged from the just-completed prior check: the latest accessible run was published at 12:16:17 UTC, covered finalized slots through 12:16:06 UTC, and showed zero allocation addresses and zero migrated SOQ. No new primary-source public-figure launch or endorsement was verified. KOL Explorer and X live search remained unavailable, and no fresh executable pSOQ quote was obtained. No research record changed materially and no entry, exit or mark event was added.",
+      "sources": [
+        {
+          "name": "Soqucoin Foundation migration notice",
+          "url": "https://soqucoin.org/migration",
+          "checkedAt": "2026-09-29T12:32:30.190Z",
+          "status": "checked"
+        },
+        {
+          "name": "Soqucoin provisional allocation run history",
+          "url": "https://soqucoin.org/migration/list/runs.json",
+          "checkedAt": "2026-09-29T12:32:30.190Z",
+          "status": "checked"
+        },
+        {
+          "name": "Current official-launch and public-figure discovery",
+          "url": "https://www.google.com/search?q=September+29+2026+official+meme+coin+launch+Elon+Musk+Donald+Trump+contract",
+          "checkedAt": "2026-09-29T12:32:30.190Z",
+          "status": "checked"
+        },
+        {
+          "name": "KOL Explorer tracked-wallet profiles and holdings",
+          "url": "https://kolexplorer.com/",
+          "checkedAt": "2026-09-29T12:32:30.190Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "X live unique-author search",
+          "url": "https://x.com/search",
+          "checkedAt": "2026-09-29T12:32:30.190Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "Fresh executable pSOQ market data",
+          "url": "https://dexscreener.com/solana/EM9NyPqcByrz8zBxZUi2LazBTCY2zbVJa49nTXHi3Pq8",
+          "checkedAt": "2026-09-29T12:32:30.190Z",
+          "status": "unavailable"
+        }
+      ],
+      "missingData": [
+        "fresh executable pSOQ quote and slippage at completion",
+        "current token-specific holdings and remaining-position percentages for all five named tracked wallets",
+        "verified two-wallet convergence and greater-than-one-hour persistence",
+        "current deployer, insider, bundler, holder-concentration and wash-trading analysis",
+        "X unique-author mention velocity, acceleration and spam filtering",
+        "future SOQ mainnet price, liquidity and custody verification",
+        "successful credited allocations after the zero-allocation 12:16 UTC official run",
+        "complete real-time coverage of all Solana launches, holders, buyers and liquidity venues"
+      ],
+      "counts": {
+        "research": 0,
         "entries": 0,
         "exits": 0
       },
