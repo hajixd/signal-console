@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-29T05:32:51.010Z",
+  "updatedAt": "2026-09-29T05:44:02.264Z",
   "alerts": [
     {
       "id": "options-bb-fy27q2-20260924",
@@ -345,43 +345,43 @@
       }
     },
     "options": {
-      "id": "options-scan-20260929T045327Z",
+      "id": "options-scan-20260929T054243Z",
       "system": "options",
-      "startedAt": "2026-09-29T04:53:27.000Z",
-      "checkedAt": "2026-09-29T04:55:04.618Z",
-      "scheduledFor": "2026-09-29T04:00:00.000Z",
-      "nextScheduledAt": "2026-09-29T05:00:00.000Z",
+      "startedAt": "2026-09-29T05:42:43.000Z",
+      "checkedAt": "2026-09-29T05:44:02.264Z",
+      "scheduledFor": "2026-09-29T05:00:00.000Z",
+      "nextScheduledAt": "2026-09-29T06:00:00.000Z",
       "status": "market_closed",
-      "summary": "No open options paper trades required management. The U.S. listed-options market was closed. Fresh post-close data remained BB $8.80 (+7.37%) on 30.56 million shares, COST $922.92 (+0.04%) on 2.44 million shares, and QQQ $736.53 (-1.07%). BB's confirmed post-earnings breakout and COST's relative-strength research were unchanged. Nasdaq again returned empty chains and explicitly reported both BB and COST option chains unavailable, preventing exact-contract quote, Greeks, IV, liquidity and flow validation. Fresh after-hours catalyst discovery surfaced Jefferies' earnings beat only through secondary coverage; JEF's adverse reaction and lack of primary-source confirmation in the bounded check made it a rejected candidate, not research. No research, entry, exit or mark event was added.",
+      "summary": "No open options paper trades required management. The U.S. listed-options market was closed, and post-close prices were unchanged: BB $8.80 (+7.37%), COST $922.92 (+0.04%), QQQ $736.53 (-1.07%) and JEF $47.13 (-1.11%). BB's confirmed post-earnings breakout and COST's relative-strength research remain unchanged. Nasdaq again explicitly reported both BB and COST option chains unavailable, preventing verification of any exact 21-60 DTE contract's midpoint, Greeks, IV, liquidity and opening flow. Fresh catalyst discovery found no new primary-source setup that cleared the multi-day thesis and contract-eligibility gates; Jefferies remained rejected because secondary coverage described an adverse after-hours reaction and the bounded check did not surface primary confirmation. No research, entry, exit or mark event was added.",
       "sources": [
         {
           "name": "BB, COST, QQQ and JEF post-close market data",
           "url": "https://finance.yahoo.com/",
-          "checkedAt": "2026-09-29T04:55:04.618Z",
+          "checkedAt": "2026-09-29T05:44:02.264Z",
           "status": "checked"
         },
         {
           "name": "Nasdaq BB option chain",
           "url": "https://www.nasdaq.com/market-activity/stocks/bb/option-chain",
-          "checkedAt": "2026-09-29T04:55:04.618Z",
+          "checkedAt": "2026-09-29T05:44:02.264Z",
           "status": "unavailable"
         },
         {
           "name": "Nasdaq COST option chain",
           "url": "https://www.nasdaq.com/market-activity/stocks/cost/option-chain",
-          "checkedAt": "2026-09-29T04:55:04.618Z",
+          "checkedAt": "2026-09-29T05:44:02.264Z",
           "status": "unavailable"
         },
         {
           "name": "BlackBerry and Costco investor-relations news pages",
           "url": "https://investors.blackberry.com/press-releases",
-          "checkedAt": "2026-09-29T04:55:04.618Z",
+          "checkedAt": "2026-09-29T05:44:02.264Z",
           "status": "checked"
         },
         {
           "name": "Current after-hours U.S. primary-catalyst discovery",
-          "url": "https://www.google.com/search?q=September+28+2026+after-hours+earnings+guidance+official+company+release",
-          "checkedAt": "2026-09-29T04:55:04.618Z",
+          "url": "https://www.google.com/search?q=September+28+2026+after+hours+official+company+earnings+guidance+stock+catalyst+U.S.",
+          "checkedAt": "2026-09-29T05:44:02.264Z",
           "status": "checked"
         }
       ],
@@ -8808,6 +8808,66 @@
       },
       "deliveryDiagnostics": {
         "repair20260928ReportedAt": "2026-09-28T01:51:49.985Z"
+      }
+    },
+    {
+      "id": "options-scan-20260929T054243Z",
+      "system": "options",
+      "startedAt": "2026-09-29T05:42:43.000Z",
+      "checkedAt": "2026-09-29T05:44:02.264Z",
+      "scheduledFor": "2026-09-29T05:00:00.000Z",
+      "nextScheduledAt": "2026-09-29T06:00:00.000Z",
+      "status": "market_closed",
+      "summary": "No open options paper trades required management. The U.S. listed-options market was closed, and post-close prices were unchanged: BB $8.80 (+7.37%), COST $922.92 (+0.04%), QQQ $736.53 (-1.07%) and JEF $47.13 (-1.11%). BB's confirmed post-earnings breakout and COST's relative-strength research remain unchanged. Nasdaq again explicitly reported both BB and COST option chains unavailable, preventing verification of any exact 21-60 DTE contract's midpoint, Greeks, IV, liquidity and opening flow. Fresh catalyst discovery found no new primary-source setup that cleared the multi-day thesis and contract-eligibility gates; Jefferies remained rejected because secondary coverage described an adverse after-hours reaction and the bounded check did not surface primary confirmation. No research, entry, exit or mark event was added.",
+      "sources": [
+        {
+          "name": "BB, COST, QQQ and JEF post-close market data",
+          "url": "https://finance.yahoo.com/",
+          "checkedAt": "2026-09-29T05:44:02.264Z",
+          "status": "checked"
+        },
+        {
+          "name": "Nasdaq BB option chain",
+          "url": "https://www.nasdaq.com/market-activity/stocks/bb/option-chain",
+          "checkedAt": "2026-09-29T05:44:02.264Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "Nasdaq COST option chain",
+          "url": "https://www.nasdaq.com/market-activity/stocks/cost/option-chain",
+          "checkedAt": "2026-09-29T05:44:02.264Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "BlackBerry and Costco investor-relations news pages",
+          "url": "https://investors.blackberry.com/press-releases",
+          "checkedAt": "2026-09-29T05:44:02.264Z",
+          "status": "checked"
+        },
+        {
+          "name": "Current after-hours U.S. primary-catalyst discovery",
+          "url": "https://www.google.com/search?q=September+28+2026+after+hours+official+company+earnings+guidance+stock+catalyst+U.S.",
+          "checkedAt": "2026-09-29T05:44:02.264Z",
+          "status": "checked"
+        }
+      ],
+      "missingData": [
+        "Reliable exact BB and COST 21-60 DTE contract bid, ask and midpoint",
+        "Contract delta and remaining Greeks",
+        "Contract implied volatility, IV rank and term structure",
+        "Contract volume, open interest and executable spread",
+        "Buyer-initiated opening-flow confirmation",
+        "Primary-source confirmation for the newly surfaced Jefferies after-hours earnings story",
+        "Complete current-market candidate coverage beyond the bounded BB/COST follow-up and after-hours catalyst check",
+        "Executable overnight options quotes while the listed options market is closed"
+      ],
+      "counts": {
+        "research": 0,
+        "entries": 0,
+        "exits": 0
+      },
+      "deliveryDiagnostics": {
+        "repair20260928ReportedAt": "2026-09-28T00:50:48.883Z"
       }
     }
   ]
