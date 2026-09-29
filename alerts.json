@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-29T07:28:32.957Z",
+  "updatedAt": "2026-09-29T07:32:59.437Z",
   "alerts": [
     {
       "id": "options-bb-fy27q2-20260924",
@@ -519,58 +519,52 @@
       }
     },
     "options": {
-      "id": "options-scan-20260929T064818Z",
+      "id": "options-scan-20260929T073121Z",
       "system": "options",
-      "startedAt": "2026-09-29T06:48:18.000Z",
-      "checkedAt": "2026-09-29T06:49:35.767Z",
-      "scheduledFor": "2026-09-29T06:00:00.000Z",
-      "nextScheduledAt": "2026-09-29T07:00:00.000Z",
+      "startedAt": "2026-09-29T07:31:21.000Z",
+      "checkedAt": "2026-09-29T07:32:59.437Z",
+      "scheduledFor": "2026-09-29T07:00:00.000Z",
+      "nextScheduledAt": "2026-09-29T08:00:00.000Z",
       "status": "market_closed",
-      "summary": "No open options paper trades required management. The listed options market was closed. A fresh primary-source check identified AstraZeneca's September 28 announcement of a $2 billion strategic equity investment in Summit Therapeutics plus oncology clinical collaborations around ivonescimab. SMMT was added as research, not an entry, because Nasdaq reported its option chain unavailable and no exact 21-60 DTE contract quote, Greeks, IV, spread, volume, open interest or buyer-initiated opening flow could be verified. BB's confirmed post-earnings breakout and COST's relative-strength research remained unchanged at their final regular-session prices. No entry, exit or mark event was added.",
+      "summary": "No open options paper trades required management. U.S. listed options were closed. SMMT's AstraZeneca investment catalyst remains primary-source verified, but the stock finished at $15.48 after an intraday range of $15.19-$19.37 and no usable exact-contract chain was available; BB closed at $8.80, COST at $922.92 and QQQ at $736.53. A bounded after-hours catalyst check found no new primary-source development that changed the existing SMMT, BB or COST research thesis. No entry, exit, mark or materially new research event was added.",
       "sources": [
         {
-          "name": "AstraZeneca SMMT investment announcement",
-          "url": "https://www.astrazeneca.com/media-centre/press-releases/2026/astrazeneca-announces-equity-investment-summit.html",
-          "checkedAt": "2026-09-29T06:49:35.767Z",
+          "name": "AstraZeneca / Summit Therapeutics strategic investment announcement",
+          "url": "https://www.astrazeneca.com/media-centre/press-releases/2026/astrazeneca-to-make-strategic-investment-in-summit-therapeutics.html",
+          "checkedAt": "2026-09-29T07:32:59.437Z",
           "status": "checked"
         },
         {
-          "name": "Summit Therapeutics investment announcement",
-          "url": "https://smmttx.com/news/press-releases/news-details/2026/AstraZeneca-Makes-2-Billion-Strategic-Equity-Investment-in-Summit-Therapeutics/",
-          "checkedAt": "2026-09-29T06:49:35.767Z",
-          "status": "checked"
-        },
-        {
-          "name": "SMMT, BB, COST and QQQ post-close market data",
-          "url": "https://finance.yahoo.com/",
-          "checkedAt": "2026-09-29T06:49:35.767Z",
+          "name": "Post-close market data for SMMT, BB, COST and QQQ",
+          "url": "https://www.nasdaq.com/market-activity/stocks/smmt",
+          "checkedAt": "2026-09-29T07:32:59.437Z",
           "status": "checked"
         },
         {
           "name": "Nasdaq SMMT option chain",
           "url": "https://www.nasdaq.com/market-activity/stocks/smmt/option-chain",
-          "checkedAt": "2026-09-29T06:49:35.767Z",
+          "checkedAt": "2026-09-29T07:32:59.437Z",
           "status": "unavailable"
         },
         {
-          "name": "Current after-hours U.S. primary-catalyst discovery",
-          "url": "https://www.google.com/search?q=September+28+2026+after+hours+official+company+earnings+guidance+investment+partnership",
-          "checkedAt": "2026-09-29T06:49:35.767Z",
+          "name": "Current after-hours catalyst discovery",
+          "url": "https://www.sec.gov/edgar/search/",
+          "checkedAt": "2026-09-29T07:32:59.437Z",
           "status": "checked"
         }
       ],
       "missingData": [
-        "reliable exact SMMT, BB and COST 21-60 DTE contract bid, ask and midpoint",
-        "contract delta and remaining Greeks",
-        "contract implied volatility, IV rank and term structure",
+        "exact 21-60 DTE contract bid, ask and midpoint for SMMT, BB and COST",
+        "current contract Greeks",
+        "IV rank and term structure",
         "contract volume, open interest and executable spread",
-        "buyer-initiated opening-flow confirmation",
-        "fresh regular-session SMMT structure after the AstraZeneca catalyst",
-        "confirmation that the $2 billion investment has closed",
-        "executable overnight options quotes while the listed options market is closed"
+        "reliable buyer-initiated opening-flow confirmation",
+        "regular-session SMMT structure after the new catalyst",
+        "confirmation that AstraZeneca's $2 billion SMMT investment has closed",
+        "executable overnight options quotes while the listed market is closed"
       ],
       "counts": {
-        "research": 1,
+        "research": 0,
         "entries": 0,
         "exits": 0
       },
@@ -9435,6 +9429,60 @@
       },
       "deliveryDiagnostics": {
         "repair20260928ReportedAt": "2026-09-28T02:04:42.735Z"
+      }
+    },
+    {
+      "id": "options-scan-20260929T073121Z",
+      "system": "options",
+      "startedAt": "2026-09-29T07:31:21.000Z",
+      "checkedAt": "2026-09-29T07:32:59.437Z",
+      "scheduledFor": "2026-09-29T07:00:00.000Z",
+      "nextScheduledAt": "2026-09-29T08:00:00.000Z",
+      "status": "market_closed",
+      "summary": "No open options paper trades required management. U.S. listed options were closed. SMMT's AstraZeneca investment catalyst remains primary-source verified, but the stock finished at $15.48 after an intraday range of $15.19-$19.37 and no usable exact-contract chain was available; BB closed at $8.80, COST at $922.92 and QQQ at $736.53. A bounded after-hours catalyst check found no new primary-source development that changed the existing SMMT, BB or COST research thesis. No entry, exit, mark or materially new research event was added.",
+      "sources": [
+        {
+          "name": "AstraZeneca / Summit Therapeutics strategic investment announcement",
+          "url": "https://www.astrazeneca.com/media-centre/press-releases/2026/astrazeneca-to-make-strategic-investment-in-summit-therapeutics.html",
+          "checkedAt": "2026-09-29T07:32:59.437Z",
+          "status": "checked"
+        },
+        {
+          "name": "Post-close market data for SMMT, BB, COST and QQQ",
+          "url": "https://www.nasdaq.com/market-activity/stocks/smmt",
+          "checkedAt": "2026-09-29T07:32:59.437Z",
+          "status": "checked"
+        },
+        {
+          "name": "Nasdaq SMMT option chain",
+          "url": "https://www.nasdaq.com/market-activity/stocks/smmt/option-chain",
+          "checkedAt": "2026-09-29T07:32:59.437Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "Current after-hours catalyst discovery",
+          "url": "https://www.sec.gov/edgar/search/",
+          "checkedAt": "2026-09-29T07:32:59.437Z",
+          "status": "checked"
+        }
+      ],
+      "missingData": [
+        "exact 21-60 DTE contract bid, ask and midpoint for SMMT, BB and COST",
+        "current contract Greeks",
+        "IV rank and term structure",
+        "contract volume, open interest and executable spread",
+        "reliable buyer-initiated opening-flow confirmation",
+        "regular-session SMMT structure after the new catalyst",
+        "confirmation that AstraZeneca's $2 billion SMMT investment has closed",
+        "executable overnight options quotes while the listed market is closed"
+      ],
+      "counts": {
+        "research": 0,
+        "entries": 0,
+        "exits": 0
+      },
+      "deliveryDiagnostics": {
+        "repair20260928ReportedAt": "2026-09-28T00:50:48.883Z"
       }
     }
   ]
