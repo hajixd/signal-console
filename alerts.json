@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-29T09:53:35.815Z",
+  "updatedAt": "2026-09-29T10:09:47.623Z",
   "alerts": [
     {
       "id": "options-bb-fy27q2-20260924",
@@ -371,31 +371,32 @@
       "id": "options-smmt-azn-investment-20260928",
       "eventType": "research",
       "system": "options",
-      "timestamp": "2026-09-29T06:49:35.767Z",
+      "timestamp": "2026-09-29T10:09:47.623Z",
       "asset": "SMMT",
-      "title": "Research: SMMT gains $2B AstraZeneca investment and oncology collaboration",
-      "summary": "AstraZeneca and Summit Therapeutics announced a $2 billion strategic equity investment plus clinical collaborations around ivonescimab. AstraZeneca said the investment would provide rights equivalent to approximately 12.0% of Summit's outstanding common stock and that closing is expected within one week. The catalyst is material, but no options paper entry was opened: the listed market was closed and Nasdaq reported the SMMT option chain unavailable, preventing verification of an exact 21-60 DTE contract's midpoint, delta, Greeks, IV, spread, volume, open interest and directional opening flow.",
+      "title": "Research update: SMMT surges over 22% premarket after AstraZeneca investment",
+      "summary": "AstraZeneca's primary-source announcement confirms a $2 billion strategic equity investment and oncology collaborations around ivonescimab. Reuters reported on September 29 that SMMT surged more than 22% premarket, materially confirming market demand for the catalyst despite flat-to-cautious U.S. index futures, rising oil and elevated Treasury yields. This remains research-only: the listed options market is closed and Nasdaq reports the SMMT option chain unavailable, so no exact 21-60 DTE contract's midpoint, delta, Greeks, IV, spread, volume, open interest or buyer-initiated flow can be verified.",
       "reasons": [
         "AstraZeneca's September 28 primary-source release confirms a $2 billion equity investment in newly issued Summit securities.",
         "Following completion, AstraZeneca would hold rights equivalent to approximately 12.0% of Summit's outstanding common stock, or about 10.6% on a fully diluted basis.",
-        "The companies also entered a clinical collaboration to evaluate sonesitatug vedotin with ivonescimab and outlined broader combination studies.",
-        "Ivonescimab's U.S. biologics license application for EGFR-mutated non-small cell lung cancer remains under FDA review.",
-        "Secondary market reporting indicated a material after-hours reaction, but the exact options contract and executable premium could not be verified."
+        "Reuters reported SMMT up more than 22% premarket on September 29, confirming a strong initial market reaction.",
+        "The companies entered a clinical collaboration to evaluate sonesitatug vedotin with ivonescimab and outlined broader combination studies.",
+        "The positive reaction occurred while U.S. stock-index futures were roughly flat and high oil and Treasury yields constrained risk appetite."
       ],
       "href": "https://www.astrazeneca.com/media-centre/press-releases/2026/astrazeneca-announces-equity-investment-summit.html",
       "missingData": [
+        "reliable numeric executable premarket SMMT bid, ask and last trade",
         "exact 21-60 DTE SMMT option contract bid, ask and midpoint",
         "contract delta and remaining Greeks",
         "contract implied volatility, IV rank and term structure",
         "contract volume, open interest and executable spread",
         "buyer-initiated opening-flow confirmation",
-        "fresh regular-session price structure after the after-hours catalyst",
+        "regular-session continuation and technical invalidation after the premarket gap",
         "independent confirmation that the $2 billion investment has closed",
         "updated earnings and binary-event calendar relative to the chosen expiration"
       ],
-      "risk": "Research only, not a paper entry. The investment is expected to close within one week and future conversion of preferred shares is subject to customary regulatory clearances. SMMT may gap materially when regular trading resumes; option IV and spreads may be unfavorable, and the company remains exposed to clinical, FDA, commercialization and concentration risks around ivonescimab.",
+      "risk": "Research only, not a paper entry. A greater-than-22% premarket gap creates substantial chase, reversal and IV-crush risk. The investment is expected to close within one week, future conversion of preferred shares is subject to customary regulatory clearances, and SMMT remains exposed to clinical, FDA, commercialization and concentration risks around ivonescimab. Do not enter without post-open structure and a liquid exact contract with favorable volatility/reward.",
       "details": {
-        "verificationStatus": "primary catalyst verified; exact-contract eligibility unavailable while listed options market is closed",
+        "verificationStatus": "primary catalyst verified; greater-than-22% premarket reaction reported; exact-contract eligibility unavailable before the options open",
         "evidenceSources": [
           {
             "name": "AstraZeneca strategic investment and collaboration announcement",
@@ -424,12 +425,27 @@
             "publishedAt": "2026-09-29T00:15:00Z",
             "checkedAt": "2026-09-29T06:49:35.767Z",
             "status": "checked"
+          },
+          {
+            "name": "Reuters September 29 premarket reaction",
+            "url": "https://www.reuters.com/business/us-stock-futures-flat-tech-bounce-meets-crude-driven-caution-2026-09-29/",
+            "publishedAt": "2026-09-29T09:57:54Z",
+            "checkedAt": "2026-09-29T10:09:47.623Z",
+            "status": "checked"
+          },
+          {
+            "name": "Fresh Nasdaq SMMT option-chain check",
+            "url": "https://www.nasdaq.com/market-activity/stocks/smmt/option-chain",
+            "publishedAt": "2026-09-29T10:09:47.623Z",
+            "checkedAt": "2026-09-29T10:09:47.623Z",
+            "status": "unavailable"
           }
         ],
         "rejectionReasons": [
           "listed options market closed",
-          "Nasdaq reported the SMMT option chain unavailable",
+          "Nasdaq reports the SMMT option chain unavailable",
           "no reliable exact-contract quote, Greeks, IV, OI, executable spread or opening flow",
+          "greater-than-22% premarket gap creates extension, reversal and volatility risk",
           "post-catalyst regular-session trend structure is not yet established",
           "investment closing and future preferred-share conversion remain subject to stated conditions"
         ],
@@ -448,12 +464,16 @@
           "regularSessionVolume": 6151131,
           "quoteTimestamp": "2026-09-29T00:15:00Z",
           "broadMarket": {
-            "asset": "QQQ",
-            "price": 736.53,
-            "changePercent": -1.06783,
-            "quoteTimestamp": "2026-09-29T00:15:00Z"
+            "asset": "U.S. stock-index futures",
+            "status": "roughly flat with rising oil and elevated Treasury yields constraining risk appetite",
+            "reportedAt": "2026-09-29T09:57:54Z"
           },
-          "status": "primary catalyst arrived after the regular session; next-session confirmation required"
+          "status": "strong premarket catalyst confirmation; exact contract and post-open structure still unavailable",
+          "session": "premarket",
+          "premarketChangePercent": "greater than 22%",
+          "premarketPrice": null,
+          "reportedAt": "2026-09-29T09:57:54Z",
+          "source": "Reuters"
         }
       }
     }
@@ -525,64 +545,59 @@
       }
     },
     "options": {
-      "id": "options-scan-20260929T091221Z",
+      "id": "options-scan-20260929T100749Z",
       "system": "options",
-      "startedAt": "2026-09-29T09:12:21.000Z",
-      "checkedAt": "2026-09-29T09:14:35.026Z",
-      "scheduledFor": "2026-09-29T09:00:00.000Z",
-      "nextScheduledAt": "2026-09-29T10:00:00.000Z",
+      "startedAt": "2026-09-29T10:07:49.000Z",
+      "checkedAt": "2026-09-29T10:09:47.623Z",
+      "scheduledFor": "2026-09-29T10:00:00.000Z",
+      "nextScheduledAt": "2026-09-29T11:00:00.000Z",
       "status": "market_closed",
-      "summary": "No new options event. There are no open options paper trades to mark or exit. The latest available BB ($8.80), COST ($922.92), SMMT ($15.48) and QQQ ($736.53) prints were unchanged after the September 28 close and were not treated as fresh premarket structure. BlackBerry and Costco primary earnings evidence remains verified, while the existing SMMT research has no newly verified material development. Nasdaq's SMMT option-chain page reported that the chain is unavailable. A bounded current-catalyst scan found no new primary-source setup that could pass the exact-contract, liquidity, volatility and directional-flow gates before listed options reopen. No research, entry or exit record was added.",
+      "summary": "No open options paper trades required management. One existing research record was materially updated: Reuters reported SMMT up more than 22% premarket after AstraZeneca's $2 billion investment and oncology collaboration, confirming strong catalyst demand while U.S. index futures were roughly flat and oil and Treasury yields remained elevated. BB and COST showed no newly verified material catalyst change. No entry was opened because listed options were still closed and Nasdaq reported the SMMT chain unavailable, preventing verification of a 21-60 DTE contract's price, Greeks, IV, spread, volume, open interest and directional opening flow. No entry, exit or mark event was added.",
       "sources": [
         {
-          "name": "BlackBerry Q2 FY2027 earnings release filed with SEC",
-          "url": "https://www.sec.gov/Archives/edgar/data/1070235/000107023526000112/q2fy27ex-991.htm",
-          "checkedAt": "2026-09-29T09:14:35.026Z",
+          "name": "AstraZeneca SMMT investment release",
+          "url": "https://www.astrazeneca.com/media-centre/press-releases/2026/astrazeneca-announces-equity-investment-summit.html",
+          "checkedAt": "2026-09-29T10:09:47.623Z",
           "status": "checked"
         },
         {
-          "name": "Costco Q4 and FY2026 earnings release",
-          "url": "https://investor.costco.com/news/news-details/2026/Costco-Wholesale-Corporation-Reports-Fourth-Quarter-and-Fiscal-Year-2026-Operating-Results/default.aspx",
-          "checkedAt": "2026-09-29T09:14:35.026Z",
+          "name": "Reuters September 29 premarket market and SMMT report",
+          "url": "https://www.reuters.com/business/us-stock-futures-flat-tech-bounce-meets-crude-driven-caution-2026-09-29/",
+          "checkedAt": "2026-09-29T10:09:47.623Z",
           "status": "checked"
         },
         {
           "name": "Latest available BB, COST, SMMT and QQQ market data",
           "url": "https://finance.yahoo.com/",
-          "checkedAt": "2026-09-29T09:14:35.026Z",
+          "checkedAt": "2026-09-29T10:09:47.623Z",
           "status": "checked"
         },
         {
           "name": "Nasdaq SMMT option chain",
           "url": "https://www.nasdaq.com/market-activity/stocks/smmt/option-chain",
-          "checkedAt": "2026-09-29T09:14:35.026Z",
+          "checkedAt": "2026-09-29T10:09:47.623Z",
           "status": "unavailable"
         },
         {
-          "name": "Current catalyst and market-regime discovery",
-          "url": "https://www.sec.gov/edgar/search/",
-          "checkedAt": "2026-09-29T09:14:35.026Z",
-          "status": "checked"
-        },
-        {
-          "name": "AstraZeneca SMMT investment release",
-          "url": "https://www.astrazeneca.com/media-centre/press-releases/2026/astrazeneca-makes-strategic-investment-in-summit-therapeutics.html",
-          "checkedAt": "2026-09-29T09:14:35.026Z",
+          "name": "Summit Therapeutics investment release",
+          "url": "https://smmttx.com/news/press-releases/news-details/2026/AstraZeneca-Makes-2-Billion-Strategic-Equity-Investment-in-Summit-Therapeutics/",
+          "checkedAt": "2026-09-29T10:09:47.623Z",
           "status": "unavailable"
         }
       ],
       "missingData": [
-        "fresh executable premarket underlying prints and trend structure",
+        "reliable numeric executable premarket SMMT bid, ask and last trade",
         "exact 21-60 DTE contract bid, ask and midpoint",
         "contract delta and remaining Greeks",
         "contract IV, IV rank and term structure",
         "contract volume, open interest and executable spread",
         "reliable buyer-initiated opening-flow confirmation",
+        "regular-session continuation and technical invalidation after the premarket gap",
         "confirmation that AstraZeneca's announced SMMT investment has closed",
         "executable listed-options quotes while the market is closed"
       ],
       "counts": {
-        "research": 0,
+        "research": 1,
         "entries": 0,
         "exits": 0
       },
@@ -10204,6 +10219,67 @@
       },
       "deliveryDiagnostics": {
         "repair20260928ReportedAt": "2026-09-28T02:04:42.735Z"
+      }
+    },
+    {
+      "id": "options-scan-20260929T100749Z",
+      "system": "options",
+      "startedAt": "2026-09-29T10:07:49.000Z",
+      "checkedAt": "2026-09-29T10:09:47.623Z",
+      "scheduledFor": "2026-09-29T10:00:00.000Z",
+      "nextScheduledAt": "2026-09-29T11:00:00.000Z",
+      "status": "market_closed",
+      "summary": "No open options paper trades required management. One existing research record was materially updated: Reuters reported SMMT up more than 22% premarket after AstraZeneca's $2 billion investment and oncology collaboration, confirming strong catalyst demand while U.S. index futures were roughly flat and oil and Treasury yields remained elevated. BB and COST showed no newly verified material catalyst change. No entry was opened because listed options were still closed and Nasdaq reported the SMMT chain unavailable, preventing verification of a 21-60 DTE contract's price, Greeks, IV, spread, volume, open interest and directional opening flow. No entry, exit or mark event was added.",
+      "sources": [
+        {
+          "name": "AstraZeneca SMMT investment release",
+          "url": "https://www.astrazeneca.com/media-centre/press-releases/2026/astrazeneca-announces-equity-investment-summit.html",
+          "checkedAt": "2026-09-29T10:09:47.623Z",
+          "status": "checked"
+        },
+        {
+          "name": "Reuters September 29 premarket market and SMMT report",
+          "url": "https://www.reuters.com/business/us-stock-futures-flat-tech-bounce-meets-crude-driven-caution-2026-09-29/",
+          "checkedAt": "2026-09-29T10:09:47.623Z",
+          "status": "checked"
+        },
+        {
+          "name": "Latest available BB, COST, SMMT and QQQ market data",
+          "url": "https://finance.yahoo.com/",
+          "checkedAt": "2026-09-29T10:09:47.623Z",
+          "status": "checked"
+        },
+        {
+          "name": "Nasdaq SMMT option chain",
+          "url": "https://www.nasdaq.com/market-activity/stocks/smmt/option-chain",
+          "checkedAt": "2026-09-29T10:09:47.623Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "Summit Therapeutics investment release",
+          "url": "https://smmttx.com/news/press-releases/news-details/2026/AstraZeneca-Makes-2-Billion-Strategic-Equity-Investment-in-Summit-Therapeutics/",
+          "checkedAt": "2026-09-29T10:09:47.623Z",
+          "status": "unavailable"
+        }
+      ],
+      "missingData": [
+        "reliable numeric executable premarket SMMT bid, ask and last trade",
+        "exact 21-60 DTE contract bid, ask and midpoint",
+        "contract delta and remaining Greeks",
+        "contract IV, IV rank and term structure",
+        "contract volume, open interest and executable spread",
+        "reliable buyer-initiated opening-flow confirmation",
+        "regular-session continuation and technical invalidation after the premarket gap",
+        "confirmation that AstraZeneca's announced SMMT investment has closed",
+        "executable listed-options quotes while the market is closed"
+      ],
+      "counts": {
+        "research": 1,
+        "entries": 0,
+        "exits": 0
+      },
+      "deliveryDiagnostics": {
+        "repair20260928ReportedAt": "2026-09-28T00:50:48.883Z"
       }
     }
   ]
