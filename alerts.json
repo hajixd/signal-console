@@ -955,103 +955,103 @@
       }
     },
     "futures": {
-      "id": "futures-scan-20260929122015446",
+      "id": "futures-scan-20260929131755467",
       "system": "futures",
-      "startedAt": "2026-09-29T12:20:15.446Z",
-      "checkedAt": "2026-09-29T12:20:58.619Z",
-      "scheduledFor": "2026-09-29T12:00:00.000Z",
-      "nextScheduledAt": "2026-09-29T13:00:00.000Z",
+      "startedAt": "2026-09-29T13:17:55.467Z",
+      "checkedAt": "2026-09-29T13:18:42.630Z",
+      "scheduledFor": "2026-09-29T13:00:00.000Z",
+      "nextScheduledAt": "2026-09-29T14:00:00.000Z",
       "status": "data_limited",
-      "summary": "No new futures entry or material research event. There are no open futures paper positions. Exact-contract public snapshots remained delayed or stale: MNQZ26 30,585.75 at 5:19:59 a.m. EDT, MESZ26 7,742.75 at 5:19:59 a.m., and MGCZ26 4,189.00 at 7:50 a.m. versus 4,168.40 settlement, after a 4,145.00–4,193.30 range. Gold's delayed rebound near the session high materially contradicts immediate bearish continuation, but delayed data cannot verify a live reversal or executable trigger. MCLX26 remained unavailable and EIA access was temporarily unavailable. Live spreads, current structure, margin, roll clearance and risk-qualified triggers remain unresolved.",
+      "summary": "No new futures entry or material research event. There are no open futures paper positions. Exact-contract public snapshots remained delayed or stale: MNQZ26 30,637.25 at 8:05:26 a.m. EDT, MESZ26 7,764.00 at 7:10:20 a.m., and MGCZ26 4,185.80 at 9:04 a.m. versus 4,168.40 settlement, after a 4,145.00–4,193.30 range. Gold remained above settlement but below its delayed session high, contradicting immediate bearish continuation without verifying a live reversal or executable trigger. MCLX26 remained unavailable. Live spreads, current structure, margin, roll clearance and risk-qualified triggers remain unresolved.",
       "sources": [
         {
           "name": "CME Micro E-mini Nasdaq-100 futures",
           "url": "https://www.cmegroup.com/markets/equities/nasdaq/micro-e-mini-nasdaq-100.html",
-          "checkedAt": "2026-09-29T12:20:58.619Z",
+          "checkedAt": "2026-09-29T13:18:42.630Z",
           "status": "checked_specs_only"
         },
         {
           "name": "CME Micro E-mini S&P 500 futures",
           "url": "https://www.cmegroup.com/markets/equities/sp/micro-e-mini-sandp-500.html",
-          "checkedAt": "2026-09-29T12:20:58.619Z",
+          "checkedAt": "2026-09-29T13:18:42.630Z",
           "status": "checked_specs_only"
         },
         {
           "name": "CME Micro Gold futures",
           "url": "https://www.cmegroup.com/markets/metals/precious/e-micro-gold.html",
-          "checkedAt": "2026-09-29T12:20:58.619Z",
+          "checkedAt": "2026-09-29T13:18:42.630Z",
           "status": "checked_specs_only"
         },
         {
           "name": "CME Micro WTI Crude Oil futures",
           "url": "https://www.cmegroup.com/markets/energy/crude-oil/micro-wti-crude-oil.html",
-          "checkedAt": "2026-09-29T12:20:58.619Z",
+          "checkedAt": "2026-09-29T13:18:42.630Z",
           "status": "checked_specs_only"
         },
         {
           "name": "CME trading hours",
           "url": "https://www.cmegroup.com/trading-hours.html",
-          "checkedAt": "2026-09-29T12:20:58.619Z",
+          "checkedAt": "2026-09-29T13:18:42.630Z",
           "status": "checked_session_open_expected"
         },
         {
           "name": "eSignal MNQ futures board",
           "url": "https://quotes.esignal.com/esignalprod/quote.action?symbol=MNQ",
-          "checkedAt": "2026-09-29T12:20:58.619Z",
+          "checkedAt": "2026-09-29T13:18:42.630Z",
           "status": "checked_stale_delayed_quote_excluded"
         },
         {
           "name": "eSignal MES futures board",
           "url": "https://quotes.esignal.com/esignalprod/quote.action?symbol=MES",
-          "checkedAt": "2026-09-29T12:20:58.619Z",
+          "checkedAt": "2026-09-29T13:18:42.630Z",
           "status": "checked_stale_delayed_quote_excluded"
         },
         {
           "name": "eSignal MGC futures board",
           "url": "https://quotes.esignal.com/esignalprod/quote.action?symbol=MGC",
-          "checkedAt": "2026-09-29T12:20:58.619Z",
+          "checkedAt": "2026-09-29T13:18:42.630Z",
           "status": "checked_stale_delayed_quote_excluded"
         },
         {
           "name": "eSignal MCL futures board",
           "url": "https://quotes.esignal.com/esignalprod/quote.action?symbol=MCL",
-          "checkedAt": "2026-09-29T12:20:58.619Z",
+          "checkedAt": "2026-09-29T13:18:42.630Z",
           "status": "unavailable"
         },
         {
           "name": "MarketWatch MGCZ26",
           "url": "https://www.marketwatch.com/investing/future/mgcz26",
-          "checkedAt": "2026-09-29T12:20:58.619Z",
+          "checkedAt": "2026-09-29T13:18:42.630Z",
           "status": "checked_delayed_quote_excluded"
         },
         {
           "name": "BLS release calendar",
           "url": "https://www.bls.gov/schedule/2026/09_sched.htm",
-          "checkedAt": "2026-09-29T12:20:58.619Z",
+          "checkedAt": "2026-09-29T13:18:42.630Z",
           "status": "checked"
         },
         {
           "name": "BEA release schedule",
           "url": "https://www.bea.gov/news/schedule",
-          "checkedAt": "2026-09-29T12:20:58.619Z",
+          "checkedAt": "2026-09-29T13:18:42.630Z",
           "status": "checked"
         },
         {
           "name": "Federal Reserve calendar",
           "url": "https://www.federalreserve.gov/newsevents/calendar.htm",
-          "checkedAt": "2026-09-29T12:20:58.619Z",
+          "checkedAt": "2026-09-29T13:18:42.630Z",
           "status": "checked"
         },
         {
           "name": "EIA Weekly Petroleum Status Report",
           "url": "https://www.eia.gov/petroleum/supply/weekly/",
-          "checkedAt": "2026-09-29T12:20:58.619Z",
-          "status": "temporarily_unavailable"
+          "checkedAt": "2026-09-29T13:18:42.630Z",
+          "status": "checked"
         },
         {
           "name": "OPEC",
           "url": "https://www.opec.org/",
-          "checkedAt": "2026-09-29T12:20:58.619Z",
+          "checkedAt": "2026-09-29T13:18:42.630Z",
           "status": "checked"
         }
       ],
@@ -1061,8 +1061,7 @@
         "Exact expiry/roll and session/holiday clearance for every candidate",
         "Source-verified initial margin per contract and sufficient remaining paper equity",
         "Observed tick-aligned triggers, invalidations and targets meeting at least 2:1 reward-to-risk and the $100 risk cap",
-        "Complete high-impact release clearance within the required 30-minute window",
-        "Current EIA weekly petroleum page response"
+        "Complete high-impact release clearance within the required 30-minute window"
       ],
       "counts": {
         "openPositions": 0,
@@ -7526,6 +7525,197 @@
       }
     },
     {
+      "id": "meme-scan-20260929T122539Z",
+      "system": "meme",
+      "startedAt": "2026-09-29T12:25:39.000Z",
+      "checkedAt": "2026-09-29T12:27:10.296Z",
+      "scheduledFor": "2026-09-29T12:00:00.000Z",
+      "nextScheduledAt": "2026-09-29T13:00:00.000Z",
+      "status": "data_limited",
+      "summary": "No open meme paper trades required management. The existing pSOQ/SOQ research record was materially updated after the one-time migration window opened: the official provisional allocation system is live and published hashed runs, with the latest accessible run at 12:16:17 UTC covering finalized slots through 12:16:06 UTC. It reported zero allocation addresses and zero migrated SOQ. No paper entry was opened because a fresh executable quote, named tracked-wallet persistence/convergence, current holder/insider/bundler safety and spam-filtered X momentum were not verified. Current public-figure and Solana launch discovery produced no separately verified new catalyst.",
+      "sources": [
+        {
+          "name": "Soqucoin Foundation migration notice",
+          "url": "https://soqucoin.org/migration",
+          "checkedAt": "2026-09-29T12:27:10.296Z",
+          "status": "checked"
+        },
+        {
+          "name": "Soqucoin provisional allocation run history",
+          "url": "https://soqucoin.org/migration/list/runs.json",
+          "checkedAt": "2026-09-29T12:27:10.296Z",
+          "status": "checked"
+        },
+        {
+          "name": "DEX Screener pSOQ/SOL pair and current discovery",
+          "url": "https://dexscreener.com/solana/EM9NyPqcByrz8zBxZUi2LazBTCY2zbVJa49nTXHi3Pq8",
+          "checkedAt": "2026-09-29T12:27:10.296Z",
+          "status": "checked"
+        },
+        {
+          "name": "Current official-launch and public-figure discovery",
+          "url": "https://www.google.com/search?q=September+29+2026+official+meme+coin+launch+Elon+Musk+Donald+Trump+contract",
+          "checkedAt": "2026-09-29T12:27:10.296Z",
+          "status": "checked"
+        },
+        {
+          "name": "KOL Explorer tracked-wallet profiles and holdings",
+          "url": "https://kolexplorer.com/",
+          "checkedAt": "2026-09-29T12:27:10.296Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "X live unique-author search",
+          "url": "https://x.com/search",
+          "checkedAt": "2026-09-29T12:27:10.296Z",
+          "status": "unavailable"
+        }
+      ],
+      "missingData": [
+        "fresh executable pSOQ quote and slippage at completion",
+        "current token-specific holdings and remaining-position percentages for all five named tracked wallets",
+        "verified two-wallet convergence and greater-than-one-hour persistence",
+        "current deployer, insider, bundler, holder-concentration and wash-trading analysis",
+        "X unique-author mention velocity, acceleration and spam filtering",
+        "future SOQ mainnet price, liquidity and custody verification",
+        "successful credited allocations after the zero-allocation 12:16 UTC official run",
+        "complete real-time coverage of all Solana launches, holders, buyers and liquidity venues"
+      ],
+      "counts": {
+        "research": 1,
+        "entries": 0,
+        "exits": 0
+      },
+      "deliveryDiagnostics": {
+        "repair20260928ReportedAt": "2026-09-28T02:04:42.735Z"
+      }
+    },
+    {
+      "id": "meme-scan-20260929T123156Z",
+      "system": "meme",
+      "startedAt": "2026-09-29T12:31:56.000Z",
+      "checkedAt": "2026-09-29T12:32:30.190Z",
+      "scheduledFor": "2026-09-29T12:00:00.000Z",
+      "nextScheduledAt": "2026-09-29T13:00:00.000Z",
+      "status": "data_limited",
+      "summary": "No open meme paper trades required management. The pSOQ/SOQ official run history remained unchanged from the just-completed prior check: the latest accessible run was published at 12:16:17 UTC, covered finalized slots through 12:16:06 UTC, and showed zero allocation addresses and zero migrated SOQ. No new primary-source public-figure launch or endorsement was verified. KOL Explorer and X live search remained unavailable, and no fresh executable pSOQ quote was obtained. No research record changed materially and no entry, exit or mark event was added.",
+      "sources": [
+        {
+          "name": "Soqucoin Foundation migration notice",
+          "url": "https://soqucoin.org/migration",
+          "checkedAt": "2026-09-29T12:32:30.190Z",
+          "status": "checked"
+        },
+        {
+          "name": "Soqucoin provisional allocation run history",
+          "url": "https://soqucoin.org/migration/list/runs.json",
+          "checkedAt": "2026-09-29T12:32:30.190Z",
+          "status": "checked"
+        },
+        {
+          "name": "Current official-launch and public-figure discovery",
+          "url": "https://www.google.com/search?q=September+29+2026+official+meme+coin+launch+Elon+Musk+Donald+Trump+contract",
+          "checkedAt": "2026-09-29T12:32:30.190Z",
+          "status": "checked"
+        },
+        {
+          "name": "KOL Explorer tracked-wallet profiles and holdings",
+          "url": "https://kolexplorer.com/",
+          "checkedAt": "2026-09-29T12:32:30.190Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "X live unique-author search",
+          "url": "https://x.com/search",
+          "checkedAt": "2026-09-29T12:32:30.190Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "Fresh executable pSOQ market data",
+          "url": "https://dexscreener.com/solana/EM9NyPqcByrz8zBxZUi2LazBTCY2zbVJa49nTXHi3Pq8",
+          "checkedAt": "2026-09-29T12:32:30.190Z",
+          "status": "unavailable"
+        }
+      ],
+      "missingData": [
+        "fresh executable pSOQ quote and slippage at completion",
+        "current token-specific holdings and remaining-position percentages for all five named tracked wallets",
+        "verified two-wallet convergence and greater-than-one-hour persistence",
+        "current deployer, insider, bundler, holder-concentration and wash-trading analysis",
+        "X unique-author mention velocity, acceleration and spam filtering",
+        "future SOQ mainnet price, liquidity and custody verification",
+        "successful credited allocations after the zero-allocation 12:16 UTC official run",
+        "complete real-time coverage of all Solana launches, holders, buyers and liquidity venues"
+      ],
+      "counts": {
+        "research": 0,
+        "entries": 0,
+        "exits": 0
+      },
+      "deliveryDiagnostics": {
+        "repair20260928ReportedAt": "2026-09-28T02:04:42.735Z"
+      }
+    },
+    {
+      "id": "penny-scan-20260929T125724Z",
+      "system": "penny",
+      "startedAt": "2026-09-29T12:57:24.000Z",
+      "checkedAt": "2026-09-29T12:59:00.543Z",
+      "scheduledFor": "2026-09-29T12:00:00.000Z",
+      "nextScheduledAt": "2026-09-29T13:00:00.000Z",
+      "status": "data_limited",
+      "summary": "No open penny-stock paper trades required management. One new research-only catalyst was published for TURB after Turbo Energy reported 172.7% first-half revenue growth and a swing to positive operating and net income. No paper entry was opened because the latest displayed price reaction was modest and executable spread, abnormal regular-session volume, technical continuation and current dilution capacity were not verified. POLA and CYN remained research-only with negative displayed premarket changes; SOAR remained severely extended and FTHM remained a failed-continuation rejection. Other fresh microcap releases were rejected as promotional, early-stage, financing-driven or lacking sufficient market confirmation.",
+      "sources": [
+        {
+          "name": "Turbo Energy September 29 financial-results release",
+          "url": "https://www.stocktitan.net/news/TURB/turbo-energy-delivers-record-first-half-2026-revenue-and-swings-to-voq6944pqzhn.html",
+          "checkedAt": "2026-09-29T12:59:00.543Z",
+          "status": "checked"
+        },
+        {
+          "name": "September 29 live issuer-release feed",
+          "url": "https://www.stocktitan.net/news/live.html",
+          "checkedAt": "2026-09-29T12:59:00.543Z",
+          "status": "checked"
+        },
+        {
+          "name": "TURB, POLA, CYN, SOAR and FTHM current market data",
+          "url": "https://finance.yahoo.com/",
+          "checkedAt": "2026-09-29T12:59:00.543Z",
+          "status": "checked"
+        },
+        {
+          "name": "Reuters September 29 premarket regime report",
+          "url": "https://www.reuters.com/business/us-stock-futures-flat-tech-bounce-meets-crude-driven-caution-2026-09-29/",
+          "checkedAt": "2026-09-29T12:59:00.543Z",
+          "status": "checked"
+        },
+        {
+          "name": "Complete real-time dilution, insider and social checks",
+          "url": "https://www.sec.gov/edgar/search/",
+          "checkedAt": "2026-09-29T12:59:00.543Z",
+          "status": "unavailable"
+        }
+      ],
+      "missingData": [
+        "fresh executable bid, ask and spread for TURB and the active research set",
+        "regular-session relative and dollar volume plus opening-range continuation",
+        "complete current S-1, S-3, 424B, ATM, PIPE, warrant and convertible review across the candidate universe",
+        "spam-filtered X unique-author acceleration",
+        "current insider activity and verified short-interest context",
+        "independent confirmation of TURB related-party revenue quality and cash conversion",
+        "complete real-time U.S. microcap universe coverage"
+      ],
+      "counts": {
+        "research": 1,
+        "entries": 0,
+        "exits": 0
+      },
+      "deliveryDiagnostics": {
+        "repair20260928ReportedAt": "2026-09-28T01:47:21.040Z"
+      }
+    },
+    {
       "id": "futures-scan-20260927203939926",
       "system": "futures",
       "startedAt": "2026-09-27T20:39:39.926Z",
@@ -11250,194 +11440,123 @@
       }
     },
     {
-      "id": "meme-scan-20260929T122539Z",
-      "system": "meme",
-      "startedAt": "2026-09-29T12:25:39.000Z",
-      "checkedAt": "2026-09-29T12:27:10.296Z",
-      "scheduledFor": "2026-09-29T12:00:00.000Z",
-      "nextScheduledAt": "2026-09-29T13:00:00.000Z",
+      "id": "futures-scan-20260929131755467",
+      "system": "futures",
+      "startedAt": "2026-09-29T13:17:55.467Z",
+      "checkedAt": "2026-09-29T13:18:42.630Z",
+      "scheduledFor": "2026-09-29T13:00:00.000Z",
+      "nextScheduledAt": "2026-09-29T14:00:00.000Z",
       "status": "data_limited",
-      "summary": "No open meme paper trades required management. The existing pSOQ/SOQ research record was materially updated after the one-time migration window opened: the official provisional allocation system is live and published hashed runs, with the latest accessible run at 12:16:17 UTC covering finalized slots through 12:16:06 UTC. It reported zero allocation addresses and zero migrated SOQ. No paper entry was opened because a fresh executable quote, named tracked-wallet persistence/convergence, current holder/insider/bundler safety and spam-filtered X momentum were not verified. Current public-figure and Solana launch discovery produced no separately verified new catalyst.",
+      "summary": "No new futures entry or material research event. There are no open futures paper positions. Exact-contract public snapshots remained delayed or stale: MNQZ26 30,637.25 at 8:05:26 a.m. EDT, MESZ26 7,764.00 at 7:10:20 a.m., and MGCZ26 4,185.80 at 9:04 a.m. versus 4,168.40 settlement, after a 4,145.00–4,193.30 range. Gold remained above settlement but below its delayed session high, contradicting immediate bearish continuation without verifying a live reversal or executable trigger. MCLX26 remained unavailable. Live spreads, current structure, margin, roll clearance and risk-qualified triggers remain unresolved.",
       "sources": [
         {
-          "name": "Soqucoin Foundation migration notice",
-          "url": "https://soqucoin.org/migration",
-          "checkedAt": "2026-09-29T12:27:10.296Z",
-          "status": "checked"
+          "name": "CME Micro E-mini Nasdaq-100 futures",
+          "url": "https://www.cmegroup.com/markets/equities/nasdaq/micro-e-mini-nasdaq-100.html",
+          "checkedAt": "2026-09-29T13:18:42.630Z",
+          "status": "checked_specs_only"
         },
         {
-          "name": "Soqucoin provisional allocation run history",
-          "url": "https://soqucoin.org/migration/list/runs.json",
-          "checkedAt": "2026-09-29T12:27:10.296Z",
-          "status": "checked"
+          "name": "CME Micro E-mini S&P 500 futures",
+          "url": "https://www.cmegroup.com/markets/equities/sp/micro-e-mini-sandp-500.html",
+          "checkedAt": "2026-09-29T13:18:42.630Z",
+          "status": "checked_specs_only"
         },
         {
-          "name": "DEX Screener pSOQ/SOL pair and current discovery",
-          "url": "https://dexscreener.com/solana/EM9NyPqcByrz8zBxZUi2LazBTCY2zbVJa49nTXHi3Pq8",
-          "checkedAt": "2026-09-29T12:27:10.296Z",
-          "status": "checked"
+          "name": "CME Micro Gold futures",
+          "url": "https://www.cmegroup.com/markets/metals/precious/e-micro-gold.html",
+          "checkedAt": "2026-09-29T13:18:42.630Z",
+          "status": "checked_specs_only"
         },
         {
-          "name": "Current official-launch and public-figure discovery",
-          "url": "https://www.google.com/search?q=September+29+2026+official+meme+coin+launch+Elon+Musk+Donald+Trump+contract",
-          "checkedAt": "2026-09-29T12:27:10.296Z",
-          "status": "checked"
+          "name": "CME Micro WTI Crude Oil futures",
+          "url": "https://www.cmegroup.com/markets/energy/crude-oil/micro-wti-crude-oil.html",
+          "checkedAt": "2026-09-29T13:18:42.630Z",
+          "status": "checked_specs_only"
         },
         {
-          "name": "KOL Explorer tracked-wallet profiles and holdings",
-          "url": "https://kolexplorer.com/",
-          "checkedAt": "2026-09-29T12:27:10.296Z",
+          "name": "CME trading hours",
+          "url": "https://www.cmegroup.com/trading-hours.html",
+          "checkedAt": "2026-09-29T13:18:42.630Z",
+          "status": "checked_session_open_expected"
+        },
+        {
+          "name": "eSignal MNQ futures board",
+          "url": "https://quotes.esignal.com/esignalprod/quote.action?symbol=MNQ",
+          "checkedAt": "2026-09-29T13:18:42.630Z",
+          "status": "checked_stale_delayed_quote_excluded"
+        },
+        {
+          "name": "eSignal MES futures board",
+          "url": "https://quotes.esignal.com/esignalprod/quote.action?symbol=MES",
+          "checkedAt": "2026-09-29T13:18:42.630Z",
+          "status": "checked_stale_delayed_quote_excluded"
+        },
+        {
+          "name": "eSignal MGC futures board",
+          "url": "https://quotes.esignal.com/esignalprod/quote.action?symbol=MGC",
+          "checkedAt": "2026-09-29T13:18:42.630Z",
+          "status": "checked_stale_delayed_quote_excluded"
+        },
+        {
+          "name": "eSignal MCL futures board",
+          "url": "https://quotes.esignal.com/esignalprod/quote.action?symbol=MCL",
+          "checkedAt": "2026-09-29T13:18:42.630Z",
           "status": "unavailable"
         },
         {
-          "name": "X live unique-author search",
-          "url": "https://x.com/search",
-          "checkedAt": "2026-09-29T12:27:10.296Z",
-          "status": "unavailable"
+          "name": "MarketWatch MGCZ26",
+          "url": "https://www.marketwatch.com/investing/future/mgcz26",
+          "checkedAt": "2026-09-29T13:18:42.630Z",
+          "status": "checked_delayed_quote_excluded"
+        },
+        {
+          "name": "BLS release calendar",
+          "url": "https://www.bls.gov/schedule/2026/09_sched.htm",
+          "checkedAt": "2026-09-29T13:18:42.630Z",
+          "status": "checked"
+        },
+        {
+          "name": "BEA release schedule",
+          "url": "https://www.bea.gov/news/schedule",
+          "checkedAt": "2026-09-29T13:18:42.630Z",
+          "status": "checked"
+        },
+        {
+          "name": "Federal Reserve calendar",
+          "url": "https://www.federalreserve.gov/newsevents/calendar.htm",
+          "checkedAt": "2026-09-29T13:18:42.630Z",
+          "status": "checked"
+        },
+        {
+          "name": "EIA Weekly Petroleum Status Report",
+          "url": "https://www.eia.gov/petroleum/supply/weekly/",
+          "checkedAt": "2026-09-29T13:18:42.630Z",
+          "status": "checked"
+        },
+        {
+          "name": "OPEC",
+          "url": "https://www.opec.org/",
+          "checkedAt": "2026-09-29T13:18:42.630Z",
+          "status": "checked"
         }
       ],
       "missingData": [
-        "fresh executable pSOQ quote and slippage at completion",
-        "current token-specific holdings and remaining-position percentages for all five named tracked wallets",
-        "verified two-wallet convergence and greater-than-one-hour persistence",
-        "current deployer, insider, bundler, holder-concentration and wash-trading analysis",
-        "X unique-author mention velocity, acceleration and spam filtering",
-        "future SOQ mainnet price, liquidity and custody verification",
-        "successful credited allocations after the zero-allocation 12:16 UTC official run",
-        "complete real-time coverage of all Solana launches, holders, buyers and liquidity venues"
+        "Non-delayed exact dated quotes no older than five minutes for MNQZ26, MESZ26, MGCZ26 and MCLX26",
+        "Verified bid/ask spreads, liquidity and current intraday price/volume structure for every micro contract",
+        "Exact expiry/roll and session/holiday clearance for every candidate",
+        "Source-verified initial margin per contract and sufficient remaining paper equity",
+        "Observed tick-aligned triggers, invalidations and targets meeting at least 2:1 reward-to-risk and the $100 risk cap",
+        "Complete high-impact release clearance within the required 30-minute window"
       ],
       "counts": {
-        "research": 1,
-        "entries": 0,
-        "exits": 0
-      },
-      "deliveryDiagnostics": {
-        "repair20260928ReportedAt": "2026-09-28T02:04:42.735Z"
-      }
-    },
-    {
-      "id": "meme-scan-20260929T123156Z",
-      "system": "meme",
-      "startedAt": "2026-09-29T12:31:56.000Z",
-      "checkedAt": "2026-09-29T12:32:30.190Z",
-      "scheduledFor": "2026-09-29T12:00:00.000Z",
-      "nextScheduledAt": "2026-09-29T13:00:00.000Z",
-      "status": "data_limited",
-      "summary": "No open meme paper trades required management. The pSOQ/SOQ official run history remained unchanged from the just-completed prior check: the latest accessible run was published at 12:16:17 UTC, covered finalized slots through 12:16:06 UTC, and showed zero allocation addresses and zero migrated SOQ. No new primary-source public-figure launch or endorsement was verified. KOL Explorer and X live search remained unavailable, and no fresh executable pSOQ quote was obtained. No research record changed materially and no entry, exit or mark event was added.",
-      "sources": [
-        {
-          "name": "Soqucoin Foundation migration notice",
-          "url": "https://soqucoin.org/migration",
-          "checkedAt": "2026-09-29T12:32:30.190Z",
-          "status": "checked"
-        },
-        {
-          "name": "Soqucoin provisional allocation run history",
-          "url": "https://soqucoin.org/migration/list/runs.json",
-          "checkedAt": "2026-09-29T12:32:30.190Z",
-          "status": "checked"
-        },
-        {
-          "name": "Current official-launch and public-figure discovery",
-          "url": "https://www.google.com/search?q=September+29+2026+official+meme+coin+launch+Elon+Musk+Donald+Trump+contract",
-          "checkedAt": "2026-09-29T12:32:30.190Z",
-          "status": "checked"
-        },
-        {
-          "name": "KOL Explorer tracked-wallet profiles and holdings",
-          "url": "https://kolexplorer.com/",
-          "checkedAt": "2026-09-29T12:32:30.190Z",
-          "status": "unavailable"
-        },
-        {
-          "name": "X live unique-author search",
-          "url": "https://x.com/search",
-          "checkedAt": "2026-09-29T12:32:30.190Z",
-          "status": "unavailable"
-        },
-        {
-          "name": "Fresh executable pSOQ market data",
-          "url": "https://dexscreener.com/solana/EM9NyPqcByrz8zBxZUi2LazBTCY2zbVJa49nTXHi3Pq8",
-          "checkedAt": "2026-09-29T12:32:30.190Z",
-          "status": "unavailable"
-        }
-      ],
-      "missingData": [
-        "fresh executable pSOQ quote and slippage at completion",
-        "current token-specific holdings and remaining-position percentages for all five named tracked wallets",
-        "verified two-wallet convergence and greater-than-one-hour persistence",
-        "current deployer, insider, bundler, holder-concentration and wash-trading analysis",
-        "X unique-author mention velocity, acceleration and spam filtering",
-        "future SOQ mainnet price, liquidity and custody verification",
-        "successful credited allocations after the zero-allocation 12:16 UTC official run",
-        "complete real-time coverage of all Solana launches, holders, buyers and liquidity venues"
-      ],
-      "counts": {
+        "openPositions": 0,
         "research": 0,
         "entries": 0,
-        "exits": 0
+        "exits": 0,
+        "marks": 0
       },
       "deliveryDiagnostics": {
-        "repair20260928ReportedAt": "2026-09-28T02:04:42.735Z"
-      }
-    },
-    {
-      "id": "penny-scan-20260929T125724Z",
-      "system": "penny",
-      "startedAt": "2026-09-29T12:57:24.000Z",
-      "checkedAt": "2026-09-29T12:59:00.543Z",
-      "scheduledFor": "2026-09-29T12:00:00.000Z",
-      "nextScheduledAt": "2026-09-29T13:00:00.000Z",
-      "status": "data_limited",
-      "summary": "No open penny-stock paper trades required management. One new research-only catalyst was published for TURB after Turbo Energy reported 172.7% first-half revenue growth and a swing to positive operating and net income. No paper entry was opened because the latest displayed price reaction was modest and executable spread, abnormal regular-session volume, technical continuation and current dilution capacity were not verified. POLA and CYN remained research-only with negative displayed premarket changes; SOAR remained severely extended and FTHM remained a failed-continuation rejection. Other fresh microcap releases were rejected as promotional, early-stage, financing-driven or lacking sufficient market confirmation.",
-      "sources": [
-        {
-          "name": "Turbo Energy September 29 financial-results release",
-          "url": "https://www.stocktitan.net/news/TURB/turbo-energy-delivers-record-first-half-2026-revenue-and-swings-to-voq6944pqzhn.html",
-          "checkedAt": "2026-09-29T12:59:00.543Z",
-          "status": "checked"
-        },
-        {
-          "name": "September 29 live issuer-release feed",
-          "url": "https://www.stocktitan.net/news/live.html",
-          "checkedAt": "2026-09-29T12:59:00.543Z",
-          "status": "checked"
-        },
-        {
-          "name": "TURB, POLA, CYN, SOAR and FTHM current market data",
-          "url": "https://finance.yahoo.com/",
-          "checkedAt": "2026-09-29T12:59:00.543Z",
-          "status": "checked"
-        },
-        {
-          "name": "Reuters September 29 premarket regime report",
-          "url": "https://www.reuters.com/business/us-stock-futures-flat-tech-bounce-meets-crude-driven-caution-2026-09-29/",
-          "checkedAt": "2026-09-29T12:59:00.543Z",
-          "status": "checked"
-        },
-        {
-          "name": "Complete real-time dilution, insider and social checks",
-          "url": "https://www.sec.gov/edgar/search/",
-          "checkedAt": "2026-09-29T12:59:00.543Z",
-          "status": "unavailable"
-        }
-      ],
-      "missingData": [
-        "fresh executable bid, ask and spread for TURB and the active research set",
-        "regular-session relative and dollar volume plus opening-range continuation",
-        "complete current S-1, S-3, 424B, ATM, PIPE, warrant and convertible review across the candidate universe",
-        "spam-filtered X unique-author acceleration",
-        "current insider activity and verified short-interest context",
-        "independent confirmation of TURB related-party revenue quality and cash conversion",
-        "complete real-time U.S. microcap universe coverage"
-      ],
-      "counts": {
-        "research": 1,
-        "entries": 0,
-        "exits": 0
-      },
-      "deliveryDiagnostics": {
-        "repair20260928ReportedAt": "2026-09-28T01:47:21.040Z"
+        "repair20260928ReportedAt": "2026-09-28T01:51:49.985Z"
       }
     }
   ]
