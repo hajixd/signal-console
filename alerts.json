@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-29T11:52:59.143Z",
+  "updatedAt": "2026-09-29T12:10:45.000Z",
   "alerts": [
     {
       "id": "options-bb-fy27q2-20260924",
@@ -555,68 +555,180 @@
           "migration execution is irreversible and subject to screening and exclusion rules"
         ]
       }
+    },
+    {
+      "id": "penny-pola-telecom-trial-order-20260929",
+      "eventType": "research",
+      "system": "penny",
+      "timestamp": "2026-09-29T12:10:45.000Z",
+      "asset": "POLA",
+      "title": "Research: POLA receives 50-generator telecom trial order",
+      "summary": "Polar Power announced a concrete trial order for 50 propane-fueled DC generators from a major Tier 1 Southeast Asian telecom operator. The trial could precede a five-year deployment across roughly 2,500 sites, but that wider program is not committed and no paper entry is opened.",
+      "reasons": [
+        "The issuer disclosed a firm 50-unit trial order after more than five years of regional qualification and field testing.",
+        "Generators are priced at approximately $19,000-$27,000 each, implying meaningful trial economics for a company with a roughly $5 million market capitalization.",
+        "Management says discussions have begun for a 200-unit next phase and estimates an uncommitted broader opportunity of up to approximately $60 million over five years.",
+        "The catalyst is research-only because the larger rollout remains uncommitted, the customer is unnamed, and recent 424B3/EFFECT filings require a full dilution review."
+      ],
+      "href": "https://www.stocktitan.net/news/POLA/polar-power-receives-trial-order-for-50-propane-fueled-dc-generators-a4n6ahsdadpc.html",
+      "missingData": [
+        "fresh executable bid/ask and spread",
+        "regular-session volume and continuation",
+        "customer identity and trial delivery schedule",
+        "remaining issuance capacity under recent 424B3/EFFECT filings",
+        "spam-filtered social acceleration and current insider activity"
+      ],
+      "risk": "High: microcap liquidity, recent offering effectiveness, unnamed customer, uncommitted rollout, reliance on LPG-distribution participation, and previously written-down inventory.",
+      "details": {
+        "catalyst": "50-unit propane DC-generator trial order from a major Tier 1 Southeast Asian telecom operator",
+        "catalystDate": "2026-09-29",
+        "evidenceSources": [
+          {
+            "name": "Polar Power issuer release via GlobeNewswire",
+            "url": "https://www.stocktitan.net/news/POLA/polar-power-receives-trial-order-for-50-propane-fueled-dc-generators-a4n6ahsdadpc.html",
+            "publishedAt": "2026-09-29T11:15:00.000Z",
+            "verification": "checked"
+          },
+          {
+            "name": "POLA market data",
+            "url": "https://finance.yahoo.com/quote/POLA/",
+            "checkedAt": "2026-09-29T12:10:45.000Z",
+            "verification": "latest displayed premarket context"
+          }
+        ],
+        "verificationStatus": "Issuer announcement verified; 50-unit trial is confirmed. The 200-unit discussion and approximately 2,500-site/$60 million opportunity are explicitly prospective and uncommitted.",
+        "marketContext": {
+          "latestDisplayedPrice": 1.26,
+          "displayedChangePct": -2.29,
+          "approxMarketCap": 4690000,
+          "session": "premarket/limited"
+        },
+        "rejectionReasons": [
+          "no reliable executable quote or spread",
+          "negative displayed price response and no regular-session continuation",
+          "September 25 424B3 and September 28 EFFECT filings create unresolved dilution risk",
+          "broader deployment and next 200 units are not contracted",
+          "social and insider confirmation unavailable"
+        ]
+      }
+    },
+    {
+      "id": "penny-cyn-follow-on-fortune100-order-20260929",
+      "eventType": "research",
+      "system": "penny",
+      "timestamp": "2026-09-29T12:10:45.000Z",
+      "asset": "CYN",
+      "title": "Research: CYN wins follow-on Fortune 100 autonomous-tugger order",
+      "summary": "Cyngn announced a follow-on DriveMod Tugger order from an existing Fortune 100 heavy-equipment manufacturer, expanding autonomous-vehicle use to a new workflow. The repeat-customer signal is material, but undisclosed economics and incomplete quote, dilution and technical checks prevent a paper entry.",
+      "reasons": [
+        "A follow-on order from an existing large industrial customer provides stronger validation than a first pilot.",
+        "The new order expands DriveMod Tugger deployment into another material-moving workflow.",
+        "Delayed market data showed unusually elevated relative activity, consistent with a material catalyst.",
+        "The setup remains research-only because customer identity, unit count and order value were not disclosed, while the issuer remains small and loss-making."
+      ],
+      "href": "https://www.stocktitan.net/news/CYN/cyngn-expands-autonomous-tugger-adoption-with-fortune-100-heavy-hzddkjkrad09.html",
+      "missingData": [
+        "fresh executable bid/ask and spread",
+        "regular-session price and volume confirmation",
+        "customer identity, order value, unit count and delivery schedule",
+        "complete current dilution and financing sweep",
+        "spam-filtered social acceleration and current insider activity"
+      ],
+      "risk": "Very high: sub-$1 microcap volatility, low revenue base, continuing losses and financing/dilution risk, with undisclosed order economics and customer identity.",
+      "details": {
+        "catalyst": "Follow-on DriveMod Tugger order from an existing Fortune 100 heavy-equipment manufacturer",
+        "catalystDate": "2026-09-29",
+        "evidenceSources": [
+          {
+            "name": "Cyngn issuer release",
+            "url": "https://www.stocktitan.net/news/CYN/cyngn-expands-autonomous-tugger-adoption-with-fortune-100-heavy-hzddkjkrad09.html",
+            "publishedAt": "2026-09-29T11:30:00.000Z",
+            "verification": "checked"
+          },
+          {
+            "name": "CYN market data",
+            "url": "https://finance.yahoo.com/quote/CYN/",
+            "checkedAt": "2026-09-29T12:10:45.000Z",
+            "verification": "latest displayed premarket context"
+          }
+        ],
+        "verificationStatus": "Follow-on order and expanded workflow are issuer-confirmed; customer identity, unit count and contract value are undisclosed.",
+        "marketContext": {
+          "latestDisplayedPrice": 0.68,
+          "displayedRelativeVolume": 46.5,
+          "approxMarketCap": 10460000,
+          "session": "delayed premarket"
+        },
+        "rejectionReasons": [
+          "no reliable executable quote or spread",
+          "order economics and unit count undisclosed",
+          "complete dilution and financing review unavailable",
+          "regular-session trend confirmation unavailable",
+          "social and insider confirmation unavailable"
+        ]
+      }
     }
   ],
   "scanners": {
     "penny": {
-      "id": "penny-scan-20260929T110439Z",
+      "id": "penny-scan-20260929T120631Z",
       "system": "penny",
-      "startedAt": "2026-09-29T11:04:39.000Z",
-      "checkedAt": "2026-09-29T11:05:55.486Z",
-      "scheduledFor": "2026-09-29T11:00:00.000Z",
-      "nextScheduledAt": "2026-09-29T12:00:00.000Z",
-      "status": "market_closed",
-      "summary": "No open penny-stock paper trades required management. Current premarket data continued to show SOAR near $0.3188 after its 78.89% prior-session extension and FTHM near $0.5374 after its failed post-catalyst continuation; neither display included a usable intraday range, spread or liquidity profile, so neither was treated as an executable quote. Fresh issuer filing pages showed no material new filing that changed the SOAR or FTHM thesis. SOAR remains research-only because of severe extension plus financing, dilution, execution, customer-payment and going-concern risks. FTHM remains rejected for entry because continuation failed and the proposed transaction retains dilution, control and completion risks. A bounded SEC, FDA, news and market-regime scan found no new primary-source microcap catalyst that cleared the research or entry threshold. No research, entry, exit or mark event was added.",
+      "startedAt": "2026-09-29T12:06:31.000Z",
+      "checkedAt": "2026-09-29T12:10:45.000Z",
+      "scheduledFor": "2026-09-29T12:00:00.000Z",
+      "nextScheduledAt": "2026-09-29T13:00:00.000Z",
+      "status": "data_limited",
+      "summary": "No open penny-stock paper trades required management. Two new source-backed research setups were identified: POLA received a 50-generator trial order from a major Tier 1 Southeast Asian telecom operator, and CYN received a follow-on DriveMod Tugger order from an existing Fortune 100 heavy-equipment customer. Neither qualified for a paper entry: POLA's broader 2,500-site rollout is uncommitted and recent 424B3/EFFECT filings create material dilution risk; CYN disclosed neither customer identity nor order value and remains a very small, loss-making issuer. Fresh executable bid/ask, full dilution review, regular-session continuation and spam-filtered social confirmation were unavailable. KALA, ELAB and FFAI were rejected for non-binding/early-stage/promotional or dilution-risk catalysts; RNAC was outside the penny-price scope. Two research events, no entries, exits or marks were added.",
       "sources": [
         {
-          "name": "Volato Group issuer SEC filings",
-          "url": "https://ir.flyvolato.com/financial-information/sec-filings",
-          "checkedAt": "2026-09-29T11:05:55.486Z",
+          "name": "Polar Power September 29 issuer release",
+          "url": "https://www.stocktitan.net/news/POLA/polar-power-receives-trial-order-for-50-propane-fueled-dc-generators-a4n6ahsdadpc.html",
+          "checkedAt": "2026-09-29T12:10:45.000Z",
           "status": "checked"
         },
         {
-          "name": "Fathom Holdings issuer SEC filings",
-          "url": "https://ir.fathominc.com/sec-filings/sec-filings",
-          "checkedAt": "2026-09-29T11:05:55.486Z",
+          "name": "Cyngn September 29 issuer release",
+          "url": "https://www.stocktitan.net/news/CYN/cyngn-expands-autonomous-tugger-adoption-with-fortune-100-heavy-hzddkjkrad09.html",
+          "checkedAt": "2026-09-29T12:10:45.000Z",
           "status": "checked"
         },
         {
-          "name": "SOAR, FTHM and IWM current premarket data",
+          "name": "September 29 U.S. microcap issuer-release feed",
+          "url": "https://www.stocktitan.net/news/2026-09-29/",
+          "checkedAt": "2026-09-29T12:10:45.000Z",
+          "status": "checked"
+        },
+        {
+          "name": "POLA, CYN and rejected-candidate market data",
           "url": "https://finance.yahoo.com/",
-          "checkedAt": "2026-09-29T11:05:55.486Z",
-          "status": "checked"
-        },
-        {
-          "name": "Current SEC and microcap catalyst discovery",
-          "url": "https://www.sec.gov/edgar/search/",
-          "checkedAt": "2026-09-29T11:05:55.486Z",
-          "status": "checked"
-        },
-        {
-          "name": "Current FDA catalyst discovery",
-          "url": "https://www.fda.gov/",
-          "checkedAt": "2026-09-29T11:05:55.486Z",
+          "checkedAt": "2026-09-29T12:10:45.000Z",
           "status": "checked"
         },
         {
           "name": "Reuters September 29 premarket regime report",
           "url": "https://www.reuters.com/business/us-stock-futures-flat-tech-bounce-meets-crude-driven-caution-2026-09-29/",
-          "checkedAt": "2026-09-29T11:05:55.486Z",
+          "checkedAt": "2026-09-29T12:10:45.000Z",
           "status": "checked"
+        },
+        {
+          "name": "Complete real-time bid/ask, social and universe-wide dilution data",
+          "url": "https://www.sec.gov/edgar/search/",
+          "checkedAt": "2026-09-29T12:10:45.000Z",
+          "status": "unavailable"
         }
       ],
       "missingData": [
-        "fresh executable bid, ask, spread, liquidity and intraday range for SOAR and FTHM",
-        "complete real-time U.S. microcap universe coverage",
-        "complete current S-1, S-3, 424B, ATM, PIPE, warrant and convertible sweep across the full candidate universe",
-        "spam-filtered X unique-author acceleration",
-        "current insider activity across the candidate universe",
-        "SOAR customer identity, credit quality and confirmation of initial prepayment receipt",
-        "regular-session technical confirmation after SOAR's extreme September 28 move",
-        "regular-session relative-volume and continuation confirmation for all candidates"
+        "fresh executable bid, ask and spread for POLA and CYN",
+        "regular-session relative-volume and technical continuation confirmation",
+        "complete current S-1, S-3, 424B, ATM, PIPE, warrant and convertible review for CYN and the full candidate universe",
+        "remaining issuance capacity and precise dilution exposure under POLA's September 25 424B3 and September 28 EFFECT filings",
+        "spam-filtered X unique-author acceleration for POLA and CYN",
+        "current insider activity and verified short-interest context",
+        "POLA customer identity, trial delivery schedule and committed value beyond the 50-unit trial",
+        "CYN customer identity, order value, delivery schedule and unit count"
       ],
       "counts": {
-        "research": 0,
+        "research": 2,
         "entries": 0,
         "exits": 0
       },
@@ -10868,6 +10980,72 @@
       },
       "deliveryDiagnostics": {
         "repair20260928ReportedAt": "2026-09-28T00:50:48.883Z"
+      }
+    },
+    {
+      "id": "penny-scan-20260929T120631Z",
+      "system": "penny",
+      "startedAt": "2026-09-29T12:06:31.000Z",
+      "checkedAt": "2026-09-29T12:10:45.000Z",
+      "scheduledFor": "2026-09-29T12:00:00.000Z",
+      "nextScheduledAt": "2026-09-29T13:00:00.000Z",
+      "status": "data_limited",
+      "summary": "No open penny-stock paper trades required management. Two new source-backed research setups were identified: POLA received a 50-generator trial order from a major Tier 1 Southeast Asian telecom operator, and CYN received a follow-on DriveMod Tugger order from an existing Fortune 100 heavy-equipment customer. Neither qualified for a paper entry: POLA's broader 2,500-site rollout is uncommitted and recent 424B3/EFFECT filings create material dilution risk; CYN disclosed neither customer identity nor order value and remains a very small, loss-making issuer. Fresh executable bid/ask, full dilution review, regular-session continuation and spam-filtered social confirmation were unavailable. KALA, ELAB and FFAI were rejected for non-binding/early-stage/promotional or dilution-risk catalysts; RNAC was outside the penny-price scope. Two research events, no entries, exits or marks were added.",
+      "sources": [
+        {
+          "name": "Polar Power September 29 issuer release",
+          "url": "https://www.stocktitan.net/news/POLA/polar-power-receives-trial-order-for-50-propane-fueled-dc-generators-a4n6ahsdadpc.html",
+          "checkedAt": "2026-09-29T12:10:45.000Z",
+          "status": "checked"
+        },
+        {
+          "name": "Cyngn September 29 issuer release",
+          "url": "https://www.stocktitan.net/news/CYN/cyngn-expands-autonomous-tugger-adoption-with-fortune-100-heavy-hzddkjkrad09.html",
+          "checkedAt": "2026-09-29T12:10:45.000Z",
+          "status": "checked"
+        },
+        {
+          "name": "September 29 U.S. microcap issuer-release feed",
+          "url": "https://www.stocktitan.net/news/2026-09-29/",
+          "checkedAt": "2026-09-29T12:10:45.000Z",
+          "status": "checked"
+        },
+        {
+          "name": "POLA, CYN and rejected-candidate market data",
+          "url": "https://finance.yahoo.com/",
+          "checkedAt": "2026-09-29T12:10:45.000Z",
+          "status": "checked"
+        },
+        {
+          "name": "Reuters September 29 premarket regime report",
+          "url": "https://www.reuters.com/business/us-stock-futures-flat-tech-bounce-meets-crude-driven-caution-2026-09-29/",
+          "checkedAt": "2026-09-29T12:10:45.000Z",
+          "status": "checked"
+        },
+        {
+          "name": "Complete real-time bid/ask, social and universe-wide dilution data",
+          "url": "https://www.sec.gov/edgar/search/",
+          "checkedAt": "2026-09-29T12:10:45.000Z",
+          "status": "unavailable"
+        }
+      ],
+      "missingData": [
+        "fresh executable bid, ask and spread for POLA and CYN",
+        "regular-session relative-volume and technical continuation confirmation",
+        "complete current S-1, S-3, 424B, ATM, PIPE, warrant and convertible review for CYN and the full candidate universe",
+        "remaining issuance capacity and precise dilution exposure under POLA's September 25 424B3 and September 28 EFFECT filings",
+        "spam-filtered X unique-author acceleration for POLA and CYN",
+        "current insider activity and verified short-interest context",
+        "POLA customer identity, trial delivery schedule and committed value beyond the 50-unit trial",
+        "CYN customer identity, order value, delivery schedule and unit count"
+      ],
+      "counts": {
+        "research": 2,
+        "entries": 0,
+        "exits": 0
+      },
+      "deliveryDiagnostics": {
+        "repair20260928ReportedAt": "2026-09-28T01:47:21.040Z"
       }
     }
   ]
