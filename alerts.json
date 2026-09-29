@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-29T09:40:36.403Z",
+  "updatedAt": "2026-09-29T09:53:35.815Z",
   "alerts": [
     {
       "id": "options-bb-fy27q2-20260924",
@@ -591,70 +591,65 @@
       }
     },
     "meme": {
-      "id": "meme-scan-20260929T085214Z",
+      "id": "meme-scan-20260929T095223Z",
       "system": "meme",
-      "startedAt": "2026-09-29T08:52:14.000Z",
-      "checkedAt": "2026-09-29T08:54:23.093Z",
-      "scheduledFor": "2026-09-29T08:00:00.000Z",
-      "nextScheduledAt": "2026-09-29T09:00:00.000Z",
+      "startedAt": "2026-09-29T09:52:23.000Z",
+      "checkedAt": "2026-09-29T09:53:35.815Z",
+      "scheduledFor": "2026-09-29T09:00:00.000Z",
+      "nextScheduledAt": "2026-09-29T10:00:00.000Z",
       "status": "data_limited",
-      "summary": "No open meme paper trades required management. Fresh DEX profiles included Anyi, Orange Shark and other self-submitted launches; latest/top boosts remained dominated by promoted tokens without verified tracked-wallet persistence or safety confirmation. KOL Explorer supplied on-chain wallet addresses and current holdings for IdontPayTaxes and Daumen. IdontPayTaxes' only recent fully retained position surfaced as KRATER, but it was rejected: approximately $10.2K market cap, $6.3K liquidity, 82 holders, 25.1% top-10 concentration, only one of three tracked wallets still holding, and that wallet was at 0.55x after eight hours. STONK showed broad historical KOL participation and strong liquidity, but was rejected as a fresh entry because it was down 2.1% over 24 hours, 96 of 120 priced wallets were underwater, and Frank DeGods had only about $385 left after realizing roughly $247K. Public-figure discovery found no new verified official token launch or endorsement. X live-search access was unavailable, so unique-author momentum and spam filtering could not be completed. No research, entry, exit or mark event was added.",
+      "summary": "No open meme paper trades required management. Fresh DEX Screener token profiles and boost feeds were dominated by self-submitted or promoted launches without verified tracked-wallet persistence, ownership safety or spam-filtered social confirmation. The prominent Trump-themed HOOKEDCAT listing explicitly described itself as not official, so its matching theme and trumpcards.lol link were rejected as proof of affiliation. Current public-figure discovery found no verified new official token launch or endorsement from Elon Musk, Donald Trump or another prominent figure. KOL Explorer was unavailable for this run, preventing current holdings and remaining-position checks for IdontPayTaxes, Daumen, Frank DeGods, Numero and verified Clukz. X live search was also unavailable, preventing unique-author velocity and spam filtering. No research, entry, exit or mark event was added.",
       "sources": [
         {
           "name": "DEX Screener latest token profiles",
           "url": "https://api.dexscreener.com/token-profiles/latest/v1",
-          "checkedAt": "2026-09-29T08:54:23.093Z",
+          "checkedAt": "2026-09-29T09:53:35.815Z",
           "status": "checked"
         },
         {
           "name": "DEX Screener latest token boosts",
           "url": "https://api.dexscreener.com/token-boosts/latest/v1",
-          "checkedAt": "2026-09-29T08:54:23.093Z",
+          "checkedAt": "2026-09-29T09:53:35.815Z",
           "status": "checked"
         },
         {
           "name": "DEX Screener top token boosts",
           "url": "https://api.dexscreener.com/token-boosts/top/v1",
-          "checkedAt": "2026-09-29T08:54:23.093Z",
+          "checkedAt": "2026-09-29T09:53:35.815Z",
           "status": "checked"
         },
         {
           "name": "KOL Explorer tracked-wallet profiles and holdings",
           "url": "https://kolexplorer.com/",
-          "checkedAt": "2026-09-29T08:54:23.093Z",
-          "status": "checked"
-        },
-        {
-          "name": "KOL Explorer KRATER token analysis",
-          "url": "https://kolexplorer.com/token/m5q3JpMtohBRhW2mGnzCj287NkMNCJHZjMepSkHXtos",
-          "checkedAt": "2026-09-29T08:54:23.093Z",
-          "status": "checked"
-        },
-        {
-          "name": "KOL Explorer STONK token analysis",
-          "url": "https://kolexplorer.com/token/6GmAFSYs4gk3FDao5FzzySQpPZaWsa4rUJHacpMpUNgx",
-          "checkedAt": "2026-09-29T08:54:23.093Z",
-          "status": "checked"
+          "checkedAt": "2026-09-29T09:53:35.815Z",
+          "status": "unavailable"
         },
         {
           "name": "Current public-figure and official token-launch discovery",
           "url": "https://www.google.com/search?q=September+29+2026+official+meme+coin+token+launch+contract+address+Elon+Musk+Donald+Trump",
-          "checkedAt": "2026-09-29T08:54:23.093Z",
+          "checkedAt": "2026-09-29T09:53:35.815Z",
           "status": "checked"
         },
         {
-          "name": "X live unique-author search for STONK and KRATER",
+          "name": "Elon Musk public X profile",
+          "url": "https://x.com/elonmusk",
+          "checkedAt": "2026-09-29T09:53:35.815Z",
+          "status": "checked"
+        },
+        {
+          "name": "X live unique-author search",
           "url": "https://x.com/search",
-          "checkedAt": "2026-09-29T08:54:23.093Z",
+          "checkedAt": "2026-09-29T09:53:35.815Z",
           "status": "unavailable"
         }
       ],
       "missingData": [
-        "complete token-specific active holdings and remaining-position percentages for all five named tracked wallets",
-        "independent deployer, insider, bundler and wash-trading analysis beyond the available concentration checks",
+        "current token-specific holdings and remaining-position percentages for all five named tracked wallets",
+        "verified two-wallet convergence and greater-than-one-hour persistence",
+        "independent deployer, insider, bundler and wash-trading analysis for newly surfaced tokens",
         "X unique-author mention velocity, acceleration and spam filtering",
-        "independent primary-source affiliation for newly surfaced self-submitted token profiles",
-        "complete real-time coverage of all Solana launches and liquidity venues"
+        "independent primary-source affiliation for self-submitted public-figure-themed tokens",
+        "complete real-time coverage of all Solana launches, holders, buyers and liquidity venues"
       ],
       "counts": {
         "research": 0,
@@ -10139,6 +10134,76 @@
       },
       "deliveryDiagnostics": {
         "repair20260928ReportedAt": "2026-09-28T01:47:21.040Z"
+      }
+    },
+    {
+      "id": "meme-scan-20260929T095223Z",
+      "system": "meme",
+      "startedAt": "2026-09-29T09:52:23.000Z",
+      "checkedAt": "2026-09-29T09:53:35.815Z",
+      "scheduledFor": "2026-09-29T09:00:00.000Z",
+      "nextScheduledAt": "2026-09-29T10:00:00.000Z",
+      "status": "data_limited",
+      "summary": "No open meme paper trades required management. Fresh DEX Screener token profiles and boost feeds were dominated by self-submitted or promoted launches without verified tracked-wallet persistence, ownership safety or spam-filtered social confirmation. The prominent Trump-themed HOOKEDCAT listing explicitly described itself as not official, so its matching theme and trumpcards.lol link were rejected as proof of affiliation. Current public-figure discovery found no verified new official token launch or endorsement from Elon Musk, Donald Trump or another prominent figure. KOL Explorer was unavailable for this run, preventing current holdings and remaining-position checks for IdontPayTaxes, Daumen, Frank DeGods, Numero and verified Clukz. X live search was also unavailable, preventing unique-author velocity and spam filtering. No research, entry, exit or mark event was added.",
+      "sources": [
+        {
+          "name": "DEX Screener latest token profiles",
+          "url": "https://api.dexscreener.com/token-profiles/latest/v1",
+          "checkedAt": "2026-09-29T09:53:35.815Z",
+          "status": "checked"
+        },
+        {
+          "name": "DEX Screener latest token boosts",
+          "url": "https://api.dexscreener.com/token-boosts/latest/v1",
+          "checkedAt": "2026-09-29T09:53:35.815Z",
+          "status": "checked"
+        },
+        {
+          "name": "DEX Screener top token boosts",
+          "url": "https://api.dexscreener.com/token-boosts/top/v1",
+          "checkedAt": "2026-09-29T09:53:35.815Z",
+          "status": "checked"
+        },
+        {
+          "name": "KOL Explorer tracked-wallet profiles and holdings",
+          "url": "https://kolexplorer.com/",
+          "checkedAt": "2026-09-29T09:53:35.815Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "Current public-figure and official token-launch discovery",
+          "url": "https://www.google.com/search?q=September+29+2026+official+meme+coin+token+launch+contract+address+Elon+Musk+Donald+Trump",
+          "checkedAt": "2026-09-29T09:53:35.815Z",
+          "status": "checked"
+        },
+        {
+          "name": "Elon Musk public X profile",
+          "url": "https://x.com/elonmusk",
+          "checkedAt": "2026-09-29T09:53:35.815Z",
+          "status": "checked"
+        },
+        {
+          "name": "X live unique-author search",
+          "url": "https://x.com/search",
+          "checkedAt": "2026-09-29T09:53:35.815Z",
+          "status": "unavailable"
+        }
+      ],
+      "missingData": [
+        "current token-specific holdings and remaining-position percentages for all five named tracked wallets",
+        "verified two-wallet convergence and greater-than-one-hour persistence",
+        "independent deployer, insider, bundler and wash-trading analysis for newly surfaced tokens",
+        "X unique-author mention velocity, acceleration and spam filtering",
+        "independent primary-source affiliation for self-submitted public-figure-themed tokens",
+        "complete real-time coverage of all Solana launches, holders, buyers and liquidity venues"
+      ],
+      "counts": {
+        "research": 0,
+        "entries": 0,
+        "exits": 0
+      },
+      "deliveryDiagnostics": {
+        "repair20260928ReportedAt": "2026-09-28T02:04:42.735Z"
       }
     }
   ]
