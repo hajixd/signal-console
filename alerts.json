@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-29T12:32:30.190Z",
+  "updatedAt": "2026-09-29T12:59:00.543Z",
   "alerts": [
     {
       "id": "options-bb-fy27q2-20260924",
@@ -689,68 +689,131 @@
           "social and insider confirmation unavailable"
         ]
       }
+    },
+    {
+      "id": "penny-turb-h1-profitability-20260929",
+      "eventType": "research",
+      "system": "penny",
+      "timestamp": "2026-09-29T12:59:00.543Z",
+      "asset": "TURB",
+      "title": "Research: TURB revenue surges 173% and operating income turns positive",
+      "summary": "Turbo Energy reported first-half revenue of €15.03 million, up 172.7%, and swung to positive operating and net income. The result is materially constructive, but no paper entry is opened because the latest quote showed only a modest premarket reaction and executable spread, relative volume, regular-session continuation and current dilution capacity were not verified.",
+      "reasons": [
+        "First-half revenue increased 172.7% to €15.03 million from €5.51 million.",
+        "Operating income improved to €510,542 from a €1.16 million loss; net income reached €65,647 from a €1.40 million loss.",
+        "Working capital improved to €6.55 million from negative €0.91 million and shareholders' equity rose to €5.52 million.",
+        "The quality of growth requires caution: gross margin fell to 16.5% from 24.0%, operating cash use widened to €3.66 million, and €7.19 million of revenue was from related parties.",
+        "First-half registered-direct and ATM issuance raised €3.79 million and diluted shareholders, so current financing capacity must be reviewed before entry."
+      ],
+      "href": "https://www.stocktitan.net/news/TURB/turbo-energy-delivers-record-first-half-2026-revenue-and-swings-to-voq6944pqzhn.html",
+      "missingData": [
+        "fresh executable bid, ask and spread",
+        "regular-session relative and dollar volume",
+        "technical continuation after the opening range",
+        "current ATM, registered-direct, warrant and other dilution capacity",
+        "spam-filtered X unique-author momentum",
+        "current insider purchases and verified short-interest context",
+        "independent confirmation of related-party revenue quality and cash conversion"
+      ],
+      "risk": "High: thin microcap liquidity, falling gross margin, negative operating cash flow, heavy related-party revenue, prior registered-direct/ATM dilution and unverified current financing capacity.",
+      "details": {
+        "exchange": "Nasdaq",
+        "catalyst": "First-half 2026 financial results",
+        "catalystDate": "2026-09-29",
+        "evidenceSources": [
+          {
+            "name": "Turbo Energy issuer financial-results release",
+            "url": "https://www.stocktitan.net/news/TURB/turbo-energy-delivers-record-first-half-2026-revenue-and-swings-to-voq6944pqzhn.html",
+            "publishedAt": "2026-09-29T12:15:00.000Z",
+            "checkedAt": "2026-09-29T12:59:00.543Z",
+            "verification": "checked"
+          },
+          {
+            "name": "TURB latest market data",
+            "url": "https://finance.yahoo.com/quote/TURB/",
+            "checkedAt": "2026-09-29T12:59:00.543Z",
+            "verification": "checked"
+          }
+        ],
+        "verificationStatus": "Issuer-reported revenue, income, balance-sheet and cash-flow figures verified in the dated release; entry-quality market and dilution checks remain incomplete.",
+        "metrics": {
+          "revenueEur": 15033238,
+          "revenueGrowthPct": 172.7,
+          "grossMarginPct": 16.5,
+          "operatingIncomeEur": 510542,
+          "netIncomeEur": 65647,
+          "operatingCashFlowEur": -3658411,
+          "relatedPartyRevenueEur": 7186691,
+          "workingCapitalEur": 6547449,
+          "shareIssuanceProceedsEur": 3786022,
+          "latestDisplayedPrice": 1.04,
+          "displayedChangePct": 0.48077,
+          "approxMarketCapUsd": 54169128
+        },
+        "rejectionReasons": [
+          "no executable spread or confirmed liquidity",
+          "no abnormal regular-session relative-volume confirmation",
+          "modest displayed premarket reaction despite the release",
+          "gross-margin compression and increased operating cash burn",
+          "material related-party revenue concentration",
+          "registered-direct and ATM dilution history with current capacity unverified"
+        ]
+      }
     }
   ],
   "scanners": {
     "penny": {
-      "id": "penny-scan-20260929T120631Z",
+      "id": "penny-scan-20260929T125724Z",
       "system": "penny",
-      "startedAt": "2026-09-29T12:06:31.000Z",
-      "checkedAt": "2026-09-29T12:10:45.000Z",
+      "startedAt": "2026-09-29T12:57:24.000Z",
+      "checkedAt": "2026-09-29T12:59:00.543Z",
       "scheduledFor": "2026-09-29T12:00:00.000Z",
       "nextScheduledAt": "2026-09-29T13:00:00.000Z",
       "status": "data_limited",
-      "summary": "No open penny-stock paper trades required management. Two new source-backed research setups were identified: POLA received a 50-generator trial order from a major Tier 1 Southeast Asian telecom operator, and CYN received a follow-on DriveMod Tugger order from an existing Fortune 100 heavy-equipment customer. Neither qualified for a paper entry: POLA's broader 2,500-site rollout is uncommitted and recent 424B3/EFFECT filings create material dilution risk; CYN disclosed neither customer identity nor order value and remains a very small, loss-making issuer. Fresh executable bid/ask, full dilution review, regular-session continuation and spam-filtered social confirmation were unavailable. KALA, ELAB and FFAI were rejected for non-binding/early-stage/promotional or dilution-risk catalysts; RNAC was outside the penny-price scope. Two research events, no entries, exits or marks were added.",
+      "summary": "No open penny-stock paper trades required management. One new research-only catalyst was published for TURB after Turbo Energy reported 172.7% first-half revenue growth and a swing to positive operating and net income. No paper entry was opened because the latest displayed price reaction was modest and executable spread, abnormal regular-session volume, technical continuation and current dilution capacity were not verified. POLA and CYN remained research-only with negative displayed premarket changes; SOAR remained severely extended and FTHM remained a failed-continuation rejection. Other fresh microcap releases were rejected as promotional, early-stage, financing-driven or lacking sufficient market confirmation.",
       "sources": [
         {
-          "name": "Polar Power September 29 issuer release",
-          "url": "https://www.stocktitan.net/news/POLA/polar-power-receives-trial-order-for-50-propane-fueled-dc-generators-a4n6ahsdadpc.html",
-          "checkedAt": "2026-09-29T12:10:45.000Z",
+          "name": "Turbo Energy September 29 financial-results release",
+          "url": "https://www.stocktitan.net/news/TURB/turbo-energy-delivers-record-first-half-2026-revenue-and-swings-to-voq6944pqzhn.html",
+          "checkedAt": "2026-09-29T12:59:00.543Z",
           "status": "checked"
         },
         {
-          "name": "Cyngn September 29 issuer release",
-          "url": "https://www.stocktitan.net/news/CYN/cyngn-expands-autonomous-tugger-adoption-with-fortune-100-heavy-hzddkjkrad09.html",
-          "checkedAt": "2026-09-29T12:10:45.000Z",
+          "name": "September 29 live issuer-release feed",
+          "url": "https://www.stocktitan.net/news/live.html",
+          "checkedAt": "2026-09-29T12:59:00.543Z",
           "status": "checked"
         },
         {
-          "name": "September 29 U.S. microcap issuer-release feed",
-          "url": "https://www.stocktitan.net/news/2026-09-29/",
-          "checkedAt": "2026-09-29T12:10:45.000Z",
-          "status": "checked"
-        },
-        {
-          "name": "POLA, CYN and rejected-candidate market data",
+          "name": "TURB, POLA, CYN, SOAR and FTHM current market data",
           "url": "https://finance.yahoo.com/",
-          "checkedAt": "2026-09-29T12:10:45.000Z",
+          "checkedAt": "2026-09-29T12:59:00.543Z",
           "status": "checked"
         },
         {
           "name": "Reuters September 29 premarket regime report",
           "url": "https://www.reuters.com/business/us-stock-futures-flat-tech-bounce-meets-crude-driven-caution-2026-09-29/",
-          "checkedAt": "2026-09-29T12:10:45.000Z",
+          "checkedAt": "2026-09-29T12:59:00.543Z",
           "status": "checked"
         },
         {
-          "name": "Complete real-time bid/ask, social and universe-wide dilution data",
+          "name": "Complete real-time dilution, insider and social checks",
           "url": "https://www.sec.gov/edgar/search/",
-          "checkedAt": "2026-09-29T12:10:45.000Z",
+          "checkedAt": "2026-09-29T12:59:00.543Z",
           "status": "unavailable"
         }
       ],
       "missingData": [
-        "fresh executable bid, ask and spread for POLA and CYN",
-        "regular-session relative-volume and technical continuation confirmation",
-        "complete current S-1, S-3, 424B, ATM, PIPE, warrant and convertible review for CYN and the full candidate universe",
-        "remaining issuance capacity and precise dilution exposure under POLA's September 25 424B3 and September 28 EFFECT filings",
-        "spam-filtered X unique-author acceleration for POLA and CYN",
+        "fresh executable bid, ask and spread for TURB and the active research set",
+        "regular-session relative and dollar volume plus opening-range continuation",
+        "complete current S-1, S-3, 424B, ATM, PIPE, warrant and convertible review across the candidate universe",
+        "spam-filtered X unique-author acceleration",
         "current insider activity and verified short-interest context",
-        "POLA customer identity, trial delivery schedule and committed value beyond the 50-unit trial",
-        "CYN customer identity, order value, delivery schedule and unit count"
+        "independent confirmation of TURB related-party revenue quality and cash conversion",
+        "complete real-time U.S. microcap universe coverage"
       ],
       "counts": {
-        "research": 2,
+        "research": 1,
         "entries": 0,
         "exits": 0
       },
@@ -11316,6 +11379,65 @@
       },
       "deliveryDiagnostics": {
         "repair20260928ReportedAt": "2026-09-28T02:04:42.735Z"
+      }
+    },
+    {
+      "id": "penny-scan-20260929T125724Z",
+      "system": "penny",
+      "startedAt": "2026-09-29T12:57:24.000Z",
+      "checkedAt": "2026-09-29T12:59:00.543Z",
+      "scheduledFor": "2026-09-29T12:00:00.000Z",
+      "nextScheduledAt": "2026-09-29T13:00:00.000Z",
+      "status": "data_limited",
+      "summary": "No open penny-stock paper trades required management. One new research-only catalyst was published for TURB after Turbo Energy reported 172.7% first-half revenue growth and a swing to positive operating and net income. No paper entry was opened because the latest displayed price reaction was modest and executable spread, abnormal regular-session volume, technical continuation and current dilution capacity were not verified. POLA and CYN remained research-only with negative displayed premarket changes; SOAR remained severely extended and FTHM remained a failed-continuation rejection. Other fresh microcap releases were rejected as promotional, early-stage, financing-driven or lacking sufficient market confirmation.",
+      "sources": [
+        {
+          "name": "Turbo Energy September 29 financial-results release",
+          "url": "https://www.stocktitan.net/news/TURB/turbo-energy-delivers-record-first-half-2026-revenue-and-swings-to-voq6944pqzhn.html",
+          "checkedAt": "2026-09-29T12:59:00.543Z",
+          "status": "checked"
+        },
+        {
+          "name": "September 29 live issuer-release feed",
+          "url": "https://www.stocktitan.net/news/live.html",
+          "checkedAt": "2026-09-29T12:59:00.543Z",
+          "status": "checked"
+        },
+        {
+          "name": "TURB, POLA, CYN, SOAR and FTHM current market data",
+          "url": "https://finance.yahoo.com/",
+          "checkedAt": "2026-09-29T12:59:00.543Z",
+          "status": "checked"
+        },
+        {
+          "name": "Reuters September 29 premarket regime report",
+          "url": "https://www.reuters.com/business/us-stock-futures-flat-tech-bounce-meets-crude-driven-caution-2026-09-29/",
+          "checkedAt": "2026-09-29T12:59:00.543Z",
+          "status": "checked"
+        },
+        {
+          "name": "Complete real-time dilution, insider and social checks",
+          "url": "https://www.sec.gov/edgar/search/",
+          "checkedAt": "2026-09-29T12:59:00.543Z",
+          "status": "unavailable"
+        }
+      ],
+      "missingData": [
+        "fresh executable bid, ask and spread for TURB and the active research set",
+        "regular-session relative and dollar volume plus opening-range continuation",
+        "complete current S-1, S-3, 424B, ATM, PIPE, warrant and convertible review across the candidate universe",
+        "spam-filtered X unique-author acceleration",
+        "current insider activity and verified short-interest context",
+        "independent confirmation of TURB related-party revenue quality and cash conversion",
+        "complete real-time U.S. microcap universe coverage"
+      ],
+      "counts": {
+        "research": 1,
+        "entries": 0,
+        "exits": 0
+      },
+      "deliveryDiagnostics": {
+        "repair20260928ReportedAt": "2026-09-28T01:47:21.040Z"
       }
     }
   ]
