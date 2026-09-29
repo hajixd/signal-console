@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-29T03:42:56.973Z",
+  "updatedAt": "2026-09-29T04:11:42.329Z",
   "alerts": [
     {
       "id": "options-bb-fy27q2-20260924",
@@ -286,48 +286,54 @@
   ],
   "scanners": {
     "penny": {
-      "id": "penny-scan-20260929T023233Z",
+      "id": "penny-scan-20260929T040956Z",
       "system": "penny",
-      "startedAt": "2026-09-29T02:32:33.000Z",
-      "checkedAt": "2026-09-29T02:33:24.440Z",
-      "scheduledFor": "2026-09-29T02:00:00.000Z",
-      "nextScheduledAt": "2026-09-29T03:00:00.000Z",
+      "startedAt": "2026-09-29T04:09:56.000Z",
+      "checkedAt": "2026-09-29T04:11:42.329Z",
+      "scheduledFor": "2026-09-29T04:00:00.000Z",
+      "nextScheduledAt": "2026-09-29T05:00:00.000Z",
       "status": "market_closed",
-      "summary": "No open penny paper trades required management. The U.S. cash market was closed. FTHM's final available price remained $0.5374, down 7.82%, after a $0.4810-$0.5903 session on 4,888,931 shares; IWM finished down 0.68%. Fathom's issuer page still showed no announcement newer than September 24, and the existing research remains rejected because continuation failed, the proposed transaction remains preliminary and share-based, and listing-compliance risk persists. A bounded post-close discovery and SEC search returned no fresh, unextended microcap setup that passed the primary-catalyst, dilution, liquidity and constructive-structure gates. No research, entry, exit or mark was created.",
+      "summary": "No open penny-stock paper trades required management. The U.S. cash market was closed. FTHM's final available quote remained $0.5374, down 7.82%, after a $0.4810-$0.5903 session on 4,888,931 shares; IWM remained down 0.68%. Fathom's issuer page still showed September 24 as its newest announcement, so the existing research remains rejected for entry because continuation failed, the proposed transaction remains preliminary and share-based, and listing-compliance risk persists. A fresh bounded post-close catalyst, SEC and dilution search did not produce a current primary-source microcap setup with verified liquidity and constructive structure. No research, entry, exit or mark was created.",
       "sources": [
         {
           "name": "FTHM and IWM post-close market data",
           "url": "https://finance.yahoo.com/",
-          "checkedAt": "2026-09-29T02:33:24.440Z",
+          "checkedAt": "2026-09-29T04:11:42.329Z",
           "status": "checked"
         },
         {
           "name": "Fathom issuer press releases",
           "url": "https://ir.fathominc.com/news-events/press-releases",
-          "checkedAt": "2026-09-29T02:33:24.440Z",
+          "checkedAt": "2026-09-29T04:11:42.329Z",
+          "status": "checked"
+        },
+        {
+          "name": "Fathom SEC entity filings page",
+          "url": "https://www.sec.gov/edgar/browse/?CIK=1753162&owner=exclude",
+          "checkedAt": "2026-09-29T04:11:42.329Z",
           "status": "checked"
         },
         {
           "name": "Current post-close microcap catalyst discovery",
-          "url": "https://www.google.com/search?q=September+28+2026+after+hours+Nasdaq+microcap+press+release+partnership+contract+FDA+merger",
-          "checkedAt": "2026-09-29T02:33:24.440Z",
+          "url": "https://www.google.com/search?q=September+28+2026+after+hours+Nasdaq+microcap+official+press+release+partnership+contract+FDA+merger",
+          "checkedAt": "2026-09-29T04:11:42.329Z",
           "status": "checked"
         },
         {
           "name": "Current microcap dilution and corporate-action discovery",
-          "url": "https://www.google.com/search?q=September+28+2026+penny+stock+after+hours+offering+ATM+reverse+split",
-          "checkedAt": "2026-09-29T02:33:24.440Z",
+          "url": "https://www.google.com/search?q=September+28+2026+microcap+after+hours+offering+ATM+PIPE+424B+reverse+split+SEC",
+          "checkedAt": "2026-09-29T04:11:42.329Z",
           "status": "checked"
         },
         {
-          "name": "Complete SEC microcap filing sweep",
+          "name": "Complete current SEC microcap filing universe",
           "url": "https://www.sec.gov/edgar/search/",
-          "checkedAt": "2026-09-29T02:33:24.440Z",
+          "checkedAt": "2026-09-29T04:11:42.329Z",
           "status": "unavailable"
         }
       ],
       "missingData": [
-        "fresh executable after-hours liquidity and spread for FTHM",
+        "fresh executable overnight liquidity and spread for FTHM",
         "complete real-time microcap universe coverage",
         "complete current dilution, ATM, offering, warrant and convertible sweep across the candidate universe",
         "spam-filtered X unique-author acceleration",
@@ -8049,6 +8055,70 @@
       },
       "deliveryDiagnostics": {
         "repair20260928ReportedAt": "2026-09-28T02:04:42.735Z"
+      }
+    },
+    {
+      "id": "penny-scan-20260929T040956Z",
+      "system": "penny",
+      "startedAt": "2026-09-29T04:09:56.000Z",
+      "checkedAt": "2026-09-29T04:11:42.329Z",
+      "scheduledFor": "2026-09-29T04:00:00.000Z",
+      "nextScheduledAt": "2026-09-29T05:00:00.000Z",
+      "status": "market_closed",
+      "summary": "No open penny-stock paper trades required management. The U.S. cash market was closed. FTHM's final available quote remained $0.5374, down 7.82%, after a $0.4810-$0.5903 session on 4,888,931 shares; IWM remained down 0.68%. Fathom's issuer page still showed September 24 as its newest announcement, so the existing research remains rejected for entry because continuation failed, the proposed transaction remains preliminary and share-based, and listing-compliance risk persists. A fresh bounded post-close catalyst, SEC and dilution search did not produce a current primary-source microcap setup with verified liquidity and constructive structure. No research, entry, exit or mark was created.",
+      "sources": [
+        {
+          "name": "FTHM and IWM post-close market data",
+          "url": "https://finance.yahoo.com/",
+          "checkedAt": "2026-09-29T04:11:42.329Z",
+          "status": "checked"
+        },
+        {
+          "name": "Fathom issuer press releases",
+          "url": "https://ir.fathominc.com/news-events/press-releases",
+          "checkedAt": "2026-09-29T04:11:42.329Z",
+          "status": "checked"
+        },
+        {
+          "name": "Fathom SEC entity filings page",
+          "url": "https://www.sec.gov/edgar/browse/?CIK=1753162&owner=exclude",
+          "checkedAt": "2026-09-29T04:11:42.329Z",
+          "status": "checked"
+        },
+        {
+          "name": "Current post-close microcap catalyst discovery",
+          "url": "https://www.google.com/search?q=September+28+2026+after+hours+Nasdaq+microcap+official+press+release+partnership+contract+FDA+merger",
+          "checkedAt": "2026-09-29T04:11:42.329Z",
+          "status": "checked"
+        },
+        {
+          "name": "Current microcap dilution and corporate-action discovery",
+          "url": "https://www.google.com/search?q=September+28+2026+microcap+after+hours+offering+ATM+PIPE+424B+reverse+split+SEC",
+          "checkedAt": "2026-09-29T04:11:42.329Z",
+          "status": "checked"
+        },
+        {
+          "name": "Complete current SEC microcap filing universe",
+          "url": "https://www.sec.gov/edgar/search/",
+          "checkedAt": "2026-09-29T04:11:42.329Z",
+          "status": "unavailable"
+        }
+      ],
+      "missingData": [
+        "fresh executable overnight liquidity and spread for FTHM",
+        "complete real-time microcap universe coverage",
+        "complete current dilution, ATM, offering, warrant and convertible sweep across the candidate universe",
+        "spam-filtered X unique-author acceleration",
+        "current insider activity across the candidate universe",
+        "a fresh unextended primary-source catalyst meeting all entry gates"
+      ],
+      "counts": {
+        "research": 0,
+        "entries": 0,
+        "exits": 0
+      },
+      "deliveryDiagnostics": {
+        "repair20260928ReportedAt": "2026-09-28T01:47:21.040Z"
       }
     }
   ]
