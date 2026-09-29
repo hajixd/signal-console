@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-29T09:14:35.026Z",
+  "updatedAt": "2026-09-29T09:31:05.622Z",
   "alerts": [
     {
       "id": "options-bb-fy27q2-20260924",
@@ -460,43 +460,43 @@
   ],
   "scanners": {
     "penny": {
-      "id": "penny-scan-20260929T080609Z",
+      "id": "penny-scan-20260929T092958Z",
       "system": "penny",
-      "startedAt": "2026-09-29T08:06:09.000Z",
-      "checkedAt": "2026-09-29T08:07:51.753Z",
-      "scheduledFor": "2026-09-29T08:00:00.000Z",
-      "nextScheduledAt": "2026-09-29T09:00:00.000Z",
-      "status": "data_limited",
-      "summary": "No open penny-stock paper trades required management. Fresh issuer filing pages showed no filing newer than September 28 for SOAR and no filing newer than September 25 for FTHM. The latest available quotes remained stale post-close prints: SOAR $0.3188 after a 78.89% session gain, FTHM $0.5374 after a 7.82% decline and IWM $280.02 after a 0.68% decline. SOAR remains rejected for entry because of extreme extension plus financing, dilution, execution, customer-payment and going-concern risk; FTHM remains rejected after failed continuation and proposed-transaction dilution/control risk. A fresh SEC/news search produced no additional primary-source microcap catalyst that cleared the entry or material-research threshold. The dated September 29 news feed and fresh executable overnight/premarket liquidity were unavailable. No research, entry, exit or mark event was added.",
+      "startedAt": "2026-09-29T09:29:58.000Z",
+      "checkedAt": "2026-09-29T09:31:05.622Z",
+      "scheduledFor": "2026-09-29T09:00:00.000Z",
+      "nextScheduledAt": "2026-09-29T10:00:00.000Z",
+      "status": "market_closed",
+      "summary": "No open penny-stock paper trades required management. The latest displayed SOAR ($0.3188), FTHM ($0.5374) and IWM ($280.02) values were unchanged post-close prints with no fresh intraday range, so they were not treated as executable premarket quotes. Fresh issuer filing pages showed no SOAR filing newer than September 28 and no FTHM filing newer than September 25. SOAR remains rejected for entry because of its 78.89% prior-session extension plus financing, dilution, execution, customer-payment and going-concern risks. FTHM remains rejected after failed continuation and proposed-transaction dilution/control risk. A bounded current SEC and news scan found no additional primary-source microcap catalyst that cleared the research or entry threshold. No research, entry, exit or mark event was added.",
       "sources": [
         {
           "name": "Volato Group issuer SEC filings",
           "url": "https://ir.flyvolato.com/financial-information/sec-filings",
-          "checkedAt": "2026-09-29T08:07:51.753Z",
+          "checkedAt": "2026-09-29T09:31:05.622Z",
           "status": "checked"
         },
         {
           "name": "Fathom Holdings issuer SEC filings",
           "url": "https://ir.fathominc.com/sec-filings/sec-filings",
-          "checkedAt": "2026-09-29T08:07:51.753Z",
+          "checkedAt": "2026-09-29T09:31:05.622Z",
           "status": "checked"
         },
         {
           "name": "SOAR, FTHM and IWM latest available market data",
           "url": "https://finance.yahoo.com/",
-          "checkedAt": "2026-09-29T08:07:51.753Z",
+          "checkedAt": "2026-09-29T09:31:05.622Z",
           "status": "checked"
         },
         {
           "name": "Current SEC and microcap catalyst discovery",
           "url": "https://www.sec.gov/edgar/search/",
-          "checkedAt": "2026-09-29T08:07:51.753Z",
+          "checkedAt": "2026-09-29T09:31:05.622Z",
           "status": "checked"
         },
         {
-          "name": "September 29 microcap news feed",
+          "name": "September 29 dated microcap news feed",
           "url": "https://www.stocktitan.net/news/2026-09-29/",
-          "checkedAt": "2026-09-29T08:07:51.753Z",
+          "checkedAt": "2026-09-29T09:31:05.622Z",
           "status": "unavailable"
         }
       ],
@@ -10009,6 +10009,65 @@
       },
       "deliveryDiagnostics": {
         "repair20260928ReportedAt": "2026-09-28T00:50:48.883Z"
+      }
+    },
+    {
+      "id": "penny-scan-20260929T092958Z",
+      "system": "penny",
+      "startedAt": "2026-09-29T09:29:58.000Z",
+      "checkedAt": "2026-09-29T09:31:05.622Z",
+      "scheduledFor": "2026-09-29T09:00:00.000Z",
+      "nextScheduledAt": "2026-09-29T10:00:00.000Z",
+      "status": "market_closed",
+      "summary": "No open penny-stock paper trades required management. The latest displayed SOAR ($0.3188), FTHM ($0.5374) and IWM ($280.02) values were unchanged post-close prints with no fresh intraday range, so they were not treated as executable premarket quotes. Fresh issuer filing pages showed no SOAR filing newer than September 28 and no FTHM filing newer than September 25. SOAR remains rejected for entry because of its 78.89% prior-session extension plus financing, dilution, execution, customer-payment and going-concern risks. FTHM remains rejected after failed continuation and proposed-transaction dilution/control risk. A bounded current SEC and news scan found no additional primary-source microcap catalyst that cleared the research or entry threshold. No research, entry, exit or mark event was added.",
+      "sources": [
+        {
+          "name": "Volato Group issuer SEC filings",
+          "url": "https://ir.flyvolato.com/financial-information/sec-filings",
+          "checkedAt": "2026-09-29T09:31:05.622Z",
+          "status": "checked"
+        },
+        {
+          "name": "Fathom Holdings issuer SEC filings",
+          "url": "https://ir.fathominc.com/sec-filings/sec-filings",
+          "checkedAt": "2026-09-29T09:31:05.622Z",
+          "status": "checked"
+        },
+        {
+          "name": "SOAR, FTHM and IWM latest available market data",
+          "url": "https://finance.yahoo.com/",
+          "checkedAt": "2026-09-29T09:31:05.622Z",
+          "status": "checked"
+        },
+        {
+          "name": "Current SEC and microcap catalyst discovery",
+          "url": "https://www.sec.gov/edgar/search/",
+          "checkedAt": "2026-09-29T09:31:05.622Z",
+          "status": "checked"
+        },
+        {
+          "name": "September 29 dated microcap news feed",
+          "url": "https://www.stocktitan.net/news/2026-09-29/",
+          "checkedAt": "2026-09-29T09:31:05.622Z",
+          "status": "unavailable"
+        }
+      ],
+      "missingData": [
+        "fresh executable overnight or premarket quotes, liquidity and spreads for SOAR and FTHM",
+        "complete real-time microcap universe coverage",
+        "complete current S-1, S-3, 424B, ATM, PIPE, warrant and convertible sweep across the candidate universe",
+        "spam-filtered X unique-author acceleration",
+        "current insider activity across the candidate universe",
+        "SOAR customer identity, credit quality and confirmation of initial prepayment receipt",
+        "regular-session technical confirmation after SOAR's extreme September 28 move"
+      ],
+      "counts": {
+        "research": 0,
+        "entries": 0,
+        "exits": 0
+      },
+      "deliveryDiagnostics": {
+        "repair20260928ReportedAt": "2026-09-28T01:47:21.040Z"
       }
     }
   ]
