@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-29T00:29:18.531Z",
+  "updatedAt": "2026-09-29T00:35:38.069Z",
   "alerts": [
     {
       "id": "options-bb-fy27q2-20260924",
@@ -458,97 +458,79 @@
       }
     },
     "futures": {
-      "id": "futures-scan-20260928233547246",
+      "id": "futures-scan-20260929003417473",
       "system": "futures",
-      "startedAt": "2026-09-28T23:35:47.246Z",
-      "checkedAt": "2026-09-28T23:36:22.625Z",
-      "scheduledFor": "2026-09-28T23:00:00.000Z",
-      "nextScheduledAt": "2026-09-29T00:00:00.000Z",
+      "startedAt": "2026-09-29T00:34:17.473Z",
+      "checkedAt": "2026-09-29T00:35:38.069Z",
+      "scheduledFor": "2026-09-29T00:00:00.000Z",
+      "nextScheduledAt": "2026-09-29T01:00:00.000Z",
       "status": "data_limited",
-      "summary": "No new futures entry or material research event. There are no open futures paper positions. The MGCZ26 page showed an open label but its exact-contract quote was stale at 4,148.7 from 4:59 p.m. EDT on September 28, down 3.99%, with 410.86K volume; it was explicitly delayed and inconsistent with the newer-session context, so it was excluded. Exact current MNQZ26, MESZ26 and MCLX26 quotes were unavailable. Live spreads, current structure, initial margins, expiry/roll clearance and risk-qualified triggers remain unresolved. The existing bearish gold research note remains unchanged.",
+      "summary": "No new futures entry or material research event. There are no open futures paper positions. MGCZ26 was the only exact-contract page available: it showed 4,149.3 at 8:20 p.m. EDT on September 28, down 0.46%, with 16.84K volume and a 4,146.3–4,161.7 range. The quote was explicitly delayed, so it was excluded from executable analysis. Exact current MNQZ26, MESZ26 and MCLX26 quotes were unavailable. Live spreads, current price/volume structure, initial margins, expiry/roll clearance and risk-qualified triggers remain unresolved. The existing bearish gold research note remains unchanged.",
       "sources": [
         {
-          "name": "CME Micro E-mini Nasdaq-100 futures",
-          "url": "https://www.cmegroup.com/markets/equities/nasdaq/micro-e-mini-nasdaq-100.html",
-          "checkedAt": "2026-09-28T23:36:22.625Z",
-          "status": "checked_public_data_delayed"
-        },
-        {
-          "name": "CME Micro E-mini S&P 500 futures",
-          "url": "https://www.cmegroup.com/markets/equities/sp/micro-e-mini-sandp-500.html",
-          "checkedAt": "2026-09-28T23:36:22.625Z",
-          "status": "checked_public_data_delayed"
-        },
-        {
-          "name": "CME Micro Gold futures",
-          "url": "https://www.cmegroup.com/markets/metals/precious/e-micro-gold.html",
-          "checkedAt": "2026-09-28T23:36:22.625Z",
+          "name": "CME E-mini Nasdaq-100 contract specifications",
+          "url": "https://www.cmegroup.com/markets/equities/nasdaq/e-mini-nasdaq-100.contractSpecs.html",
+          "checkedAt": "2026-09-29T00:35:38.069Z",
           "status": "checked_specs_only"
         },
         {
-          "name": "CME Micro WTI Crude Oil futures",
-          "url": "https://www.cmegroup.com/markets/energy/crude-oil/micro-wti-crude-oil.html",
-          "checkedAt": "2026-09-28T23:36:22.625Z",
+          "name": "CME E-mini S&P 500 contract specifications",
+          "url": "https://www.cmegroup.com/markets/equities/sp/e-mini-sandp500.contractSpecs.html",
+          "checkedAt": "2026-09-29T00:35:38.069Z",
           "status": "checked_specs_only"
         },
         {
-          "name": "CME trading hours",
-          "url": "https://www.cmegroup.com/trading-hours.html",
-          "checkedAt": "2026-09-28T23:36:22.625Z",
-          "status": "checked_session_open_expected"
+          "name": "CME Micro Gold contract specifications",
+          "url": "https://www.cmegroup.com/markets/metals/precious/e-micro-gold.contractSpecs.html",
+          "checkedAt": "2026-09-29T00:35:38.069Z",
+          "status": "checked_specs_only"
         },
         {
-          "name": "BLS September 2026 schedule",
+          "name": "CME Micro WTI contract specifications",
+          "url": "https://www.cmegroup.com/markets/energy/crude-oil/micro-wti-crude-oil.contractSpecs.html",
+          "checkedAt": "2026-09-29T00:35:38.069Z",
+          "status": "checked_specs_only"
+        },
+        {
+          "name": "BLS September 2026 release schedule",
           "url": "https://www.bls.gov/schedule/2026/09_sched.htm",
-          "checkedAt": "2026-09-28T23:36:22.625Z",
-          "status": "checked"
-        },
-        {
-          "name": "BEA release schedule",
-          "url": "https://www.bea.gov/news/schedule",
-          "checkedAt": "2026-09-28T23:36:22.625Z",
+          "checkedAt": "2026-09-29T00:35:38.069Z",
           "status": "checked"
         },
         {
           "name": "Federal Reserve calendar",
           "url": "https://www.federalreserve.gov/newsevents/calendar.htm",
-          "checkedAt": "2026-09-28T23:36:22.625Z",
+          "checkedAt": "2026-09-29T00:35:38.069Z",
           "status": "checked"
         },
         {
           "name": "EIA Weekly Petroleum Status Report",
           "url": "https://www.eia.gov/petroleum/supply/weekly/",
-          "checkedAt": "2026-09-28T23:36:22.625Z",
-          "status": "checked"
-        },
-        {
-          "name": "OPEC news",
-          "url": "https://www.opec.org/",
-          "checkedAt": "2026-09-28T23:36:22.625Z",
+          "checkedAt": "2026-09-29T00:35:38.069Z",
           "status": "checked"
         },
         {
           "name": "MarketWatch MNQZ26",
           "url": "https://www.marketwatch.com/investing/future/mnqz26",
-          "checkedAt": "2026-09-28T23:36:22.625Z",
+          "checkedAt": "2026-09-29T00:35:38.069Z",
           "status": "unavailable"
         },
         {
           "name": "MarketWatch MESZ26",
           "url": "https://www.marketwatch.com/investing/future/mesz26",
-          "checkedAt": "2026-09-28T23:36:22.625Z",
+          "checkedAt": "2026-09-29T00:35:38.069Z",
           "status": "unavailable"
         },
         {
           "name": "MarketWatch MGCZ26",
           "url": "https://www.marketwatch.com/investing/future/mgcz26",
-          "checkedAt": "2026-09-28T23:36:22.625Z",
-          "status": "checked_stale_delayed_quote_excluded"
+          "checkedAt": "2026-09-29T00:35:38.069Z",
+          "status": "checked_delayed_quote_excluded"
         },
         {
           "name": "MarketWatch MCLX26",
           "url": "https://www.marketwatch.com/investing/future/mclx26",
-          "checkedAt": "2026-09-28T23:36:22.625Z",
+          "checkedAt": "2026-09-29T00:35:38.069Z",
           "status": "unavailable"
         }
       ],
@@ -4748,6 +4730,120 @@
       }
     },
     {
+      "id": "meme-scan-20260929T000810Z",
+      "system": "meme",
+      "startedAt": "2026-09-29T00:08:10.000Z",
+      "checkedAt": "2026-09-29T00:09:22.642Z",
+      "scheduledFor": "2026-09-29T00:00:00.000Z",
+      "nextScheduledAt": "2026-09-29T01:00:00.000Z",
+      "status": "data_limited",
+      "summary": "No open meme paper trades required management. Fresh DEX Screener profile and boost feeds were dominated by self-submitted or paid promotions, including tokens explicitly described as unofficial. None established participation by IdontPayTaxes, Daumen, Frank DeGods, Numero or verified Clukz; greater-than-one-hour persistence; percent remaining; two-wallet convergence; safe holder/deployer/bundler structure; or spam-filtered unique-author acceleration. Current public-figure discovery confirmed only the existing official TRUMP contract and historical coverage, while current lookalike Trump/Musk tokens lacked verified affiliation. No independently verified new prominent-figure launch or endorsement was found. No candidate met the research or entry gates, so no research, entry, exit or mark was created.",
+      "sources": [
+        {
+          "name": "DEX Screener latest token profiles API",
+          "url": "https://api.dexscreener.com/token-profiles/latest/v1",
+          "checkedAt": "2026-09-29T00:09:22.642Z",
+          "status": "checked"
+        },
+        {
+          "name": "DEX Screener top token boosts API",
+          "url": "https://api.dexscreener.com/token-boosts/top/v1",
+          "checkedAt": "2026-09-29T00:09:22.642Z",
+          "status": "checked"
+        },
+        {
+          "name": "DEX Screener latest token boosts API",
+          "url": "https://api.dexscreener.com/token-boosts/latest/v1",
+          "checkedAt": "2026-09-29T00:09:22.642Z",
+          "status": "checked"
+        },
+        {
+          "name": "Official Trump meme site",
+          "url": "https://gettrumpmemes.com/",
+          "checkedAt": "2026-09-29T00:09:22.642Z",
+          "status": "checked"
+        },
+        {
+          "name": "Current public-figure token-launch search",
+          "url": "https://www.google.com/search?q=September+28+2026+official+meme+token+launch+Elon+Musk+Donald+Trump+endorsement+contract+address",
+          "checkedAt": "2026-09-29T00:09:22.642Z",
+          "status": "checked"
+        }
+      ],
+      "missingData": [
+        "Current holdings, entry timestamps and percent remaining for IdontPayTaxes, Daumen, Frank DeGods, Numero and verified Clukz",
+        "Independent confirmation of two-wallet convergence and greater-than-one-hour persistence",
+        "Complete deployer, insider, bundler, holder-concentration and wash-trading analysis for promoted tokens",
+        "Spam-filtered X/Twitter mention velocity and unique-author acceleration",
+        "Complete live pair price, liquidity, unique-buyer and holder metrics for every promoted token",
+        "Independent official affiliation for current promoted public-figure or narrative tokens"
+      ],
+      "counts": {
+        "research": 0,
+        "entries": 0,
+        "exits": 0
+      },
+      "deliveryDiagnostics": {
+        "repair20260928ReportedAt": "2026-09-28T02:04:42.735Z"
+      }
+    },
+    {
+      "id": "options-scan-20260929T002818Z",
+      "system": "options",
+      "startedAt": "2026-09-29T00:28:18.000Z",
+      "checkedAt": "2026-09-29T00:29:18.531Z",
+      "scheduledFor": "2026-09-29T00:00:00.000Z",
+      "nextScheduledAt": "2026-09-29T01:00:00.000Z",
+      "status": "market_closed",
+      "summary": "No open options paper trades required management. After the U.S. close, BB remained at $8.80 (+7.37%) on 30.56M shares, COST at $922.92 (+0.04%), and QQQ at $736.53 (-1.07%). The existing BB and COST research remained unchanged, with no material new issuer evidence. Nasdaq's exact option chains remained unavailable for both symbols, preventing reliable contract quotes, Greeks, IV, flow, spread and open-interest validation. No new research, entry, mark or exit was published.",
+      "sources": [
+        {
+          "name": "Market quotes (BB, COST, QQQ)",
+          "url": "https://finance.yahoo.com/",
+          "checkedAt": "2026-09-29T00:29:18.531Z",
+          "status": "checked"
+        },
+        {
+          "name": "BlackBerry Investor Relations",
+          "url": "https://investors.blackberry.com/press-releases",
+          "checkedAt": "2026-09-29T00:29:18.531Z",
+          "status": "checked"
+        },
+        {
+          "name": "Costco Investor Relations",
+          "url": "https://investor.costco.com/news/default.aspx",
+          "checkedAt": "2026-09-29T00:29:18.531Z",
+          "status": "checked"
+        },
+        {
+          "name": "Nasdaq BB option chain",
+          "url": "https://www.nasdaq.com/market-activity/stocks/bb/option-chain",
+          "checkedAt": "2026-09-29T00:29:18.531Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "Nasdaq COST option chain",
+          "url": "https://www.nasdaq.com/market-activity/stocks/cost/option-chain",
+          "checkedAt": "2026-09-29T00:29:18.531Z",
+          "status": "unavailable"
+        }
+      ],
+      "missingData": [
+        "Reliable exact BB and COST option contract bid/ask, midpoint, volume and open interest",
+        "Contract Greeks and implied volatility",
+        "Buyer-initiated opening options flow and IV term structure",
+        "A complete current-market candidate screen beyond the bounded BB/COST follow-up"
+      ],
+      "counts": {
+        "research": 0,
+        "entries": 0,
+        "exits": 0
+      },
+      "deliveryDiagnostics": {
+        "repair20260928ReportedAt": "2026-09-28T00:50:48.883Z"
+      }
+    },
+    {
       "id": "futures-scan-20260927203939926",
       "system": "futures",
       "startedAt": "2026-09-27T20:39:39.926Z",
@@ -7019,117 +7115,99 @@
       }
     },
     {
-      "id": "meme-scan-20260929T000810Z",
-      "system": "meme",
-      "startedAt": "2026-09-29T00:08:10.000Z",
-      "checkedAt": "2026-09-29T00:09:22.642Z",
+      "id": "futures-scan-20260929003417473",
+      "system": "futures",
+      "startedAt": "2026-09-29T00:34:17.473Z",
+      "checkedAt": "2026-09-29T00:35:38.069Z",
       "scheduledFor": "2026-09-29T00:00:00.000Z",
       "nextScheduledAt": "2026-09-29T01:00:00.000Z",
       "status": "data_limited",
-      "summary": "No open meme paper trades required management. Fresh DEX Screener profile and boost feeds were dominated by self-submitted or paid promotions, including tokens explicitly described as unofficial. None established participation by IdontPayTaxes, Daumen, Frank DeGods, Numero or verified Clukz; greater-than-one-hour persistence; percent remaining; two-wallet convergence; safe holder/deployer/bundler structure; or spam-filtered unique-author acceleration. Current public-figure discovery confirmed only the existing official TRUMP contract and historical coverage, while current lookalike Trump/Musk tokens lacked verified affiliation. No independently verified new prominent-figure launch or endorsement was found. No candidate met the research or entry gates, so no research, entry, exit or mark was created.",
+      "summary": "No new futures entry or material research event. There are no open futures paper positions. MGCZ26 was the only exact-contract page available: it showed 4,149.3 at 8:20 p.m. EDT on September 28, down 0.46%, with 16.84K volume and a 4,146.3–4,161.7 range. The quote was explicitly delayed, so it was excluded from executable analysis. Exact current MNQZ26, MESZ26 and MCLX26 quotes were unavailable. Live spreads, current price/volume structure, initial margins, expiry/roll clearance and risk-qualified triggers remain unresolved. The existing bearish gold research note remains unchanged.",
       "sources": [
         {
-          "name": "DEX Screener latest token profiles API",
-          "url": "https://api.dexscreener.com/token-profiles/latest/v1",
-          "checkedAt": "2026-09-29T00:09:22.642Z",
+          "name": "CME E-mini Nasdaq-100 contract specifications",
+          "url": "https://www.cmegroup.com/markets/equities/nasdaq/e-mini-nasdaq-100.contractSpecs.html",
+          "checkedAt": "2026-09-29T00:35:38.069Z",
+          "status": "checked_specs_only"
+        },
+        {
+          "name": "CME E-mini S&P 500 contract specifications",
+          "url": "https://www.cmegroup.com/markets/equities/sp/e-mini-sandp500.contractSpecs.html",
+          "checkedAt": "2026-09-29T00:35:38.069Z",
+          "status": "checked_specs_only"
+        },
+        {
+          "name": "CME Micro Gold contract specifications",
+          "url": "https://www.cmegroup.com/markets/metals/precious/e-micro-gold.contractSpecs.html",
+          "checkedAt": "2026-09-29T00:35:38.069Z",
+          "status": "checked_specs_only"
+        },
+        {
+          "name": "CME Micro WTI contract specifications",
+          "url": "https://www.cmegroup.com/markets/energy/crude-oil/micro-wti-crude-oil.contractSpecs.html",
+          "checkedAt": "2026-09-29T00:35:38.069Z",
+          "status": "checked_specs_only"
+        },
+        {
+          "name": "BLS September 2026 release schedule",
+          "url": "https://www.bls.gov/schedule/2026/09_sched.htm",
+          "checkedAt": "2026-09-29T00:35:38.069Z",
           "status": "checked"
         },
         {
-          "name": "DEX Screener top token boosts API",
-          "url": "https://api.dexscreener.com/token-boosts/top/v1",
-          "checkedAt": "2026-09-29T00:09:22.642Z",
+          "name": "Federal Reserve calendar",
+          "url": "https://www.federalreserve.gov/newsevents/calendar.htm",
+          "checkedAt": "2026-09-29T00:35:38.069Z",
           "status": "checked"
         },
         {
-          "name": "DEX Screener latest token boosts API",
-          "url": "https://api.dexscreener.com/token-boosts/latest/v1",
-          "checkedAt": "2026-09-29T00:09:22.642Z",
+          "name": "EIA Weekly Petroleum Status Report",
+          "url": "https://www.eia.gov/petroleum/supply/weekly/",
+          "checkedAt": "2026-09-29T00:35:38.069Z",
           "status": "checked"
         },
         {
-          "name": "Official Trump meme site",
-          "url": "https://gettrumpmemes.com/",
-          "checkedAt": "2026-09-29T00:09:22.642Z",
-          "status": "checked"
-        },
-        {
-          "name": "Current public-figure token-launch search",
-          "url": "https://www.google.com/search?q=September+28+2026+official+meme+token+launch+Elon+Musk+Donald+Trump+endorsement+contract+address",
-          "checkedAt": "2026-09-29T00:09:22.642Z",
-          "status": "checked"
-        }
-      ],
-      "missingData": [
-        "Current holdings, entry timestamps and percent remaining for IdontPayTaxes, Daumen, Frank DeGods, Numero and verified Clukz",
-        "Independent confirmation of two-wallet convergence and greater-than-one-hour persistence",
-        "Complete deployer, insider, bundler, holder-concentration and wash-trading analysis for promoted tokens",
-        "Spam-filtered X/Twitter mention velocity and unique-author acceleration",
-        "Complete live pair price, liquidity, unique-buyer and holder metrics for every promoted token",
-        "Independent official affiliation for current promoted public-figure or narrative tokens"
-      ],
-      "counts": {
-        "research": 0,
-        "entries": 0,
-        "exits": 0
-      },
-      "deliveryDiagnostics": {
-        "repair20260928ReportedAt": "2026-09-28T02:04:42.735Z"
-      }
-    },
-    {
-      "id": "options-scan-20260929T002818Z",
-      "system": "options",
-      "startedAt": "2026-09-29T00:28:18.000Z",
-      "checkedAt": "2026-09-29T00:29:18.531Z",
-      "scheduledFor": "2026-09-29T00:00:00.000Z",
-      "nextScheduledAt": "2026-09-29T01:00:00.000Z",
-      "status": "market_closed",
-      "summary": "No open options paper trades required management. After the U.S. close, BB remained at $8.80 (+7.37%) on 30.56M shares, COST at $922.92 (+0.04%), and QQQ at $736.53 (-1.07%). The existing BB and COST research remained unchanged, with no material new issuer evidence. Nasdaq's exact option chains remained unavailable for both symbols, preventing reliable contract quotes, Greeks, IV, flow, spread and open-interest validation. No new research, entry, mark or exit was published.",
-      "sources": [
-        {
-          "name": "Market quotes (BB, COST, QQQ)",
-          "url": "https://finance.yahoo.com/",
-          "checkedAt": "2026-09-29T00:29:18.531Z",
-          "status": "checked"
-        },
-        {
-          "name": "BlackBerry Investor Relations",
-          "url": "https://investors.blackberry.com/press-releases",
-          "checkedAt": "2026-09-29T00:29:18.531Z",
-          "status": "checked"
-        },
-        {
-          "name": "Costco Investor Relations",
-          "url": "https://investor.costco.com/news/default.aspx",
-          "checkedAt": "2026-09-29T00:29:18.531Z",
-          "status": "checked"
-        },
-        {
-          "name": "Nasdaq BB option chain",
-          "url": "https://www.nasdaq.com/market-activity/stocks/bb/option-chain",
-          "checkedAt": "2026-09-29T00:29:18.531Z",
+          "name": "MarketWatch MNQZ26",
+          "url": "https://www.marketwatch.com/investing/future/mnqz26",
+          "checkedAt": "2026-09-29T00:35:38.069Z",
           "status": "unavailable"
         },
         {
-          "name": "Nasdaq COST option chain",
-          "url": "https://www.nasdaq.com/market-activity/stocks/cost/option-chain",
-          "checkedAt": "2026-09-29T00:29:18.531Z",
+          "name": "MarketWatch MESZ26",
+          "url": "https://www.marketwatch.com/investing/future/mesz26",
+          "checkedAt": "2026-09-29T00:35:38.069Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "MarketWatch MGCZ26",
+          "url": "https://www.marketwatch.com/investing/future/mgcz26",
+          "checkedAt": "2026-09-29T00:35:38.069Z",
+          "status": "checked_delayed_quote_excluded"
+        },
+        {
+          "name": "MarketWatch MCLX26",
+          "url": "https://www.marketwatch.com/investing/future/mclx26",
+          "checkedAt": "2026-09-29T00:35:38.069Z",
           "status": "unavailable"
         }
       ],
       "missingData": [
-        "Reliable exact BB and COST option contract bid/ask, midpoint, volume and open interest",
-        "Contract Greeks and implied volatility",
-        "Buyer-initiated opening options flow and IV term structure",
-        "A complete current-market candidate screen beyond the bounded BB/COST follow-up"
+        "Non-delayed exact dated quotes no older than five minutes for MNQZ26, MESZ26, MGCZ26 and MCLX26",
+        "Verified bid/ask spreads, liquidity and current intraday price/volume structure for every micro contract",
+        "Exact expiry/roll and session/holiday clearance for every candidate",
+        "Source-verified initial margin per contract and sufficient remaining paper equity",
+        "Observed tick-aligned triggers, invalidations and targets meeting at least 2:1 reward-to-risk and the $100 risk cap",
+        "Complete high-impact release clearance within the required 30-minute window"
       ],
       "counts": {
+        "openPositions": 0,
         "research": 0,
         "entries": 0,
-        "exits": 0
+        "exits": 0,
+        "marks": 0
       },
       "deliveryDiagnostics": {
-        "repair20260928ReportedAt": "2026-09-28T00:50:48.883Z"
+        "repair20260928ReportedAt": "2026-09-28T01:51:49.985Z"
       }
     }
   ]
