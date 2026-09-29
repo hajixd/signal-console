@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-29T12:59:00.543Z",
+  "updatedAt": "2026-09-29T13:23:50.569Z",
   "alerts": [
     {
       "id": "options-bb-fy27q2-20260924",
@@ -822,49 +822,49 @@
       }
     },
     "options": {
-      "id": "options-scan-20260929T115149Z",
+      "id": "options-scan-20260929T132217Z",
       "system": "options",
-      "startedAt": "2026-09-29T11:51:49.000Z",
-      "checkedAt": "2026-09-29T11:52:59.143Z",
-      "scheduledFor": "2026-09-29T11:00:00.000Z",
-      "nextScheduledAt": "2026-09-29T12:00:00.000Z",
+      "startedAt": "2026-09-29T13:22:17.000Z",
+      "checkedAt": "2026-09-29T13:23:50.569Z",
+      "scheduledFor": "2026-09-29T13:00:00.000Z",
+      "nextScheduledAt": "2026-09-29T14:00:00.000Z",
       "status": "market_closed",
-      "summary": "No open options paper trades required management. Fresh premarket reporting continued to place SMMT roughly 17%-22% above the prior close after AstraZeneca's $2 billion strategic investment, consistent with the existing material research catalyst but still substantially extended. The structured BB, COST, SMMT and QQQ displays continued to show prior-session values without intraday ranges, so they were not treated as executable premarket quotes. No new material catalyst change was verified for BB or COST. Nasdaq reported the BB, COST and SMMT option chains unavailable, preventing verification of an exact 21-60 DTE contract's bid, ask, midpoint, delta, remaining Greeks, IV, spread, volume, open interest and buyer-initiated opening flow. No research, entry, exit or mark event was added.",
+      "summary": "No open options paper trades required management. SMMT remained roughly 21%-23% above the prior close in fresh premarket reporting after AstraZeneca's $2 billion strategic investment, confirming the already-published catalyst but leaving the underlying substantially gap-extended before the regular session. No newly verified material catalyst change was found for BB or COST, and the structured BB, COST, SMMT and QQQ market displays still reflected prior-session values rather than executable premarket quotes. Nasdaq reported the BB, COST and SMMT option chains unavailable, so no exact 21-60 DTE contract could be verified for bid, ask, midpoint, delta, remaining Greeks, IV, spread, volume, open interest or buyer-initiated opening flow. No research, entry, exit or mark event was added.",
       "sources": [
         {
           "name": "Reuters September 29 premarket market and SMMT report",
           "url": "https://www.reuters.com/business/us-stock-futures-flat-tech-bounce-meets-crude-driven-caution-2026-09-29/",
-          "checkedAt": "2026-09-29T11:52:59.143Z",
+          "checkedAt": "2026-09-29T13:23:50.569Z",
           "status": "checked"
         },
         {
-          "name": "Current SMMT premarket reporting",
-          "url": "https://www.barrons.com/articles/s-p-500-futures-rise-in-premarket-trading-fair-isaac-loar-holdings-lag-72260cd5",
-          "checkedAt": "2026-09-29T11:52:59.143Z",
+          "name": "Current SMMT premarket quote context",
+          "url": "https://marketchameleon.com/Overview/SMMT/Stock-Price-Action/Pre-Market-VWAP",
+          "checkedAt": "2026-09-29T13:23:50.569Z",
           "status": "checked"
         },
         {
           "name": "Latest available BB, COST, SMMT and QQQ market data",
           "url": "https://finance.yahoo.com/",
-          "checkedAt": "2026-09-29T11:52:59.143Z",
+          "checkedAt": "2026-09-29T13:23:50.569Z",
           "status": "checked"
         },
         {
           "name": "Nasdaq SMMT option chain",
           "url": "https://www.nasdaq.com/market-activity/stocks/smmt/option-chain",
-          "checkedAt": "2026-09-29T11:52:59.143Z",
+          "checkedAt": "2026-09-29T13:23:50.569Z",
           "status": "unavailable"
         },
         {
           "name": "Nasdaq BB option chain",
           "url": "https://www.nasdaq.com/market-activity/stocks/bb/option-chain",
-          "checkedAt": "2026-09-29T11:52:59.143Z",
+          "checkedAt": "2026-09-29T13:23:50.569Z",
           "status": "unavailable"
         },
         {
           "name": "Nasdaq COST option chain",
           "url": "https://www.nasdaq.com/market-activity/stocks/cost/option-chain",
-          "checkedAt": "2026-09-29T11:52:59.143Z",
+          "checkedAt": "2026-09-29T13:23:50.569Z",
           "status": "unavailable"
         }
       ],
@@ -11557,6 +11557,73 @@
       },
       "deliveryDiagnostics": {
         "repair20260928ReportedAt": "2026-09-28T01:51:49.985Z"
+      }
+    },
+    {
+      "id": "options-scan-20260929T132217Z",
+      "system": "options",
+      "startedAt": "2026-09-29T13:22:17.000Z",
+      "checkedAt": "2026-09-29T13:23:50.569Z",
+      "scheduledFor": "2026-09-29T13:00:00.000Z",
+      "nextScheduledAt": "2026-09-29T14:00:00.000Z",
+      "status": "market_closed",
+      "summary": "No open options paper trades required management. SMMT remained roughly 21%-23% above the prior close in fresh premarket reporting after AstraZeneca's $2 billion strategic investment, confirming the already-published catalyst but leaving the underlying substantially gap-extended before the regular session. No newly verified material catalyst change was found for BB or COST, and the structured BB, COST, SMMT and QQQ market displays still reflected prior-session values rather than executable premarket quotes. Nasdaq reported the BB, COST and SMMT option chains unavailable, so no exact 21-60 DTE contract could be verified for bid, ask, midpoint, delta, remaining Greeks, IV, spread, volume, open interest or buyer-initiated opening flow. No research, entry, exit or mark event was added.",
+      "sources": [
+        {
+          "name": "Reuters September 29 premarket market and SMMT report",
+          "url": "https://www.reuters.com/business/us-stock-futures-flat-tech-bounce-meets-crude-driven-caution-2026-09-29/",
+          "checkedAt": "2026-09-29T13:23:50.569Z",
+          "status": "checked"
+        },
+        {
+          "name": "Current SMMT premarket quote context",
+          "url": "https://marketchameleon.com/Overview/SMMT/Stock-Price-Action/Pre-Market-VWAP",
+          "checkedAt": "2026-09-29T13:23:50.569Z",
+          "status": "checked"
+        },
+        {
+          "name": "Latest available BB, COST, SMMT and QQQ market data",
+          "url": "https://finance.yahoo.com/",
+          "checkedAt": "2026-09-29T13:23:50.569Z",
+          "status": "checked"
+        },
+        {
+          "name": "Nasdaq SMMT option chain",
+          "url": "https://www.nasdaq.com/market-activity/stocks/smmt/option-chain",
+          "checkedAt": "2026-09-29T13:23:50.569Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "Nasdaq BB option chain",
+          "url": "https://www.nasdaq.com/market-activity/stocks/bb/option-chain",
+          "checkedAt": "2026-09-29T13:23:50.569Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "Nasdaq COST option chain",
+          "url": "https://www.nasdaq.com/market-activity/stocks/cost/option-chain",
+          "checkedAt": "2026-09-29T13:23:50.569Z",
+          "status": "unavailable"
+        }
+      ],
+      "missingData": [
+        "reliable executable premarket bid, ask and last trade for BB, COST and SMMT",
+        "exact 21-60 DTE contract bid, ask and midpoint",
+        "contract delta and remaining Greeks",
+        "contract IV, IV rank and term structure",
+        "contract volume, open interest and executable spread",
+        "reliable buyer-initiated opening-flow confirmation",
+        "regular-session continuation and technical invalidation after SMMT's premarket gap",
+        "confirmation that AstraZeneca's announced SMMT investment has closed",
+        "executable listed-options quotes while the market is closed"
+      ],
+      "counts": {
+        "research": 0,
+        "entries": 0,
+        "exits": 0
+      },
+      "deliveryDiagnostics": {
+        "repair20260928ReportedAt": "2026-09-28T00:50:48.883Z"
       }
     }
   ]
