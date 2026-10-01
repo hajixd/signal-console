@@ -1153,103 +1153,103 @@
       }
     },
     "futures": {
-      "id": "futures-scan-20260929131755467",
+      "id": "futures-scan-20261001233137093",
       "system": "futures",
-      "startedAt": "2026-09-29T13:17:55.467Z",
-      "checkedAt": "2026-09-29T13:18:42.630Z",
-      "scheduledFor": "2026-09-29T13:00:00.000Z",
-      "nextScheduledAt": "2026-09-29T14:00:00.000Z",
+      "startedAt": "2026-10-01T23:31:37.093Z",
+      "checkedAt": "2026-10-01T23:32:20.690Z",
+      "scheduledFor": "2026-10-01T23:00:00.000Z",
+      "nextScheduledAt": "2026-10-02T00:00:00.000Z",
       "status": "data_limited",
-      "summary": "No new futures entry or material research event. There are no open futures paper positions. Exact-contract public snapshots remained delayed or stale: MNQZ26 30,637.25 at 8:05:26 a.m. EDT, MESZ26 7,764.00 at 7:10:20 a.m., and MGCZ26 4,185.80 at 9:04 a.m. versus 4,168.40 settlement, after a 4,145.00–4,193.30 range. Gold remained above settlement but below its delayed session high, contradicting immediate bearish continuation without verifying a live reversal or executable trigger. MCLX26 remained unavailable. Live spreads, current structure, margin, roll clearance and risk-qualified triggers remain unresolved.",
+      "summary": "No new futures entry or material research event. There are no open futures paper positions. Public exact-contract snapshots were delayed or stale: MNQZ26 30,779.00 at 3:52:27 p.m. EDT, MESZ26 7,739.50 from September 30, and MGCZ26 4,205.70 at 6:48 p.m. EDT versus the 4,202.30 October 1 settlement, after a 4,201.00–4,209.70 range. MarketWatch labeled the MGC quote delayed and closed; this does not verify a live trigger. MCLX26 remained unavailable and the BEA schedule request failed. Live spreads, current structure, margin, roll clearance and risk-qualified triggers remain unresolved.",
       "sources": [
         {
           "name": "CME Micro E-mini Nasdaq-100 futures",
           "url": "https://www.cmegroup.com/markets/equities/nasdaq/micro-e-mini-nasdaq-100.html",
-          "checkedAt": "2026-09-29T13:18:42.630Z",
+          "checkedAt": "2026-10-01T23:32:20.690Z",
           "status": "checked_specs_only"
         },
         {
           "name": "CME Micro E-mini S&P 500 futures",
           "url": "https://www.cmegroup.com/markets/equities/sp/micro-e-mini-sandp-500.html",
-          "checkedAt": "2026-09-29T13:18:42.630Z",
+          "checkedAt": "2026-10-01T23:32:20.690Z",
           "status": "checked_specs_only"
         },
         {
           "name": "CME Micro Gold futures",
           "url": "https://www.cmegroup.com/markets/metals/precious/e-micro-gold.html",
-          "checkedAt": "2026-09-29T13:18:42.630Z",
+          "checkedAt": "2026-10-01T23:32:20.690Z",
           "status": "checked_specs_only"
         },
         {
           "name": "CME Micro WTI Crude Oil futures",
           "url": "https://www.cmegroup.com/markets/energy/crude-oil/micro-wti-crude-oil.html",
-          "checkedAt": "2026-09-29T13:18:42.630Z",
+          "checkedAt": "2026-10-01T23:32:20.690Z",
           "status": "checked_specs_only"
         },
         {
           "name": "CME trading hours",
           "url": "https://www.cmegroup.com/trading-hours.html",
-          "checkedAt": "2026-09-29T13:18:42.630Z",
+          "checkedAt": "2026-10-01T23:32:20.690Z",
           "status": "checked_session_open_expected"
         },
         {
           "name": "eSignal MNQ futures board",
           "url": "https://quotes.esignal.com/esignalprod/quote.action?symbol=MNQ",
-          "checkedAt": "2026-09-29T13:18:42.630Z",
+          "checkedAt": "2026-10-01T23:32:20.690Z",
           "status": "checked_stale_delayed_quote_excluded"
         },
         {
           "name": "eSignal MES futures board",
           "url": "https://quotes.esignal.com/esignalprod/quote.action?symbol=MES",
-          "checkedAt": "2026-09-29T13:18:42.630Z",
+          "checkedAt": "2026-10-01T23:32:20.690Z",
           "status": "checked_stale_delayed_quote_excluded"
         },
         {
           "name": "eSignal MGC futures board",
           "url": "https://quotes.esignal.com/esignalprod/quote.action?symbol=MGC",
-          "checkedAt": "2026-09-29T13:18:42.630Z",
+          "checkedAt": "2026-10-01T23:32:20.690Z",
           "status": "checked_stale_delayed_quote_excluded"
         },
         {
           "name": "eSignal MCL futures board",
           "url": "https://quotes.esignal.com/esignalprod/quote.action?symbol=MCL",
-          "checkedAt": "2026-09-29T13:18:42.630Z",
+          "checkedAt": "2026-10-01T23:32:20.690Z",
           "status": "unavailable"
         },
         {
           "name": "MarketWatch MGCZ26",
           "url": "https://www.marketwatch.com/investing/future/mgcz26",
-          "checkedAt": "2026-09-29T13:18:42.630Z",
-          "status": "checked_delayed_quote_excluded"
+          "checkedAt": "2026-10-01T23:32:20.690Z",
+          "status": "checked_stale_delayed_quote_excluded"
         },
         {
           "name": "BLS release calendar",
-          "url": "https://www.bls.gov/schedule/2026/09_sched.htm",
-          "checkedAt": "2026-09-29T13:18:42.630Z",
+          "url": "https://www.bls.gov/schedule/2026/10_sched.htm",
+          "checkedAt": "2026-10-01T23:32:20.690Z",
           "status": "checked"
         },
         {
           "name": "BEA release schedule",
           "url": "https://www.bea.gov/news/schedule",
-          "checkedAt": "2026-09-29T13:18:42.630Z",
-          "status": "checked"
+          "checkedAt": "2026-10-01T23:32:20.690Z",
+          "status": "temporarily_unavailable"
         },
         {
           "name": "Federal Reserve calendar",
           "url": "https://www.federalreserve.gov/newsevents/calendar.htm",
-          "checkedAt": "2026-09-29T13:18:42.630Z",
+          "checkedAt": "2026-10-01T23:32:20.690Z",
           "status": "checked"
         },
         {
           "name": "EIA Weekly Petroleum Status Report",
           "url": "https://www.eia.gov/petroleum/supply/weekly/",
-          "checkedAt": "2026-09-29T13:18:42.630Z",
+          "checkedAt": "2026-10-01T23:32:20.690Z",
           "status": "checked"
         },
         {
           "name": "OPEC",
           "url": "https://www.opec.org/",
-          "checkedAt": "2026-09-29T13:18:42.630Z",
+          "checkedAt": "2026-10-01T23:32:20.690Z",
           "status": "checked"
         }
       ],
@@ -1259,7 +1259,8 @@
         "Exact expiry/roll and session/holiday clearance for every candidate",
         "Source-verified initial margin per contract and sufficient remaining paper equity",
         "Observed tick-aligned triggers, invalidations and targets meeting at least 2:1 reward-to-risk and the $100 risk cap",
-        "Complete high-impact release clearance within the required 30-minute window"
+        "Complete high-impact release clearance within the required 30-minute window",
+        "Current BEA release schedule response"
       ],
       "counts": {
         "openPositions": 0,
@@ -7914,6 +7915,384 @@
       }
     },
     {
+      "id": "options-scan-20260929T132217Z",
+      "system": "options",
+      "startedAt": "2026-09-29T13:22:17.000Z",
+      "checkedAt": "2026-09-29T13:23:50.569Z",
+      "scheduledFor": "2026-09-29T13:00:00.000Z",
+      "nextScheduledAt": "2026-09-29T14:00:00.000Z",
+      "status": "market_closed",
+      "summary": "No open options paper trades required management. SMMT remained roughly 21%-23% above the prior close in fresh premarket reporting after AstraZeneca's $2 billion strategic investment, confirming the already-published catalyst but leaving the underlying substantially gap-extended before the regular session. No newly verified material catalyst change was found for BB or COST, and the structured BB, COST, SMMT and QQQ market displays still reflected prior-session values rather than executable premarket quotes. Nasdaq reported the BB, COST and SMMT option chains unavailable, so no exact 21-60 DTE contract could be verified for bid, ask, midpoint, delta, remaining Greeks, IV, spread, volume, open interest or buyer-initiated opening flow. No research, entry, exit or mark event was added.",
+      "sources": [
+        {
+          "name": "Reuters September 29 premarket market and SMMT report",
+          "url": "https://www.reuters.com/business/us-stock-futures-flat-tech-bounce-meets-crude-driven-caution-2026-09-29/",
+          "checkedAt": "2026-09-29T13:23:50.569Z",
+          "status": "checked"
+        },
+        {
+          "name": "Current SMMT premarket quote context",
+          "url": "https://marketchameleon.com/Overview/SMMT/Stock-Price-Action/Pre-Market-VWAP",
+          "checkedAt": "2026-09-29T13:23:50.569Z",
+          "status": "checked"
+        },
+        {
+          "name": "Latest available BB, COST, SMMT and QQQ market data",
+          "url": "https://finance.yahoo.com/",
+          "checkedAt": "2026-09-29T13:23:50.569Z",
+          "status": "checked"
+        },
+        {
+          "name": "Nasdaq SMMT option chain",
+          "url": "https://www.nasdaq.com/market-activity/stocks/smmt/option-chain",
+          "checkedAt": "2026-09-29T13:23:50.569Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "Nasdaq BB option chain",
+          "url": "https://www.nasdaq.com/market-activity/stocks/bb/option-chain",
+          "checkedAt": "2026-09-29T13:23:50.569Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "Nasdaq COST option chain",
+          "url": "https://www.nasdaq.com/market-activity/stocks/cost/option-chain",
+          "checkedAt": "2026-09-29T13:23:50.569Z",
+          "status": "unavailable"
+        }
+      ],
+      "missingData": [
+        "reliable executable premarket bid, ask and last trade for BB, COST and SMMT",
+        "exact 21-60 DTE contract bid, ask and midpoint",
+        "contract delta and remaining Greeks",
+        "contract IV, IV rank and term structure",
+        "contract volume, open interest and executable spread",
+        "reliable buyer-initiated opening-flow confirmation",
+        "regular-session continuation and technical invalidation after SMMT's premarket gap",
+        "confirmation that AstraZeneca's announced SMMT investment has closed",
+        "executable listed-options quotes while the market is closed"
+      ],
+      "counts": {
+        "research": 0,
+        "entries": 0,
+        "exits": 0
+      },
+      "deliveryDiagnostics": {
+        "repair20260928ReportedAt": "2026-09-28T00:50:48.883Z"
+      }
+    },
+    {
+      "id": "options-scan-20260929T133524Z",
+      "system": "options",
+      "startedAt": "2026-09-29T13:35:24.000Z",
+      "checkedAt": "2026-09-29T13:37:58.202Z",
+      "scheduledFor": "2026-09-29T13:00:00.000Z",
+      "nextScheduledAt": "2026-09-29T14:00:00.000Z",
+      "status": "data_limited",
+      "summary": "No open options paper trades required management. Two existing research records were materially updated after the open: BB fell to $8.58, 2.50% below the prior $8.80 breakout close, while SMMT faded from an early $19.07 high to $17.55 (+13.37%), compressing a greater-than-22% premarket gain. COST was roughly flat near $923.18 and did not produce a material thesis change. Public displayed delayed 24-38 DTE asks and open interest, but the relevant pages lacked reliable live bids, midpoints, full Greeks, IV term structures, contract volumes, executable spreads and buyer-initiated opening-flow confirmation; visible BB near-the-money OI was also thin. No entry, exit or mark event was added.",
+      "sources": [
+        {
+          "name": "Latest BB, COST, SMMT and QQQ market data",
+          "url": "https://finance.yahoo.com/",
+          "checkedAt": "2026-09-29T13:37:58.202Z",
+          "status": "checked"
+        },
+        {
+          "name": "Public BB November 6 option chain",
+          "url": "https://public.com/stocks/bb/options-chain?expiration=2026-11-06",
+          "checkedAt": "2026-09-29T13:37:58.202Z",
+          "status": "checked"
+        },
+        {
+          "name": "Public COST October 23 and November 6 option chains",
+          "url": "https://public.com/stocks/cost/options-chain?expiration=2026-10-23",
+          "checkedAt": "2026-09-29T13:37:58.202Z",
+          "status": "checked"
+        },
+        {
+          "name": "Investing.com SMMT regular-session quote",
+          "url": "https://www.investing.com/equities/summit-therapeutics-plc-options",
+          "checkedAt": "2026-09-29T13:37:58.202Z",
+          "status": "checked"
+        },
+        {
+          "name": "Public SMMT October 23 option chain",
+          "url": "https://public.com/stocks/smmt/options-chain?expiration=2026-10-23",
+          "checkedAt": "2026-09-29T13:37:58.202Z",
+          "status": "checked"
+        },
+        {
+          "name": "Reliable complete executable 21-60 DTE option data and opening flow",
+          "url": "https://www.nasdaq.com/market-activity/quotes/option-chain",
+          "checkedAt": "2026-09-29T13:37:58.202Z",
+          "status": "unavailable"
+        }
+      ],
+      "missingData": [
+        "reliable live bid and midpoint for eligible BB, COST and SMMT contracts",
+        "complete delta and remaining Greeks",
+        "current IV rank and maturity term structure",
+        "contract volume and executable bid-ask spread",
+        "buyer-initiated opening-flow confirmation",
+        "confirmation that BB can reclaim the prior breakout close",
+        "confirmation that SMMT can stabilize after its opening gap fade",
+        "confirmation that AstraZeneca's announced SMMT investment has closed"
+      ],
+      "counts": {
+        "research": 2,
+        "entries": 0,
+        "exits": 0
+      },
+      "deliveryDiagnostics": {
+        "repair20260928ReportedAt": "2026-09-28T00:50:48.883Z"
+      }
+    },
+    {
+      "id": "meme-scan-20260929T135417Z",
+      "system": "meme",
+      "startedAt": "2026-09-29T13:54:17.000Z",
+      "checkedAt": "2026-09-29T13:56:35.099Z",
+      "scheduledFor": "2026-09-29T13:00:00.000Z",
+      "nextScheduledAt": "2026-09-29T14:00:00.000Z",
+      "status": "data_limited",
+      "summary": "No open meme paper trades required management. The existing pSOQ/SOQ research record was materially updated: the official provisional list continued publishing through 13:16:09 UTC and still showed zero credited addresses and zero migrated SOQ across the visible runs. DEX Screener displayed contextual price, liquidity and market-cap values, but the accessible page was indexed two days earlier and was not treated as a fresh executable quote. Frank DeGods' accessible profile was last active ten days earlier, Daumen's accessible profile showed no recent swaps, and no two-wallet convergence was verified. No new public-figure token launch or endorsement was confirmed. No entry, exit or mark event was added.",
+      "sources": [
+        {
+          "name": "Soqucoin Foundation migration notice",
+          "url": "https://soqucoin.org/migration",
+          "checkedAt": "2026-09-29T13:56:35.099Z",
+          "status": "checked"
+        },
+        {
+          "name": "Soqucoin provisional allocation live list",
+          "url": "https://soqucoin.org/migration/list/",
+          "checkedAt": "2026-09-29T13:56:35.099Z",
+          "status": "checked"
+        },
+        {
+          "name": "DEX Screener pSOQ/SOL pair page",
+          "url": "https://dexscreener.com/solana/EM9NyPqcByrz8zBxZUi2LazBTCY2zbVJa49nTXHi3Pq8",
+          "checkedAt": "2026-09-29T13:56:35.099Z",
+          "status": "checked"
+        },
+        {
+          "name": "Solscan pSOQ token page",
+          "url": "https://solscan.io/token/6NX2MWBuJM2Fn63K4hUgMPivLXHV8pwsU1yTdmjKpump",
+          "checkedAt": "2026-09-29T13:56:35.099Z",
+          "status": "checked"
+        },
+        {
+          "name": "Provadata Frank DeGods wallet profile",
+          "url": "https://provadata.com/traders/frankdegods",
+          "checkedAt": "2026-09-29T13:56:35.099Z",
+          "status": "checked"
+        },
+        {
+          "name": "uwuu.ai Daumen wallet profile",
+          "url": "https://uwuu.ai/trader/8MaVa9kdt3NW4Q5HyNAm1X5LbR8PQRVDc1W8NMVK88D5",
+          "checkedAt": "2026-09-29T13:56:35.099Z",
+          "status": "checked"
+        },
+        {
+          "name": "Current official-launch and public-figure discovery",
+          "url": "https://www.reuters.com/world/us/trump-us-house-speaker-tech-ceos-meet-ai-september-29-source-says-2026-09-24/",
+          "checkedAt": "2026-09-29T13:56:35.099Z",
+          "status": "checked"
+        },
+        {
+          "name": "IdontPayTaxes, Numero and verified Clukz current holdings",
+          "url": "https://kolexplorer.com/",
+          "checkedAt": "2026-09-29T13:56:35.099Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "X live unique-author search",
+          "url": "https://x.com/search",
+          "checkedAt": "2026-09-29T13:56:35.099Z",
+          "status": "unavailable"
+        }
+      ],
+      "missingData": [
+        "fresh executable pSOQ bid, ask, last trade and slippage at completion",
+        "current token holdings and remaining-position percentages for all five named tracked wallets",
+        "verified two-wallet convergence and greater-than-one-hour persistence",
+        "current deployer, insider, bundler, holder-concentration and wash-trading analysis",
+        "X unique-author mention velocity, acceleration and spam filtering",
+        "future SOQ mainnet price, liquidity and custody verification",
+        "successful credited allocations after the zero-allocation 13:16 UTC official run",
+        "complete real-time coverage of all Solana launches, holders, buyers and liquidity venues"
+      ],
+      "counts": {
+        "research": 1,
+        "entries": 0,
+        "exits": 0
+      },
+      "deliveryDiagnostics": {
+        "repair20260928ReportedAt": "2026-09-28T02:04:42.735Z"
+      }
+    },
+    {
+      "id": "options-scan-20261001T231156Z",
+      "system": "options",
+      "startedAt": "2026-10-01T23:11:56.000Z",
+      "checkedAt": "2026-10-01T23:15:10.082Z",
+      "scheduledFor": "2026-10-01T23:00:00.000Z",
+      "nextScheduledAt": "2026-10-02T00:00:00.000Z",
+      "status": "market_closed",
+      "summary": "No open options paper trades required management. Three existing research records were materially updated from October 1 closing data. BB confirmed constructive multi-day post-earnings continuation at $9.18 (+1.49%) after reaching $9.30 on 20.55 million shares. COST closed at $914.94 (+0.50%) but remained below its September 28 research price and failed to establish a clean post-earnings drift. SMMT closed at $16.69 (-1.36%), below the $18.36 investment-equivalent price as its catalyst gap continued to fade. Nasdaq reported the BB, COST and SMMT chains unavailable, and the accessible SMMT chain was a stale September 29 snapshot. No exact 21-60 DTE contract could be validated for executable quote, Greeks, IV, liquidity or directional opening flow. No entry, exit or mark event was added.",
+      "sources": [
+        {
+          "name": "October 1 BB, COST, SMMT and QQQ closing market data",
+          "url": "https://finance.yahoo.com/",
+          "checkedAt": "2026-10-01T23:15:10.082Z",
+          "status": "checked"
+        },
+        {
+          "name": "BlackBerry investor relations and catalyst check",
+          "url": "https://investors.blackberry.com/",
+          "checkedAt": "2026-10-01T23:15:10.082Z",
+          "status": "checked"
+        },
+        {
+          "name": "Costco September 24 earnings release",
+          "url": "https://investor.costco.com/news/news-details/2026/Costco-Wholesale-Corporation-Reports-Fourth-Quarter-and-Fiscal-Year-2026-Operating-Results/default.aspx",
+          "checkedAt": "2026-10-01T23:15:10.082Z",
+          "status": "checked"
+        },
+        {
+          "name": "AstraZeneca Summit investment announcement",
+          "url": "https://www.astrazeneca.com/media-centre/press-releases/2026/astrazeneca-announces-equity-investment-summit.html",
+          "checkedAt": "2026-10-01T23:15:10.082Z",
+          "status": "checked"
+        },
+        {
+          "name": "Nasdaq BB option chain",
+          "url": "https://www.nasdaq.com/market-activity/stocks/bb/option-chain",
+          "checkedAt": "2026-10-01T23:15:10.082Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "Nasdaq COST option chain",
+          "url": "https://www.nasdaq.com/market-activity/stocks/cost/option-chain",
+          "checkedAt": "2026-10-01T23:15:10.082Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "Nasdaq SMMT option chain",
+          "url": "https://www.nasdaq.com/market-activity/stocks/smmt/option-chain",
+          "checkedAt": "2026-10-01T23:15:10.082Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "Public SMMT October 23 option chain",
+          "url": "https://public.com/stocks/smmt/options-chain?expiration=2026-10-23",
+          "checkedAt": "2026-10-01T23:15:10.082Z",
+          "status": "unavailable"
+        }
+      ],
+      "missingData": [
+        "exact October 1 21-60 DTE contract bid, ask and midpoint",
+        "contract delta and remaining Greeks",
+        "contract IV, IV rank and maturity term structure",
+        "contract volume, open interest and executable spread",
+        "reliable buyer-initiated opening-flow confirmation",
+        "confirmation that AstraZeneca's announced SMMT investment has closed",
+        "executable listed-options quotes after the market close"
+      ],
+      "counts": {
+        "research": 3,
+        "entries": 0,
+        "exits": 0
+      },
+      "deliveryDiagnostics": {
+        "repair20260928ReportedAt": "2026-09-28T00:50:48.883Z"
+      }
+    },
+    {
+      "id": "meme-scan-20261001T232625Z",
+      "system": "meme",
+      "startedAt": "2026-10-01T23:26:25.000Z",
+      "checkedAt": "2026-10-01T23:28:35.547Z",
+      "scheduledFor": "2026-10-01T23:00:00.000Z",
+      "nextScheduledAt": "2026-10-02T00:00:00.000Z",
+      "status": "data_limited",
+      "summary": "No open meme paper trades required management. The existing pSOQ/SOQ research record was materially updated after DEX Screener displayed pSOQ at $0.0003175 with approximately $68,000 liquidity and a $317,000 market cap, materially below the contextual September 29 snapshot; displayed 1-hour, 6-hour and 24-hour performance were all negative and 24-hour sell volume exceeded buy volume. Current wallet-profile checks did not verify pSOQ persistence or two-wallet convergence. The official migration terms and mint remain verified, but the current allocation run list and X unique-author momentum were unavailable. Current public-figure discovery found a reported future $TRUMP-holder dinner, not a new token launch, and lacked a qualifying new official-contract catalyst. No entry, exit or mark event was added.",
+      "sources": [
+        {
+          "name": "DEX Screener pSOQ/SOL pair page",
+          "url": "https://dexscreener.com/solana/EM9NyPqcByrz8zBxZUi2LazBTCY2zbVJa49nTXHi3Pq8",
+          "checkedAt": "2026-10-01T23:28:35.547Z",
+          "status": "checked"
+        },
+        {
+          "name": "Soqucoin Foundation transparency and migration terms",
+          "url": "https://soqucoin.org/transparency",
+          "checkedAt": "2026-10-01T23:28:35.547Z",
+          "status": "checked"
+        },
+        {
+          "name": "Soqucoin current provisional allocation list",
+          "url": "https://soqucoin.org/migration/list/",
+          "checkedAt": "2026-10-01T23:28:35.547Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "IdontPayTaxes and Numero tracked-wallet comparison",
+          "url": "https://kolexplorer.com/compare/idontpaytaxes-vs-numero",
+          "checkedAt": "2026-10-01T23:28:35.547Z",
+          "status": "checked"
+        },
+        {
+          "name": "Daumen tracked-wallet profile",
+          "url": "https://uwuu.ai/trader/8MaVa9kdt3NW4Q5HyNAm1X5LbR8PQRVDc1W8NMVK88D5",
+          "checkedAt": "2026-10-01T23:28:35.547Z",
+          "status": "checked"
+        },
+        {
+          "name": "Frank DeGods tracked-wallet profile",
+          "url": "https://www.copyfomo.com/traders/frankdegods",
+          "checkedAt": "2026-10-01T23:28:35.547Z",
+          "status": "checked"
+        },
+        {
+          "name": "Current public-figure meme-coin discovery",
+          "url": "https://www.vox.com/the-logoff-newsletter-trump/504911/trump-memecoin-crypto-dinner-corruption",
+          "checkedAt": "2026-10-01T23:28:35.547Z",
+          "status": "checked"
+        },
+        {
+          "name": "Verified Clukz current holdings",
+          "url": "https://kolexplorer.com/",
+          "checkedAt": "2026-10-01T23:28:35.547Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "X live unique-author search",
+          "url": "https://x.com/search",
+          "checkedAt": "2026-10-01T23:28:35.547Z",
+          "status": "unavailable"
+        }
+      ],
+      "missingData": [
+        "fresh executable pSOQ bid, ask, last trade and slippage at completion",
+        "current token-specific holdings and remaining-position percentages for all five named tracked wallets",
+        "verified two-wallet convergence and greater-than-one-hour persistence",
+        "current deployer, insider, bundler, holder-concentration and wash-trading analysis",
+        "X unique-author mention velocity, acceleration and spam filtering",
+        "successful credited allocations from the current official migration run list",
+        "future SOQ mainnet price, liquidity and custody verification",
+        "complete real-time coverage of all Solana launches, holders, buyers and liquidity venues"
+      ],
+      "counts": {
+        "research": 1,
+        "entries": 0,
+        "exits": 0
+      },
+      "deliveryDiagnostics": {
+        "repair20260928ReportedAt": "2026-09-28T02:04:42.735Z"
+      }
+    },
+    {
       "id": "futures-scan-20260927203939926",
       "system": "futures",
       "startedAt": "2026-09-27T20:39:39.926Z",
@@ -11758,381 +12137,124 @@
       }
     },
     {
-      "id": "options-scan-20260929T132217Z",
-      "system": "options",
-      "startedAt": "2026-09-29T13:22:17.000Z",
-      "checkedAt": "2026-09-29T13:23:50.569Z",
-      "scheduledFor": "2026-09-29T13:00:00.000Z",
-      "nextScheduledAt": "2026-09-29T14:00:00.000Z",
-      "status": "market_closed",
-      "summary": "No open options paper trades required management. SMMT remained roughly 21%-23% above the prior close in fresh premarket reporting after AstraZeneca's $2 billion strategic investment, confirming the already-published catalyst but leaving the underlying substantially gap-extended before the regular session. No newly verified material catalyst change was found for BB or COST, and the structured BB, COST, SMMT and QQQ market displays still reflected prior-session values rather than executable premarket quotes. Nasdaq reported the BB, COST and SMMT option chains unavailable, so no exact 21-60 DTE contract could be verified for bid, ask, midpoint, delta, remaining Greeks, IV, spread, volume, open interest or buyer-initiated opening flow. No research, entry, exit or mark event was added.",
+      "id": "futures-scan-20261001233137093",
+      "system": "futures",
+      "startedAt": "2026-10-01T23:31:37.093Z",
+      "checkedAt": "2026-10-01T23:32:20.690Z",
+      "scheduledFor": "2026-10-01T23:00:00.000Z",
+      "nextScheduledAt": "2026-10-02T00:00:00.000Z",
+      "status": "data_limited",
+      "summary": "No new futures entry or material research event. There are no open futures paper positions. Public exact-contract snapshots were delayed or stale: MNQZ26 30,779.00 at 3:52:27 p.m. EDT, MESZ26 7,739.50 from September 30, and MGCZ26 4,205.70 at 6:48 p.m. EDT versus the 4,202.30 October 1 settlement, after a 4,201.00–4,209.70 range. MarketWatch labeled the MGC quote delayed and closed; this does not verify a live trigger. MCLX26 remained unavailable and the BEA schedule request failed. Live spreads, current structure, margin, roll clearance and risk-qualified triggers remain unresolved.",
       "sources": [
         {
-          "name": "Reuters September 29 premarket market and SMMT report",
-          "url": "https://www.reuters.com/business/us-stock-futures-flat-tech-bounce-meets-crude-driven-caution-2026-09-29/",
-          "checkedAt": "2026-09-29T13:23:50.569Z",
-          "status": "checked"
+          "name": "CME Micro E-mini Nasdaq-100 futures",
+          "url": "https://www.cmegroup.com/markets/equities/nasdaq/micro-e-mini-nasdaq-100.html",
+          "checkedAt": "2026-10-01T23:32:20.690Z",
+          "status": "checked_specs_only"
         },
         {
-          "name": "Current SMMT premarket quote context",
-          "url": "https://marketchameleon.com/Overview/SMMT/Stock-Price-Action/Pre-Market-VWAP",
-          "checkedAt": "2026-09-29T13:23:50.569Z",
-          "status": "checked"
+          "name": "CME Micro E-mini S&P 500 futures",
+          "url": "https://www.cmegroup.com/markets/equities/sp/micro-e-mini-sandp-500.html",
+          "checkedAt": "2026-10-01T23:32:20.690Z",
+          "status": "checked_specs_only"
         },
         {
-          "name": "Latest available BB, COST, SMMT and QQQ market data",
-          "url": "https://finance.yahoo.com/",
-          "checkedAt": "2026-09-29T13:23:50.569Z",
-          "status": "checked"
+          "name": "CME Micro Gold futures",
+          "url": "https://www.cmegroup.com/markets/metals/precious/e-micro-gold.html",
+          "checkedAt": "2026-10-01T23:32:20.690Z",
+          "status": "checked_specs_only"
         },
         {
-          "name": "Nasdaq SMMT option chain",
-          "url": "https://www.nasdaq.com/market-activity/stocks/smmt/option-chain",
-          "checkedAt": "2026-09-29T13:23:50.569Z",
+          "name": "CME Micro WTI Crude Oil futures",
+          "url": "https://www.cmegroup.com/markets/energy/crude-oil/micro-wti-crude-oil.html",
+          "checkedAt": "2026-10-01T23:32:20.690Z",
+          "status": "checked_specs_only"
+        },
+        {
+          "name": "CME trading hours",
+          "url": "https://www.cmegroup.com/trading-hours.html",
+          "checkedAt": "2026-10-01T23:32:20.690Z",
+          "status": "checked_session_open_expected"
+        },
+        {
+          "name": "eSignal MNQ futures board",
+          "url": "https://quotes.esignal.com/esignalprod/quote.action?symbol=MNQ",
+          "checkedAt": "2026-10-01T23:32:20.690Z",
+          "status": "checked_stale_delayed_quote_excluded"
+        },
+        {
+          "name": "eSignal MES futures board",
+          "url": "https://quotes.esignal.com/esignalprod/quote.action?symbol=MES",
+          "checkedAt": "2026-10-01T23:32:20.690Z",
+          "status": "checked_stale_delayed_quote_excluded"
+        },
+        {
+          "name": "eSignal MGC futures board",
+          "url": "https://quotes.esignal.com/esignalprod/quote.action?symbol=MGC",
+          "checkedAt": "2026-10-01T23:32:20.690Z",
+          "status": "checked_stale_delayed_quote_excluded"
+        },
+        {
+          "name": "eSignal MCL futures board",
+          "url": "https://quotes.esignal.com/esignalprod/quote.action?symbol=MCL",
+          "checkedAt": "2026-10-01T23:32:20.690Z",
           "status": "unavailable"
         },
         {
-          "name": "Nasdaq BB option chain",
-          "url": "https://www.nasdaq.com/market-activity/stocks/bb/option-chain",
-          "checkedAt": "2026-09-29T13:23:50.569Z",
-          "status": "unavailable"
+          "name": "MarketWatch MGCZ26",
+          "url": "https://www.marketwatch.com/investing/future/mgcz26",
+          "checkedAt": "2026-10-01T23:32:20.690Z",
+          "status": "checked_stale_delayed_quote_excluded"
         },
         {
-          "name": "Nasdaq COST option chain",
-          "url": "https://www.nasdaq.com/market-activity/stocks/cost/option-chain",
-          "checkedAt": "2026-09-29T13:23:50.569Z",
-          "status": "unavailable"
+          "name": "BLS release calendar",
+          "url": "https://www.bls.gov/schedule/2026/10_sched.htm",
+          "checkedAt": "2026-10-01T23:32:20.690Z",
+          "status": "checked"
+        },
+        {
+          "name": "BEA release schedule",
+          "url": "https://www.bea.gov/news/schedule",
+          "checkedAt": "2026-10-01T23:32:20.690Z",
+          "status": "temporarily_unavailable"
+        },
+        {
+          "name": "Federal Reserve calendar",
+          "url": "https://www.federalreserve.gov/newsevents/calendar.htm",
+          "checkedAt": "2026-10-01T23:32:20.690Z",
+          "status": "checked"
+        },
+        {
+          "name": "EIA Weekly Petroleum Status Report",
+          "url": "https://www.eia.gov/petroleum/supply/weekly/",
+          "checkedAt": "2026-10-01T23:32:20.690Z",
+          "status": "checked"
+        },
+        {
+          "name": "OPEC",
+          "url": "https://www.opec.org/",
+          "checkedAt": "2026-10-01T23:32:20.690Z",
+          "status": "checked"
         }
       ],
       "missingData": [
-        "reliable executable premarket bid, ask and last trade for BB, COST and SMMT",
-        "exact 21-60 DTE contract bid, ask and midpoint",
-        "contract delta and remaining Greeks",
-        "contract IV, IV rank and term structure",
-        "contract volume, open interest and executable spread",
-        "reliable buyer-initiated opening-flow confirmation",
-        "regular-session continuation and technical invalidation after SMMT's premarket gap",
-        "confirmation that AstraZeneca's announced SMMT investment has closed",
-        "executable listed-options quotes while the market is closed"
+        "Non-delayed exact dated quotes no older than five minutes for MNQZ26, MESZ26, MGCZ26 and MCLX26",
+        "Verified bid/ask spreads, liquidity and current intraday price/volume structure for every micro contract",
+        "Exact expiry/roll and session/holiday clearance for every candidate",
+        "Source-verified initial margin per contract and sufficient remaining paper equity",
+        "Observed tick-aligned triggers, invalidations and targets meeting at least 2:1 reward-to-risk and the $100 risk cap",
+        "Complete high-impact release clearance within the required 30-minute window",
+        "Current BEA release schedule response"
       ],
       "counts": {
+        "openPositions": 0,
         "research": 0,
         "entries": 0,
-        "exits": 0
+        "exits": 0,
+        "marks": 0
       },
       "deliveryDiagnostics": {
-        "repair20260928ReportedAt": "2026-09-28T00:50:48.883Z"
-      }
-    },
-    {
-      "id": "options-scan-20260929T133524Z",
-      "system": "options",
-      "startedAt": "2026-09-29T13:35:24.000Z",
-      "checkedAt": "2026-09-29T13:37:58.202Z",
-      "scheduledFor": "2026-09-29T13:00:00.000Z",
-      "nextScheduledAt": "2026-09-29T14:00:00.000Z",
-      "status": "data_limited",
-      "summary": "No open options paper trades required management. Two existing research records were materially updated after the open: BB fell to $8.58, 2.50% below the prior $8.80 breakout close, while SMMT faded from an early $19.07 high to $17.55 (+13.37%), compressing a greater-than-22% premarket gain. COST was roughly flat near $923.18 and did not produce a material thesis change. Public displayed delayed 24-38 DTE asks and open interest, but the relevant pages lacked reliable live bids, midpoints, full Greeks, IV term structures, contract volumes, executable spreads and buyer-initiated opening-flow confirmation; visible BB near-the-money OI was also thin. No entry, exit or mark event was added.",
-      "sources": [
-        {
-          "name": "Latest BB, COST, SMMT and QQQ market data",
-          "url": "https://finance.yahoo.com/",
-          "checkedAt": "2026-09-29T13:37:58.202Z",
-          "status": "checked"
-        },
-        {
-          "name": "Public BB November 6 option chain",
-          "url": "https://public.com/stocks/bb/options-chain?expiration=2026-11-06",
-          "checkedAt": "2026-09-29T13:37:58.202Z",
-          "status": "checked"
-        },
-        {
-          "name": "Public COST October 23 and November 6 option chains",
-          "url": "https://public.com/stocks/cost/options-chain?expiration=2026-10-23",
-          "checkedAt": "2026-09-29T13:37:58.202Z",
-          "status": "checked"
-        },
-        {
-          "name": "Investing.com SMMT regular-session quote",
-          "url": "https://www.investing.com/equities/summit-therapeutics-plc-options",
-          "checkedAt": "2026-09-29T13:37:58.202Z",
-          "status": "checked"
-        },
-        {
-          "name": "Public SMMT October 23 option chain",
-          "url": "https://public.com/stocks/smmt/options-chain?expiration=2026-10-23",
-          "checkedAt": "2026-09-29T13:37:58.202Z",
-          "status": "checked"
-        },
-        {
-          "name": "Reliable complete executable 21-60 DTE option data and opening flow",
-          "url": "https://www.nasdaq.com/market-activity/quotes/option-chain",
-          "checkedAt": "2026-09-29T13:37:58.202Z",
-          "status": "unavailable"
-        }
-      ],
-      "missingData": [
-        "reliable live bid and midpoint for eligible BB, COST and SMMT contracts",
-        "complete delta and remaining Greeks",
-        "current IV rank and maturity term structure",
-        "contract volume and executable bid-ask spread",
-        "buyer-initiated opening-flow confirmation",
-        "confirmation that BB can reclaim the prior breakout close",
-        "confirmation that SMMT can stabilize after its opening gap fade",
-        "confirmation that AstraZeneca's announced SMMT investment has closed"
-      ],
-      "counts": {
-        "research": 2,
-        "entries": 0,
-        "exits": 0
-      },
-      "deliveryDiagnostics": {
-        "repair20260928ReportedAt": "2026-09-28T00:50:48.883Z"
-      }
-    },
-    {
-      "id": "meme-scan-20260929T135417Z",
-      "system": "meme",
-      "startedAt": "2026-09-29T13:54:17.000Z",
-      "checkedAt": "2026-09-29T13:56:35.099Z",
-      "scheduledFor": "2026-09-29T13:00:00.000Z",
-      "nextScheduledAt": "2026-09-29T14:00:00.000Z",
-      "status": "data_limited",
-      "summary": "No open meme paper trades required management. The existing pSOQ/SOQ research record was materially updated: the official provisional list continued publishing through 13:16:09 UTC and still showed zero credited addresses and zero migrated SOQ across the visible runs. DEX Screener displayed contextual price, liquidity and market-cap values, but the accessible page was indexed two days earlier and was not treated as a fresh executable quote. Frank DeGods' accessible profile was last active ten days earlier, Daumen's accessible profile showed no recent swaps, and no two-wallet convergence was verified. No new public-figure token launch or endorsement was confirmed. No entry, exit or mark event was added.",
-      "sources": [
-        {
-          "name": "Soqucoin Foundation migration notice",
-          "url": "https://soqucoin.org/migration",
-          "checkedAt": "2026-09-29T13:56:35.099Z",
-          "status": "checked"
-        },
-        {
-          "name": "Soqucoin provisional allocation live list",
-          "url": "https://soqucoin.org/migration/list/",
-          "checkedAt": "2026-09-29T13:56:35.099Z",
-          "status": "checked"
-        },
-        {
-          "name": "DEX Screener pSOQ/SOL pair page",
-          "url": "https://dexscreener.com/solana/EM9NyPqcByrz8zBxZUi2LazBTCY2zbVJa49nTXHi3Pq8",
-          "checkedAt": "2026-09-29T13:56:35.099Z",
-          "status": "checked"
-        },
-        {
-          "name": "Solscan pSOQ token page",
-          "url": "https://solscan.io/token/6NX2MWBuJM2Fn63K4hUgMPivLXHV8pwsU1yTdmjKpump",
-          "checkedAt": "2026-09-29T13:56:35.099Z",
-          "status": "checked"
-        },
-        {
-          "name": "Provadata Frank DeGods wallet profile",
-          "url": "https://provadata.com/traders/frankdegods",
-          "checkedAt": "2026-09-29T13:56:35.099Z",
-          "status": "checked"
-        },
-        {
-          "name": "uwuu.ai Daumen wallet profile",
-          "url": "https://uwuu.ai/trader/8MaVa9kdt3NW4Q5HyNAm1X5LbR8PQRVDc1W8NMVK88D5",
-          "checkedAt": "2026-09-29T13:56:35.099Z",
-          "status": "checked"
-        },
-        {
-          "name": "Current official-launch and public-figure discovery",
-          "url": "https://www.reuters.com/world/us/trump-us-house-speaker-tech-ceos-meet-ai-september-29-source-says-2026-09-24/",
-          "checkedAt": "2026-09-29T13:56:35.099Z",
-          "status": "checked"
-        },
-        {
-          "name": "IdontPayTaxes, Numero and verified Clukz current holdings",
-          "url": "https://kolexplorer.com/",
-          "checkedAt": "2026-09-29T13:56:35.099Z",
-          "status": "unavailable"
-        },
-        {
-          "name": "X live unique-author search",
-          "url": "https://x.com/search",
-          "checkedAt": "2026-09-29T13:56:35.099Z",
-          "status": "unavailable"
-        }
-      ],
-      "missingData": [
-        "fresh executable pSOQ bid, ask, last trade and slippage at completion",
-        "current token holdings and remaining-position percentages for all five named tracked wallets",
-        "verified two-wallet convergence and greater-than-one-hour persistence",
-        "current deployer, insider, bundler, holder-concentration and wash-trading analysis",
-        "X unique-author mention velocity, acceleration and spam filtering",
-        "future SOQ mainnet price, liquidity and custody verification",
-        "successful credited allocations after the zero-allocation 13:16 UTC official run",
-        "complete real-time coverage of all Solana launches, holders, buyers and liquidity venues"
-      ],
-      "counts": {
-        "research": 1,
-        "entries": 0,
-        "exits": 0
-      },
-      "deliveryDiagnostics": {
-        "repair20260928ReportedAt": "2026-09-28T02:04:42.735Z"
-      }
-    },
-    {
-      "id": "options-scan-20261001T231156Z",
-      "system": "options",
-      "startedAt": "2026-10-01T23:11:56.000Z",
-      "checkedAt": "2026-10-01T23:15:10.082Z",
-      "scheduledFor": "2026-10-01T23:00:00.000Z",
-      "nextScheduledAt": "2026-10-02T00:00:00.000Z",
-      "status": "market_closed",
-      "summary": "No open options paper trades required management. Three existing research records were materially updated from October 1 closing data. BB confirmed constructive multi-day post-earnings continuation at $9.18 (+1.49%) after reaching $9.30 on 20.55 million shares. COST closed at $914.94 (+0.50%) but remained below its September 28 research price and failed to establish a clean post-earnings drift. SMMT closed at $16.69 (-1.36%), below the $18.36 investment-equivalent price as its catalyst gap continued to fade. Nasdaq reported the BB, COST and SMMT chains unavailable, and the accessible SMMT chain was a stale September 29 snapshot. No exact 21-60 DTE contract could be validated for executable quote, Greeks, IV, liquidity or directional opening flow. No entry, exit or mark event was added.",
-      "sources": [
-        {
-          "name": "October 1 BB, COST, SMMT and QQQ closing market data",
-          "url": "https://finance.yahoo.com/",
-          "checkedAt": "2026-10-01T23:15:10.082Z",
-          "status": "checked"
-        },
-        {
-          "name": "BlackBerry investor relations and catalyst check",
-          "url": "https://investors.blackberry.com/",
-          "checkedAt": "2026-10-01T23:15:10.082Z",
-          "status": "checked"
-        },
-        {
-          "name": "Costco September 24 earnings release",
-          "url": "https://investor.costco.com/news/news-details/2026/Costco-Wholesale-Corporation-Reports-Fourth-Quarter-and-Fiscal-Year-2026-Operating-Results/default.aspx",
-          "checkedAt": "2026-10-01T23:15:10.082Z",
-          "status": "checked"
-        },
-        {
-          "name": "AstraZeneca Summit investment announcement",
-          "url": "https://www.astrazeneca.com/media-centre/press-releases/2026/astrazeneca-announces-equity-investment-summit.html",
-          "checkedAt": "2026-10-01T23:15:10.082Z",
-          "status": "checked"
-        },
-        {
-          "name": "Nasdaq BB option chain",
-          "url": "https://www.nasdaq.com/market-activity/stocks/bb/option-chain",
-          "checkedAt": "2026-10-01T23:15:10.082Z",
-          "status": "unavailable"
-        },
-        {
-          "name": "Nasdaq COST option chain",
-          "url": "https://www.nasdaq.com/market-activity/stocks/cost/option-chain",
-          "checkedAt": "2026-10-01T23:15:10.082Z",
-          "status": "unavailable"
-        },
-        {
-          "name": "Nasdaq SMMT option chain",
-          "url": "https://www.nasdaq.com/market-activity/stocks/smmt/option-chain",
-          "checkedAt": "2026-10-01T23:15:10.082Z",
-          "status": "unavailable"
-        },
-        {
-          "name": "Public SMMT October 23 option chain",
-          "url": "https://public.com/stocks/smmt/options-chain?expiration=2026-10-23",
-          "checkedAt": "2026-10-01T23:15:10.082Z",
-          "status": "unavailable"
-        }
-      ],
-      "missingData": [
-        "exact October 1 21-60 DTE contract bid, ask and midpoint",
-        "contract delta and remaining Greeks",
-        "contract IV, IV rank and maturity term structure",
-        "contract volume, open interest and executable spread",
-        "reliable buyer-initiated opening-flow confirmation",
-        "confirmation that AstraZeneca's announced SMMT investment has closed",
-        "executable listed-options quotes after the market close"
-      ],
-      "counts": {
-        "research": 3,
-        "entries": 0,
-        "exits": 0
-      },
-      "deliveryDiagnostics": {
-        "repair20260928ReportedAt": "2026-09-28T00:50:48.883Z"
-      }
-    },
-    {
-      "id": "meme-scan-20261001T232625Z",
-      "system": "meme",
-      "startedAt": "2026-10-01T23:26:25.000Z",
-      "checkedAt": "2026-10-01T23:28:35.547Z",
-      "scheduledFor": "2026-10-01T23:00:00.000Z",
-      "nextScheduledAt": "2026-10-02T00:00:00.000Z",
-      "status": "data_limited",
-      "summary": "No open meme paper trades required management. The existing pSOQ/SOQ research record was materially updated after DEX Screener displayed pSOQ at $0.0003175 with approximately $68,000 liquidity and a $317,000 market cap, materially below the contextual September 29 snapshot; displayed 1-hour, 6-hour and 24-hour performance were all negative and 24-hour sell volume exceeded buy volume. Current wallet-profile checks did not verify pSOQ persistence or two-wallet convergence. The official migration terms and mint remain verified, but the current allocation run list and X unique-author momentum were unavailable. Current public-figure discovery found a reported future $TRUMP-holder dinner, not a new token launch, and lacked a qualifying new official-contract catalyst. No entry, exit or mark event was added.",
-      "sources": [
-        {
-          "name": "DEX Screener pSOQ/SOL pair page",
-          "url": "https://dexscreener.com/solana/EM9NyPqcByrz8zBxZUi2LazBTCY2zbVJa49nTXHi3Pq8",
-          "checkedAt": "2026-10-01T23:28:35.547Z",
-          "status": "checked"
-        },
-        {
-          "name": "Soqucoin Foundation transparency and migration terms",
-          "url": "https://soqucoin.org/transparency",
-          "checkedAt": "2026-10-01T23:28:35.547Z",
-          "status": "checked"
-        },
-        {
-          "name": "Soqucoin current provisional allocation list",
-          "url": "https://soqucoin.org/migration/list/",
-          "checkedAt": "2026-10-01T23:28:35.547Z",
-          "status": "unavailable"
-        },
-        {
-          "name": "IdontPayTaxes and Numero tracked-wallet comparison",
-          "url": "https://kolexplorer.com/compare/idontpaytaxes-vs-numero",
-          "checkedAt": "2026-10-01T23:28:35.547Z",
-          "status": "checked"
-        },
-        {
-          "name": "Daumen tracked-wallet profile",
-          "url": "https://uwuu.ai/trader/8MaVa9kdt3NW4Q5HyNAm1X5LbR8PQRVDc1W8NMVK88D5",
-          "checkedAt": "2026-10-01T23:28:35.547Z",
-          "status": "checked"
-        },
-        {
-          "name": "Frank DeGods tracked-wallet profile",
-          "url": "https://www.copyfomo.com/traders/frankdegods",
-          "checkedAt": "2026-10-01T23:28:35.547Z",
-          "status": "checked"
-        },
-        {
-          "name": "Current public-figure meme-coin discovery",
-          "url": "https://www.vox.com/the-logoff-newsletter-trump/504911/trump-memecoin-crypto-dinner-corruption",
-          "checkedAt": "2026-10-01T23:28:35.547Z",
-          "status": "checked"
-        },
-        {
-          "name": "Verified Clukz current holdings",
-          "url": "https://kolexplorer.com/",
-          "checkedAt": "2026-10-01T23:28:35.547Z",
-          "status": "unavailable"
-        },
-        {
-          "name": "X live unique-author search",
-          "url": "https://x.com/search",
-          "checkedAt": "2026-10-01T23:28:35.547Z",
-          "status": "unavailable"
-        }
-      ],
-      "missingData": [
-        "fresh executable pSOQ bid, ask, last trade and slippage at completion",
-        "current token-specific holdings and remaining-position percentages for all five named tracked wallets",
-        "verified two-wallet convergence and greater-than-one-hour persistence",
-        "current deployer, insider, bundler, holder-concentration and wash-trading analysis",
-        "X unique-author mention velocity, acceleration and spam filtering",
-        "successful credited allocations from the current official migration run list",
-        "future SOQ mainnet price, liquidity and custody verification",
-        "complete real-time coverage of all Solana launches, holders, buyers and liquidity venues"
-      ],
-      "counts": {
-        "research": 1,
-        "entries": 0,
-        "exits": 0
-      },
-      "deliveryDiagnostics": {
-        "repair20260928ReportedAt": "2026-09-28T02:04:42.735Z"
+        "repair20260928ReportedAt": "2026-09-28T01:51:49.985Z"
       }
     }
   ]
