@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-10-01T23:28:35.547Z",
+  "updatedAt": "2026-10-01T23:39:15.965Z",
   "alerts": [
     {
       "id": "options-bb-fy27q2-20260924",
@@ -992,66 +992,66 @@
       }
     },
     "options": {
-      "id": "options-scan-20261001T231156Z",
+      "id": "options-scan-20261001T233817Z",
       "system": "options",
-      "startedAt": "2026-10-01T23:11:56.000Z",
-      "checkedAt": "2026-10-01T23:15:10.082Z",
+      "startedAt": "2026-10-01T23:38:17.000Z",
+      "checkedAt": "2026-10-01T23:39:15.965Z",
       "scheduledFor": "2026-10-01T23:00:00.000Z",
       "nextScheduledAt": "2026-10-02T00:00:00.000Z",
       "status": "market_closed",
-      "summary": "No open options paper trades required management. Three existing research records were materially updated from October 1 closing data. BB confirmed constructive multi-day post-earnings continuation at $9.18 (+1.49%) after reaching $9.30 on 20.55 million shares. COST closed at $914.94 (+0.50%) but remained below its September 28 research price and failed to establish a clean post-earnings drift. SMMT closed at $16.69 (-1.36%), below the $18.36 investment-equivalent price as its catalyst gap continued to fade. Nasdaq reported the BB, COST and SMMT chains unavailable, and the accessible SMMT chain was a stale September 29 snapshot. No exact 21-60 DTE contract could be validated for executable quote, Greeks, IV, liquidity or directional opening flow. No entry, exit or mark event was added.",
+      "summary": "No open options paper trades required management. The post-close market snapshot remained unchanged from the completed 23:15 UTC closing scan: BB $9.18 (+1.49%), COST $914.94 (+0.50%), SMMT $16.69 (-1.36%) and QQQ $742.03 (+0.26%). A bounded after-close catalyst search found no new material primary-source development for BB, COST or SMMT; current reporting remained focused on the already-published AstraZeneca/Summit investment. Nasdaq continued to report all three option chains unavailable, so no exact 21-60 DTE contract could be validated for executable quote, Greeks, IV, liquidity or directional opening flow. Existing research records were unchanged. No research, entry, exit or mark event was added.",
       "sources": [
         {
-          "name": "October 1 BB, COST, SMMT and QQQ closing market data",
+          "name": "Post-close BB, COST, SMMT and QQQ market data",
           "url": "https://finance.yahoo.com/",
-          "checkedAt": "2026-10-01T23:15:10.082Z",
+          "checkedAt": "2026-10-01T23:39:15.965Z",
           "status": "checked"
         },
         {
-          "name": "BlackBerry investor relations and catalyst check",
-          "url": "https://investors.blackberry.com/",
-          "checkedAt": "2026-10-01T23:15:10.082Z",
+          "name": "October 1 market-regime close report",
+          "url": "https://www.reuters.com/business/dow-futures-hit-three-month-low-yields-surge-micron-earnings-offer-support-2026-10-01/",
+          "checkedAt": "2026-10-01T23:39:15.965Z",
           "status": "checked"
         },
         {
-          "name": "Costco September 24 earnings release",
-          "url": "https://investor.costco.com/news/news-details/2026/Costco-Wholesale-Corporation-Reports-Fourth-Quarter-and-Fiscal-Year-2026-Operating-Results/default.aspx",
-          "checkedAt": "2026-10-01T23:15:10.082Z",
+          "name": "BlackBerry current catalyst search",
+          "url": "https://www.blackberry.com/en",
+          "checkedAt": "2026-10-01T23:39:15.965Z",
           "status": "checked"
         },
         {
-          "name": "AstraZeneca Summit investment announcement",
-          "url": "https://www.astrazeneca.com/media-centre/press-releases/2026/astrazeneca-announces-equity-investment-summit.html",
-          "checkedAt": "2026-10-01T23:15:10.082Z",
+          "name": "Costco current catalyst search",
+          "url": "https://finance.yahoo.com/quote/COST/",
+          "checkedAt": "2026-10-01T23:39:15.965Z",
+          "status": "checked"
+        },
+        {
+          "name": "Summit/AstraZeneca current catalyst search",
+          "url": "https://www.reuters.com/legal/litigation/summit-soars-after-2-billion-investment-astrazeneca-cancer-therapies-2026-09-29/",
+          "checkedAt": "2026-10-01T23:39:15.965Z",
           "status": "checked"
         },
         {
           "name": "Nasdaq BB option chain",
           "url": "https://www.nasdaq.com/market-activity/stocks/bb/option-chain",
-          "checkedAt": "2026-10-01T23:15:10.082Z",
+          "checkedAt": "2026-10-01T23:39:15.965Z",
           "status": "unavailable"
         },
         {
           "name": "Nasdaq COST option chain",
           "url": "https://www.nasdaq.com/market-activity/stocks/cost/option-chain",
-          "checkedAt": "2026-10-01T23:15:10.082Z",
+          "checkedAt": "2026-10-01T23:39:15.965Z",
           "status": "unavailable"
         },
         {
           "name": "Nasdaq SMMT option chain",
           "url": "https://www.nasdaq.com/market-activity/stocks/smmt/option-chain",
-          "checkedAt": "2026-10-01T23:15:10.082Z",
-          "status": "unavailable"
-        },
-        {
-          "name": "Public SMMT October 23 option chain",
-          "url": "https://public.com/stocks/smmt/options-chain?expiration=2026-10-23",
-          "checkedAt": "2026-10-01T23:15:10.082Z",
+          "checkedAt": "2026-10-01T23:39:15.965Z",
           "status": "unavailable"
         }
       ],
       "missingData": [
-        "exact October 1 21-60 DTE contract bid, ask and midpoint",
+        "exact post-close 21-60 DTE contract bid, ask and midpoint",
         "contract delta and remaining Greeks",
         "contract IV, IV rank and maturity term structure",
         "contract volume, open interest and executable spread",
@@ -1060,7 +1060,7 @@
         "executable listed-options quotes after the market close"
       ],
       "counts": {
-        "research": 3,
+        "research": 0,
         "entries": 0,
         "exits": 0
       },
@@ -12255,6 +12255,83 @@
       },
       "deliveryDiagnostics": {
         "repair20260928ReportedAt": "2026-09-28T01:51:49.985Z"
+      }
+    },
+    {
+      "id": "options-scan-20261001T233817Z",
+      "system": "options",
+      "startedAt": "2026-10-01T23:38:17.000Z",
+      "checkedAt": "2026-10-01T23:39:15.965Z",
+      "scheduledFor": "2026-10-01T23:00:00.000Z",
+      "nextScheduledAt": "2026-10-02T00:00:00.000Z",
+      "status": "market_closed",
+      "summary": "No open options paper trades required management. The post-close market snapshot remained unchanged from the completed 23:15 UTC closing scan: BB $9.18 (+1.49%), COST $914.94 (+0.50%), SMMT $16.69 (-1.36%) and QQQ $742.03 (+0.26%). A bounded after-close catalyst search found no new material primary-source development for BB, COST or SMMT; current reporting remained focused on the already-published AstraZeneca/Summit investment. Nasdaq continued to report all three option chains unavailable, so no exact 21-60 DTE contract could be validated for executable quote, Greeks, IV, liquidity or directional opening flow. Existing research records were unchanged. No research, entry, exit or mark event was added.",
+      "sources": [
+        {
+          "name": "Post-close BB, COST, SMMT and QQQ market data",
+          "url": "https://finance.yahoo.com/",
+          "checkedAt": "2026-10-01T23:39:15.965Z",
+          "status": "checked"
+        },
+        {
+          "name": "October 1 market-regime close report",
+          "url": "https://www.reuters.com/business/dow-futures-hit-three-month-low-yields-surge-micron-earnings-offer-support-2026-10-01/",
+          "checkedAt": "2026-10-01T23:39:15.965Z",
+          "status": "checked"
+        },
+        {
+          "name": "BlackBerry current catalyst search",
+          "url": "https://www.blackberry.com/en",
+          "checkedAt": "2026-10-01T23:39:15.965Z",
+          "status": "checked"
+        },
+        {
+          "name": "Costco current catalyst search",
+          "url": "https://finance.yahoo.com/quote/COST/",
+          "checkedAt": "2026-10-01T23:39:15.965Z",
+          "status": "checked"
+        },
+        {
+          "name": "Summit/AstraZeneca current catalyst search",
+          "url": "https://www.reuters.com/legal/litigation/summit-soars-after-2-billion-investment-astrazeneca-cancer-therapies-2026-09-29/",
+          "checkedAt": "2026-10-01T23:39:15.965Z",
+          "status": "checked"
+        },
+        {
+          "name": "Nasdaq BB option chain",
+          "url": "https://www.nasdaq.com/market-activity/stocks/bb/option-chain",
+          "checkedAt": "2026-10-01T23:39:15.965Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "Nasdaq COST option chain",
+          "url": "https://www.nasdaq.com/market-activity/stocks/cost/option-chain",
+          "checkedAt": "2026-10-01T23:39:15.965Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "Nasdaq SMMT option chain",
+          "url": "https://www.nasdaq.com/market-activity/stocks/smmt/option-chain",
+          "checkedAt": "2026-10-01T23:39:15.965Z",
+          "status": "unavailable"
+        }
+      ],
+      "missingData": [
+        "exact post-close 21-60 DTE contract bid, ask and midpoint",
+        "contract delta and remaining Greeks",
+        "contract IV, IV rank and maturity term structure",
+        "contract volume, open interest and executable spread",
+        "reliable buyer-initiated opening-flow confirmation",
+        "confirmation that AstraZeneca's announced SMMT investment has closed",
+        "executable listed-options quotes after the market close"
+      ],
+      "counts": {
+        "research": 0,
+        "entries": 0,
+        "exits": 0
+      },
+      "deliveryDiagnostics": {
+        "repair20260928ReportedAt": "2026-09-28T00:50:48.883Z"
       }
     }
   ]
