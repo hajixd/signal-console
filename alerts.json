@@ -1,33 +1,32 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-29T13:56:35.099Z",
+  "updatedAt": "2026-10-01T23:15:10.082Z",
   "alerts": [
     {
       "id": "options-bb-fy27q2-20260924",
       "eventType": "research",
       "system": "options",
-      "timestamp": "2026-09-29T13:37:58.202Z",
+      "timestamp": "2026-10-01T23:15:10.082Z",
       "asset": "BB",
-      "title": "Research update: BB reverses below prior close after breakout",
-      "summary": "BlackBerry's September 24 earnings catalyst remains verified, but the follow-through weakened materially after the open. Public showed BB at $8.58, down 2.50% from the prior $8.80 close, reversing part of September 28's breakout. The November 6 chain displayed only delayed ask prices and thin near-the-money open interest: the $8 call ask was $1.38 with OI 4 and the $8.50 call ask was $1.08 with OI 29. Without a reliable live bid, midpoint, delta, complete Greeks, IV term structure, contract volume, executable spread or buyer-initiated opening-flow confirmation, no paper entry qualifies.",
+      "title": "Research update: BB confirms multi-day post-earnings continuation",
+      "summary": "BlackBerry's September 24 earnings catalyst remains verified, and the technical follow-through strengthened materially. BB closed October 1 at $9.18, up 1.49% on 20.55 million shares after trading as high as $9.30; it is now above the September 28 breakout close of $8.80 and has recovered from the September 29 reversal. This confirms multi-day underlying continuation, but no paper option entry qualifies because the listed-options session is closed and Nasdaq still reports the chain unavailable, preventing validation of a 21-60 DTE contract's executable quote, delta, full Greeks, IV, spread, volume, open interest and buyer-initiated opening flow.",
       "reasons": [
-        "September 24 earnings and raised outlook remain the primary bullish catalyst",
-        "BB fell below the prior $8.80 breakout close shortly after the open",
-        "visible 38-DTE near-the-money open interest was thin",
-        "the delayed chain omitted a reliable executable bid, midpoint, Greeks, IV and directional opening flow"
+        "September 24 earnings, raised outlook and QNX design-win catalyst remain verified",
+        "BB closed at $9.18 after reaching $9.30 on 20.55 million shares",
+        "the stock reclaimed and exceeded the September 28 breakout close",
+        "multi-day continuation is present, but exact-contract eligibility remains unverified"
       ],
       "href": "https://www.sec.gov/Archives/edgar/data/1070235/000107023526000112/q2fy27ex-991.htm",
       "missingData": [
-        "reliable live bid and midpoint for the November 6 $8.00 and $8.50 calls",
+        "exact 21-60 DTE bid, ask and midpoint from the October 1 session",
         "verified delta and remaining Greeks",
         "current IV rank and term structure",
-        "contract volume and executable spread",
-        "buyer-initiated opening-flow confirmation",
-        "evidence that BB can reclaim and hold the prior $8.80 breakout close"
+        "contract volume, open interest and executable spread",
+        "buyer-initiated opening-flow confirmation"
       ],
-      "risk": "High. The earnings catalyst is real, but early-session reversal below the breakout close and thin visible option liquidity materially weaken the entry case.",
+      "risk": "High. The underlying continuation is constructive, but entering without a reliable exact-contract quote and liquidity/flow validation would violate the scanner rules.",
       "details": {
-        "verificationStatus": "primary catalyst verified; breakout follow-through weakened; exact-contract eligibility failed",
+        "verificationStatus": "primary catalyst verified; multi-day underlying continuation confirmed; exact-contract eligibility unavailable",
         "evidenceSources": [
           {
             "name": "BlackBerry Q2 FY2027 earnings release filed with SEC",
@@ -77,21 +76,31 @@
             "publishedAt": "2026-09-29T13:36:00Z",
             "checkedAt": "2026-09-29T13:37:58.202Z",
             "status": "checked"
+          },
+          {
+            "name": "BB October 1 closing market data",
+            "url": "https://finance.yahoo.com/quote/BB/",
+            "publishedAt": "2026-10-01T22:55:00Z",
+            "checkedAt": "2026-10-01T23:15:10.082Z",
+            "status": "checked"
           }
         ],
         "rejectionReasons": [
-          "BB reversed below the prior $8.80 breakout close after the open",
-          "November 6 near-the-money open interest was thin in the visible delayed chain",
-          "no reliable live bid or midpoint",
-          "no verified delta, remaining Greeks, IV term structure, contract volume, executable spread or buyer-initiated opening flow"
+          "listed-options session closed",
+          "Nasdaq reports the BB option chain unavailable",
+          "no reliable October 1 exact-contract quote, delta, full Greeks, IV, volume, open interest, spread or buyer-initiated opening flow"
         ],
         "marketReaction": {
-          "session": "regular",
-          "price": 8.58,
-          "changePercent": -2.5,
-          "priorClose": 8.8,
-          "quoteTimestamp": "2026-09-29T13:36:00Z",
-          "status": "early reversal materially weakens bullish continuation"
+          "session": "closing",
+          "price": 9.18,
+          "changePercent": 1.49336,
+          "open": 8.94,
+          "high": 9.3,
+          "low": 8.915,
+          "volume": 20550060,
+          "marketCap": 5388956321,
+          "quoteTimestamp": "2026-10-01T22:55:00Z",
+          "status": "multi-day post-earnings continuation confirmed above the prior breakout close"
         },
         "contractChecks": {
           "expiration": "2026-11-06",
@@ -118,29 +127,28 @@
       "id": "options-cost-fy26q4-20260924",
       "eventType": "research",
       "system": "options",
-      "timestamp": "2026-09-28T14:43:42.948Z",
+      "timestamp": "2026-10-01T23:15:10.082Z",
       "asset": "COST",
-      "title": "Research update: COST shows relative strength after earnings",
-      "summary": "Costco's September 24 results remain verified. In regular trading on September 28, COST was $925.94 at 14:27:34 UTC, up 0.34%, after opening at $925.15 and trading between $913.40 and $928.54 on 384,256 shares. The stock recovered from its intraday low and outperformed QQQ at -1.03%, supporting the post-earnings drift thesis, but no exact qualifying option contract could be validated.",
+      "title": "Research update: COST post-earnings drift remains choppy",
+      "summary": "Costco's September 24 results remain verified, but the price action has not produced a clean multi-day continuation. COST closed October 1 at $914.94, up 0.50% for the day, after ranging from $903.88 to $923.39 on 2.13 million shares. The close remained below the September 28 research price of $925.94 despite modest outperformance versus QQQ at +0.26%. This is not a qualifying trend entry, and Nasdaq's unavailable chain prevents exact-contract validation.",
       "reasons": [
-        "At 14:27:34 UTC, COST traded at $925.94, up 0.34%, after opening at $925.15 and recovering from a $913.40 low.",
-        "COST was positive while QQQ was down 1.03%, providing relative-strength confirmation.",
-        "Fourth-quarter net sales rose 11.2% year over year to $93.9 billion.",
-        "Adjusted total-company comparable sales increased 6.7% and digitally enabled comparable sales increased 19.8%.",
-        "Diluted EPS increased to $6.75 from $5.87."
+        "the September 24 earnings beat remains verified",
+        "COST recovered from $903.88 but closed well below the $923.39 session high",
+        "the October 1 close remained below the September 28 research price",
+        "post-earnings drift lacks a clean directional continuation"
       ],
       "href": "https://www.sec.gov/Archives/edgar/data/909832/000090983226000084/costex9918-k92426.htm",
       "missingData": [
-        "exact 21-60 DTE contract bid, ask and midpoint",
-        "contract IV, IV rank and term structure",
-        "delta and remaining Greeks",
-        "contract volume, open interest and spread",
-        "reliable buyer-initiated opening-flow confirmation",
-        "closing confirmation that relative strength persists"
+        "exact 21-60 DTE bid, ask and midpoint",
+        "verified delta and remaining Greeks",
+        "current IV rank and term structure",
+        "contract volume, open interest and executable spread",
+        "buyer-initiated opening-flow confirmation",
+        "evidence of sustained price acceptance above the recent $923-$926 area"
       ],
-      "risk": "Research only. COST is showing relative strength, but it has already moved through a wide intraday range, post-earnings option premium may remain elevated, and the results included a nonrecurring tariff-refund benefit. Do not enter without favorable contract economics, liquidity and defined invalidation.",
+      "risk": "Moderate to high. The company results are solid, but the underlying remains range-bound and exact contract economics are unavailable.",
       "details": {
-        "verificationStatus": "primary catalyst verified; regular-session relative strength observed; exact-contract eligibility unavailable",
+        "verificationStatus": "primary catalyst verified; multi-day continuation not confirmed; exact-contract eligibility unavailable",
         "evidenceSources": [
           {
             "name": "Costco Q4 and FY2026 earnings release filed with SEC",
@@ -162,31 +170,38 @@
             "publishedAt": "2026-09-28T12:48:05Z",
             "checkedAt": "2026-09-28T13:05:47.915Z",
             "status": "checked"
+          },
+          {
+            "name": "COST October 1 closing market data",
+            "url": "https://finance.yahoo.com/quote/COST/",
+            "publishedAt": "2026-10-01T22:56:46Z",
+            "checkedAt": "2026-10-01T23:15:10.082Z",
+            "status": "checked"
           }
         ],
         "rejectionReasons": [
-          "no reliable live exact-contract quote",
-          "no verified current IV, Greeks, OI, spread or buyer-initiated flow",
-          "wide intraday range increases timing risk",
-          "closing continuation not yet confirmed"
+          "multi-day post-earnings price action remains choppy",
+          "close remained below the September 28 research price and the October 1 session high",
+          "Nasdaq reports the COST option chain unavailable",
+          "no verified current exact-contract quote, Greeks, IV, liquidity or directional flow"
         ],
         "marketReaction": {
-          "session": "regular",
-          "price": 925.94,
-          "changePercent": 0.34407,
-          "open": 925.15,
-          "high": 928.54,
-          "low": 913.4,
-          "volume": 384256,
-          "marketCap": 411457738300,
-          "quoteTimestamp": "2026-09-28T14:27:34Z",
+          "session": "closing",
+          "price": 914.94,
+          "changePercent": 0.50091,
+          "open": 910.34,
+          "high": 923.39,
+          "low": 903.88,
+          "volume": 2125766,
+          "marketCap": 406626784200,
+          "quoteTimestamp": "2026-10-01T22:56:46Z",
           "broadMarket": {
             "asset": "QQQ",
-            "price": 736.81,
-            "changePercent": -1.03291,
-            "quoteTimestamp": "2026-09-28T14:27:18Z"
+            "price": 742.03,
+            "changePercent": 0.2636,
+            "quoteTimestamp": "2026-10-01T22:57:10Z"
           },
-          "status": "positive relative strength but contract eligibility unavailable"
+          "status": "modest daily rebound, but no clean multi-day post-earnings continuation"
         }
       }
     },
@@ -387,29 +402,29 @@
       "id": "options-smmt-azn-investment-20260928",
       "eventType": "research",
       "system": "options",
-      "timestamp": "2026-09-29T13:37:58.202Z",
+      "timestamp": "2026-10-01T23:15:10.082Z",
       "asset": "SMMT",
-      "title": "Research update: SMMT gap fades sharply after the open",
-      "summary": "AstraZeneca's $2 billion strategic investment and oncology collaboration remain verified, but SMMT's initial reaction weakened materially after the open. At 9:33:17 a.m. ET, Investing.com showed $17.55, up 13.37%, after an early $19.07 high—well below the greater-than-22% premarket gain. The October 23 chain displayed delayed ask prices and generally modest open interest but no reliable live bid, midpoint, full Greeks, IV term structure, contract volume, executable spread or directional opening flow. The sharp gap fade and incomplete contract data make this research-only; no paper entry qualifies.",
+      "title": "Research update: SMMT catalyst gap continues to fade",
+      "summary": "AstraZeneca's announced $2 billion investment and oncology collaboration remain verified, but SMMT's catalyst reaction continues to weaken. SMMT closed October 1 at $16.69, down 1.36%, after trading between $16.595 and $17.48 on 7.90 million shares. The close is below the $18.36 common-share-equivalent investment price and below the September 29 research update at $17.55. With the investment closing still unconfirmed, Nasdaq's chain unavailable and the accessible Public chain frozen at a September 29 snapshot, no paper option entry qualifies.",
       "reasons": [
-        "AstraZeneca's announced $2 billion investment remains a strong verified catalyst",
-        "SMMT faded from an early $19.07 high to $17.55 by 9:33 a.m. ET",
-        "the gain compressed from more than 22% premarket to 13.37%",
-        "the 24-DTE chain lacked complete executable and flow data"
+        "the AstraZeneca investment and collaboration remain a verified strategic catalyst",
+        "SMMT closed at $16.69, below the $18.36 investment-equivalent price",
+        "the stock has continued fading from its September 29 catalyst high",
+        "investment closing and exact-contract eligibility remain unconfirmed"
       ],
       "href": "https://www.astrazeneca.com/media-centre/press-releases/2026/astrazeneca-announces-equity-investment-summit.html",
       "missingData": [
-        "reliable live bid and midpoint for an eligible October 23 call",
+        "confirmation that AstraZeneca's announced investment has closed",
+        "exact 21-60 DTE bid, ask and midpoint from October 1",
         "verified delta and remaining Greeks",
         "current IV rank and maturity term structure",
-        "contract volume and executable spread",
+        "contract volume, open interest and executable spread",
         "buyer-initiated opening-flow confirmation",
-        "evidence that SMMT can stabilize after the opening gap fade",
-        "confirmation that AstraZeneca's announced investment has closed"
+        "evidence that SMMT can reclaim and hold the $18.36 investment-equivalent level"
       ],
-      "risk": "Very high. The catalyst is verified, but the opening gap is fading, event volatility is elevated, and the visible options data are incomplete and illiquid.",
+      "risk": "Very high. The strategic catalyst is real, but the gap has faded, the stock is below the investment-equivalent price, closing is unconfirmed and contract data are incomplete.",
       "details": {
-        "verificationStatus": "primary catalyst verified; regular-session gap fade confirmed; exact-contract eligibility failed",
+        "verificationStatus": "primary catalyst verified; catalyst-gap continuation weakened; exact-contract eligibility unavailable",
         "evidenceSources": [
           {
             "name": "AstraZeneca strategic investment and collaboration announcement",
@@ -466,14 +481,21 @@
             "publishedAt": "2026-09-29T13:36:00Z",
             "checkedAt": "2026-09-29T13:37:58.202Z",
             "status": "checked"
+          },
+          {
+            "name": "SMMT October 1 closing market data",
+            "url": "https://finance.yahoo.com/quote/SMMT/",
+            "publishedAt": "2026-10-01T22:50:10Z",
+            "checkedAt": "2026-10-01T23:15:10.082Z",
+            "status": "checked"
           }
         ],
         "rejectionReasons": [
-          "opening gap faded materially from the early high",
-          "no reliable live bid or midpoint for the 24-DTE calls",
-          "no verified full Greeks, IV term structure, contract volume, executable spread or buyer-initiated opening flow",
-          "visible open interest was generally modest around relevant strikes",
-          "investment closing remains subject to stated conditions"
+          "SMMT closed below the $18.36 investment-equivalent price",
+          "the catalyst gap has continued to fade",
+          "investment closing remains unconfirmed",
+          "Nasdaq reports the SMMT option chain unavailable",
+          "the accessible Public chain was stale and no reliable October 1 exact-contract quote, Greeks, IV, liquidity or flow could be verified"
         ],
         "catalyst": {
           "investmentAmount": 2000000000,
@@ -488,23 +510,24 @@
           "regularSessionHigh": 19.37,
           "regularSessionLow": 15.19,
           "regularSessionVolume": 6151131,
-          "quoteTimestamp": "2026-09-29T13:33:17Z",
+          "quoteTimestamp": "2026-10-01T22:50:10Z",
           "broadMarket": {
             "asset": "U.S. stock-index futures",
             "status": "roughly flat with rising oil and elevated Treasury yields constraining risk appetite",
             "reportedAt": "2026-09-29T09:57:54Z"
           },
-          "status": "strong catalyst remains, but the opening gap faded sharply and continuation is unconfirmed",
-          "session": "regular",
+          "status": "catalyst gap continues to fade below the investment-equivalent price",
+          "session": "closing",
           "premarketChangePercent": "greater than 22%",
           "premarketPrice": null,
           "reportedAt": "2026-09-29T09:57:54Z",
           "source": "Reuters",
-          "price": 17.55,
-          "changePercent": 13.37,
-          "high": 19.07,
-          "low": 17.5,
-          "volume": 4573199
+          "price": 16.69,
+          "changePercent": -1.36014,
+          "high": 17.48,
+          "low": 16.595,
+          "volume": 7900038,
+          "open": 16.82
         },
         "contractChecks": {
           "expiration": "2026-10-23",
@@ -942,64 +965,75 @@
       }
     },
     "options": {
-      "id": "options-scan-20260929T133524Z",
+      "id": "options-scan-20261001T231156Z",
       "system": "options",
-      "startedAt": "2026-09-29T13:35:24.000Z",
-      "checkedAt": "2026-09-29T13:37:58.202Z",
-      "scheduledFor": "2026-09-29T13:00:00.000Z",
-      "nextScheduledAt": "2026-09-29T14:00:00.000Z",
-      "status": "data_limited",
-      "summary": "No open options paper trades required management. Two existing research records were materially updated after the open: BB fell to $8.58, 2.50% below the prior $8.80 breakout close, while SMMT faded from an early $19.07 high to $17.55 (+13.37%), compressing a greater-than-22% premarket gain. COST was roughly flat near $923.18 and did not produce a material thesis change. Public displayed delayed 24-38 DTE asks and open interest, but the relevant pages lacked reliable live bids, midpoints, full Greeks, IV term structures, contract volumes, executable spreads and buyer-initiated opening-flow confirmation; visible BB near-the-money OI was also thin. No entry, exit or mark event was added.",
+      "startedAt": "2026-10-01T23:11:56.000Z",
+      "checkedAt": "2026-10-01T23:15:10.082Z",
+      "scheduledFor": "2026-10-01T23:00:00.000Z",
+      "nextScheduledAt": "2026-10-02T00:00:00.000Z",
+      "status": "market_closed",
+      "summary": "No open options paper trades required management. Three existing research records were materially updated from October 1 closing data. BB confirmed constructive multi-day post-earnings continuation at $9.18 (+1.49%) after reaching $9.30 on 20.55 million shares. COST closed at $914.94 (+0.50%) but remained below its September 28 research price and failed to establish a clean post-earnings drift. SMMT closed at $16.69 (-1.36%), below the $18.36 investment-equivalent price as its catalyst gap continued to fade. Nasdaq reported the BB, COST and SMMT chains unavailable, and the accessible SMMT chain was a stale September 29 snapshot. No exact 21-60 DTE contract could be validated for executable quote, Greeks, IV, liquidity or directional opening flow. No entry, exit or mark event was added.",
       "sources": [
         {
-          "name": "Latest BB, COST, SMMT and QQQ market data",
+          "name": "October 1 BB, COST, SMMT and QQQ closing market data",
           "url": "https://finance.yahoo.com/",
-          "checkedAt": "2026-09-29T13:37:58.202Z",
+          "checkedAt": "2026-10-01T23:15:10.082Z",
           "status": "checked"
         },
         {
-          "name": "Public BB November 6 option chain",
-          "url": "https://public.com/stocks/bb/options-chain?expiration=2026-11-06",
-          "checkedAt": "2026-09-29T13:37:58.202Z",
+          "name": "BlackBerry investor relations and catalyst check",
+          "url": "https://investors.blackberry.com/",
+          "checkedAt": "2026-10-01T23:15:10.082Z",
           "status": "checked"
         },
         {
-          "name": "Public COST October 23 and November 6 option chains",
-          "url": "https://public.com/stocks/cost/options-chain?expiration=2026-10-23",
-          "checkedAt": "2026-09-29T13:37:58.202Z",
+          "name": "Costco September 24 earnings release",
+          "url": "https://investor.costco.com/news/news-details/2026/Costco-Wholesale-Corporation-Reports-Fourth-Quarter-and-Fiscal-Year-2026-Operating-Results/default.aspx",
+          "checkedAt": "2026-10-01T23:15:10.082Z",
           "status": "checked"
         },
         {
-          "name": "Investing.com SMMT regular-session quote",
-          "url": "https://www.investing.com/equities/summit-therapeutics-plc-options",
-          "checkedAt": "2026-09-29T13:37:58.202Z",
+          "name": "AstraZeneca Summit investment announcement",
+          "url": "https://www.astrazeneca.com/media-centre/press-releases/2026/astrazeneca-announces-equity-investment-summit.html",
+          "checkedAt": "2026-10-01T23:15:10.082Z",
           "status": "checked"
+        },
+        {
+          "name": "Nasdaq BB option chain",
+          "url": "https://www.nasdaq.com/market-activity/stocks/bb/option-chain",
+          "checkedAt": "2026-10-01T23:15:10.082Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "Nasdaq COST option chain",
+          "url": "https://www.nasdaq.com/market-activity/stocks/cost/option-chain",
+          "checkedAt": "2026-10-01T23:15:10.082Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "Nasdaq SMMT option chain",
+          "url": "https://www.nasdaq.com/market-activity/stocks/smmt/option-chain",
+          "checkedAt": "2026-10-01T23:15:10.082Z",
+          "status": "unavailable"
         },
         {
           "name": "Public SMMT October 23 option chain",
           "url": "https://public.com/stocks/smmt/options-chain?expiration=2026-10-23",
-          "checkedAt": "2026-09-29T13:37:58.202Z",
-          "status": "checked"
-        },
-        {
-          "name": "Reliable complete executable 21-60 DTE option data and opening flow",
-          "url": "https://www.nasdaq.com/market-activity/quotes/option-chain",
-          "checkedAt": "2026-09-29T13:37:58.202Z",
+          "checkedAt": "2026-10-01T23:15:10.082Z",
           "status": "unavailable"
         }
       ],
       "missingData": [
-        "reliable live bid and midpoint for eligible BB, COST and SMMT contracts",
-        "complete delta and remaining Greeks",
-        "current IV rank and maturity term structure",
-        "contract volume and executable bid-ask spread",
-        "buyer-initiated opening-flow confirmation",
-        "confirmation that BB can reclaim the prior breakout close",
-        "confirmation that SMMT can stabilize after its opening gap fade",
-        "confirmation that AstraZeneca's announced SMMT investment has closed"
+        "exact October 1 21-60 DTE contract bid, ask and midpoint",
+        "contract delta and remaining Greeks",
+        "contract IV, IV rank and maturity term structure",
+        "contract volume, open interest and executable spread",
+        "reliable buyer-initiated opening-flow confirmation",
+        "confirmation that AstraZeneca's announced SMMT investment has closed",
+        "executable listed-options quotes after the market close"
       ],
       "counts": {
-        "research": 2,
+        "research": 3,
         "entries": 0,
         "exits": 0
       },
@@ -11911,6 +11945,83 @@
       },
       "deliveryDiagnostics": {
         "repair20260928ReportedAt": "2026-09-28T02:04:42.735Z"
+      }
+    },
+    {
+      "id": "options-scan-20261001T231156Z",
+      "system": "options",
+      "startedAt": "2026-10-01T23:11:56.000Z",
+      "checkedAt": "2026-10-01T23:15:10.082Z",
+      "scheduledFor": "2026-10-01T23:00:00.000Z",
+      "nextScheduledAt": "2026-10-02T00:00:00.000Z",
+      "status": "market_closed",
+      "summary": "No open options paper trades required management. Three existing research records were materially updated from October 1 closing data. BB confirmed constructive multi-day post-earnings continuation at $9.18 (+1.49%) after reaching $9.30 on 20.55 million shares. COST closed at $914.94 (+0.50%) but remained below its September 28 research price and failed to establish a clean post-earnings drift. SMMT closed at $16.69 (-1.36%), below the $18.36 investment-equivalent price as its catalyst gap continued to fade. Nasdaq reported the BB, COST and SMMT chains unavailable, and the accessible SMMT chain was a stale September 29 snapshot. No exact 21-60 DTE contract could be validated for executable quote, Greeks, IV, liquidity or directional opening flow. No entry, exit or mark event was added.",
+      "sources": [
+        {
+          "name": "October 1 BB, COST, SMMT and QQQ closing market data",
+          "url": "https://finance.yahoo.com/",
+          "checkedAt": "2026-10-01T23:15:10.082Z",
+          "status": "checked"
+        },
+        {
+          "name": "BlackBerry investor relations and catalyst check",
+          "url": "https://investors.blackberry.com/",
+          "checkedAt": "2026-10-01T23:15:10.082Z",
+          "status": "checked"
+        },
+        {
+          "name": "Costco September 24 earnings release",
+          "url": "https://investor.costco.com/news/news-details/2026/Costco-Wholesale-Corporation-Reports-Fourth-Quarter-and-Fiscal-Year-2026-Operating-Results/default.aspx",
+          "checkedAt": "2026-10-01T23:15:10.082Z",
+          "status": "checked"
+        },
+        {
+          "name": "AstraZeneca Summit investment announcement",
+          "url": "https://www.astrazeneca.com/media-centre/press-releases/2026/astrazeneca-announces-equity-investment-summit.html",
+          "checkedAt": "2026-10-01T23:15:10.082Z",
+          "status": "checked"
+        },
+        {
+          "name": "Nasdaq BB option chain",
+          "url": "https://www.nasdaq.com/market-activity/stocks/bb/option-chain",
+          "checkedAt": "2026-10-01T23:15:10.082Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "Nasdaq COST option chain",
+          "url": "https://www.nasdaq.com/market-activity/stocks/cost/option-chain",
+          "checkedAt": "2026-10-01T23:15:10.082Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "Nasdaq SMMT option chain",
+          "url": "https://www.nasdaq.com/market-activity/stocks/smmt/option-chain",
+          "checkedAt": "2026-10-01T23:15:10.082Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "Public SMMT October 23 option chain",
+          "url": "https://public.com/stocks/smmt/options-chain?expiration=2026-10-23",
+          "checkedAt": "2026-10-01T23:15:10.082Z",
+          "status": "unavailable"
+        }
+      ],
+      "missingData": [
+        "exact October 1 21-60 DTE contract bid, ask and midpoint",
+        "contract delta and remaining Greeks",
+        "contract IV, IV rank and maturity term structure",
+        "contract volume, open interest and executable spread",
+        "reliable buyer-initiated opening-flow confirmation",
+        "confirmation that AstraZeneca's announced SMMT investment has closed",
+        "executable listed-options quotes after the market close"
+      ],
+      "counts": {
+        "research": 3,
+        "entries": 0,
+        "exits": 0
+      },
+      "deliveryDiagnostics": {
+        "repair20260928ReportedAt": "2026-09-28T00:50:48.883Z"
       }
     }
   ]
