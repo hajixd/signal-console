@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-10-01T23:15:10.082Z",
+  "updatedAt": "2026-10-01T23:28:35.547Z",
   "alerts": [
     {
       "id": "options-bb-fy27q2-20260924",
@@ -566,28 +566,29 @@
       "id": "meme-research-psoq-soq-migration-20260929",
       "eventType": "research",
       "system": "meme",
-      "timestamp": "2026-09-29T13:56:35.099Z",
+      "timestamp": "2026-10-01T23:28:35.547Z",
       "asset": "pSOQ / SOQ",
-      "title": "Research update: pSOQ migration remains at zero after additional runs",
-      "summary": "Research only, not a paper entry. Soqucoin's official migration system continued publishing 15-minute provisional runs after the 12:00 UTC opening. The latest accessible run was published at 13:16:09 UTC, covered finalized slots through 13:15:55 UTC, and still showed zero credited addresses and zero migrated SOQ; the same zero-allocation output hash persisted across the five visible runs. DEX Screener displayed contextual pSOQ values, but its accessible page was indexed two days earlier and was not treated as a fresh executable quote. No named tracked-wallet convergence, holder/bundler safety or spam-filtered social acceleration was verified, so no paper entry qualifies.",
+      "title": "Research update: pSOQ market weakens during migration window",
+      "summary": "The official pSOQ-to-SOQ migration window remains open through October 5, but the displayed market structure weakened materially. DEX Screener showed pSOQ at $0.0003175 with about $68,000 liquidity and a $317,000 market cap, down approximately 64%, 46% and 57%, respectively, from the contextual September 29 snapshot stored in this research record. The page also showed -1.77% over 1 hour, -18.72% over 6 hours and -9.43% over 24 hours, with 24-hour sell volume exceeding buy volume. No entry qualifies because a freshness-guaranteed executable quote, tracked-wallet persistence/convergence, current holder and bundler analysis, and spam-filtered social momentum remain unavailable.",
       "reasons": [
-        "the official migration window and live-list mechanism remain verified",
-        "five visible official runs through 13:16 UTC retained the same zero-allocation output",
-        "no credited addresses or migrated SOQ were visible more than one hour after opening",
-        "accessible DEX data were not freshness-guaranteed for an executable paper entry",
-        "Frank DeGods was last active ten days earlier and Daumen showed no recent on-chain swaps in the accessible wallet profiles"
+        "The official migration window remains open through October 5, with mainnet block 1 planned for October 8.",
+        "DEX Screener displayed pSOQ at $0.0003175, about 64% below the contextual September 29 snapshot stored in the research record.",
+        "Displayed liquidity fell from approximately $127,000 to $68,000 and displayed market cap fell from approximately $731,000 to $317,000.",
+        "Displayed short-term performance was negative across 1-hour, 6-hour and 24-hour windows, while 24-hour sell volume exceeded buy volume.",
+        "No two-wallet convergence, greater-than-one-hour position persistence, or spam-filtered unique-author acceleration was verified."
       ],
       "href": "https://soqucoin.org/migration",
       "missingData": [
         "fresh executable pSOQ bid, ask, last trade and slippage at completion",
-        "current tracked-wallet holdings and greater-than-one-hour persistence for IdontPayTaxes, Daumen, Frank DeGods, Numero and verified Clukz",
-        "two-wallet convergence on pSOQ or another candidate",
-        "current holder concentration, deployer, insider, bundler and wash-trading analysis",
+        "current token-specific holdings and remaining-position percentages for all five named tracked wallets",
+        "verified two-wallet convergence and greater-than-one-hour persistence",
+        "current deployer, insider, bundler, holder-concentration and wash-trading analysis",
         "X unique-author mention velocity, acceleration and spam filtering",
-        "independent validation of future SOQ mainnet market, liquidity and custody",
-        "a successful credited migration allocation after the zero-allocation 13:16 UTC official run"
+        "successful credited allocations from the current official migration run list",
+        "future SOQ mainnet price, liquidity and custody verification",
+        "complete real-time coverage of all Solana launches, holders, buyers and liquidity venues"
       ],
-      "risk": "Very high. The migration is irreversible, the official list still shows no participation, executable pricing and holder safety are incomplete, and future SOQ liquidity is unverified.",
+      "risk": "Very high. Displayed price, liquidity and market cap deteriorated sharply during an irreversible migration window. The project discloses 9.9% project-controlled supply and 14.85% of the pool LP supply attributable to a project operations wallet at its September 12 measurement. Current wallet convergence, holder concentration, bundler risk, social quality and an executable quote are not verified. Research only; no paper entry.",
       "details": {
         "chain": "Solana (pSOQ) to Soqucoin mainnet (SOQ)",
         "catalystType": "one-time token migration and mainnet launch",
@@ -597,11 +598,12 @@
           "exactMint": "confirmed by official migration notice and independently matched by Solscan and DEX Screener",
           "migrationWindow": "2026-09-29T12:00:00Z to 2026-10-05T12:00:00Z",
           "plannedMainnetBlock1": "2026-10-08",
-          "verificationStatus": "official catalyst, mint and continued live-list publication verified; five visible runs remain at zero allocations; market, wallet, holder-risk and social entry gates incomplete",
+          "verificationStatus": "official migration terms and mint remain verified; current official allocation list was unavailable this run; market, wallet, holder-risk and social entry gates remain incomplete",
           "liveList": "confirmed publishing hashed runs after the 12:00 UTC opening",
           "latestAccessibleRun": "published 2026-09-29T13:16:09Z; cutoff block time 2026-09-29T13:15:55Z; allocation_count 0; n_migration_total 0",
           "visibleRunCount": 5,
-          "visibleRunStatus": "all five visible runs retained the same zero-allocation output hash"
+          "visibleRunStatus": "all five visible runs retained the same zero-allocation output hash",
+          "currentRunListStatus": "unavailable on 2026-10-01; last verified allocation run remains the September 29 record and must not be treated as current"
         },
         "newsSources": [
           {
@@ -645,20 +647,40 @@
         ],
         "marketSnapshot": {
           "source": "DEX Screener pSOQ/SOL pair page",
-          "observedPriceUsd": 0.0008813,
-          "observedLiquidityUsd": 127000,
-          "observedMarketCapUsd": 731000,
-          "freshness": "The accessible page was indexed two days earlier; values are contextual only and were not treated as a reliable executable quote.",
-          "verificationAt": "2026-09-29T13:56:35.099Z",
+          "observedPriceUsd": 0.0003175,
+          "observedLiquidityUsd": 68000,
+          "observedMarketCapUsd": 317000,
+          "priceChange1hPercent": -1.77,
+          "priceChange6hPercent": -18.72,
+          "priceChange24hPercent": -9.43,
+          "volume24hUsd": 17000,
+          "buyVolume24hUsd": 8200,
+          "sellVolume24hUsd": 9000,
+          "buyers24h": 55,
+          "sellers24h": 102,
+          "previousContextualSnapshot": {
+            "observedAt": "2026-09-29T13:56:35.099Z",
+            "priceUsd": 0.0008813,
+            "liquidityUsd": 127000,
+            "marketCapUsd": 731000
+          },
+          "changeFromPreviousContextualSnapshot": {
+            "pricePercent": -63.97,
+            "liquidityPercent": -46.46,
+            "marketCapPercent": -56.63
+          },
+          "freshness": "Displayed values were observed on the accessible DEX Screener pair page at scan completion but were not a guaranteed executable bid/ask quote.",
+          "verificationAt": "2026-10-01T23:28:35.547Z",
           "currentQuoteStatus": "Unavailable for entry: no freshness-guaranteed executable bid, ask, last trade or slippage."
         },
         "rejectionReasons": [
+          "displayed price, liquidity and market cap deteriorated materially during the migration window",
           "no verified tracked-wallet persistence or two-wallet convergence",
           "no freshness-guaranteed executable quote suitable for a paper entry",
           "no current independent holder, insider, bundler or wash-trading risk report",
           "no spam-filtered unique-author social acceleration",
-          "future SOQ mainnet liquidity and price discovery are unverified",
-          "latest accessible official run still showed zero credited addresses and zero migrated SOQ",
+          "current official migration allocation list unavailable",
+          "future SOQ mainnet liquidity and price discovery remain unverified",
           "migration execution is irreversible and subject to screening and exclusion rules"
         ],
         "firstPublishedAt": "2026-09-29T10:43:15.735Z",
@@ -699,24 +721,29 @@
           ]
         },
         "walletChecks": {
-          "frankDeGods": {
-            "source": "https://provadata.com/traders/frankdegods",
+          "idontPayTaxes": {
+            "source": "https://kolexplorer.com/compare/idontpaytaxes-vs-numero",
             "status": "checked",
-            "finding": "two verified wallets; profile last active ten days ago; no current token convergence verified"
+            "finding": "current profile showed active holdings, but no pSOQ position or two-wallet token convergence was verified"
+          },
+          "numero": {
+            "source": "https://kolexplorer.com/compare/idontpaytaxes-vs-numero",
+            "status": "checked",
+            "finding": "current profile showed active holdings, but no pSOQ position or convergence with IdontPayTaxes was verified"
           },
           "daumen": {
             "source": "https://uwuu.ai/trader/8MaVa9kdt3NW4Q5HyNAm1X5LbR8PQRVDc1W8NMVK88D5",
             "status": "checked",
-            "finding": "accessible profile reported no recent on-chain swaps"
+            "finding": "accessible profile continued to report no recent on-chain swaps"
           },
-          "idontPayTaxes": {
-            "status": "unavailable"
-          },
-          "numero": {
-            "status": "unavailable"
+          "frankDeGods": {
+            "source": "https://www.copyfomo.com/traders/frankdegods",
+            "status": "checked",
+            "finding": "current token-specific position persistence and convergence were not exposed or verified"
           },
           "clukz": {
-            "status": "unavailable"
+            "status": "unavailable",
+            "finding": "no current verified holdings or remaining-position percentage obtained"
           }
         }
       }
@@ -1042,78 +1069,78 @@
       }
     },
     "meme": {
-      "id": "meme-scan-20260929T135417Z",
+      "id": "meme-scan-20261001T232625Z",
       "system": "meme",
-      "startedAt": "2026-09-29T13:54:17.000Z",
-      "checkedAt": "2026-09-29T13:56:35.099Z",
-      "scheduledFor": "2026-09-29T13:00:00.000Z",
-      "nextScheduledAt": "2026-09-29T14:00:00.000Z",
+      "startedAt": "2026-10-01T23:26:25.000Z",
+      "checkedAt": "2026-10-01T23:28:35.547Z",
+      "scheduledFor": "2026-10-01T23:00:00.000Z",
+      "nextScheduledAt": "2026-10-02T00:00:00.000Z",
       "status": "data_limited",
-      "summary": "No open meme paper trades required management. The existing pSOQ/SOQ research record was materially updated: the official provisional list continued publishing through 13:16:09 UTC and still showed zero credited addresses and zero migrated SOQ across the visible runs. DEX Screener displayed contextual price, liquidity and market-cap values, but the accessible page was indexed two days earlier and was not treated as a fresh executable quote. Frank DeGods' accessible profile was last active ten days earlier, Daumen's accessible profile showed no recent swaps, and no two-wallet convergence was verified. No new public-figure token launch or endorsement was confirmed. No entry, exit or mark event was added.",
+      "summary": "No open meme paper trades required management. The existing pSOQ/SOQ research record was materially updated after DEX Screener displayed pSOQ at $0.0003175 with approximately $68,000 liquidity and a $317,000 market cap, materially below the contextual September 29 snapshot; displayed 1-hour, 6-hour and 24-hour performance were all negative and 24-hour sell volume exceeded buy volume. Current wallet-profile checks did not verify pSOQ persistence or two-wallet convergence. The official migration terms and mint remain verified, but the current allocation run list and X unique-author momentum were unavailable. Current public-figure discovery found a reported future $TRUMP-holder dinner, not a new token launch, and lacked a qualifying new official-contract catalyst. No entry, exit or mark event was added.",
       "sources": [
-        {
-          "name": "Soqucoin Foundation migration notice",
-          "url": "https://soqucoin.org/migration",
-          "checkedAt": "2026-09-29T13:56:35.099Z",
-          "status": "checked"
-        },
-        {
-          "name": "Soqucoin provisional allocation live list",
-          "url": "https://soqucoin.org/migration/list/",
-          "checkedAt": "2026-09-29T13:56:35.099Z",
-          "status": "checked"
-        },
         {
           "name": "DEX Screener pSOQ/SOL pair page",
           "url": "https://dexscreener.com/solana/EM9NyPqcByrz8zBxZUi2LazBTCY2zbVJa49nTXHi3Pq8",
-          "checkedAt": "2026-09-29T13:56:35.099Z",
+          "checkedAt": "2026-10-01T23:28:35.547Z",
           "status": "checked"
         },
         {
-          "name": "Solscan pSOQ token page",
-          "url": "https://solscan.io/token/6NX2MWBuJM2Fn63K4hUgMPivLXHV8pwsU1yTdmjKpump",
-          "checkedAt": "2026-09-29T13:56:35.099Z",
+          "name": "Soqucoin Foundation transparency and migration terms",
+          "url": "https://soqucoin.org/transparency",
+          "checkedAt": "2026-10-01T23:28:35.547Z",
           "status": "checked"
         },
         {
-          "name": "Provadata Frank DeGods wallet profile",
-          "url": "https://provadata.com/traders/frankdegods",
-          "checkedAt": "2026-09-29T13:56:35.099Z",
+          "name": "Soqucoin current provisional allocation list",
+          "url": "https://soqucoin.org/migration/list/",
+          "checkedAt": "2026-10-01T23:28:35.547Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "IdontPayTaxes and Numero tracked-wallet comparison",
+          "url": "https://kolexplorer.com/compare/idontpaytaxes-vs-numero",
+          "checkedAt": "2026-10-01T23:28:35.547Z",
           "status": "checked"
         },
         {
-          "name": "uwuu.ai Daumen wallet profile",
+          "name": "Daumen tracked-wallet profile",
           "url": "https://uwuu.ai/trader/8MaVa9kdt3NW4Q5HyNAm1X5LbR8PQRVDc1W8NMVK88D5",
-          "checkedAt": "2026-09-29T13:56:35.099Z",
+          "checkedAt": "2026-10-01T23:28:35.547Z",
           "status": "checked"
         },
         {
-          "name": "Current official-launch and public-figure discovery",
-          "url": "https://www.reuters.com/world/us/trump-us-house-speaker-tech-ceos-meet-ai-september-29-source-says-2026-09-24/",
-          "checkedAt": "2026-09-29T13:56:35.099Z",
+          "name": "Frank DeGods tracked-wallet profile",
+          "url": "https://www.copyfomo.com/traders/frankdegods",
+          "checkedAt": "2026-10-01T23:28:35.547Z",
           "status": "checked"
         },
         {
-          "name": "IdontPayTaxes, Numero and verified Clukz current holdings",
+          "name": "Current public-figure meme-coin discovery",
+          "url": "https://www.vox.com/the-logoff-newsletter-trump/504911/trump-memecoin-crypto-dinner-corruption",
+          "checkedAt": "2026-10-01T23:28:35.547Z",
+          "status": "checked"
+        },
+        {
+          "name": "Verified Clukz current holdings",
           "url": "https://kolexplorer.com/",
-          "checkedAt": "2026-09-29T13:56:35.099Z",
+          "checkedAt": "2026-10-01T23:28:35.547Z",
           "status": "unavailable"
         },
         {
           "name": "X live unique-author search",
           "url": "https://x.com/search",
-          "checkedAt": "2026-09-29T13:56:35.099Z",
+          "checkedAt": "2026-10-01T23:28:35.547Z",
           "status": "unavailable"
         }
       ],
       "missingData": [
         "fresh executable pSOQ bid, ask, last trade and slippage at completion",
-        "current token holdings and remaining-position percentages for all five named tracked wallets",
+        "current token-specific holdings and remaining-position percentages for all five named tracked wallets",
         "verified two-wallet convergence and greater-than-one-hour persistence",
         "current deployer, insider, bundler, holder-concentration and wash-trading analysis",
         "X unique-author mention velocity, acceleration and spam filtering",
+        "successful credited allocations from the current official migration run list",
         "future SOQ mainnet price, liquidity and custody verification",
-        "successful credited allocations after the zero-allocation 13:16 UTC official run",
         "complete real-time coverage of all Solana launches, holders, buyers and liquidity venues"
       ],
       "counts": {
@@ -12022,6 +12049,90 @@
       },
       "deliveryDiagnostics": {
         "repair20260928ReportedAt": "2026-09-28T00:50:48.883Z"
+      }
+    },
+    {
+      "id": "meme-scan-20261001T232625Z",
+      "system": "meme",
+      "startedAt": "2026-10-01T23:26:25.000Z",
+      "checkedAt": "2026-10-01T23:28:35.547Z",
+      "scheduledFor": "2026-10-01T23:00:00.000Z",
+      "nextScheduledAt": "2026-10-02T00:00:00.000Z",
+      "status": "data_limited",
+      "summary": "No open meme paper trades required management. The existing pSOQ/SOQ research record was materially updated after DEX Screener displayed pSOQ at $0.0003175 with approximately $68,000 liquidity and a $317,000 market cap, materially below the contextual September 29 snapshot; displayed 1-hour, 6-hour and 24-hour performance were all negative and 24-hour sell volume exceeded buy volume. Current wallet-profile checks did not verify pSOQ persistence or two-wallet convergence. The official migration terms and mint remain verified, but the current allocation run list and X unique-author momentum were unavailable. Current public-figure discovery found a reported future $TRUMP-holder dinner, not a new token launch, and lacked a qualifying new official-contract catalyst. No entry, exit or mark event was added.",
+      "sources": [
+        {
+          "name": "DEX Screener pSOQ/SOL pair page",
+          "url": "https://dexscreener.com/solana/EM9NyPqcByrz8zBxZUi2LazBTCY2zbVJa49nTXHi3Pq8",
+          "checkedAt": "2026-10-01T23:28:35.547Z",
+          "status": "checked"
+        },
+        {
+          "name": "Soqucoin Foundation transparency and migration terms",
+          "url": "https://soqucoin.org/transparency",
+          "checkedAt": "2026-10-01T23:28:35.547Z",
+          "status": "checked"
+        },
+        {
+          "name": "Soqucoin current provisional allocation list",
+          "url": "https://soqucoin.org/migration/list/",
+          "checkedAt": "2026-10-01T23:28:35.547Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "IdontPayTaxes and Numero tracked-wallet comparison",
+          "url": "https://kolexplorer.com/compare/idontpaytaxes-vs-numero",
+          "checkedAt": "2026-10-01T23:28:35.547Z",
+          "status": "checked"
+        },
+        {
+          "name": "Daumen tracked-wallet profile",
+          "url": "https://uwuu.ai/trader/8MaVa9kdt3NW4Q5HyNAm1X5LbR8PQRVDc1W8NMVK88D5",
+          "checkedAt": "2026-10-01T23:28:35.547Z",
+          "status": "checked"
+        },
+        {
+          "name": "Frank DeGods tracked-wallet profile",
+          "url": "https://www.copyfomo.com/traders/frankdegods",
+          "checkedAt": "2026-10-01T23:28:35.547Z",
+          "status": "checked"
+        },
+        {
+          "name": "Current public-figure meme-coin discovery",
+          "url": "https://www.vox.com/the-logoff-newsletter-trump/504911/trump-memecoin-crypto-dinner-corruption",
+          "checkedAt": "2026-10-01T23:28:35.547Z",
+          "status": "checked"
+        },
+        {
+          "name": "Verified Clukz current holdings",
+          "url": "https://kolexplorer.com/",
+          "checkedAt": "2026-10-01T23:28:35.547Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "X live unique-author search",
+          "url": "https://x.com/search",
+          "checkedAt": "2026-10-01T23:28:35.547Z",
+          "status": "unavailable"
+        }
+      ],
+      "missingData": [
+        "fresh executable pSOQ bid, ask, last trade and slippage at completion",
+        "current token-specific holdings and remaining-position percentages for all five named tracked wallets",
+        "verified two-wallet convergence and greater-than-one-hour persistence",
+        "current deployer, insider, bundler, holder-concentration and wash-trading analysis",
+        "X unique-author mention velocity, acceleration and spam filtering",
+        "successful credited allocations from the current official migration run list",
+        "future SOQ mainnet price, liquidity and custody verification",
+        "complete real-time coverage of all Solana launches, holders, buyers and liquidity venues"
+      ],
+      "counts": {
+        "research": 1,
+        "entries": 0,
+        "exits": 0
+      },
+      "deliveryDiagnostics": {
+        "repair20260928ReportedAt": "2026-09-28T02:04:42.735Z"
       }
     }
   ]
