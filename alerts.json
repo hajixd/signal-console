@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-10-01T23:39:15.965Z",
+  "updatedAt": "2026-10-01T23:43:08.157Z",
   "alerts": [
     {
       "id": "options-bb-fy27q2-20260924",
@@ -209,27 +209,28 @@
       "id": "penny-fthm-restructured-transaction-20260924",
       "eventType": "research",
       "system": "penny",
-      "timestamp": "2026-09-28T13:50:33.765Z",
+      "timestamp": "2026-10-01T23:43:08.157Z",
       "asset": "FTHM",
-      "title": "Research update: FTHM fails post-catalyst continuation",
-      "summary": "Fathom's September 24 proposed digital-asset restructuring remains a verified but preliminary catalyst. In regular trading on September 28, FTHM was $0.522 at 13:34:15 UTC, down 10.46% from the prior close, after opening at $0.5225 and trading between $0.5031 and $0.5903 on 1,504,131 shares. The volume did not produce constructive continuation, so the setup remains research-only and is not eligible for a paper entry.",
+      "title": "Research update: FTHM deterioration deepens",
+      "summary": "Fathom's preliminary transaction catalyst remains source-verified but price action deteriorated further. FTHM closed the October 1 session at $0.38, down 14.52%, after opening at $0.4235 and trading between $0.3721 and $0.431 on 916,640 shares. The stock is now roughly 27% below the $0.522 quote in the prior research update, confirming continued failure rather than constructive post-catalyst continuation. No entry qualifies.",
       "reasons": [
         "The September 24 issuer announcement and Form 8-K confirm that the parties agreed to explore an alternative transaction structure.",
         "The proposed contributed assets are described as worth at least $130 million, subject to validation, definitive agreements and approvals.",
         "At 13:34:15 UTC on September 28, FTHM traded at $0.522, down 10.46%, with a $0.5031-$0.5903 range and 1,504,131 shares traded.",
-        "The stock opened near $0.5225 and failed to sustain its pre-market indication, so price structure did not confirm the catalyst.",
-        "The transaction remains non-definitive, uses newly issued shares, and is expected to leave NXH in control."
+        "October 1 market reaction: 0.38 (-14.52%) on 916,640 shares"
       ],
       "href": "https://ir.fathominc.com/news-events/press-releases/detail/181/fathom-holdings-and-neighborhood-intelligence-announce",
       "missingData": [
         "complete current dilution, ATM, offering, warrant and convertible sweep after the latest filing",
         "spam-filtered X unique-author acceleration",
         "current insider alignment",
-        "full-session relative-volume and closing-structure confirmation"
+        "full-session relative-volume and closing-structure confirmation",
+        "fresh executable bid, ask and spread after the market close",
+        "complete current dilution and insider sweep"
       ],
-      "risk": "Research only, not a paper entry. The regular-session decline and failed continuation materially weaken the setup. The transaction is exploratory, requires definitive agreements, valuation validation, board and stockholder approvals, a fairness opinion and other approvals, and may not close. Consideration would be newly issued Fathom shares and NXH is expected to retain control, creating substantial dilution/control risk. FTHM also has an active Nasdaq minimum-bid deficiency.",
+      "risk": "Research only, not a paper entry. The regular-session decline and failed continuation materially weaken the setup. The transaction is exploratory, requires definitive agreements, valuation validation, board and stockholder approvals, a fairness opinion and other approvals, and may not close. Consideration would be newly issued Fathom shares and NXH is expected to retain control, creating substantial dilution/control risk. FTHM also has an active Nasdaq minimum-bid deficiency. October 1 price action failed to confirm the catalyst; research only and rejected for entry.",
       "details": {
-        "verificationStatus": "primary catalyst verified; regular-session continuation failed; rejected for entry",
+        "verificationStatus": "primary catalyst remains verified; October 1 continuation failed; rejected for entry",
         "evidenceSources": [
           {
             "name": "Fathom issuer announcement",
@@ -258,6 +259,13 @@
             "publishedAt": "2026-07-20",
             "checkedAt": "2026-09-27T10:12:54Z",
             "status": "checked"
+          },
+          {
+            "name": "FTHM October 1 closing market data",
+            "url": "https://finance.yahoo.com/quote/FTHM/",
+            "publishedAt": "2026-10-01T23:19:17Z",
+            "checkedAt": "2026-10-01T23:43:08.157Z",
+            "status": "checked"
           }
         ],
         "catalystVerification": {
@@ -273,19 +281,24 @@
           "failed to sustain the pre-market indication or establish constructive continuation",
           "active Nasdaq minimum-bid deficiency",
           "proposed transaction is non-definitive and would involve newly issued shares",
-          "complete current dilution and social checks unavailable"
+          "complete current dilution and social checks unavailable",
+          "October 1 close down 14.52%",
+          "roughly 27% below the prior $0.522 research quote",
+          "continued failure of the proposed-transaction catalyst to produce constructive continuation",
+          "transaction remains preliminary and would involve newly issued shares",
+          "active listing and dilution risks remain"
         ],
         "marketReaction": {
-          "session": "regular",
-          "price": 0.522,
-          "changePercent": -10.46312,
-          "open": 0.5225,
-          "high": 0.5903,
-          "low": 0.5031,
-          "volume": 1504131,
-          "marketCap": 17684987,
-          "quoteTimestamp": "2026-09-28T13:34:15Z",
-          "status": "material failure of continuation"
+          "price": 0.38,
+          "changePercent": -14.51872,
+          "open": 0.4235,
+          "high": 0.431,
+          "low": 0.3721,
+          "volume": 916640,
+          "marketCap": 12701370,
+          "quoteTimestamp": "2026-10-01T23:19:17Z",
+          "session": "closing",
+          "status": "failed continuation"
         }
       }
     },
@@ -318,16 +331,15 @@
       "id": "penny-soar-ai-orders-20260928",
       "eventType": "research",
       "system": "penny",
-      "timestamp": "2026-09-29T06:43:16.074Z",
+      "timestamp": "2026-10-01T23:43:08.157Z",
       "asset": "SOAR",
-      "title": "Research: SOAR discloses $1.17B AI infrastructure orders",
-      "summary": "Volato Group disclosed in a September 28 SEC-filed Form 8-K that its Alignment Engine subsidiary signed a master services agreement covering two 48-month GPU-cluster orders with approximately $1.17 billion of aggregate contractual value and about $133 million of contractual prepayments. SOAR nevertheless closed the available September 28 session at $0.3188 after an extreme 78.89% gain and a $0.1755-$0.4651 range on roughly 999.8 million shares. The catalyst is material, but the setup is research-only because price is severely extended and the filing explicitly identifies additional-financing, dilution, going-concern, execution, customer-payment and listing risks.",
+      "title": "Research update: SOAR momentum continues to unwind",
+      "summary": "SOAR's SEC-filed AI-infrastructure order catalyst remains verified, but the extreme post-announcement move continued to unwind. SOAR closed October 1 at $0.2946, down 11.29%, after ranging from $0.29 to $0.3583 on 27.54 million shares. The close was below the $0.3188 September 28 research close despite continued heavy turnover, while financing, dilution, execution, customer-payment and listing risks remain unresolved. No entry qualifies.",
       "reasons": [
         "The September 28 Form 8-K verifies a signed master services agreement and two initial take-or-pay orders with approximately $1.17 billion of aggregate contractual value.",
         "The orders include approximately $133 million of contractual prepayments, including about $40 million due following execution of the initial order.",
         "The first 48-month AMD MI355X deployment is scheduled for December 31, 2026; a second MI455X deployment is scheduled for June 30, 2027.",
-        "The available September 28 quote was $0.3188, up 78.89%, on approximately 999.8 million shares, confirming extraordinary demand but also extreme extension and execution risk.",
-        "The SEC filing warns that future financing may be dilutive and cites going-concern, listing, infrastructure, procurement, acceptance and customer-payment risks."
+        "October 1 market reaction: 0.2946 (-11.29%) on 27,541,051 shares"
       ],
       "href": "https://www.sec.gov/Archives/edgar/data/1853070/000149315226044456/form8-k.htm",
       "missingData": [
@@ -337,11 +349,13 @@
         "current insider activity and beneficial-ownership changes",
         "customer identity and independently verified credit quality",
         "confirmation that the initial approximately $40 million prepayment has been received",
-        "constructive consolidation or continuation structure after the 78.89% move"
+        "constructive consolidation or continuation structure after the 78.89% move",
+        "fresh executable bid, ask and spread after the market close",
+        "complete current dilution and insider sweep"
       ],
-      "risk": "Research only, not a paper entry. SOAR is extremely extended and highly volatile. The agreement remains subject to deployment, delivery, acceptance, service-level and performance requirements; the customer is unnamed; the company must procure GPUs and develop sufficient power and infrastructure; and the SEC filing expressly identifies additional-financing, dilution, going-concern and NYSE American listing risks.",
+      "risk": "Research only, not a paper entry. SOAR is extremely extended and highly volatile. The agreement remains subject to deployment, delivery, acceptance, service-level and performance requirements; the customer is unnamed; the company must procure GPUs and develop sufficient power and infrastructure; and the SEC filing expressly identifies additional-financing, dilution, going-concern and NYSE American listing risks. October 1 price action failed to confirm the catalyst; research only and rejected for entry.",
       "details": {
-        "verificationStatus": "material contract verified in SEC Form 8-K; entry rejected pending financing, execution, structure and social checks",
+        "verificationStatus": "primary catalyst remains verified; October 1 continuation failed; rejected for entry",
         "evidenceSources": [
           {
             "name": "Volato Group September 28 Form 8-K",
@@ -363,6 +377,13 @@
             "publishedAt": "2026-09-28",
             "checkedAt": "2026-09-29T06:43:16.074Z",
             "status": "checked"
+          },
+          {
+            "name": "SOAR October 1 closing market data",
+            "url": "https://finance.yahoo.com/quote/SOAR/",
+            "publishedAt": "2026-10-01T23:23:49Z",
+            "checkedAt": "2026-10-01T23:43:08.157Z",
+            "status": "checked"
           }
         ],
         "catalystVerification": {
@@ -382,19 +403,23 @@
           "filing identifies future-financing and dilution risk",
           "filing identifies going-concern and listing-compliance risk",
           "customer identity and credit quality are not disclosed",
-          "complete dilution, insider and spam-filtered social checks remain unavailable"
+          "complete dilution, insider and spam-filtered social checks remain unavailable",
+          "October 1 close down 11.29%",
+          "closed below the September 28 research close despite 27.54 million shares traded",
+          "extreme catalyst move continues to unwind rather than consolidate constructively",
+          "financing, dilution, execution and customer-payment risks remain unresolved"
         ],
         "marketReaction": {
-          "session": "post-close snapshot",
-          "price": 0.3188,
-          "changePercent": 78.88579,
-          "open": 0.3788,
-          "high": 0.4651,
-          "low": 0.1755,
-          "volume": 999814733,
-          "marketCap": 11097361,
-          "quoteTimestamp": "2026-09-29T00:15:00Z",
-          "status": "material demand confirmation but severely extended"
+          "price": 0.2946,
+          "changePercent": -11.29178,
+          "open": 0.336,
+          "high": 0.3583,
+          "low": 0.29,
+          "volume": 27541051,
+          "marketCap": 10254964,
+          "quoteTimestamp": "2026-10-01T23:23:49Z",
+          "session": "closing",
+          "status": "failed continuation"
         }
       }
     },
@@ -752,15 +777,15 @@
       "id": "penny-pola-telecom-trial-order-20260929",
       "eventType": "research",
       "system": "penny",
-      "timestamp": "2026-09-29T12:10:45.000Z",
+      "timestamp": "2026-10-01T23:43:08.157Z",
       "asset": "POLA",
-      "title": "Research: POLA receives 50-generator telecom trial order",
-      "summary": "Polar Power announced a concrete trial order for 50 propane-fueled DC generators from a major Tier 1 Southeast Asian telecom operator. The trial could precede a five-year deployment across roughly 2,500 sites, but that wider program is not committed and no paper entry is opened.",
+      "title": "Research update: POLA trial-order setup fails to continue",
+      "summary": "Polar Power's 50-generator telecom trial order remains verified, but the market did not confirm a broader rollout thesis. POLA closed October 1 at $1.12, down 9.09%, after opening at $1.20 and trading between $1.07 and $1.20 on only 105,827 shares. The low dollar volume, weak close and absence of a committed 2,500-site rollout reject the setup for entry.",
       "reasons": [
         "The issuer disclosed a firm 50-unit trial order after more than five years of regional qualification and field testing.",
         "Generators are priced at approximately $19,000-$27,000 each, implying meaningful trial economics for a company with a roughly $5 million market capitalization.",
         "Management says discussions have begun for a 200-unit next phase and estimates an uncommitted broader opportunity of up to approximately $60 million over five years.",
-        "The catalyst is research-only because the larger rollout remains uncommitted, the customer is unnamed, and recent 424B3/EFFECT filings require a full dilution review."
+        "October 1 market reaction: 1.12 (-9.09%) on 105,827 shares"
       ],
       "href": "https://www.stocktitan.net/news/POLA/polar-power-receives-trial-order-for-50-propane-fueled-dc-generators-a4n6ahsdadpc.html",
       "missingData": [
@@ -768,9 +793,12 @@
         "regular-session volume and continuation",
         "customer identity and trial delivery schedule",
         "remaining issuance capacity under recent 424B3/EFFECT filings",
-        "spam-filtered social acceleration and current insider activity"
+        "spam-filtered social acceleration and current insider activity",
+        "fresh executable bid, ask and spread after the market close",
+        "spam-filtered X unique-author acceleration",
+        "complete current dilution and insider sweep"
       ],
-      "risk": "High: microcap liquidity, recent offering effectiveness, unnamed customer, uncommitted rollout, reliance on LPG-distribution participation, and previously written-down inventory.",
+      "risk": "High: microcap liquidity, recent offering effectiveness, unnamed customer, uncommitted rollout, reliance on LPG-distribution participation, and previously written-down inventory. October 1 price action failed to confirm the catalyst; research only and rejected for entry.",
       "details": {
         "catalyst": "50-unit propane DC-generator trial order from a major Tier 1 Southeast Asian telecom operator",
         "catalystDate": "2026-09-29",
@@ -786,9 +814,16 @@
             "url": "https://finance.yahoo.com/quote/POLA/",
             "checkedAt": "2026-09-29T12:10:45.000Z",
             "verification": "latest displayed premarket context"
+          },
+          {
+            "name": "POLA October 1 closing market data",
+            "url": "https://finance.yahoo.com/quote/POLA/",
+            "publishedAt": "2026-10-01T21:35:00Z",
+            "checkedAt": "2026-10-01T23:43:08.157Z",
+            "status": "checked"
           }
         ],
-        "verificationStatus": "Issuer announcement verified; 50-unit trial is confirmed. The 200-unit discussion and approximately 2,500-site/$60 million opportunity are explicitly prospective and uncommitted.",
+        "verificationStatus": "primary catalyst remains verified; October 1 continuation failed; rejected for entry",
         "marketContext": {
           "latestDisplayedPrice": 1.26,
           "displayedChangePct": -2.29,
@@ -800,23 +835,40 @@
           "negative displayed price response and no regular-session continuation",
           "September 25 424B3 and September 28 EFFECT filings create unresolved dilution risk",
           "broader deployment and next 200 units are not contracted",
-          "social and insider confirmation unavailable"
-        ]
+          "social and insider confirmation unavailable",
+          "October 1 close down 9.09%",
+          "closed below the open and near the session low",
+          "only about $118,500 of approximate dollar volume at the closing price",
+          "broader 2,500-site rollout remains uncommitted",
+          "offering and dilution risk remains material"
+        ],
+        "marketReaction": {
+          "price": 1.12,
+          "changePercent": -9.09091,
+          "open": 1.2,
+          "high": 1.2,
+          "low": 1.07,
+          "volume": 105827,
+          "marketCap": 4167754,
+          "quoteTimestamp": "2026-10-01T21:35:00Z",
+          "session": "closing",
+          "status": "failed continuation"
+        }
       }
     },
     {
       "id": "penny-cyn-follow-on-fortune100-order-20260929",
       "eventType": "research",
       "system": "penny",
-      "timestamp": "2026-09-29T12:10:45.000Z",
+      "timestamp": "2026-10-01T23:43:08.157Z",
       "asset": "CYN",
-      "title": "Research: CYN wins follow-on Fortune 100 autonomous-tugger order",
-      "summary": "Cyngn announced a follow-on DriveMod Tugger order from an existing Fortune 100 heavy-equipment manufacturer, expanding autonomous-vehicle use to a new workflow. The repeat-customer signal is material, but undisclosed economics and incomplete quote, dilution and technical checks prevent a paper entry.",
+      "title": "Research update: CYN order catalyst fails to gain traction",
+      "summary": "Cyngn's follow-on autonomous-tugger order remains verified, but the issuer did not disclose order value, unit count or customer identity and the price reaction failed to continue. CYN closed October 1 at $0.70, down 6.96%, after opening at $0.76 and trading between $0.6906 and $0.7777 on 269,192 shares. Low dollar volume and weak technical follow-through reject the setup for entry.",
       "reasons": [
         "A follow-on order from an existing large industrial customer provides stronger validation than a first pilot.",
         "The new order expands DriveMod Tugger deployment into another material-moving workflow.",
         "Delayed market data showed unusually elevated relative activity, consistent with a material catalyst.",
-        "The setup remains research-only because customer identity, unit count and order value were not disclosed, while the issuer remains small and loss-making."
+        "October 1 market reaction: 0.7 (-6.96%) on 269,192 shares"
       ],
       "href": "https://www.stocktitan.net/news/CYN/cyngn-expands-autonomous-tugger-adoption-with-fortune-100-heavy-hzddkjkrad09.html",
       "missingData": [
@@ -824,9 +876,12 @@
         "regular-session price and volume confirmation",
         "customer identity, order value, unit count and delivery schedule",
         "complete current dilution and financing sweep",
-        "spam-filtered social acceleration and current insider activity"
+        "spam-filtered social acceleration and current insider activity",
+        "fresh executable bid, ask and spread after the market close",
+        "spam-filtered X unique-author acceleration",
+        "complete current dilution and insider sweep"
       ],
-      "risk": "Very high: sub-$1 microcap volatility, low revenue base, continuing losses and financing/dilution risk, with undisclosed order economics and customer identity.",
+      "risk": "Very high: sub-$1 microcap volatility, low revenue base, continuing losses and financing/dilution risk, with undisclosed order economics and customer identity. October 1 price action failed to confirm the catalyst; research only and rejected for entry.",
       "details": {
         "catalyst": "Follow-on DriveMod Tugger order from an existing Fortune 100 heavy-equipment manufacturer",
         "catalystDate": "2026-09-29",
@@ -842,9 +897,16 @@
             "url": "https://finance.yahoo.com/quote/CYN/",
             "checkedAt": "2026-09-29T12:10:45.000Z",
             "verification": "latest displayed premarket context"
+          },
+          {
+            "name": "CYN October 1 closing market data",
+            "url": "https://finance.yahoo.com/quote/CYN/",
+            "publishedAt": "2026-10-01T21:35:00Z",
+            "checkedAt": "2026-10-01T23:43:08.157Z",
+            "status": "checked"
           }
         ],
-        "verificationStatus": "Follow-on order and expanded workflow are issuer-confirmed; customer identity, unit count and contract value are undisclosed.",
+        "verificationStatus": "primary catalyst remains verified; October 1 continuation failed; rejected for entry",
         "marketContext": {
           "latestDisplayedPrice": 0.68,
           "displayedRelativeVolume": 46.5,
@@ -856,24 +918,40 @@
           "order economics and unit count undisclosed",
           "complete dilution and financing review unavailable",
           "regular-session trend confirmation unavailable",
-          "social and insider confirmation unavailable"
-        ]
+          "social and insider confirmation unavailable",
+          "October 1 close down 6.96%",
+          "closed below the open and near the session low",
+          "only about $188,000 of approximate dollar volume at the closing price",
+          "order value, unit count and customer identity remain undisclosed",
+          "no constructive continuation or abnormal demand confirmation"
+        ],
+        "marketReaction": {
+          "price": 0.7,
+          "changePercent": -6.96093,
+          "open": 0.76,
+          "high": 0.7777,
+          "low": 0.6906,
+          "volume": 269192,
+          "marketCap": 10096297,
+          "quoteTimestamp": "2026-10-01T21:35:00Z",
+          "session": "closing",
+          "status": "failed continuation"
+        }
       }
     },
     {
       "id": "penny-turb-h1-profitability-20260929",
       "eventType": "research",
       "system": "penny",
-      "timestamp": "2026-09-29T12:59:00.543Z",
+      "timestamp": "2026-10-01T23:43:08.157Z",
       "asset": "TURB",
-      "title": "Research: TURB revenue surges 173% and operating income turns positive",
-      "summary": "Turbo Energy reported first-half revenue of €15.03 million, up 172.7%, and swung to positive operating and net income. The result is materially constructive, but no paper entry is opened because the latest quote showed only a modest premarket reaction and executable spread, relative volume, regular-session continuation and current dilution capacity were not verified.",
+      "title": "Research update: TURB profitability catalyst lacks follow-through",
+      "summary": "Turbo Energy's first-half revenue growth and swing to positive operating income remain verified, but the market response failed to confirm the catalyst. TURB closed October 1 at $1.08, down 4.42%, after opening at $1.14 and trading between $1.07 and $1.13 on only 127,805 shares. Low dollar volume, a close near the session low, prior issuance dilution and unresolved revenue-quality/cash-conversion concerns reject the setup for entry.",
       "reasons": [
         "First-half revenue increased 172.7% to €15.03 million from €5.51 million.",
         "Operating income improved to €510,542 from a €1.16 million loss; net income reached €65,647 from a €1.40 million loss.",
         "Working capital improved to €6.55 million from negative €0.91 million and shareholders' equity rose to €5.52 million.",
-        "The quality of growth requires caution: gross margin fell to 16.5% from 24.0%, operating cash use widened to €3.66 million, and €7.19 million of revenue was from related parties.",
-        "First-half registered-direct and ATM issuance raised €3.79 million and diluted shareholders, so current financing capacity must be reviewed before entry."
+        "October 1 market reaction: 1.08 (-4.42%) on 127,805 shares"
       ],
       "href": "https://www.stocktitan.net/news/TURB/turbo-energy-delivers-record-first-half-2026-revenue-and-swings-to-voq6944pqzhn.html",
       "missingData": [
@@ -883,9 +961,12 @@
         "current ATM, registered-direct, warrant and other dilution capacity",
         "spam-filtered X unique-author momentum",
         "current insider purchases and verified short-interest context",
-        "independent confirmation of related-party revenue quality and cash conversion"
+        "independent confirmation of related-party revenue quality and cash conversion",
+        "fresh executable bid, ask and spread after the market close",
+        "spam-filtered X unique-author acceleration",
+        "complete current dilution and insider sweep"
       ],
-      "risk": "High: thin microcap liquidity, falling gross margin, negative operating cash flow, heavy related-party revenue, prior registered-direct/ATM dilution and unverified current financing capacity.",
+      "risk": "High: thin microcap liquidity, falling gross margin, negative operating cash flow, heavy related-party revenue, prior registered-direct/ATM dilution and unverified current financing capacity. October 1 price action failed to confirm the catalyst; research only and rejected for entry.",
       "details": {
         "exchange": "Nasdaq",
         "catalyst": "First-half 2026 financial results",
@@ -903,9 +984,16 @@
             "url": "https://finance.yahoo.com/quote/TURB/",
             "checkedAt": "2026-09-29T12:59:00.543Z",
             "verification": "checked"
+          },
+          {
+            "name": "TURB October 1 closing market data",
+            "url": "https://finance.yahoo.com/quote/TURB/",
+            "publishedAt": "2026-10-01T21:35:00Z",
+            "checkedAt": "2026-10-01T23:43:08.157Z",
+            "status": "checked"
           }
         ],
-        "verificationStatus": "Issuer-reported revenue, income, balance-sheet and cash-flow figures verified in the dated release; entry-quality market and dilution checks remain incomplete.",
+        "verificationStatus": "primary catalyst remains verified; October 1 continuation failed; rejected for entry",
         "metrics": {
           "revenueEur": 15033238,
           "revenueGrowthPct": 172.7,
@@ -926,64 +1014,80 @@
           "modest displayed premarket reaction despite the release",
           "gross-margin compression and increased operating cash burn",
           "material related-party revenue concentration",
-          "registered-direct and ATM dilution history with current capacity unverified"
-        ]
+          "registered-direct and ATM dilution history with current capacity unverified",
+          "October 1 close down 4.42%",
+          "closed near the session low on low volume",
+          "only about $138,000 of approximate dollar volume at the closing price",
+          "prior registered-direct and ATM issuance diluted shareholders",
+          "related-party revenue quality and cash conversion remain unresolved"
+        ],
+        "marketReaction": {
+          "price": 1.08,
+          "changePercent": -4.42478,
+          "open": 1.14,
+          "high": 1.13,
+          "low": 1.07,
+          "volume": 127805,
+          "marketCap": 56252556,
+          "quoteTimestamp": "2026-10-01T21:35:00Z",
+          "session": "closing",
+          "status": "failed continuation"
+        }
       }
     }
   ],
   "scanners": {
     "penny": {
-      "id": "penny-scan-20260929T125724Z",
+      "id": "penny-scan-20261001T234138Z",
       "system": "penny",
-      "startedAt": "2026-09-29T12:57:24.000Z",
-      "checkedAt": "2026-09-29T12:59:00.543Z",
-      "scheduledFor": "2026-09-29T12:00:00.000Z",
-      "nextScheduledAt": "2026-09-29T13:00:00.000Z",
-      "status": "data_limited",
-      "summary": "No open penny-stock paper trades required management. One new research-only catalyst was published for TURB after Turbo Energy reported 172.7% first-half revenue growth and a swing to positive operating and net income. No paper entry was opened because the latest displayed price reaction was modest and executable spread, abnormal regular-session volume, technical continuation and current dilution capacity were not verified. POLA and CYN remained research-only with negative displayed premarket changes; SOAR remained severely extended and FTHM remained a failed-continuation rejection. Other fresh microcap releases were rejected as promotional, early-stage, financing-driven or lacking sufficient market confirmation.",
+      "startedAt": "2026-10-01T23:41:38.000Z",
+      "checkedAt": "2026-10-01T23:43:08.157Z",
+      "scheduledFor": "2026-10-01T23:00:00.000Z",
+      "nextScheduledAt": "2026-10-02T00:00:00.000Z",
+      "status": "market_closed",
+      "summary": "No open penny-stock paper trades required management. All five existing research setups were materially updated and rejected for entry after weak October 1 closes: FTHM $0.38 (-14.52%), SOAR $0.2946 (-11.29%), POLA $1.12 (-9.09%), CYN $0.70 (-6.96%) and TURB $1.08 (-4.42%). SOAR retained heavy turnover but continued unwinding its extreme catalyst move; POLA, CYN and TURB showed low dollar volume and weak closes; FTHM's preliminary transaction catalyst continued to fail. A bounded after-close catalyst search found no new primary-source microcap setup with both a substantive catalyst and sufficient market confirmation. No entry, exit or mark event was added.",
       "sources": [
         {
-          "name": "Turbo Energy September 29 financial-results release",
-          "url": "https://www.stocktitan.net/news/TURB/turbo-energy-delivers-record-first-half-2026-revenue-and-swings-to-voq6944pqzhn.html",
-          "checkedAt": "2026-09-29T12:59:00.543Z",
-          "status": "checked"
-        },
-        {
-          "name": "September 29 live issuer-release feed",
-          "url": "https://www.stocktitan.net/news/live.html",
-          "checkedAt": "2026-09-29T12:59:00.543Z",
-          "status": "checked"
-        },
-        {
-          "name": "TURB, POLA, CYN, SOAR and FTHM current market data",
+          "name": "October 1 FTHM, SOAR, POLA, CYN and TURB closing market data",
           "url": "https://finance.yahoo.com/",
-          "checkedAt": "2026-09-29T12:59:00.543Z",
+          "checkedAt": "2026-10-01T23:43:08.157Z",
           "status": "checked"
         },
         {
-          "name": "Reuters September 29 premarket regime report",
-          "url": "https://www.reuters.com/business/us-stock-futures-flat-tech-bounce-meets-crude-driven-caution-2026-09-29/",
-          "checkedAt": "2026-09-29T12:59:00.543Z",
+          "name": "Current official-company release discovery feed",
+          "url": "https://www.stocktitan.net/news/live.html",
+          "checkedAt": "2026-10-01T23:43:08.157Z",
           "status": "checked"
         },
         {
-          "name": "Complete real-time dilution, insider and social checks",
+          "name": "October 1 small-cap market-regime report",
+          "url": "https://apnews.com/article/c367e6e87c621f06078ea223ab7ce6d1",
+          "checkedAt": "2026-10-01T23:43:08.157Z",
+          "status": "checked"
+        },
+        {
+          "name": "Complete real-time SEC dilution, insider and offering sweep",
           "url": "https://www.sec.gov/edgar/search/",
-          "checkedAt": "2026-09-29T12:59:00.543Z",
+          "checkedAt": "2026-10-01T23:43:08.157Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "Spam-filtered X unique-author acceleration",
+          "url": "https://x.com/search",
+          "checkedAt": "2026-10-01T23:43:08.157Z",
           "status": "unavailable"
         }
       ],
       "missingData": [
-        "fresh executable bid, ask and spread for TURB and the active research set",
-        "regular-session relative and dollar volume plus opening-range continuation",
+        "fresh executable bid, ask and spread for the active research set after the market close",
+        "next-session relative and dollar volume plus opening-range continuation",
         "complete current S-1, S-3, 424B, ATM, PIPE, warrant and convertible review across the candidate universe",
         "spam-filtered X unique-author acceleration",
         "current insider activity and verified short-interest context",
-        "independent confirmation of TURB related-party revenue quality and cash conversion",
         "complete real-time U.S. microcap universe coverage"
       ],
       "counts": {
-        "research": 1,
+        "research": 5,
         "entries": 0,
         "exits": 0
       },
@@ -12332,6 +12436,64 @@
       },
       "deliveryDiagnostics": {
         "repair20260928ReportedAt": "2026-09-28T00:50:48.883Z"
+      }
+    },
+    {
+      "id": "penny-scan-20261001T234138Z",
+      "system": "penny",
+      "startedAt": "2026-10-01T23:41:38.000Z",
+      "checkedAt": "2026-10-01T23:43:08.157Z",
+      "scheduledFor": "2026-10-01T23:00:00.000Z",
+      "nextScheduledAt": "2026-10-02T00:00:00.000Z",
+      "status": "market_closed",
+      "summary": "No open penny-stock paper trades required management. All five existing research setups were materially updated and rejected for entry after weak October 1 closes: FTHM $0.38 (-14.52%), SOAR $0.2946 (-11.29%), POLA $1.12 (-9.09%), CYN $0.70 (-6.96%) and TURB $1.08 (-4.42%). SOAR retained heavy turnover but continued unwinding its extreme catalyst move; POLA, CYN and TURB showed low dollar volume and weak closes; FTHM's preliminary transaction catalyst continued to fail. A bounded after-close catalyst search found no new primary-source microcap setup with both a substantive catalyst and sufficient market confirmation. No entry, exit or mark event was added.",
+      "sources": [
+        {
+          "name": "October 1 FTHM, SOAR, POLA, CYN and TURB closing market data",
+          "url": "https://finance.yahoo.com/",
+          "checkedAt": "2026-10-01T23:43:08.157Z",
+          "status": "checked"
+        },
+        {
+          "name": "Current official-company release discovery feed",
+          "url": "https://www.stocktitan.net/news/live.html",
+          "checkedAt": "2026-10-01T23:43:08.157Z",
+          "status": "checked"
+        },
+        {
+          "name": "October 1 small-cap market-regime report",
+          "url": "https://apnews.com/article/c367e6e87c621f06078ea223ab7ce6d1",
+          "checkedAt": "2026-10-01T23:43:08.157Z",
+          "status": "checked"
+        },
+        {
+          "name": "Complete real-time SEC dilution, insider and offering sweep",
+          "url": "https://www.sec.gov/edgar/search/",
+          "checkedAt": "2026-10-01T23:43:08.157Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "Spam-filtered X unique-author acceleration",
+          "url": "https://x.com/search",
+          "checkedAt": "2026-10-01T23:43:08.157Z",
+          "status": "unavailable"
+        }
+      ],
+      "missingData": [
+        "fresh executable bid, ask and spread for the active research set after the market close",
+        "next-session relative and dollar volume plus opening-range continuation",
+        "complete current S-1, S-3, 424B, ATM, PIPE, warrant and convertible review across the candidate universe",
+        "spam-filtered X unique-author acceleration",
+        "current insider activity and verified short-interest context",
+        "complete real-time U.S. microcap universe coverage"
+      ],
+      "counts": {
+        "research": 5,
+        "entries": 0,
+        "exits": 0
+      },
+      "deliveryDiagnostics": {
+        "repair20260928ReportedAt": "2026-09-28T01:47:21.040Z"
       }
     }
   ]
