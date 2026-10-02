@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-10-02T02:46:13.155Z",
+  "updatedAt": "2026-10-02T02:56:33.679Z",
   "alerts": [
     {
       "id": "options-bb-fy27q2-20260924",
@@ -1161,49 +1161,49 @@
   ],
   "scanners": {
     "penny": {
-      "id": "penny-scan-20261002T022904Z",
+      "id": "penny-scan-20261002T025535Z",
       "system": "penny",
-      "startedAt": "2026-10-02T02:29:04.000Z",
-      "checkedAt": "2026-10-02T02:30:11.982Z",
+      "startedAt": "2026-10-02T02:55:35.000Z",
+      "checkedAt": "2026-10-02T02:56:33.679Z",
       "scheduledFor": "2026-10-02T02:00:00.000Z",
       "nextScheduledAt": "2026-10-02T03:00:00.000Z",
       "status": "market_closed",
-      "summary": "No open penny-stock paper trades required management. FTHM, SOAR, POLA, CYN and TURB remained at their October 1 closes of $0.38 (-14.52%), $0.2946 (-11.29%), $1.12 (-9.09%), $0.70 (-6.96%) and $1.08 (-4.42%). Their verified catalysts remain rejected for entry because price structure and demand deteriorated. A fresh bounded review of SEC filings, issuer releases and FDA announcements found no new primary-source microcap catalyst with sufficient market confirmation. No research, entry, exit or mark event was added.",
+      "summary": "No open penny-stock paper trades required management. FTHM, SOAR, POLA, CYN and TURB remained at their October 1 closes of $0.38 (-14.52%), $0.2946 (-11.29%), $1.12 (-9.09%), $0.70 (-6.96%) and $1.08 (-4.42%), leaving every active research catalyst rejected for entry on failed continuation and weak demand. A fresh after-hours review of SEC filings, issuer releases and FDA announcements found no new listed microcap setup with a substantive primary-source catalyst and sufficient confirmation. No research, entry, exit or mark event was added.",
       "sources": [
         {
           "name": "Latest FTHM, SOAR, POLA, CYN and TURB market data",
           "url": "https://finance.yahoo.com/",
-          "checkedAt": "2026-10-02T02:30:11.982Z",
+          "checkedAt": "2026-10-02T02:56:33.679Z",
           "status": "checked"
         },
         {
           "name": "Current SEC filing and offering discovery",
           "url": "https://www.sec.gov/edgar/search/",
-          "checkedAt": "2026-10-02T02:30:11.982Z",
+          "checkedAt": "2026-10-02T02:56:33.679Z",
           "status": "checked"
         },
         {
           "name": "Current issuer release and earnings discovery",
           "url": "https://www.globenewswire.com/",
-          "checkedAt": "2026-10-02T02:30:11.982Z",
+          "checkedAt": "2026-10-02T02:56:33.679Z",
           "status": "checked"
         },
         {
           "name": "Current FDA approval and safety announcements",
           "url": "https://www.fda.gov/news-events/press-announcements",
-          "checkedAt": "2026-10-02T02:30:11.982Z",
+          "checkedAt": "2026-10-02T02:56:33.679Z",
           "status": "checked"
         },
         {
           "name": "Complete real-time dilution and insider sweep across the microcap universe",
           "url": "https://www.sec.gov/edgar/search/",
-          "checkedAt": "2026-10-02T02:30:11.982Z",
+          "checkedAt": "2026-10-02T02:56:33.679Z",
           "status": "unavailable"
         },
         {
           "name": "Spam-filtered X unique-author acceleration",
           "url": "https://x.com/search",
-          "checkedAt": "2026-10-02T02:30:11.982Z",
+          "checkedAt": "2026-10-02T02:56:33.679Z",
           "status": "unavailable"
         }
       ],
@@ -13560,6 +13560,70 @@
       },
       "deliveryDiagnostics": {
         "repair20260928ReportedAt": "2026-09-28T01:51:49.985Z"
+      }
+    },
+    {
+      "id": "penny-scan-20261002T025535Z",
+      "system": "penny",
+      "startedAt": "2026-10-02T02:55:35.000Z",
+      "checkedAt": "2026-10-02T02:56:33.679Z",
+      "scheduledFor": "2026-10-02T02:00:00.000Z",
+      "nextScheduledAt": "2026-10-02T03:00:00.000Z",
+      "status": "market_closed",
+      "summary": "No open penny-stock paper trades required management. FTHM, SOAR, POLA, CYN and TURB remained at their October 1 closes of $0.38 (-14.52%), $0.2946 (-11.29%), $1.12 (-9.09%), $0.70 (-6.96%) and $1.08 (-4.42%), leaving every active research catalyst rejected for entry on failed continuation and weak demand. A fresh after-hours review of SEC filings, issuer releases and FDA announcements found no new listed microcap setup with a substantive primary-source catalyst and sufficient confirmation. No research, entry, exit or mark event was added.",
+      "sources": [
+        {
+          "name": "Latest FTHM, SOAR, POLA, CYN and TURB market data",
+          "url": "https://finance.yahoo.com/",
+          "checkedAt": "2026-10-02T02:56:33.679Z",
+          "status": "checked"
+        },
+        {
+          "name": "Current SEC filing and offering discovery",
+          "url": "https://www.sec.gov/edgar/search/",
+          "checkedAt": "2026-10-02T02:56:33.679Z",
+          "status": "checked"
+        },
+        {
+          "name": "Current issuer release and earnings discovery",
+          "url": "https://www.globenewswire.com/",
+          "checkedAt": "2026-10-02T02:56:33.679Z",
+          "status": "checked"
+        },
+        {
+          "name": "Current FDA approval and safety announcements",
+          "url": "https://www.fda.gov/news-events/press-announcements",
+          "checkedAt": "2026-10-02T02:56:33.679Z",
+          "status": "checked"
+        },
+        {
+          "name": "Complete real-time dilution and insider sweep across the microcap universe",
+          "url": "https://www.sec.gov/edgar/search/",
+          "checkedAt": "2026-10-02T02:56:33.679Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "Spam-filtered X unique-author acceleration",
+          "url": "https://x.com/search",
+          "checkedAt": "2026-10-02T02:56:33.679Z",
+          "status": "unavailable"
+        }
+      ],
+      "missingData": [
+        "Fresh executable bid, ask, and spread after the market close",
+        "Next-session relative and dollar volume plus opening-range continuation",
+        "Complete current S-1, S-3, 424B, ATM, PIPE, warrant, and convertible review across the candidate universe",
+        "Spam-filtered X unique-author acceleration",
+        "Current insider activity and verified short-interest context",
+        "Complete real-time U.S. microcap universe coverage"
+      ],
+      "counts": {
+        "research": 0,
+        "entries": 0,
+        "exits": 0
+      },
+      "deliveryDiagnostics": {
+        "repair20260928ReportedAt": "2026-09-28T01:47:21.040Z"
       }
     }
   ]
