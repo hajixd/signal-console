@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-10-02T05:52:49.793Z",
+  "updatedAt": "2026-10-02T06:26:59.449Z",
   "alerts": [
     {
       "id": "options-bb-fy27q2-20260924",
@@ -1244,66 +1244,73 @@
       }
     },
     "options": {
-      "id": "options-scan-20261002T051358Z",
+      "id": "options-scan-20261002T062538Z",
       "system": "options",
-      "startedAt": "2026-10-02T05:13:58.000Z",
-      "checkedAt": "2026-10-02T05:14:57.080Z",
-      "scheduledFor": "2026-10-02T05:00:00.000Z",
-      "nextScheduledAt": "2026-10-02T06:00:00.000Z",
+      "startedAt": "2026-10-02T06:25:38.000Z",
+      "checkedAt": "2026-10-02T06:26:59.449Z",
+      "scheduledFor": "2026-10-02T06:00:00.000Z",
+      "nextScheduledAt": "2026-10-02T07:00:00.000Z",
       "status": "market_closed",
-      "summary": "No open options paper trades required management. BB, COST and SMMT remained at their October 1 closes of $9.18, $914.94 and $16.69; QQQ remained at $742.03. BB retains the strongest underlying continuation, COST remains choppy and SMMT's catalyst gap remains weak. Nasdaq still reported all three option chains unavailable after the close, so exact quotes, Greeks, IV, spreads, open interest, volume and directional opening flow could not be verified. A fresh primary-source and market-catalyst sweep found no new material setup; Costco's next dated company catalyst is September sales on October 7. No research, entry, exit or mark event was added.",
+      "summary": "No open options paper trades required management. BB, COST and SMMT remained at their October 1 closes of $9.18, $914.94 and $16.69, while QQQ closed at $742.03. BB still has the strongest multi-day underlying continuation; COST remains choppy ahead of its October 7 September-sales release; and SMMT remains below the approximately $18.36 AstraZeneca investment-equivalent level after its catalyst gap faded. Nasdaq again provided no usable contract rows for BB, COST or SMMT, preventing verification of exact quotes, Greeks, IV, spreads, volume, open interest and directional opening flow. A fresh issuer, SEC and catalyst sweep found no new material setup. Existing research was unchanged, so no research, entry, exit or mark event was added.",
       "sources": [
         {
           "name": "Latest BB, COST, SMMT and QQQ market data",
           "url": "https://finance.yahoo.com/",
-          "checkedAt": "2026-10-02T05:14:57.080Z",
+          "checkedAt": "2026-10-02T06:26:59.449Z",
           "status": "checked"
         },
         {
           "name": "Nasdaq BB option chain",
           "url": "https://www.nasdaq.com/market-activity/stocks/bb/option-chain",
-          "checkedAt": "2026-10-02T05:14:57.080Z",
+          "checkedAt": "2026-10-02T06:26:59.449Z",
           "status": "unavailable"
         },
         {
           "name": "Nasdaq COST option chain",
           "url": "https://www.nasdaq.com/market-activity/stocks/cost/option-chain",
-          "checkedAt": "2026-10-02T05:14:57.080Z",
+          "checkedAt": "2026-10-02T06:26:59.449Z",
           "status": "unavailable"
         },
         {
           "name": "Nasdaq SMMT option chain",
           "url": "https://www.nasdaq.com/market-activity/stocks/smmt/option-chain",
-          "checkedAt": "2026-10-02T05:14:57.080Z",
+          "checkedAt": "2026-10-02T06:26:59.449Z",
           "status": "unavailable"
         },
         {
           "name": "BlackBerry newsroom",
           "url": "https://www.blackberry.com/us/en/company/newsroom/press-releases",
-          "checkedAt": "2026-10-02T05:14:57.080Z",
+          "checkedAt": "2026-10-02T06:26:59.449Z",
           "status": "checked"
         },
         {
           "name": "Costco investor relations and SEC filings",
           "url": "https://investor.costco.com/",
-          "checkedAt": "2026-10-02T05:14:57.080Z",
+          "checkedAt": "2026-10-02T06:26:59.449Z",
           "status": "checked"
         },
         {
-          "name": "AstraZeneca media centre and Summit materials",
+          "name": "AstraZeneca media centre and Summit catalyst materials",
           "url": "https://www.astrazeneca.com/media-centre/press-releases.html",
-          "checkedAt": "2026-10-02T05:14:57.080Z",
+          "checkedAt": "2026-10-02T06:26:59.449Z",
+          "status": "checked"
+        },
+        {
+          "name": "SEC EDGAR catalyst and filing discovery",
+          "url": "https://www.sec.gov/edgar/search/",
+          "checkedAt": "2026-10-02T06:26:59.449Z",
           "status": "checked"
         }
       ],
       "missingData": [
-        "Reliable after-hours bid, ask, and midpoint for exact 21–60 DTE contracts",
-        "Current contract Greeks",
-        "Implied volatility, IV rank, and term structure",
-        "Current contract volume, open interest, and spread quality",
+        "Reliable after-hours bid, ask and midpoint for exact 21–60 DTE contracts",
+        "Current contract delta and remaining Greeks",
+        "Implied volatility, IV rank and term structure",
+        "Current contract volume, open interest and executable spread quality",
         "Directional buyer-initiated opening flow",
         "Primary-source confirmation that AstraZeneca's announced SMMT investment has closed",
-        "Executable listed-options quotes while the U.S. options market is closed"
+        "Executable listed-options quotes while the U.S. options market is closed",
+        "Complete real-time universe-wide unusual-options-flow coverage"
       ],
       "counts": {
         "research": 0,
@@ -14417,6 +14424,84 @@
       },
       "deliveryDiagnostics": {
         "repair20260928ReportedAt": "2026-09-28T01:47:21.040Z"
+      }
+    },
+    {
+      "id": "options-scan-20261002T062538Z",
+      "system": "options",
+      "startedAt": "2026-10-02T06:25:38.000Z",
+      "checkedAt": "2026-10-02T06:26:59.449Z",
+      "scheduledFor": "2026-10-02T06:00:00.000Z",
+      "nextScheduledAt": "2026-10-02T07:00:00.000Z",
+      "status": "market_closed",
+      "summary": "No open options paper trades required management. BB, COST and SMMT remained at their October 1 closes of $9.18, $914.94 and $16.69, while QQQ closed at $742.03. BB still has the strongest multi-day underlying continuation; COST remains choppy ahead of its October 7 September-sales release; and SMMT remains below the approximately $18.36 AstraZeneca investment-equivalent level after its catalyst gap faded. Nasdaq again provided no usable contract rows for BB, COST or SMMT, preventing verification of exact quotes, Greeks, IV, spreads, volume, open interest and directional opening flow. A fresh issuer, SEC and catalyst sweep found no new material setup. Existing research was unchanged, so no research, entry, exit or mark event was added.",
+      "sources": [
+        {
+          "name": "Latest BB, COST, SMMT and QQQ market data",
+          "url": "https://finance.yahoo.com/",
+          "checkedAt": "2026-10-02T06:26:59.449Z",
+          "status": "checked"
+        },
+        {
+          "name": "Nasdaq BB option chain",
+          "url": "https://www.nasdaq.com/market-activity/stocks/bb/option-chain",
+          "checkedAt": "2026-10-02T06:26:59.449Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "Nasdaq COST option chain",
+          "url": "https://www.nasdaq.com/market-activity/stocks/cost/option-chain",
+          "checkedAt": "2026-10-02T06:26:59.449Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "Nasdaq SMMT option chain",
+          "url": "https://www.nasdaq.com/market-activity/stocks/smmt/option-chain",
+          "checkedAt": "2026-10-02T06:26:59.449Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "BlackBerry newsroom",
+          "url": "https://www.blackberry.com/us/en/company/newsroom/press-releases",
+          "checkedAt": "2026-10-02T06:26:59.449Z",
+          "status": "checked"
+        },
+        {
+          "name": "Costco investor relations and SEC filings",
+          "url": "https://investor.costco.com/",
+          "checkedAt": "2026-10-02T06:26:59.449Z",
+          "status": "checked"
+        },
+        {
+          "name": "AstraZeneca media centre and Summit catalyst materials",
+          "url": "https://www.astrazeneca.com/media-centre/press-releases.html",
+          "checkedAt": "2026-10-02T06:26:59.449Z",
+          "status": "checked"
+        },
+        {
+          "name": "SEC EDGAR catalyst and filing discovery",
+          "url": "https://www.sec.gov/edgar/search/",
+          "checkedAt": "2026-10-02T06:26:59.449Z",
+          "status": "checked"
+        }
+      ],
+      "missingData": [
+        "Reliable after-hours bid, ask and midpoint for exact 21–60 DTE contracts",
+        "Current contract delta and remaining Greeks",
+        "Implied volatility, IV rank and term structure",
+        "Current contract volume, open interest and executable spread quality",
+        "Directional buyer-initiated opening flow",
+        "Primary-source confirmation that AstraZeneca's announced SMMT investment has closed",
+        "Executable listed-options quotes while the U.S. options market is closed",
+        "Complete real-time universe-wide unusual-options-flow coverage"
+      ],
+      "counts": {
+        "research": 0,
+        "entries": 0,
+        "exits": 0
+      },
+      "deliveryDiagnostics": {
+        "repair20260928ReportedAt": "2026-09-28T00:50:48.883Z"
       }
     }
   ]
