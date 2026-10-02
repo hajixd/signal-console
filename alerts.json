@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-10-02T21:08:29.860Z",
+  "updatedAt": "2026-10-02T21:38:40.376Z",
   "alerts": [
     {
       "id": "options-bb-fy27q2-20260924",
@@ -2470,35 +2470,41 @@
       }
     },
     "options": {
-      "startedAt": "2026-10-02T21:06:49.000Z",
-      "checkedAt": "2026-10-02T21:08:29.860Z",
+      "startedAt": "2026-10-02T21:36:01.000Z",
+      "checkedAt": "2026-10-02T21:38:40.376Z",
       "scheduledFor": "2026-10-02T21:00:00.000Z",
       "nextScheduledAt": "2026-10-02T22:00:00.000Z",
       "status": "data_limited",
-      "summary": "No open options paper trades required management. ACN finished at $198.90 (-6.27%) near its $198.37 low, breaking below $200 and materially deepening the failure of the prior earnings breakout. HPE finished at $69.33 (+7.32%) after reaching $70.28, failing to retain breakout acceptance above $70 despite strong catalyst-day volume. Other tracked research names showed no comparably material change. The options market was closed and Nasdaq reported both ACN and HPE chains unavailable; exact 21–60 DTE bid/ask, spread, positive bid, contract liquidity and premium-risk checks could not be completed. Two research records were updated; no entry, exit or mark was created.",
+      "summary": "No open options paper trades required management. Final delayed underlying quotes were unchanged in substance from the prior completed check: ACN $198.90 (-6.27%), HPE $69.33 (+7.32%), NKE $33.87 (-3.60%) and ON $84.89 (+5.98%). The broad market closed higher, but no new source-backed setup produced a distinct material research update. The listed-options session was closed and Nasdaq's ACN and HPE chains remained unavailable, so no exact 21–60 DTE bid/ask, positive bid, spread, contract liquidity or maximum-premium check could be completed. No research record changed and no entry, exit or mark was created.",
       "sources": [
         {
-          "name": "Final ACN and HPE underlying quotes",
+          "name": "Final ACN, HPE, NKE and ON underlying quotes",
           "url": "https://finance.yahoo.com/",
-          "checkedAt": "2026-10-02T21:08:29.860Z",
+          "checkedAt": "2026-10-02T21:38:40.376Z",
+          "status": "checked"
+        },
+        {
+          "name": "Reuters U.S. market close and catalyst review",
+          "url": "https://www.reuters.com/business/wall-st-futures-gain-yields-oil-prices-ease-ahead-jobs-report-2026-10-02/",
+          "checkedAt": "2026-10-02T21:38:40.376Z",
           "status": "checked"
         },
         {
           "name": "Nasdaq ACN option chain",
           "url": "https://www.nasdaq.com/market-activity/stocks/acn/option-chain",
-          "checkedAt": "2026-10-02T21:08:29.860Z",
+          "checkedAt": "2026-10-02T21:38:40.376Z",
           "status": "unavailable"
         },
         {
           "name": "Nasdaq HPE option chain",
           "url": "https://www.nasdaq.com/market-activity/stocks/hpe/option-chain",
-          "checkedAt": "2026-10-02T21:08:29.860Z",
+          "checkedAt": "2026-10-02T21:38:40.376Z",
           "status": "unavailable"
         },
         {
           "name": "Complete real-time unusual-options flow",
           "url": "https://www.cboe.com/us/options/market_statistics/",
-          "checkedAt": "2026-10-02T21:08:29.860Z",
+          "checkedAt": "2026-10-02T21:38:40.376Z",
           "status": "unavailable"
         }
       ],
@@ -2511,7 +2517,7 @@
         "buyer-initiated opening flow (optional enrichment)"
       ],
       "counts": {
-        "research": 2,
+        "research": 0,
         "entries": 0,
         "exits": 0
       },
@@ -19305,6 +19311,64 @@
       ],
       "counts": {
         "research": 2,
+        "entries": 0,
+        "exits": 0
+      },
+      "deliveryDiagnostics": {
+        "repair20260928ReportedAt": "2026-09-28T00:50:48.883Z"
+      }
+    },
+    {
+      "id": "options-scan-20261002T213840376Z",
+      "system": "options",
+      "startedAt": "2026-10-02T21:36:01.000Z",
+      "checkedAt": "2026-10-02T21:38:40.376Z",
+      "scheduledFor": "2026-10-02T21:00:00.000Z",
+      "nextScheduledAt": "2026-10-02T22:00:00.000Z",
+      "status": "data_limited",
+      "summary": "No open options paper trades required management. Final delayed underlying quotes were unchanged in substance from the prior completed check: ACN $198.90 (-6.27%), HPE $69.33 (+7.32%), NKE $33.87 (-3.60%) and ON $84.89 (+5.98%). The broad market closed higher, but no new source-backed setup produced a distinct material research update. The listed-options session was closed and Nasdaq's ACN and HPE chains remained unavailable, so no exact 21–60 DTE bid/ask, positive bid, spread, contract liquidity or maximum-premium check could be completed. No research record changed and no entry, exit or mark was created.",
+      "sources": [
+        {
+          "name": "Final ACN, HPE, NKE and ON underlying quotes",
+          "url": "https://finance.yahoo.com/",
+          "checkedAt": "2026-10-02T21:38:40.376Z",
+          "status": "checked"
+        },
+        {
+          "name": "Reuters U.S. market close and catalyst review",
+          "url": "https://www.reuters.com/business/wall-st-futures-gain-yields-oil-prices-ease-ahead-jobs-report-2026-10-02/",
+          "checkedAt": "2026-10-02T21:38:40.376Z",
+          "status": "checked"
+        },
+        {
+          "name": "Nasdaq ACN option chain",
+          "url": "https://www.nasdaq.com/market-activity/stocks/acn/option-chain",
+          "checkedAt": "2026-10-02T21:38:40.376Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "Nasdaq HPE option chain",
+          "url": "https://www.nasdaq.com/market-activity/stocks/hpe/option-chain",
+          "checkedAt": "2026-10-02T21:38:40.376Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "Complete real-time unusual-options flow",
+          "url": "https://www.cboe.com/us/options/market_statistics/",
+          "checkedAt": "2026-10-02T21:38:40.376Z",
+          "status": "unavailable"
+        }
+      ],
+      "missingData": [
+        "exact current 21–60 DTE bid and ask",
+        "positive bid and spread <=10% of midpoint",
+        "contract OI >=100 or today's volume >=100",
+        "contract premium <=$100 at observed ask",
+        "Greeks, IV rank and full term structure (optional enrichment)",
+        "buyer-initiated opening flow (optional enrichment)"
+      ],
+      "counts": {
+        "research": 0,
         "entries": 0,
         "exits": 0
       },
