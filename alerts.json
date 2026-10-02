@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-10-02T05:45:06.453Z",
+  "updatedAt": "2026-10-02T05:52:49.793Z",
   "alerts": [
     {
       "id": "options-bb-fy27q2-20260924",
@@ -1180,59 +1180,59 @@
   ],
   "scanners": {
     "penny": {
-      "id": "penny-scan-20261002T050608Z",
+      "id": "penny-scan-20261002T055100Z",
       "system": "penny",
-      "startedAt": "2026-10-02T05:06:08.000Z",
-      "checkedAt": "2026-10-02T05:07:20.805Z",
+      "startedAt": "2026-10-02T05:51:00.000Z",
+      "checkedAt": "2026-10-02T05:52:49.793Z",
       "scheduledFor": "2026-10-02T05:00:00.000Z",
       "nextScheduledAt": "2026-10-02T06:00:00.000Z",
       "status": "market_closed",
-      "summary": "No open penny-stock paper trades required management. FTHM, SOAR, POLA, CYN and TURB remained at their October 1 closes of $0.38 (-14.52%), $0.2946 (-11.29%), $1.12 (-9.09%), $0.70 (-6.96%) and $1.08 (-4.42%), so all five existing research catalysts remain rejected for entry on failed continuation and weak demand. A fresh after-hours review of SEC filings, issuer releases and FDA announcements found no new listed microcap setup with a substantive primary-source catalyst plus sufficient live price, abnormal volume and dilution confirmation. The newly reported AUTUS valve approval belongs to large-cap Edwards Lifesciences and is outside the penny/microcap mandate. No research, entry, exit or mark event was added.",
+      "summary": "No open penny-stock paper trades required management. The October 1 close remained weak across the monitored research set (FTHM, SOAR, POLA, CYN and TURB), so none met constructive continuation criteria. A fresh catalyst and filing sweep produced no qualifying entry or new material research item: VERI was rejected because its registered-direct financing introduced immediate dilution risk; promotional microcap coverage was excluded; and the AUTUS valve approval concerned large-cap Edwards Lifesciences, outside the mandate. No entries, exits, marks or research events were added.",
       "sources": [
         {
-          "name": "Latest FTHM, SOAR, POLA, CYN and TURB market data",
-          "url": "https://finance.yahoo.com/",
-          "checkedAt": "2026-10-02T05:07:20.805Z",
+          "name": "Yahoo Finance market data",
+          "url": "https://finance.yahoo.com/markets/stocks/gainers/",
+          "checkedAt": "2026-10-02T05:52:49.793Z",
           "status": "checked"
         },
         {
-          "name": "Current SEC filing and offering discovery",
+          "name": "SEC EDGAR filing and offering discovery",
           "url": "https://www.sec.gov/edgar/search/",
-          "checkedAt": "2026-10-02T05:07:20.805Z",
+          "checkedAt": "2026-10-02T05:52:49.793Z",
           "status": "checked"
         },
         {
-          "name": "Current issuer release and earnings discovery",
+          "name": "GlobeNewswire issuer-announcement discovery",
           "url": "https://www.globenewswire.com/",
-          "checkedAt": "2026-10-02T05:07:20.805Z",
+          "checkedAt": "2026-10-02T05:52:49.793Z",
           "status": "checked"
         },
         {
-          "name": "Current FDA approval and safety announcements",
-          "url": "https://www.fda.gov/news-events/press-announcements",
-          "checkedAt": "2026-10-02T05:07:20.805Z",
+          "name": "FDA news and approvals",
+          "url": "https://www.fda.gov/news-events/fda-newsroom/press-announcements",
+          "checkedAt": "2026-10-02T05:52:49.793Z",
           "status": "checked"
         },
         {
-          "name": "Complete real-time dilution and insider sweep across the microcap universe",
+          "name": "Complete real-time dilution and insider sweep",
           "url": "https://www.sec.gov/edgar/search/",
-          "checkedAt": "2026-10-02T05:07:20.805Z",
+          "checkedAt": "2026-10-02T05:52:49.793Z",
           "status": "unavailable"
         },
         {
           "name": "Spam-filtered X unique-author acceleration",
-          "url": "https://x.com/search",
-          "checkedAt": "2026-10-02T05:07:20.805Z",
+          "url": "https://x.com/",
+          "checkedAt": "2026-10-02T05:52:49.793Z",
           "status": "unavailable"
         }
       ],
       "missingData": [
-        "Fresh executable bid, ask, and spread after the market close",
-        "Next-session relative and dollar volume plus opening-range continuation",
-        "Complete current S-1, S-3, 424B, ATM, PIPE, warrant, and convertible review across the candidate universe",
-        "Spam-filtered X unique-author acceleration",
-        "Current insider activity and verified short-interest context",
-        "Complete real-time U.S. microcap universe coverage"
+        "Fresh executable bid/ask spreads are unavailable after the regular and extended-hours sessions.",
+        "Next-session relative volume, dollar volume and opening-range confirmation are not yet observable.",
+        "A complete real-time universe-wide S-1/S-3/424B/ATM/PIPE/warrant/convertible and insider review was unavailable.",
+        "Spam-filtered X/Twitter unique-author acceleration was unavailable.",
+        "Complete current insider-activity and official short-interest context was unavailable.",
+        "Complete real-time microcap-universe coverage was unavailable."
       ],
       "counts": {
         "research": 0,
@@ -14353,6 +14353,70 @@
       },
       "deliveryDiagnostics": {
         "repair20260928ReportedAt": "2026-09-28T01:51:49.985Z"
+      }
+    },
+    {
+      "id": "penny-scan-20261002T055100Z",
+      "system": "penny",
+      "startedAt": "2026-10-02T05:51:00.000Z",
+      "checkedAt": "2026-10-02T05:52:49.793Z",
+      "scheduledFor": "2026-10-02T05:00:00.000Z",
+      "nextScheduledAt": "2026-10-02T06:00:00.000Z",
+      "status": "market_closed",
+      "summary": "No open penny-stock paper trades required management. The October 1 close remained weak across the monitored research set (FTHM, SOAR, POLA, CYN and TURB), so none met constructive continuation criteria. A fresh catalyst and filing sweep produced no qualifying entry or new material research item: VERI was rejected because its registered-direct financing introduced immediate dilution risk; promotional microcap coverage was excluded; and the AUTUS valve approval concerned large-cap Edwards Lifesciences, outside the mandate. No entries, exits, marks or research events were added.",
+      "sources": [
+        {
+          "name": "Yahoo Finance market data",
+          "url": "https://finance.yahoo.com/markets/stocks/gainers/",
+          "checkedAt": "2026-10-02T05:52:49.793Z",
+          "status": "checked"
+        },
+        {
+          "name": "SEC EDGAR filing and offering discovery",
+          "url": "https://www.sec.gov/edgar/search/",
+          "checkedAt": "2026-10-02T05:52:49.793Z",
+          "status": "checked"
+        },
+        {
+          "name": "GlobeNewswire issuer-announcement discovery",
+          "url": "https://www.globenewswire.com/",
+          "checkedAt": "2026-10-02T05:52:49.793Z",
+          "status": "checked"
+        },
+        {
+          "name": "FDA news and approvals",
+          "url": "https://www.fda.gov/news-events/fda-newsroom/press-announcements",
+          "checkedAt": "2026-10-02T05:52:49.793Z",
+          "status": "checked"
+        },
+        {
+          "name": "Complete real-time dilution and insider sweep",
+          "url": "https://www.sec.gov/edgar/search/",
+          "checkedAt": "2026-10-02T05:52:49.793Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "Spam-filtered X unique-author acceleration",
+          "url": "https://x.com/",
+          "checkedAt": "2026-10-02T05:52:49.793Z",
+          "status": "unavailable"
+        }
+      ],
+      "missingData": [
+        "Fresh executable bid/ask spreads are unavailable after the regular and extended-hours sessions.",
+        "Next-session relative volume, dollar volume and opening-range confirmation are not yet observable.",
+        "A complete real-time universe-wide S-1/S-3/424B/ATM/PIPE/warrant/convertible and insider review was unavailable.",
+        "Spam-filtered X/Twitter unique-author acceleration was unavailable.",
+        "Complete current insider-activity and official short-interest context was unavailable.",
+        "Complete real-time microcap-universe coverage was unavailable."
+      ],
+      "counts": {
+        "research": 0,
+        "entries": 0,
+        "exits": 0
+      },
+      "deliveryDiagnostics": {
+        "repair20260928ReportedAt": "2026-09-28T01:47:21.040Z"
       }
     }
   ]
