@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-10-02T13:07:11.555Z",
+  "updatedAt": "2026-10-02T13:09:25.385Z",
   "alerts": [
     {
       "id": "options-bb-fy27q2-20260924",
@@ -1869,62 +1869,72 @@
   ],
   "scanners": {
     "penny": {
-      "id": "penny-scan-20261002T115039209Z",
-      "system": "penny",
-      "startedAt": "2026-10-02T11:47:39.000Z",
-      "checkedAt": "2026-10-02T11:50:39.209Z",
-      "scheduledFor": "2026-10-02T11:00:00.000Z",
-      "nextScheduledAt": "2026-10-02T12:00:00.000Z",
+      "startedAt": "2026-10-02T13:07:29.000Z",
+      "checkedAt": "2026-10-02T13:09:25.385Z",
+      "scheduledFor": "2026-10-02T13:00:00.000Z",
+      "nextScheduledAt": "2026-10-02T14:00:00.000Z",
       "status": "data_limited",
-      "summary": "No open penny-stock paper trades required management. A new research-only MEDS catalyst was verified: Corexa Pharmacy reported preliminary unaudited September revenue above $1 million, more than 66% above July. MEDS is rejected for entry because the shares are extremely extended, a delayed premarket snapshot showed reversal risk, filings document substantial warrant, note-financing, registration-rights and reverse-split history, and FY2025 fundamentals were weak. NSTR still lacked a reliable post-listing quote and remained unchanged. One research event was added; no entry, exit or mark was created.",
+      "summary": "No open penny paper trades required management. MEDS remained at the last available $4.06 snapshot after its October 1 earnings reaction, but no fresh executable premarket bid/ask, spread, full intraday structure or complete dilution check was available; the existing MEDS item therefore remains research-only. NSTR still lacked reliable post-listing quote and liquidity data. A fresh SEC, issuer and FDA catalyst sweep produced no new primary-source setup meeting the material-research or entry gates. Secondary momentum in SDEV lacked a verified primary catalyst, and a HYPD buyback/debt headline was not sufficiently verified and lacked current entry-quality market data. Existing research was unchanged; no research, entry, exit or mark event was added.",
       "sources": [
         {
-          "name": "DataMeds AI media room",
-          "url": "https://company-998106.suite.accessnewswire.com/",
-          "checkedAt": "2026-10-02T11:50:39.209Z",
+          "name": "Latest tracked penny-stock market data",
+          "url": "https://finance.yahoo.com/",
+          "checkedAt": "2026-10-02T13:09:25.385Z",
           "status": "checked"
         },
         {
-          "name": "DataMeds AI Form S-1",
-          "url": "https://www.sec.gov/Archives/edgar/data/2030763/000149315226036665/forms-1.htm",
-          "checkedAt": "2026-10-02T11:50:39.209Z",
+          "name": "SEC EDGAR current filings and catalyst sweep",
+          "url": "https://www.sec.gov/edgar/search/",
+          "checkedAt": "2026-10-02T13:09:25.385Z",
           "status": "checked"
         },
         {
-          "name": "MEDS market and financial overview",
-          "url": "https://www.stocktitan.net/overview/MEDS/",
-          "checkedAt": "2026-10-02T11:50:39.209Z",
+          "name": "FDA news and announcements sweep",
+          "url": "https://www.fda.gov/news-events",
+          "checkedAt": "2026-10-02T13:09:25.385Z",
           "status": "checked"
         },
         {
-          "name": "Reliable NSTR post-listing quote and volume",
+          "name": "Issuer-news catalyst sweep",
+          "url": "https://www.globenewswire.com/",
+          "checkedAt": "2026-10-02T13:09:25.385Z",
+          "status": "checked"
+        },
+        {
+          "name": "Fresh executable MEDS quote, spread and structure",
+          "url": "https://finance.yahoo.com/quote/MEDS/",
+          "checkedAt": "2026-10-02T13:09:25.385Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "Reliable post-listing NSTR quote and liquidity",
           "url": "https://finance.yahoo.com/quote/NSTR/",
-          "checkedAt": "2026-10-02T11:50:39.209Z",
+          "checkedAt": "2026-10-02T13:09:25.385Z",
           "status": "unavailable"
         },
         {
           "name": "Complete real-time dilution and insider sweep",
           "url": "https://www.sec.gov/edgar/search/",
-          "checkedAt": "2026-10-02T11:50:39.209Z",
+          "checkedAt": "2026-10-02T13:09:25.385Z",
           "status": "unavailable"
         },
         {
           "name": "Spam-filtered X unique-author acceleration",
-          "url": "https://x.com/",
-          "checkedAt": "2026-10-02T11:50:39.209Z",
+          "url": "https://x.com/search",
+          "checkedAt": "2026-10-02T13:09:25.385Z",
           "status": "unavailable"
         }
       ],
       "missingData": [
-        "Reliable current executable MEDS bid, ask, spread, full-session relative volume and technical structure.",
-        "Complete current MEDS and NSTR cap-table, warrant, convertible, ATM and resale-registration exposure.",
-        "Reliable NSTR post-listing price, spread, volume and opening-range structure.",
-        "Spam-filtered X/Twitter unique-author acceleration.",
-        "Complete current insider activity and official short-interest context.",
-        "Complete real-time microcap-universe coverage."
+        "fresh executable MEDS bid, ask, spread and premarket structure",
+        "reliable post-listing NSTR quote, market capitalization, volume and spread",
+        "complete current S-1, S-3, 424B, ATM, PIPE, convertible and warrant sweep across the candidate universe",
+        "current insider alignment and beneficial-ownership changes",
+        "spam-filtered X unique-author mention acceleration",
+        "complete real-time penny and microcap universe coverage"
       ],
       "counts": {
-        "research": 1,
+        "research": 0,
         "entries": 0,
         "exits": 0
       },
@@ -17137,6 +17147,82 @@
       },
       "deliveryDiagnostics": {
         "repair20260928ReportedAt": "2026-09-28T02:04:42.735Z"
+      }
+    },
+    {
+      "id": "penny-scan-20261002T130925385Z",
+      "system": "penny",
+      "startedAt": "2026-10-02T13:07:29.000Z",
+      "checkedAt": "2026-10-02T13:09:25.385Z",
+      "scheduledFor": "2026-10-02T13:00:00.000Z",
+      "nextScheduledAt": "2026-10-02T14:00:00.000Z",
+      "status": "data_limited",
+      "summary": "No open penny paper trades required management. MEDS remained at the last available $4.06 snapshot after its October 1 earnings reaction, but no fresh executable premarket bid/ask, spread, full intraday structure or complete dilution check was available; the existing MEDS item therefore remains research-only. NSTR still lacked reliable post-listing quote and liquidity data. A fresh SEC, issuer and FDA catalyst sweep produced no new primary-source setup meeting the material-research or entry gates. Secondary momentum in SDEV lacked a verified primary catalyst, and a HYPD buyback/debt headline was not sufficiently verified and lacked current entry-quality market data. Existing research was unchanged; no research, entry, exit or mark event was added.",
+      "sources": [
+        {
+          "name": "Latest tracked penny-stock market data",
+          "url": "https://finance.yahoo.com/",
+          "checkedAt": "2026-10-02T13:09:25.385Z",
+          "status": "checked"
+        },
+        {
+          "name": "SEC EDGAR current filings and catalyst sweep",
+          "url": "https://www.sec.gov/edgar/search/",
+          "checkedAt": "2026-10-02T13:09:25.385Z",
+          "status": "checked"
+        },
+        {
+          "name": "FDA news and announcements sweep",
+          "url": "https://www.fda.gov/news-events",
+          "checkedAt": "2026-10-02T13:09:25.385Z",
+          "status": "checked"
+        },
+        {
+          "name": "Issuer-news catalyst sweep",
+          "url": "https://www.globenewswire.com/",
+          "checkedAt": "2026-10-02T13:09:25.385Z",
+          "status": "checked"
+        },
+        {
+          "name": "Fresh executable MEDS quote, spread and structure",
+          "url": "https://finance.yahoo.com/quote/MEDS/",
+          "checkedAt": "2026-10-02T13:09:25.385Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "Reliable post-listing NSTR quote and liquidity",
+          "url": "https://finance.yahoo.com/quote/NSTR/",
+          "checkedAt": "2026-10-02T13:09:25.385Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "Complete real-time dilution and insider sweep",
+          "url": "https://www.sec.gov/edgar/search/",
+          "checkedAt": "2026-10-02T13:09:25.385Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "Spam-filtered X unique-author acceleration",
+          "url": "https://x.com/search",
+          "checkedAt": "2026-10-02T13:09:25.385Z",
+          "status": "unavailable"
+        }
+      ],
+      "missingData": [
+        "fresh executable MEDS bid, ask, spread and premarket structure",
+        "reliable post-listing NSTR quote, market capitalization, volume and spread",
+        "complete current S-1, S-3, 424B, ATM, PIPE, convertible and warrant sweep across the candidate universe",
+        "current insider alignment and beneficial-ownership changes",
+        "spam-filtered X unique-author mention acceleration",
+        "complete real-time penny and microcap universe coverage"
+      ],
+      "counts": {
+        "research": 0,
+        "entries": 0,
+        "exits": 0
+      },
+      "deliveryDiagnostics": {
+        "repair20260928ReportedAt": "2026-09-28T01:47:21.040Z"
       }
     }
   ]
