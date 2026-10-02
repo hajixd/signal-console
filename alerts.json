@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-10-02T06:26:59.449Z",
+  "updatedAt": "2026-10-02T06:33:57.636Z",
   "alerts": [
     {
       "id": "options-bb-fy27q2-20260924",
@@ -1176,53 +1176,138 @@
         "quoteDelay": "Both sources explicitly label the data delayed; excluded from entry pricing.",
         "whatCouldGoWrong": "Employment data can gap gold in either direction; geopolitical safe-haven demand, falling yields or a weaker dollar could support gold, while renewed yield/dollar strength could revive downside pressure."
       }
+    },
+    {
+      "id": "penny-wkey-h1-2026-results-20260930",
+      "eventType": "research",
+      "system": "penny",
+      "timestamp": "2026-10-02T06:33:57.636Z",
+      "asset": "WKEY",
+      "title": "Research: WKEY growth improves, but losses and price reaction reject entry",
+      "summary": "WISeKey reported H1 2026 revenue of approximately $11.4 million, up about 116%, gross profit of $5.5 million with roughly 48% gross margin, and reaffirmed 50%–100% FY2026 revenue-growth guidance. However, operating loss widened to $40.9 million and net loss to $36.4 million. WKEY closed October 1 at $5.68, down 4.10%, on only 32,815 shares, so the catalyst did not produce constructive price or liquidity confirmation. This is research only and is rejected for entry.",
+      "reasons": [
+        "Primary issuer and SEC-filed materials confirm H1 revenue growth of approximately 116% and gross-margin expansion.",
+        "Management reaffirmed FY2026 revenue-growth guidance of 50%–100%.",
+        "The operating loss widened to $40.9 million and the net loss widened to $36.4 million, materially reducing earnings quality.",
+        "The October 1 market reaction was negative and volume was too low for a liquid continuation setup.",
+        "The announced redomiciliation and expected ticker transition introduce corporate-action and execution risk."
+      ],
+      "href": "https://www.wisekey.com/press/wisekey-reports-first-half-2026-financial-results-accelerates-quantum-and-post-quantum-strategy-and-provides-outlook/",
+      "missingData": [
+        "Next-session relative and dollar-volume confirmation",
+        "Executable bid/ask spread and opening-range structure",
+        "Complete current dilution, registration-statement and financing-capacity review",
+        "Current insider activity and official short-interest context",
+        "Spam-filtered X/Twitter unique-author acceleration",
+        "Clear reconciliation of consolidated cash and restricted cash to parent-company shareholder value after the proposed redomiciliation"
+      ],
+      "risk": "High. WKEY is a thinly traded microcap with widening losses, complex subsidiary ownership, corporate-action risk and no positive price confirmation. Consolidated cash and restricted cash should not be treated as directly attributable parent-company net cash without a full structure review.",
+      "details": {
+        "exchange": "Nasdaq",
+        "catalyst": "H1 2026 results and reaffirmed FY2026 growth guidance",
+        "catalystDate": "2026-09-30",
+        "marketDataDate": "2026-10-01",
+        "marketMetrics": {
+          "close": 5.68,
+          "dayChangePct": -4.09556,
+          "intradayHigh": 5.97,
+          "intradayLow": 5.57,
+          "volume": 32815,
+          "marketCap": 19267088
+        },
+        "financialMetrics": {
+          "h1RevenueUsd": 11400000,
+          "revenueGrowthPct": 116,
+          "grossProfitUsd": 5500000,
+          "grossMarginPct": 48,
+          "operatingLossUsd": 40900000,
+          "netLossUsd": 36400000,
+          "reportedCashAndRestrictedCashUsd": 495000000,
+          "fy2026RevenueGrowthGuidancePct": "50–100"
+        },
+        "datedEvidenceSources": [
+          {
+            "name": "WISeKey official H1 2026 results",
+            "url": "https://www.wisekey.com/press/wisekey-reports-first-half-2026-financial-results-accelerates-quantum-and-post-quantum-strategy-and-provides-outlook/",
+            "date": "2026-09-30",
+            "status": "verified"
+          },
+          {
+            "name": "SEC-filed WISeKey results exhibit",
+            "url": "https://www.sec.gov/Archives/edgar/data/1738699/000121390026105356/ea030642301ex99-1.htm",
+            "date": "2026-09-30",
+            "status": "verified"
+          },
+          {
+            "name": "October 1 market data",
+            "url": "https://finance.yahoo.com/quote/WKEY/",
+            "date": "2026-10-01",
+            "status": "verified"
+          }
+        ],
+        "verificationStatus": "Catalyst and headline financial metrics verified from issuer and SEC materials; market response verified. Entry rejected pending liquidity, dilution, structure and social checks.",
+        "rejectionReasons": [
+          "Negative October 1 price reaction",
+          "Only 32,815 shares traded",
+          "Operating and net losses widened materially",
+          "Corporate-action and ownership-structure complexity",
+          "No verified abnormal dollar volume or technical continuation",
+          "Incomplete dilution and financing-capacity review"
+        ]
+      }
     }
   ],
   "scanners": {
     "penny": {
-      "id": "penny-scan-20261002T055100Z",
+      "id": "penny-scan-20261002T063219Z",
       "system": "penny",
-      "startedAt": "2026-10-02T05:51:00.000Z",
-      "checkedAt": "2026-10-02T05:52:49.793Z",
-      "scheduledFor": "2026-10-02T05:00:00.000Z",
-      "nextScheduledAt": "2026-10-02T06:00:00.000Z",
+      "startedAt": "2026-10-02T06:32:19.000Z",
+      "checkedAt": "2026-10-02T06:33:57.636Z",
+      "scheduledFor": "2026-10-02T06:00:00.000Z",
+      "nextScheduledAt": "2026-10-02T07:00:00.000Z",
       "status": "market_closed",
-      "summary": "No open penny-stock paper trades required management. The October 1 close remained weak across the monitored research set (FTHM, SOAR, POLA, CYN and TURB), so none met constructive continuation criteria. A fresh catalyst and filing sweep produced no qualifying entry or new material research item: VERI was rejected because its registered-direct financing introduced immediate dilution risk; promotional microcap coverage was excluded; and the AUTUS valve approval concerned large-cap Edwards Lifesciences, outside the mandate. No entries, exits, marks or research events were added.",
+      "summary": "No open penny-stock paper trades required management. FTHM, SOAR, POLA, CYN and TURB remained at their weak October 1 closes and still failed constructive-continuation criteria. One new research item was added for WKEY: H1 revenue rose about 116%, gross margin expanded to roughly 48% and FY2026 growth guidance was reaffirmed, but operating and net losses widened; WKEY closed down 4.10% on only 32,815 shares. WKEY was therefore classified as a high-risk rejected research candidate, not an entry. A fresh SEC, issuer and FDA sweep found no other qualifying catalyst. No entries, exits or marks were added.",
       "sources": [
         {
-          "name": "Yahoo Finance market data",
-          "url": "https://finance.yahoo.com/markets/stocks/gainers/",
-          "checkedAt": "2026-10-02T05:52:49.793Z",
+          "name": "Latest FTHM, SOAR, POLA, CYN, TURB and WKEY market data",
+          "url": "https://finance.yahoo.com/",
+          "checkedAt": "2026-10-02T06:33:57.636Z",
+          "status": "checked"
+        },
+        {
+          "name": "WISeKey official H1 2026 results",
+          "url": "https://www.wisekey.com/press/wisekey-reports-first-half-2026-financial-results-accelerates-quantum-and-post-quantum-strategy-and-provides-outlook/",
+          "checkedAt": "2026-10-02T06:33:57.636Z",
+          "status": "checked"
+        },
+        {
+          "name": "SEC-filed WISeKey results exhibit",
+          "url": "https://www.sec.gov/Archives/edgar/data/1738699/000121390026105356/ea030642301ex99-1.htm",
+          "checkedAt": "2026-10-02T06:33:57.636Z",
           "status": "checked"
         },
         {
           "name": "SEC EDGAR filing and offering discovery",
           "url": "https://www.sec.gov/edgar/search/",
-          "checkedAt": "2026-10-02T05:52:49.793Z",
-          "status": "checked"
-        },
-        {
-          "name": "GlobeNewswire issuer-announcement discovery",
-          "url": "https://www.globenewswire.com/",
-          "checkedAt": "2026-10-02T05:52:49.793Z",
+          "checkedAt": "2026-10-02T06:33:57.636Z",
           "status": "checked"
         },
         {
           "name": "FDA news and approvals",
-          "url": "https://www.fda.gov/news-events/fda-newsroom/press-announcements",
-          "checkedAt": "2026-10-02T05:52:49.793Z",
+          "url": "https://www.fda.gov/medical-devices/medical-devices-news-and-events/cdrh-new-news-and-updates",
+          "checkedAt": "2026-10-02T06:33:57.636Z",
           "status": "checked"
         },
         {
           "name": "Complete real-time dilution and insider sweep",
           "url": "https://www.sec.gov/edgar/search/",
-          "checkedAt": "2026-10-02T05:52:49.793Z",
+          "checkedAt": "2026-10-02T06:33:57.636Z",
           "status": "unavailable"
         },
         {
           "name": "Spam-filtered X unique-author acceleration",
           "url": "https://x.com/",
-          "checkedAt": "2026-10-02T05:52:49.793Z",
+          "checkedAt": "2026-10-02T06:33:57.636Z",
           "status": "unavailable"
         }
       ],
@@ -1232,10 +1317,11 @@
         "A complete real-time universe-wide S-1/S-3/424B/ATM/PIPE/warrant/convertible and insider review was unavailable.",
         "Spam-filtered X/Twitter unique-author acceleration was unavailable.",
         "Complete current insider-activity and official short-interest context was unavailable.",
-        "Complete real-time microcap-universe coverage was unavailable."
+        "Complete real-time microcap-universe coverage was unavailable.",
+        "WKEY consolidated cash and restricted cash were not fully reconciled to parent-company shareholder value after the proposed redomiciliation."
       ],
       "counts": {
-        "research": 0,
+        "research": 1,
         "entries": 0,
         "exits": 0
       },
@@ -14502,6 +14588,77 @@
       },
       "deliveryDiagnostics": {
         "repair20260928ReportedAt": "2026-09-28T00:50:48.883Z"
+      }
+    },
+    {
+      "id": "penny-scan-20261002T063219Z",
+      "system": "penny",
+      "startedAt": "2026-10-02T06:32:19.000Z",
+      "checkedAt": "2026-10-02T06:33:57.636Z",
+      "scheduledFor": "2026-10-02T06:00:00.000Z",
+      "nextScheduledAt": "2026-10-02T07:00:00.000Z",
+      "status": "market_closed",
+      "summary": "No open penny-stock paper trades required management. FTHM, SOAR, POLA, CYN and TURB remained at their weak October 1 closes and still failed constructive-continuation criteria. One new research item was added for WKEY: H1 revenue rose about 116%, gross margin expanded to roughly 48% and FY2026 growth guidance was reaffirmed, but operating and net losses widened; WKEY closed down 4.10% on only 32,815 shares. WKEY was therefore classified as a high-risk rejected research candidate, not an entry. A fresh SEC, issuer and FDA sweep found no other qualifying catalyst. No entries, exits or marks were added.",
+      "sources": [
+        {
+          "name": "Latest FTHM, SOAR, POLA, CYN, TURB and WKEY market data",
+          "url": "https://finance.yahoo.com/",
+          "checkedAt": "2026-10-02T06:33:57.636Z",
+          "status": "checked"
+        },
+        {
+          "name": "WISeKey official H1 2026 results",
+          "url": "https://www.wisekey.com/press/wisekey-reports-first-half-2026-financial-results-accelerates-quantum-and-post-quantum-strategy-and-provides-outlook/",
+          "checkedAt": "2026-10-02T06:33:57.636Z",
+          "status": "checked"
+        },
+        {
+          "name": "SEC-filed WISeKey results exhibit",
+          "url": "https://www.sec.gov/Archives/edgar/data/1738699/000121390026105356/ea030642301ex99-1.htm",
+          "checkedAt": "2026-10-02T06:33:57.636Z",
+          "status": "checked"
+        },
+        {
+          "name": "SEC EDGAR filing and offering discovery",
+          "url": "https://www.sec.gov/edgar/search/",
+          "checkedAt": "2026-10-02T06:33:57.636Z",
+          "status": "checked"
+        },
+        {
+          "name": "FDA news and approvals",
+          "url": "https://www.fda.gov/medical-devices/medical-devices-news-and-events/cdrh-new-news-and-updates",
+          "checkedAt": "2026-10-02T06:33:57.636Z",
+          "status": "checked"
+        },
+        {
+          "name": "Complete real-time dilution and insider sweep",
+          "url": "https://www.sec.gov/edgar/search/",
+          "checkedAt": "2026-10-02T06:33:57.636Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "Spam-filtered X unique-author acceleration",
+          "url": "https://x.com/",
+          "checkedAt": "2026-10-02T06:33:57.636Z",
+          "status": "unavailable"
+        }
+      ],
+      "missingData": [
+        "Fresh executable bid/ask spreads are unavailable after the regular and extended-hours sessions.",
+        "Next-session relative volume, dollar volume and opening-range confirmation are not yet observable.",
+        "A complete real-time universe-wide S-1/S-3/424B/ATM/PIPE/warrant/convertible and insider review was unavailable.",
+        "Spam-filtered X/Twitter unique-author acceleration was unavailable.",
+        "Complete current insider-activity and official short-interest context was unavailable.",
+        "Complete real-time microcap-universe coverage was unavailable.",
+        "WKEY consolidated cash and restricted cash were not fully reconciled to parent-company shareholder value after the proposed redomiciliation."
+      ],
+      "counts": {
+        "research": 1,
+        "entries": 0,
+        "exits": 0
+      },
+      "deliveryDiagnostics": {
+        "repair20260928ReportedAt": "2026-09-28T01:47:21.040Z"
       }
     }
   ]
