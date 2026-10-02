@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-10-02T10:13:00.098Z",
+  "updatedAt": "2026-10-02T10:35:16.744Z",
   "alerts": [
     {
       "id": "options-bb-fy27q2-20260924",
@@ -1923,73 +1923,67 @@
       }
     },
     "futures": {
-      "id": "futures-scan-20261002101217267",
+      "id": "futures-scan-20261002103438822",
       "system": "futures",
-      "startedAt": "2026-10-02T10:12:17.267Z",
-      "checkedAt": "2026-10-02T10:13:00.098Z",
+      "startedAt": "2026-10-02T10:34:38.822Z",
+      "checkedAt": "2026-10-02T10:35:16.744Z",
       "scheduledFor": "2026-10-02T10:00:00.000Z",
       "nextScheduledAt": "2026-10-02T11:00:00.000Z",
       "status": "data_limited",
-      "summary": "No new futures entry or material research event. There are no open futures paper positions. The previously published WTI downside watch remains research-only: benchmark WTI's roughly 3.6% drop has not been confirmed by a current exact MCLX26 quote or a post-release break/retest. Delayed MGCZ26 was 4,213.50 at 5:50 a.m. ET, still above its 4,202.30 settlement, while MNQZ26 and MESZ26 data remained stale. No contract had a non-delayed five-minute quote, verified current spread, live structure or source-verified margin. The October 2 Employment Situation at 8:30 a.m. ET remains the immediate event-risk gate.",
+      "summary": "No new futures entry or material research event. There are no open futures paper positions. The WTI downside watch remains research-only because benchmark weakness still lacks a current exact MCLX26 quote and a confirmed micro-contract break/retest. Delayed MGCZ26 slipped to 4,199.20 at 6:23 a.m. ET, below its 4,202.30 settlement, but this small reversal does not by itself revalidate the prior bearish gold thesis ahead of payrolls. MNQ/MES exact-micro data remained stale or unavailable. CME states its public quotes are delayed by at least 10 minutes, and no contract met the five-minute executable-quote, live-spread, structure or margin gates. The October 2 Employment Situation at 8:30 a.m. ET remains the immediate event-risk gate.",
       "sources": [
         {
-          "name": "CME trading hours",
-          "url": "https://www.cmegroup.com/trading-hours.html",
-          "checkedAt": "2026-10-02T10:13:00.098Z",
-          "status": "checked_session_open_expected"
+          "name": "CME delayed-quote policy",
+          "url": "https://www.cmegroup.com/market-data/browse-data/delayed-quotes.html",
+          "checkedAt": "2026-10-02T10:35:16.744Z",
+          "status": "checked_quotes_delayed_at_least_10_minutes"
         },
         {
-          "name": "eSignal MNQ futures board",
-          "url": "https://quotes.esignal.com/esignalprod/quote.action?symbol=MNQ",
-          "checkedAt": "2026-10-02T10:13:00.098Z",
+          "name": "CME MNQ product page",
+          "url": "https://www.cmegroup.com/markets/equities/nasdaq/micro-e-mini-nasdaq-100.html",
+          "checkedAt": "2026-10-02T10:35:16.744Z",
           "status": "checked_stale_delayed_quote_excluded"
         },
         {
-          "name": "eSignal MES futures board",
-          "url": "https://quotes.esignal.com/esignalprod/quote.action?symbol=MES",
-          "checkedAt": "2026-10-02T10:13:00.098Z",
-          "status": "checked_stale_delayed_quote_excluded"
+          "name": "CME ES calendar",
+          "url": "https://www.cmegroup.com/markets/equities/sp/e-mini-sandp500.calendar.html",
+          "checkedAt": "2026-10-02T10:35:16.744Z",
+          "status": "checked_mini_delayed_context_only"
         },
         {
           "name": "MarketWatch MGCZ26",
           "url": "https://www.marketwatch.com/investing/future/mgcz26",
-          "checkedAt": "2026-10-02T10:13:00.098Z",
+          "checkedAt": "2026-10-02T10:35:16.744Z",
           "status": "checked_delayed_context_only"
         },
         {
-          "name": "CME MCL quotes and calendar",
-          "url": "https://www.cmegroup.com/markets/energy/crude-oil/micro-wti-crude-oil.calendar.html",
-          "checkedAt": "2026-10-02T10:13:00.098Z",
+          "name": "CME MCL quotes",
+          "url": "https://www.cmegroup.com/markets/energy/crude-oil/micro-wti-crude-oil.quotes.html",
+          "checkedAt": "2026-10-02T10:35:16.744Z",
           "status": "checked_stale_quote_excluded"
         },
         {
           "name": "Reuters WTI market update",
           "url": "https://www.reuters.com/business/energy/oil-rises-slightly-market-weighs-mixed-supply-signals-2026-10-02/",
-          "checkedAt": "2026-10-02T10:13:00.098Z",
+          "checkedAt": "2026-10-02T10:35:16.744Z",
           "status": "checked_benchmark_context_only"
-        },
-        {
-          "name": "Reuters gold and payroll context",
-          "url": "https://www.reuters.com/world/india/gold-slips-before-us-payrolls-data-set-second-weekly-loss-2026-10-02/",
-          "checkedAt": "2026-10-02T10:13:00.098Z",
-          "status": "checked_context_only"
         },
         {
           "name": "BLS Employment Situation schedule",
           "url": "https://www.bls.gov/news.release/empsit.htm",
-          "checkedAt": "2026-10-02T10:13:00.098Z",
+          "checkedAt": "2026-10-02T10:35:16.744Z",
           "status": "checked"
         },
         {
           "name": "EIA Weekly Petroleum Status Report",
           "url": "https://www.eia.gov/petroleum/supply/weekly/",
-          "checkedAt": "2026-10-02T10:13:00.098Z",
+          "checkedAt": "2026-10-02T10:35:16.744Z",
           "status": "checked"
         },
         {
           "name": "OPEC September production decision",
           "url": "https://www.opec.org/pr-detail/1835613-6-september-2026.html",
-          "checkedAt": "2026-10-02T10:13:00.098Z",
+          "checkedAt": "2026-10-02T10:35:16.744Z",
           "status": "checked"
         }
       ],
@@ -16209,6 +16203,90 @@
           "name": "OPEC September production decision",
           "url": "https://www.opec.org/pr-detail/1835613-6-september-2026.html",
           "checkedAt": "2026-10-02T10:13:00.098Z",
+          "status": "checked"
+        }
+      ],
+      "missingData": [
+        "Non-delayed exact dated quotes no older than five minutes for MNQZ26, MESZ26, MGCZ26 and MCLX26",
+        "Verified current bid/ask spreads, liquidity and intraday price/volume structure for every micro contract",
+        "Exact expiry/roll and session/holiday clearance for every candidate",
+        "Source-verified initial margin per contract and sufficient remaining paper equity",
+        "Observed tick-aligned triggers, invalidations and targets meeting at least 2:1 reward-to-risk and the $100 risk cap",
+        "Post-Employment-Situation confirmation after October 2 at 8:30 a.m. ET"
+      ],
+      "counts": {
+        "openPositions": 0,
+        "research": 0,
+        "entries": 0,
+        "exits": 0,
+        "marks": 0
+      },
+      "deliveryDiagnostics": {
+        "repair20260928ReportedAt": "2026-09-28T01:51:49.985Z"
+      }
+    },
+    {
+      "id": "futures-scan-20261002103438822",
+      "system": "futures",
+      "startedAt": "2026-10-02T10:34:38.822Z",
+      "checkedAt": "2026-10-02T10:35:16.744Z",
+      "scheduledFor": "2026-10-02T10:00:00.000Z",
+      "nextScheduledAt": "2026-10-02T11:00:00.000Z",
+      "status": "data_limited",
+      "summary": "No new futures entry or material research event. There are no open futures paper positions. The WTI downside watch remains research-only because benchmark weakness still lacks a current exact MCLX26 quote and a confirmed micro-contract break/retest. Delayed MGCZ26 slipped to 4,199.20 at 6:23 a.m. ET, below its 4,202.30 settlement, but this small reversal does not by itself revalidate the prior bearish gold thesis ahead of payrolls. MNQ/MES exact-micro data remained stale or unavailable. CME states its public quotes are delayed by at least 10 minutes, and no contract met the five-minute executable-quote, live-spread, structure or margin gates. The October 2 Employment Situation at 8:30 a.m. ET remains the immediate event-risk gate.",
+      "sources": [
+        {
+          "name": "CME delayed-quote policy",
+          "url": "https://www.cmegroup.com/market-data/browse-data/delayed-quotes.html",
+          "checkedAt": "2026-10-02T10:35:16.744Z",
+          "status": "checked_quotes_delayed_at_least_10_minutes"
+        },
+        {
+          "name": "CME MNQ product page",
+          "url": "https://www.cmegroup.com/markets/equities/nasdaq/micro-e-mini-nasdaq-100.html",
+          "checkedAt": "2026-10-02T10:35:16.744Z",
+          "status": "checked_stale_delayed_quote_excluded"
+        },
+        {
+          "name": "CME ES calendar",
+          "url": "https://www.cmegroup.com/markets/equities/sp/e-mini-sandp500.calendar.html",
+          "checkedAt": "2026-10-02T10:35:16.744Z",
+          "status": "checked_mini_delayed_context_only"
+        },
+        {
+          "name": "MarketWatch MGCZ26",
+          "url": "https://www.marketwatch.com/investing/future/mgcz26",
+          "checkedAt": "2026-10-02T10:35:16.744Z",
+          "status": "checked_delayed_context_only"
+        },
+        {
+          "name": "CME MCL quotes",
+          "url": "https://www.cmegroup.com/markets/energy/crude-oil/micro-wti-crude-oil.quotes.html",
+          "checkedAt": "2026-10-02T10:35:16.744Z",
+          "status": "checked_stale_quote_excluded"
+        },
+        {
+          "name": "Reuters WTI market update",
+          "url": "https://www.reuters.com/business/energy/oil-rises-slightly-market-weighs-mixed-supply-signals-2026-10-02/",
+          "checkedAt": "2026-10-02T10:35:16.744Z",
+          "status": "checked_benchmark_context_only"
+        },
+        {
+          "name": "BLS Employment Situation schedule",
+          "url": "https://www.bls.gov/news.release/empsit.htm",
+          "checkedAt": "2026-10-02T10:35:16.744Z",
+          "status": "checked"
+        },
+        {
+          "name": "EIA Weekly Petroleum Status Report",
+          "url": "https://www.eia.gov/petroleum/supply/weekly/",
+          "checkedAt": "2026-10-02T10:35:16.744Z",
+          "status": "checked"
+        },
+        {
+          "name": "OPEC September production decision",
+          "url": "https://www.opec.org/pr-detail/1835613-6-september-2026.html",
+          "checkedAt": "2026-10-02T10:35:16.744Z",
           "status": "checked"
         }
       ],
