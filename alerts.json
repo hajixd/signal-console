@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-10-02T11:50:15.888Z",
+  "updatedAt": "2026-10-02T11:50:17.766Z",
   "alerts": [
     {
       "id": "options-bb-fy27q2-20260924",
@@ -1717,7 +1717,7 @@
       "id": "penny-meds-corexa-revenue-20261001",
       "eventType": "research",
       "system": "penny",
-      "timestamp": "2026-10-02T11:50:15.888Z",
+      "timestamp": "2026-10-02T11:50:17.766Z",
       "asset": "MEDS",
       "title": "Research: MEDS pharmacy revenue surge is offset by dilution and balance-sheet risk",
       "summary": "DataMeds AI reported preliminary unaudited September 2026 revenue above $1 million at Corexa Pharmacy, more than 66% above July. MEDS closed October 1 at $4.06 after a 28.08% gain and was roughly 310% higher over one month; a delayed premarket snapshot then showed a 6.16% pullback on elevated activity. No paper entry qualifies because the move is extremely extended, the company has substantial financing, warrant, convertible-note and reverse-split history, and reliable executable spread, current structure, social and insider checks were unavailable.",
@@ -1748,19 +1748,19 @@
             "name": "DataMeds AI media room",
             "url": "https://company-998106.suite.accessnewswire.com/",
             "publishedAt": "2026-10-01",
-            "checkedAt": "2026-10-02T11:50:15.888Z",
+            "checkedAt": "2026-10-02T11:50:17.766Z",
             "status": "checked"
           },
           {
             "name": "DataMeds AI Form S-1",
             "url": "https://www.sec.gov/Archives/edgar/data/2030763/000149315226036665/forms-1.htm",
-            "checkedAt": "2026-10-02T11:50:15.888Z",
+            "checkedAt": "2026-10-02T11:50:17.766Z",
             "status": "checked"
           },
           {
             "name": "MEDS market and financial overview",
             "url": "https://www.stocktitan.net/overview/MEDS/",
-            "checkedAt": "2026-10-02T11:50:15.888Z",
+            "checkedAt": "2026-10-02T11:50:17.766Z",
             "status": "checked_delayed_context"
           }
         ],
@@ -1794,10 +1794,10 @@
   ],
   "scanners": {
     "penny": {
-      "id": "penny-scan-20261002T115015888Z",
+      "id": "penny-scan-20261002T115017766Z",
       "system": "penny",
       "startedAt": "2026-10-02T11:47:39.000Z",
-      "checkedAt": "2026-10-02T11:50:15.888Z",
+      "checkedAt": "2026-10-02T11:50:17.766Z",
       "scheduledFor": "2026-10-02T11:00:00.000Z",
       "nextScheduledAt": "2026-10-02T12:00:00.000Z",
       "status": "data_limited",
@@ -1806,37 +1806,37 @@
         {
           "name": "DataMeds AI media room",
           "url": "https://company-998106.suite.accessnewswire.com/",
-          "checkedAt": "2026-10-02T11:50:15.888Z",
+          "checkedAt": "2026-10-02T11:50:17.766Z",
           "status": "checked"
         },
         {
           "name": "DataMeds AI Form S-1",
           "url": "https://www.sec.gov/Archives/edgar/data/2030763/000149315226036665/forms-1.htm",
-          "checkedAt": "2026-10-02T11:50:15.888Z",
+          "checkedAt": "2026-10-02T11:50:17.766Z",
           "status": "checked"
         },
         {
           "name": "MEDS market and financial overview",
           "url": "https://www.stocktitan.net/overview/MEDS/",
-          "checkedAt": "2026-10-02T11:50:15.888Z",
+          "checkedAt": "2026-10-02T11:50:17.766Z",
           "status": "checked"
         },
         {
           "name": "Reliable NSTR post-listing quote and volume",
           "url": "https://finance.yahoo.com/quote/NSTR/",
-          "checkedAt": "2026-10-02T11:50:15.888Z",
+          "checkedAt": "2026-10-02T11:50:17.766Z",
           "status": "unavailable"
         },
         {
           "name": "Complete real-time dilution and insider sweep",
           "url": "https://www.sec.gov/edgar/search/",
-          "checkedAt": "2026-10-02T11:50:15.888Z",
+          "checkedAt": "2026-10-02T11:50:17.766Z",
           "status": "unavailable"
         },
         {
           "name": "Spam-filtered X unique-author acceleration",
           "url": "https://x.com/",
-          "checkedAt": "2026-10-02T11:50:15.888Z",
+          "checkedAt": "2026-10-02T11:50:17.766Z",
           "status": "unavailable"
         }
       ],
@@ -16786,6 +16786,70 @@
           "name": "Spam-filtered X unique-author acceleration",
           "url": "https://x.com/",
           "checkedAt": "2026-10-02T11:50:15.888Z",
+          "status": "unavailable"
+        }
+      ],
+      "missingData": [
+        "Reliable current executable MEDS bid, ask, spread, full-session relative volume and technical structure.",
+        "Complete current MEDS and NSTR cap-table, warrant, convertible, ATM and resale-registration exposure.",
+        "Reliable NSTR post-listing price, spread, volume and opening-range structure.",
+        "Spam-filtered X/Twitter unique-author acceleration.",
+        "Complete current insider activity and official short-interest context.",
+        "Complete real-time microcap-universe coverage."
+      ],
+      "counts": {
+        "research": 1,
+        "entries": 0,
+        "exits": 0
+      },
+      "deliveryDiagnostics": {
+        "repair20260928ReportedAt": "2026-09-28T01:47:21.040Z"
+      }
+    },
+    {
+      "id": "penny-scan-20261002T115017766Z",
+      "system": "penny",
+      "startedAt": "2026-10-02T11:47:39.000Z",
+      "checkedAt": "2026-10-02T11:50:17.766Z",
+      "scheduledFor": "2026-10-02T11:00:00.000Z",
+      "nextScheduledAt": "2026-10-02T12:00:00.000Z",
+      "status": "data_limited",
+      "summary": "No open penny-stock paper trades required management. A new research-only MEDS catalyst was verified: Corexa Pharmacy reported preliminary unaudited September revenue above $1 million, more than 66% above July. MEDS is rejected for entry because the shares are extremely extended, a delayed premarket snapshot showed reversal risk, filings document substantial warrant, note-financing, registration-rights and reverse-split history, and FY2025 fundamentals were weak. NSTR still lacked a reliable post-listing quote and remained unchanged. One research event was added; no entry, exit or mark was created.",
+      "sources": [
+        {
+          "name": "DataMeds AI media room",
+          "url": "https://company-998106.suite.accessnewswire.com/",
+          "checkedAt": "2026-10-02T11:50:17.766Z",
+          "status": "checked"
+        },
+        {
+          "name": "DataMeds AI Form S-1",
+          "url": "https://www.sec.gov/Archives/edgar/data/2030763/000149315226036665/forms-1.htm",
+          "checkedAt": "2026-10-02T11:50:17.766Z",
+          "status": "checked"
+        },
+        {
+          "name": "MEDS market and financial overview",
+          "url": "https://www.stocktitan.net/overview/MEDS/",
+          "checkedAt": "2026-10-02T11:50:17.766Z",
+          "status": "checked"
+        },
+        {
+          "name": "Reliable NSTR post-listing quote and volume",
+          "url": "https://finance.yahoo.com/quote/NSTR/",
+          "checkedAt": "2026-10-02T11:50:17.766Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "Complete real-time dilution and insider sweep",
+          "url": "https://www.sec.gov/edgar/search/",
+          "checkedAt": "2026-10-02T11:50:17.766Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "Spam-filtered X unique-author acceleration",
+          "url": "https://x.com/",
+          "checkedAt": "2026-10-02T11:50:17.766Z",
           "status": "unavailable"
         }
       ],
