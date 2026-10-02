@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-10-02T05:33:08.057Z",
+  "updatedAt": "2026-10-02T05:45:06.453Z",
   "alerts": [
     {
       "id": "options-bb-fy27q2-20260924",
@@ -1387,79 +1387,79 @@
       }
     },
     "futures": {
-      "id": "futures-scan-20261002044014969",
+      "id": "futures-scan-20261002054425947",
       "system": "futures",
-      "startedAt": "2026-10-02T04:40:14.969Z",
-      "checkedAt": "2026-10-02T04:41:12.420Z",
-      "scheduledFor": "2026-10-02T04:00:00.000Z",
-      "nextScheduledAt": "2026-10-02T05:00:00.000Z",
+      "startedAt": "2026-10-02T05:44:25.947Z",
+      "checkedAt": "2026-10-02T05:45:06.453Z",
+      "scheduledFor": "2026-10-02T05:00:00.000Z",
+      "nextScheduledAt": "2026-10-02T06:00:00.000Z",
       "status": "data_limited",
-      "summary": "No futures paper entry qualified and there are no open futures positions. One material research update was published: delayed MGCZ26 data from eSignal and MarketWatch converged near 4,203 late October 1, essentially back at the 4,202.30 settlement after an earlier 4,162.80 low. That recovery removes confirmation for the existing bearish-continuation watch. MNQZ26 and MESZ26 remained positive on delayed boards, MCLX26 was unavailable, and no asset had a non-delayed five-minute quote, verified spread, live structure or source-verified margin. The October 2 Employment Situation at 8:30 a.m. ET remains a major event-risk gate.",
+      "summary": "No new futures entry or material research event. There are no open futures paper positions. Delayed MGCZ26 snapshots rose to 4,218.50–4,218.70, above the prior 4,213.50 observed high and 4,202.30 settlement; this reinforces the already-published invalidation of the bearish gold watch but does not establish a new long setup. MNQZ26 and MESZ26 were also positive on delayed boards, while MCLX26 remained unavailable. No contract had a non-delayed five-minute quote, verified bid/ask, live structure or source-verified margin. The October 2 Employment Situation at 8:30 a.m. ET remains a major event-risk gate.",
       "sources": [
         {
           "name": "CME trading hours",
           "url": "https://www.cmegroup.com/trading-hours.html",
-          "checkedAt": "2026-10-02T04:41:12.420Z",
+          "checkedAt": "2026-10-02T05:45:06.453Z",
           "status": "checked_session_open_expected"
         },
         {
           "name": "eSignal MNQ futures board",
           "url": "https://quotes.esignal.com/esignalprod/quote.action?symbol=MNQ",
-          "checkedAt": "2026-10-02T04:41:12.420Z",
+          "checkedAt": "2026-10-02T05:45:06.453Z",
           "status": "checked_stale_delayed_quote_excluded"
         },
         {
           "name": "eSignal MES futures board",
           "url": "https://quotes.esignal.com/esignalprod/quote.action?symbol=MES",
-          "checkedAt": "2026-10-02T04:41:12.420Z",
+          "checkedAt": "2026-10-02T05:45:06.453Z",
           "status": "checked_stale_delayed_quote_excluded"
         },
         {
           "name": "eSignal MGC futures board",
           "url": "https://quotes.esignal.com/esignalprod/quote.action?symbol=MGC",
-          "checkedAt": "2026-10-02T04:41:12.420Z",
-          "status": "checked_delayed_research_only"
+          "checkedAt": "2026-10-02T05:45:06.453Z",
+          "status": "checked_delayed_context_only"
         },
         {
           "name": "eSignal MCL futures board",
           "url": "https://quotes.esignal.com/esignalprod/quote.action?symbol=MCL",
-          "checkedAt": "2026-10-02T04:41:12.420Z",
+          "checkedAt": "2026-10-02T05:45:06.453Z",
           "status": "unavailable"
         },
         {
           "name": "MarketWatch MGCZ26",
           "url": "https://www.marketwatch.com/investing/future/mgcz26",
-          "checkedAt": "2026-10-02T04:41:12.420Z",
-          "status": "checked_delayed_research_only"
+          "checkedAt": "2026-10-02T05:45:06.453Z",
+          "status": "checked_delayed_context_only"
         },
         {
           "name": "BLS October 2026 release calendar",
           "url": "https://www.bls.gov/schedule/2026/10_sched.htm",
-          "checkedAt": "2026-10-02T04:41:12.420Z",
+          "checkedAt": "2026-10-02T05:45:06.453Z",
           "status": "checked"
         },
         {
           "name": "BEA release schedule",
           "url": "https://www.bea.gov/news/schedule",
-          "checkedAt": "2026-10-02T04:41:12.420Z",
+          "checkedAt": "2026-10-02T05:45:06.453Z",
           "status": "checked"
         },
         {
           "name": "Federal Reserve October 2026 calendar",
           "url": "https://www.federalreserve.gov/newsevents/2026-october.htm",
-          "checkedAt": "2026-10-02T04:41:12.420Z",
+          "checkedAt": "2026-10-02T05:45:06.453Z",
           "status": "checked"
         },
         {
           "name": "EIA Weekly Petroleum Status Report",
           "url": "https://www.eia.gov/petroleum/supply/weekly/",
-          "checkedAt": "2026-10-02T04:41:12.420Z",
+          "checkedAt": "2026-10-02T05:45:06.453Z",
           "status": "checked"
         },
         {
           "name": "OPEC",
           "url": "https://www.opec.org/",
-          "checkedAt": "2026-10-02T04:41:12.420Z",
+          "checkedAt": "2026-10-02T05:45:06.453Z",
           "status": "checked"
         }
       ],
@@ -1473,7 +1473,7 @@
       ],
       "counts": {
         "openPositions": 0,
-        "research": 1,
+        "research": 0,
         "entries": 0,
         "exits": 0,
         "marks": 0
@@ -14257,6 +14257,102 @@
       },
       "deliveryDiagnostics": {
         "repair20260928ReportedAt": "2026-09-28T02:04:42.735Z"
+      }
+    },
+    {
+      "id": "futures-scan-20261002054425947",
+      "system": "futures",
+      "startedAt": "2026-10-02T05:44:25.947Z",
+      "checkedAt": "2026-10-02T05:45:06.453Z",
+      "scheduledFor": "2026-10-02T05:00:00.000Z",
+      "nextScheduledAt": "2026-10-02T06:00:00.000Z",
+      "status": "data_limited",
+      "summary": "No new futures entry or material research event. There are no open futures paper positions. Delayed MGCZ26 snapshots rose to 4,218.50–4,218.70, above the prior 4,213.50 observed high and 4,202.30 settlement; this reinforces the already-published invalidation of the bearish gold watch but does not establish a new long setup. MNQZ26 and MESZ26 were also positive on delayed boards, while MCLX26 remained unavailable. No contract had a non-delayed five-minute quote, verified bid/ask, live structure or source-verified margin. The October 2 Employment Situation at 8:30 a.m. ET remains a major event-risk gate.",
+      "sources": [
+        {
+          "name": "CME trading hours",
+          "url": "https://www.cmegroup.com/trading-hours.html",
+          "checkedAt": "2026-10-02T05:45:06.453Z",
+          "status": "checked_session_open_expected"
+        },
+        {
+          "name": "eSignal MNQ futures board",
+          "url": "https://quotes.esignal.com/esignalprod/quote.action?symbol=MNQ",
+          "checkedAt": "2026-10-02T05:45:06.453Z",
+          "status": "checked_stale_delayed_quote_excluded"
+        },
+        {
+          "name": "eSignal MES futures board",
+          "url": "https://quotes.esignal.com/esignalprod/quote.action?symbol=MES",
+          "checkedAt": "2026-10-02T05:45:06.453Z",
+          "status": "checked_stale_delayed_quote_excluded"
+        },
+        {
+          "name": "eSignal MGC futures board",
+          "url": "https://quotes.esignal.com/esignalprod/quote.action?symbol=MGC",
+          "checkedAt": "2026-10-02T05:45:06.453Z",
+          "status": "checked_delayed_context_only"
+        },
+        {
+          "name": "eSignal MCL futures board",
+          "url": "https://quotes.esignal.com/esignalprod/quote.action?symbol=MCL",
+          "checkedAt": "2026-10-02T05:45:06.453Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "MarketWatch MGCZ26",
+          "url": "https://www.marketwatch.com/investing/future/mgcz26",
+          "checkedAt": "2026-10-02T05:45:06.453Z",
+          "status": "checked_delayed_context_only"
+        },
+        {
+          "name": "BLS October 2026 release calendar",
+          "url": "https://www.bls.gov/schedule/2026/10_sched.htm",
+          "checkedAt": "2026-10-02T05:45:06.453Z",
+          "status": "checked"
+        },
+        {
+          "name": "BEA release schedule",
+          "url": "https://www.bea.gov/news/schedule",
+          "checkedAt": "2026-10-02T05:45:06.453Z",
+          "status": "checked"
+        },
+        {
+          "name": "Federal Reserve October 2026 calendar",
+          "url": "https://www.federalreserve.gov/newsevents/2026-october.htm",
+          "checkedAt": "2026-10-02T05:45:06.453Z",
+          "status": "checked"
+        },
+        {
+          "name": "EIA Weekly Petroleum Status Report",
+          "url": "https://www.eia.gov/petroleum/supply/weekly/",
+          "checkedAt": "2026-10-02T05:45:06.453Z",
+          "status": "checked"
+        },
+        {
+          "name": "OPEC",
+          "url": "https://www.opec.org/",
+          "checkedAt": "2026-10-02T05:45:06.453Z",
+          "status": "checked"
+        }
+      ],
+      "missingData": [
+        "Non-delayed exact dated quotes no older than five minutes for MNQZ26, MESZ26, MGCZ26 and MCLX26",
+        "Verified bid/ask spreads, liquidity and current intraday price/volume structure for every micro contract",
+        "Exact expiry/roll and session/holiday clearance for every candidate",
+        "Source-verified initial margin per contract and sufficient remaining paper equity",
+        "Observed tick-aligned triggers, invalidations and targets meeting at least 2:1 reward-to-risk and the $100 risk cap",
+        "Post-Employment-Situation confirmation after October 2 at 8:30 a.m. ET"
+      ],
+      "counts": {
+        "openPositions": 0,
+        "research": 0,
+        "entries": 0,
+        "exits": 0,
+        "marks": 0
+      },
+      "deliveryDiagnostics": {
+        "repair20260928ReportedAt": "2026-09-28T01:51:49.985Z"
       }
     }
   ]
