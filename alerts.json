@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-10-02T17:47:47.607Z",
+  "updatedAt": "2026-10-02T17:51:57.959Z",
   "alerts": [
     {
       "id": "options-bb-fy27q2-20260924",
@@ -2455,56 +2455,56 @@
       }
     },
     "futures": {
-      "id": "futures-scan-20261002171839105",
+      "id": "futures-scan-20261002175124736",
       "system": "futures",
-      "startedAt": "2026-10-02T17:18:39.105Z",
-      "checkedAt": "2026-10-02T17:19:32.562Z",
+      "startedAt": "2026-10-02T17:51:24.736Z",
+      "checkedAt": "2026-10-02T17:51:57.959Z",
       "scheduledFor": "2026-10-02T17:00:00.000Z",
       "nextScheduledAt": "2026-10-02T18:00:00.000Z",
       "status": "data_limited",
-      "summary": "One material research update was published and no paper entry was opened. There are no open futures positions. Gold’s initial post-payroll rally reversed as Treasury yields rebounded; updated benchmark reporting showed gold lower, removing confirmation for the conditional MGCZ26 long watch. The MGC watch is now neutral pending fresh exact-contract structure. Nasdaq remained strong and WTI remained weak, but MNQZ26 and MCLX26 also lacked non-delayed five-minute quotes, live spreads, verified triggers and margin data.",
+      "summary": "No new futures entry or material research update. There are no open futures paper positions. The latest broader market reporting continued to show Nasdaq strength, weak WTI and gold losing its initial post-payroll gains, consistent with the existing MNQ long watch, MCL short watch and neutral MGC status. No exact micro contract supplied a non-delayed quote no older than five minutes with a verified spread, depth, volume structure and observed trigger. MCLX26 also approaches its mid-October roll/expiry window, adding contract-risk caution. All ideas remain research-only.",
       "sources": [
         {
-          "name": "Reuters updated gold report",
-          "url": "https://www.reuters.com/world/india/gold-slips-before-us-payrolls-data-set-second-weekly-loss-2026-10-02/",
-          "checkedAt": "2026-10-02T17:19:32.562Z",
-          "status": "checked_material_reversal_benchmark_only"
+          "name": "Reuters Nasdaq update",
+          "url": "https://www.reuters.com/business/wall-st-futures-gain-yields-oil-prices-ease-ahead-jobs-report-2026-10-02/",
+          "checkedAt": "2026-10-02T17:51:57.959Z",
+          "status": "checked_cash_index_context_only"
         },
         {
           "name": "Reuters global markets update",
           "url": "https://www.reuters.com/world/china/global-markets-wrapup-1-2026-10-02/",
-          "checkedAt": "2026-10-02T17:19:32.562Z",
-          "status": "checked_yields_and_cross_asset_context"
+          "checkedAt": "2026-10-02T17:51:57.959Z",
+          "status": "checked_cross_asset_context_only"
         },
         {
-          "name": "Reuters Nasdaq update",
-          "url": "https://www.reuters.com/business/wall-st-futures-gain-yields-oil-prices-ease-ahead-jobs-report-2026-10-02/",
-          "checkedAt": "2026-10-02T17:19:32.562Z",
-          "status": "checked_cash_index_context_only"
+          "name": "Reuters gold update",
+          "url": "https://www.reuters.com/world/india/gold-slips-before-us-payrolls-data-set-second-weekly-loss-2026-10-02/",
+          "checkedAt": "2026-10-02T17:51:57.959Z",
+          "status": "checked_benchmark_context_only"
         },
         {
-          "name": "eSignal MESZ26 board",
-          "url": "https://quotes.esignal.com/esignalprod/quote.action?symbol=MES",
-          "checkedAt": "2026-10-02T17:19:32.562Z",
-          "status": "checked_delayed_quote_excluded"
+          "name": "Linn Software exact-contract symbol calendar",
+          "url": "https://www.linnsoft.com/support/all-symbols",
+          "checkedAt": "2026-10-02T17:51:57.959Z",
+          "status": "checked_roll_dates_context"
         },
         {
-          "name": "CME real-time data information",
-          "url": "https://www.cmegroup.com/market-data/real-time-and-historical-data.html",
-          "checkedAt": "2026-10-02T17:19:32.562Z",
-          "status": "checked_public_data_not_real_time"
+          "name": "CME delayed quotes",
+          "url": "https://www.cmegroup.com/market-data/browse-data/delayed-quotes.html",
+          "checkedAt": "2026-10-02T17:51:57.959Z",
+          "status": "checked_no_qualifying_live_micro_quotes"
         }
       ],
       "missingData": [
         "Non-delayed exact dated quotes no older than five minutes for MNQZ26, MESZ26, MGCZ26 and MCLX26",
         "Verified current bid/ask spreads, depth, liquidity and intraday price/volume structure for every micro contract",
-        "Exact expiry/roll and session clearance for every candidate",
+        "Authoritative CME roll/expiry and delivery-risk confirmation for MCLX26",
         "Source-verified initial margin per contract and sufficient remaining paper equity",
         "Observed tick-aligned triggers, invalidations and targets meeting at least 2:1 reward-to-risk and the $100 risk cap"
       ],
       "counts": {
         "openPositions": 0,
-        "research": 1,
+        "research": 0,
         "entries": 0,
         "exits": 0,
         "marks": 0
@@ -13052,6 +13052,89 @@
       }
     },
     {
+      "id": "meme-scan-20261002T174747607Z",
+      "system": "meme",
+      "startedAt": "2026-10-02T17:45:23.000Z",
+      "checkedAt": "2026-10-02T17:47:47.607Z",
+      "scheduledFor": "2026-10-02T17:00:00.000Z",
+      "nextScheduledAt": "2026-10-02T18:00:00.000Z",
+      "status": "data_limited",
+      "summary": "No open meme paper trades required management. TRUMP's official gala catalyst remains verified, and its displayed price rebounded to $2.17 with approximately $266,000 liquidity and a $611.6 million market cap, up 5.62% over one hour. The move did not qualify for entry: one-hour sells and unique sellers exceeded buys and unique buyers, Frank DeGods's visible holdings did not include TRUMP, Numero's displayed activity was stale and unrelated, and Daumen, IdontPayTaxes and verified Clukz coverage was incomplete. pSOQ remained near $0.0004463 with about $88,000 liquidity but only $7,500 of 24-hour volume and 20 sellers versus 13 buyers. A fresh public-figure sweep found no newly verified official token launch or endorsement with an independently confirmed contract. One TRUMP research record was updated; no entry, exit or mark was created.",
+      "sources": [
+        {
+          "name": "DEX Screener OFFICIAL TRUMP/SOL pair",
+          "url": "https://dexscreener.com/solana/6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN",
+          "checkedAt": "2026-10-02T17:47:47.607Z",
+          "status": "checked"
+        },
+        {
+          "name": "DEX Screener pSOQ/SOL pair",
+          "url": "https://dexscreener.com/solana/EM9NyPqcByrz8zBxZUi2LazBTCY2zbVJa49nTXHi3Pq8",
+          "checkedAt": "2026-10-02T17:47:47.607Z",
+          "status": "checked"
+        },
+        {
+          "name": "Frank DeGods live wallet profile",
+          "url": "https://kolexplorer.com/kol/frank-degods",
+          "checkedAt": "2026-10-02T17:47:47.607Z",
+          "status": "checked"
+        },
+        {
+          "name": "Frank DeGods versus Numero wallet comparison",
+          "url": "https://kolexplorer.com/compare/frank-degods-vs-numero",
+          "checkedAt": "2026-10-02T17:47:47.607Z",
+          "status": "checked"
+        },
+        {
+          "name": "Current prominent-figure launch and endorsement search",
+          "url": "https://x.com/search",
+          "checkedAt": "2026-10-02T17:47:47.607Z",
+          "status": "checked"
+        },
+        {
+          "name": "Frank DeGods versus Daumen wallet comparison",
+          "url": "https://kolexplorer.com/compare/frank-degods-vs-daumen",
+          "checkedAt": "2026-10-02T17:47:47.607Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "Frank DeGods versus IdontPayTaxes wallet comparison",
+          "url": "https://kolexplorer.com/compare/frank-degods-vs-idontpaytaxes",
+          "checkedAt": "2026-10-02T17:47:47.607Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "Verified Clukz current holdings",
+          "url": "https://kolexplorer.com/",
+          "checkedAt": "2026-10-02T17:47:47.607Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "X live unique-author acceleration and spam filtering",
+          "url": "https://x.com/search",
+          "checkedAt": "2026-10-02T17:47:47.607Z",
+          "status": "unavailable"
+        }
+      ],
+      "missingData": [
+        "fresh executable bid, ask and slippage for TRUMP, pSOQ and newly surfaced wallet tokens",
+        "current token-specific holdings and remaining-position percentages for Daumen, IdontPayTaxes and verified Clukz",
+        "verified two-wallet convergence with greater-than-one-hour persistence and meaningful remaining size",
+        "current deployer, insider, bundler, holder-concentration and wash-trading analysis",
+        "X unique-author mention velocity, acceleration and spam filtering",
+        "current TRUMP insider-wallet transfers and unlock-related selling pressure",
+        "complete real-time coverage of all Solana launches, holders, buyers and liquidity venues"
+      ],
+      "counts": {
+        "research": 1,
+        "entries": 0,
+        "exits": 0
+      },
+      "deliveryDiagnostics": {
+        "repair20260928ReportedAt": "2026-09-28T02:04:42.735Z"
+      }
+    },
+    {
       "id": "futures-scan-20260927203939926",
       "system": "futures",
       "startedAt": "2026-09-27T20:39:39.926Z",
@@ -18510,86 +18593,62 @@
       }
     },
     {
-      "id": "meme-scan-20261002T174747607Z",
-      "system": "meme",
-      "startedAt": "2026-10-02T17:45:23.000Z",
-      "checkedAt": "2026-10-02T17:47:47.607Z",
+      "id": "futures-scan-20261002175124736",
+      "system": "futures",
+      "startedAt": "2026-10-02T17:51:24.736Z",
+      "checkedAt": "2026-10-02T17:51:57.959Z",
       "scheduledFor": "2026-10-02T17:00:00.000Z",
       "nextScheduledAt": "2026-10-02T18:00:00.000Z",
       "status": "data_limited",
-      "summary": "No open meme paper trades required management. TRUMP's official gala catalyst remains verified, and its displayed price rebounded to $2.17 with approximately $266,000 liquidity and a $611.6 million market cap, up 5.62% over one hour. The move did not qualify for entry: one-hour sells and unique sellers exceeded buys and unique buyers, Frank DeGods's visible holdings did not include TRUMP, Numero's displayed activity was stale and unrelated, and Daumen, IdontPayTaxes and verified Clukz coverage was incomplete. pSOQ remained near $0.0004463 with about $88,000 liquidity but only $7,500 of 24-hour volume and 20 sellers versus 13 buyers. A fresh public-figure sweep found no newly verified official token launch or endorsement with an independently confirmed contract. One TRUMP research record was updated; no entry, exit or mark was created.",
+      "summary": "No new futures entry or material research update. There are no open futures paper positions. The latest broader market reporting continued to show Nasdaq strength, weak WTI and gold losing its initial post-payroll gains, consistent with the existing MNQ long watch, MCL short watch and neutral MGC status. No exact micro contract supplied a non-delayed quote no older than five minutes with a verified spread, depth, volume structure and observed trigger. MCLX26 also approaches its mid-October roll/expiry window, adding contract-risk caution. All ideas remain research-only.",
       "sources": [
         {
-          "name": "DEX Screener OFFICIAL TRUMP/SOL pair",
-          "url": "https://dexscreener.com/solana/6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN",
-          "checkedAt": "2026-10-02T17:47:47.607Z",
-          "status": "checked"
+          "name": "Reuters Nasdaq update",
+          "url": "https://www.reuters.com/business/wall-st-futures-gain-yields-oil-prices-ease-ahead-jobs-report-2026-10-02/",
+          "checkedAt": "2026-10-02T17:51:57.959Z",
+          "status": "checked_cash_index_context_only"
         },
         {
-          "name": "DEX Screener pSOQ/SOL pair",
-          "url": "https://dexscreener.com/solana/EM9NyPqcByrz8zBxZUi2LazBTCY2zbVJa49nTXHi3Pq8",
-          "checkedAt": "2026-10-02T17:47:47.607Z",
-          "status": "checked"
+          "name": "Reuters global markets update",
+          "url": "https://www.reuters.com/world/china/global-markets-wrapup-1-2026-10-02/",
+          "checkedAt": "2026-10-02T17:51:57.959Z",
+          "status": "checked_cross_asset_context_only"
         },
         {
-          "name": "Frank DeGods live wallet profile",
-          "url": "https://kolexplorer.com/kol/frank-degods",
-          "checkedAt": "2026-10-02T17:47:47.607Z",
-          "status": "checked"
+          "name": "Reuters gold update",
+          "url": "https://www.reuters.com/world/india/gold-slips-before-us-payrolls-data-set-second-weekly-loss-2026-10-02/",
+          "checkedAt": "2026-10-02T17:51:57.959Z",
+          "status": "checked_benchmark_context_only"
         },
         {
-          "name": "Frank DeGods versus Numero wallet comparison",
-          "url": "https://kolexplorer.com/compare/frank-degods-vs-numero",
-          "checkedAt": "2026-10-02T17:47:47.607Z",
-          "status": "checked"
+          "name": "Linn Software exact-contract symbol calendar",
+          "url": "https://www.linnsoft.com/support/all-symbols",
+          "checkedAt": "2026-10-02T17:51:57.959Z",
+          "status": "checked_roll_dates_context"
         },
         {
-          "name": "Current prominent-figure launch and endorsement search",
-          "url": "https://x.com/search",
-          "checkedAt": "2026-10-02T17:47:47.607Z",
-          "status": "checked"
-        },
-        {
-          "name": "Frank DeGods versus Daumen wallet comparison",
-          "url": "https://kolexplorer.com/compare/frank-degods-vs-daumen",
-          "checkedAt": "2026-10-02T17:47:47.607Z",
-          "status": "unavailable"
-        },
-        {
-          "name": "Frank DeGods versus IdontPayTaxes wallet comparison",
-          "url": "https://kolexplorer.com/compare/frank-degods-vs-idontpaytaxes",
-          "checkedAt": "2026-10-02T17:47:47.607Z",
-          "status": "unavailable"
-        },
-        {
-          "name": "Verified Clukz current holdings",
-          "url": "https://kolexplorer.com/",
-          "checkedAt": "2026-10-02T17:47:47.607Z",
-          "status": "unavailable"
-        },
-        {
-          "name": "X live unique-author acceleration and spam filtering",
-          "url": "https://x.com/search",
-          "checkedAt": "2026-10-02T17:47:47.607Z",
-          "status": "unavailable"
+          "name": "CME delayed quotes",
+          "url": "https://www.cmegroup.com/market-data/browse-data/delayed-quotes.html",
+          "checkedAt": "2026-10-02T17:51:57.959Z",
+          "status": "checked_no_qualifying_live_micro_quotes"
         }
       ],
       "missingData": [
-        "fresh executable bid, ask and slippage for TRUMP, pSOQ and newly surfaced wallet tokens",
-        "current token-specific holdings and remaining-position percentages for Daumen, IdontPayTaxes and verified Clukz",
-        "verified two-wallet convergence with greater-than-one-hour persistence and meaningful remaining size",
-        "current deployer, insider, bundler, holder-concentration and wash-trading analysis",
-        "X unique-author mention velocity, acceleration and spam filtering",
-        "current TRUMP insider-wallet transfers and unlock-related selling pressure",
-        "complete real-time coverage of all Solana launches, holders, buyers and liquidity venues"
+        "Non-delayed exact dated quotes no older than five minutes for MNQZ26, MESZ26, MGCZ26 and MCLX26",
+        "Verified current bid/ask spreads, depth, liquidity and intraday price/volume structure for every micro contract",
+        "Authoritative CME roll/expiry and delivery-risk confirmation for MCLX26",
+        "Source-verified initial margin per contract and sufficient remaining paper equity",
+        "Observed tick-aligned triggers, invalidations and targets meeting at least 2:1 reward-to-risk and the $100 risk cap"
       ],
       "counts": {
-        "research": 1,
+        "openPositions": 0,
+        "research": 0,
         "entries": 0,
-        "exits": 0
+        "exits": 0,
+        "marks": 0
       },
       "deliveryDiagnostics": {
-        "repair20260928ReportedAt": "2026-09-28T02:04:42.735Z"
+        "repair20260928ReportedAt": "2026-09-28T01:51:49.985Z"
       }
     }
   ]
