@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-10-02T03:24:50.653Z",
+  "updatedAt": "2026-10-02T03:53:58.788Z",
   "alerts": [
     {
       "id": "options-bb-fy27q2-20260924",
@@ -1383,113 +1383,114 @@
       }
     },
     "futures": {
-      "id": "futures-scan-20261002024522510",
+      "id": "futures-scan-20261002035307409",
       "system": "futures",
-      "startedAt": "2026-10-02T02:45:22.510Z",
-      "checkedAt": "2026-10-02T02:46:13.155Z",
-      "scheduledFor": "2026-10-02T02:00:00.000Z",
-      "nextScheduledAt": "2026-10-02T03:00:00.000Z",
+      "startedAt": "2026-10-02T03:53:07.409Z",
+      "checkedAt": "2026-10-02T03:53:58.788Z",
+      "scheduledFor": "2026-10-02T03:00:00.000Z",
+      "nextScheduledAt": "2026-10-02T04:00:00.000Z",
       "status": "data_limited",
-      "summary": "No new futures entry or material research event. There are no open futures paper positions. eSignal's explicitly delayed exact-contract board, retrieved at 10:23:30 p.m. EDT, showed MNQZ26 30,852.25 and MESZ26 7,734.75 with last-trade times near 9:13 p.m., and MGCZ26 4,182.80 at 10:13 p.m. MarketWatch still showed delayed MGCZ26 4,169.80 at 9:13 p.m.; the source-time mismatch prevents a reliable current structure or trigger determination. MCLX26 remained unavailable. The September Employment Situation remains scheduled for October 2 at 8:30 a.m. ET. Live spreads, liquidity, margin, roll clearance and risk-qualified triggers remain unresolved.",
+      "summary": "No new futures entry or material research event. There are no open futures paper positions. The newest accessible exact-contract board had not advanced: eSignal still reported delayed data retrieved at 10:23:30 p.m. EDT, with MNQZ26 30,852.25 and MESZ26 7,734.75 last traded near 9:13 p.m., and MGCZ26 4,182.80 at 10:13 p.m. MarketWatch remained on delayed MGCZ26 4,169.80 at 9:13 p.m. The stale and mismatched sources cannot verify a current trigger or structure. MCLX26 remained unavailable, and EIA's weekly petroleum page failed during this run. The September Employment Situation is scheduled for October 2 at 8:30 a.m. ET. Live spreads, liquidity, margin, roll clearance and risk-qualified triggers remain unresolved.",
       "sources": [
         {
           "name": "CME Micro E-mini Nasdaq-100 futures",
           "url": "https://www.cmegroup.com/markets/equities/nasdaq/micro-e-mini-nasdaq-100.html",
-          "checkedAt": "2026-10-02T02:46:13.155Z",
+          "checkedAt": "2026-10-02T03:53:58.788Z",
           "status": "checked_specs_only"
         },
         {
           "name": "CME Micro E-mini S&P 500 futures",
           "url": "https://www.cmegroup.com/markets/equities/sp/micro-e-mini-sandp-500.html",
-          "checkedAt": "2026-10-02T02:46:13.155Z",
+          "checkedAt": "2026-10-02T03:53:58.788Z",
           "status": "checked_specs_only"
         },
         {
           "name": "CME Micro Gold futures",
           "url": "https://www.cmegroup.com/markets/metals/precious/e-micro-gold.html",
-          "checkedAt": "2026-10-02T02:46:13.155Z",
+          "checkedAt": "2026-10-02T03:53:58.788Z",
           "status": "checked_specs_only"
         },
         {
           "name": "CME Micro WTI Crude Oil futures",
           "url": "https://www.cmegroup.com/markets/energy/crude-oil/micro-wti-crude-oil.html",
-          "checkedAt": "2026-10-02T02:46:13.155Z",
+          "checkedAt": "2026-10-02T03:53:58.788Z",
           "status": "checked_specs_only"
         },
         {
           "name": "CME trading hours",
           "url": "https://www.cmegroup.com/trading-hours.html",
-          "checkedAt": "2026-10-02T02:46:13.155Z",
+          "checkedAt": "2026-10-02T03:53:58.788Z",
           "status": "checked_session_open_expected"
         },
         {
           "name": "eSignal MNQ futures board",
           "url": "https://quotes.esignal.com/esignalprod/quote.action?symbol=MNQ",
-          "checkedAt": "2026-10-02T02:46:13.155Z",
+          "checkedAt": "2026-10-02T03:53:58.788Z",
           "status": "checked_stale_delayed_quote_excluded"
         },
         {
           "name": "eSignal MES futures board",
           "url": "https://quotes.esignal.com/esignalprod/quote.action?symbol=MES",
-          "checkedAt": "2026-10-02T02:46:13.155Z",
+          "checkedAt": "2026-10-02T03:53:58.788Z",
           "status": "checked_stale_delayed_quote_excluded"
         },
         {
           "name": "eSignal MGC futures board",
           "url": "https://quotes.esignal.com/esignalprod/quote.action?symbol=MGC",
-          "checkedAt": "2026-10-02T02:46:13.155Z",
-          "status": "checked_delayed_quote_excluded"
+          "checkedAt": "2026-10-02T03:53:58.788Z",
+          "status": "checked_stale_delayed_quote_excluded"
         },
         {
           "name": "eSignal MCL futures board",
           "url": "https://quotes.esignal.com/esignalprod/quote.action?symbol=MCL",
-          "checkedAt": "2026-10-02T02:46:13.155Z",
+          "checkedAt": "2026-10-02T03:53:58.788Z",
           "status": "unavailable"
         },
         {
           "name": "MarketWatch MGCZ26",
           "url": "https://www.marketwatch.com/investing/future/mgcz26",
-          "checkedAt": "2026-10-02T02:46:13.155Z",
+          "checkedAt": "2026-10-02T03:53:58.788Z",
           "status": "checked_stale_delayed_quote_excluded"
         },
         {
           "name": "BLS October 2026 release calendar",
           "url": "https://www.bls.gov/schedule/2026/10_sched.htm",
-          "checkedAt": "2026-10-02T02:46:13.155Z",
+          "checkedAt": "2026-10-02T03:53:58.788Z",
           "status": "checked"
         },
         {
           "name": "BEA release schedule",
           "url": "https://www.bea.gov/news/schedule",
-          "checkedAt": "2026-10-02T02:46:13.155Z",
+          "checkedAt": "2026-10-02T03:53:58.788Z",
           "status": "checked"
         },
         {
           "name": "Federal Reserve October 2026 calendar",
           "url": "https://www.federalreserve.gov/newsevents/2026-october.htm",
-          "checkedAt": "2026-10-02T02:46:13.155Z",
+          "checkedAt": "2026-10-02T03:53:58.788Z",
           "status": "checked"
         },
         {
           "name": "EIA Weekly Petroleum Status Report",
           "url": "https://www.eia.gov/petroleum/supply/weekly/",
-          "checkedAt": "2026-10-02T02:46:13.155Z",
-          "status": "checked"
+          "checkedAt": "2026-10-02T03:53:58.788Z",
+          "status": "temporarily_unavailable"
         },
         {
           "name": "OPEC",
           "url": "https://www.opec.org/",
-          "checkedAt": "2026-10-02T02:46:13.155Z",
+          "checkedAt": "2026-10-02T03:53:58.788Z",
           "status": "checked"
         }
       ],
       "missingData": [
         "Non-delayed exact dated quotes no older than five minutes for MNQZ26, MESZ26, MGCZ26 and MCLX26",
-        "Reconciliation of mismatched delayed MGCZ26 source timestamps and prices",
+        "Reconciliation of stale and mismatched delayed MGCZ26 source timestamps and prices",
         "Verified bid/ask spreads, liquidity and current intraday price/volume structure for every micro contract",
         "Exact expiry/roll and session/holiday clearance for every candidate",
         "Source-verified initial margin per contract and sufficient remaining paper equity",
         "Observed tick-aligned triggers, invalidations and targets meeting at least 2:1 reward-to-risk and the $100 risk cap",
+        "Current EIA weekly petroleum report response",
         "Complete release-risk clearance after the October 2 Employment Situation report"
       ],
       "counts": {
@@ -13711,6 +13712,128 @@
       },
       "deliveryDiagnostics": {
         "repair20260928ReportedAt": "2026-09-28T02:04:42.735Z"
+      }
+    },
+    {
+      "id": "futures-scan-20261002035307409",
+      "system": "futures",
+      "startedAt": "2026-10-02T03:53:07.409Z",
+      "checkedAt": "2026-10-02T03:53:58.788Z",
+      "scheduledFor": "2026-10-02T03:00:00.000Z",
+      "nextScheduledAt": "2026-10-02T04:00:00.000Z",
+      "status": "data_limited",
+      "summary": "No new futures entry or material research event. There are no open futures paper positions. The newest accessible exact-contract board had not advanced: eSignal still reported delayed data retrieved at 10:23:30 p.m. EDT, with MNQZ26 30,852.25 and MESZ26 7,734.75 last traded near 9:13 p.m., and MGCZ26 4,182.80 at 10:13 p.m. MarketWatch remained on delayed MGCZ26 4,169.80 at 9:13 p.m. The stale and mismatched sources cannot verify a current trigger or structure. MCLX26 remained unavailable, and EIA's weekly petroleum page failed during this run. The September Employment Situation is scheduled for October 2 at 8:30 a.m. ET. Live spreads, liquidity, margin, roll clearance and risk-qualified triggers remain unresolved.",
+      "sources": [
+        {
+          "name": "CME Micro E-mini Nasdaq-100 futures",
+          "url": "https://www.cmegroup.com/markets/equities/nasdaq/micro-e-mini-nasdaq-100.html",
+          "checkedAt": "2026-10-02T03:53:58.788Z",
+          "status": "checked_specs_only"
+        },
+        {
+          "name": "CME Micro E-mini S&P 500 futures",
+          "url": "https://www.cmegroup.com/markets/equities/sp/micro-e-mini-sandp-500.html",
+          "checkedAt": "2026-10-02T03:53:58.788Z",
+          "status": "checked_specs_only"
+        },
+        {
+          "name": "CME Micro Gold futures",
+          "url": "https://www.cmegroup.com/markets/metals/precious/e-micro-gold.html",
+          "checkedAt": "2026-10-02T03:53:58.788Z",
+          "status": "checked_specs_only"
+        },
+        {
+          "name": "CME Micro WTI Crude Oil futures",
+          "url": "https://www.cmegroup.com/markets/energy/crude-oil/micro-wti-crude-oil.html",
+          "checkedAt": "2026-10-02T03:53:58.788Z",
+          "status": "checked_specs_only"
+        },
+        {
+          "name": "CME trading hours",
+          "url": "https://www.cmegroup.com/trading-hours.html",
+          "checkedAt": "2026-10-02T03:53:58.788Z",
+          "status": "checked_session_open_expected"
+        },
+        {
+          "name": "eSignal MNQ futures board",
+          "url": "https://quotes.esignal.com/esignalprod/quote.action?symbol=MNQ",
+          "checkedAt": "2026-10-02T03:53:58.788Z",
+          "status": "checked_stale_delayed_quote_excluded"
+        },
+        {
+          "name": "eSignal MES futures board",
+          "url": "https://quotes.esignal.com/esignalprod/quote.action?symbol=MES",
+          "checkedAt": "2026-10-02T03:53:58.788Z",
+          "status": "checked_stale_delayed_quote_excluded"
+        },
+        {
+          "name": "eSignal MGC futures board",
+          "url": "https://quotes.esignal.com/esignalprod/quote.action?symbol=MGC",
+          "checkedAt": "2026-10-02T03:53:58.788Z",
+          "status": "checked_stale_delayed_quote_excluded"
+        },
+        {
+          "name": "eSignal MCL futures board",
+          "url": "https://quotes.esignal.com/esignalprod/quote.action?symbol=MCL",
+          "checkedAt": "2026-10-02T03:53:58.788Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "MarketWatch MGCZ26",
+          "url": "https://www.marketwatch.com/investing/future/mgcz26",
+          "checkedAt": "2026-10-02T03:53:58.788Z",
+          "status": "checked_stale_delayed_quote_excluded"
+        },
+        {
+          "name": "BLS October 2026 release calendar",
+          "url": "https://www.bls.gov/schedule/2026/10_sched.htm",
+          "checkedAt": "2026-10-02T03:53:58.788Z",
+          "status": "checked"
+        },
+        {
+          "name": "BEA release schedule",
+          "url": "https://www.bea.gov/news/schedule",
+          "checkedAt": "2026-10-02T03:53:58.788Z",
+          "status": "checked"
+        },
+        {
+          "name": "Federal Reserve October 2026 calendar",
+          "url": "https://www.federalreserve.gov/newsevents/2026-october.htm",
+          "checkedAt": "2026-10-02T03:53:58.788Z",
+          "status": "checked"
+        },
+        {
+          "name": "EIA Weekly Petroleum Status Report",
+          "url": "https://www.eia.gov/petroleum/supply/weekly/",
+          "checkedAt": "2026-10-02T03:53:58.788Z",
+          "status": "temporarily_unavailable"
+        },
+        {
+          "name": "OPEC",
+          "url": "https://www.opec.org/",
+          "checkedAt": "2026-10-02T03:53:58.788Z",
+          "status": "checked"
+        }
+      ],
+      "missingData": [
+        "Non-delayed exact dated quotes no older than five minutes for MNQZ26, MESZ26, MGCZ26 and MCLX26",
+        "Reconciliation of stale and mismatched delayed MGCZ26 source timestamps and prices",
+        "Verified bid/ask spreads, liquidity and current intraday price/volume structure for every micro contract",
+        "Exact expiry/roll and session/holiday clearance for every candidate",
+        "Source-verified initial margin per contract and sufficient remaining paper equity",
+        "Observed tick-aligned triggers, invalidations and targets meeting at least 2:1 reward-to-risk and the $100 risk cap",
+        "Current EIA weekly petroleum report response",
+        "Complete release-risk clearance after the October 2 Employment Situation report"
+      ],
+      "counts": {
+        "openPositions": 0,
+        "research": 0,
+        "entries": 0,
+        "exits": 0,
+        "marks": 0
+      },
+      "deliveryDiagnostics": {
+        "repair20260928ReportedAt": "2026-09-28T01:51:49.985Z"
       }
     }
   ]
