@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-10-02T15:11:00.477Z",
+  "updatedAt": "2026-10-02T15:17:35.741Z",
   "alerts": [
     {
       "id": "options-bb-fy27q2-20260924",
@@ -209,15 +209,15 @@
       "id": "penny-fthm-restructured-transaction-20260924",
       "eventType": "research",
       "system": "penny",
-      "timestamp": "2026-10-02T13:56:12.919Z",
+      "timestamp": "2026-10-02T15:17:35.741Z",
       "asset": "FTHM",
-      "title": "Research update: FTHM transaction thesis deteriorates further",
-      "summary": "Fathom's preliminary transaction remains source-verified, but the market reaction deteriorated again. At 9:35 a.m. ET on October 2, FTHM traded at $0.331, down 12.89%, at the session low after opening at $0.354; volume was 185,439 shares. The stock is now about 37% below the prior $0.522 research quote. The continued selloff, active minimum-bid deficiency, preliminary share-based transaction structure and dilution/control risks reject entry.",
+      "title": "Research update: FTHM selloff accelerates",
+      "summary": "Fathom's preliminary transaction remains source-verified, but the market rejection accelerated. At 10:58 a.m. ET on October 2, FTHM traded at $0.3125, down 17.76%, after touching $0.30 on 1.19 million shares. The stock is now about 40% below the prior $0.522 research quote. The heavy-volume decline, active minimum-bid deficiency, preliminary share-based transaction structure and dilution/control risks reject entry.",
       "reasons": [
         "The preliminary alternative-transaction announcement remains source-verified.",
-        "FTHM traded at $0.331, down 12.89%, at 9:35 a.m. ET on October 2.",
-        "The quote was at the session low and roughly 37% below the prior $0.522 research snapshot.",
-        "Listing, dilution, execution and control risks remain unresolved."
+        "FTHM traded at $0.3125, down 17.76%, after touching $0.30.",
+        "Volume increased to approximately 1.19 million shares as the selloff deepened.",
+        "The quote is about 40% below the prior $0.522 research snapshot."
       ],
       "href": "https://ir.fathominc.com/news-events/press-releases/detail/181/fathom-holdings-and-neighborhood-intelligence-announce",
       "missingData": [
@@ -228,9 +228,9 @@
         "fresh executable bid, ask and spread after the market close",
         "complete current dilution and insider sweep"
       ],
-      "risk": "Research only, not a paper entry. Price deterioration materially weakens the thesis. The transaction remains preliminary, would use newly issued shares, and is subject to valuation, definitive agreements and approvals; the active minimum-bid deficiency and expected controlling interest compound dilution and execution risk.",
+      "risk": "Research only, not a paper entry. The accelerating decline confirms failed catalyst follow-through. The transaction remains preliminary and share-based, with valuation, approval, dilution, control and Nasdaq minimum-bid risks.",
       "details": {
-        "verificationStatus": "primary catalyst remains verified; October 2 deterioration deepened; rejected for entry",
+        "verificationStatus": "primary catalyst remains verified; October 2 selloff accelerated; rejected for entry",
         "evidenceSources": [
           {
             "name": "Fathom issuer announcement",
@@ -273,6 +273,13 @@
             "publishedAt": "2026-10-02T13:35:16Z",
             "checkedAt": "2026-10-02T13:56:12.919Z",
             "status": "checked"
+          },
+          {
+            "name": "FTHM October 2 late-morning market data",
+            "url": "https://finance.yahoo.com/quote/FTHM/",
+            "publishedAt": "2026-10-02T14:58:01Z",
+            "checkedAt": "2026-10-02T15:17:35.741Z",
+            "status": "checked"
           }
         ],
         "catalystVerification": {
@@ -297,19 +304,23 @@
           "October 2 price down 12.89% at the quote timestamp",
           "quote at the $0.331 session low",
           "roughly 37% below the prior $0.522 research snapshot",
-          "continued failure of the preliminary transaction catalyst"
+          "continued failure of the preliminary transaction catalyst",
+          "October 2 price down 17.76% at the quote timestamp",
+          "session low reached $0.30",
+          "selloff volume increased to about 1.19 million shares",
+          "roughly 40% below the prior $0.522 research snapshot"
         ],
         "marketReaction": {
           "session": "regular",
-          "price": 0.331,
-          "changePercent": -12.89474,
-          "open": 0.354,
+          "price": 0.3125,
+          "changePercent": -17.76316,
+          "open": 0.368,
           "high": 0.38,
-          "low": 0.331,
-          "volume": 185439,
-          "marketCap": 11063562,
-          "quoteTimestamp": "2026-10-02T13:35:16Z",
-          "status": "continued catalyst failure and deteriorating structure"
+          "low": 0.3,
+          "volume": 1194686,
+          "marketCap": 10445206,
+          "quoteTimestamp": "2026-10-02T14:58:01Z",
+          "status": "accelerating catalyst failure on materially higher volume"
         }
       }
     },
@@ -2024,68 +2035,130 @@
           "A delayed mini-contract move cannot establish a micro-contract fill, spread, or risk level."
         ]
       }
+    },
+    {
+      "id": "penny-rcon-fy2026-results-20260930",
+      "eventType": "research",
+      "system": "penny",
+      "timestamp": "2026-10-02T15:17:35.741Z",
+      "asset": "RCON",
+      "title": "Research: RCON revenue and margin growth offset by reverse-split risk",
+      "summary": "Recon Technology reported FY2026 revenue of RMB109.9 million ($16.2 million), up 65.8%, with gross margin improving to 33.2% from 23.0%. Operating loss narrowed to RMB41.2 million from RMB57.3 million and net loss narrowed to approximately RMB31.6 million. The operating improvement is material, but RCON remains research-only because a reliable current executable quote, dollar volume, spread, technical structure, dilution capacity and social/insider confirmation were unavailable; the company also completed a 1-for-200 reverse split in August 2026.",
+      "reasons": [
+        "FY2026 revenue increased 65.8% to RMB109.9 million.",
+        "Gross margin improved to 33.2% from 23.0%.",
+        "Operating loss narrowed to RMB41.2 million from RMB57.3 million.",
+        "Recent 1-for-200 reverse split and unresolved liquidity/dilution checks materially elevate risk."
+      ],
+      "href": "https://recon.mediaroom.com/2026-09-30-Recon-Technology%2C-Ltd-Reports-Financial-Year-Results-for-Fiscal-Year-2026",
+      "missingData": [
+        "reliable current bid, ask, midpoint and spread",
+        "current regular-session price, volume and dollar-volume confirmation",
+        "complete S-1, S-3, 424B, ATM, PIPE, convertible and warrant sweep",
+        "current insider activity and beneficial-ownership changes",
+        "spam-filtered X unique-author acceleration",
+        "constructive multi-session technical continuation after the results"
+      ],
+      "risk": "High. Research only, not a paper entry. RCON remains loss-making and recently executed a 1-for-200 reverse split; its dual-class share structure, liquidity, dilution capacity and post-results technical structure require verification before any entry.",
+      "details": {
+        "verificationStatus": "primary issuer results verified; market and risk gates incomplete; rejected for entry",
+        "evidenceSources": [
+          {
+            "name": "Recon Technology FY2026 results",
+            "url": "https://recon.mediaroom.com/2026-09-30-Recon-Technology%2C-Ltd-Reports-Financial-Year-Results-for-Fiscal-Year-2026",
+            "publishedAt": "2026-09-30",
+            "checkedAt": "2026-10-02T15:17:35.741Z",
+            "status": "checked"
+          }
+        ],
+        "financialMetrics": {
+          "revenueRMB": 109900000,
+          "revenueUSD": 16200000,
+          "revenueGrowthPercent": 65.8,
+          "grossProfitRMB": 36500000,
+          "grossMarginPercent": 33.2,
+          "priorGrossMarginPercent": 23,
+          "operatingLossRMB": 41200000,
+          "priorOperatingLossRMB": 57300000,
+          "netLossRMB": 31600000
+        },
+        "riskChecks": {
+          "reverseSplit": "1-for-200 Class A reverse split completed August 18, 2026",
+          "liveQuoteVerified": false,
+          "dilutionSweepComplete": false,
+          "insiderAlignmentVerified": false,
+          "socialAccelerationVerified": false
+        },
+        "rejectionReasons": [
+          "no reliable current executable quote or spread",
+          "no verified abnormal dollar volume or constructive technical continuation",
+          "complete dilution and beneficial-ownership sweep unavailable",
+          "recent 1-for-200 reverse split",
+          "company remains loss-making"
+        ]
+      }
     }
   ],
   "scanners": {
     "penny": {
-      "startedAt": "2026-10-02T13:54:25.000Z",
-      "checkedAt": "2026-10-02T13:56:12.919Z",
-      "scheduledFor": "2026-10-02T13:00:00.000Z",
-      "nextScheduledAt": "2026-10-02T14:00:00.000Z",
+      "startedAt": "2026-10-02T15:15:40.000Z",
+      "checkedAt": "2026-10-02T15:17:35.741Z",
+      "scheduledFor": "2026-10-02T15:00:00.000Z",
+      "nextScheduledAt": "2026-10-02T16:00:00.000Z",
       "status": "data_limited",
-      "summary": "No open penny paper trades required management. MEDS and FTHM changed materially after the open and their existing research records were updated: MEDS traded at $3.76, down 7.39%, reversing its revenue-catalyst reaction; FTHM traded at $0.331, down 12.89%, extending the failure of its preliminary transaction thesis. SOAR rebounded modestly to $0.3085 but did not establish a qualifying continuation. NSTR still lacked reliable post-listing price, spread and liquidity data. A fresh SEC, issuer and FDA sweep found no additional primary-source setup meeting the research or entry gates. Two research updates were written; no entry, exit or mark was created.",
+      "summary": "No open penny paper trades required management. One new research-only setup was added: Recon Technology reported 65.8% FY2026 revenue growth, gross-margin expansion to 33.2% and narrower losses, but its recent 1-for-200 reverse split and unavailable live quote, liquidity, dilution, insider and social checks reject entry. FTHM deteriorated further to $0.3125, down 17.76%, after touching $0.30 on 1.19 million shares; its existing research record was materially updated. MEDS remained weak near $3.79, while SOAR, POLA, CYN, TURB and WKEY did not produce qualifying continuation. NSTR still lacked reliable post-listing market data. One new research item and one material research update were written; no entry, exit or mark was created.",
       "sources": [
         {
-          "name": "MEDS October 2 regular-session market data",
-          "url": "https://finance.yahoo.com/quote/MEDS/",
-          "checkedAt": "2026-10-02T13:56:12.919Z",
+          "name": "Recon Technology FY2026 results",
+          "url": "https://recon.mediaroom.com/2026-09-30-Recon-Technology%2C-Ltd-Reports-Financial-Year-Results-for-Fiscal-Year-2026",
+          "checkedAt": "2026-10-02T15:17:35.741Z",
           "status": "checked"
         },
         {
-          "name": "FTHM October 2 regular-session market data",
-          "url": "https://finance.yahoo.com/quote/FTHM/",
-          "checkedAt": "2026-10-02T13:56:12.919Z",
-          "status": "checked"
-        },
-        {
-          "name": "SOAR October 2 regular-session market data",
-          "url": "https://finance.yahoo.com/quote/SOAR/",
-          "checkedAt": "2026-10-02T13:56:12.919Z",
+          "name": "Latest tracked penny-stock market data",
+          "url": "https://finance.yahoo.com/",
+          "checkedAt": "2026-10-02T15:17:35.741Z",
           "status": "checked"
         },
         {
           "name": "SEC EDGAR current filings and catalyst sweep",
           "url": "https://www.sec.gov/edgar/search/",
-          "checkedAt": "2026-10-02T13:56:12.919Z",
+          "checkedAt": "2026-10-02T15:17:35.741Z",
           "status": "checked"
         },
         {
           "name": "FDA current approvals and announcements sweep",
           "url": "https://www.fda.gov/news-events",
-          "checkedAt": "2026-10-02T13:56:12.919Z",
+          "checkedAt": "2026-10-02T15:17:35.741Z",
           "status": "checked"
         },
         {
           "name": "Reliable NSTR post-listing quote and spread",
           "url": "https://finance.yahoo.com/quote/NSTR/",
-          "checkedAt": "2026-10-02T13:56:12.919Z",
+          "checkedAt": "2026-10-02T15:17:35.741Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "Reliable RCON executable quote and spread",
+          "url": "https://finance.yahoo.com/quote/RCON/",
+          "checkedAt": "2026-10-02T15:17:35.741Z",
           "status": "unavailable"
         },
         {
           "name": "Complete real-time dilution and insider sweep",
           "url": "https://www.sec.gov/edgar/search/",
-          "checkedAt": "2026-10-02T13:56:12.919Z",
+          "checkedAt": "2026-10-02T15:17:35.741Z",
           "status": "unavailable"
         },
         {
           "name": "Spam-filtered X unique-author acceleration",
           "url": "https://x.com/search",
-          "checkedAt": "2026-10-02T13:56:12.919Z",
+          "checkedAt": "2026-10-02T15:17:35.741Z",
           "status": "unavailable"
         }
       ],
       "missingData": [
-        "reliable post-listing NSTR quote, market capitalization, volume and spread",
+        "reliable current RCON and post-listing NSTR quotes, market capitalization, volume and spreads",
         "fresh executable bid, ask and spread for all tracked microcaps",
         "complete current S-1, S-3, 424B, ATM, PIPE, convertible and warrant sweep across the candidate universe",
         "current insider alignment and beneficial-ownership changes",
@@ -17706,6 +17779,82 @@
       },
       "deliveryDiagnostics": {
         "repair20260928ReportedAt": "2026-09-28T01:51:49.985Z"
+      }
+    },
+    {
+      "id": "penny-scan-20261002T151735741Z",
+      "system": "penny",
+      "startedAt": "2026-10-02T15:15:40.000Z",
+      "checkedAt": "2026-10-02T15:17:35.741Z",
+      "scheduledFor": "2026-10-02T15:00:00.000Z",
+      "nextScheduledAt": "2026-10-02T16:00:00.000Z",
+      "status": "data_limited",
+      "summary": "No open penny paper trades required management. One new research-only setup was added: Recon Technology reported 65.8% FY2026 revenue growth, gross-margin expansion to 33.2% and narrower losses, but its recent 1-for-200 reverse split and unavailable live quote, liquidity, dilution, insider and social checks reject entry. FTHM deteriorated further to $0.3125, down 17.76%, after touching $0.30 on 1.19 million shares; its existing research record was materially updated. MEDS remained weak near $3.79, while SOAR, POLA, CYN, TURB and WKEY did not produce qualifying continuation. NSTR still lacked reliable post-listing market data. One new research item and one material research update were written; no entry, exit or mark was created.",
+      "sources": [
+        {
+          "name": "Recon Technology FY2026 results",
+          "url": "https://recon.mediaroom.com/2026-09-30-Recon-Technology%2C-Ltd-Reports-Financial-Year-Results-for-Fiscal-Year-2026",
+          "checkedAt": "2026-10-02T15:17:35.741Z",
+          "status": "checked"
+        },
+        {
+          "name": "Latest tracked penny-stock market data",
+          "url": "https://finance.yahoo.com/",
+          "checkedAt": "2026-10-02T15:17:35.741Z",
+          "status": "checked"
+        },
+        {
+          "name": "SEC EDGAR current filings and catalyst sweep",
+          "url": "https://www.sec.gov/edgar/search/",
+          "checkedAt": "2026-10-02T15:17:35.741Z",
+          "status": "checked"
+        },
+        {
+          "name": "FDA current approvals and announcements sweep",
+          "url": "https://www.fda.gov/news-events",
+          "checkedAt": "2026-10-02T15:17:35.741Z",
+          "status": "checked"
+        },
+        {
+          "name": "Reliable NSTR post-listing quote and spread",
+          "url": "https://finance.yahoo.com/quote/NSTR/",
+          "checkedAt": "2026-10-02T15:17:35.741Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "Reliable RCON executable quote and spread",
+          "url": "https://finance.yahoo.com/quote/RCON/",
+          "checkedAt": "2026-10-02T15:17:35.741Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "Complete real-time dilution and insider sweep",
+          "url": "https://www.sec.gov/edgar/search/",
+          "checkedAt": "2026-10-02T15:17:35.741Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "Spam-filtered X unique-author acceleration",
+          "url": "https://x.com/search",
+          "checkedAt": "2026-10-02T15:17:35.741Z",
+          "status": "unavailable"
+        }
+      ],
+      "missingData": [
+        "reliable current RCON and post-listing NSTR quotes, market capitalization, volume and spreads",
+        "fresh executable bid, ask and spread for all tracked microcaps",
+        "complete current S-1, S-3, 424B, ATM, PIPE, convertible and warrant sweep across the candidate universe",
+        "current insider alignment and beneficial-ownership changes",
+        "spam-filtered X unique-author mention acceleration",
+        "complete real-time penny and microcap universe coverage"
+      ],
+      "counts": {
+        "research": 2,
+        "entries": 0,
+        "exits": 0
+      },
+      "deliveryDiagnostics": {
+        "repair20260928ReportedAt": "2026-09-28T01:47:21.040Z"
       }
     }
   ]
