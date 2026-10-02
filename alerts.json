@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-10-02T09:37:26.247Z",
+  "updatedAt": "2026-10-02T09:55:07.459Z",
   "alerts": [
     {
       "id": "options-bb-fy27q2-20260924",
@@ -1786,55 +1786,55 @@
       }
     },
     "options": {
-      "id": "options-scan-20261002T091502736Z",
+      "id": "options-scan-20261002T095507459Z",
       "system": "options",
-      "startedAt": "2026-10-02T09:12:21.000Z",
-      "checkedAt": "2026-10-02T09:15:02.736Z",
+      "startedAt": "2026-10-02T09:54:16.000Z",
+      "checkedAt": "2026-10-02T09:55:07.459Z",
       "scheduledFor": "2026-10-02T09:00:00.000Z",
       "nextScheduledAt": "2026-10-02T10:00:00.000Z",
       "status": "market_closed",
-      "summary": "No open options paper trades required management. Two new research-only catalysts were published: NKE's fiscal 2027 high-single-digit revenue-decline outlook creates a bearish follow-through watch, while MRNA's confirmed Nasdaq-100 inclusion before the October 9 open creates a mechanical-demand watch. Neither qualifies for a paper entry because the U.S. listed-options market is closed, both Nasdaq chains are unavailable, exact 21-60 DTE contract economics and directional flow cannot be verified, and the underlying moves require next-session structure confirmation. No entry, exit or mark was added.",
+      "summary": "No open options paper trades required management. NKE and MRNA remained at the same available premarket indications of $35.15 and $188.94, with no material change to the newly published research. NKE's weak fiscal 2027 outlook remains a bearish follow-through watch, but next-session structure and post-earnings volatility are unverified. MRNA's October 9 Nasdaq-100 inclusion remains a confirmed mechanical-demand catalyst, but the underlying is extended. Nasdaq again reported both chains unavailable, so exact 21-60 DTE quotes, Greeks, IV, spreads, open interest, volume and directional flow could not be validated. A fresh catalyst sweep produced no additional material primary-source setup. No research, entry, exit or mark event was added.",
       "sources": [
         {
-          "name": "NIKE fiscal 2027 first-quarter results",
-          "url": "https://investors.nike.com/investors/news-events-and-reports/investor-news/investor-news-details/2026/NIKE-Inc--Reports-Fiscal-2027-First-Quarter-Results/default.aspx",
-          "checkedAt": "2026-10-02T09:15:02.736Z",
+          "name": "Latest public NKE, MRNA and QQQ market data",
+          "url": "https://finance.yahoo.com/",
+          "checkedAt": "2026-10-02T09:55:07.459Z",
           "status": "checked"
         },
         {
-          "name": "NIKE SEC-filed earnings exhibit",
-          "url": "https://www.sec.gov/Archives/edgar/data/320187/000032018726000184/q1fy27exhibit991er.htm",
-          "checkedAt": "2026-10-02T09:15:02.736Z",
+          "name": "NIKE fiscal 2027 first-quarter results",
+          "url": "https://investors.nike.com/investors/news-events-and-reports/investor-news/investor-news-details/2026/NIKE-Inc--Reports-Fiscal-2027-First-Quarter-Results/default.aspx",
+          "checkedAt": "2026-10-02T09:55:07.459Z",
           "status": "checked"
         },
         {
           "name": "Nasdaq Global Indexes MRNA inclusion announcement",
           "url": "https://ir.nasdaq.com/node/111076",
-          "checkedAt": "2026-10-02T09:15:02.736Z",
+          "checkedAt": "2026-10-02T09:55:07.459Z",
           "status": "checked"
         },
         {
-          "name": "Latest public NKE, MRNA and QQQ market data",
-          "url": "https://finance.yahoo.com/",
-          "checkedAt": "2026-10-02T09:15:02.736Z",
+          "name": "Current primary-source catalyst sweep",
+          "url": "https://www.sec.gov/edgar/search/",
+          "checkedAt": "2026-10-02T09:55:07.459Z",
           "status": "checked"
         },
         {
           "name": "Nasdaq NKE option chain",
           "url": "https://www.nasdaq.com/market-activity/stocks/nke/option-chain",
-          "checkedAt": "2026-10-02T09:15:02.736Z",
+          "checkedAt": "2026-10-02T09:55:07.459Z",
           "status": "unavailable"
         },
         {
           "name": "Nasdaq MRNA option chain",
           "url": "https://www.nasdaq.com/market-activity/stocks/mrna/option-chain",
-          "checkedAt": "2026-10-02T09:15:02.736Z",
+          "checkedAt": "2026-10-02T09:55:07.459Z",
           "status": "unavailable"
         },
         {
           "name": "Complete real-time unusual-options flow",
           "url": "https://www.cboe.com/us/options/market_statistics/",
-          "checkedAt": "2026-10-02T09:15:02.736Z",
+          "checkedAt": "2026-10-02T09:55:07.459Z",
           "status": "unavailable"
         }
       ],
@@ -1849,7 +1849,7 @@
         "complete real-time universe-wide unusual-options-flow coverage"
       ],
       "counts": {
-        "research": 2,
+        "research": 0,
         "entries": 0,
         "exits": 0
       },
@@ -16009,6 +16009,78 @@
       },
       "deliveryDiagnostics": {
         "repair20260928ReportedAt": "2026-09-28T02:04:42.735Z"
+      }
+    },
+    {
+      "id": "options-scan-20261002T095507459Z",
+      "system": "options",
+      "startedAt": "2026-10-02T09:54:16.000Z",
+      "checkedAt": "2026-10-02T09:55:07.459Z",
+      "scheduledFor": "2026-10-02T09:00:00.000Z",
+      "nextScheduledAt": "2026-10-02T10:00:00.000Z",
+      "status": "market_closed",
+      "summary": "No open options paper trades required management. NKE and MRNA remained at the same available premarket indications of $35.15 and $188.94, with no material change to the newly published research. NKE's weak fiscal 2027 outlook remains a bearish follow-through watch, but next-session structure and post-earnings volatility are unverified. MRNA's October 9 Nasdaq-100 inclusion remains a confirmed mechanical-demand catalyst, but the underlying is extended. Nasdaq again reported both chains unavailable, so exact 21-60 DTE quotes, Greeks, IV, spreads, open interest, volume and directional flow could not be validated. A fresh catalyst sweep produced no additional material primary-source setup. No research, entry, exit or mark event was added.",
+      "sources": [
+        {
+          "name": "Latest public NKE, MRNA and QQQ market data",
+          "url": "https://finance.yahoo.com/",
+          "checkedAt": "2026-10-02T09:55:07.459Z",
+          "status": "checked"
+        },
+        {
+          "name": "NIKE fiscal 2027 first-quarter results",
+          "url": "https://investors.nike.com/investors/news-events-and-reports/investor-news/investor-news-details/2026/NIKE-Inc--Reports-Fiscal-2027-First-Quarter-Results/default.aspx",
+          "checkedAt": "2026-10-02T09:55:07.459Z",
+          "status": "checked"
+        },
+        {
+          "name": "Nasdaq Global Indexes MRNA inclusion announcement",
+          "url": "https://ir.nasdaq.com/node/111076",
+          "checkedAt": "2026-10-02T09:55:07.459Z",
+          "status": "checked"
+        },
+        {
+          "name": "Current primary-source catalyst sweep",
+          "url": "https://www.sec.gov/edgar/search/",
+          "checkedAt": "2026-10-02T09:55:07.459Z",
+          "status": "checked"
+        },
+        {
+          "name": "Nasdaq NKE option chain",
+          "url": "https://www.nasdaq.com/market-activity/stocks/nke/option-chain",
+          "checkedAt": "2026-10-02T09:55:07.459Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "Nasdaq MRNA option chain",
+          "url": "https://www.nasdaq.com/market-activity/stocks/mrna/option-chain",
+          "checkedAt": "2026-10-02T09:55:07.459Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "Complete real-time unusual-options flow",
+          "url": "https://www.cboe.com/us/options/market_statistics/",
+          "checkedAt": "2026-10-02T09:55:07.459Z",
+          "status": "unavailable"
+        }
+      ],
+      "missingData": [
+        "executable listed-options quotes while the U.S. options market is closed",
+        "exact 21-60 DTE bid, ask and midpoint for NKE and MRNA",
+        "verified delta and remaining Greeks",
+        "current IV rank and term structure",
+        "contract volume, open interest and executable spread quality",
+        "buyer-initiated opening-flow confirmation",
+        "next-session price and volume acceptance or rejection",
+        "complete real-time universe-wide unusual-options-flow coverage"
+      ],
+      "counts": {
+        "research": 0,
+        "entries": 0,
+        "exits": 0
+      },
+      "deliveryDiagnostics": {
+        "repair20260928ReportedAt": "2026-09-28T00:50:48.883Z"
       }
     }
   ]
