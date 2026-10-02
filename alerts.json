@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-10-02T07:13:39.031Z",
+  "updatedAt": "2026-10-02T07:41:52.140Z",
   "alerts": [
     {
       "id": "options-bb-fy27q2-20260924",
@@ -1388,6 +1388,82 @@
           "IV, Greeks, spread, OI, volume and directional flow unavailable"
         ]
       }
+    },
+    {
+      "id": "options-hpe-networking-ai-investor-day-20260930",
+      "eventType": "research",
+      "system": "options",
+      "timestamp": "2026-10-02T07:41:52.140Z",
+      "asset": "HPE",
+      "title": "Research: HPE AI-networking catalyst awaits contract confirmation",
+      "summary": "HPE announced its first AMD Helios order in a $1.2 billion Vultr deal and raised its fiscal 2027 growth framework. HPE closed October 1 at $64.58, up 1.11%, on 16.45 million shares. The catalyst is material and the underlying structure is constructive, but no exact option contract could be verified because Nasdaq returned no usable chain rows.",
+      "reasons": [
+        "A $1.2 billion Vultr AMD Helios order is an official primary-source catalyst.",
+        "HPE raised its fiscal 2027 revenue-growth outlook to 13–17%, non-GAAP EPS growth to 16–20%, and free-cash-flow outlook to at least $5 billion.",
+        "The underlying closed up 1.11% on 16.45 million shares without an extreme one-day extension.",
+        "No exact 21–60 DTE contract qualifies because the option chain was unavailable."
+      ],
+      "href": "https://investors.hpe.com/",
+      "missingData": [
+        "exact 21–60 DTE bid, ask and midpoint",
+        "delta and other Greeks",
+        "IV, IV rank and term structure",
+        "contract volume, open interest and executable spread",
+        "buyer-initiated opening-flow confirmation",
+        "next-session acceptance above the recent breakout area"
+      ],
+      "risk": "High until contract liquidity and implied volatility are verified. HPE has already advanced substantially in 2026 and could mean-revert despite the positive catalyst.",
+      "details": {
+        "catalyst": "Networking Investor Day, $1.2 billion Vultr AMD Helios order and raised fiscal 2027 framework",
+        "catalystDate": "2026-09-30",
+        "marketDataDate": "2026-10-01",
+        "marketMetrics": {
+          "close": 64.58,
+          "dayChangePct": 1.11129,
+          "high": 65.93,
+          "low": 61.78,
+          "volume": 16450623,
+          "marketCap": 93576420000
+        },
+        "catalystMetrics": {
+          "vultrOrderUsd": 1200000000,
+          "fy2027RevenueGrowthPct": "13–17",
+          "fy2027NonGaapEpsGrowthPct": "16–20",
+          "fy2027FreeCashFlowMinimumUsd": 5000000000
+        },
+        "datedEvidenceSources": [
+          {
+            "name": "HPE Investor Relations",
+            "url": "https://investors.hpe.com/",
+            "date": "2026-09-30",
+            "status": "verified"
+          },
+          {
+            "name": "HPE fiscal outlook release",
+            "url": "https://investors.hpe.com/~/media/Files/H/HP-Enterprise-IR/documents/q3-2026/q3-2026-earnings-press-release.pdf",
+            "date": "2026-09-30",
+            "status": "verified"
+          },
+          {
+            "name": "October 1 HPE market data",
+            "url": "https://finance.yahoo.com/quote/HPE/",
+            "date": "2026-10-01",
+            "status": "verified"
+          },
+          {
+            "name": "Nasdaq HPE option chain",
+            "url": "https://www.nasdaq.com/market-activity/stocks/hpe/option-chain",
+            "date": "2026-10-02",
+            "status": "unavailable"
+          }
+        ],
+        "verificationStatus": "Underlying catalyst and close verified; exact option eligibility unverified.",
+        "rejectionReasons": [
+          "No usable option-chain rows",
+          "IV, Greeks, spread, open interest, volume and flow unavailable",
+          "No next-session price acceptance confirmation"
+        ]
+      }
     }
   ],
   "scanners": {
@@ -1463,69 +1539,67 @@
       }
     },
     "options": {
-      "id": "options-scan-20261002T065345Z",
+      "id": "options-scan-20261002T073947Z",
       "system": "options",
-      "startedAt": "2026-10-02T06:53:45.000Z",
-      "checkedAt": "2026-10-02T06:55:39.336Z",
-      "scheduledFor": "2026-10-02T06:00:00.000Z",
-      "nextScheduledAt": "2026-10-02T07:00:00.000Z",
+      "startedAt": "2026-10-02T07:39:47.000Z",
+      "checkedAt": "2026-10-02T07:41:52.140Z",
+      "scheduledFor": "2026-10-02T07:00:00.000Z",
+      "nextScheduledAt": "2026-10-02T08:00:00.000Z",
       "status": "market_closed",
-      "summary": "No open options paper trades required management. Two new research-only catalysts were published. ACN gained 16.01% after fiscal 2026 results showed revenue above the high end of guidance and broad-based growth, but it faded materially from its intraday high. SNPS gained 12.85% after investor-day guidance targeted approximately 15% fiscal 2027 revenue growth and described an intended roughly $1 billion repurchase. Both moves are too extended to chase, and Nasdaq provided no usable option-chain rows for either ticker, preventing verification of exact quotes, Greeks, IV, spreads, volume, open interest and directional flow. Existing BB, COST and SMMT research was unchanged. No entries, exits or marks were added.",
+      "summary": "No open options paper trades required management. One new research-only setup was published for HPE after the company announced its first AMD Helios order in a $1.2 billion Vultr deal and raised its fiscal 2027 growth framework. HPE closed October 1 at $64.58, up 1.11%, on 16.45 million shares. No paper entry qualified because Nasdaq returned no usable option-chain rows, leaving the exact 21–60 DTE quote, Greeks, IV, spread, volume, open interest and buyer-initiated flow unverified. Existing ACN and SNPS research remained unchanged and too extended for a fresh long-premium entry; BB, COST and SMMT also had no material change. No entry, exit or mark was added.",
       "sources": [
         {
-          "name": "Latest ACN, SNPS, BB, COST, SMMT and QQQ market data",
-          "url": "https://finance.yahoo.com/",
-          "checkedAt": "2026-10-02T06:55:39.336Z",
+          "name": "October 1 closing market data",
+          "url": "https://finance.yahoo.com/quote/HPE/",
+          "checkedAt": "2026-10-02T07:41:52.140Z",
           "status": "checked"
         },
         {
-          "name": "Accenture official fiscal 2026 results",
+          "name": "HPE Investor Relations",
+          "url": "https://investors.hpe.com/",
+          "checkedAt": "2026-10-02T07:41:52.140Z",
+          "status": "checked"
+        },
+        {
+          "name": "HPE fiscal outlook release",
+          "url": "https://investors.hpe.com/~/media/Files/H/HP-Enterprise-IR/documents/q3-2026/q3-2026-earnings-press-release.pdf",
+          "checkedAt": "2026-10-02T07:41:52.140Z",
+          "status": "checked"
+        },
+        {
+          "name": "Accenture fiscal 2026 results",
           "url": "https://newsroom.accenture.com/news/2026/accenture-reports-fourth-quarter-and-full-year-fiscal-2026-results",
-          "checkedAt": "2026-10-02T06:55:39.336Z",
+          "checkedAt": "2026-10-02T07:41:52.140Z",
           "status": "checked"
         },
         {
-          "name": "Synopsys official 2026 Investor Day release",
-          "url": "https://investor.synopsys.com/news/news-details/2026/Synopsys-Details-Growth-Strategy-and-Long-term-Financial-Model-at-2026-Investor-Day/default.aspx",
-          "checkedAt": "2026-10-02T06:55:39.336Z",
+          "name": "Synopsys Investor Day materials",
+          "url": "https://investor.synopsys.com/events-and-presentations/default.aspx",
+          "checkedAt": "2026-10-02T07:41:52.140Z",
           "status": "checked"
         },
         {
-          "name": "Nasdaq ACN option chain",
-          "url": "https://www.nasdaq.com/market-activity/stocks/acn/option-chain",
-          "checkedAt": "2026-10-02T06:55:39.336Z",
+          "name": "Nasdaq HPE option chain",
+          "url": "https://www.nasdaq.com/market-activity/stocks/hpe/option-chain",
+          "checkedAt": "2026-10-02T07:41:52.140Z",
           "status": "unavailable"
         },
         {
-          "name": "Nasdaq SNPS option chain",
-          "url": "https://www.nasdaq.com/market-activity/stocks/snps/option-chain",
-          "checkedAt": "2026-10-02T06:55:39.336Z",
-          "status": "unavailable"
-        },
-        {
-          "name": "Costco investor relations and SEC filings",
-          "url": "https://investor.costco.com/",
-          "checkedAt": "2026-10-02T06:55:39.336Z",
-          "status": "checked"
-        },
-        {
-          "name": "Complete real-time unusual-options-flow coverage",
-          "url": "https://www.nasdaq.com/market-activity/options",
-          "checkedAt": "2026-10-02T06:55:39.336Z",
+          "name": "Complete real-time unusual-options flow",
+          "url": "https://www.cboe.com/us/options/market_statistics/",
+          "checkedAt": "2026-10-02T07:41:52.140Z",
           "status": "unavailable"
         }
       ],
       "missingData": [
-        "Reliable after-hours bid, ask and midpoint for exact 21–60 DTE ACN and SNPS contracts",
-        "Current contract delta and remaining Greeks",
-        "Implied volatility, IV rank and term structure",
-        "Current contract volume, open interest and executable spread quality",
-        "Directional buyer-initiated opening flow",
-        "Next-session post-gap acceptance, consolidation or retest",
-        "Complete real-time universe-wide unusual-options-flow coverage"
+        "current executable bid, ask and midpoint for an HPE 21–60 DTE contract",
+        "verified HPE option delta, remaining Greeks, IV rank and term structure",
+        "HPE contract volume, open interest, spread quality and buyer-initiated opening flow",
+        "fresh post-open acceptance or rejection of the HPE breakout area",
+        "complete real-time market-wide unusual-options flow"
       ],
       "counts": {
-        "research": 2,
+        "research": 1,
         "entries": 0,
         "exits": 0
       },
@@ -15024,6 +15098,75 @@
       },
       "deliveryDiagnostics": {
         "repair20260928ReportedAt": "2026-09-28T02:04:42.735Z"
+      }
+    },
+    {
+      "id": "options-scan-20261002T073947Z",
+      "system": "options",
+      "startedAt": "2026-10-02T07:39:47.000Z",
+      "checkedAt": "2026-10-02T07:41:52.140Z",
+      "scheduledFor": "2026-10-02T07:00:00.000Z",
+      "nextScheduledAt": "2026-10-02T08:00:00.000Z",
+      "status": "market_closed",
+      "summary": "No open options paper trades required management. One new research-only setup was published for HPE after the company announced its first AMD Helios order in a $1.2 billion Vultr deal and raised its fiscal 2027 growth framework. HPE closed October 1 at $64.58, up 1.11%, on 16.45 million shares. No paper entry qualified because Nasdaq returned no usable option-chain rows, leaving the exact 21–60 DTE quote, Greeks, IV, spread, volume, open interest and buyer-initiated flow unverified. Existing ACN and SNPS research remained unchanged and too extended for a fresh long-premium entry; BB, COST and SMMT also had no material change. No entry, exit or mark was added.",
+      "sources": [
+        {
+          "name": "October 1 closing market data",
+          "url": "https://finance.yahoo.com/quote/HPE/",
+          "checkedAt": "2026-10-02T07:41:52.140Z",
+          "status": "checked"
+        },
+        {
+          "name": "HPE Investor Relations",
+          "url": "https://investors.hpe.com/",
+          "checkedAt": "2026-10-02T07:41:52.140Z",
+          "status": "checked"
+        },
+        {
+          "name": "HPE fiscal outlook release",
+          "url": "https://investors.hpe.com/~/media/Files/H/HP-Enterprise-IR/documents/q3-2026/q3-2026-earnings-press-release.pdf",
+          "checkedAt": "2026-10-02T07:41:52.140Z",
+          "status": "checked"
+        },
+        {
+          "name": "Accenture fiscal 2026 results",
+          "url": "https://newsroom.accenture.com/news/2026/accenture-reports-fourth-quarter-and-full-year-fiscal-2026-results",
+          "checkedAt": "2026-10-02T07:41:52.140Z",
+          "status": "checked"
+        },
+        {
+          "name": "Synopsys Investor Day materials",
+          "url": "https://investor.synopsys.com/events-and-presentations/default.aspx",
+          "checkedAt": "2026-10-02T07:41:52.140Z",
+          "status": "checked"
+        },
+        {
+          "name": "Nasdaq HPE option chain",
+          "url": "https://www.nasdaq.com/market-activity/stocks/hpe/option-chain",
+          "checkedAt": "2026-10-02T07:41:52.140Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "Complete real-time unusual-options flow",
+          "url": "https://www.cboe.com/us/options/market_statistics/",
+          "checkedAt": "2026-10-02T07:41:52.140Z",
+          "status": "unavailable"
+        }
+      ],
+      "missingData": [
+        "current executable bid, ask and midpoint for an HPE 21–60 DTE contract",
+        "verified HPE option delta, remaining Greeks, IV rank and term structure",
+        "HPE contract volume, open interest, spread quality and buyer-initiated opening flow",
+        "fresh post-open acceptance or rejection of the HPE breakout area",
+        "complete real-time market-wide unusual-options flow"
+      ],
+      "counts": {
+        "research": 1,
+        "entries": 0,
+        "exits": 0
+      },
+      "deliveryDiagnostics": {
+        "repair20260928ReportedAt": "2026-09-28T00:50:48.883Z"
       }
     }
   ]
