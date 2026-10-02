@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-10-02T11:37:04.091Z",
+  "updatedAt": "2026-10-02T11:50:14.092Z",
   "alerts": [
     {
       "id": "options-bb-fy27q2-20260924",
@@ -1712,66 +1712,144 @@
           "The OPEC+ meeting on October 4 could change supply expectations."
         ]
       }
+    },
+    {
+      "id": "penny-meds-corexa-revenue-20261001",
+      "eventType": "research",
+      "system": "penny",
+      "timestamp": "2026-10-02T11:50:14.092Z",
+      "asset": "MEDS",
+      "title": "Research: MEDS pharmacy revenue surge is offset by dilution and balance-sheet risk",
+      "summary": "DataMeds AI reported preliminary unaudited September 2026 revenue above $1 million at Corexa Pharmacy, more than 66% above July. MEDS closed October 1 at $4.06 after a 28.08% gain and was roughly 310% higher over one month; a delayed premarket snapshot then showed a 6.16% pullback on elevated activity. No paper entry qualifies because the move is extremely extended, the company has substantial financing, warrant, convertible-note and reverse-split history, and reliable executable spread, current structure, social and insider checks were unavailable.",
+      "reasons": [
+        "Issuer source reports preliminary unaudited September revenue above $1 million, more than 66% above July.",
+        "October 1 price action confirmed strong attention, but the approximately 310% one-month advance creates major extension and reversal risk.",
+        "The SEC registration statement documents warrants, placement-agent warrants, multiple note financings and registration-rights obligations.",
+        "FY2025 losses, negative gross margin, negative operating cash flow and a very low current ratio materially weaken catalyst quality."
+      ],
+      "href": "https://company-998106.suite.accessnewswire.com/",
+      "missingData": [
+        "Reliable current executable bid, ask, spread, volume and technical structure.",
+        "Complete current cap table, warrant and note-conversion overhang, and remaining dilution capacity.",
+        "Spam-filtered X/Twitter unique-author acceleration.",
+        "Current insider activity and beneficial-ownership changes.",
+        "Audited confirmation of the preliminary revenue and evidence of positive margin and cash conversion."
+      ],
+      "risk": "Very high. Research only; rejected for entry because the stock is extremely extended and financing, dilution, reverse-split, liquidity and fundamental risks remain substantial.",
+      "details": {
+        "catalyst": {
+          "status": "confirmed issuer announcement; preliminary and unaudited",
+          "announcedAt": "2026-10-01",
+          "metric": "Corexa Pharmacy September 2026 revenue above $1 million",
+          "comparison": "more than 66% above July 2026"
+        },
+        "evidenceSources": [
+          {
+            "name": "DataMeds AI media room",
+            "url": "https://company-998106.suite.accessnewswire.com/",
+            "publishedAt": "2026-10-01",
+            "checkedAt": "2026-10-02T11:50:14.092Z",
+            "status": "checked"
+          },
+          {
+            "name": "DataMeds AI Form S-1",
+            "url": "https://www.sec.gov/Archives/edgar/data/2030763/000149315226036665/forms-1.htm",
+            "checkedAt": "2026-10-02T11:50:14.092Z",
+            "status": "checked"
+          },
+          {
+            "name": "MEDS market and financial overview",
+            "url": "https://www.stocktitan.net/overview/MEDS/",
+            "checkedAt": "2026-10-02T11:50:14.092Z",
+            "status": "checked_delayed_context"
+          }
+        ],
+        "marketSnapshot": {
+          "priorClose": 4.06,
+          "priorDayChangePercent": 28.08,
+          "oneMonthChangePercent": 310.1,
+          "marketCapUsd": 12700000,
+          "premarketChangePercent": -6.16,
+          "volumeMultiple": 4.3,
+          "freshness": "delayed, non-executable context"
+        },
+        "financialRisk": {
+          "fy2025RevenueUsd": 23300000,
+          "fy2025NetLossUsd": 101300000,
+          "grossMarginPercent": -27.5,
+          "operatingCashFlowUsd": -10900000,
+          "currentRatio": 0.09
+        },
+        "verificationStatus": "primary issuer catalyst confirmed; research only; entry rejected",
+        "rejectionReasons": [
+          "approximately 310% one-month extension and negative delayed premarket reversal",
+          "preliminary unaudited revenue rather than audited profitable growth",
+          "documented warrants, placement-agent warrants, convertible-note financings and registration rights",
+          "1-for-50 reverse-split history",
+          "large FY2025 net loss, negative gross margin, negative operating cash flow and current ratio of 0.09",
+          "no reliable current executable quote, spread, full dilution sweep, insider check or spam-filtered social confirmation"
+        ]
+      }
     }
   ],
   "scanners": {
     "penny": {
-      "id": "penny-scan-20261002T111618504Z",
+      "id": "penny-scan-20261002T115014092Z",
       "system": "penny",
-      "startedAt": "2026-10-02T11:15:03.000Z",
-      "checkedAt": "2026-10-02T11:16:18.504Z",
+      "startedAt": "2026-10-02T11:47:39.000Z",
+      "checkedAt": "2026-10-02T11:50:14.092Z",
       "scheduledFor": "2026-10-02T11:00:00.000Z",
       "nextScheduledAt": "2026-10-02T12:00:00.000Z",
       "status": "data_limited",
-      "summary": "No open penny-stock paper trades required management. NSTR still had no reliable post-listing quote, bid/ask spread, volume or opening structure, so the existing research record remained unchanged and no entry was opened; the $30 million PIPE, public warrants and former-SPAC structure remain material dilution and execution risks. Fresh market-data checks left SOAR at $0.2946 (-11.29%), WKEY at $5.68 (-4.10%), FTHM at $0.38 (-14.52%) and POLA at $1.12 (-9.09%), with no constructive premarket confirmation. SEC EDGAR and FDA were reachable, but a bounded catalyst sweep found no new source-backed microcap setup meeting the research or entry bar. No research, entry, exit or mark event was added.",
+      "summary": "No open penny-stock paper trades required management. A new research-only MEDS catalyst was verified: Corexa Pharmacy reported preliminary unaudited September revenue above $1 million, more than 66% above July. MEDS is rejected for entry because the shares are extremely extended, a delayed premarket snapshot showed reversal risk, filings document substantial warrant, note-financing, registration-rights and reverse-split history, and FY2025 fundamentals were weak. NSTR still lacked a reliable post-listing quote and remained unchanged. One research event was added; no entry, exit or mark was created.",
       "sources": [
         {
-          "name": "Tracked penny-stock market data",
-          "url": "https://finance.yahoo.com/",
-          "checkedAt": "2026-10-02T11:16:18.504Z",
+          "name": "DataMeds AI media room",
+          "url": "https://company-998106.suite.accessnewswire.com/",
+          "checkedAt": "2026-10-02T11:50:14.092Z",
           "status": "checked"
         },
         {
-          "name": "SEC EDGAR filing search",
-          "url": "https://www.sec.gov/edgar/search/",
-          "checkedAt": "2026-10-02T11:16:18.504Z",
+          "name": "DataMeds AI Form S-1",
+          "url": "https://www.sec.gov/Archives/edgar/data/2030763/000149315226036665/forms-1.htm",
+          "checkedAt": "2026-10-02T11:50:14.092Z",
           "status": "checked"
         },
         {
-          "name": "FDA press announcements",
-          "url": "https://www.fda.gov/news-events/fda-newsroom/press-announcements",
-          "checkedAt": "2026-10-02T11:16:18.504Z",
+          "name": "MEDS market and financial overview",
+          "url": "https://www.stocktitan.net/overview/MEDS/",
+          "checkedAt": "2026-10-02T11:50:14.092Z",
           "status": "checked"
         },
         {
           "name": "Reliable NSTR post-listing quote and volume",
           "url": "https://finance.yahoo.com/quote/NSTR/",
-          "checkedAt": "2026-10-02T11:16:18.504Z",
+          "checkedAt": "2026-10-02T11:50:14.092Z",
           "status": "unavailable"
         },
         {
           "name": "Complete real-time dilution and insider sweep",
           "url": "https://www.sec.gov/edgar/search/",
-          "checkedAt": "2026-10-02T11:16:18.504Z",
+          "checkedAt": "2026-10-02T11:50:14.092Z",
           "status": "unavailable"
         },
         {
           "name": "Spam-filtered X unique-author acceleration",
           "url": "https://x.com/",
-          "checkedAt": "2026-10-02T11:16:18.504Z",
+          "checkedAt": "2026-10-02T11:50:14.092Z",
           "status": "unavailable"
         }
       ],
       "missingData": [
-        "Reliable NSTR price, bid, ask, spread, volume and opening-range structure remain unavailable.",
-        "Post-closing NSTR free float, PIPE resale timing, lockups and full warrant overhang were not fully verified.",
-        "A complete real-time universe-wide S-1/S-3/424B/ATM/PIPE/warrant/convertible and insider review was unavailable.",
-        "Spam-filtered X/Twitter unique-author acceleration was unavailable.",
-        "Complete current insider-activity and official short-interest context was unavailable.",
-        "Complete real-time microcap-universe coverage was unavailable."
+        "Reliable current executable MEDS bid, ask, spread, full-session relative volume and technical structure.",
+        "Complete current MEDS and NSTR cap-table, warrant, convertible, ATM and resale-registration exposure.",
+        "Reliable NSTR post-listing price, spread, volume and opening-range structure.",
+        "Spam-filtered X/Twitter unique-author acceleration.",
+        "Complete current insider activity and official short-interest context.",
+        "Complete real-time microcap-universe coverage."
       ],
       "counts": {
-        "research": 0,
+        "research": 1,
         "entries": 0,
         "exits": 0
       },
@@ -16598,6 +16676,70 @@
       },
       "deliveryDiagnostics": {
         "repair20260928ReportedAt": "2026-09-28T00:50:48.883Z"
+      }
+    },
+    {
+      "id": "penny-scan-20261002T115014092Z",
+      "system": "penny",
+      "startedAt": "2026-10-02T11:47:39.000Z",
+      "checkedAt": "2026-10-02T11:50:14.092Z",
+      "scheduledFor": "2026-10-02T11:00:00.000Z",
+      "nextScheduledAt": "2026-10-02T12:00:00.000Z",
+      "status": "data_limited",
+      "summary": "No open penny-stock paper trades required management. A new research-only MEDS catalyst was verified: Corexa Pharmacy reported preliminary unaudited September revenue above $1 million, more than 66% above July. MEDS is rejected for entry because the shares are extremely extended, a delayed premarket snapshot showed reversal risk, filings document substantial warrant, note-financing, registration-rights and reverse-split history, and FY2025 fundamentals were weak. NSTR still lacked a reliable post-listing quote and remained unchanged. One research event was added; no entry, exit or mark was created.",
+      "sources": [
+        {
+          "name": "DataMeds AI media room",
+          "url": "https://company-998106.suite.accessnewswire.com/",
+          "checkedAt": "2026-10-02T11:50:14.092Z",
+          "status": "checked"
+        },
+        {
+          "name": "DataMeds AI Form S-1",
+          "url": "https://www.sec.gov/Archives/edgar/data/2030763/000149315226036665/forms-1.htm",
+          "checkedAt": "2026-10-02T11:50:14.092Z",
+          "status": "checked"
+        },
+        {
+          "name": "MEDS market and financial overview",
+          "url": "https://www.stocktitan.net/overview/MEDS/",
+          "checkedAt": "2026-10-02T11:50:14.092Z",
+          "status": "checked"
+        },
+        {
+          "name": "Reliable NSTR post-listing quote and volume",
+          "url": "https://finance.yahoo.com/quote/NSTR/",
+          "checkedAt": "2026-10-02T11:50:14.092Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "Complete real-time dilution and insider sweep",
+          "url": "https://www.sec.gov/edgar/search/",
+          "checkedAt": "2026-10-02T11:50:14.092Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "Spam-filtered X unique-author acceleration",
+          "url": "https://x.com/",
+          "checkedAt": "2026-10-02T11:50:14.092Z",
+          "status": "unavailable"
+        }
+      ],
+      "missingData": [
+        "Reliable current executable MEDS bid, ask, spread, full-session relative volume and technical structure.",
+        "Complete current MEDS and NSTR cap-table, warrant, convertible, ATM and resale-registration exposure.",
+        "Reliable NSTR post-listing price, spread, volume and opening-range structure.",
+        "Spam-filtered X/Twitter unique-author acceleration.",
+        "Complete current insider activity and official short-interest context.",
+        "Complete real-time microcap-universe coverage."
+      ],
+      "counts": {
+        "research": 1,
+        "entries": 0,
+        "exits": 0
+      },
+      "deliveryDiagnostics": {
+        "repair20260928ReportedAt": "2026-09-28T01:47:21.040Z"
       }
     }
   ]
