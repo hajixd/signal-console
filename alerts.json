@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-10-02T14:50:29.414Z",
+  "updatedAt": "2026-10-02T15:11:00.477Z",
   "alerts": [
     {
       "id": "options-bb-fy27q2-20260924",
@@ -2265,44 +2265,44 @@
       }
     },
     "futures": {
-      "id": "futures-scan-20261002142519080",
+      "id": "futures-scan-20261002151026214",
       "system": "futures",
-      "startedAt": "2026-10-02T14:25:19.080Z",
-      "checkedAt": "2026-10-02T14:26:21.104Z",
-      "scheduledFor": "2026-10-02T14:00:00.000Z",
-      "nextScheduledAt": "2026-10-02T15:00:00.000Z",
+      "startedAt": "2026-10-02T15:10:26.214Z",
+      "checkedAt": "2026-10-02T15:11:00.477Z",
+      "scheduledFor": "2026-10-02T15:00:00.000Z",
+      "nextScheduledAt": "2026-10-02T16:00:00.000Z",
       "status": "data_limited",
-      "summary": "One material research update was published and no paper entry was opened. There are no open futures positions. Gold reversed the prior bearish watch after weak payrolls pushed yields and the dollar lower; benchmark U.S. gold futures gained about 1.2% to $4,254.10. U.S. equities also held a positive post-release reaction and WTI remained weak, but no exact micro contract had a non-delayed quote no older than five minutes, verified live spread/liquidity, confirmed break/retest, source-verified margin or complete tick-aligned risk levels. Gold is now a conditional MGCZ26 long watch; MNQ and WTI watches remain research-only.",
+      "summary": "No new futures entry or material research update. There are no open futures paper positions. The post-payroll equity and gold rallies continued in broader market reporting, while oil remained weak, but this did not add exact-micro confirmation beyond the already published MNQ and MGC watches. No MNQZ26, MESZ26, MGCZ26 or MCLX26 source provided a non-delayed quote no older than five minutes with a verified current spread, depth, volume structure and trigger. The existing MNQ long, MGC long and MCL short watches remain research-only.",
       "sources": [
         {
-          "name": "BLS Employment Situation — September 2026",
-          "url": "https://www.bls.gov/news.release/empsit.htm",
-          "checkedAt": "2026-10-02T14:26:21.104Z",
-          "status": "checked_primary_release"
+          "name": "Reuters global markets post-payroll update",
+          "url": "https://www.reuters.com/world/china/global-markets-wrapup-1-2026-10-02/",
+          "checkedAt": "2026-10-02T15:11:00.477Z",
+          "status": "checked_broader_context_only"
         },
         {
-          "name": "Reuters gold post-payroll update",
-          "url": "https://www.reuters.com/world/india/gold-slips-before-us-payrolls-data-set-second-weekly-loss-2026-10-02/",
-          "checkedAt": "2026-10-02T14:26:21.104Z",
+          "name": "Reuters Wall Street post-open update",
+          "url": "https://www.reuters.com/business/wall-st-futures-gain-yields-oil-prices-ease-ahead-jobs-report-2026-10-02/",
+          "checkedAt": "2026-10-02T15:11:00.477Z",
+          "status": "checked_broader_context_only"
+        },
+        {
+          "name": "MarketWatch Nasdaq update",
+          "url": "https://www.marketwatch.com/livecoverage/stock-market-today-dow-s-p-500-nasdaq-september-jobs-report/card/nasdaq-heads-for-fresh-record-close-jmWjode4iXnedR3IJcsA",
+          "checkedAt": "2026-10-02T15:11:00.477Z",
+          "status": "checked_cash_index_context_only"
+        },
+        {
+          "name": "Charles Schwab market-open update",
+          "url": "https://www.schwab.com/learn/story/stock-market-update-open",
+          "checkedAt": "2026-10-02T15:11:00.477Z",
           "status": "checked_benchmark_context_only"
         },
         {
-          "name": "AP post-open equity and yield update",
-          "url": "https://apnews.com/article/a2b99562febc21d84955e243c87f5d31",
-          "checkedAt": "2026-10-02T14:26:21.104Z",
-          "status": "checked"
-        },
-        {
-          "name": "CME MCL calendar",
-          "url": "https://www.cmegroup.com/markets/energy/crude-oil/micro-wti-crude-oil.calendar.html",
-          "checkedAt": "2026-10-02T14:26:21.104Z",
-          "status": "checked_calendar_context"
-        },
-        {
-          "name": "Exact micro quote search",
+          "name": "CME delayed quotes",
           "url": "https://www.cmegroup.com/market-data/browse-data/delayed-quotes.html",
-          "checkedAt": "2026-10-02T14:26:21.104Z",
-          "status": "current_five_minute_quotes_unavailable"
+          "checkedAt": "2026-10-02T15:11:00.477Z",
+          "status": "checked_no_qualifying_live_micro_quotes"
         }
       ],
       "missingData": [
@@ -2314,7 +2314,7 @@
       ],
       "counts": {
         "openPositions": 0,
-        "research": 1,
+        "research": 0,
         "entries": 0,
         "exits": 0,
         "marks": 0
@@ -12293,6 +12293,82 @@
       }
     },
     {
+      "id": "options-scan-20261002T145029414Z",
+      "system": "options",
+      "startedAt": "2026-10-02T14:48:24.000Z",
+      "checkedAt": "2026-10-02T14:50:29.414Z",
+      "scheduledFor": "2026-10-02T14:00:00.000Z",
+      "nextScheduledAt": "2026-10-02T15:00:00.000Z",
+      "status": "data_limited",
+      "summary": "No open options paper trades required management. Three existing research setups changed materially: HPE traded at $68.43, up 5.96%, confirming its AI-networking order and raised-outlook catalyst; NKE traded at $33.22, down 5.49% on 58.73 million shares, confirming bearish follow-through but recovering from a $31.32 low; ON traded at $83.14, up 3.82%, but faded from $86.84 while SYNA remained below the revised $123 cash offer. Nasdaq returned no usable option-chain rows for ON, HPE or NKE, and real-time buyer-initiated flow was unavailable, so no exact contract met the quote, delta, Greeks, IV, spread, volume, open-interest and flow gates. Three research updates were written; no entry, exit or mark was created.",
+      "sources": [
+        {
+          "name": "Latest ON, SYNA, HPE, NKE, BB, MRNA and QQQ market data",
+          "url": "https://finance.yahoo.com/",
+          "checkedAt": "2026-10-02T14:50:29.414Z",
+          "status": "checked"
+        },
+        {
+          "name": "onsemi and Synaptics revised merger announcement",
+          "url": "https://www.onsemi.com/company/newsroom/news-and-insights/onsemi-and-synaptics-announce-revised-merger-agreement",
+          "checkedAt": "2026-10-02T14:50:29.414Z",
+          "status": "checked"
+        },
+        {
+          "name": "HPE AI networking and FY2027 outlook disclosure",
+          "url": "https://www.hpe.com/us/en/newsroom/press-release/2026/09/hpe-securities-analyst-meeting-2026.html",
+          "checkedAt": "2026-10-02T14:50:29.414Z",
+          "status": "checked"
+        },
+        {
+          "name": "Nike FY2027 outlook disclosure",
+          "url": "https://investors.nike.com/",
+          "checkedAt": "2026-10-02T14:50:29.414Z",
+          "status": "checked"
+        },
+        {
+          "name": "Nasdaq ON option chain",
+          "url": "https://www.nasdaq.com/market-activity/stocks/on/option-chain",
+          "checkedAt": "2026-10-02T14:50:29.414Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "Nasdaq HPE option chain",
+          "url": "https://www.nasdaq.com/market-activity/stocks/hpe/option-chain",
+          "checkedAt": "2026-10-02T14:50:29.414Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "Nasdaq NKE option chain",
+          "url": "https://www.nasdaq.com/market-activity/stocks/nke/option-chain",
+          "checkedAt": "2026-10-02T14:50:29.414Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "Complete real-time unusual-options flow",
+          "url": "https://www.cboe.com/us/options/market_statistics/",
+          "checkedAt": "2026-10-02T14:50:29.414Z",
+          "status": "unavailable"
+        }
+      ],
+      "missingData": [
+        "exact 21-60 DTE bid, ask and midpoint for ON, HPE and NKE",
+        "verified delta and remaining Greeks",
+        "current IV rank and term structure",
+        "contract volume, open interest and executable spread quality",
+        "buyer-initiated opening-flow confirmation",
+        "complete real-time universe-wide unusual-options-flow coverage"
+      ],
+      "counts": {
+        "research": 3,
+        "entries": 0,
+        "exits": 0
+      },
+      "deliveryDiagnostics": {
+        "repair20260928ReportedAt": "2026-09-28T00:50:48.883Z"
+      }
+    },
+    {
       "id": "futures-scan-20260927203939926",
       "system": "futures",
       "startedAt": "2026-09-27T20:39:39.926Z",
@@ -17574,79 +17650,62 @@
       }
     },
     {
-      "id": "options-scan-20261002T145029414Z",
-      "system": "options",
-      "startedAt": "2026-10-02T14:48:24.000Z",
-      "checkedAt": "2026-10-02T14:50:29.414Z",
-      "scheduledFor": "2026-10-02T14:00:00.000Z",
-      "nextScheduledAt": "2026-10-02T15:00:00.000Z",
+      "id": "futures-scan-20261002151026214",
+      "system": "futures",
+      "startedAt": "2026-10-02T15:10:26.214Z",
+      "checkedAt": "2026-10-02T15:11:00.477Z",
+      "scheduledFor": "2026-10-02T15:00:00.000Z",
+      "nextScheduledAt": "2026-10-02T16:00:00.000Z",
       "status": "data_limited",
-      "summary": "No open options paper trades required management. Three existing research setups changed materially: HPE traded at $68.43, up 5.96%, confirming its AI-networking order and raised-outlook catalyst; NKE traded at $33.22, down 5.49% on 58.73 million shares, confirming bearish follow-through but recovering from a $31.32 low; ON traded at $83.14, up 3.82%, but faded from $86.84 while SYNA remained below the revised $123 cash offer. Nasdaq returned no usable option-chain rows for ON, HPE or NKE, and real-time buyer-initiated flow was unavailable, so no exact contract met the quote, delta, Greeks, IV, spread, volume, open-interest and flow gates. Three research updates were written; no entry, exit or mark was created.",
+      "summary": "No new futures entry or material research update. There are no open futures paper positions. The post-payroll equity and gold rallies continued in broader market reporting, while oil remained weak, but this did not add exact-micro confirmation beyond the already published MNQ and MGC watches. No MNQZ26, MESZ26, MGCZ26 or MCLX26 source provided a non-delayed quote no older than five minutes with a verified current spread, depth, volume structure and trigger. The existing MNQ long, MGC long and MCL short watches remain research-only.",
       "sources": [
         {
-          "name": "Latest ON, SYNA, HPE, NKE, BB, MRNA and QQQ market data",
-          "url": "https://finance.yahoo.com/",
-          "checkedAt": "2026-10-02T14:50:29.414Z",
-          "status": "checked"
+          "name": "Reuters global markets post-payroll update",
+          "url": "https://www.reuters.com/world/china/global-markets-wrapup-1-2026-10-02/",
+          "checkedAt": "2026-10-02T15:11:00.477Z",
+          "status": "checked_broader_context_only"
         },
         {
-          "name": "onsemi and Synaptics revised merger announcement",
-          "url": "https://www.onsemi.com/company/newsroom/news-and-insights/onsemi-and-synaptics-announce-revised-merger-agreement",
-          "checkedAt": "2026-10-02T14:50:29.414Z",
-          "status": "checked"
+          "name": "Reuters Wall Street post-open update",
+          "url": "https://www.reuters.com/business/wall-st-futures-gain-yields-oil-prices-ease-ahead-jobs-report-2026-10-02/",
+          "checkedAt": "2026-10-02T15:11:00.477Z",
+          "status": "checked_broader_context_only"
         },
         {
-          "name": "HPE AI networking and FY2027 outlook disclosure",
-          "url": "https://www.hpe.com/us/en/newsroom/press-release/2026/09/hpe-securities-analyst-meeting-2026.html",
-          "checkedAt": "2026-10-02T14:50:29.414Z",
-          "status": "checked"
+          "name": "MarketWatch Nasdaq update",
+          "url": "https://www.marketwatch.com/livecoverage/stock-market-today-dow-s-p-500-nasdaq-september-jobs-report/card/nasdaq-heads-for-fresh-record-close-jmWjode4iXnedR3IJcsA",
+          "checkedAt": "2026-10-02T15:11:00.477Z",
+          "status": "checked_cash_index_context_only"
         },
         {
-          "name": "Nike FY2027 outlook disclosure",
-          "url": "https://investors.nike.com/",
-          "checkedAt": "2026-10-02T14:50:29.414Z",
-          "status": "checked"
+          "name": "Charles Schwab market-open update",
+          "url": "https://www.schwab.com/learn/story/stock-market-update-open",
+          "checkedAt": "2026-10-02T15:11:00.477Z",
+          "status": "checked_benchmark_context_only"
         },
         {
-          "name": "Nasdaq ON option chain",
-          "url": "https://www.nasdaq.com/market-activity/stocks/on/option-chain",
-          "checkedAt": "2026-10-02T14:50:29.414Z",
-          "status": "unavailable"
-        },
-        {
-          "name": "Nasdaq HPE option chain",
-          "url": "https://www.nasdaq.com/market-activity/stocks/hpe/option-chain",
-          "checkedAt": "2026-10-02T14:50:29.414Z",
-          "status": "unavailable"
-        },
-        {
-          "name": "Nasdaq NKE option chain",
-          "url": "https://www.nasdaq.com/market-activity/stocks/nke/option-chain",
-          "checkedAt": "2026-10-02T14:50:29.414Z",
-          "status": "unavailable"
-        },
-        {
-          "name": "Complete real-time unusual-options flow",
-          "url": "https://www.cboe.com/us/options/market_statistics/",
-          "checkedAt": "2026-10-02T14:50:29.414Z",
-          "status": "unavailable"
+          "name": "CME delayed quotes",
+          "url": "https://www.cmegroup.com/market-data/browse-data/delayed-quotes.html",
+          "checkedAt": "2026-10-02T15:11:00.477Z",
+          "status": "checked_no_qualifying_live_micro_quotes"
         }
       ],
       "missingData": [
-        "exact 21-60 DTE bid, ask and midpoint for ON, HPE and NKE",
-        "verified delta and remaining Greeks",
-        "current IV rank and term structure",
-        "contract volume, open interest and executable spread quality",
-        "buyer-initiated opening-flow confirmation",
-        "complete real-time universe-wide unusual-options-flow coverage"
+        "Non-delayed exact dated quotes no older than five minutes for MNQZ26, MESZ26, MGCZ26 and MCLX26",
+        "Verified current bid/ask spreads, depth, liquidity and intraday price/volume structure for every micro contract",
+        "Exact expiry/roll and session clearance for every candidate",
+        "Source-verified initial margin per contract and sufficient remaining paper equity",
+        "Observed tick-aligned triggers, invalidations and targets meeting at least 2:1 reward-to-risk and the $100 risk cap"
       ],
       "counts": {
-        "research": 3,
+        "openPositions": 0,
+        "research": 0,
         "entries": 0,
-        "exits": 0
+        "exits": 0,
+        "marks": 0
       },
       "deliveryDiagnostics": {
-        "repair20260928ReportedAt": "2026-09-28T00:50:48.883Z"
+        "repair20260928ReportedAt": "2026-09-28T01:51:49.985Z"
       }
     }
   ]
