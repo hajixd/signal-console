@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-10-02T12:12:34.561Z",
+  "updatedAt": "2026-10-02T13:03:14.549Z",
   "alerts": [
     {
       "id": "options-bb-fy27q2-20260924",
@@ -1790,6 +1790,81 @@
           "no reliable current executable quote, spread, full dilution sweep, insider check or spam-filtered social confirmation"
         ]
       }
+    },
+    {
+      "id": "options-on-syna-revised-merger-20261001",
+      "eventType": "research",
+      "system": "options",
+      "timestamp": "2026-10-02T13:03:14.549Z",
+      "asset": "ON",
+      "title": "Research: ON rises on revised all-cash Synaptics deal",
+      "summary": "onsemi and Synaptics amended their merger to $123 per SYNA share in cash, an aggregate value of approximately $5.7 billion versus the prior approximately $7 billion stock deal. onsemi expects immediate non-GAAP EPS accretion and more value opportunities beyond the previously identified $200 million of annual run-rate synergies. ON was indicated roughly 6-8% higher premarket, while SYNA traded near but below the $123 offer. This is a material bullish ON catalyst, but no paper option entry qualifies before the listed-options session opens because an exact 21-60 DTE contract's executable quote, delta, Greeks, IV, spread, volume, open interest and buyer-initiated flow could not be verified.",
+      "reasons": [
+        "The issuer confirmed the revised $123-per-share all-cash structure and approximately $5.7 billion aggregate value.",
+        "Management expects the revised transaction to be immediately accretive to non-GAAP EPS.",
+        "The companies identified incremental revenue and insourcing opportunities beyond the previously announced $200 million of annual run-rate synergies.",
+        "Premarket reaction was strongly positive for ON, indicating initial shareholder approval of the lower-cost structure."
+      ],
+      "href": "https://www.onsemi.com/company/newsroom/news-and-insights/onsemi-and-synaptics-announce-revised-merger-agreement",
+      "missingData": [
+        "regular-session ON price and volume acceptance after the opening bell",
+        "exact 21-60 DTE ON option bid, ask and midpoint",
+        "verified delta and remaining Greeks",
+        "current IV rank and term structure",
+        "contract volume, open interest and executable spread",
+        "buyer-initiated opening-flow confirmation",
+        "post-jobs-report semiconductor-sector confirmation"
+      ],
+      "risk": "High. Research only. The initial move is a premarket gap; the acquisition remains subject to Synaptics shareholder approval, remaining regulatory approvals and other closing conditions, and onsemi is using committed debt financing.",
+      "details": {
+        "verificationStatus": "issuer and SEC catalyst confirmed; premarket reaction constructive; exact-contract eligibility unavailable",
+        "catalyst": {
+          "announcedAt": "2026-10-01",
+          "target": "Synaptics",
+          "considerationPerShareUsd": 123,
+          "aggregateValueUsd": 5700000000,
+          "structure": "all cash",
+          "expectedClose": "mid-2027",
+          "expectedAccretion": "immediate non-GAAP EPS accretion upon closing",
+          "priorAnnualRunRateSynergiesUsd": 200000000
+        },
+        "marketReaction": {
+          "session": "premarket",
+          "onIndication": "approximately +6% to +8%",
+          "synaIndication": "approximately +14% to +16%, near $121-$123",
+          "quoteReliability": "news-reported premarket indications; no executable option quote"
+        },
+        "evidenceSources": [
+          {
+            "name": "onsemi and Synaptics revised merger announcement",
+            "url": "https://www.onsemi.com/company/newsroom/news-and-insights/onsemi-and-synaptics-announce-revised-merger-agreement",
+            "publishedAt": "2026-10-01",
+            "checkedAt": "2026-10-02T13:03:14.549Z",
+            "status": "checked"
+          },
+          {
+            "name": "Synaptics Form 8-K",
+            "url": "https://www.sec.gov/Archives/edgar/data/817720/000114036126038301/ef20083029_8k.htm",
+            "publishedAt": "2026-10-01",
+            "checkedAt": "2026-10-02T13:03:14.549Z",
+            "status": "checked"
+          },
+          {
+            "name": "Current premarket reaction coverage",
+            "url": "https://www.barrons.com/articles/on-semi-stock-price-synaptics-acquisition-d4148c67",
+            "publishedAt": "2026-10-02",
+            "checkedAt": "2026-10-02T13:03:14.549Z",
+            "status": "checked"
+          }
+        ],
+        "rejectionReasons": [
+          "listed-options session not yet open",
+          "premarket gap may reverse after the opening bell",
+          "Nasdaq provided no usable current ON or SYNA chain rows",
+          "no verified exact-contract quote, Greeks, IV, spread, liquidity or opening flow",
+          "transaction remains subject to shareholder, regulatory and customary closing conditions"
+        ]
+      }
     }
   ],
   "scanners": {
@@ -1858,58 +1933,70 @@
       }
     },
     "options": {
-      "id": "options-scan-20261002T113704091Z",
+      "id": "options-scan-20261002T130314549Z",
       "system": "options",
-      "startedAt": "2026-10-02T11:35:59.000Z",
-      "checkedAt": "2026-10-02T11:37:04.091Z",
-      "scheduledFor": "2026-10-02T11:00:00.000Z",
-      "nextScheduledAt": "2026-10-02T12:00:00.000Z",
+      "startedAt": "2026-10-02T13:00:40.000Z",
+      "checkedAt": "2026-10-02T13:03:14.549Z",
+      "scheduledFor": "2026-10-02T13:00:00.000Z",
+      "nextScheduledAt": "2026-10-02T14:00:00.000Z",
       "status": "market_closed",
-      "summary": "No open options paper trades required management. Premarket indications remained unchanged at $35.15 for NKE (-0.85%), $188.94 for MRNA (-1.83%), $9.18 for BB (+1.49%) and $64.58 for HPE (+1.11%), while QQQ remained at $742.03 (+0.26%). NKE's weak fiscal 2027 outlook and MRNA's October 9 Nasdaq-100 inclusion remain valid research theses, but neither showed material new evidence. Nasdaq again reported the NKE chain unavailable and the MRNA chain request timed out, so no exact 21-60 DTE quote, delta, Greeks, IV, spread, open interest, volume or directional opening flow could be validated. A fresh catalyst sweep found no additional primary-source setup meeting the research bar. No research, entry, exit or mark event was added.",
+      "summary": "No open options paper trades required management. A new research-only catalyst was verified: onsemi revised its Synaptics acquisition to $123 per share in cash, approximately $5.7 billion, and expects immediate non-GAAP EPS accretion plus incremental synergies. ON gained roughly 6-8% premarket and SYNA traded near the offer price, but the listed-options session had not opened and Nasdaq exposed no usable current chain rows, so no exact 21-60 DTE quote, delta, Greeks, IV, spread, open interest, volume or buyer-initiated flow could be validated. Existing NKE, MRNA, BB and HPE research showed no additional material change. One research event was added; no entry, exit or mark was created.",
       "sources": [
         {
-          "name": "Latest NKE, MRNA, BB, HPE and QQQ market data",
+          "name": "onsemi and Synaptics revised merger announcement",
+          "url": "https://www.onsemi.com/company/newsroom/news-and-insights/onsemi-and-synaptics-announce-revised-merger-agreement",
+          "checkedAt": "2026-10-02T13:03:14.549Z",
+          "status": "checked"
+        },
+        {
+          "name": "Synaptics Form 8-K",
+          "url": "https://www.sec.gov/Archives/edgar/data/817720/000114036126038301/ef20083029_8k.htm",
+          "checkedAt": "2026-10-02T13:03:14.549Z",
+          "status": "checked"
+        },
+        {
+          "name": "Latest ON, SYNA, NKE, MRNA, BB, HPE and QQQ market data",
           "url": "https://finance.yahoo.com/",
-          "checkedAt": "2026-10-02T11:37:04.091Z",
+          "checkedAt": "2026-10-02T13:03:14.549Z",
           "status": "checked"
         },
         {
-          "name": "SEC EDGAR catalyst sweep",
+          "name": "Current primary-source catalyst sweep",
           "url": "https://www.sec.gov/edgar/search/",
-          "checkedAt": "2026-10-02T11:37:04.091Z",
+          "checkedAt": "2026-10-02T13:03:14.549Z",
           "status": "checked"
         },
         {
-          "name": "Nasdaq NKE option chain",
-          "url": "https://www.nasdaq.com/market-activity/stocks/nke/option-chain",
-          "checkedAt": "2026-10-02T11:37:04.091Z",
+          "name": "Nasdaq ON option chain",
+          "url": "https://www.nasdaq.com/market-activity/stocks/on/option-chain",
+          "checkedAt": "2026-10-02T13:03:14.549Z",
           "status": "unavailable"
         },
         {
-          "name": "Nasdaq MRNA option chain",
-          "url": "https://www.nasdaq.com/market-activity/stocks/mrna/option-chain",
-          "checkedAt": "2026-10-02T11:37:04.091Z",
+          "name": "Nasdaq SYNA option chain",
+          "url": "https://www.nasdaq.com/market-activity/stocks/syna/option-chain",
+          "checkedAt": "2026-10-02T13:03:14.549Z",
           "status": "unavailable"
         },
         {
           "name": "Complete real-time unusual-options flow",
           "url": "https://www.cboe.com/us/options/market_statistics/",
-          "checkedAt": "2026-10-02T11:37:04.091Z",
+          "checkedAt": "2026-10-02T13:03:14.549Z",
           "status": "unavailable"
         }
       ],
       "missingData": [
-        "executable listed-options quotes while the U.S. options market is closed",
-        "exact 21-60 DTE bid, ask and midpoint for NKE and MRNA",
+        "executable listed-options quotes before the U.S. options market opens",
+        "exact 21-60 DTE ON bid, ask and midpoint",
         "verified delta and remaining Greeks",
         "current IV rank and term structure",
         "contract volume, open interest and executable spread quality",
         "buyer-initiated opening-flow confirmation",
-        "next-session price and volume acceptance or rejection",
+        "regular-session price and volume acceptance after the opening bell",
         "complete real-time universe-wide unusual-options-flow coverage"
       ],
       "counts": {
-        "research": 0,
+        "research": 1,
         "entries": 0,
         "exits": 0
       },
@@ -16889,6 +16976,78 @@
       },
       "deliveryDiagnostics": {
         "repair20260928ReportedAt": "2026-09-28T01:51:49.985Z"
+      }
+    },
+    {
+      "id": "options-scan-20261002T130314549Z",
+      "system": "options",
+      "startedAt": "2026-10-02T13:00:40.000Z",
+      "checkedAt": "2026-10-02T13:03:14.549Z",
+      "scheduledFor": "2026-10-02T13:00:00.000Z",
+      "nextScheduledAt": "2026-10-02T14:00:00.000Z",
+      "status": "market_closed",
+      "summary": "No open options paper trades required management. A new research-only catalyst was verified: onsemi revised its Synaptics acquisition to $123 per share in cash, approximately $5.7 billion, and expects immediate non-GAAP EPS accretion plus incremental synergies. ON gained roughly 6-8% premarket and SYNA traded near the offer price, but the listed-options session had not opened and Nasdaq exposed no usable current chain rows, so no exact 21-60 DTE quote, delta, Greeks, IV, spread, open interest, volume or buyer-initiated flow could be validated. Existing NKE, MRNA, BB and HPE research showed no additional material change. One research event was added; no entry, exit or mark was created.",
+      "sources": [
+        {
+          "name": "onsemi and Synaptics revised merger announcement",
+          "url": "https://www.onsemi.com/company/newsroom/news-and-insights/onsemi-and-synaptics-announce-revised-merger-agreement",
+          "checkedAt": "2026-10-02T13:03:14.549Z",
+          "status": "checked"
+        },
+        {
+          "name": "Synaptics Form 8-K",
+          "url": "https://www.sec.gov/Archives/edgar/data/817720/000114036126038301/ef20083029_8k.htm",
+          "checkedAt": "2026-10-02T13:03:14.549Z",
+          "status": "checked"
+        },
+        {
+          "name": "Latest ON, SYNA, NKE, MRNA, BB, HPE and QQQ market data",
+          "url": "https://finance.yahoo.com/",
+          "checkedAt": "2026-10-02T13:03:14.549Z",
+          "status": "checked"
+        },
+        {
+          "name": "Current primary-source catalyst sweep",
+          "url": "https://www.sec.gov/edgar/search/",
+          "checkedAt": "2026-10-02T13:03:14.549Z",
+          "status": "checked"
+        },
+        {
+          "name": "Nasdaq ON option chain",
+          "url": "https://www.nasdaq.com/market-activity/stocks/on/option-chain",
+          "checkedAt": "2026-10-02T13:03:14.549Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "Nasdaq SYNA option chain",
+          "url": "https://www.nasdaq.com/market-activity/stocks/syna/option-chain",
+          "checkedAt": "2026-10-02T13:03:14.549Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "Complete real-time unusual-options flow",
+          "url": "https://www.cboe.com/us/options/market_statistics/",
+          "checkedAt": "2026-10-02T13:03:14.549Z",
+          "status": "unavailable"
+        }
+      ],
+      "missingData": [
+        "executable listed-options quotes before the U.S. options market opens",
+        "exact 21-60 DTE ON bid, ask and midpoint",
+        "verified delta and remaining Greeks",
+        "current IV rank and term structure",
+        "contract volume, open interest and executable spread quality",
+        "buyer-initiated opening-flow confirmation",
+        "regular-session price and volume acceptance after the opening bell",
+        "complete real-time universe-wide unusual-options-flow coverage"
+      ],
+      "counts": {
+        "research": 1,
+        "entries": 0,
+        "exits": 0
+      },
+      "deliveryDiagnostics": {
+        "repair20260928ReportedAt": "2026-09-28T00:50:48.883Z"
       }
     }
   ]
