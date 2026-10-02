@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-10-02T07:41:52.140Z",
+  "updatedAt": "2026-10-02T07:46:00.370Z",
   "alerts": [
     {
       "id": "options-bb-fy27q2-20260924",
@@ -1680,85 +1680,73 @@
       }
     },
     "futures": {
-      "id": "futures-scan-20261002071021774",
+      "id": "futures-scan-20261002074442385",
       "system": "futures",
-      "startedAt": "2026-10-02T07:10:21.774Z",
-      "checkedAt": "2026-10-02T07:11:45.033Z",
+      "startedAt": "2026-10-02T07:44:42.385Z",
+      "checkedAt": "2026-10-02T07:46:00.370Z",
       "scheduledFor": "2026-10-02T07:00:00.000Z",
       "nextScheduledAt": "2026-10-02T08:00:00.000Z",
       "status": "data_limited",
-      "summary": "No new futures entry or material research event. There are no open futures paper positions. Delayed MGCZ26 data continued above settlement, with eSignal at 4,225.00 and MarketWatch at 4,218.70; this reinforces the already-published invalidation of the bearish gold watch but does not establish a new long setup. Delayed MNQZ26 and MESZ26 were positive, while MCLX26 remained unavailable. No contract had a non-delayed five-minute quote, verified bid/ask, live structure, roll clearance or source-verified margin. The October 2 Employment Situation at 8:30 a.m. ET remains the next major event-risk gate.",
+      "summary": "No new futures entry or material research event. There are no open futures paper positions. Delayed MGCZ26 was 4,211.90 at 3:00 a.m. ET, still above its 4,202.30 settlement; that continues to support the already-published invalidation of the bearish gold watch but does not establish a long setup. Delayed MNQZ26 remained positive, MESZ26 was stale, and MCLX26 had no current executable quote; broader WTI reporting also showed mixed supply signals and a pullback. No contract had a non-delayed five-minute quote, verified current bid/ask, live structure, roll clearance or source-verified margin. The October 2 Employment Situation at 8:30 a.m. ET remains the next major event-risk gate.",
       "sources": [
         {
           "name": "CME trading hours",
           "url": "https://www.cmegroup.com/trading-hours.html",
-          "checkedAt": "2026-10-02T07:11:45.033Z",
+          "checkedAt": "2026-10-02T07:46:00.370Z",
           "status": "checked_session_open_expected"
         },
         {
           "name": "eSignal MNQ futures board",
           "url": "https://quotes.esignal.com/esignalprod/quote.action?symbol=MNQ",
-          "checkedAt": "2026-10-02T07:11:45.033Z",
+          "checkedAt": "2026-10-02T07:46:00.370Z",
           "status": "checked_stale_delayed_quote_excluded"
         },
         {
           "name": "eSignal MES futures board",
           "url": "https://quotes.esignal.com/esignalprod/quote.action?symbol=MES",
-          "checkedAt": "2026-10-02T07:11:45.033Z",
+          "checkedAt": "2026-10-02T07:46:00.370Z",
           "status": "checked_stale_delayed_quote_excluded"
-        },
-        {
-          "name": "eSignal MGC futures board",
-          "url": "https://quotes.esignal.com/esignalprod/quote.action?symbol=MGC",
-          "checkedAt": "2026-10-02T07:11:45.033Z",
-          "status": "checked_delayed_context_only"
-        },
-        {
-          "name": "eSignal MCL futures board",
-          "url": "https://quotes.esignal.com/esignalprod/quote.action?symbol=MCL",
-          "checkedAt": "2026-10-02T07:11:45.033Z",
-          "status": "unavailable"
         },
         {
           "name": "MarketWatch MGCZ26",
           "url": "https://www.marketwatch.com/investing/future/mgcz26",
-          "checkedAt": "2026-10-02T07:11:45.033Z",
+          "checkedAt": "2026-10-02T07:46:00.370Z",
           "status": "checked_delayed_context_only"
+        },
+        {
+          "name": "CME Micro WTI",
+          "url": "https://www.cmegroup.com/markets/energy/crude-oil/micro-wti-crude-oil.html",
+          "checkedAt": "2026-10-02T07:46:00.370Z",
+          "status": "checked_stale_quote_excluded"
         },
         {
           "name": "BLS October 2026 release calendar",
           "url": "https://www.bls.gov/schedule/2026/10_sched.htm",
-          "checkedAt": "2026-10-02T07:11:45.033Z",
-          "status": "checked"
-        },
-        {
-          "name": "BEA release schedule",
-          "url": "https://www.bea.gov/news/schedule",
-          "checkedAt": "2026-10-02T07:11:45.033Z",
-          "status": "checked"
-        },
-        {
-          "name": "Federal Reserve October 2026 calendar",
-          "url": "https://www.federalreserve.gov/newsevents/2026-october.htm",
-          "checkedAt": "2026-10-02T07:11:45.033Z",
+          "checkedAt": "2026-10-02T07:46:00.370Z",
           "status": "checked"
         },
         {
           "name": "EIA Weekly Petroleum Status Report",
           "url": "https://www.eia.gov/petroleum/supply/weekly/",
-          "checkedAt": "2026-10-02T07:11:45.033Z",
+          "checkedAt": "2026-10-02T07:46:00.370Z",
           "status": "checked"
         },
         {
-          "name": "OPEC",
-          "url": "https://www.opec.org/",
-          "checkedAt": "2026-10-02T07:11:45.033Z",
+          "name": "OPEC September 6 production decision",
+          "url": "https://www.opec.org/pr-detail/1835613-6-september-2026.html",
+          "checkedAt": "2026-10-02T07:46:00.370Z",
+          "status": "checked"
+        },
+        {
+          "name": "Federal Reserve October 2026 calendar",
+          "url": "https://www.federalreserve.gov/newsevents/2026-october.htm",
+          "checkedAt": "2026-10-02T07:46:00.370Z",
           "status": "checked"
         }
       ],
       "missingData": [
         "Non-delayed exact dated quotes no older than five minutes for MNQZ26, MESZ26, MGCZ26 and MCLX26",
-        "Verified bid/ask spreads, liquidity and current intraday price/volume structure for every micro contract",
+        "Verified current bid/ask spreads, liquidity and intraday price/volume structure for every micro contract",
         "Exact expiry/roll and session/holiday clearance for every candidate",
         "Source-verified initial margin per contract and sufficient remaining paper equity",
         "Observed tick-aligned triggers, invalidations and targets meeting at least 2:1 reward-to-risk and the $100 risk cap",
@@ -10292,6 +10280,147 @@
       }
     },
     {
+      "id": "meme-scan-20261002T071218Z",
+      "system": "meme",
+      "startedAt": "2026-10-02T07:12:18.000Z",
+      "checkedAt": "2026-10-02T07:13:39.031Z",
+      "scheduledFor": "2026-10-02T07:00:00.000Z",
+      "nextScheduledAt": "2026-10-02T08:00:00.000Z",
+      "status": "data_limited",
+      "summary": "No open meme paper trades required management. OFFICIAL TRUMP displayed $2.09, approximately $260,000 liquidity and a $589.9 million market cap. Its 24-hour decline improved to about 2.33%, but the latest five-minute window remained sell-dominated with 14 sells versus 2 buys and about $443 of sell volume versus less than $1 of buy volume. pSOQ's displayed market cap was approximately $347,000, but executable spread, meaningful participation and tracked-wallet confirmation remained unavailable. IdontPayTaxes and Numero produced no verified two-wallet convergence, while Daumen, Frank DeGods and verified Clukz position persistence remained unavailable. A fresh search found no independently verified new prominent-figure token launch; recycled TRUMP coverage, generic launch promotions and unrelated stablecoin news were rejected. Existing TRUMP and pSOQ research did not change materially. No research, entry, exit or mark event was added.",
+      "sources": [
+        {
+          "name": "DEX Screener OFFICIAL TRUMP/SOL pair",
+          "url": "https://dexscreener.com/solana/6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN",
+          "checkedAt": "2026-10-02T07:13:39.031Z",
+          "status": "checked"
+        },
+        {
+          "name": "DEX Screener pSOQ/SOL pair",
+          "url": "https://dexscreener.com/solana/EM9NyPqcByrz8zBxZUi2LazBTCY2zbVJa49nTXHi3Pq8",
+          "checkedAt": "2026-10-02T07:13:39.031Z",
+          "status": "checked"
+        },
+        {
+          "name": "Official TRUMP Coin Club",
+          "url": "https://gettrumpmemes.com/",
+          "checkedAt": "2026-10-02T07:13:39.031Z",
+          "status": "checked"
+        },
+        {
+          "name": "IdontPayTaxes and Numero wallet comparison",
+          "url": "https://kolexplorer.com/compare/idontpaytaxes-vs-numero",
+          "checkedAt": "2026-10-02T07:13:39.031Z",
+          "status": "checked"
+        },
+        {
+          "name": "Current prominent-figure and Solana launch search",
+          "url": "https://x.com/search",
+          "checkedAt": "2026-10-02T07:13:39.031Z",
+          "status": "checked"
+        },
+        {
+          "name": "Daumen, Frank DeGods and verified Clukz current holdings",
+          "url": "https://kolexplorer.com/",
+          "checkedAt": "2026-10-02T07:13:39.031Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "X live unique-author acceleration and spam filtering",
+          "url": "https://x.com/search",
+          "checkedAt": "2026-10-02T07:13:39.031Z",
+          "status": "unavailable"
+        }
+      ],
+      "missingData": [
+        "fresh executable bid, ask and slippage for pSOQ and TRUMP",
+        "current token-specific holdings and remaining-position percentages for Daumen, Frank DeGods and verified Clukz",
+        "verified two-wallet convergence and greater-than-one-hour persistence",
+        "current deployer, insider, bundler, holder-concentration and wash-trading analysis",
+        "X unique-author mention velocity, acceleration and spam filtering",
+        "current successful credited allocations from the pSOQ migration run list",
+        "current TRUMP insider-wallet transfers and unlock-related selling pressure",
+        "complete real-time coverage of all Solana launches, holders, buyers and liquidity venues"
+      ],
+      "counts": {
+        "research": 0,
+        "entries": 0,
+        "exits": 0
+      },
+      "deliveryDiagnostics": {
+        "repair20260928ReportedAt": "2026-09-28T02:04:42.735Z"
+      }
+    },
+    {
+      "id": "options-scan-20261002T073947Z",
+      "system": "options",
+      "startedAt": "2026-10-02T07:39:47.000Z",
+      "checkedAt": "2026-10-02T07:41:52.140Z",
+      "scheduledFor": "2026-10-02T07:00:00.000Z",
+      "nextScheduledAt": "2026-10-02T08:00:00.000Z",
+      "status": "market_closed",
+      "summary": "No open options paper trades required management. One new research-only setup was published for HPE after the company announced its first AMD Helios order in a $1.2 billion Vultr deal and raised its fiscal 2027 growth framework. HPE closed October 1 at $64.58, up 1.11%, on 16.45 million shares. No paper entry qualified because Nasdaq returned no usable option-chain rows, leaving the exact 21–60 DTE quote, Greeks, IV, spread, volume, open interest and buyer-initiated flow unverified. Existing ACN and SNPS research remained unchanged and too extended for a fresh long-premium entry; BB, COST and SMMT also had no material change. No entry, exit or mark was added.",
+      "sources": [
+        {
+          "name": "October 1 closing market data",
+          "url": "https://finance.yahoo.com/quote/HPE/",
+          "checkedAt": "2026-10-02T07:41:52.140Z",
+          "status": "checked"
+        },
+        {
+          "name": "HPE Investor Relations",
+          "url": "https://investors.hpe.com/",
+          "checkedAt": "2026-10-02T07:41:52.140Z",
+          "status": "checked"
+        },
+        {
+          "name": "HPE fiscal outlook release",
+          "url": "https://investors.hpe.com/~/media/Files/H/HP-Enterprise-IR/documents/q3-2026/q3-2026-earnings-press-release.pdf",
+          "checkedAt": "2026-10-02T07:41:52.140Z",
+          "status": "checked"
+        },
+        {
+          "name": "Accenture fiscal 2026 results",
+          "url": "https://newsroom.accenture.com/news/2026/accenture-reports-fourth-quarter-and-full-year-fiscal-2026-results",
+          "checkedAt": "2026-10-02T07:41:52.140Z",
+          "status": "checked"
+        },
+        {
+          "name": "Synopsys Investor Day materials",
+          "url": "https://investor.synopsys.com/events-and-presentations/default.aspx",
+          "checkedAt": "2026-10-02T07:41:52.140Z",
+          "status": "checked"
+        },
+        {
+          "name": "Nasdaq HPE option chain",
+          "url": "https://www.nasdaq.com/market-activity/stocks/hpe/option-chain",
+          "checkedAt": "2026-10-02T07:41:52.140Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "Complete real-time unusual-options flow",
+          "url": "https://www.cboe.com/us/options/market_statistics/",
+          "checkedAt": "2026-10-02T07:41:52.140Z",
+          "status": "unavailable"
+        }
+      ],
+      "missingData": [
+        "current executable bid, ask and midpoint for an HPE 21–60 DTE contract",
+        "verified HPE option delta, remaining Greeks, IV rank and term structure",
+        "HPE contract volume, open interest, spread quality and buyer-initiated opening flow",
+        "fresh post-open acceptance or rejection of the HPE breakout area",
+        "complete real-time market-wide unusual-options flow"
+      ],
+      "counts": {
+        "research": 1,
+        "entries": 0,
+        "exits": 0
+      },
+      "deliveryDiagnostics": {
+        "repair20260928ReportedAt": "2026-09-28T00:50:48.883Z"
+      }
+    },
+    {
       "id": "futures-scan-20260927203939926",
       "system": "futures",
       "startedAt": "2026-09-27T20:39:39.926Z",
@@ -15029,144 +15158,87 @@
       }
     },
     {
-      "id": "meme-scan-20261002T071218Z",
-      "system": "meme",
-      "startedAt": "2026-10-02T07:12:18.000Z",
-      "checkedAt": "2026-10-02T07:13:39.031Z",
+      "id": "futures-scan-20261002074442385",
+      "system": "futures",
+      "startedAt": "2026-10-02T07:44:42.385Z",
+      "checkedAt": "2026-10-02T07:46:00.370Z",
       "scheduledFor": "2026-10-02T07:00:00.000Z",
       "nextScheduledAt": "2026-10-02T08:00:00.000Z",
       "status": "data_limited",
-      "summary": "No open meme paper trades required management. OFFICIAL TRUMP displayed $2.09, approximately $260,000 liquidity and a $589.9 million market cap. Its 24-hour decline improved to about 2.33%, but the latest five-minute window remained sell-dominated with 14 sells versus 2 buys and about $443 of sell volume versus less than $1 of buy volume. pSOQ's displayed market cap was approximately $347,000, but executable spread, meaningful participation and tracked-wallet confirmation remained unavailable. IdontPayTaxes and Numero produced no verified two-wallet convergence, while Daumen, Frank DeGods and verified Clukz position persistence remained unavailable. A fresh search found no independently verified new prominent-figure token launch; recycled TRUMP coverage, generic launch promotions and unrelated stablecoin news were rejected. Existing TRUMP and pSOQ research did not change materially. No research, entry, exit or mark event was added.",
+      "summary": "No new futures entry or material research event. There are no open futures paper positions. Delayed MGCZ26 was 4,211.90 at 3:00 a.m. ET, still above its 4,202.30 settlement; that continues to support the already-published invalidation of the bearish gold watch but does not establish a long setup. Delayed MNQZ26 remained positive, MESZ26 was stale, and MCLX26 had no current executable quote; broader WTI reporting also showed mixed supply signals and a pullback. No contract had a non-delayed five-minute quote, verified current bid/ask, live structure, roll clearance or source-verified margin. The October 2 Employment Situation at 8:30 a.m. ET remains the next major event-risk gate.",
       "sources": [
         {
-          "name": "DEX Screener OFFICIAL TRUMP/SOL pair",
-          "url": "https://dexscreener.com/solana/6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN",
-          "checkedAt": "2026-10-02T07:13:39.031Z",
+          "name": "CME trading hours",
+          "url": "https://www.cmegroup.com/trading-hours.html",
+          "checkedAt": "2026-10-02T07:46:00.370Z",
+          "status": "checked_session_open_expected"
+        },
+        {
+          "name": "eSignal MNQ futures board",
+          "url": "https://quotes.esignal.com/esignalprod/quote.action?symbol=MNQ",
+          "checkedAt": "2026-10-02T07:46:00.370Z",
+          "status": "checked_stale_delayed_quote_excluded"
+        },
+        {
+          "name": "eSignal MES futures board",
+          "url": "https://quotes.esignal.com/esignalprod/quote.action?symbol=MES",
+          "checkedAt": "2026-10-02T07:46:00.370Z",
+          "status": "checked_stale_delayed_quote_excluded"
+        },
+        {
+          "name": "MarketWatch MGCZ26",
+          "url": "https://www.marketwatch.com/investing/future/mgcz26",
+          "checkedAt": "2026-10-02T07:46:00.370Z",
+          "status": "checked_delayed_context_only"
+        },
+        {
+          "name": "CME Micro WTI",
+          "url": "https://www.cmegroup.com/markets/energy/crude-oil/micro-wti-crude-oil.html",
+          "checkedAt": "2026-10-02T07:46:00.370Z",
+          "status": "checked_stale_quote_excluded"
+        },
+        {
+          "name": "BLS October 2026 release calendar",
+          "url": "https://www.bls.gov/schedule/2026/10_sched.htm",
+          "checkedAt": "2026-10-02T07:46:00.370Z",
           "status": "checked"
         },
         {
-          "name": "DEX Screener pSOQ/SOL pair",
-          "url": "https://dexscreener.com/solana/EM9NyPqcByrz8zBxZUi2LazBTCY2zbVJa49nTXHi3Pq8",
-          "checkedAt": "2026-10-02T07:13:39.031Z",
+          "name": "EIA Weekly Petroleum Status Report",
+          "url": "https://www.eia.gov/petroleum/supply/weekly/",
+          "checkedAt": "2026-10-02T07:46:00.370Z",
           "status": "checked"
         },
         {
-          "name": "Official TRUMP Coin Club",
-          "url": "https://gettrumpmemes.com/",
-          "checkedAt": "2026-10-02T07:13:39.031Z",
+          "name": "OPEC September 6 production decision",
+          "url": "https://www.opec.org/pr-detail/1835613-6-september-2026.html",
+          "checkedAt": "2026-10-02T07:46:00.370Z",
           "status": "checked"
         },
         {
-          "name": "IdontPayTaxes and Numero wallet comparison",
-          "url": "https://kolexplorer.com/compare/idontpaytaxes-vs-numero",
-          "checkedAt": "2026-10-02T07:13:39.031Z",
+          "name": "Federal Reserve October 2026 calendar",
+          "url": "https://www.federalreserve.gov/newsevents/2026-october.htm",
+          "checkedAt": "2026-10-02T07:46:00.370Z",
           "status": "checked"
-        },
-        {
-          "name": "Current prominent-figure and Solana launch search",
-          "url": "https://x.com/search",
-          "checkedAt": "2026-10-02T07:13:39.031Z",
-          "status": "checked"
-        },
-        {
-          "name": "Daumen, Frank DeGods and verified Clukz current holdings",
-          "url": "https://kolexplorer.com/",
-          "checkedAt": "2026-10-02T07:13:39.031Z",
-          "status": "unavailable"
-        },
-        {
-          "name": "X live unique-author acceleration and spam filtering",
-          "url": "https://x.com/search",
-          "checkedAt": "2026-10-02T07:13:39.031Z",
-          "status": "unavailable"
         }
       ],
       "missingData": [
-        "fresh executable bid, ask and slippage for pSOQ and TRUMP",
-        "current token-specific holdings and remaining-position percentages for Daumen, Frank DeGods and verified Clukz",
-        "verified two-wallet convergence and greater-than-one-hour persistence",
-        "current deployer, insider, bundler, holder-concentration and wash-trading analysis",
-        "X unique-author mention velocity, acceleration and spam filtering",
-        "current successful credited allocations from the pSOQ migration run list",
-        "current TRUMP insider-wallet transfers and unlock-related selling pressure",
-        "complete real-time coverage of all Solana launches, holders, buyers and liquidity venues"
+        "Non-delayed exact dated quotes no older than five minutes for MNQZ26, MESZ26, MGCZ26 and MCLX26",
+        "Verified current bid/ask spreads, liquidity and intraday price/volume structure for every micro contract",
+        "Exact expiry/roll and session/holiday clearance for every candidate",
+        "Source-verified initial margin per contract and sufficient remaining paper equity",
+        "Observed tick-aligned triggers, invalidations and targets meeting at least 2:1 reward-to-risk and the $100 risk cap",
+        "Post-Employment-Situation confirmation after October 2 at 8:30 a.m. ET"
       ],
       "counts": {
+        "openPositions": 0,
         "research": 0,
         "entries": 0,
-        "exits": 0
+        "exits": 0,
+        "marks": 0
       },
       "deliveryDiagnostics": {
-        "repair20260928ReportedAt": "2026-09-28T02:04:42.735Z"
-      }
-    },
-    {
-      "id": "options-scan-20261002T073947Z",
-      "system": "options",
-      "startedAt": "2026-10-02T07:39:47.000Z",
-      "checkedAt": "2026-10-02T07:41:52.140Z",
-      "scheduledFor": "2026-10-02T07:00:00.000Z",
-      "nextScheduledAt": "2026-10-02T08:00:00.000Z",
-      "status": "market_closed",
-      "summary": "No open options paper trades required management. One new research-only setup was published for HPE after the company announced its first AMD Helios order in a $1.2 billion Vultr deal and raised its fiscal 2027 growth framework. HPE closed October 1 at $64.58, up 1.11%, on 16.45 million shares. No paper entry qualified because Nasdaq returned no usable option-chain rows, leaving the exact 21–60 DTE quote, Greeks, IV, spread, volume, open interest and buyer-initiated flow unverified. Existing ACN and SNPS research remained unchanged and too extended for a fresh long-premium entry; BB, COST and SMMT also had no material change. No entry, exit or mark was added.",
-      "sources": [
-        {
-          "name": "October 1 closing market data",
-          "url": "https://finance.yahoo.com/quote/HPE/",
-          "checkedAt": "2026-10-02T07:41:52.140Z",
-          "status": "checked"
-        },
-        {
-          "name": "HPE Investor Relations",
-          "url": "https://investors.hpe.com/",
-          "checkedAt": "2026-10-02T07:41:52.140Z",
-          "status": "checked"
-        },
-        {
-          "name": "HPE fiscal outlook release",
-          "url": "https://investors.hpe.com/~/media/Files/H/HP-Enterprise-IR/documents/q3-2026/q3-2026-earnings-press-release.pdf",
-          "checkedAt": "2026-10-02T07:41:52.140Z",
-          "status": "checked"
-        },
-        {
-          "name": "Accenture fiscal 2026 results",
-          "url": "https://newsroom.accenture.com/news/2026/accenture-reports-fourth-quarter-and-full-year-fiscal-2026-results",
-          "checkedAt": "2026-10-02T07:41:52.140Z",
-          "status": "checked"
-        },
-        {
-          "name": "Synopsys Investor Day materials",
-          "url": "https://investor.synopsys.com/events-and-presentations/default.aspx",
-          "checkedAt": "2026-10-02T07:41:52.140Z",
-          "status": "checked"
-        },
-        {
-          "name": "Nasdaq HPE option chain",
-          "url": "https://www.nasdaq.com/market-activity/stocks/hpe/option-chain",
-          "checkedAt": "2026-10-02T07:41:52.140Z",
-          "status": "unavailable"
-        },
-        {
-          "name": "Complete real-time unusual-options flow",
-          "url": "https://www.cboe.com/us/options/market_statistics/",
-          "checkedAt": "2026-10-02T07:41:52.140Z",
-          "status": "unavailable"
-        }
-      ],
-      "missingData": [
-        "current executable bid, ask and midpoint for an HPE 21–60 DTE contract",
-        "verified HPE option delta, remaining Greeks, IV rank and term structure",
-        "HPE contract volume, open interest, spread quality and buyer-initiated opening flow",
-        "fresh post-open acceptance or rejection of the HPE breakout area",
-        "complete real-time market-wide unusual-options flow"
-      ],
-      "counts": {
-        "research": 1,
-        "entries": 0,
-        "exits": 0
-      },
-      "deliveryDiagnostics": {
-        "repair20260928ReportedAt": "2026-09-28T00:50:48.883Z"
+        "repair20260928ReportedAt": "2026-09-28T01:51:49.985Z"
       }
     }
   ]
