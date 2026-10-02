@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-10-02T16:42:41.099Z",
+  "updatedAt": "2026-10-02T17:14:57.710Z",
   "alerts": [
     {
       "id": "options-bb-fy27q2-20260924",
@@ -1381,26 +1381,26 @@
       "id": "options-acn-fy2026-results-20261001",
       "eventType": "research",
       "system": "options",
-      "timestamp": "2026-10-02T06:55:39.336Z",
+      "timestamp": "2026-10-02T17:14:57.710Z",
       "asset": "ACN",
-      "title": "Research: ACN earnings breakout is strong but overextended",
-      "summary": "Accenture reported fourth-quarter revenue above the high end of its guided range with broad-based growth and strong EPS, free-cash-flow and profitability growth. ACN closed October 1 at $212.30, up 16.01%, after reaching $227.48 on 28.99 million shares. The catalyst and volume are material, but the stock faded well off the high and is too extended for a disciplined long-premium entry without a retest and complete contract verification.",
+      "title": "Research update: ACN fails next-session breakout acceptance",
+      "summary": "Accenture's fiscal 2026 results remain source-verified, but the post-earnings breakout failed next-session acceptance. ACN traded at $201.51, down 5.08%, after falling to $200.39 on 5.95 million shares, reversing a substantial portion of the prior 16.01% surge from the $212.30 close. This weakens the bullish continuation thesis. No bearish or bullish paper option entry qualifies because the move is volatile and usable exact-contract quotes, Greeks, IV/term structure, spread, volume, open interest and buyer-initiated opening flow remain unavailable.",
       "reasons": [
-        "Primary-source fiscal 2026 results confirm revenue above the high end of guidance and broad-based growth.",
-        "The 16.01% gain on approximately 28.99 million shares confirms a material institutional price reaction.",
-        "The close was roughly 6.7% below the session high, showing meaningful intraday giveback after a very large gap.",
-        "No exact contract can qualify because Nasdaq returned no usable option-chain rows after the close."
+        "The fiscal 2026 results catalyst remains source-verified.",
+        "ACN fell to $201.51, down 5.08%, after touching $200.39.",
+        "The decline materially retraced the prior session's 16.01% earnings surge.",
+        "Next-session price acceptance failed, while exact-contract eligibility remains unverified."
       ],
       "href": "https://newsroom.accenture.com/news/2026/accenture-reports-fourth-quarter-and-full-year-fiscal-2026-results",
       "missingData": [
-        "Exact 21–60 DTE bid, ask and midpoint from an executable market",
-        "Verified delta and remaining Greeks",
-        "Current implied volatility, IV rank and term structure",
-        "Contract volume, open interest and executable spread quality",
-        "Directional buyer-initiated opening-flow confirmation",
-        "Next-session price acceptance after the large catalyst gap"
+        "exact current 21–60 DTE bid, ask and midpoint",
+        "verified 0.55–0.75 absolute delta and remaining Greeks",
+        "current IV rank and term structure after earnings",
+        "contract volume, open interest and executable spread quality",
+        "buyer-initiated opening-flow confirmation",
+        "evidence of stabilization, support acceptance or continued bearish follow-through"
       ],
-      "risk": "High near-term chase risk after a 16% one-day move. A bullish swing setup requires consolidation or a controlled retest plus verified option liquidity, IV and directional flow.",
+      "risk": "Research only. The next-session reversal weakens the bullish setup, but the post-earnings tape is volatile and neither direction qualifies without current contract pricing, IV, Greeks, liquidity and directional-flow confirmation.",
       "details": {
         "catalyst": "Fourth-quarter and full-year fiscal 2026 results",
         "catalystDate": "2026-10-01",
@@ -1432,12 +1432,38 @@
             "status": "unavailable"
           }
         ],
-        "verificationStatus": "Underlying catalyst and market reaction verified; exact option eligibility unverified.",
+        "verificationStatus": "primary catalyst verified; next-session breakout acceptance failed; exact-contract eligibility unavailable",
         "rejectionReasons": [
           "Underlying advanced 16.01% in one session",
           "Substantial fade from the $227.48 high",
           "No usable option-chain rows",
-          "IV, Greeks, spread, OI, volume and directional flow unavailable"
+          "IV, Greeks, spread, OI, volume and directional flow unavailable",
+          "next-session breakout acceptance failed",
+          "post-earnings volatility remains elevated",
+          "Nasdaq option chain unavailable",
+          "Cboe delayed chain could not be reliably extracted",
+          "no verified current exact-contract quote, Greeks, IV, liquidity or directional flow"
+        ],
+        "marketReaction": {
+          "session": "regular",
+          "price": 201.51,
+          "changePercent": -5.08243,
+          "open": 211.31,
+          "high": 213.61,
+          "low": 200.39,
+          "volume": 5954169,
+          "marketCap": 124048227848,
+          "quoteTimestamp": "2026-10-02T16:57:47Z",
+          "status": "material next-session reversal after the prior 16.01% earnings surge"
+        },
+        "evidenceSources": [
+          {
+            "name": "ACN October 2 late-morning market data",
+            "url": "https://finance.yahoo.com/quote/ACN/",
+            "publishedAt": "2026-10-02T16:57:47Z",
+            "checkedAt": "2026-10-02T17:14:57.710Z",
+            "status": "checked"
+          }
         ]
       }
     },
@@ -1514,29 +1540,26 @@
       "id": "options-hpe-networking-ai-investor-day-20260930",
       "eventType": "research",
       "system": "options",
-      "timestamp": "2026-10-02T14:50:29.414Z",
+      "timestamp": "2026-10-02T17:14:57.710Z",
       "asset": "HPE",
-      "title": "Research update: HPE AI-networking catalyst gains strong confirmation",
-      "summary": "HPE's verified $1.2 billion Vultr/AMD Helios order and raised FY2027 outlook received strong regular-session confirmation. HPE traded at $68.43 at 10:34 a.m. ET, up 5.96%, after reaching $69.19 on 6.22 million shares, materially above the prior $64.58 close. The underlying setup strengthened, but no paper option entry qualifies because Nasdaq's HPE chain is unavailable and exact 21-60 DTE pricing, delta, Greeks, IV, spread, volume, open interest and buyer-initiated opening flow cannot be validated.",
+      "title": "Research update: HPE breakout extends above $70",
+      "summary": "HPE's verified $1.2 billion Vultr/AMD Helios order and raised FY2027 outlook received further regular-session confirmation. HPE traded at $70.09, up 8.53%, after reaching $70.16 on 15.28 million shares. The underlying breakout strengthened materially from the prior $68.43 research snapshot, but the move is extended and no paper option entry qualifies because usable exact-contract quotes, delta, complete Greeks, IV/term structure, spread, volume, open interest and buyer-initiated opening flow remain unavailable.",
       "reasons": [
         "The $1.2 billion order and raised FY2027 outlook remain source-verified.",
-        "HPE traded at $68.43, up 5.96%, after reaching $69.19.",
-        "The move confirms underlying catalyst follow-through.",
-        "Exact-contract liquidity, volatility and opening-flow gates remain unavailable."
+        "HPE advanced to $70.09, up 8.53%, after reaching $70.16.",
+        "Volume increased to approximately 15.28 million shares as the breakout extended.",
+        "The move is now extended and exact-contract eligibility remains unverified."
       ],
       "href": "https://investors.hpe.com/",
       "missingData": [
-        "exact 21–60 DTE bid, ask and midpoint",
-        "delta and other Greeks",
-        "IV, IV rank and term structure",
-        "contract volume, open interest and executable spread",
+        "exact current 21–60 DTE bid, ask and midpoint",
+        "verified 0.55–0.75 absolute delta and remaining Greeks",
+        "current IV rank and term structure",
+        "contract volume, open interest and executable spread quality",
         "buyer-initiated opening-flow confirmation",
-        "next-session acceptance above the recent breakout area",
-        "exact 21-60 DTE bid, ask and midpoint",
-        "verified delta and remaining Greeks",
-        "current IV rank and term structure"
+        "evidence of controlled consolidation or a retest after the 8.53% move"
       ],
-      "risk": "Research only. The underlying breakout is constructive but already extended intraday; entering without a reliable exact-contract quote, volatility profile and liquidity/flow confirmation would violate the scanner rules.",
+      "risk": "Research only. The catalyst and price confirmation are strong, but the underlying is extended after an 8.53% move. Entering without a reliable exact-contract quote, volatility profile, liquidity and flow confirmation would violate the scanner rules.",
       "details": {
         "catalyst": "Networking Investor Day, $1.2 billion Vultr AMD Helios order and raised fiscal 2027 framework",
         "catalystDate": "2026-09-30",
@@ -1581,25 +1604,27 @@
             "status": "unavailable"
           }
         ],
-        "verificationStatus": "primary catalyst verified; material regular-session reaction confirmed; exact-contract eligibility unavailable",
+        "verificationStatus": "primary catalyst verified; breakout extended above $70; exact-contract eligibility unavailable",
         "rejectionReasons": [
           "No usable option-chain rows",
           "IV, Greeks, spread, open interest, volume and flow unavailable",
           "No next-session price acceptance confirmation",
           "Nasdaq option chain unavailable",
-          "no verified current exact-contract quote, Greeks, IV, liquidity or directional flow"
+          "no verified current exact-contract quote, Greeks, IV, liquidity or directional flow",
+          "underlying extended 8.53% in the current session",
+          "Cboe delayed chain could not be reliably extracted"
         ],
         "marketReaction": {
           "session": "regular",
-          "price": 68.43,
-          "changePercent": 5.9616,
+          "price": 70.09,
+          "changePercent": 8.53205,
           "open": 66.19,
-          "high": 69.19,
+          "high": 70.16,
           "low": 65.4,
-          "volume": 6217928,
-          "marketCap": 99155070000,
-          "quoteTimestamp": "2026-10-02T14:34:00Z",
-          "status": "strong catalyst follow-through, but extended and contract-unverified"
+          "volume": 15275026,
+          "marketCap": 101574900000,
+          "quoteTimestamp": "2026-10-02T16:57:13Z",
+          "status": "strong catalyst follow-through, now extended and contract-unverified"
         },
         "evidenceSources": [
           {
@@ -1607,6 +1632,13 @@
             "url": "https://finance.yahoo.com/quote/HPE/",
             "publishedAt": "2026-10-02T14:34:00Z",
             "checkedAt": "2026-10-02T14:50:29.414Z",
+            "status": "checked"
+          },
+          {
+            "name": "HPE October 2 late-morning market data",
+            "url": "https://finance.yahoo.com/quote/HPE/",
+            "publishedAt": "2026-10-02T16:57:13Z",
+            "checkedAt": "2026-10-02T17:14:57.710Z",
             "status": "checked"
           }
         ]
@@ -2255,54 +2287,60 @@
       }
     },
     "options": {
-      "startedAt": "2026-10-02T15:32:47.000Z",
-      "checkedAt": "2026-10-02T15:35:24.137Z",
-      "scheduledFor": "2026-10-02T15:00:00.000Z",
-      "nextScheduledAt": "2026-10-02T16:00:00.000Z",
+      "startedAt": "2026-10-02T17:12:12.000Z",
+      "checkedAt": "2026-10-02T17:14:57.710Z",
+      "scheduledFor": "2026-10-02T17:00:00.000Z",
+      "nextScheduledAt": "2026-10-02T18:00:00.000Z",
       "status": "data_limited",
-      "summary": "No open options paper trades required management. HPE remained strongly higher at $68.87 (+6.64%) after reaching $69.35, NKE remained sharply lower at $32.865 (-6.50%) after rebounding from $31.32, and ON traded at $84.00 (+4.90%) after fading from $86.84. These were continuations of research updates published in the prior scan rather than new material evidence, so no research event was added. Public exact-contract sources still did not provide a fully reliable 21–60 DTE contract with a current executable midpoint, verified 0.55–0.75 absolute delta, complete Greeks, IV/term structure, spread, volume, open interest and buyer-initiated opening flow. No entry, exit or mark was created.",
+      "summary": "No open options paper trades required management. HPE extended its verified AI-networking breakout to $70.09 (+8.53%) after reaching $70.16 on 15.28 million shares, materially strengthening the underlying thesis but leaving it extended. ACN fell to $201.51 (-5.08%) after a $200.39 low, materially retracing the prior 16.01% earnings surge and failing next-session breakout acceptance. BB, SMMT, NKE, ON, SNPS and MRNA showed no comparably material new catalyst change requiring another research update. Nasdaq reported the HPE and ACN option chains unavailable, and Cboe delayed-chain pages could not be reliably extracted; exact 21–60 DTE pricing, delta, complete Greeks, IV/term structure, spread, volume, open interest and buyer-initiated opening flow therefore remained unverified. Two research records were updated; no entry, exit or mark was created.",
       "sources": [
         {
-          "name": "Latest HPE, NKE and ON market data",
+          "name": "Latest HPE and ACN market data",
           "url": "https://finance.yahoo.com/",
-          "checkedAt": "2026-10-02T15:35:24.137Z",
+          "checkedAt": "2026-10-02T17:14:57.710Z",
           "status": "checked"
         },
         {
-          "name": "HPE November 6, 2026 option-chain search",
-          "url": "https://whalequant.io/en/stocks/HPE/options/2026-11-06",
-          "checkedAt": "2026-10-02T15:35:24.137Z",
+          "name": "Nasdaq HPE option chain",
+          "url": "https://www.nasdaq.com/market-activity/stocks/hpe/option-chain",
+          "checkedAt": "2026-10-02T17:14:57.710Z",
           "status": "unavailable"
         },
         {
-          "name": "NKE November 6, 2026 option-chain search",
-          "url": "https://whalequant.io/en/stocks/NKE/options/2026-11-06",
-          "checkedAt": "2026-10-02T15:35:24.137Z",
+          "name": "Nasdaq ACN option chain",
+          "url": "https://www.nasdaq.com/market-activity/stocks/acn/option-chain",
+          "checkedAt": "2026-10-02T17:14:57.710Z",
           "status": "unavailable"
         },
         {
-          "name": "ON delayed option chain",
-          "url": "https://www.cboe.com/delayed_quotes/on/quote_table/",
-          "checkedAt": "2026-10-02T15:35:24.137Z",
+          "name": "Cboe HPE delayed quote table",
+          "url": "https://www.cboe.com/delayed_quotes/hpe/quote_table",
+          "checkedAt": "2026-10-02T17:14:57.710Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "Cboe ACN delayed quote table",
+          "url": "https://www.cboe.com/delayed_quotes/acn/quote_table",
+          "checkedAt": "2026-10-02T17:14:57.710Z",
           "status": "unavailable"
         },
         {
           "name": "Complete real-time unusual-options flow",
           "url": "https://www.cboe.com/us/options/market_statistics/",
-          "checkedAt": "2026-10-02T15:35:24.137Z",
+          "checkedAt": "2026-10-02T17:14:57.710Z",
           "status": "unavailable"
         }
       ],
       "missingData": [
-        "exact current 21-60 DTE bid, ask and midpoint for HPE, NKE and ON",
-        "verified 0.55-0.75 absolute delta and remaining Greeks",
+        "exact current 21–60 DTE bid, ask and midpoint for HPE and ACN",
+        "verified 0.55–0.75 absolute delta and remaining Greeks",
         "current IV rank and term structure",
         "contract volume, open interest and executable spread quality",
         "buyer-initiated opening-flow confirmation",
         "complete real-time universe-wide unusual-options-flow coverage"
       ],
       "counts": {
-        "research": 0,
+        "research": 2,
         "entries": 0,
         "exits": 0
       },
@@ -18327,6 +18365,70 @@
       },
       "deliveryDiagnostics": {
         "repair20260928ReportedAt": "2026-09-28T01:47:21.040Z"
+      }
+    },
+    {
+      "id": "options-scan-20261002T171457710Z",
+      "system": "options",
+      "startedAt": "2026-10-02T17:12:12.000Z",
+      "checkedAt": "2026-10-02T17:14:57.710Z",
+      "scheduledFor": "2026-10-02T17:00:00.000Z",
+      "nextScheduledAt": "2026-10-02T18:00:00.000Z",
+      "status": "data_limited",
+      "summary": "No open options paper trades required management. HPE extended its verified AI-networking breakout to $70.09 (+8.53%) after reaching $70.16 on 15.28 million shares, materially strengthening the underlying thesis but leaving it extended. ACN fell to $201.51 (-5.08%) after a $200.39 low, materially retracing the prior 16.01% earnings surge and failing next-session breakout acceptance. BB, SMMT, NKE, ON, SNPS and MRNA showed no comparably material new catalyst change requiring another research update. Nasdaq reported the HPE and ACN option chains unavailable, and Cboe delayed-chain pages could not be reliably extracted; exact 21–60 DTE pricing, delta, complete Greeks, IV/term structure, spread, volume, open interest and buyer-initiated opening flow therefore remained unverified. Two research records were updated; no entry, exit or mark was created.",
+      "sources": [
+        {
+          "name": "Latest HPE and ACN market data",
+          "url": "https://finance.yahoo.com/",
+          "checkedAt": "2026-10-02T17:14:57.710Z",
+          "status": "checked"
+        },
+        {
+          "name": "Nasdaq HPE option chain",
+          "url": "https://www.nasdaq.com/market-activity/stocks/hpe/option-chain",
+          "checkedAt": "2026-10-02T17:14:57.710Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "Nasdaq ACN option chain",
+          "url": "https://www.nasdaq.com/market-activity/stocks/acn/option-chain",
+          "checkedAt": "2026-10-02T17:14:57.710Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "Cboe HPE delayed quote table",
+          "url": "https://www.cboe.com/delayed_quotes/hpe/quote_table",
+          "checkedAt": "2026-10-02T17:14:57.710Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "Cboe ACN delayed quote table",
+          "url": "https://www.cboe.com/delayed_quotes/acn/quote_table",
+          "checkedAt": "2026-10-02T17:14:57.710Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "Complete real-time unusual-options flow",
+          "url": "https://www.cboe.com/us/options/market_statistics/",
+          "checkedAt": "2026-10-02T17:14:57.710Z",
+          "status": "unavailable"
+        }
+      ],
+      "missingData": [
+        "exact current 21–60 DTE bid, ask and midpoint for HPE and ACN",
+        "verified 0.55–0.75 absolute delta and remaining Greeks",
+        "current IV rank and term structure",
+        "contract volume, open interest and executable spread quality",
+        "buyer-initiated opening-flow confirmation",
+        "complete real-time universe-wide unusual-options-flow coverage"
+      ],
+      "counts": {
+        "research": 2,
+        "entries": 0,
+        "exits": 0
+      },
+      "deliveryDiagnostics": {
+        "repair20260928ReportedAt": "2026-09-28T00:50:48.883Z"
       }
     }
   ]
