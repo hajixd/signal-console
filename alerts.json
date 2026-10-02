@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-10-02T20:11:10.074Z",
+  "updatedAt": "2026-10-02T20:48:49.274Z",
   "alerts": [
     {
       "id": "options-bb-fy27q2-20260924",
@@ -2486,59 +2486,53 @@
       }
     },
     "meme": {
-      "startedAt": "2026-10-02T20:09:10.000Z",
-      "checkedAt": "2026-10-02T20:11:10.074Z",
+      "startedAt": "2026-10-02T20:47:20.000Z",
+      "checkedAt": "2026-10-02T20:48:49.274Z",
       "scheduledFor": "2026-10-02T20:00:00.000Z",
       "nextScheduledAt": "2026-10-02T21:00:00.000Z",
       "status": "data_limited",
-      "summary": "No open meme paper trades required management. TRUMP fell from the prior $2.17 snapshot to $2.01, with six-hour performance at -6.79%, materially reversing its catalyst-day rebound. Displayed liquidity of about $252,000 and 24-hour volume of about $1.0 million passed the practical-mode floors, but the directional trigger failed and the disclosed 80% creator-linked allocation, current holder concentration, liquidity control and measured sell impact remained material blockers. pSOQ displayed about $93,000 liquidity and only $8,200 24-hour volume, failing both mandatory floors. No newly verified prominent-figure token launch or endorsement with an independently confirmed contract was found. One research record was updated; no entry, exit or mark was created.",
+      "summary": "No open meme paper trades required management. TRUMP remained unchanged from the prior material update at a displayed $2.01 with about $252,000 liquidity, $1.0 million 24-hour volume, -6.79% over six hours and -2.29% over 24 hours. It continued to fail entry because the directional trigger was weak and the disclosed 80% creator-linked allocation, current holder concentration, liquidity control and measured sell impact remained unresolved. pSOQ remained below the mandatory liquidity and volume floors. No newly verified prominent-figure launch or endorsement with an independently confirmed contract was found. No research record changed materially; no entry, exit or mark was created.",
       "sources": [
         {
           "name": "DEX Screener OFFICIAL TRUMP/SOL pair",
           "url": "https://dexscreener.com/solana/6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN",
-          "checkedAt": "2026-10-02T20:11:10.074Z",
-          "status": "checked"
-        },
-        {
-          "name": "Official TRUMP gala page",
-          "url": "https://gettrumpmemes.com/gala-dinner",
-          "checkedAt": "2026-10-02T20:11:10.074Z",
-          "status": "checked"
-        },
-        {
-          "name": "Solscan OFFICIAL TRUMP mint page",
-          "url": "https://solscan.io/token/6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN",
-          "checkedAt": "2026-10-02T20:11:10.074Z",
+          "checkedAt": "2026-10-02T20:48:49.274Z",
           "status": "checked"
         },
         {
           "name": "DEX Screener pSOQ/SOL pair",
           "url": "https://dexscreener.com/solana/EM9NyPqcByrz8zBxZUi2LazBTCY2zbVJa49nTXHi3Pq8",
-          "checkedAt": "2026-10-02T20:11:10.074Z",
+          "checkedAt": "2026-10-02T20:48:49.274Z",
+          "status": "checked"
+        },
+        {
+          "name": "Official TRUMP gala page",
+          "url": "https://gettrumpmemes.com/gala-dinner",
+          "checkedAt": "2026-10-02T20:48:49.274Z",
           "status": "checked"
         },
         {
           "name": "Current prominent-figure launch and endorsement search",
           "url": "https://x.com/search",
-          "checkedAt": "2026-10-02T20:11:10.074Z",
+          "checkedAt": "2026-10-02T20:48:49.274Z",
           "status": "checked"
         },
         {
           "name": "Current holder concentration and liquidity-control analysis",
           "url": "https://solscan.io/",
-          "checkedAt": "2026-10-02T20:11:10.074Z",
+          "checkedAt": "2026-10-02T20:48:49.274Z",
           "status": "unavailable"
         },
         {
           "name": "Measured swap impact and sellability quote",
           "url": "https://www.orca.so/",
-          "checkedAt": "2026-10-02T20:11:10.074Z",
+          "checkedAt": "2026-10-02T20:48:49.274Z",
           "status": "unavailable"
         },
         {
           "name": "X unique-author acceleration and spam filtering",
           "url": "https://x.com/search",
-          "checkedAt": "2026-10-02T20:11:10.074Z",
+          "checkedAt": "2026-10-02T20:48:49.274Z",
           "status": "unavailable"
         }
       ],
@@ -2552,7 +2546,7 @@
         "complete real-time Solana token universe coverage"
       ],
       "counts": {
-        "research": 1,
+        "research": 0,
         "entries": 0,
         "exits": 0
       },
@@ -19090,6 +19084,77 @@
       ],
       "counts": {
         "research": 1,
+        "entries": 0,
+        "exits": 0
+      },
+      "deliveryDiagnostics": {
+        "repair20260928ReportedAt": "2026-09-28T02:04:42.735Z"
+      }
+    },
+    {
+      "id": "meme-scan-20261002T204849274Z",
+      "system": "meme",
+      "startedAt": "2026-10-02T20:47:20.000Z",
+      "checkedAt": "2026-10-02T20:48:49.274Z",
+      "scheduledFor": "2026-10-02T20:00:00.000Z",
+      "nextScheduledAt": "2026-10-02T21:00:00.000Z",
+      "status": "data_limited",
+      "summary": "No open meme paper trades required management. TRUMP remained unchanged from the prior material update at a displayed $2.01 with about $252,000 liquidity, $1.0 million 24-hour volume, -6.79% over six hours and -2.29% over 24 hours. It continued to fail entry because the directional trigger was weak and the disclosed 80% creator-linked allocation, current holder concentration, liquidity control and measured sell impact remained unresolved. pSOQ remained below the mandatory liquidity and volume floors. No newly verified prominent-figure launch or endorsement with an independently confirmed contract was found. No research record changed materially; no entry, exit or mark was created.",
+      "sources": [
+        {
+          "name": "DEX Screener OFFICIAL TRUMP/SOL pair",
+          "url": "https://dexscreener.com/solana/6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN",
+          "checkedAt": "2026-10-02T20:48:49.274Z",
+          "status": "checked"
+        },
+        {
+          "name": "DEX Screener pSOQ/SOL pair",
+          "url": "https://dexscreener.com/solana/EM9NyPqcByrz8zBxZUi2LazBTCY2zbVJa49nTXHi3Pq8",
+          "checkedAt": "2026-10-02T20:48:49.274Z",
+          "status": "checked"
+        },
+        {
+          "name": "Official TRUMP gala page",
+          "url": "https://gettrumpmemes.com/gala-dinner",
+          "checkedAt": "2026-10-02T20:48:49.274Z",
+          "status": "checked"
+        },
+        {
+          "name": "Current prominent-figure launch and endorsement search",
+          "url": "https://x.com/search",
+          "checkedAt": "2026-10-02T20:48:49.274Z",
+          "status": "checked"
+        },
+        {
+          "name": "Current holder concentration and liquidity-control analysis",
+          "url": "https://solscan.io/",
+          "checkedAt": "2026-10-02T20:48:49.274Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "Measured swap impact and sellability quote",
+          "url": "https://www.orca.so/",
+          "checkedAt": "2026-10-02T20:48:49.274Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "X unique-author acceleration and spam filtering",
+          "url": "https://x.com/search",
+          "checkedAt": "2026-10-02T20:48:49.274Z",
+          "status": "unavailable"
+        }
+      ],
+      "missingData": [
+        "timestamped crypto quote within five minutes suitable for paper execution",
+        "current top-holder concentration and insider transfers",
+        "current liquidity-lock/control evidence",
+        "measured swap price impact and sellability",
+        "named-wallet persistence and convergence (optional enrichment)",
+        "spam-filtered unique-author social acceleration (optional enrichment)",
+        "complete real-time Solana token universe coverage"
+      ],
+      "counts": {
+        "research": 0,
         "entries": 0,
         "exits": 0
       },
