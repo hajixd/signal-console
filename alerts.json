@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-10-01T23:43:08.157Z",
+  "updatedAt": "2026-10-02T00:22:23.311Z",
   "alerts": [
     {
       "id": "options-bb-fy27q2-20260924",
@@ -591,29 +591,28 @@
       "id": "meme-research-psoq-soq-migration-20260929",
       "eventType": "research",
       "system": "meme",
-      "timestamp": "2026-10-01T23:28:35.547Z",
+      "timestamp": "2026-10-02T00:22:23.311Z",
       "asset": "pSOQ / SOQ",
-      "title": "Research update: pSOQ market weakens during migration window",
-      "summary": "The official pSOQ-to-SOQ migration window remains open through October 5, but the displayed market structure weakened materially. DEX Screener showed pSOQ at $0.0003175 with about $68,000 liquidity and a $317,000 market cap, down approximately 64%, 46% and 57%, respectively, from the contextual September 29 snapshot stored in this research record. The page also showed -1.77% over 1 hour, -18.72% over 6 hours and -9.43% over 24 hours, with 24-hour sell volume exceeding buy volume. No entry qualifies because a freshness-guaranteed executable quote, tracked-wallet persistence/convergence, current holder and bundler analysis, and spam-filtered social momentum remain unavailable.",
+      "title": "Research update: pSOQ rebounds on extremely thin activity",
+      "summary": "DEX Screener displayed pSOQ at $0.0004473 with approximately $88,000 liquidity and a $332,000 market cap, a roughly 41% displayed rebound and 29% liquidity recovery from the prior scan. The move lacked meaningful participation: the page showed only one trade and $9 of volume over both the 1-hour and 6-hour windows, and just $4,100 of 24-hour volume. Displayed holders fell to 851 from 866 on the prior page snapshot. This is an illiquid rebound, not verified momentum, and no paper entry qualifies.",
       "reasons": [
-        "The official migration window remains open through October 5, with mainnet block 1 planned for October 8.",
-        "DEX Screener displayed pSOQ at $0.0003175, about 64% below the contextual September 29 snapshot stored in the research record.",
-        "Displayed liquidity fell from approximately $127,000 to $68,000 and displayed market cap fell from approximately $731,000 to $317,000.",
-        "Displayed short-term performance was negative across 1-hour, 6-hour and 24-hour windows, while 24-hour sell volume exceeded buy volume.",
-        "No two-wallet convergence, greater-than-one-hour position persistence, or spam-filtered unique-author acceleration was verified."
+        "Displayed price rebounded about 41% from the prior scan to $0.0004473.",
+        "Displayed liquidity recovered to about $88,000, but remained below the September 29 contextual level.",
+        "Only one trade and $9 of volume appeared in both the 1-hour and 6-hour windows.",
+        "Displayed 24-hour volume was only about $4,100 across 33 transactions.",
+        "Named-wallet persistence, two-wallet convergence, current migration allocations and social-author acceleration remain unverified."
       ],
       "href": "https://soqucoin.org/migration",
       "missingData": [
-        "fresh executable pSOQ bid, ask, last trade and slippage at completion",
+        "fresh executable pSOQ bid, ask and slippage at completion",
         "current token-specific holdings and remaining-position percentages for all five named tracked wallets",
         "verified two-wallet convergence and greater-than-one-hour persistence",
         "current deployer, insider, bundler, holder-concentration and wash-trading analysis",
         "X unique-author mention velocity, acceleration and spam filtering",
         "successful credited allocations from the current official migration run list",
-        "future SOQ mainnet price, liquidity and custody verification",
-        "complete real-time coverage of all Solana launches, holders, buyers and liquidity venues"
+        "future SOQ mainnet price, liquidity and custody verification"
       ],
-      "risk": "Very high. Displayed price, liquidity and market cap deteriorated sharply during an irreversible migration window. The project discloses 9.9% project-controlled supply and 14.85% of the pool LP supply attributable to a project operations wallet at its September 12 measurement. Current wallet convergence, holder concentration, bundler risk, social quality and an executable quote are not verified. Research only; no paper entry.",
+      "risk": "Very high. The displayed rebound occurred on negligible activity and remains vulnerable to slippage and reversal. The current migration allocation list, wallet convergence, holder/bundler safety and social-quality checks remain unavailable. Research only; no paper entry.",
       "details": {
         "chain": "Solana (pSOQ) to Soqucoin mainnet (SOQ)",
         "catalystType": "one-time token migration and mainnet launch",
@@ -672,41 +671,44 @@
         ],
         "marketSnapshot": {
           "source": "DEX Screener pSOQ/SOL pair page",
-          "observedPriceUsd": 0.0003175,
-          "observedLiquidityUsd": 68000,
-          "observedMarketCapUsd": 317000,
-          "priceChange1hPercent": -1.77,
-          "priceChange6hPercent": -18.72,
-          "priceChange24hPercent": -9.43,
-          "volume24hUsd": 17000,
-          "buyVolume24hUsd": 8200,
-          "sellVolume24hUsd": 9000,
-          "buyers24h": 55,
-          "sellers24h": 102,
-          "previousContextualSnapshot": {
-            "observedAt": "2026-09-29T13:56:35.099Z",
-            "priceUsd": 0.0008813,
-            "liquidityUsd": 127000,
-            "marketCapUsd": 731000
+          "observedPriceUsd": 0.0004473,
+          "observedLiquidityUsd": 88000,
+          "observedMarketCapUsd": 332000,
+          "priceChange1hPercent": 1.53,
+          "priceChange6hPercent": 1.53,
+          "priceChange24hPercent": 0.77,
+          "volume1hUsd": 9,
+          "volume6hUsd": 9,
+          "volume24hUsd": 4100,
+          "transactions24h": 33,
+          "buyers24h": 9,
+          "sellers24h": 12,
+          "displayedHolders": 851,
+          "previousScanSnapshot": {
+            "observedAt": "2026-10-01T23:28:35.547Z",
+            "priceUsd": 0.0003175,
+            "liquidityUsd": 68000,
+            "marketCapUsd": 317000,
+            "displayedHolders": 866
           },
-          "changeFromPreviousContextualSnapshot": {
-            "pricePercent": -63.97,
-            "liquidityPercent": -46.46,
-            "marketCapPercent": -56.63
+          "changeFromPreviousScan": {
+            "pricePercent": 40.88,
+            "liquidityPercent": 29.41,
+            "marketCapPercent": 4.73,
+            "holdersChange": -15
           },
-          "freshness": "Displayed values were observed on the accessible DEX Screener pair page at scan completion but were not a guaranteed executable bid/ask quote.",
-          "verificationAt": "2026-10-01T23:28:35.547Z",
-          "currentQuoteStatus": "Unavailable for entry: no freshness-guaranteed executable bid, ask, last trade or slippage."
+          "freshness": "Displayed values observed on the accessible DEX Screener page; not a guaranteed executable bid/ask quote.",
+          "verificationAt": "2026-10-02T00:22:23.311Z",
+          "currentQuoteStatus": "Unavailable for entry: rebound was supported by negligible displayed trade activity and no executable spread or slippage was verified."
         },
         "rejectionReasons": [
-          "displayed price, liquidity and market cap deteriorated materially during the migration window",
+          "displayed rebound occurred on only $9 of 1-hour and 6-hour volume",
+          "24-hour volume remained only about $4,100",
+          "displayed holder count fell versus the prior page snapshot",
           "no verified tracked-wallet persistence or two-wallet convergence",
-          "no freshness-guaranteed executable quote suitable for a paper entry",
-          "no current independent holder, insider, bundler or wash-trading risk report",
-          "no spam-filtered unique-author social acceleration",
+          "no current independent holder, insider, bundler or wash-trading analysis",
           "current official migration allocation list unavailable",
-          "future SOQ mainnet liquidity and price discovery remain unverified",
-          "migration execution is irreversible and subject to screening and exclusion rules"
+          "no spam-filtered unique-author social acceleration"
         ],
         "firstPublishedAt": "2026-09-29T10:43:15.735Z",
         "liveListStatus": {
@@ -770,7 +772,8 @@
             "status": "unavailable",
             "finding": "no current verified holdings or remaining-position percentage obtained"
           }
-        }
+        },
+        "verificationStatus": "official migration terms and mint remain verified; displayed rebound lacks participation; entry gates incomplete"
       }
     },
     {
@@ -1034,6 +1037,126 @@
           "status": "failed continuation"
         }
       }
+    },
+    {
+      "id": "meme-research-trump-coin-club-gala-20261001",
+      "eventType": "research",
+      "system": "meme",
+      "timestamp": "2026-10-02T00:22:23.311Z",
+      "asset": "TRUMP",
+      "title": "Research: Official TRUMP launches new holder-scoring gala campaign",
+      "summary": "The official $TRUMP Coin Club opened a new time-weighted holder campaign tied to a November 22 gala at Trump National Golf Club. The official site says the top 185 registered holders qualify for dinner, the top 29 receive VIP access, and the Gala leaderboard locks November 12. The site publishes Solana contract 6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN; Solscan identifies it as OFFICIAL TRUMP and DEX Screener independently matches the contract. DEX Screener displayed $2.06, approximately $256,000 pool liquidity, $582 million market cap and $1.3 million 24-hour volume. This is a material promotional catalyst but not an entry: price was only +0.82% over 24 hours, no tracked-wallet convergence or spam-filtered social acceleration was verified, and the official site says creator-linked entities control 80% of supply subject to its unlock schedule.",
+      "reasons": [
+        "Official project site confirms a new time-weighted Gala Dinner leaderboard tied to a November 22 event.",
+        "Top 185 holders qualify for dinner, top 29 receive VIP access and the ranking locks November 12.",
+        "Official Solana contract matches Solscan and DEX Screener.",
+        "DEX Screener displayed $2.06, approximately $582 million market cap and $1.3 million 24-hour volume.",
+        "The official page discloses that creator-linked entities collectively control 80% of supply, creating major concentration and unlock risk."
+      ],
+      "href": "https://gettrumpmemes.com/",
+      "missingData": [
+        "fresh executable bid, ask and slippage across major TRUMP liquidity venues",
+        "tracked-wallet persistence and two-wallet convergence among the five named wallets",
+        "spam-filtered X unique-author mention velocity and acceleration",
+        "current insider-wallet transfers and unlock-related selling pressure",
+        "independent holder-concentration and wash-trading analysis",
+        "evidence that the promotional catalyst produces sustained price and buyer continuation rather than a temporary spike"
+      ],
+      "risk": "Very high. This is a promotional memecoin catalyst, not an economic cash-flow catalyst. Creator-linked entities control 80% of supply under the official allocation schedule; the token remains roughly 97% below its historical peak in current reporting. The official terms explicitly say it is not an investment and may change or cancel event benefits. Research only; no paper entry.",
+      "details": {
+        "chain": "Solana",
+        "contractAddress": "6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN",
+        "catalystType": "official holder-leaderboard promotion and gala event",
+        "catalystVerification": {
+          "affiliation": "confirmed official project website operated by Fight Fight Fight LLC under licensed TRUMP branding",
+          "announcementDate": "2026-10-01",
+          "eventDate": "2026-11-22",
+          "scoringWindow": "official site states Gala scoring is active and locks 2026-11-12; accessible page contains conflicting start-date language that requires monitoring",
+          "rewards": "top 185 dinner invitations; top 29 VIP access; further prizes described by official project materials",
+          "exactContract": "confirmed by official site and independently matched by Solscan and DEX Screener",
+          "verificationStatus": "official catalyst and contract verified; market, wallet, social and ownership-risk entry gates incomplete"
+        },
+        "newsSources": [
+          {
+            "name": "Official TRUMP Coin Club",
+            "url": "https://gettrumpmemes.com/",
+            "publishedOrUpdatedAt": "2026-10-01",
+            "checkedAt": "2026-10-02T00:22:23.311Z",
+            "status": "checked"
+          },
+          {
+            "name": "Washington Post gala report",
+            "url": "https://www.washingtonpost.com/politics/2026/10/01/trump-memecoin-plans-another-gala-amid-backlash-self-enrichment/",
+            "publishedOrUpdatedAt": "2026-10-01T20:44:41Z",
+            "checkedAt": "2026-10-02T00:22:23.311Z",
+            "status": "checked"
+          },
+          {
+            "name": "Solscan OFFICIAL TRUMP token page",
+            "url": "https://solscan.io/token/6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN",
+            "checkedAt": "2026-10-02T00:22:23.311Z",
+            "status": "checked"
+          },
+          {
+            "name": "DEX Screener OFFICIAL TRUMP/SOL pair",
+            "url": "https://dexscreener.com/solana/6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN",
+            "checkedAt": "2026-10-02T00:22:23.311Z",
+            "status": "checked"
+          }
+        ],
+        "marketSnapshot": {
+          "source": "DEX Screener OFFICIAL TRUMP/SOL Orca pair",
+          "observedPriceUsd": 2.06,
+          "observedLiquidityUsd": 256000,
+          "observedMarketCapUsd": 582000000,
+          "fdvUsd": 2060000000,
+          "priceChange1hPercent": 0.75,
+          "priceChange6hPercent": 0.04,
+          "priceChange24hPercent": 0.82,
+          "volume24hUsd": 1300000,
+          "buyVolume24hUsd": 683000,
+          "sellVolume24hUsd": 681000,
+          "buyers24h": 1795,
+          "sellers24h": 1952,
+          "displayedHolders": 671003,
+          "verificationAt": "2026-10-02T00:22:23.311Z",
+          "freshness": "Displayed values observed on the accessible DEX Screener page; not a guaranteed executable bid/ask quote."
+        },
+        "ownershipRisk": {
+          "officialDisclosure": "CIC Digital LLC and Fight Fight Fight LLC collectively control 80% of supply, subject to a three-year unlock schedule.",
+          "status": "material concentration and unlock risk; current insider-wallet transfers not independently verified"
+        },
+        "walletChecks": {
+          "idontPayTaxes": {
+            "status": "checked",
+            "finding": "active holdings displayed, but TRUMP was not among the visible holdings and no qualifying persistence was verified"
+          },
+          "numero": {
+            "status": "checked",
+            "finding": "active holdings displayed, but TRUMP was not among the visible holdings and no qualifying persistence was verified"
+          },
+          "daumen": {
+            "status": "unavailable",
+            "finding": "profile fetch timed out this run"
+          },
+          "frankDeGods": {
+            "status": "unavailable",
+            "finding": "current TRUMP position persistence was not obtained"
+          },
+          "clukz": {
+            "status": "unavailable",
+            "finding": "current verified holdings were not obtained"
+          }
+        },
+        "rejectionReasons": [
+          "no named tracked-wallet persistence or two-wallet convergence",
+          "no spam-filtered unique-author social acceleration",
+          "80% creator-linked allocation concentration and unlock risk",
+          "24-hour price response remained modest despite the campaign announcement",
+          "no executable spread or slippage verification",
+          "promotional event benefits may be modified or cancelled under official terms"
+        ]
+      }
     }
   ],
   "scanners": {
@@ -1173,82 +1296,88 @@
       }
     },
     "meme": {
-      "id": "meme-scan-20261001T232625Z",
+      "id": "meme-scan-20261002T002000Z",
       "system": "meme",
-      "startedAt": "2026-10-01T23:26:25.000Z",
-      "checkedAt": "2026-10-01T23:28:35.547Z",
-      "scheduledFor": "2026-10-01T23:00:00.000Z",
-      "nextScheduledAt": "2026-10-02T00:00:00.000Z",
+      "startedAt": "2026-10-02T00:20:00.000Z",
+      "checkedAt": "2026-10-02T00:22:23.311Z",
+      "scheduledFor": "2026-10-02T00:00:00.000Z",
+      "nextScheduledAt": "2026-10-02T01:00:00.000Z",
       "status": "data_limited",
-      "summary": "No open meme paper trades required management. The existing pSOQ/SOQ research record was materially updated after DEX Screener displayed pSOQ at $0.0003175 with approximately $68,000 liquidity and a $317,000 market cap, materially below the contextual September 29 snapshot; displayed 1-hour, 6-hour and 24-hour performance were all negative and 24-hour sell volume exceeded buy volume. Current wallet-profile checks did not verify pSOQ persistence or two-wallet convergence. The official migration terms and mint remain verified, but the current allocation run list and X unique-author momentum were unavailable. Current public-figure discovery found a reported future $TRUMP-holder dinner, not a new token launch, and lacked a qualifying new official-contract catalyst. No entry, exit or mark event was added.",
+      "summary": "No open meme paper trades required management. Two material research items were published. pSOQ displayed a roughly 41% rebound to $0.0004473 and liquidity recovery to about $88,000, but only one trade and $9 of volume appeared in the 1-hour and 6-hour windows, so the move lacked qualifying participation. The official $TRUMP Coin Club launched a new time-weighted holder campaign tied to a November 22 gala; its Solana contract was verified against Solscan and DEX Screener, which displayed $2.06, about $582 million market cap and $1.3 million 24-hour volume. No TRUMP entry qualified because named-wallet convergence, social-author acceleration, executable spread and insider-wallet risk were unverified, while the official site discloses 80% creator-linked supply concentration. No entry, exit or mark event was added.",
       "sources": [
         {
-          "name": "DEX Screener pSOQ/SOL pair page",
+          "name": "DEX Screener pSOQ/SOL pair",
           "url": "https://dexscreener.com/solana/EM9NyPqcByrz8zBxZUi2LazBTCY2zbVJa49nTXHi3Pq8",
-          "checkedAt": "2026-10-01T23:28:35.547Z",
+          "checkedAt": "2026-10-02T00:22:23.311Z",
           "status": "checked"
         },
         {
-          "name": "Soqucoin Foundation transparency and migration terms",
-          "url": "https://soqucoin.org/transparency",
-          "checkedAt": "2026-10-01T23:28:35.547Z",
-          "status": "checked"
-        },
-        {
-          "name": "Soqucoin current provisional allocation list",
+          "name": "Soqucoin current migration allocation list",
           "url": "https://soqucoin.org/migration/list/",
-          "checkedAt": "2026-10-01T23:28:35.547Z",
+          "checkedAt": "2026-10-02T00:22:23.311Z",
           "status": "unavailable"
         },
         {
-          "name": "IdontPayTaxes and Numero tracked-wallet comparison",
+          "name": "IdontPayTaxes and Numero wallet comparison",
           "url": "https://kolexplorer.com/compare/idontpaytaxes-vs-numero",
-          "checkedAt": "2026-10-01T23:28:35.547Z",
+          "checkedAt": "2026-10-02T00:22:23.311Z",
           "status": "checked"
         },
         {
-          "name": "Daumen tracked-wallet profile",
+          "name": "Daumen wallet profile",
           "url": "https://uwuu.ai/trader/8MaVa9kdt3NW4Q5HyNAm1X5LbR8PQRVDc1W8NMVK88D5",
-          "checkedAt": "2026-10-01T23:28:35.547Z",
+          "checkedAt": "2026-10-02T00:22:23.311Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "Official TRUMP Coin Club and contract disclosure",
+          "url": "https://gettrumpmemes.com/",
+          "checkedAt": "2026-10-02T00:22:23.311Z",
           "status": "checked"
         },
         {
-          "name": "Frank DeGods tracked-wallet profile",
-          "url": "https://www.copyfomo.com/traders/frankdegods",
-          "checkedAt": "2026-10-01T23:28:35.547Z",
+          "name": "Solscan OFFICIAL TRUMP token verification",
+          "url": "https://solscan.io/token/6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN",
+          "checkedAt": "2026-10-02T00:22:23.311Z",
           "status": "checked"
         },
         {
-          "name": "Current public-figure meme-coin discovery",
-          "url": "https://www.vox.com/the-logoff-newsletter-trump/504911/trump-memecoin-crypto-dinner-corruption",
-          "checkedAt": "2026-10-01T23:28:35.547Z",
+          "name": "DEX Screener OFFICIAL TRUMP/SOL pair",
+          "url": "https://dexscreener.com/solana/6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN",
+          "checkedAt": "2026-10-02T00:22:23.311Z",
           "status": "checked"
         },
         {
-          "name": "Verified Clukz current holdings",
+          "name": "Washington Post TRUMP gala report",
+          "url": "https://www.washingtonpost.com/politics/2026/10/01/trump-memecoin-plans-another-gala-amid-backlash-self-enrichment/",
+          "checkedAt": "2026-10-02T00:22:23.311Z",
+          "status": "checked"
+        },
+        {
+          "name": "Verified Frank DeGods and Clukz current holdings",
           "url": "https://kolexplorer.com/",
-          "checkedAt": "2026-10-01T23:28:35.547Z",
+          "checkedAt": "2026-10-02T00:22:23.311Z",
           "status": "unavailable"
         },
         {
           "name": "X live unique-author search",
           "url": "https://x.com/search",
-          "checkedAt": "2026-10-01T23:28:35.547Z",
+          "checkedAt": "2026-10-02T00:22:23.311Z",
           "status": "unavailable"
         }
       ],
       "missingData": [
-        "fresh executable pSOQ bid, ask, last trade and slippage at completion",
+        "fresh executable bid, ask and slippage for pSOQ and TRUMP",
         "current token-specific holdings and remaining-position percentages for all five named tracked wallets",
         "verified two-wallet convergence and greater-than-one-hour persistence",
         "current deployer, insider, bundler, holder-concentration and wash-trading analysis",
         "X unique-author mention velocity, acceleration and spam filtering",
-        "successful credited allocations from the current official migration run list",
-        "future SOQ mainnet price, liquidity and custody verification",
+        "successful credited allocations from the current pSOQ migration run list",
+        "current TRUMP insider-wallet transfers and unlock-related selling pressure",
         "complete real-time coverage of all Solana launches, holders, buyers and liquidity venues"
       ],
       "counts": {
-        "research": 1,
+        "research": 2,
         "entries": 0,
         "exits": 0
       },
@@ -12494,6 +12623,96 @@
       },
       "deliveryDiagnostics": {
         "repair20260928ReportedAt": "2026-09-28T01:47:21.040Z"
+      }
+    },
+    {
+      "id": "meme-scan-20261002T002000Z",
+      "system": "meme",
+      "startedAt": "2026-10-02T00:20:00.000Z",
+      "checkedAt": "2026-10-02T00:22:23.311Z",
+      "scheduledFor": "2026-10-02T00:00:00.000Z",
+      "nextScheduledAt": "2026-10-02T01:00:00.000Z",
+      "status": "data_limited",
+      "summary": "No open meme paper trades required management. Two material research items were published. pSOQ displayed a roughly 41% rebound to $0.0004473 and liquidity recovery to about $88,000, but only one trade and $9 of volume appeared in the 1-hour and 6-hour windows, so the move lacked qualifying participation. The official $TRUMP Coin Club launched a new time-weighted holder campaign tied to a November 22 gala; its Solana contract was verified against Solscan and DEX Screener, which displayed $2.06, about $582 million market cap and $1.3 million 24-hour volume. No TRUMP entry qualified because named-wallet convergence, social-author acceleration, executable spread and insider-wallet risk were unverified, while the official site discloses 80% creator-linked supply concentration. No entry, exit or mark event was added.",
+      "sources": [
+        {
+          "name": "DEX Screener pSOQ/SOL pair",
+          "url": "https://dexscreener.com/solana/EM9NyPqcByrz8zBxZUi2LazBTCY2zbVJa49nTXHi3Pq8",
+          "checkedAt": "2026-10-02T00:22:23.311Z",
+          "status": "checked"
+        },
+        {
+          "name": "Soqucoin current migration allocation list",
+          "url": "https://soqucoin.org/migration/list/",
+          "checkedAt": "2026-10-02T00:22:23.311Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "IdontPayTaxes and Numero wallet comparison",
+          "url": "https://kolexplorer.com/compare/idontpaytaxes-vs-numero",
+          "checkedAt": "2026-10-02T00:22:23.311Z",
+          "status": "checked"
+        },
+        {
+          "name": "Daumen wallet profile",
+          "url": "https://uwuu.ai/trader/8MaVa9kdt3NW4Q5HyNAm1X5LbR8PQRVDc1W8NMVK88D5",
+          "checkedAt": "2026-10-02T00:22:23.311Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "Official TRUMP Coin Club and contract disclosure",
+          "url": "https://gettrumpmemes.com/",
+          "checkedAt": "2026-10-02T00:22:23.311Z",
+          "status": "checked"
+        },
+        {
+          "name": "Solscan OFFICIAL TRUMP token verification",
+          "url": "https://solscan.io/token/6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN",
+          "checkedAt": "2026-10-02T00:22:23.311Z",
+          "status": "checked"
+        },
+        {
+          "name": "DEX Screener OFFICIAL TRUMP/SOL pair",
+          "url": "https://dexscreener.com/solana/6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN",
+          "checkedAt": "2026-10-02T00:22:23.311Z",
+          "status": "checked"
+        },
+        {
+          "name": "Washington Post TRUMP gala report",
+          "url": "https://www.washingtonpost.com/politics/2026/10/01/trump-memecoin-plans-another-gala-amid-backlash-self-enrichment/",
+          "checkedAt": "2026-10-02T00:22:23.311Z",
+          "status": "checked"
+        },
+        {
+          "name": "Verified Frank DeGods and Clukz current holdings",
+          "url": "https://kolexplorer.com/",
+          "checkedAt": "2026-10-02T00:22:23.311Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "X live unique-author search",
+          "url": "https://x.com/search",
+          "checkedAt": "2026-10-02T00:22:23.311Z",
+          "status": "unavailable"
+        }
+      ],
+      "missingData": [
+        "fresh executable bid, ask and slippage for pSOQ and TRUMP",
+        "current token-specific holdings and remaining-position percentages for all five named tracked wallets",
+        "verified two-wallet convergence and greater-than-one-hour persistence",
+        "current deployer, insider, bundler, holder-concentration and wash-trading analysis",
+        "X unique-author mention velocity, acceleration and spam filtering",
+        "successful credited allocations from the current pSOQ migration run list",
+        "current TRUMP insider-wallet transfers and unlock-related selling pressure",
+        "complete real-time coverage of all Solana launches, holders, buyers and liquidity venues"
+      ],
+      "counts": {
+        "research": 2,
+        "entries": 0,
+        "exits": 0
+      },
+      "deliveryDiagnostics": {
+        "repair20260928ReportedAt": "2026-09-28T02:04:42.735Z"
       }
     }
   ]
