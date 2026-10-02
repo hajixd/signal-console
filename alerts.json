@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-10-02T06:33:57.636Z",
+  "updatedAt": "2026-10-02T06:55:39.336Z",
   "alerts": [
     {
       "id": "options-bb-fy27q2-20260924",
@@ -1255,6 +1255,139 @@
           "Incomplete dilution and financing-capacity review"
         ]
       }
+    },
+    {
+      "id": "options-acn-fy2026-results-20261001",
+      "eventType": "research",
+      "system": "options",
+      "timestamp": "2026-10-02T06:55:39.336Z",
+      "asset": "ACN",
+      "title": "Research: ACN earnings breakout is strong but overextended",
+      "summary": "Accenture reported fourth-quarter revenue above the high end of its guided range with broad-based growth and strong EPS, free-cash-flow and profitability growth. ACN closed October 1 at $212.30, up 16.01%, after reaching $227.48 on 28.99 million shares. The catalyst and volume are material, but the stock faded well off the high and is too extended for a disciplined long-premium entry without a retest and complete contract verification.",
+      "reasons": [
+        "Primary-source fiscal 2026 results confirm revenue above the high end of guidance and broad-based growth.",
+        "The 16.01% gain on approximately 28.99 million shares confirms a material institutional price reaction.",
+        "The close was roughly 6.7% below the session high, showing meaningful intraday giveback after a very large gap.",
+        "No exact contract can qualify because Nasdaq returned no usable option-chain rows after the close."
+      ],
+      "href": "https://newsroom.accenture.com/news/2026/accenture-reports-fourth-quarter-and-full-year-fiscal-2026-results",
+      "missingData": [
+        "Exact 21–60 DTE bid, ask and midpoint from an executable market",
+        "Verified delta and remaining Greeks",
+        "Current implied volatility, IV rank and term structure",
+        "Contract volume, open interest and executable spread quality",
+        "Directional buyer-initiated opening-flow confirmation",
+        "Next-session price acceptance after the large catalyst gap"
+      ],
+      "risk": "High near-term chase risk after a 16% one-day move. A bullish swing setup requires consolidation or a controlled retest plus verified option liquidity, IV and directional flow.",
+      "details": {
+        "catalyst": "Fourth-quarter and full-year fiscal 2026 results",
+        "catalystDate": "2026-10-01",
+        "marketDataDate": "2026-10-01",
+        "marketMetrics": {
+          "close": 212.3,
+          "dayChangePct": 16.01134,
+          "high": 227.48,
+          "low": 182,
+          "volume": 28986135
+        },
+        "datedEvidenceSources": [
+          {
+            "name": "Accenture official fiscal 2026 results",
+            "url": "https://newsroom.accenture.com/news/2026/accenture-reports-fourth-quarter-and-full-year-fiscal-2026-results",
+            "date": "2026-10-01",
+            "status": "verified"
+          },
+          {
+            "name": "October 1 ACN market data",
+            "url": "https://finance.yahoo.com/quote/ACN/",
+            "date": "2026-10-01",
+            "status": "verified"
+          },
+          {
+            "name": "Nasdaq ACN option chain",
+            "url": "https://www.nasdaq.com/market-activity/stocks/acn/option-chain",
+            "date": "2026-10-01",
+            "status": "unavailable"
+          }
+        ],
+        "verificationStatus": "Underlying catalyst and market reaction verified; exact option eligibility unverified.",
+        "rejectionReasons": [
+          "Underlying advanced 16.01% in one session",
+          "Substantial fade from the $227.48 high",
+          "No usable option-chain rows",
+          "IV, Greeks, spread, OI, volume and directional flow unavailable"
+        ]
+      }
+    },
+    {
+      "id": "options-snps-investor-day-20260930",
+      "eventType": "research",
+      "system": "options",
+      "timestamp": "2026-10-02T06:55:39.336Z",
+      "asset": "SNPS",
+      "title": "Research: SNPS guidance breakout needs a retest",
+      "summary": "Synopsys used its 2026 investor day to project approximately 15% fiscal 2027 revenue growth to an $11.15 billion midpoint, update long-term growth targets and signal roughly $1 billion of intended share repurchases. SNPS closed October 1 at $490.54, up 12.85%, near its $496.87 high on 6.66 million shares. The catalyst and sector thesis are strong, but the move is already extended and no exact option contract could be verified.",
+      "reasons": [
+        "Primary-source investor-day guidance calls for approximately 15% fiscal 2027 revenue growth.",
+        "Management updated long-term targets and intends approximately $1 billion of share repurchases, subject to conditions.",
+        "The 12.85% gain on about 6.66 million shares confirms strong catalyst recognition.",
+        "No exact contract can qualify because Nasdaq returned no usable option-chain rows after the close."
+      ],
+      "href": "https://investor.synopsys.com/news/news-details/2026/Synopsys-Details-Growth-Strategy-and-Long-term-Financial-Model-at-2026-Investor-Day/default.aspx",
+      "missingData": [
+        "Exact 21–60 DTE bid, ask and midpoint from an executable market",
+        "Verified delta and remaining Greeks",
+        "Current implied volatility, IV rank and term structure",
+        "Contract volume, open interest and executable spread quality",
+        "Directional buyer-initiated opening-flow confirmation",
+        "Next-session price acceptance after the large catalyst gap"
+      ],
+      "risk": "High chase and mean-reversion risk after a 12.85% one-day move. Entry requires post-gap consolidation or retest plus verified contract liquidity, IV and directional flow.",
+      "details": {
+        "catalyst": "2026 investor-day fiscal 2027 guidance and long-term financial model",
+        "catalystDate": "2026-09-30",
+        "marketDataDate": "2026-10-01",
+        "marketMetrics": {
+          "close": 490.54,
+          "dayChangePct": 12.85465,
+          "high": 496.87,
+          "low": 441.75,
+          "volume": 6664648
+        },
+        "catalystMetrics": {
+          "fy2027RevenueGrowthPctApprox": 15,
+          "fy2027RevenueMidpointUsd": 11150000000,
+          "intendedRepurchaseUsdApprox": 1000000000
+        },
+        "datedEvidenceSources": [
+          {
+            "name": "Synopsys official 2026 Investor Day release",
+            "url": "https://investor.synopsys.com/news/news-details/2026/Synopsys-Details-Growth-Strategy-and-Long-term-Financial-Model-at-2026-Investor-Day/default.aspx",
+            "date": "2026-09-30",
+            "status": "verified"
+          },
+          {
+            "name": "October 1 SNPS market data",
+            "url": "https://finance.yahoo.com/quote/SNPS/",
+            "date": "2026-10-01",
+            "status": "verified"
+          },
+          {
+            "name": "Nasdaq SNPS option chain",
+            "url": "https://www.nasdaq.com/market-activity/stocks/snps/option-chain",
+            "date": "2026-10-01",
+            "status": "unavailable"
+          }
+        ],
+        "verificationStatus": "Underlying catalyst and market reaction verified; exact option eligibility unverified.",
+        "rejectionReasons": [
+          "Underlying advanced 12.85% in one session",
+          "No post-gap consolidation or retest yet",
+          "No usable option-chain rows",
+          "IV, Greeks, spread, OI, volume and directional flow unavailable"
+        ]
+      }
     }
   ],
   "scanners": {
@@ -1330,76 +1463,69 @@
       }
     },
     "options": {
-      "id": "options-scan-20261002T062538Z",
+      "id": "options-scan-20261002T065345Z",
       "system": "options",
-      "startedAt": "2026-10-02T06:25:38.000Z",
-      "checkedAt": "2026-10-02T06:26:59.449Z",
+      "startedAt": "2026-10-02T06:53:45.000Z",
+      "checkedAt": "2026-10-02T06:55:39.336Z",
       "scheduledFor": "2026-10-02T06:00:00.000Z",
       "nextScheduledAt": "2026-10-02T07:00:00.000Z",
       "status": "market_closed",
-      "summary": "No open options paper trades required management. BB, COST and SMMT remained at their October 1 closes of $9.18, $914.94 and $16.69, while QQQ closed at $742.03. BB still has the strongest multi-day underlying continuation; COST remains choppy ahead of its October 7 September-sales release; and SMMT remains below the approximately $18.36 AstraZeneca investment-equivalent level after its catalyst gap faded. Nasdaq again provided no usable contract rows for BB, COST or SMMT, preventing verification of exact quotes, Greeks, IV, spreads, volume, open interest and directional opening flow. A fresh issuer, SEC and catalyst sweep found no new material setup. Existing research was unchanged, so no research, entry, exit or mark event was added.",
+      "summary": "No open options paper trades required management. Two new research-only catalysts were published. ACN gained 16.01% after fiscal 2026 results showed revenue above the high end of guidance and broad-based growth, but it faded materially from its intraday high. SNPS gained 12.85% after investor-day guidance targeted approximately 15% fiscal 2027 revenue growth and described an intended roughly $1 billion repurchase. Both moves are too extended to chase, and Nasdaq provided no usable option-chain rows for either ticker, preventing verification of exact quotes, Greeks, IV, spreads, volume, open interest and directional flow. Existing BB, COST and SMMT research was unchanged. No entries, exits or marks were added.",
       "sources": [
         {
-          "name": "Latest BB, COST, SMMT and QQQ market data",
+          "name": "Latest ACN, SNPS, BB, COST, SMMT and QQQ market data",
           "url": "https://finance.yahoo.com/",
-          "checkedAt": "2026-10-02T06:26:59.449Z",
+          "checkedAt": "2026-10-02T06:55:39.336Z",
           "status": "checked"
         },
         {
-          "name": "Nasdaq BB option chain",
-          "url": "https://www.nasdaq.com/market-activity/stocks/bb/option-chain",
-          "checkedAt": "2026-10-02T06:26:59.449Z",
-          "status": "unavailable"
-        },
-        {
-          "name": "Nasdaq COST option chain",
-          "url": "https://www.nasdaq.com/market-activity/stocks/cost/option-chain",
-          "checkedAt": "2026-10-02T06:26:59.449Z",
-          "status": "unavailable"
-        },
-        {
-          "name": "Nasdaq SMMT option chain",
-          "url": "https://www.nasdaq.com/market-activity/stocks/smmt/option-chain",
-          "checkedAt": "2026-10-02T06:26:59.449Z",
-          "status": "unavailable"
-        },
-        {
-          "name": "BlackBerry newsroom",
-          "url": "https://www.blackberry.com/us/en/company/newsroom/press-releases",
-          "checkedAt": "2026-10-02T06:26:59.449Z",
+          "name": "Accenture official fiscal 2026 results",
+          "url": "https://newsroom.accenture.com/news/2026/accenture-reports-fourth-quarter-and-full-year-fiscal-2026-results",
+          "checkedAt": "2026-10-02T06:55:39.336Z",
           "status": "checked"
+        },
+        {
+          "name": "Synopsys official 2026 Investor Day release",
+          "url": "https://investor.synopsys.com/news/news-details/2026/Synopsys-Details-Growth-Strategy-and-Long-term-Financial-Model-at-2026-Investor-Day/default.aspx",
+          "checkedAt": "2026-10-02T06:55:39.336Z",
+          "status": "checked"
+        },
+        {
+          "name": "Nasdaq ACN option chain",
+          "url": "https://www.nasdaq.com/market-activity/stocks/acn/option-chain",
+          "checkedAt": "2026-10-02T06:55:39.336Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "Nasdaq SNPS option chain",
+          "url": "https://www.nasdaq.com/market-activity/stocks/snps/option-chain",
+          "checkedAt": "2026-10-02T06:55:39.336Z",
+          "status": "unavailable"
         },
         {
           "name": "Costco investor relations and SEC filings",
           "url": "https://investor.costco.com/",
-          "checkedAt": "2026-10-02T06:26:59.449Z",
+          "checkedAt": "2026-10-02T06:55:39.336Z",
           "status": "checked"
         },
         {
-          "name": "AstraZeneca media centre and Summit catalyst materials",
-          "url": "https://www.astrazeneca.com/media-centre/press-releases.html",
-          "checkedAt": "2026-10-02T06:26:59.449Z",
-          "status": "checked"
-        },
-        {
-          "name": "SEC EDGAR catalyst and filing discovery",
-          "url": "https://www.sec.gov/edgar/search/",
-          "checkedAt": "2026-10-02T06:26:59.449Z",
-          "status": "checked"
+          "name": "Complete real-time unusual-options-flow coverage",
+          "url": "https://www.nasdaq.com/market-activity/options",
+          "checkedAt": "2026-10-02T06:55:39.336Z",
+          "status": "unavailable"
         }
       ],
       "missingData": [
-        "Reliable after-hours bid, ask and midpoint for exact 21–60 DTE contracts",
+        "Reliable after-hours bid, ask and midpoint for exact 21–60 DTE ACN and SNPS contracts",
         "Current contract delta and remaining Greeks",
         "Implied volatility, IV rank and term structure",
         "Current contract volume, open interest and executable spread quality",
         "Directional buyer-initiated opening flow",
-        "Primary-source confirmation that AstraZeneca's announced SMMT investment has closed",
-        "Executable listed-options quotes while the U.S. options market is closed",
+        "Next-session post-gap acceptance, consolidation or retest",
         "Complete real-time universe-wide unusual-options-flow coverage"
       ],
       "counts": {
-        "research": 0,
+        "research": 2,
         "entries": 0,
         "exits": 0
       },
@@ -14659,6 +14785,77 @@
       },
       "deliveryDiagnostics": {
         "repair20260928ReportedAt": "2026-09-28T01:47:21.040Z"
+      }
+    },
+    {
+      "id": "options-scan-20261002T065345Z",
+      "system": "options",
+      "startedAt": "2026-10-02T06:53:45.000Z",
+      "checkedAt": "2026-10-02T06:55:39.336Z",
+      "scheduledFor": "2026-10-02T06:00:00.000Z",
+      "nextScheduledAt": "2026-10-02T07:00:00.000Z",
+      "status": "market_closed",
+      "summary": "No open options paper trades required management. Two new research-only catalysts were published. ACN gained 16.01% after fiscal 2026 results showed revenue above the high end of guidance and broad-based growth, but it faded materially from its intraday high. SNPS gained 12.85% after investor-day guidance targeted approximately 15% fiscal 2027 revenue growth and described an intended roughly $1 billion repurchase. Both moves are too extended to chase, and Nasdaq provided no usable option-chain rows for either ticker, preventing verification of exact quotes, Greeks, IV, spreads, volume, open interest and directional flow. Existing BB, COST and SMMT research was unchanged. No entries, exits or marks were added.",
+      "sources": [
+        {
+          "name": "Latest ACN, SNPS, BB, COST, SMMT and QQQ market data",
+          "url": "https://finance.yahoo.com/",
+          "checkedAt": "2026-10-02T06:55:39.336Z",
+          "status": "checked"
+        },
+        {
+          "name": "Accenture official fiscal 2026 results",
+          "url": "https://newsroom.accenture.com/news/2026/accenture-reports-fourth-quarter-and-full-year-fiscal-2026-results",
+          "checkedAt": "2026-10-02T06:55:39.336Z",
+          "status": "checked"
+        },
+        {
+          "name": "Synopsys official 2026 Investor Day release",
+          "url": "https://investor.synopsys.com/news/news-details/2026/Synopsys-Details-Growth-Strategy-and-Long-term-Financial-Model-at-2026-Investor-Day/default.aspx",
+          "checkedAt": "2026-10-02T06:55:39.336Z",
+          "status": "checked"
+        },
+        {
+          "name": "Nasdaq ACN option chain",
+          "url": "https://www.nasdaq.com/market-activity/stocks/acn/option-chain",
+          "checkedAt": "2026-10-02T06:55:39.336Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "Nasdaq SNPS option chain",
+          "url": "https://www.nasdaq.com/market-activity/stocks/snps/option-chain",
+          "checkedAt": "2026-10-02T06:55:39.336Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "Costco investor relations and SEC filings",
+          "url": "https://investor.costco.com/",
+          "checkedAt": "2026-10-02T06:55:39.336Z",
+          "status": "checked"
+        },
+        {
+          "name": "Complete real-time unusual-options-flow coverage",
+          "url": "https://www.nasdaq.com/market-activity/options",
+          "checkedAt": "2026-10-02T06:55:39.336Z",
+          "status": "unavailable"
+        }
+      ],
+      "missingData": [
+        "Reliable after-hours bid, ask and midpoint for exact 21–60 DTE ACN and SNPS contracts",
+        "Current contract delta and remaining Greeks",
+        "Implied volatility, IV rank and term structure",
+        "Current contract volume, open interest and executable spread quality",
+        "Directional buyer-initiated opening flow",
+        "Next-session post-gap acceptance, consolidation or retest",
+        "Complete real-time universe-wide unusual-options-flow coverage"
+      ],
+      "counts": {
+        "research": 2,
+        "entries": 0,
+        "exits": 0
+      },
+      "deliveryDiagnostics": {
+        "repair20260928ReportedAt": "2026-09-28T00:50:48.883Z"
       }
     }
   ]
