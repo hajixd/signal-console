@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-10-02T11:16:18.504Z",
+  "updatedAt": "2026-10-02T11:37:04.091Z",
   "alerts": [
     {
       "id": "options-bb-fy27q2-20260924",
@@ -1780,55 +1780,43 @@
       }
     },
     "options": {
-      "id": "options-scan-20261002T103813424Z",
+      "id": "options-scan-20261002T113704091Z",
       "system": "options",
-      "startedAt": "2026-10-02T10:37:02.000Z",
-      "checkedAt": "2026-10-02T10:38:13.424Z",
-      "scheduledFor": "2026-10-02T10:00:00.000Z",
-      "nextScheduledAt": "2026-10-02T11:00:00.000Z",
+      "startedAt": "2026-10-02T11:35:59.000Z",
+      "checkedAt": "2026-10-02T11:37:04.091Z",
+      "scheduledFor": "2026-10-02T11:00:00.000Z",
+      "nextScheduledAt": "2026-10-02T12:00:00.000Z",
       "status": "market_closed",
-      "summary": "No open options paper trades required management. Premarket indications remained unchanged at $35.15 for NKE (-0.85%) and $188.94 for MRNA (-1.83%); BB and HPE also remained at their prior closes of $9.18 and $64.58. NKE's weak fiscal 2027 outlook remains a bearish follow-through watch, while MRNA's October 9 Nasdaq-100 inclusion remains a credible mechanical-demand catalyst, but neither showed material new evidence. Nasdaq again reported the NKE and MRNA option chains unavailable, so no exact 21-60 DTE quote, delta, Greeks, IV, spread, open interest, volume or directional opening flow could be validated. A fresh primary-source catalyst sweep produced no additional qualifying setup. No research, entry, exit or mark event was added.",
+      "summary": "No open options paper trades required management. Premarket indications remained unchanged at $35.15 for NKE (-0.85%), $188.94 for MRNA (-1.83%), $9.18 for BB (+1.49%) and $64.58 for HPE (+1.11%), while QQQ remained at $742.03 (+0.26%). NKE's weak fiscal 2027 outlook and MRNA's October 9 Nasdaq-100 inclusion remain valid research theses, but neither showed material new evidence. Nasdaq again reported the NKE chain unavailable and the MRNA chain request timed out, so no exact 21-60 DTE quote, delta, Greeks, IV, spread, open interest, volume or directional opening flow could be validated. A fresh catalyst sweep found no additional primary-source setup meeting the research bar. No research, entry, exit or mark event was added.",
       "sources": [
         {
           "name": "Latest NKE, MRNA, BB, HPE and QQQ market data",
           "url": "https://finance.yahoo.com/",
-          "checkedAt": "2026-10-02T10:38:13.424Z",
+          "checkedAt": "2026-10-02T11:37:04.091Z",
           "status": "checked"
         },
         {
-          "name": "NIKE fiscal 2027 first-quarter results",
-          "url": "https://investors.nike.com/investors/news-events-and-reports/investor-news/investor-news-details/2026/NIKE-Inc--Reports-Fiscal-2027-First-Quarter-Results/default.aspx",
-          "checkedAt": "2026-10-02T10:38:13.424Z",
-          "status": "checked"
-        },
-        {
-          "name": "Nasdaq Global Indexes MRNA inclusion announcement",
-          "url": "https://ir.nasdaq.com/node/111076",
-          "checkedAt": "2026-10-02T10:38:13.424Z",
-          "status": "unavailable"
-        },
-        {
-          "name": "Current primary-source catalyst sweep",
+          "name": "SEC EDGAR catalyst sweep",
           "url": "https://www.sec.gov/edgar/search/",
-          "checkedAt": "2026-10-02T10:38:13.424Z",
+          "checkedAt": "2026-10-02T11:37:04.091Z",
           "status": "checked"
         },
         {
           "name": "Nasdaq NKE option chain",
           "url": "https://www.nasdaq.com/market-activity/stocks/nke/option-chain",
-          "checkedAt": "2026-10-02T10:38:13.424Z",
+          "checkedAt": "2026-10-02T11:37:04.091Z",
           "status": "unavailable"
         },
         {
           "name": "Nasdaq MRNA option chain",
           "url": "https://www.nasdaq.com/market-activity/stocks/mrna/option-chain",
-          "checkedAt": "2026-10-02T10:38:13.424Z",
+          "checkedAt": "2026-10-02T11:37:04.091Z",
           "status": "unavailable"
         },
         {
           "name": "Complete real-time unusual-options flow",
           "url": "https://www.cboe.com/us/options/market_statistics/",
-          "checkedAt": "2026-10-02T10:38:13.424Z",
+          "checkedAt": "2026-10-02T11:37:04.091Z",
           "status": "unavailable"
         }
       ],
@@ -16550,6 +16538,66 @@
       },
       "deliveryDiagnostics": {
         "repair20260928ReportedAt": "2026-09-28T01:47:21.040Z"
+      }
+    },
+    {
+      "id": "options-scan-20261002T113704091Z",
+      "system": "options",
+      "startedAt": "2026-10-02T11:35:59.000Z",
+      "checkedAt": "2026-10-02T11:37:04.091Z",
+      "scheduledFor": "2026-10-02T11:00:00.000Z",
+      "nextScheduledAt": "2026-10-02T12:00:00.000Z",
+      "status": "market_closed",
+      "summary": "No open options paper trades required management. Premarket indications remained unchanged at $35.15 for NKE (-0.85%), $188.94 for MRNA (-1.83%), $9.18 for BB (+1.49%) and $64.58 for HPE (+1.11%), while QQQ remained at $742.03 (+0.26%). NKE's weak fiscal 2027 outlook and MRNA's October 9 Nasdaq-100 inclusion remain valid research theses, but neither showed material new evidence. Nasdaq again reported the NKE chain unavailable and the MRNA chain request timed out, so no exact 21-60 DTE quote, delta, Greeks, IV, spread, open interest, volume or directional opening flow could be validated. A fresh catalyst sweep found no additional primary-source setup meeting the research bar. No research, entry, exit or mark event was added.",
+      "sources": [
+        {
+          "name": "Latest NKE, MRNA, BB, HPE and QQQ market data",
+          "url": "https://finance.yahoo.com/",
+          "checkedAt": "2026-10-02T11:37:04.091Z",
+          "status": "checked"
+        },
+        {
+          "name": "SEC EDGAR catalyst sweep",
+          "url": "https://www.sec.gov/edgar/search/",
+          "checkedAt": "2026-10-02T11:37:04.091Z",
+          "status": "checked"
+        },
+        {
+          "name": "Nasdaq NKE option chain",
+          "url": "https://www.nasdaq.com/market-activity/stocks/nke/option-chain",
+          "checkedAt": "2026-10-02T11:37:04.091Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "Nasdaq MRNA option chain",
+          "url": "https://www.nasdaq.com/market-activity/stocks/mrna/option-chain",
+          "checkedAt": "2026-10-02T11:37:04.091Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "Complete real-time unusual-options flow",
+          "url": "https://www.cboe.com/us/options/market_statistics/",
+          "checkedAt": "2026-10-02T11:37:04.091Z",
+          "status": "unavailable"
+        }
+      ],
+      "missingData": [
+        "executable listed-options quotes while the U.S. options market is closed",
+        "exact 21-60 DTE bid, ask and midpoint for NKE and MRNA",
+        "verified delta and remaining Greeks",
+        "current IV rank and term structure",
+        "contract volume, open interest and executable spread quality",
+        "buyer-initiated opening-flow confirmation",
+        "next-session price and volume acceptance or rejection",
+        "complete real-time universe-wide unusual-options-flow coverage"
+      ],
+      "counts": {
+        "research": 0,
+        "entries": 0,
+        "exits": 0
+      },
+      "deliveryDiagnostics": {
+        "repair20260928ReportedAt": "2026-09-28T00:50:48.883Z"
       }
     }
   ]
