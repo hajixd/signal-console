@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-10-02T09:28:48.926Z",
+  "updatedAt": "2026-10-02T09:37:26.247Z",
   "alerts": [
     {
       "id": "options-bb-fy27q2-20260924",
@@ -1858,55 +1858,55 @@
       }
     },
     "meme": {
-      "id": "meme-scan-20261002T092848926Z",
+      "id": "meme-scan-20261002T093726247Z",
       "system": "meme",
-      "startedAt": "2026-10-02T09:27:42.000Z",
-      "checkedAt": "2026-10-02T09:28:48.926Z",
+      "startedAt": "2026-10-02T09:36:36.000Z",
+      "checkedAt": "2026-10-02T09:37:26.247Z",
       "scheduledFor": "2026-10-02T09:00:00.000Z",
       "nextScheduledAt": "2026-10-02T10:00:00.000Z",
       "status": "data_limited",
-      "summary": "No open meme paper trades required management. OFFICIAL TRUMP remained materially unchanged at a displayed $2.10 price, approximately $261,000 liquidity and $591.9 million market cap; the same cached five-minute and 24-hour flow snapshot did not provide a fresh momentum signal. pSOQ displayed $0.0004555, approximately $91,000 liquidity and a $338,000 market cap, but only $3,300 of 24-hour volume, seven unique buyers and eleven unique sellers, leaving it too illiquid for entry. IdontPayTaxes and Numero showed no visible TRUMP or pSOQ convergence in their listed active holdings; Daumen, Frank DeGods and verified Clukz persistence remained unavailable. Fresh prominent-figure and Solana-launch searches produced no independently verified new token launch or endorsement. Existing research was unchanged, so no research, entry, exit or mark event was added.",
+      "summary": "No open meme paper trades required management. OFFICIAL TRUMP displayed a marginal move to $2.11 with approximately $262,000 liquidity and a $594.7 million market cap. The latest five-minute window weakened to 8 buys versus 13 sells, while one-hour flow remained net-buying and 24-hour unique sellers still exceeded buyers; this was not a material thesis change. pSOQ was unchanged at $0.0004555 with approximately $91,000 liquidity and extremely thin participation. IdontPayTaxes and Numero showed no visible TRUMP or pSOQ convergence in listed active holdings. A fresh launch search surfaced community-made Trump-themed tokens, but none had verified affiliation or independent original-source confirmation, so they were rejected. Daumen, Frank DeGods, verified Clukz, holder/bundler risk and spam-filtered X momentum remained unavailable. No research, entry, exit or mark event was added.",
       "sources": [
         {
           "name": "DEX Screener OFFICIAL TRUMP/SOL pair",
           "url": "https://dexscreener.com/solana/6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN",
-          "checkedAt": "2026-10-02T09:28:48.926Z",
+          "checkedAt": "2026-10-02T09:37:26.247Z",
           "status": "checked"
         },
         {
           "name": "DEX Screener pSOQ/SOL pair",
           "url": "https://dexscreener.com/solana/EM9NyPqcByrz8zBxZUi2LazBTCY2zbVJa49nTXHi3Pq8",
-          "checkedAt": "2026-10-02T09:28:48.926Z",
+          "checkedAt": "2026-10-02T09:37:26.247Z",
           "status": "checked"
         },
         {
-          "name": "Official TRUMP Coin Club",
+          "name": "Official TRUMP project source",
           "url": "https://gettrumpmemes.com/",
-          "checkedAt": "2026-10-02T09:28:48.926Z",
+          "checkedAt": "2026-10-02T09:37:26.247Z",
           "status": "checked"
         },
         {
           "name": "IdontPayTaxes and Numero wallet comparison",
           "url": "https://kolexplorer.com/compare/idontpaytaxes-vs-numero",
-          "checkedAt": "2026-10-02T09:28:48.926Z",
+          "checkedAt": "2026-10-02T09:37:26.247Z",
           "status": "checked"
         },
         {
           "name": "Current prominent-figure and Solana launch search",
           "url": "https://x.com/search",
-          "checkedAt": "2026-10-02T09:28:48.926Z",
+          "checkedAt": "2026-10-02T09:37:26.247Z",
           "status": "checked"
         },
         {
           "name": "Daumen, Frank DeGods and verified Clukz current holdings",
           "url": "https://kolexplorer.com/",
-          "checkedAt": "2026-10-02T09:28:48.926Z",
+          "checkedAt": "2026-10-02T09:37:26.247Z",
           "status": "unavailable"
         },
         {
           "name": "X live unique-author acceleration and spam filtering",
           "url": "https://x.com/search",
-          "checkedAt": "2026-10-02T09:28:48.926Z",
+          "checkedAt": "2026-10-02T09:37:26.247Z",
           "status": "unavailable"
         }
       ],
@@ -15919,6 +15919,77 @@
           "name": "X live unique-author acceleration and spam filtering",
           "url": "https://x.com/search",
           "checkedAt": "2026-10-02T09:28:48.926Z",
+          "status": "unavailable"
+        }
+      ],
+      "missingData": [
+        "fresh executable bid, ask and slippage for TRUMP and pSOQ",
+        "current token-specific holdings and remaining-position percentages for Daumen, Frank DeGods and verified Clukz",
+        "verified two-wallet convergence and greater-than-one-hour persistence",
+        "current deployer, insider, bundler, holder-concentration and wash-trading analysis",
+        "X unique-author mention velocity, acceleration and spam filtering",
+        "current TRUMP insider-wallet transfers and unlock-related selling pressure",
+        "complete real-time coverage of all Solana launches, holders, buyers and liquidity venues"
+      ],
+      "counts": {
+        "research": 0,
+        "entries": 0,
+        "exits": 0
+      },
+      "deliveryDiagnostics": {
+        "repair20260928ReportedAt": "2026-09-28T02:04:42.735Z"
+      }
+    },
+    {
+      "id": "meme-scan-20261002T093726247Z",
+      "system": "meme",
+      "startedAt": "2026-10-02T09:36:36.000Z",
+      "checkedAt": "2026-10-02T09:37:26.247Z",
+      "scheduledFor": "2026-10-02T09:00:00.000Z",
+      "nextScheduledAt": "2026-10-02T10:00:00.000Z",
+      "status": "data_limited",
+      "summary": "No open meme paper trades required management. OFFICIAL TRUMP displayed a marginal move to $2.11 with approximately $262,000 liquidity and a $594.7 million market cap. The latest five-minute window weakened to 8 buys versus 13 sells, while one-hour flow remained net-buying and 24-hour unique sellers still exceeded buyers; this was not a material thesis change. pSOQ was unchanged at $0.0004555 with approximately $91,000 liquidity and extremely thin participation. IdontPayTaxes and Numero showed no visible TRUMP or pSOQ convergence in listed active holdings. A fresh launch search surfaced community-made Trump-themed tokens, but none had verified affiliation or independent original-source confirmation, so they were rejected. Daumen, Frank DeGods, verified Clukz, holder/bundler risk and spam-filtered X momentum remained unavailable. No research, entry, exit or mark event was added.",
+      "sources": [
+        {
+          "name": "DEX Screener OFFICIAL TRUMP/SOL pair",
+          "url": "https://dexscreener.com/solana/6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN",
+          "checkedAt": "2026-10-02T09:37:26.247Z",
+          "status": "checked"
+        },
+        {
+          "name": "DEX Screener pSOQ/SOL pair",
+          "url": "https://dexscreener.com/solana/EM9NyPqcByrz8zBxZUi2LazBTCY2zbVJa49nTXHi3Pq8",
+          "checkedAt": "2026-10-02T09:37:26.247Z",
+          "status": "checked"
+        },
+        {
+          "name": "Official TRUMP project source",
+          "url": "https://gettrumpmemes.com/",
+          "checkedAt": "2026-10-02T09:37:26.247Z",
+          "status": "checked"
+        },
+        {
+          "name": "IdontPayTaxes and Numero wallet comparison",
+          "url": "https://kolexplorer.com/compare/idontpaytaxes-vs-numero",
+          "checkedAt": "2026-10-02T09:37:26.247Z",
+          "status": "checked"
+        },
+        {
+          "name": "Current prominent-figure and Solana launch search",
+          "url": "https://x.com/search",
+          "checkedAt": "2026-10-02T09:37:26.247Z",
+          "status": "checked"
+        },
+        {
+          "name": "Daumen, Frank DeGods and verified Clukz current holdings",
+          "url": "https://kolexplorer.com/",
+          "checkedAt": "2026-10-02T09:37:26.247Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "X live unique-author acceleration and spam filtering",
+          "url": "https://x.com/search",
+          "checkedAt": "2026-10-02T09:37:26.247Z",
           "status": "unavailable"
         }
       ],
