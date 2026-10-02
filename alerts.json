@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-10-02T13:56:12.919Z",
+  "updatedAt": "2026-10-02T14:26:21.104Z",
   "alerts": [
     {
       "id": "options-bb-fy27q2-20260924",
@@ -1155,34 +1155,38 @@
       "eventType": "research",
       "system": "futures",
       "asset": "MGC",
-      "title": "Research update: Gold short thesis loses confirmation",
-      "timestamp": "2026-10-02T04:41:12.420Z",
-      "direction": "neutral",
-      "summary": "The prior bearish gold watch is no longer confirmed. Delayed MGCZ26 snapshots from eSignal and MarketWatch converged near 4,203 late on October 1, essentially back at the 4,202.30 settlement after trading as low as 4,162.80. That recovery erased the earlier delayed-price breakdown signal. No paper trade is opened because the quotes are delayed, bid/ask and live structure are unavailable, and the October 2 Employment Situation at 8:30 a.m. ET remains a major catalyst.",
+      "timestamp": "2026-10-02T14:26:21.104Z",
+      "direction": "long",
+      "title": "Research update: Gold reverses higher after weak payrolls",
+      "summary": "Gold reversed the prior bearish watch after September payrolls rose only 29,000, Treasury yields and the dollar fell, and benchmark U.S. gold futures gained about 1.2% to $4,254.10. The move supports a conditional MGCZ26 long watch, but no exact micro quote, live spread or post-release break/retest was verified, so no paper entry was opened.",
       "reasons": [
-        "eSignal showed delayed MGCZ26 at 4,203.00 at 11:43:14 p.m. EDT, versus the 4,202.30 settlement.",
-        "MarketWatch independently showed delayed MGCZ26 at 4,203.00 at 11:43 p.m. EDT after a 4,162.80–4,213.50 range.",
-        "The rebound removes confirmation for the previous downside-continuation hypothesis.",
-        "The October 2 Employment Situation can materially move yields, the dollar, equities and gold."
+        "BLS reported September payrolls up 29,000 and unemployment at 4.2%, materially softer than expected.",
+        "Reuters reported U.S. gold futures up about 1.2% to $4,254.10 as rate-hike expectations, yields and the dollar declined.",
+        "The new catalyst and price response invalidate the earlier bearish continuation watch and favor a conditional long setup."
       ],
       "missingData": [
-        "non-delayed MGCZ26 quote no older than five minutes",
-        "live bid/ask spread, depth, volume and current intraday bars",
-        "fresh USD and Treasury-yield confirmation",
-        "CME expiry/delivery clearance and source-verified initial margin",
-        "observed tick-aligned trigger, invalidation and target meeting at least 2:1 reward-to-risk and the $100 risk cap",
-        "post-Employment-Situation price acceptance"
+        "Non-delayed MGCZ26 quote no older than five minutes with a verifiable timestamp",
+        "Current MGCZ26 bid/ask spread, depth, volume and intraday bars",
+        "A live pullback/hold or breakout-retest trigger on MGCZ26 after the payroll reaction",
+        "Tick-aligned stop and target supporting at least 2:1 reward-to-risk within the $100 risk cap",
+        "Source-verified initial margin, remaining paper equity, and final expiry/session clearance"
       ],
-      "href": "https://www.marketwatch.com/investing/future/mgcz26",
+      "href": "https://www.reuters.com/world/india/gold-slips-before-us-payrolls-data-set-second-weekly-loss-2026-10-02/",
       "details": {
-        "verificationStatus": "research update only; prior bearish continuation not confirmed; no executable entry",
-        "trigger": "Reconsider a short only after the October 2 employment release if a fresh, non-delayed MGCZ26 chart shows a failed rebound and confirmed break/retest below the observed 4,162.80 session low with volume and firm USD/yields.",
-        "invalidation": "Fresh price acceptance above the observed 4,213.50 session high, or falling yields/USD with sustained gold recovery, invalidates a renewed short thesis.",
-        "targets": "Not set because no live structural trigger or executable quote is available.",
-        "catalystTime": "2026-10-02T08:30:00-04:00 Employment Situation",
-        "quoteTimestamp": "2026-10-01T23:43:14-04:00 eSignal; 2026-10-01T23:43:00-04:00 MarketWatch",
-        "quoteDelay": "Both sources explicitly label the data delayed; excluded from entry pricing.",
-        "whatCouldGoWrong": "Employment data can gap gold in either direction; geopolitical safe-haven demand, falling yields or a weaker dollar could support gold, while renewed yield/dollar strength could revive downside pressure."
+        "contractUnderReview": "MGCZ26",
+        "verificationStatus": "research update only; bullish macro reversal observed on benchmark gold, but no executable exact-micro confirmation",
+        "trigger": "Using a fresh exact MGCZ26 feed, require either a post-payroll pullback that holds above the breakout area and reclaims the live session high, or a clean breakout followed by a successful retest with current volume. Neither trigger is verified.",
+        "invalidation": "A fresh MGCZ26 failure back below the post-payroll breakout area, especially alongside rebounding Treasury yields and the dollar, invalidates the long watch.",
+        "targets": [],
+        "catalystTime": "2026-10-02T12:30:00Z Employment Situation; benchmark gold update published October 2, 2026",
+        "quoteTimestamp": "Reuters benchmark U.S. gold futures at $4,254.10; not an executable MGCZ26 quote",
+        "quoteDelay": "Exact MGCZ26 data could not be verified within five minutes and was excluded from entry pricing.",
+        "whatCouldGoWrong": [
+          "Treasury yields remain historically elevated and could rebound, pressuring gold.",
+          "The initial payroll reaction could reverse as the market shifts from rate relief to growth concern.",
+          "Geopolitical headlines can gap gold in either direction.",
+          "Benchmark GC or spot pricing cannot establish an MGC fill, spread or risk level."
+        ]
       }
     },
     {
@@ -2179,50 +2183,44 @@
       }
     },
     "futures": {
-      "id": "futures-scan-20261002132449848",
+      "id": "futures-scan-20261002142519080",
       "system": "futures",
-      "startedAt": "2026-10-02T13:24:49.848Z",
-      "checkedAt": "2026-10-02T13:26:35.949Z",
-      "scheduledFor": "2026-10-02T13:00:00.000Z",
-      "nextScheduledAt": "2026-10-02T14:00:00.000Z",
+      "startedAt": "2026-10-02T14:25:19.080Z",
+      "checkedAt": "2026-10-02T14:26:21.104Z",
+      "scheduledFor": "2026-10-02T14:00:00.000Z",
+      "nextScheduledAt": "2026-10-02T15:00:00.000Z",
       "status": "data_limited",
-      "summary": "One new research event was published and no paper entry was opened. There are no open futures paper positions. The September Employment Situation showed only 29,000 payroll gains and 4.2% unemployment; Reuters reported Nasdaq-100 E-minis up 1.13% at 8:47 a.m. ET as yields fell. This supports a conditional MNQ long watch, but no exact dated micro contract had a non-delayed quote no older than five minutes, verified live spread/liquidity, confirmed post-release break/retest, margin, or tick-aligned risk levels. Existing gold and WTI watches remain research-only.",
+      "summary": "One material research update was published and no paper entry was opened. There are no open futures positions. Gold reversed the prior bearish watch after weak payrolls pushed yields and the dollar lower; benchmark U.S. gold futures gained about 1.2% to $4,254.10. U.S. equities also held a positive post-release reaction and WTI remained weak, but no exact micro contract had a non-delayed quote no older than five minutes, verified live spread/liquidity, confirmed break/retest, source-verified margin or complete tick-aligned risk levels. Gold is now a conditional MGCZ26 long watch; MNQ and WTI watches remain research-only.",
       "sources": [
         {
           "name": "BLS Employment Situation — September 2026",
           "url": "https://www.bls.gov/news.release/empsit.htm",
-          "checkedAt": "2026-10-02T13:26:35.949Z",
+          "checkedAt": "2026-10-02T14:26:21.104Z",
           "status": "checked_primary_release"
         },
         {
-          "name": "Reuters post-payroll futures and rates update",
-          "url": "https://www.reuters.com/business/wall-st-futures-gain-yields-oil-prices-ease-ahead-jobs-report-2026-10-02/",
-          "checkedAt": "2026-10-02T13:26:35.949Z",
-          "status": "checked_delayed_market_context_only"
+          "name": "Reuters gold post-payroll update",
+          "url": "https://www.reuters.com/world/india/gold-slips-before-us-payrolls-data-set-second-weekly-loss-2026-10-02/",
+          "checkedAt": "2026-10-02T14:26:21.104Z",
+          "status": "checked_benchmark_context_only"
         },
         {
-          "name": "Yahoo Finance MNQZ26",
-          "url": "https://finance.yahoo.com/quote/MNQZ26.CME/",
-          "checkedAt": "2026-10-02T13:26:35.949Z",
-          "status": "unavailable_rate_limited"
+          "name": "AP post-open equity and yield update",
+          "url": "https://apnews.com/article/a2b99562febc21d84955e243c87f5d31",
+          "checkedAt": "2026-10-02T14:26:21.104Z",
+          "status": "checked"
         },
         {
-          "name": "Yahoo Finance MESZ26",
-          "url": "https://finance.yahoo.com/quote/MESZ26.CME/",
-          "checkedAt": "2026-10-02T13:26:35.949Z",
-          "status": "unavailable"
+          "name": "CME MCL calendar",
+          "url": "https://www.cmegroup.com/markets/energy/crude-oil/micro-wti-crude-oil.calendar.html",
+          "checkedAt": "2026-10-02T14:26:21.104Z",
+          "status": "checked_calendar_context"
         },
         {
-          "name": "Yahoo Finance MGCZ26",
-          "url": "https://finance.yahoo.com/quote/MGCZ26.CME/",
-          "checkedAt": "2026-10-02T13:26:35.949Z",
-          "status": "unavailable"
-        },
-        {
-          "name": "Yahoo Finance MCLX26",
-          "url": "https://finance.yahoo.com/quote/MCLX26.NYM/",
-          "checkedAt": "2026-10-02T13:26:35.949Z",
-          "status": "unavailable"
+          "name": "Exact micro quote search",
+          "url": "https://www.cmegroup.com/market-data/browse-data/delayed-quotes.html",
+          "checkedAt": "2026-10-02T14:26:21.104Z",
+          "status": "current_five_minute_quotes_unavailable"
         }
       ],
       "missingData": [
@@ -2230,7 +2228,7 @@
         "Verified current bid/ask spreads, depth, liquidity and intraday price/volume structure for every micro contract",
         "Exact expiry/roll and session clearance for every candidate",
         "Source-verified initial margin per contract and sufficient remaining paper equity",
-        "Observed post-release tick-aligned triggers, invalidations and targets meeting at least 2:1 reward-to-risk and the $100 risk cap"
+        "Observed tick-aligned triggers, invalidations and targets meeting at least 2:1 reward-to-risk and the $100 risk cap"
       ],
       "counts": {
         "openPositions": 0,
@@ -12137,6 +12135,82 @@
       }
     },
     {
+      "id": "penny-scan-20261002T135612919Z",
+      "system": "penny",
+      "startedAt": "2026-10-02T13:54:25.000Z",
+      "checkedAt": "2026-10-02T13:56:12.919Z",
+      "scheduledFor": "2026-10-02T13:00:00.000Z",
+      "nextScheduledAt": "2026-10-02T14:00:00.000Z",
+      "status": "data_limited",
+      "summary": "No open penny paper trades required management. MEDS and FTHM changed materially after the open and their existing research records were updated: MEDS traded at $3.76, down 7.39%, reversing its revenue-catalyst reaction; FTHM traded at $0.331, down 12.89%, extending the failure of its preliminary transaction thesis. SOAR rebounded modestly to $0.3085 but did not establish a qualifying continuation. NSTR still lacked reliable post-listing price, spread and liquidity data. A fresh SEC, issuer and FDA sweep found no additional primary-source setup meeting the research or entry gates. Two research updates were written; no entry, exit or mark was created.",
+      "sources": [
+        {
+          "name": "MEDS October 2 regular-session market data",
+          "url": "https://finance.yahoo.com/quote/MEDS/",
+          "checkedAt": "2026-10-02T13:56:12.919Z",
+          "status": "checked"
+        },
+        {
+          "name": "FTHM October 2 regular-session market data",
+          "url": "https://finance.yahoo.com/quote/FTHM/",
+          "checkedAt": "2026-10-02T13:56:12.919Z",
+          "status": "checked"
+        },
+        {
+          "name": "SOAR October 2 regular-session market data",
+          "url": "https://finance.yahoo.com/quote/SOAR/",
+          "checkedAt": "2026-10-02T13:56:12.919Z",
+          "status": "checked"
+        },
+        {
+          "name": "SEC EDGAR current filings and catalyst sweep",
+          "url": "https://www.sec.gov/edgar/search/",
+          "checkedAt": "2026-10-02T13:56:12.919Z",
+          "status": "checked"
+        },
+        {
+          "name": "FDA current approvals and announcements sweep",
+          "url": "https://www.fda.gov/news-events",
+          "checkedAt": "2026-10-02T13:56:12.919Z",
+          "status": "checked"
+        },
+        {
+          "name": "Reliable NSTR post-listing quote and spread",
+          "url": "https://finance.yahoo.com/quote/NSTR/",
+          "checkedAt": "2026-10-02T13:56:12.919Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "Complete real-time dilution and insider sweep",
+          "url": "https://www.sec.gov/edgar/search/",
+          "checkedAt": "2026-10-02T13:56:12.919Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "Spam-filtered X unique-author acceleration",
+          "url": "https://x.com/search",
+          "checkedAt": "2026-10-02T13:56:12.919Z",
+          "status": "unavailable"
+        }
+      ],
+      "missingData": [
+        "reliable post-listing NSTR quote, market capitalization, volume and spread",
+        "fresh executable bid, ask and spread for all tracked microcaps",
+        "complete current S-1, S-3, 424B, ATM, PIPE, convertible and warrant sweep across the candidate universe",
+        "current insider alignment and beneficial-ownership changes",
+        "spam-filtered X unique-author mention acceleration",
+        "complete real-time penny and microcap universe coverage"
+      ],
+      "counts": {
+        "research": 2,
+        "entries": 0,
+        "exits": 0
+      },
+      "deliveryDiagnostics": {
+        "repair20260928ReportedAt": "2026-09-28T01:47:21.040Z"
+      }
+    },
+    {
       "id": "futures-scan-20260927203939926",
       "system": "futures",
       "startedAt": "2026-09-27T20:39:39.926Z",
@@ -17359,79 +17433,62 @@
       }
     },
     {
-      "id": "penny-scan-20261002T135612919Z",
-      "system": "penny",
-      "startedAt": "2026-10-02T13:54:25.000Z",
-      "checkedAt": "2026-10-02T13:56:12.919Z",
-      "scheduledFor": "2026-10-02T13:00:00.000Z",
-      "nextScheduledAt": "2026-10-02T14:00:00.000Z",
+      "id": "futures-scan-20261002142519080",
+      "system": "futures",
+      "startedAt": "2026-10-02T14:25:19.080Z",
+      "checkedAt": "2026-10-02T14:26:21.104Z",
+      "scheduledFor": "2026-10-02T14:00:00.000Z",
+      "nextScheduledAt": "2026-10-02T15:00:00.000Z",
       "status": "data_limited",
-      "summary": "No open penny paper trades required management. MEDS and FTHM changed materially after the open and their existing research records were updated: MEDS traded at $3.76, down 7.39%, reversing its revenue-catalyst reaction; FTHM traded at $0.331, down 12.89%, extending the failure of its preliminary transaction thesis. SOAR rebounded modestly to $0.3085 but did not establish a qualifying continuation. NSTR still lacked reliable post-listing price, spread and liquidity data. A fresh SEC, issuer and FDA sweep found no additional primary-source setup meeting the research or entry gates. Two research updates were written; no entry, exit or mark was created.",
+      "summary": "One material research update was published and no paper entry was opened. There are no open futures positions. Gold reversed the prior bearish watch after weak payrolls pushed yields and the dollar lower; benchmark U.S. gold futures gained about 1.2% to $4,254.10. U.S. equities also held a positive post-release reaction and WTI remained weak, but no exact micro contract had a non-delayed quote no older than five minutes, verified live spread/liquidity, confirmed break/retest, source-verified margin or complete tick-aligned risk levels. Gold is now a conditional MGCZ26 long watch; MNQ and WTI watches remain research-only.",
       "sources": [
         {
-          "name": "MEDS October 2 regular-session market data",
-          "url": "https://finance.yahoo.com/quote/MEDS/",
-          "checkedAt": "2026-10-02T13:56:12.919Z",
+          "name": "BLS Employment Situation — September 2026",
+          "url": "https://www.bls.gov/news.release/empsit.htm",
+          "checkedAt": "2026-10-02T14:26:21.104Z",
+          "status": "checked_primary_release"
+        },
+        {
+          "name": "Reuters gold post-payroll update",
+          "url": "https://www.reuters.com/world/india/gold-slips-before-us-payrolls-data-set-second-weekly-loss-2026-10-02/",
+          "checkedAt": "2026-10-02T14:26:21.104Z",
+          "status": "checked_benchmark_context_only"
+        },
+        {
+          "name": "AP post-open equity and yield update",
+          "url": "https://apnews.com/article/a2b99562febc21d84955e243c87f5d31",
+          "checkedAt": "2026-10-02T14:26:21.104Z",
           "status": "checked"
         },
         {
-          "name": "FTHM October 2 regular-session market data",
-          "url": "https://finance.yahoo.com/quote/FTHM/",
-          "checkedAt": "2026-10-02T13:56:12.919Z",
-          "status": "checked"
+          "name": "CME MCL calendar",
+          "url": "https://www.cmegroup.com/markets/energy/crude-oil/micro-wti-crude-oil.calendar.html",
+          "checkedAt": "2026-10-02T14:26:21.104Z",
+          "status": "checked_calendar_context"
         },
         {
-          "name": "SOAR October 2 regular-session market data",
-          "url": "https://finance.yahoo.com/quote/SOAR/",
-          "checkedAt": "2026-10-02T13:56:12.919Z",
-          "status": "checked"
-        },
-        {
-          "name": "SEC EDGAR current filings and catalyst sweep",
-          "url": "https://www.sec.gov/edgar/search/",
-          "checkedAt": "2026-10-02T13:56:12.919Z",
-          "status": "checked"
-        },
-        {
-          "name": "FDA current approvals and announcements sweep",
-          "url": "https://www.fda.gov/news-events",
-          "checkedAt": "2026-10-02T13:56:12.919Z",
-          "status": "checked"
-        },
-        {
-          "name": "Reliable NSTR post-listing quote and spread",
-          "url": "https://finance.yahoo.com/quote/NSTR/",
-          "checkedAt": "2026-10-02T13:56:12.919Z",
-          "status": "unavailable"
-        },
-        {
-          "name": "Complete real-time dilution and insider sweep",
-          "url": "https://www.sec.gov/edgar/search/",
-          "checkedAt": "2026-10-02T13:56:12.919Z",
-          "status": "unavailable"
-        },
-        {
-          "name": "Spam-filtered X unique-author acceleration",
-          "url": "https://x.com/search",
-          "checkedAt": "2026-10-02T13:56:12.919Z",
-          "status": "unavailable"
+          "name": "Exact micro quote search",
+          "url": "https://www.cmegroup.com/market-data/browse-data/delayed-quotes.html",
+          "checkedAt": "2026-10-02T14:26:21.104Z",
+          "status": "current_five_minute_quotes_unavailable"
         }
       ],
       "missingData": [
-        "reliable post-listing NSTR quote, market capitalization, volume and spread",
-        "fresh executable bid, ask and spread for all tracked microcaps",
-        "complete current S-1, S-3, 424B, ATM, PIPE, convertible and warrant sweep across the candidate universe",
-        "current insider alignment and beneficial-ownership changes",
-        "spam-filtered X unique-author mention acceleration",
-        "complete real-time penny and microcap universe coverage"
+        "Non-delayed exact dated quotes no older than five minutes for MNQZ26, MESZ26, MGCZ26 and MCLX26",
+        "Verified current bid/ask spreads, depth, liquidity and intraday price/volume structure for every micro contract",
+        "Exact expiry/roll and session clearance for every candidate",
+        "Source-verified initial margin per contract and sufficient remaining paper equity",
+        "Observed tick-aligned triggers, invalidations and targets meeting at least 2:1 reward-to-risk and the $100 risk cap"
       ],
       "counts": {
-        "research": 2,
+        "openPositions": 0,
+        "research": 1,
         "entries": 0,
-        "exits": 0
+        "exits": 0,
+        "marks": 0
       },
       "deliveryDiagnostics": {
-        "repair20260928ReportedAt": "2026-09-28T01:47:21.040Z"
+        "repair20260928ReportedAt": "2026-09-28T01:51:49.985Z"
       }
     }
   ]
