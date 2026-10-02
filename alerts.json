@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-10-02T02:56:33.679Z",
+  "updatedAt": "2026-10-02T03:24:50.653Z",
   "alerts": [
     {
       "id": "options-bb-fy27q2-20260924",
@@ -1042,16 +1042,17 @@
       "id": "meme-research-trump-coin-club-gala-20261001",
       "eventType": "research",
       "system": "meme",
-      "timestamp": "2026-10-02T00:22:23.311Z",
+      "timestamp": "2026-10-02T03:24:50.653Z",
       "asset": "TRUMP",
-      "title": "Research: Official TRUMP launches new holder-scoring gala campaign",
-      "summary": "The official $TRUMP Coin Club opened a new time-weighted holder campaign tied to a November 22 gala at Trump National Golf Club. The official site says the top 185 registered holders qualify for dinner, the top 29 receive VIP access, and the Gala leaderboard locks November 12. The site publishes Solana contract 6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN; Solscan identifies it as OFFICIAL TRUMP and DEX Screener independently matches the contract. DEX Screener displayed $2.06, approximately $256,000 pool liquidity, $582 million market cap and $1.3 million 24-hour volume. This is a material promotional catalyst but not an entry: price was only +0.82% over 24 hours, no tracked-wallet convergence or spam-filtered social acceleration was verified, and the official site says creator-linked entities control 80% of supply subject to its unlock schedule.",
+      "title": "Research update: TRUMP gala reaction fades",
+      "summary": "The official TRUMP Coin Club gala campaign remains verified, but its market reaction weakened materially. DEX Screener displayed TRUMP at $2.06 with approximately $257,000 pool liquidity and a $581.2 million market cap, down 4.80% over 24 hours. The rolling 24-hour window showed about $1.0 million of volume, 1,613 buyers and 1,760 sellers; the latest five-minute window showed 10 sells, zero buys and $323 of sell volume. The promotional catalyst is not producing sustained upside confirmation, creator-linked concentration remains material, and no tracked-wallet convergence or spam-filtered social acceleration was verified. No paper entry qualifies.",
       "reasons": [
-        "Official project site confirms a new time-weighted Gala Dinner leaderboard tied to a November 22 event.",
-        "Top 185 holders qualify for dinner, top 29 receive VIP access and the ranking locks November 12.",
-        "Official Solana contract matches Solscan and DEX Screener.",
-        "DEX Screener displayed $2.06, approximately $582 million market cap and $1.3 million 24-hour volume.",
-        "The official page discloses that creator-linked entities collectively control 80% of supply, creating major concentration and unlock risk."
+        "The official gala catalyst and exact Solana contract remain verified.",
+        "TRUMP was down 4.80% over 24 hours at the latest DEX Screener observation.",
+        "Displayed 24-hour sellers outnumbered buyers 1,760 to 1,613.",
+        "The latest five-minute window showed 10 sells, zero buys and $323 of sell volume.",
+        "No named tracked-wallet persistence, two-wallet convergence or spam-filtered unique-author acceleration was verified.",
+        "Creator-linked entities continue to control 80% of supply under the official allocation schedule."
       ],
       "href": "https://gettrumpmemes.com/",
       "missingData": [
@@ -1060,9 +1061,9 @@
         "spam-filtered X unique-author mention velocity and acceleration",
         "current insider-wallet transfers and unlock-related selling pressure",
         "independent holder-concentration and wash-trading analysis",
-        "evidence that the promotional catalyst produces sustained price and buyer continuation rather than a temporary spike"
+        "evidence that the gala campaign can produce sustained buyer and price continuation"
       ],
-      "risk": "Very high. This is a promotional memecoin catalyst, not an economic cash-flow catalyst. Creator-linked entities control 80% of supply under the official allocation schedule; the token remains roughly 97% below its historical peak in current reporting. The official terms explicitly say it is not an investment and may change or cancel event benefits. Research only; no paper entry.",
+      "risk": "Very high. The promotional gala catalyst is now accompanied by a negative 24-hour price response and seller-heavy short-window activity. Creator-linked entities control 80% of supply under the official allocation schedule, and tracked-wallet, insider-transfer and social-quality checks remain incomplete. Research only; no paper entry.",
       "details": {
         "chain": "Solana",
         "contractAddress": "6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN",
@@ -1100,26 +1101,31 @@
           {
             "name": "DEX Screener OFFICIAL TRUMP/SOL pair",
             "url": "https://dexscreener.com/solana/6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN",
-            "checkedAt": "2026-10-02T00:22:23.311Z",
+            "checkedAt": "2026-10-02T03:24:50.653Z",
             "status": "checked"
           }
         ],
         "marketSnapshot": {
           "source": "DEX Screener OFFICIAL TRUMP/SOL Orca pair",
           "observedPriceUsd": 2.06,
-          "observedLiquidityUsd": 256000,
-          "observedMarketCapUsd": 582000000,
+          "observedLiquidityUsd": 257000,
+          "observedMarketCapUsd": 581200000,
           "fdvUsd": 2060000000,
-          "priceChange1hPercent": 0.75,
-          "priceChange6hPercent": 0.04,
-          "priceChange24hPercent": 0.82,
-          "volume24hUsd": 1300000,
-          "buyVolume24hUsd": 683000,
-          "sellVolume24hUsd": 681000,
-          "buyers24h": 1795,
-          "sellers24h": 1952,
-          "displayedHolders": 671003,
-          "verificationAt": "2026-10-02T00:22:23.311Z",
+          "priceChange5mPercent": -0.12,
+          "priceChange1hPercent": -0.32,
+          "priceChange6hPercent": 0.06,
+          "priceChange24hPercent": -4.8,
+          "volume5mUsd": 323,
+          "buys5m": 0,
+          "sells5m": 10,
+          "volume1hUsd": 10000,
+          "volume6hUsd": 118000,
+          "volume24hUsd": 1000000,
+          "buyVolume24hUsd": 504000,
+          "sellVolume24hUsd": 528000,
+          "buyers24h": 1613,
+          "sellers24h": 1760,
+          "verificationAt": "2026-10-02T03:24:50.653Z",
           "freshness": "Displayed values observed on the accessible DEX Screener page; not a guaranteed executable bid/ask quote."
         },
         "ownershipRisk": {
@@ -1149,13 +1155,16 @@
           }
         },
         "rejectionReasons": [
+          "24-hour price response weakened to negative 4.80%",
+          "displayed 24-hour sellers exceeded buyers",
+          "latest five-minute activity showed sells and no buys",
           "no named tracked-wallet persistence or two-wallet convergence",
           "no spam-filtered unique-author social acceleration",
           "80% creator-linked allocation concentration and unlock risk",
-          "24-hour price response remained modest despite the campaign announcement",
           "no executable spread or slippage verification",
           "promotional event benefits may be modified or cancelled under official terms"
-        ]
+        ],
+        "verificationStatus": "official catalyst and contract verified; market reaction weakened; wallet, social and ownership-risk entry gates incomplete"
       }
     }
   ],
@@ -1296,61 +1305,61 @@
       }
     },
     "meme": {
-      "id": "meme-scan-20261002T015239Z",
+      "id": "meme-scan-20261002T032258Z",
       "system": "meme",
-      "startedAt": "2026-10-02T01:52:39.000Z",
-      "checkedAt": "2026-10-02T01:53:50.669Z",
-      "scheduledFor": "2026-10-02T01:00:00.000Z",
-      "nextScheduledAt": "2026-10-02T02:00:00.000Z",
+      "startedAt": "2026-10-02T03:22:58.000Z",
+      "checkedAt": "2026-10-02T03:24:50.653Z",
+      "scheduledFor": "2026-10-02T03:00:00.000Z",
+      "nextScheduledAt": "2026-10-02T04:00:00.000Z",
       "status": "data_limited",
-      "summary": "No open meme paper trades required management. No new research, entry, exit or mark event qualified. pSOQ displayed $0.0004473 with about $88,000 liquidity but zero one-hour volume, only $9 over six hours and about $4,000 over 24 hours, confirming that participation remained far below an entry threshold. TRUMP displayed $2.06 with approximately $256,000 liquidity and $1.3 million 24-hour volume, effectively returning to the prior research snapshot; the existing gala catalyst was unchanged. IdontPayTaxes and Numero again displayed no pSOQ or TRUMP holdings and no two-wallet convergence. A current prominent-figure and Solana-launch search found no independently verified new launch or endorsement with a contract and qualifying on-chain evidence. Complete coverage for Daumen, Frank DeGods, verified Clukz, wallet persistence, unique-author social acceleration and insider/bundler risk remained unavailable.",
+      "summary": "No open meme paper trades required management. TRUMP's official gala catalyst remains verified, but the market reaction weakened materially: DEX Screener displayed $2.06, approximately $257,000 liquidity and a $581.2 million market cap, down 4.80% over 24 hours, with 1,760 sellers versus 1,613 buyers and seller-only activity in the latest five-minute window. The existing TRUMP research record was updated and remains rejected for entry. pSOQ displayed $0.0004433 with about $88,000 liquidity, zero one-hour volume and only $21 over six hours, so it remains non-actionable. IdontPayTaxes and Numero showed no visible pSOQ or TRUMP holdings, and no new verified prominent-figure launch with qualifying contract and on-chain evidence was found. No entry, exit or mark event was added.",
       "sources": [
         {
           "name": "DEX Screener pSOQ/SOL pair",
           "url": "https://dexscreener.com/solana/EM9NyPqcByrz8zBxZUi2LazBTCY2zbVJa49nTXHi3Pq8",
-          "checkedAt": "2026-10-02T01:53:50.669Z",
+          "checkedAt": "2026-10-02T03:24:50.653Z",
           "status": "checked"
         },
         {
           "name": "DEX Screener OFFICIAL TRUMP/SOL pair",
           "url": "https://dexscreener.com/solana/6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN",
-          "checkedAt": "2026-10-02T01:53:50.669Z",
+          "checkedAt": "2026-10-02T03:24:50.653Z",
           "status": "checked"
         },
         {
           "name": "Official TRUMP Coin Club",
           "url": "https://gettrumpmemes.com/",
-          "checkedAt": "2026-10-02T01:53:50.669Z",
+          "checkedAt": "2026-10-02T03:24:50.653Z",
           "status": "checked"
         },
         {
           "name": "IdontPayTaxes and Numero wallet comparison",
           "url": "https://kolexplorer.com/compare/idontpaytaxes-vs-numero",
-          "checkedAt": "2026-10-02T01:53:50.669Z",
+          "checkedAt": "2026-10-02T03:24:50.653Z",
           "status": "checked"
         },
         {
-          "name": "Current prominent-figure and Solana launch news search",
+          "name": "Current prominent-figure and Solana launch search",
           "url": "https://www.coindesk.com/policy/2026/10/01/another-trump-memecoin-dinner-advertised-for-token-s-top-investors",
-          "checkedAt": "2026-10-02T01:53:50.669Z",
+          "checkedAt": "2026-10-02T03:24:50.653Z",
           "status": "checked"
         },
         {
           "name": "Daumen, Frank DeGods and verified Clukz current holdings",
           "url": "https://kolexplorer.com/",
-          "checkedAt": "2026-10-02T01:53:50.669Z",
+          "checkedAt": "2026-10-02T03:24:50.653Z",
           "status": "unavailable"
         },
         {
           "name": "Soqucoin migration allocation list",
           "url": "https://soqucoin.org/migration/list/",
-          "checkedAt": "2026-10-02T01:53:50.669Z",
+          "checkedAt": "2026-10-02T03:24:50.653Z",
           "status": "unavailable"
         },
         {
           "name": "X live unique-author search",
           "url": "https://x.com/search",
-          "checkedAt": "2026-10-02T01:53:50.669Z",
+          "checkedAt": "2026-10-02T03:24:50.653Z",
           "status": "unavailable"
         }
       ],
@@ -1365,7 +1374,7 @@
         "complete real-time coverage of all Solana launches, holders, buyers and liquidity venues"
       ],
       "counts": {
-        "research": 0,
+        "research": 1,
         "entries": 0,
         "exits": 0
       },
@@ -13624,6 +13633,84 @@
       },
       "deliveryDiagnostics": {
         "repair20260928ReportedAt": "2026-09-28T01:47:21.040Z"
+      }
+    },
+    {
+      "id": "meme-scan-20261002T032258Z",
+      "system": "meme",
+      "startedAt": "2026-10-02T03:22:58.000Z",
+      "checkedAt": "2026-10-02T03:24:50.653Z",
+      "scheduledFor": "2026-10-02T03:00:00.000Z",
+      "nextScheduledAt": "2026-10-02T04:00:00.000Z",
+      "status": "data_limited",
+      "summary": "No open meme paper trades required management. TRUMP's official gala catalyst remains verified, but the market reaction weakened materially: DEX Screener displayed $2.06, approximately $257,000 liquidity and a $581.2 million market cap, down 4.80% over 24 hours, with 1,760 sellers versus 1,613 buyers and seller-only activity in the latest five-minute window. The existing TRUMP research record was updated and remains rejected for entry. pSOQ displayed $0.0004433 with about $88,000 liquidity, zero one-hour volume and only $21 over six hours, so it remains non-actionable. IdontPayTaxes and Numero showed no visible pSOQ or TRUMP holdings, and no new verified prominent-figure launch with qualifying contract and on-chain evidence was found. No entry, exit or mark event was added.",
+      "sources": [
+        {
+          "name": "DEX Screener pSOQ/SOL pair",
+          "url": "https://dexscreener.com/solana/EM9NyPqcByrz8zBxZUi2LazBTCY2zbVJa49nTXHi3Pq8",
+          "checkedAt": "2026-10-02T03:24:50.653Z",
+          "status": "checked"
+        },
+        {
+          "name": "DEX Screener OFFICIAL TRUMP/SOL pair",
+          "url": "https://dexscreener.com/solana/6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN",
+          "checkedAt": "2026-10-02T03:24:50.653Z",
+          "status": "checked"
+        },
+        {
+          "name": "Official TRUMP Coin Club",
+          "url": "https://gettrumpmemes.com/",
+          "checkedAt": "2026-10-02T03:24:50.653Z",
+          "status": "checked"
+        },
+        {
+          "name": "IdontPayTaxes and Numero wallet comparison",
+          "url": "https://kolexplorer.com/compare/idontpaytaxes-vs-numero",
+          "checkedAt": "2026-10-02T03:24:50.653Z",
+          "status": "checked"
+        },
+        {
+          "name": "Current prominent-figure and Solana launch search",
+          "url": "https://www.coindesk.com/policy/2026/10/01/another-trump-memecoin-dinner-advertised-for-token-s-top-investors",
+          "checkedAt": "2026-10-02T03:24:50.653Z",
+          "status": "checked"
+        },
+        {
+          "name": "Daumen, Frank DeGods and verified Clukz current holdings",
+          "url": "https://kolexplorer.com/",
+          "checkedAt": "2026-10-02T03:24:50.653Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "Soqucoin migration allocation list",
+          "url": "https://soqucoin.org/migration/list/",
+          "checkedAt": "2026-10-02T03:24:50.653Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "X live unique-author search",
+          "url": "https://x.com/search",
+          "checkedAt": "2026-10-02T03:24:50.653Z",
+          "status": "unavailable"
+        }
+      ],
+      "missingData": [
+        "fresh executable bid, ask and slippage for pSOQ and TRUMP",
+        "current token-specific holdings and remaining-position percentages for Daumen, Frank DeGods and verified Clukz",
+        "verified two-wallet convergence and greater-than-one-hour persistence",
+        "current deployer, insider, bundler, holder-concentration and wash-trading analysis",
+        "X unique-author mention velocity, acceleration and spam filtering",
+        "successful credited allocations from the current pSOQ migration run list",
+        "current TRUMP insider-wallet transfers and unlock-related selling pressure",
+        "complete real-time coverage of all Solana launches, holders, buyers and liquidity venues"
+      ],
+      "counts": {
+        "research": 1,
+        "entries": 0,
+        "exits": 0
+      },
+      "deliveryDiagnostics": {
+        "repair20260928ReportedAt": "2026-09-28T02:04:42.735Z"
       }
     }
   ]
