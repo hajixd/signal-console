@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-10-02T14:26:21.104Z",
+  "updatedAt": "2026-10-02T14:50:29.414Z",
   "alerts": [
     {
       "id": "options-bb-fy27q2-20260924",
@@ -1405,15 +1405,15 @@
       "id": "options-hpe-networking-ai-investor-day-20260930",
       "eventType": "research",
       "system": "options",
-      "timestamp": "2026-10-02T07:41:52.140Z",
+      "timestamp": "2026-10-02T14:50:29.414Z",
       "asset": "HPE",
-      "title": "Research: HPE AI-networking catalyst awaits contract confirmation",
-      "summary": "HPE announced its first AMD Helios order in a $1.2 billion Vultr deal and raised its fiscal 2027 growth framework. HPE closed October 1 at $64.58, up 1.11%, on 16.45 million shares. The catalyst is material and the underlying structure is constructive, but no exact option contract could be verified because Nasdaq returned no usable chain rows.",
+      "title": "Research update: HPE AI-networking catalyst gains strong confirmation",
+      "summary": "HPE's verified $1.2 billion Vultr/AMD Helios order and raised FY2027 outlook received strong regular-session confirmation. HPE traded at $68.43 at 10:34 a.m. ET, up 5.96%, after reaching $69.19 on 6.22 million shares, materially above the prior $64.58 close. The underlying setup strengthened, but no paper option entry qualifies because Nasdaq's HPE chain is unavailable and exact 21-60 DTE pricing, delta, Greeks, IV, spread, volume, open interest and buyer-initiated opening flow cannot be validated.",
       "reasons": [
-        "A $1.2 billion Vultr AMD Helios order is an official primary-source catalyst.",
-        "HPE raised its fiscal 2027 revenue-growth outlook to 13–17%, non-GAAP EPS growth to 16–20%, and free-cash-flow outlook to at least $5 billion.",
-        "The underlying closed up 1.11% on 16.45 million shares without an extreme one-day extension.",
-        "No exact 21–60 DTE contract qualifies because the option chain was unavailable."
+        "The $1.2 billion order and raised FY2027 outlook remain source-verified.",
+        "HPE traded at $68.43, up 5.96%, after reaching $69.19.",
+        "The move confirms underlying catalyst follow-through.",
+        "Exact-contract liquidity, volatility and opening-flow gates remain unavailable."
       ],
       "href": "https://investors.hpe.com/",
       "missingData": [
@@ -1422,9 +1422,12 @@
         "IV, IV rank and term structure",
         "contract volume, open interest and executable spread",
         "buyer-initiated opening-flow confirmation",
-        "next-session acceptance above the recent breakout area"
+        "next-session acceptance above the recent breakout area",
+        "exact 21-60 DTE bid, ask and midpoint",
+        "verified delta and remaining Greeks",
+        "current IV rank and term structure"
       ],
-      "risk": "High until contract liquidity and implied volatility are verified. HPE has already advanced substantially in 2026 and could mean-revert despite the positive catalyst.",
+      "risk": "Research only. The underlying breakout is constructive but already extended intraday; entering without a reliable exact-contract quote, volatility profile and liquidity/flow confirmation would violate the scanner rules.",
       "details": {
         "catalyst": "Networking Investor Day, $1.2 billion Vultr AMD Helios order and raised fiscal 2027 framework",
         "catalystDate": "2026-09-30",
@@ -1469,11 +1472,34 @@
             "status": "unavailable"
           }
         ],
-        "verificationStatus": "Underlying catalyst and close verified; exact option eligibility unverified.",
+        "verificationStatus": "primary catalyst verified; material regular-session reaction confirmed; exact-contract eligibility unavailable",
         "rejectionReasons": [
           "No usable option-chain rows",
           "IV, Greeks, spread, open interest, volume and flow unavailable",
-          "No next-session price acceptance confirmation"
+          "No next-session price acceptance confirmation",
+          "Nasdaq option chain unavailable",
+          "no verified current exact-contract quote, Greeks, IV, liquidity or directional flow"
+        ],
+        "marketReaction": {
+          "session": "regular",
+          "price": 68.43,
+          "changePercent": 5.9616,
+          "open": 66.19,
+          "high": 69.19,
+          "low": 65.4,
+          "volume": 6217928,
+          "marketCap": 99155070000,
+          "quoteTimestamp": "2026-10-02T14:34:00Z",
+          "status": "strong catalyst follow-through, but extended and contract-unverified"
+        },
+        "evidenceSources": [
+          {
+            "name": "HPE October 2 regular-session market data",
+            "url": "https://finance.yahoo.com/quote/HPE/",
+            "publishedAt": "2026-10-02T14:34:00Z",
+            "checkedAt": "2026-10-02T14:50:29.414Z",
+            "status": "checked"
+          }
         ]
       }
     },
@@ -1556,16 +1582,15 @@
       "id": "options-nke-fy27q1-20261001",
       "eventType": "research",
       "system": "options",
-      "timestamp": "2026-10-02T09:15:02.736Z",
+      "timestamp": "2026-10-02T14:50:29.414Z",
       "asset": "NKE",
-      "title": "Research: NKE weak FY2027 outlook creates bearish follow-through setup",
-      "summary": "Nike reported fiscal Q1 revenue of $11.2 billion, down 4% reported and 5% currency-neutral, while NIKE Direct fell 8% and Greater China remained a major pressure point. Management expects fiscal 2027 revenue to decline high-single digits and adjusted diluted EPS of $1.15-$1.35. The negative outlook is material, but no bearish paper option entry qualifies before the next regular session because the move may already be extended and Nasdaq provides no usable chain rows for validating an exact 21-60 DTE put's quote, delta, Greeks, IV, spread, volume, open interest or buyer-initiated opening flow.",
+      "title": "Research update: NKE bearish follow-through confirms weak outlook",
+      "summary": "Nike's weak FY2027 outlook received further bearish confirmation. NKE traded at $33.22 at 10:33 a.m. ET, down 5.49%, after opening at $32.40 and falling to $31.32 on 58.73 million shares. The stock recovered from the session low while QQQ gained 1.55%, so a fresh put entry may be late and vulnerable to mean reversion. No paper option entry qualifies because Nasdaq's NKE chain is unavailable, preventing exact-contract validation.",
       "reasons": [
-        "Fiscal Q1 revenue fell 4% reported and 5% currency-neutral to $11.2 billion",
-        "NIKE Direct revenue fell 8% reported and 9% currency-neutral",
-        "Fiscal 2027 revenue is expected to decline high-single digits",
-        "Adjusted fiscal 2027 diluted EPS guidance is $1.15-$1.35",
-        "A next-session acceptance or failed-bounce signal is required before considering bearish premium"
+        "Nike's high-single-digit FY2027 revenue decline and $1.15-$1.35 adjusted EPS outlook remain verified.",
+        "NKE traded at $33.22, down 5.49%, on 58.73 million shares.",
+        "NKE materially underperformed QQQ, which gained 1.55%.",
+        "The recovery from $31.32 and unavailable contract economics make a fresh put entry unattractive."
       ],
       "href": "https://investors.nike.com/investors/news-events-and-reports/investor-news/investor-news-details/2026/NIKE-Inc--Reports-Fiscal-2027-First-Quarter-Results/default.aspx",
       "missingData": [
@@ -1573,11 +1598,15 @@
         "exact 21-60 DTE put bid, ask and midpoint",
         "verified delta and remaining Greeks",
         "current IV rank and term structure after earnings",
-        "contract volume, open interest, executable spread and buyer-initiated opening flow"
+        "contract volume, open interest, executable spread and buyer-initiated opening flow",
+        "exact 21-60 DTE bid, ask and midpoint",
+        "current IV rank and term structure",
+        "contract volume, open interest and executable spread",
+        "buyer-initiated opening-flow confirmation"
       ],
-      "risk": "High. The earnings reaction may be overextended, post-earnings IV can compress sharply, and a relief bounce could punish late bearish premium. Research only until structure and exact-contract economics are verified.",
+      "risk": "Research only. The bearish thesis is confirmed, but the stock has already made a large earnings-driven move and recovered materially from its low. Chasing puts without exact pricing, IV, spread, liquidity and flow confirmation carries substantial reversal and volatility-crush risk.",
       "details": {
-        "verificationStatus": "primary earnings and outlook catalyst verified; bearish setup developing; no qualifying contract",
+        "verificationStatus": "primary catalyst verified; material regular-session reaction confirmed; exact-contract eligibility unavailable",
         "evidenceSources": [
           {
             "name": "NIKE fiscal 2027 first-quarter results",
@@ -1598,6 +1627,13 @@
             "url": "https://www.nasdaq.com/market-activity/stocks/nke/option-chain",
             "checkedAt": "2026-10-02T09:15:02.736Z",
             "status": "unavailable"
+          },
+          {
+            "name": "NKE October 2 regular-session market data",
+            "url": "https://finance.yahoo.com/quote/NKE/",
+            "publishedAt": "2026-10-02T14:33:59Z",
+            "checkedAt": "2026-10-02T14:50:29.414Z",
+            "status": "checked"
           }
         ],
         "catalystMetrics": {
@@ -1616,8 +1652,28 @@
           "U.S. listed-options market is closed",
           "Nasdaq reports the NKE option chain unavailable",
           "no reliable exact-contract quote, Greeks, IV, liquidity or directional opening-flow confirmation",
-          "bearish gap may be too extended to chase without next-session structure"
-        ]
+          "bearish gap may be too extended to chase without next-session structure",
+          "Nasdaq option chain unavailable",
+          "no verified current exact-contract quote, Greeks, IV, liquidity or directional flow"
+        ],
+        "marketReaction": {
+          "session": "regular",
+          "price": 33.22,
+          "changePercent": -5.49075,
+          "open": 32.4,
+          "high": 33.355,
+          "low": 31.32,
+          "volume": 58725250,
+          "marketCap": 49218752000,
+          "quoteTimestamp": "2026-10-02T14:33:59Z",
+          "broadMarket": {
+            "asset": "QQQ",
+            "price": 753.54,
+            "changePercent": 1.55115,
+            "quoteTimestamp": "2026-10-02T14:33:55Z"
+          },
+          "status": "bearish follow-through confirmed, but extended and rebounding from low"
+        }
       }
     },
     {
@@ -1836,15 +1892,15 @@
       "id": "options-on-syna-revised-merger-20261001",
       "eventType": "research",
       "system": "options",
-      "timestamp": "2026-10-02T13:03:14.549Z",
+      "timestamp": "2026-10-02T14:50:29.414Z",
       "asset": "ON",
-      "title": "Research: ON rises on revised all-cash Synaptics deal",
-      "summary": "onsemi and Synaptics amended their merger to $123 per SYNA share in cash, an aggregate value of approximately $5.7 billion versus the prior approximately $7 billion stock deal. onsemi expects immediate non-GAAP EPS accretion and more value opportunities beyond the previously identified $200 million of annual run-rate synergies. ON was indicated roughly 6-8% higher premarket, while SYNA traded near but below the $123 offer. This is a material bullish ON catalyst, but no paper option entry qualifies before the listed-options session opens because an exact 21-60 DTE contract's executable quote, delta, Greeks, IV, spread, volume, open interest and buyer-initiated flow could not be verified.",
+      "title": "Research update: ON merger reaction fades from opening high",
+      "summary": "The revised $123-per-share all-cash Synaptics acquisition remains verified. ON traded at $83.14 at 10:32 a.m. ET, up 3.82%, after opening at $84.21 and reaching $86.84; the fade from the high weakens immediate continuation quality. SYNA traded at $120.63, up 13.64%, below the $123 offer price. No paper option entry qualifies because Nasdaq's ON chain remains unavailable, preventing validation of an exact 21-60 DTE contract's executable quote, delta, Greeks, IV, spread, volume, open interest and buyer-initiated opening flow.",
       "reasons": [
-        "The issuer confirmed the revised $123-per-share all-cash structure and approximately $5.7 billion aggregate value.",
-        "Management expects the revised transaction to be immediately accretive to non-GAAP EPS.",
-        "The companies identified incremental revenue and insourcing opportunities beyond the previously announced $200 million of annual run-rate synergies.",
-        "Premarket reaction was strongly positive for ON, indicating initial shareholder approval of the lower-cost structure."
+        "The revised $123 cash offer and approximately $5.7 billion transaction remain primary-source verified.",
+        "ON held a 3.82% gain but faded from $86.84 to $83.14.",
+        "SYNA traded below the $123 offer price at $120.63.",
+        "Exact-contract eligibility and directional opening flow remain unavailable."
       ],
       "href": "https://www.onsemi.com/company/newsroom/news-and-insights/onsemi-and-synaptics-announce-revised-merger-agreement",
       "missingData": [
@@ -1854,11 +1910,12 @@
         "current IV rank and term structure",
         "contract volume, open interest and executable spread",
         "buyer-initiated opening-flow confirmation",
-        "post-jobs-report semiconductor-sector confirmation"
+        "post-jobs-report semiconductor-sector confirmation",
+        "exact 21-60 DTE bid, ask and midpoint"
       ],
-      "risk": "High. Research only. The initial move is a premarket gap; the acquisition remains subject to Synaptics shareholder approval, remaining regulatory approvals and other closing conditions, and onsemi is using committed debt financing.",
+      "risk": "Research only. Merger execution, financing and regulatory risks remain; ON's reaction faded materially from its session high, and no exact-contract economics or flow could be verified.",
       "details": {
-        "verificationStatus": "issuer and SEC catalyst confirmed; premarket reaction constructive; exact-contract eligibility unavailable",
+        "verificationStatus": "primary catalyst verified; material regular-session reaction confirmed; exact-contract eligibility unavailable",
         "catalyst": {
           "announcedAt": "2026-10-01",
           "target": "Synaptics",
@@ -1870,10 +1927,24 @@
           "priorAnnualRunRateSynergiesUsd": 200000000
         },
         "marketReaction": {
-          "session": "premarket",
-          "onIndication": "approximately +6% to +8%",
-          "synaIndication": "approximately +14% to +16%, near $121-$123",
-          "quoteReliability": "news-reported premarket indications; no executable option quote"
+          "session": "regular",
+          "price": 83.14,
+          "changePercent": 3.82118,
+          "open": 84.21,
+          "high": 86.84,
+          "low": 83,
+          "volume": 8336895,
+          "marketCap": 33642036000,
+          "quoteTimestamp": "2026-10-02T14:32:55Z",
+          "relatedAsset": {
+            "asset": "SYNA",
+            "price": 120.63,
+            "changePercent": 13.64107,
+            "high": 123,
+            "volume": 4895848,
+            "quoteTimestamp": "2026-10-02T14:33:53Z"
+          },
+          "status": "positive but faded from opening high"
         },
         "evidenceSources": [
           {
@@ -1896,6 +1967,13 @@
             "publishedAt": "2026-10-02",
             "checkedAt": "2026-10-02T13:03:14.549Z",
             "status": "checked"
+          },
+          {
+            "name": "ON October 2 regular-session market data",
+            "url": "https://finance.yahoo.com/quote/ON/",
+            "publishedAt": "2026-10-02T14:32:55Z",
+            "checkedAt": "2026-10-02T14:50:29.414Z",
+            "status": "checked"
           }
         ],
         "rejectionReasons": [
@@ -1903,7 +1981,9 @@
           "premarket gap may reverse after the opening bell",
           "Nasdaq provided no usable current ON or SYNA chain rows",
           "no verified exact-contract quote, Greeks, IV, spread, liquidity or opening flow",
-          "transaction remains subject to shareholder, regulatory and customary closing conditions"
+          "transaction remains subject to shareholder, regulatory and customary closing conditions",
+          "Nasdaq option chain unavailable",
+          "no verified current exact-contract quote, Greeks, IV, liquidity or directional flow"
         ]
       }
     },
@@ -2022,70 +2102,72 @@
       }
     },
     "options": {
-      "id": "options-scan-20261002T130314549Z",
-      "system": "options",
-      "startedAt": "2026-10-02T13:00:40.000Z",
-      "checkedAt": "2026-10-02T13:03:14.549Z",
-      "scheduledFor": "2026-10-02T13:00:00.000Z",
-      "nextScheduledAt": "2026-10-02T14:00:00.000Z",
-      "status": "market_closed",
-      "summary": "No open options paper trades required management. A new research-only catalyst was verified: onsemi revised its Synaptics acquisition to $123 per share in cash, approximately $5.7 billion, and expects immediate non-GAAP EPS accretion plus incremental synergies. ON gained roughly 6-8% premarket and SYNA traded near the offer price, but the listed-options session had not opened and Nasdaq exposed no usable current chain rows, so no exact 21-60 DTE quote, delta, Greeks, IV, spread, open interest, volume or buyer-initiated flow could be validated. Existing NKE, MRNA, BB and HPE research showed no additional material change. One research event was added; no entry, exit or mark was created.",
+      "startedAt": "2026-10-02T14:48:24.000Z",
+      "checkedAt": "2026-10-02T14:50:29.414Z",
+      "scheduledFor": "2026-10-02T14:00:00.000Z",
+      "nextScheduledAt": "2026-10-02T15:00:00.000Z",
+      "status": "data_limited",
+      "summary": "No open options paper trades required management. Three existing research setups changed materially: HPE traded at $68.43, up 5.96%, confirming its AI-networking order and raised-outlook catalyst; NKE traded at $33.22, down 5.49% on 58.73 million shares, confirming bearish follow-through but recovering from a $31.32 low; ON traded at $83.14, up 3.82%, but faded from $86.84 while SYNA remained below the revised $123 cash offer. Nasdaq returned no usable option-chain rows for ON, HPE or NKE, and real-time buyer-initiated flow was unavailable, so no exact contract met the quote, delta, Greeks, IV, spread, volume, open-interest and flow gates. Three research updates were written; no entry, exit or mark was created.",
       "sources": [
+        {
+          "name": "Latest ON, SYNA, HPE, NKE, BB, MRNA and QQQ market data",
+          "url": "https://finance.yahoo.com/",
+          "checkedAt": "2026-10-02T14:50:29.414Z",
+          "status": "checked"
+        },
         {
           "name": "onsemi and Synaptics revised merger announcement",
           "url": "https://www.onsemi.com/company/newsroom/news-and-insights/onsemi-and-synaptics-announce-revised-merger-agreement",
-          "checkedAt": "2026-10-02T13:03:14.549Z",
+          "checkedAt": "2026-10-02T14:50:29.414Z",
           "status": "checked"
         },
         {
-          "name": "Synaptics Form 8-K",
-          "url": "https://www.sec.gov/Archives/edgar/data/817720/000114036126038301/ef20083029_8k.htm",
-          "checkedAt": "2026-10-02T13:03:14.549Z",
+          "name": "HPE AI networking and FY2027 outlook disclosure",
+          "url": "https://www.hpe.com/us/en/newsroom/press-release/2026/09/hpe-securities-analyst-meeting-2026.html",
+          "checkedAt": "2026-10-02T14:50:29.414Z",
           "status": "checked"
         },
         {
-          "name": "Latest ON, SYNA, NKE, MRNA, BB, HPE and QQQ market data",
-          "url": "https://finance.yahoo.com/",
-          "checkedAt": "2026-10-02T13:03:14.549Z",
-          "status": "checked"
-        },
-        {
-          "name": "Current primary-source catalyst sweep",
-          "url": "https://www.sec.gov/edgar/search/",
-          "checkedAt": "2026-10-02T13:03:14.549Z",
+          "name": "Nike FY2027 outlook disclosure",
+          "url": "https://investors.nike.com/",
+          "checkedAt": "2026-10-02T14:50:29.414Z",
           "status": "checked"
         },
         {
           "name": "Nasdaq ON option chain",
           "url": "https://www.nasdaq.com/market-activity/stocks/on/option-chain",
-          "checkedAt": "2026-10-02T13:03:14.549Z",
+          "checkedAt": "2026-10-02T14:50:29.414Z",
           "status": "unavailable"
         },
         {
-          "name": "Nasdaq SYNA option chain",
-          "url": "https://www.nasdaq.com/market-activity/stocks/syna/option-chain",
-          "checkedAt": "2026-10-02T13:03:14.549Z",
+          "name": "Nasdaq HPE option chain",
+          "url": "https://www.nasdaq.com/market-activity/stocks/hpe/option-chain",
+          "checkedAt": "2026-10-02T14:50:29.414Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "Nasdaq NKE option chain",
+          "url": "https://www.nasdaq.com/market-activity/stocks/nke/option-chain",
+          "checkedAt": "2026-10-02T14:50:29.414Z",
           "status": "unavailable"
         },
         {
           "name": "Complete real-time unusual-options flow",
           "url": "https://www.cboe.com/us/options/market_statistics/",
-          "checkedAt": "2026-10-02T13:03:14.549Z",
+          "checkedAt": "2026-10-02T14:50:29.414Z",
           "status": "unavailable"
         }
       ],
       "missingData": [
-        "executable listed-options quotes before the U.S. options market opens",
-        "exact 21-60 DTE ON bid, ask and midpoint",
+        "exact 21-60 DTE bid, ask and midpoint for ON, HPE and NKE",
         "verified delta and remaining Greeks",
         "current IV rank and term structure",
         "contract volume, open interest and executable spread quality",
         "buyer-initiated opening-flow confirmation",
-        "regular-session price and volume acceptance after the opening bell",
         "complete real-time universe-wide unusual-options-flow coverage"
       ],
       "counts": {
-        "research": 1,
+        "research": 3,
         "entries": 0,
         "exits": 0
       },
@@ -17489,6 +17571,82 @@
       },
       "deliveryDiagnostics": {
         "repair20260928ReportedAt": "2026-09-28T01:51:49.985Z"
+      }
+    },
+    {
+      "id": "options-scan-20261002T145029414Z",
+      "system": "options",
+      "startedAt": "2026-10-02T14:48:24.000Z",
+      "checkedAt": "2026-10-02T14:50:29.414Z",
+      "scheduledFor": "2026-10-02T14:00:00.000Z",
+      "nextScheduledAt": "2026-10-02T15:00:00.000Z",
+      "status": "data_limited",
+      "summary": "No open options paper trades required management. Three existing research setups changed materially: HPE traded at $68.43, up 5.96%, confirming its AI-networking order and raised-outlook catalyst; NKE traded at $33.22, down 5.49% on 58.73 million shares, confirming bearish follow-through but recovering from a $31.32 low; ON traded at $83.14, up 3.82%, but faded from $86.84 while SYNA remained below the revised $123 cash offer. Nasdaq returned no usable option-chain rows for ON, HPE or NKE, and real-time buyer-initiated flow was unavailable, so no exact contract met the quote, delta, Greeks, IV, spread, volume, open-interest and flow gates. Three research updates were written; no entry, exit or mark was created.",
+      "sources": [
+        {
+          "name": "Latest ON, SYNA, HPE, NKE, BB, MRNA and QQQ market data",
+          "url": "https://finance.yahoo.com/",
+          "checkedAt": "2026-10-02T14:50:29.414Z",
+          "status": "checked"
+        },
+        {
+          "name": "onsemi and Synaptics revised merger announcement",
+          "url": "https://www.onsemi.com/company/newsroom/news-and-insights/onsemi-and-synaptics-announce-revised-merger-agreement",
+          "checkedAt": "2026-10-02T14:50:29.414Z",
+          "status": "checked"
+        },
+        {
+          "name": "HPE AI networking and FY2027 outlook disclosure",
+          "url": "https://www.hpe.com/us/en/newsroom/press-release/2026/09/hpe-securities-analyst-meeting-2026.html",
+          "checkedAt": "2026-10-02T14:50:29.414Z",
+          "status": "checked"
+        },
+        {
+          "name": "Nike FY2027 outlook disclosure",
+          "url": "https://investors.nike.com/",
+          "checkedAt": "2026-10-02T14:50:29.414Z",
+          "status": "checked"
+        },
+        {
+          "name": "Nasdaq ON option chain",
+          "url": "https://www.nasdaq.com/market-activity/stocks/on/option-chain",
+          "checkedAt": "2026-10-02T14:50:29.414Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "Nasdaq HPE option chain",
+          "url": "https://www.nasdaq.com/market-activity/stocks/hpe/option-chain",
+          "checkedAt": "2026-10-02T14:50:29.414Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "Nasdaq NKE option chain",
+          "url": "https://www.nasdaq.com/market-activity/stocks/nke/option-chain",
+          "checkedAt": "2026-10-02T14:50:29.414Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "Complete real-time unusual-options flow",
+          "url": "https://www.cboe.com/us/options/market_statistics/",
+          "checkedAt": "2026-10-02T14:50:29.414Z",
+          "status": "unavailable"
+        }
+      ],
+      "missingData": [
+        "exact 21-60 DTE bid, ask and midpoint for ON, HPE and NKE",
+        "verified delta and remaining Greeks",
+        "current IV rank and term structure",
+        "contract volume, open interest and executable spread quality",
+        "buyer-initiated opening-flow confirmation",
+        "complete real-time universe-wide unusual-options-flow coverage"
+      ],
+      "counts": {
+        "research": 3,
+        "entries": 0,
+        "exits": 0
+      },
+      "deliveryDiagnostics": {
+        "repair20260928ReportedAt": "2026-09-28T00:50:48.883Z"
       }
     }
   ]
