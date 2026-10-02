@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-10-02T15:17:35.741Z",
+  "updatedAt": "2026-10-02T15:21:47.368Z",
   "alerts": [
     {
       "id": "options-bb-fy27q2-20260924",
@@ -1039,17 +1039,16 @@
       "id": "meme-research-trump-coin-club-gala-20261001",
       "eventType": "research",
       "system": "meme",
-      "timestamp": "2026-10-02T07:58:31.021Z",
+      "timestamp": "2026-10-02T15:21:47.368Z",
       "asset": "TRUMP",
-      "title": "Research update: TRUMP short-term momentum rebounds, entry gates remain incomplete",
-      "summary": "The official TRUMP Coin Club gala catalyst remains verified and short-term market momentum improved materially. DEX Screener displayed TRUMP at $2.10 with approximately $261,000 pool liquidity and a $591.9 million market cap, up 2.33% over 24 hours. The latest five-minute window showed 23 buys versus 14 sells and about $801 of buy volume versus $632 of sell volume, reversing the prior all-sell snapshot. However, the 24-hour window remained nearly balanced by transaction count and slightly sell-heavy by dollar volume, while unique sellers still exceeded buyers. No tracked-wallet convergence, spam-filtered social acceleration, current insider-transfer analysis or executable spread was verified. No paper entry qualifies.",
+      "title": "Research update: TRUMP rebound loses short-term momentum",
+      "summary": "The official November 22 gala catalyst remains verified, but TRUMP's rebound weakened. DEX Screener showed $2.13, about $264,000 liquidity and a $600.3 million market cap, up 4.02% over 24 hours but down 1.58% over one hour. The latest five-minute window was nearly balanced at 33 buys versus 32 sells but sell volume exceeded buy volume; over six hours, sells exceeded buys 2,628 to 2,563 and unique sellers exceeded buyers 573 to 548. Twenty-four-hour unique sellers also exceeded buyers 1,711 to 1,608. No entry qualifies without tracked-wallet convergence, insider/bundler analysis, executable slippage and spam-filtered social acceleration.",
       "reasons": [
-        "The official November 22 gala campaign and exact Solana contract remain verified.",
-        "Displayed price improved to $2.10 and the rolling 24-hour return turned positive at 2.33%.",
-        "The latest five-minute window reversed to 23 buys versus 14 sells with buy volume exceeding sell volume.",
-        "The 24-hour window remained nearly balanced: 6,863 buys versus 6,853 sells and about $421,000 buy volume versus $423,000 sell volume.",
-        "Displayed 24-hour unique sellers still exceeded buyers, 1,608 to 1,459.",
-        "No named tracked-wallet persistence, two-wallet convergence, current insider-transfer check or spam-filtered unique-author acceleration was verified."
+        "The official gala remains a verified dated catalyst.",
+        "TRUMP slipped to $2.13 from the prior $2.19 snapshot.",
+        "One-hour performance turned negative at -1.58%.",
+        "Six-hour and 24-hour unique sellers continued to exceed unique buyers.",
+        "No tracked-wallet convergence or greater-than-one-hour position persistence was verified."
       ],
       "href": "https://gettrumpmemes.com/",
       "missingData": [
@@ -1058,9 +1057,14 @@
         "spam-filtered X unique-author mention velocity and acceleration",
         "current insider-wallet transfers and unlock-related selling pressure",
         "independent holder-concentration, bundler and wash-trading analysis",
-        "sustained continuation beyond the short-term flow rebound"
+        "sustained continuation beyond the short-term flow rebound",
+        "fresh executable bid, ask and slippage",
+        "current token-specific holdings for Frank DeGods and verified Clukz",
+        "verified two-wallet convergence and greater-than-one-hour persistence",
+        "current insider, bundler, holder-concentration and wash-trading analysis",
+        "X unique-author mention velocity, acceleration and spam filtering"
       ],
-      "risk": "Very high. Short-term momentum improved, but the 24-hour flow remains mixed, unique sellers still exceed buyers, creator-linked entities control 80% of supply under the official allocation schedule, and wallet, insider-transfer and social-quality checks remain incomplete. Research only; no paper entry.",
+      "risk": "Very high. Research only, not a paper entry. Short-term momentum weakened, creator-linked concentration and future unlock/insider-selling risks remain material, and wallet convergence, ownership safety, social quality and executable slippage are unverified.",
       "details": {
         "chain": "Solana",
         "contractAddress": "6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN",
@@ -1156,9 +1160,69 @@
           "no current insider-transfer, bundler or wash-trading clearance",
           "no executable spread or slippage verification",
           "24-hour unique sellers still exceeded buyers despite the short-term rebound",
-          "short-term reversal has not yet proved durable continuation"
+          "short-term reversal has not yet proved durable continuation",
+          "price fell from the prior $2.19 snapshot to $2.13",
+          "one-hour momentum turned negative",
+          "six-hour and 24-hour unique sellers exceeded buyers",
+          "tracked-wallet convergence and persistence unverified",
+          "complete insider/bundler and spam-filtered social checks unavailable"
         ],
-        "verificationStatus": "official catalyst and contract verified; short-term market momentum improved; wallet, social, executable-liquidity and ownership-risk entry gates incomplete"
+        "verificationStatus": "official gala catalyst verified; short-term rebound weakened; entry gates incomplete",
+        "marketData": {
+          "price": 2.13,
+          "liquidityUSD": 264000,
+          "marketCapUSD": 600300000,
+          "fdvUSD": 2130000000,
+          "change5mPercent": -0.61,
+          "change1hPercent": -1.58,
+          "change6hPercent": 0.87,
+          "change24hPercent": 4.02,
+          "volume24hUSD": 900000,
+          "quoteTimestamp": "2026-10-02T15:21:47.368Z"
+        },
+        "transactionMetrics": {
+          "m5": {
+            "buys": 33,
+            "sells": 32,
+            "buyVolumeUSD": 1600,
+            "sellVolumeUSD": 2400,
+            "buyers": 25,
+            "sellers": 9
+          },
+          "h1": {
+            "buys": 556,
+            "sells": 466,
+            "buyVolumeUSD": 22000,
+            "sellVolumeUSD": 21000,
+            "buyers": 168,
+            "sellers": 134
+          },
+          "h6": {
+            "buys": 2563,
+            "sells": 2628,
+            "buyVolumeUSD": 134000,
+            "sellVolumeUSD": 123000,
+            "buyers": 548,
+            "sellers": 573
+          },
+          "h24": {
+            "buys": 7706,
+            "sells": 7478,
+            "buyVolumeUSD": 454000,
+            "sellVolumeUSD": 446000,
+            "buyers": 1608,
+            "sellers": 1711
+          }
+        },
+        "evidenceSources": [
+          {
+            "name": "DEX Screener OFFICIAL TRUMP/SOL pair",
+            "url": "https://dexscreener.com/solana/6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN",
+            "publishedAt": "2026-10-02T15:21:47.368Z",
+            "checkedAt": "2026-10-02T15:21:47.368Z",
+            "status": "checked"
+          }
+        ]
       }
     },
     {
@@ -2249,73 +2313,59 @@
       }
     },
     "meme": {
-      "id": "meme-scan-20261002T130711555Z",
-      "system": "meme",
-      "startedAt": "2026-10-02T13:05:33.000Z",
-      "checkedAt": "2026-10-02T13:07:11.555Z",
-      "scheduledFor": "2026-10-02T13:00:00.000Z",
-      "nextScheduledAt": "2026-10-02T14:00:00.000Z",
+      "startedAt": "2026-10-02T15:19:57.000Z",
+      "checkedAt": "2026-10-02T15:21:47.368Z",
+      "scheduledFor": "2026-10-02T15:00:00.000Z",
+      "nextScheduledAt": "2026-10-02T16:00:00.000Z",
       "status": "data_limited",
-      "summary": "No open meme paper trades required management. OFFICIAL TRUMP rose to $2.19 with approximately $271,000 liquidity and a $617.2 million market cap, up 6.70% over 24 hours. The move remained mixed rather than entry-quality: five-minute sells exceeded buys 40 to 35, one-hour sells exceeded buys 876 to 732, and unique sellers exceeded buyers in every displayed multi-hour window despite higher buy-side dollar volume. pSOQ rose to $0.0005032 with about $96,000 liquidity and a $374,000 market cap, but only $5,400 of 24-hour volume, one five-minute sell, and 24-hour sellers exceeding buyers 29 to 16. IdontPayTaxes and Numero showed no TRUMP or pSOQ holdings; Daumen showed no recent swaps; Frank DeGods token-specific live holdings were unavailable. A fresh public-figure launch sweep found no newly verified official launch or endorsement with an independently confirmed contract. Existing research was unchanged; no research, entry, exit or mark event was added.",
+      "summary": "No open meme paper trades required management. TRUMP's official gala catalyst remains verified, but its rebound weakened to $2.13 with approximately $264,000 liquidity and a $600.3 million market cap. One-hour performance turned negative, six-hour sells exceeded buys, and unique sellers exceeded buyers over six and 24 hours. pSOQ remained near $0.0005028 with about $95,000 liquidity but only $7,000 of 24-hour volume and 22 buyers versus 30 sellers. IdontPayTaxes and Numero showed no TRUMP or pSOQ holdings in their displayed active books; Daumen showed no recent swaps; Frank DeGods token-specific holdings and verified Clukz coverage remained unavailable. A fresh public-figure launch sweep found no newly verified official launch or endorsement with an independently confirmed contract. One TRUMP research update was written; no entry, exit or mark was created.",
       "sources": [
         {
           "name": "DEX Screener OFFICIAL TRUMP/SOL pair",
           "url": "https://dexscreener.com/solana/6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN",
-          "checkedAt": "2026-10-02T13:07:11.555Z",
+          "checkedAt": "2026-10-02T15:21:47.368Z",
           "status": "checked"
         },
         {
           "name": "DEX Screener pSOQ/SOL pair",
           "url": "https://dexscreener.com/solana/EM9NyPqcByrz8zBxZUi2LazBTCY2zbVJa49nTXHi3Pq8",
-          "checkedAt": "2026-10-02T13:07:11.555Z",
-          "status": "checked"
-        },
-        {
-          "name": "Official TRUMP project source",
-          "url": "https://gettrumpmemes.com/",
-          "checkedAt": "2026-10-02T13:07:11.555Z",
-          "status": "checked"
-        },
-        {
-          "name": "Soqucoin migration source",
-          "url": "https://soqucoin.org/migration",
-          "checkedAt": "2026-10-02T13:07:11.555Z",
+          "checkedAt": "2026-10-02T15:21:47.368Z",
           "status": "checked"
         },
         {
           "name": "IdontPayTaxes and Numero wallet comparison",
           "url": "https://kolexplorer.com/compare/idontpaytaxes-vs-numero",
-          "checkedAt": "2026-10-02T13:07:11.555Z",
+          "checkedAt": "2026-10-02T15:21:47.368Z",
           "status": "checked"
         },
         {
           "name": "Daumen wallet profile",
           "url": "https://uwuu.ai/trader/8MaVa9kdt3NW4Q5HyNAm1X5LbR8PQRVDc1W8NMVK88D5",
-          "checkedAt": "2026-10-02T13:07:11.555Z",
+          "checkedAt": "2026-10-02T15:21:47.368Z",
           "status": "checked"
         },
         {
           "name": "Frank DeGods profile",
           "url": "https://www.copyfomo.com/traders/frankdegods",
-          "checkedAt": "2026-10-02T13:07:11.555Z",
+          "checkedAt": "2026-10-02T15:21:47.368Z",
           "status": "checked"
         },
         {
           "name": "Current prominent-figure and Solana launch search",
           "url": "https://x.com/search",
-          "checkedAt": "2026-10-02T13:07:11.555Z",
+          "checkedAt": "2026-10-02T15:21:47.368Z",
           "status": "checked"
         },
         {
           "name": "Verified Clukz current holdings",
           "url": "https://kolexplorer.com/",
-          "checkedAt": "2026-10-02T13:07:11.555Z",
+          "checkedAt": "2026-10-02T15:21:47.368Z",
           "status": "unavailable"
         },
         {
           "name": "X live unique-author acceleration and spam filtering",
           "url": "https://x.com/search",
-          "checkedAt": "2026-10-02T13:07:11.555Z",
+          "checkedAt": "2026-10-02T15:21:47.368Z",
           "status": "unavailable"
         }
       ],
@@ -2329,7 +2379,7 @@
         "complete real-time coverage of all Solana launches, holders, buyers and liquidity venues"
       ],
       "counts": {
-        "research": 0,
+        "research": 1,
         "entries": 0,
         "exits": 0
       },
@@ -17855,6 +17905,83 @@
       },
       "deliveryDiagnostics": {
         "repair20260928ReportedAt": "2026-09-28T01:47:21.040Z"
+      }
+    },
+    {
+      "id": "meme-scan-20261002T152147368Z",
+      "system": "meme",
+      "startedAt": "2026-10-02T15:19:57.000Z",
+      "checkedAt": "2026-10-02T15:21:47.368Z",
+      "scheduledFor": "2026-10-02T15:00:00.000Z",
+      "nextScheduledAt": "2026-10-02T16:00:00.000Z",
+      "status": "data_limited",
+      "summary": "No open meme paper trades required management. TRUMP's official gala catalyst remains verified, but its rebound weakened to $2.13 with approximately $264,000 liquidity and a $600.3 million market cap. One-hour performance turned negative, six-hour sells exceeded buys, and unique sellers exceeded buyers over six and 24 hours. pSOQ remained near $0.0005028 with about $95,000 liquidity but only $7,000 of 24-hour volume and 22 buyers versus 30 sellers. IdontPayTaxes and Numero showed no TRUMP or pSOQ holdings in their displayed active books; Daumen showed no recent swaps; Frank DeGods token-specific holdings and verified Clukz coverage remained unavailable. A fresh public-figure launch sweep found no newly verified official launch or endorsement with an independently confirmed contract. One TRUMP research update was written; no entry, exit or mark was created.",
+      "sources": [
+        {
+          "name": "DEX Screener OFFICIAL TRUMP/SOL pair",
+          "url": "https://dexscreener.com/solana/6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN",
+          "checkedAt": "2026-10-02T15:21:47.368Z",
+          "status": "checked"
+        },
+        {
+          "name": "DEX Screener pSOQ/SOL pair",
+          "url": "https://dexscreener.com/solana/EM9NyPqcByrz8zBxZUi2LazBTCY2zbVJa49nTXHi3Pq8",
+          "checkedAt": "2026-10-02T15:21:47.368Z",
+          "status": "checked"
+        },
+        {
+          "name": "IdontPayTaxes and Numero wallet comparison",
+          "url": "https://kolexplorer.com/compare/idontpaytaxes-vs-numero",
+          "checkedAt": "2026-10-02T15:21:47.368Z",
+          "status": "checked"
+        },
+        {
+          "name": "Daumen wallet profile",
+          "url": "https://uwuu.ai/trader/8MaVa9kdt3NW4Q5HyNAm1X5LbR8PQRVDc1W8NMVK88D5",
+          "checkedAt": "2026-10-02T15:21:47.368Z",
+          "status": "checked"
+        },
+        {
+          "name": "Frank DeGods profile",
+          "url": "https://www.copyfomo.com/traders/frankdegods",
+          "checkedAt": "2026-10-02T15:21:47.368Z",
+          "status": "checked"
+        },
+        {
+          "name": "Current prominent-figure and Solana launch search",
+          "url": "https://x.com/search",
+          "checkedAt": "2026-10-02T15:21:47.368Z",
+          "status": "checked"
+        },
+        {
+          "name": "Verified Clukz current holdings",
+          "url": "https://kolexplorer.com/",
+          "checkedAt": "2026-10-02T15:21:47.368Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "X live unique-author acceleration and spam filtering",
+          "url": "https://x.com/search",
+          "checkedAt": "2026-10-02T15:21:47.368Z",
+          "status": "unavailable"
+        }
+      ],
+      "missingData": [
+        "fresh executable bid, ask and slippage for TRUMP and pSOQ",
+        "current token-specific holdings and remaining-position percentages for Frank DeGods and verified Clukz",
+        "verified two-wallet convergence and greater-than-one-hour persistence",
+        "current deployer, insider, bundler, holder-concentration and wash-trading analysis",
+        "X unique-author mention velocity, acceleration and spam filtering",
+        "current TRUMP insider-wallet transfers and unlock-related selling pressure",
+        "complete real-time coverage of all Solana launches, holders, buyers and liquidity venues"
+      ],
+      "counts": {
+        "research": 1,
+        "entries": 0,
+        "exits": 0
+      },
+      "deliveryDiagnostics": {
+        "repair20260928ReportedAt": "2026-09-28T02:04:42.735Z"
       }
     }
   ]
