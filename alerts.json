@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-10-02T13:26:35.949Z",
+  "updatedAt": "2026-10-02T13:56:12.919Z",
   "alerts": [
     {
       "id": "options-bb-fy27q2-20260924",
@@ -209,15 +209,15 @@
       "id": "penny-fthm-restructured-transaction-20260924",
       "eventType": "research",
       "system": "penny",
-      "timestamp": "2026-10-01T23:43:08.157Z",
+      "timestamp": "2026-10-02T13:56:12.919Z",
       "asset": "FTHM",
-      "title": "Research update: FTHM deterioration deepens",
-      "summary": "Fathom's preliminary transaction catalyst remains source-verified but price action deteriorated further. FTHM closed the October 1 session at $0.38, down 14.52%, after opening at $0.4235 and trading between $0.3721 and $0.431 on 916,640 shares. The stock is now roughly 27% below the $0.522 quote in the prior research update, confirming continued failure rather than constructive post-catalyst continuation. No entry qualifies.",
+      "title": "Research update: FTHM transaction thesis deteriorates further",
+      "summary": "Fathom's preliminary transaction remains source-verified, but the market reaction deteriorated again. At 9:35 a.m. ET on October 2, FTHM traded at $0.331, down 12.89%, at the session low after opening at $0.354; volume was 185,439 shares. The stock is now about 37% below the prior $0.522 research quote. The continued selloff, active minimum-bid deficiency, preliminary share-based transaction structure and dilution/control risks reject entry.",
       "reasons": [
-        "The September 24 issuer announcement and Form 8-K confirm that the parties agreed to explore an alternative transaction structure.",
-        "The proposed contributed assets are described as worth at least $130 million, subject to validation, definitive agreements and approvals.",
-        "At 13:34:15 UTC on September 28, FTHM traded at $0.522, down 10.46%, with a $0.5031-$0.5903 range and 1,504,131 shares traded.",
-        "October 1 market reaction: 0.38 (-14.52%) on 916,640 shares"
+        "The preliminary alternative-transaction announcement remains source-verified.",
+        "FTHM traded at $0.331, down 12.89%, at 9:35 a.m. ET on October 2.",
+        "The quote was at the session low and roughly 37% below the prior $0.522 research snapshot.",
+        "Listing, dilution, execution and control risks remain unresolved."
       ],
       "href": "https://ir.fathominc.com/news-events/press-releases/detail/181/fathom-holdings-and-neighborhood-intelligence-announce",
       "missingData": [
@@ -228,9 +228,9 @@
         "fresh executable bid, ask and spread after the market close",
         "complete current dilution and insider sweep"
       ],
-      "risk": "Research only, not a paper entry. The regular-session decline and failed continuation materially weaken the setup. The transaction is exploratory, requires definitive agreements, valuation validation, board and stockholder approvals, a fairness opinion and other approvals, and may not close. Consideration would be newly issued Fathom shares and NXH is expected to retain control, creating substantial dilution/control risk. FTHM also has an active Nasdaq minimum-bid deficiency. October 1 price action failed to confirm the catalyst; research only and rejected for entry.",
+      "risk": "Research only, not a paper entry. Price deterioration materially weakens the thesis. The transaction remains preliminary, would use newly issued shares, and is subject to valuation, definitive agreements and approvals; the active minimum-bid deficiency and expected controlling interest compound dilution and execution risk.",
       "details": {
-        "verificationStatus": "primary catalyst remains verified; October 1 continuation failed; rejected for entry",
+        "verificationStatus": "primary catalyst remains verified; October 2 deterioration deepened; rejected for entry",
         "evidenceSources": [
           {
             "name": "Fathom issuer announcement",
@@ -266,6 +266,13 @@
             "publishedAt": "2026-10-01T23:19:17Z",
             "checkedAt": "2026-10-01T23:43:08.157Z",
             "status": "checked"
+          },
+          {
+            "name": "FTHM October 2 regular-session market data",
+            "url": "https://finance.yahoo.com/quote/FTHM/",
+            "publishedAt": "2026-10-02T13:35:16Z",
+            "checkedAt": "2026-10-02T13:56:12.919Z",
+            "status": "checked"
           }
         ],
         "catalystVerification": {
@@ -286,19 +293,23 @@
           "roughly 27% below the prior $0.522 research quote",
           "continued failure of the proposed-transaction catalyst to produce constructive continuation",
           "transaction remains preliminary and would involve newly issued shares",
-          "active listing and dilution risks remain"
+          "active listing and dilution risks remain",
+          "October 2 price down 12.89% at the quote timestamp",
+          "quote at the $0.331 session low",
+          "roughly 37% below the prior $0.522 research snapshot",
+          "continued failure of the preliminary transaction catalyst"
         ],
         "marketReaction": {
-          "price": 0.38,
-          "changePercent": -14.51872,
-          "open": 0.4235,
-          "high": 0.431,
-          "low": 0.3721,
-          "volume": 916640,
-          "marketCap": 12701370,
-          "quoteTimestamp": "2026-10-01T23:19:17Z",
-          "session": "closing",
-          "status": "failed continuation"
+          "session": "regular",
+          "price": 0.331,
+          "changePercent": -12.89474,
+          "open": 0.354,
+          "high": 0.38,
+          "low": 0.331,
+          "volume": 185439,
+          "marketCap": 11063562,
+          "quoteTimestamp": "2026-10-02T13:35:16Z",
+          "status": "continued catalyst failure and deteriorating structure"
         }
       }
     },
@@ -1717,15 +1728,15 @@
       "id": "penny-meds-corexa-revenue-20261001",
       "eventType": "research",
       "system": "penny",
-      "timestamp": "2026-10-02T11:50:39.209Z",
+      "timestamp": "2026-10-02T13:56:12.919Z",
       "asset": "MEDS",
-      "title": "Research: MEDS pharmacy revenue surge is offset by dilution and balance-sheet risk",
-      "summary": "DataMeds AI reported preliminary unaudited September 2026 revenue above $1 million at Corexa Pharmacy, more than 66% above July. MEDS closed October 1 at $4.06 after a 28.08% gain and was roughly 310% higher over one month; a delayed premarket snapshot then showed a 6.16% pullback on elevated activity. No paper entry qualifies because the move is extremely extended, the company has substantial financing, warrant, convertible-note and reverse-split history, and reliable executable spread, current structure, social and insider checks were unavailable.",
+      "title": "Research update: MEDS revenue-catalyst reaction reverses",
+      "summary": "Corexa Pharmacy's preliminary September revenue growth remains source-verified, but MEDS reversed after the initial catalyst response. At 9:39 a.m. ET on October 2, MEDS traded at $3.76, down 7.39%, after opening at $3.87 and ranging from $3.69 to $4.01 on 329,621 shares. The price remains highly volatile and the setup still fails the entry gate because of prior extreme extension, warrants, convertible-note financing, registration obligations, reverse-split history, weak balance-sheet quality and unavailable executable spread/social confirmation.",
       "reasons": [
-        "Issuer source reports preliminary unaudited September revenue above $1 million, more than 66% above July.",
-        "October 1 price action confirmed strong attention, but the approximately 310% one-month advance creates major extension and reversal risk.",
-        "The SEC registration statement documents warrants, placement-agent warrants, multiple note financings and registration-rights obligations.",
-        "FY2025 losses, negative gross margin, negative operating cash flow and a very low current ratio materially weaken catalyst quality."
+        "Corexa's preliminary unaudited September revenue above $1 million remains verified.",
+        "MEDS traded at $3.76, down 7.39%, at 9:39 a.m. ET on October 2.",
+        "The stock failed to hold the prior $4.06 snapshot and traded as low as $3.69.",
+        "Dilution, financing, reverse-split and liquidity risks remain unresolved."
       ],
       "href": "https://company-998106.suite.accessnewswire.com/",
       "missingData": [
@@ -1733,9 +1744,12 @@
         "Complete current cap table, warrant and note-conversion overhang, and remaining dilution capacity.",
         "Spam-filtered X/Twitter unique-author acceleration.",
         "Current insider activity and beneficial-ownership changes.",
-        "Audited confirmation of the preliminary revenue and evidence of positive margin and cash conversion."
+        "Audited confirmation of the preliminary revenue and evidence of positive margin and cash conversion.",
+        "fresh executable bid, ask and spread",
+        "complete current dilution and beneficial-ownership sweep",
+        "spam-filtered X unique-author acceleration"
       ],
-      "risk": "Very high. Research only; rejected for entry because the stock is extremely extended and financing, dilution, reverse-split, liquidity and fundamental risks remain substantial.",
+      "risk": "Research only, not a paper entry. The revenue catalyst is preliminary and unaudited; the stock remains extremely volatile and subject to warrants, convertible-note financing, registration obligations, reverse-split history, weak liquidity and balance-sheet risk. The October 2 reversal rejects entry pending durable price acceptance and complete risk checks.",
       "details": {
         "catalyst": {
           "status": "confirmed issuer announcement; preliminary and unaudited",
@@ -1762,6 +1776,13 @@
             "url": "https://www.stocktitan.net/overview/MEDS/",
             "checkedAt": "2026-10-02T11:50:39.209Z",
             "status": "checked_delayed_context"
+          },
+          {
+            "name": "MEDS October 2 regular-session market data",
+            "url": "https://finance.yahoo.com/quote/MEDS/",
+            "publishedAt": "2026-10-02T13:39:22Z",
+            "checkedAt": "2026-10-02T13:56:12.919Z",
+            "status": "checked"
           }
         ],
         "marketSnapshot": {
@@ -1780,15 +1801,31 @@
           "operatingCashFlowUsd": -10900000,
           "currentRatio": 0.09
         },
-        "verificationStatus": "primary issuer catalyst confirmed; research only; entry rejected",
+        "verificationStatus": "primary catalyst remains verified; October 2 reaction reversed; rejected for entry",
         "rejectionReasons": [
           "approximately 310% one-month extension and negative delayed premarket reversal",
           "preliminary unaudited revenue rather than audited profitable growth",
           "documented warrants, placement-agent warrants, convertible-note financings and registration rights",
           "1-for-50 reverse-split history",
           "large FY2025 net loss, negative gross margin, negative operating cash flow and current ratio of 0.09",
-          "no reliable current executable quote, spread, full dilution sweep, insider check or spam-filtered social confirmation"
-        ]
+          "no reliable current executable quote, spread, full dilution sweep, insider check or spam-filtered social confirmation",
+          "October 2 price down 7.39% at the quote timestamp",
+          "failed to hold the prior $4.06 research snapshot",
+          "prior extreme extension and unresolved financing/dilution risks",
+          "fresh executable spread and social confirmation unavailable"
+        ],
+        "marketReaction": {
+          "session": "regular",
+          "price": 3.76,
+          "changePercent": -7.38916,
+          "open": 3.87,
+          "high": 4.01,
+          "low": 3.69,
+          "volume": 329621,
+          "marketCap": 9680755,
+          "quoteTimestamp": "2026-10-02T13:39:22Z",
+          "status": "revenue-catalyst reaction reversed; no constructive entry structure"
+        }
       }
     },
     {
@@ -1907,72 +1944,72 @@
   ],
   "scanners": {
     "penny": {
-      "startedAt": "2026-10-02T13:07:29.000Z",
-      "checkedAt": "2026-10-02T13:09:25.385Z",
+      "startedAt": "2026-10-02T13:54:25.000Z",
+      "checkedAt": "2026-10-02T13:56:12.919Z",
       "scheduledFor": "2026-10-02T13:00:00.000Z",
       "nextScheduledAt": "2026-10-02T14:00:00.000Z",
       "status": "data_limited",
-      "summary": "No open penny paper trades required management. MEDS remained at the last available $4.06 snapshot after its October 1 earnings reaction, but no fresh executable premarket bid/ask, spread, full intraday structure or complete dilution check was available; the existing MEDS item therefore remains research-only. NSTR still lacked reliable post-listing quote and liquidity data. A fresh SEC, issuer and FDA catalyst sweep produced no new primary-source setup meeting the material-research or entry gates. Secondary momentum in SDEV lacked a verified primary catalyst, and a HYPD buyback/debt headline was not sufficiently verified and lacked current entry-quality market data. Existing research was unchanged; no research, entry, exit or mark event was added.",
+      "summary": "No open penny paper trades required management. MEDS and FTHM changed materially after the open and their existing research records were updated: MEDS traded at $3.76, down 7.39%, reversing its revenue-catalyst reaction; FTHM traded at $0.331, down 12.89%, extending the failure of its preliminary transaction thesis. SOAR rebounded modestly to $0.3085 but did not establish a qualifying continuation. NSTR still lacked reliable post-listing price, spread and liquidity data. A fresh SEC, issuer and FDA sweep found no additional primary-source setup meeting the research or entry gates. Two research updates were written; no entry, exit or mark was created.",
       "sources": [
         {
-          "name": "Latest tracked penny-stock market data",
-          "url": "https://finance.yahoo.com/",
-          "checkedAt": "2026-10-02T13:09:25.385Z",
+          "name": "MEDS October 2 regular-session market data",
+          "url": "https://finance.yahoo.com/quote/MEDS/",
+          "checkedAt": "2026-10-02T13:56:12.919Z",
+          "status": "checked"
+        },
+        {
+          "name": "FTHM October 2 regular-session market data",
+          "url": "https://finance.yahoo.com/quote/FTHM/",
+          "checkedAt": "2026-10-02T13:56:12.919Z",
+          "status": "checked"
+        },
+        {
+          "name": "SOAR October 2 regular-session market data",
+          "url": "https://finance.yahoo.com/quote/SOAR/",
+          "checkedAt": "2026-10-02T13:56:12.919Z",
           "status": "checked"
         },
         {
           "name": "SEC EDGAR current filings and catalyst sweep",
           "url": "https://www.sec.gov/edgar/search/",
-          "checkedAt": "2026-10-02T13:09:25.385Z",
+          "checkedAt": "2026-10-02T13:56:12.919Z",
           "status": "checked"
         },
         {
-          "name": "FDA news and announcements sweep",
+          "name": "FDA current approvals and announcements sweep",
           "url": "https://www.fda.gov/news-events",
-          "checkedAt": "2026-10-02T13:09:25.385Z",
+          "checkedAt": "2026-10-02T13:56:12.919Z",
           "status": "checked"
         },
         {
-          "name": "Issuer-news catalyst sweep",
-          "url": "https://www.globenewswire.com/",
-          "checkedAt": "2026-10-02T13:09:25.385Z",
-          "status": "checked"
-        },
-        {
-          "name": "Fresh executable MEDS quote, spread and structure",
-          "url": "https://finance.yahoo.com/quote/MEDS/",
-          "checkedAt": "2026-10-02T13:09:25.385Z",
-          "status": "unavailable"
-        },
-        {
-          "name": "Reliable post-listing NSTR quote and liquidity",
+          "name": "Reliable NSTR post-listing quote and spread",
           "url": "https://finance.yahoo.com/quote/NSTR/",
-          "checkedAt": "2026-10-02T13:09:25.385Z",
+          "checkedAt": "2026-10-02T13:56:12.919Z",
           "status": "unavailable"
         },
         {
           "name": "Complete real-time dilution and insider sweep",
           "url": "https://www.sec.gov/edgar/search/",
-          "checkedAt": "2026-10-02T13:09:25.385Z",
+          "checkedAt": "2026-10-02T13:56:12.919Z",
           "status": "unavailable"
         },
         {
           "name": "Spam-filtered X unique-author acceleration",
           "url": "https://x.com/search",
-          "checkedAt": "2026-10-02T13:09:25.385Z",
+          "checkedAt": "2026-10-02T13:56:12.919Z",
           "status": "unavailable"
         }
       ],
       "missingData": [
-        "fresh executable MEDS bid, ask, spread and premarket structure",
         "reliable post-listing NSTR quote, market capitalization, volume and spread",
+        "fresh executable bid, ask and spread for all tracked microcaps",
         "complete current S-1, S-3, 424B, ATM, PIPE, convertible and warrant sweep across the candidate universe",
         "current insider alignment and beneficial-ownership changes",
         "spam-filtered X unique-author mention acceleration",
         "complete real-time penny and microcap universe coverage"
       ],
       "counts": {
-        "research": 0,
+        "research": 2,
         "entries": 0,
         "exits": 0
       },
@@ -17319,6 +17356,82 @@
       },
       "deliveryDiagnostics": {
         "repair20260928ReportedAt": "2026-09-28T01:51:49.985Z"
+      }
+    },
+    {
+      "id": "penny-scan-20261002T135612919Z",
+      "system": "penny",
+      "startedAt": "2026-10-02T13:54:25.000Z",
+      "checkedAt": "2026-10-02T13:56:12.919Z",
+      "scheduledFor": "2026-10-02T13:00:00.000Z",
+      "nextScheduledAt": "2026-10-02T14:00:00.000Z",
+      "status": "data_limited",
+      "summary": "No open penny paper trades required management. MEDS and FTHM changed materially after the open and their existing research records were updated: MEDS traded at $3.76, down 7.39%, reversing its revenue-catalyst reaction; FTHM traded at $0.331, down 12.89%, extending the failure of its preliminary transaction thesis. SOAR rebounded modestly to $0.3085 but did not establish a qualifying continuation. NSTR still lacked reliable post-listing price, spread and liquidity data. A fresh SEC, issuer and FDA sweep found no additional primary-source setup meeting the research or entry gates. Two research updates were written; no entry, exit or mark was created.",
+      "sources": [
+        {
+          "name": "MEDS October 2 regular-session market data",
+          "url": "https://finance.yahoo.com/quote/MEDS/",
+          "checkedAt": "2026-10-02T13:56:12.919Z",
+          "status": "checked"
+        },
+        {
+          "name": "FTHM October 2 regular-session market data",
+          "url": "https://finance.yahoo.com/quote/FTHM/",
+          "checkedAt": "2026-10-02T13:56:12.919Z",
+          "status": "checked"
+        },
+        {
+          "name": "SOAR October 2 regular-session market data",
+          "url": "https://finance.yahoo.com/quote/SOAR/",
+          "checkedAt": "2026-10-02T13:56:12.919Z",
+          "status": "checked"
+        },
+        {
+          "name": "SEC EDGAR current filings and catalyst sweep",
+          "url": "https://www.sec.gov/edgar/search/",
+          "checkedAt": "2026-10-02T13:56:12.919Z",
+          "status": "checked"
+        },
+        {
+          "name": "FDA current approvals and announcements sweep",
+          "url": "https://www.fda.gov/news-events",
+          "checkedAt": "2026-10-02T13:56:12.919Z",
+          "status": "checked"
+        },
+        {
+          "name": "Reliable NSTR post-listing quote and spread",
+          "url": "https://finance.yahoo.com/quote/NSTR/",
+          "checkedAt": "2026-10-02T13:56:12.919Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "Complete real-time dilution and insider sweep",
+          "url": "https://www.sec.gov/edgar/search/",
+          "checkedAt": "2026-10-02T13:56:12.919Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "Spam-filtered X unique-author acceleration",
+          "url": "https://x.com/search",
+          "checkedAt": "2026-10-02T13:56:12.919Z",
+          "status": "unavailable"
+        }
+      ],
+      "missingData": [
+        "reliable post-listing NSTR quote, market capitalization, volume and spread",
+        "fresh executable bid, ask and spread for all tracked microcaps",
+        "complete current S-1, S-3, 424B, ATM, PIPE, convertible and warrant sweep across the candidate universe",
+        "current insider alignment and beneficial-ownership changes",
+        "spam-filtered X unique-author mention acceleration",
+        "complete real-time penny and microcap universe coverage"
+      ],
+      "counts": {
+        "research": 2,
+        "entries": 0,
+        "exits": 0
+      },
+      "deliveryDiagnostics": {
+        "repair20260928ReportedAt": "2026-09-28T01:47:21.040Z"
       }
     }
   ]
