@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-10-02T07:11:45.033Z",
+  "updatedAt": "2026-10-02T07:13:39.031Z",
   "alerts": [
     {
       "id": "options-bb-fy27q2-20260924",
@@ -1534,55 +1534,55 @@
       }
     },
     "meme": {
-      "id": "meme-scan-20261002T053206Z",
+      "id": "meme-scan-20261002T071218Z",
       "system": "meme",
-      "startedAt": "2026-10-02T05:32:06.000Z",
-      "checkedAt": "2026-10-02T05:33:08.057Z",
-      "scheduledFor": "2026-10-02T05:00:00.000Z",
-      "nextScheduledAt": "2026-10-02T06:00:00.000Z",
+      "startedAt": "2026-10-02T07:12:18.000Z",
+      "checkedAt": "2026-10-02T07:13:39.031Z",
+      "scheduledFor": "2026-10-02T07:00:00.000Z",
+      "nextScheduledAt": "2026-10-02T08:00:00.000Z",
       "status": "data_limited",
-      "summary": "No open meme paper trades required management. OFFICIAL TRUMP remained at a displayed $2.08 with about $260,000 liquidity and a $588.2 million market cap, while its 24-hour performance remained negative and sellers still exceeded buyers. pSOQ remained near $0.0004435 with about $89,000 liquidity and negligible participation, including no five-minute trades and only one $2 sell over one hour. IdontPayTaxes and Numero still showed no visible TRUMP or pSOQ convergence. A newly surfaced social post claiming a future Solana memecoin launch supplied no independently verified project identity, contract address, explorer record or liquidity pool and was rejected as unverified promotion. No new verified prominent-figure launch was found. No research, entry, exit or mark event was added.",
+      "summary": "No open meme paper trades required management. OFFICIAL TRUMP displayed $2.09, approximately $260,000 liquidity and a $589.9 million market cap. Its 24-hour decline improved to about 2.33%, but the latest five-minute window remained sell-dominated with 14 sells versus 2 buys and about $443 of sell volume versus less than $1 of buy volume. pSOQ's displayed market cap was approximately $347,000, but executable spread, meaningful participation and tracked-wallet confirmation remained unavailable. IdontPayTaxes and Numero produced no verified two-wallet convergence, while Daumen, Frank DeGods and verified Clukz position persistence remained unavailable. A fresh search found no independently verified new prominent-figure token launch; recycled TRUMP coverage, generic launch promotions and unrelated stablecoin news were rejected. Existing TRUMP and pSOQ research did not change materially. No research, entry, exit or mark event was added.",
       "sources": [
         {
           "name": "DEX Screener OFFICIAL TRUMP/SOL pair",
           "url": "https://dexscreener.com/solana/6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN",
-          "checkedAt": "2026-10-02T05:33:08.057Z",
+          "checkedAt": "2026-10-02T07:13:39.031Z",
           "status": "checked"
         },
         {
           "name": "DEX Screener pSOQ/SOL pair",
           "url": "https://dexscreener.com/solana/EM9NyPqcByrz8zBxZUi2LazBTCY2zbVJa49nTXHi3Pq8",
-          "checkedAt": "2026-10-02T05:33:08.057Z",
+          "checkedAt": "2026-10-02T07:13:39.031Z",
           "status": "checked"
         },
         {
           "name": "Official TRUMP Coin Club",
           "url": "https://gettrumpmemes.com/",
-          "checkedAt": "2026-10-02T05:33:08.057Z",
+          "checkedAt": "2026-10-02T07:13:39.031Z",
           "status": "checked"
         },
         {
           "name": "IdontPayTaxes and Numero wallet comparison",
           "url": "https://kolexplorer.com/compare/idontpaytaxes-vs-numero",
-          "checkedAt": "2026-10-02T05:33:08.057Z",
+          "checkedAt": "2026-10-02T07:13:39.031Z",
           "status": "checked"
         },
         {
           "name": "Current prominent-figure and Solana launch search",
           "url": "https://x.com/search",
-          "checkedAt": "2026-10-02T05:33:08.057Z",
+          "checkedAt": "2026-10-02T07:13:39.031Z",
           "status": "checked"
         },
         {
           "name": "Daumen, Frank DeGods and verified Clukz current holdings",
           "url": "https://kolexplorer.com/",
-          "checkedAt": "2026-10-02T05:33:08.057Z",
+          "checkedAt": "2026-10-02T07:13:39.031Z",
           "status": "unavailable"
         },
         {
           "name": "X live unique-author acceleration and spam filtering",
           "url": "https://x.com/search",
-          "checkedAt": "2026-10-02T05:33:08.057Z",
+          "checkedAt": "2026-10-02T07:13:39.031Z",
           "status": "unavailable"
         }
       ],
@@ -14952,6 +14952,78 @@
       },
       "deliveryDiagnostics": {
         "repair20260928ReportedAt": "2026-09-28T01:51:49.985Z"
+      }
+    },
+    {
+      "id": "meme-scan-20261002T071218Z",
+      "system": "meme",
+      "startedAt": "2026-10-02T07:12:18.000Z",
+      "checkedAt": "2026-10-02T07:13:39.031Z",
+      "scheduledFor": "2026-10-02T07:00:00.000Z",
+      "nextScheduledAt": "2026-10-02T08:00:00.000Z",
+      "status": "data_limited",
+      "summary": "No open meme paper trades required management. OFFICIAL TRUMP displayed $2.09, approximately $260,000 liquidity and a $589.9 million market cap. Its 24-hour decline improved to about 2.33%, but the latest five-minute window remained sell-dominated with 14 sells versus 2 buys and about $443 of sell volume versus less than $1 of buy volume. pSOQ's displayed market cap was approximately $347,000, but executable spread, meaningful participation and tracked-wallet confirmation remained unavailable. IdontPayTaxes and Numero produced no verified two-wallet convergence, while Daumen, Frank DeGods and verified Clukz position persistence remained unavailable. A fresh search found no independently verified new prominent-figure token launch; recycled TRUMP coverage, generic launch promotions and unrelated stablecoin news were rejected. Existing TRUMP and pSOQ research did not change materially. No research, entry, exit or mark event was added.",
+      "sources": [
+        {
+          "name": "DEX Screener OFFICIAL TRUMP/SOL pair",
+          "url": "https://dexscreener.com/solana/6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN",
+          "checkedAt": "2026-10-02T07:13:39.031Z",
+          "status": "checked"
+        },
+        {
+          "name": "DEX Screener pSOQ/SOL pair",
+          "url": "https://dexscreener.com/solana/EM9NyPqcByrz8zBxZUi2LazBTCY2zbVJa49nTXHi3Pq8",
+          "checkedAt": "2026-10-02T07:13:39.031Z",
+          "status": "checked"
+        },
+        {
+          "name": "Official TRUMP Coin Club",
+          "url": "https://gettrumpmemes.com/",
+          "checkedAt": "2026-10-02T07:13:39.031Z",
+          "status": "checked"
+        },
+        {
+          "name": "IdontPayTaxes and Numero wallet comparison",
+          "url": "https://kolexplorer.com/compare/idontpaytaxes-vs-numero",
+          "checkedAt": "2026-10-02T07:13:39.031Z",
+          "status": "checked"
+        },
+        {
+          "name": "Current prominent-figure and Solana launch search",
+          "url": "https://x.com/search",
+          "checkedAt": "2026-10-02T07:13:39.031Z",
+          "status": "checked"
+        },
+        {
+          "name": "Daumen, Frank DeGods and verified Clukz current holdings",
+          "url": "https://kolexplorer.com/",
+          "checkedAt": "2026-10-02T07:13:39.031Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "X live unique-author acceleration and spam filtering",
+          "url": "https://x.com/search",
+          "checkedAt": "2026-10-02T07:13:39.031Z",
+          "status": "unavailable"
+        }
+      ],
+      "missingData": [
+        "fresh executable bid, ask and slippage for pSOQ and TRUMP",
+        "current token-specific holdings and remaining-position percentages for Daumen, Frank DeGods and verified Clukz",
+        "verified two-wallet convergence and greater-than-one-hour persistence",
+        "current deployer, insider, bundler, holder-concentration and wash-trading analysis",
+        "X unique-author mention velocity, acceleration and spam filtering",
+        "current successful credited allocations from the pSOQ migration run list",
+        "current TRUMP insider-wallet transfers and unlock-related selling pressure",
+        "complete real-time coverage of all Solana launches, holders, buyers and liquidity venues"
+      ],
+      "counts": {
+        "research": 0,
+        "entries": 0,
+        "exits": 0
+      },
+      "deliveryDiagnostics": {
+        "repair20260928ReportedAt": "2026-09-28T02:04:42.735Z"
       }
     }
   ]
