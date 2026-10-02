@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-10-02T22:57:49.035Z",
+  "updatedAt": "2026-10-02T23:42:54.237Z",
   "alerts": [
     {
       "id": "options-bb-fy27q2-20260924",
@@ -2526,53 +2526,53 @@
       }
     },
     "meme": {
-      "startedAt": "2026-10-02T22:56:18.000Z",
-      "checkedAt": "2026-10-02T22:57:49.035Z",
-      "scheduledFor": "2026-10-02T22:00:00.000Z",
-      "nextScheduledAt": "2026-10-02T23:00:00.000Z",
+      "startedAt": "2026-10-02T23:41:19.000Z",
+      "checkedAt": "2026-10-02T23:42:54.237Z",
+      "scheduledFor": "2026-10-02T23:00:00.000Z",
+      "nextScheduledAt": "2026-10-03T00:00:00.000Z",
       "status": "data_limited",
-      "summary": "No open meme paper trades required management. Fresh accessible market pages remained unchanged in substance from the prior completed check: TRUMP displayed $2.04 with about $254,000 liquidity, $1.0 million 24-hour volume, +0.79% over one hour, -4.12% over six hours and -0.16% over 24 hours. This was not a clean upside trigger, and the disclosed 80% creator-linked allocation plus unresolved current holder concentration, liquidity control and measured sell impact continued to block a paper entry. pSOQ displayed $0.0004928, about $93,000 liquidity and $8,300 24-hour volume, below both practical-mode minimums. A current public-figure launch and endorsement search found no independently verified new launch or material endorsement beyond the already-published TRUMP gala catalyst. No research record changed materially; no entry, exit or mark was created.",
+      "summary": "No open meme paper trades required management. TRUMP displayed $2.07 with about $257,000 liquidity and $1.1 million 24-hour volume. One-hour change improved to +1.24% and 24-hour change to +0.72%, but six-hour momentum remained -2.67%, one-hour sells exceeded buys 375 to 351, and five-minute sell volume exceeded buy volume. The move was not a clean directional trigger. The disclosed 80% creator-linked allocation plus unresolved current holder concentration, liquidity control and measured sell impact continued to block a paper entry. pSOQ displayed $0.0004934 with about $93,000 liquidity and only $8,400 24-hour volume, below both practical-mode floors. A current prominent-figure token search found no independently verified new launch or material endorsement beyond the existing TRUMP gala catalyst. No research record changed materially; no entry, exit or mark was created.",
       "sources": [
         {
           "name": "DEX Screener OFFICIAL TRUMP/SOL pair",
           "url": "https://dexscreener.com/solana/6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN",
-          "checkedAt": "2026-10-02T22:57:49.035Z",
+          "checkedAt": "2026-10-02T23:42:54.237Z",
           "status": "checked"
         },
         {
           "name": "DEX Screener pSOQ/SOL pair",
           "url": "https://dexscreener.com/solana/EM9NyPqcByrz8zBxZUi2LazBTCY2zbVJa49nTXHi3Pq8",
-          "checkedAt": "2026-10-02T22:57:49.035Z",
+          "checkedAt": "2026-10-02T23:42:54.237Z",
           "status": "checked"
         },
         {
           "name": "Official TRUMP gala page",
           "url": "https://gettrumpmemes.com/gala-dinner",
-          "checkedAt": "2026-10-02T22:57:49.035Z",
+          "checkedAt": "2026-10-02T23:42:54.237Z",
           "status": "checked"
         },
         {
-          "name": "Current public-figure token launch and endorsement search",
+          "name": "Current prominent-figure token launch and endorsement search",
           "url": "https://www.google.com/search?q=October+2+2026+celebrity+meme+coin+launch",
-          "checkedAt": "2026-10-02T22:57:49.035Z",
+          "checkedAt": "2026-10-02T23:42:54.237Z",
           "status": "checked"
         },
         {
           "name": "Current holder concentration and liquidity-control analysis",
           "url": "https://solscan.io/",
-          "checkedAt": "2026-10-02T22:57:49.035Z",
+          "checkedAt": "2026-10-02T23:42:54.237Z",
           "status": "unavailable"
         },
         {
           "name": "Measured swap impact and sellability quote",
           "url": "https://www.orca.so/",
-          "checkedAt": "2026-10-02T22:57:49.035Z",
+          "checkedAt": "2026-10-02T23:42:54.237Z",
           "status": "unavailable"
         },
         {
           "name": "X unique-author acceleration and spam filtering",
           "url": "https://x.com/search",
-          "checkedAt": "2026-10-02T22:57:49.035Z",
+          "checkedAt": "2026-10-02T23:42:54.237Z",
           "status": "unavailable"
         }
       ],
@@ -19683,6 +19683,77 @@
           "name": "X unique-author acceleration and spam filtering",
           "url": "https://x.com/search",
           "checkedAt": "2026-10-02T22:57:49.035Z",
+          "status": "unavailable"
+        }
+      ],
+      "missingData": [
+        "timestamped crypto quote within five minutes suitable for paper execution",
+        "current top-holder concentration and insider transfers",
+        "current liquidity-lock/control evidence",
+        "measured swap price impact and sellability",
+        "named-wallet persistence and convergence (optional enrichment)",
+        "spam-filtered unique-author social acceleration (optional enrichment)",
+        "complete real-time Solana token universe coverage"
+      ],
+      "counts": {
+        "research": 0,
+        "entries": 0,
+        "exits": 0
+      },
+      "deliveryDiagnostics": {
+        "repair20260928ReportedAt": "2026-09-28T02:04:42.735Z"
+      }
+    },
+    {
+      "id": "meme-scan-20261002T234254237Z",
+      "system": "meme",
+      "startedAt": "2026-10-02T23:41:19.000Z",
+      "checkedAt": "2026-10-02T23:42:54.237Z",
+      "scheduledFor": "2026-10-02T23:00:00.000Z",
+      "nextScheduledAt": "2026-10-03T00:00:00.000Z",
+      "status": "data_limited",
+      "summary": "No open meme paper trades required management. TRUMP displayed $2.07 with about $257,000 liquidity and $1.1 million 24-hour volume. One-hour change improved to +1.24% and 24-hour change to +0.72%, but six-hour momentum remained -2.67%, one-hour sells exceeded buys 375 to 351, and five-minute sell volume exceeded buy volume. The move was not a clean directional trigger. The disclosed 80% creator-linked allocation plus unresolved current holder concentration, liquidity control and measured sell impact continued to block a paper entry. pSOQ displayed $0.0004934 with about $93,000 liquidity and only $8,400 24-hour volume, below both practical-mode floors. A current prominent-figure token search found no independently verified new launch or material endorsement beyond the existing TRUMP gala catalyst. No research record changed materially; no entry, exit or mark was created.",
+      "sources": [
+        {
+          "name": "DEX Screener OFFICIAL TRUMP/SOL pair",
+          "url": "https://dexscreener.com/solana/6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN",
+          "checkedAt": "2026-10-02T23:42:54.237Z",
+          "status": "checked"
+        },
+        {
+          "name": "DEX Screener pSOQ/SOL pair",
+          "url": "https://dexscreener.com/solana/EM9NyPqcByrz8zBxZUi2LazBTCY2zbVJa49nTXHi3Pq8",
+          "checkedAt": "2026-10-02T23:42:54.237Z",
+          "status": "checked"
+        },
+        {
+          "name": "Official TRUMP gala page",
+          "url": "https://gettrumpmemes.com/gala-dinner",
+          "checkedAt": "2026-10-02T23:42:54.237Z",
+          "status": "checked"
+        },
+        {
+          "name": "Current prominent-figure token launch and endorsement search",
+          "url": "https://www.google.com/search?q=October+2+2026+celebrity+meme+coin+launch",
+          "checkedAt": "2026-10-02T23:42:54.237Z",
+          "status": "checked"
+        },
+        {
+          "name": "Current holder concentration and liquidity-control analysis",
+          "url": "https://solscan.io/",
+          "checkedAt": "2026-10-02T23:42:54.237Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "Measured swap impact and sellability quote",
+          "url": "https://www.orca.so/",
+          "checkedAt": "2026-10-02T23:42:54.237Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "X unique-author acceleration and spam filtering",
+          "url": "https://x.com/search",
+          "checkedAt": "2026-10-02T23:42:54.237Z",
           "status": "unavailable"
         }
       ],
