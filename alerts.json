@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-10-02T10:38:13.424Z",
+  "updatedAt": "2026-10-02T11:16:18.504Z",
   "alerts": [
     {
       "id": "options-bb-fy27q2-20260924",
@@ -1716,54 +1716,54 @@
   ],
   "scanners": {
     "penny": {
-      "id": "penny-scan-20261002T101123137Z",
+      "id": "penny-scan-20261002T111618504Z",
       "system": "penny",
-      "startedAt": "2026-10-02T10:09:23.000Z",
-      "checkedAt": "2026-10-02T10:11:23.137Z",
-      "scheduledFor": "2026-10-02T10:00:00.000Z",
-      "nextScheduledAt": "2026-10-02T11:00:00.000Z",
+      "startedAt": "2026-10-02T11:15:03.000Z",
+      "checkedAt": "2026-10-02T11:16:18.504Z",
+      "scheduledFor": "2026-10-02T11:00:00.000Z",
+      "nextScheduledAt": "2026-10-02T12:00:00.000Z",
       "status": "data_limited",
-      "summary": "No open penny-stock paper trades required management. NSTR still lacked a reliable post-listing quote, bid/ask spread, volume and opening structure, so its existing research record was unchanged and no entry was opened; the previously identified $30 million PIPE, public warrants and former-SPAC structure remain material risk gates. Fresh market-data checks showed SOAR at $0.2946 (-11.29%) and WKEY at $5.68 (-4.10%), neither with a new qualifying primary catalyst or constructive entry structure. The SEC search interface and FDA press-announcement page were reachable, but the bounded catalyst sweep found no new source-backed microcap setup meeting the research or entry bar. No entry, exit, mark or materially changed research event was added.",
+      "summary": "No open penny-stock paper trades required management. NSTR still had no reliable post-listing quote, bid/ask spread, volume or opening structure, so the existing research record remained unchanged and no entry was opened; the $30 million PIPE, public warrants and former-SPAC structure remain material dilution and execution risks. Fresh market-data checks left SOAR at $0.2946 (-11.29%), WKEY at $5.68 (-4.10%), FTHM at $0.38 (-14.52%) and POLA at $1.12 (-9.09%), with no constructive premarket confirmation. SEC EDGAR and FDA were reachable, but a bounded catalyst sweep found no new source-backed microcap setup meeting the research or entry bar. No research, entry, exit or mark event was added.",
       "sources": [
         {
           "name": "Tracked penny-stock market data",
           "url": "https://finance.yahoo.com/",
-          "checkedAt": "2026-10-02T10:11:23.137Z",
+          "checkedAt": "2026-10-02T11:16:18.504Z",
           "status": "checked"
         },
         {
           "name": "SEC EDGAR filing search",
           "url": "https://www.sec.gov/edgar/search/",
-          "checkedAt": "2026-10-02T10:11:23.137Z",
+          "checkedAt": "2026-10-02T11:16:18.504Z",
           "status": "checked"
         },
         {
           "name": "FDA press announcements",
           "url": "https://www.fda.gov/news-events/fda-newsroom/press-announcements",
-          "checkedAt": "2026-10-02T10:11:23.137Z",
+          "checkedAt": "2026-10-02T11:16:18.504Z",
           "status": "checked"
-        },
-        {
-          "name": "NorthStar issuer announcement",
-          "url": "https://www.businesswire.com/news/home/20261001750178/en/NorthStar-Earth-Space-Completes-Business-Combination-with-Viking",
-          "checkedAt": "2026-10-02T10:11:23.137Z",
-          "status": "unavailable"
         },
         {
           "name": "Reliable NSTR post-listing quote and volume",
           "url": "https://finance.yahoo.com/quote/NSTR/",
-          "checkedAt": "2026-10-02T10:11:23.137Z",
+          "checkedAt": "2026-10-02T11:16:18.504Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "Complete real-time dilution and insider sweep",
+          "url": "https://www.sec.gov/edgar/search/",
+          "checkedAt": "2026-10-02T11:16:18.504Z",
           "status": "unavailable"
         },
         {
           "name": "Spam-filtered X unique-author acceleration",
           "url": "https://x.com/",
-          "checkedAt": "2026-10-02T10:11:23.137Z",
+          "checkedAt": "2026-10-02T11:16:18.504Z",
           "status": "unavailable"
         }
       ],
       "missingData": [
-        "Reliable NSTR price, bid, ask, spread, volume and opening-range structure were unavailable.",
+        "Reliable NSTR price, bid, ask, spread, volume and opening-range structure remain unavailable.",
         "Post-closing NSTR free float, PIPE resale timing, lockups and full warrant overhang were not fully verified.",
         "A complete real-time universe-wide S-1/S-3/424B/ATM/PIPE/warrant/convertible and insider review was unavailable.",
         "Spam-filtered X/Twitter unique-author acceleration was unavailable.",
@@ -16486,6 +16486,70 @@
       },
       "deliveryDiagnostics": {
         "repair20260928ReportedAt": "2026-09-28T00:50:48.883Z"
+      }
+    },
+    {
+      "id": "penny-scan-20261002T111618504Z",
+      "system": "penny",
+      "startedAt": "2026-10-02T11:15:03.000Z",
+      "checkedAt": "2026-10-02T11:16:18.504Z",
+      "scheduledFor": "2026-10-02T11:00:00.000Z",
+      "nextScheduledAt": "2026-10-02T12:00:00.000Z",
+      "status": "data_limited",
+      "summary": "No open penny-stock paper trades required management. NSTR still had no reliable post-listing quote, bid/ask spread, volume or opening structure, so the existing research record remained unchanged and no entry was opened; the $30 million PIPE, public warrants and former-SPAC structure remain material dilution and execution risks. Fresh market-data checks left SOAR at $0.2946 (-11.29%), WKEY at $5.68 (-4.10%), FTHM at $0.38 (-14.52%) and POLA at $1.12 (-9.09%), with no constructive premarket confirmation. SEC EDGAR and FDA were reachable, but a bounded catalyst sweep found no new source-backed microcap setup meeting the research or entry bar. No research, entry, exit or mark event was added.",
+      "sources": [
+        {
+          "name": "Tracked penny-stock market data",
+          "url": "https://finance.yahoo.com/",
+          "checkedAt": "2026-10-02T11:16:18.504Z",
+          "status": "checked"
+        },
+        {
+          "name": "SEC EDGAR filing search",
+          "url": "https://www.sec.gov/edgar/search/",
+          "checkedAt": "2026-10-02T11:16:18.504Z",
+          "status": "checked"
+        },
+        {
+          "name": "FDA press announcements",
+          "url": "https://www.fda.gov/news-events/fda-newsroom/press-announcements",
+          "checkedAt": "2026-10-02T11:16:18.504Z",
+          "status": "checked"
+        },
+        {
+          "name": "Reliable NSTR post-listing quote and volume",
+          "url": "https://finance.yahoo.com/quote/NSTR/",
+          "checkedAt": "2026-10-02T11:16:18.504Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "Complete real-time dilution and insider sweep",
+          "url": "https://www.sec.gov/edgar/search/",
+          "checkedAt": "2026-10-02T11:16:18.504Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "Spam-filtered X unique-author acceleration",
+          "url": "https://x.com/",
+          "checkedAt": "2026-10-02T11:16:18.504Z",
+          "status": "unavailable"
+        }
+      ],
+      "missingData": [
+        "Reliable NSTR price, bid, ask, spread, volume and opening-range structure remain unavailable.",
+        "Post-closing NSTR free float, PIPE resale timing, lockups and full warrant overhang were not fully verified.",
+        "A complete real-time universe-wide S-1/S-3/424B/ATM/PIPE/warrant/convertible and insider review was unavailable.",
+        "Spam-filtered X/Twitter unique-author acceleration was unavailable.",
+        "Complete current insider-activity and official short-interest context was unavailable.",
+        "Complete real-time microcap-universe coverage was unavailable."
+      ],
+      "counts": {
+        "research": 0,
+        "entries": 0,
+        "exits": 0
+      },
+      "deliveryDiagnostics": {
+        "repair20260928ReportedAt": "2026-09-28T01:47:21.040Z"
       }
     }
   ]
