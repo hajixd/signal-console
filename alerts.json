@@ -2515,52 +2515,94 @@
       }
     },
     "futures": {
-      "id": "futures-scan-20261002175124736",
+      "id": "futures-scan-20261002195326",
       "system": "futures",
-      "startedAt": "2026-10-02T17:51:24.736Z",
-      "checkedAt": "2026-10-02T17:51:57.959Z",
-      "scheduledFor": "2026-10-02T17:00:00.000Z",
-      "nextScheduledAt": "2026-10-02T18:00:00.000Z",
+      "startedAt": "2026-10-02T19:53:26Z",
+      "checkedAt": "2026-10-02T19:55:06Z",
+      "scheduledFor": "2026-10-02T19:00:00Z",
+      "nextScheduledAt": "2026-10-02T20:00:00Z",
       "status": "data_limited",
-      "summary": "No new futures entry or material research update. There are no open futures paper positions. The latest broader market reporting continued to show Nasdaq strength, weak WTI and gold losing its initial post-payroll gains, consistent with the existing MNQ long watch, MCL short watch and neutral MGC status. No exact micro contract supplied a non-delayed quote no older than five minutes with a verified spread, depth, volume structure and observed trigger. MCLX26 also approaches its mid-October roll/expiry window, adding contract-risk caution. All ideas remain research-only.",
+      "summary": "No open futures paper positions and no new entries, exits, marks or material research events. Applied the approved up-to-20-minute delayed paper pricing rule. MESZ26 board showed 7,776.50 with time 14:20:31 and retrieval October 2 15:33:31 EDT; even the page retrieval was over 20 minutes old at completion, and bid/ask and contract volume were absent. Other exact micro quotes were unavailable. BLS September payrolls +29,000 and unemployment 4.2% were reverified, but this existing catalyst alone does not establish direction. No current exact-contract structure or contradictory price evidence could be assessed. Known paper equity and source-verified margin remain unavailable. Existing research retained without asserting fresh confirmation.",
       "sources": [
         {
-          "name": "Reuters Nasdaq update",
-          "url": "https://www.reuters.com/business/wall-st-futures-gain-yields-oil-prices-ease-ahead-jobs-report-2026-10-02/",
-          "checkedAt": "2026-10-02T17:51:57.959Z",
-          "status": "checked_cash_index_context_only"
+          "name": "BLS September employment release",
+          "url": "https://www.bls.gov/news.release/archives/empsit_10022026.htm",
+          "status": "checked_primary_release",
+          "checkedAt": "2026-10-02T19:55:06Z"
         },
         {
-          "name": "Reuters global markets update",
-          "url": "https://www.reuters.com/world/china/global-markets-wrapup-1-2026-10-02/",
-          "checkedAt": "2026-10-02T17:51:57.959Z",
-          "status": "checked_cross_asset_context_only"
+          "name": "eSignal MESZ26 quote board",
+          "url": "https://quotes.esignal.com/esignalprod/quote.action?symbol=MES",
+          "status": "stale_quote_no_bid_ask_or_volume",
+          "checkedAt": "2026-10-02T19:55:06Z"
         },
         {
-          "name": "Reuters gold update",
-          "url": "https://www.reuters.com/world/india/gold-slips-before-us-payrolls-data-set-second-weekly-loss-2026-10-02/",
-          "checkedAt": "2026-10-02T17:51:57.959Z",
-          "status": "checked_benchmark_context_only"
+          "name": "CME MNQ specifications",
+          "url": "https://www.cmegroup.com/markets/equities/nasdaq/micro-e-mini-nasdaq-100.html",
+          "status": "specifications_verified_quote_table_unavailable",
+          "checkedAt": "2026-10-02T19:55:06Z"
         },
         {
-          "name": "Linn Software exact-contract symbol calendar",
-          "url": "https://www.linnsoft.com/support/all-symbols",
-          "checkedAt": "2026-10-02T17:51:57.959Z",
-          "status": "checked_roll_dates_context"
+          "name": "CME Micro Metals specifications",
+          "url": "https://www.cmegroup.com/markets/microsuite/metals.html",
+          "status": "specifications_and_general_hours_only",
+          "checkedAt": "2026-10-02T19:55:06Z"
         },
         {
-          "name": "CME delayed quotes",
-          "url": "https://www.cmegroup.com/market-data/browse-data/delayed-quotes.html",
-          "checkedAt": "2026-10-02T17:51:57.959Z",
-          "status": "checked_no_qualifying_live_micro_quotes"
+          "name": "CME MGC quotes",
+          "url": "https://www.cmegroup.com/markets/metals/precious/micro-gold.html",
+          "status": "unavailable",
+          "checkedAt": "2026-10-02T19:55:06Z"
+        },
+        {
+          "name": "CME MCL calendar",
+          "url": "https://www.cmegroup.com/markets/energy/crude-oil/micro-wti-crude-oil.calendar.html",
+          "status": "exact_dates_not_exposed",
+          "checkedAt": "2026-10-02T19:55:06Z"
+        },
+        {
+          "name": "Yahoo MNQZ26",
+          "url": "https://finance.yahoo.com/quote/MNQZ26.CME/",
+          "status": "unavailable",
+          "checkedAt": "2026-10-02T19:55:06Z"
+        },
+        {
+          "name": "Yahoo MGCZ26",
+          "url": "https://finance.yahoo.com/quote/MGCZ26.CMX/",
+          "status": "unavailable",
+          "checkedAt": "2026-10-02T19:55:06Z"
+        },
+        {
+          "name": "Yahoo MCLX26",
+          "url": "https://finance.yahoo.com/quote/MCLX26.NYM/",
+          "status": "unavailable",
+          "checkedAt": "2026-10-02T19:55:06Z"
+        },
+        {
+          "name": "CME MES margins",
+          "url": "https://www.cmegroup.com/markets/equities/sp/micro-e-mini-sandp-500.margins.html",
+          "status": "specifications_verified_margin_table_unavailable",
+          "checkedAt": "2026-10-02T19:55:06Z"
+        },
+        {
+          "name": "EIA weekly petroleum report",
+          "url": "https://www.eia.gov/petroleum/supply/weekly/",
+          "status": "release_index_only_no_new_catalyst_verified",
+          "checkedAt": "2026-10-02T19:55:06Z"
+        },
+        {
+          "name": "Federal Reserve calendar",
+          "url": "https://www.federalreserve.gov/newsevents/calendar.htm",
+          "status": "calendar_index_only",
+          "checkedAt": "2026-10-02T19:55:06Z"
         }
       ],
       "missingData": [
-        "Non-delayed exact dated quotes no older than five minutes for MNQZ26, MESZ26, MGCZ26 and MCLX26",
-        "Verified current bid/ask spreads, depth, liquidity and intraday price/volume structure for every micro contract",
-        "Authoritative CME roll/expiry and delivery-risk confirmation for MCLX26",
-        "Source-verified initial margin per contract and sufficient remaining paper equity",
-        "Observed tick-aligned triggers, invalidations and targets meeting at least 2:1 reward-to-risk and the $100 risk cap"
+        "Timestamped MNQZ26, MESZ26, MGCZ26 and MCLX26 quotes within 20 minutes with known delay, actual bid/ask and recent volume",
+        "Observed same-contract directional structure, trigger, invalidation and target satisfying reward:risk >=2 and <=$100 risk including adverse tick slippage",
+        "Source-verified initial margins and known sufficient paper equity; no capital balance supplied in alerts.json",
+        "Exact CME expiry/roll, delivery and holiday/session clearance for each candidate",
+        "Complete imminent high-impact release clearance; current USD/yields, BEA, OPEC and supply/geopolitical verification incomplete"
       ],
       "counts": {
         "openPositions": 0,
@@ -2571,7 +2613,9 @@
       },
       "deliveryDiagnostics": {
         "repair20260928ReportedAt": "2026-09-28T01:51:49.985Z"
-      }
+      },
+      "executionMode": "paper_simulated",
+      "maxQuoteAgeMinutes": 20
     }
   },
   "scanHistory": [
@@ -18768,6 +18812,109 @@
       "deliveryDiagnostics": {
         "repair20260928ReportedAt": "2026-09-28T01:47:21.040Z"
       }
+    },
+    {
+      "id": "futures-scan-20261002195326",
+      "system": "futures",
+      "startedAt": "2026-10-02T19:53:26Z",
+      "checkedAt": "2026-10-02T19:55:06Z",
+      "scheduledFor": "2026-10-02T19:00:00Z",
+      "nextScheduledAt": "2026-10-02T20:00:00Z",
+      "status": "data_limited",
+      "summary": "No open futures paper positions and no new entries, exits, marks or material research events. Applied the approved up-to-20-minute delayed paper pricing rule. MESZ26 board showed 7,776.50 with time 14:20:31 and retrieval October 2 15:33:31 EDT; even the page retrieval was over 20 minutes old at completion, and bid/ask and contract volume were absent. Other exact micro quotes were unavailable. BLS September payrolls +29,000 and unemployment 4.2% were reverified, but this existing catalyst alone does not establish direction. No current exact-contract structure or contradictory price evidence could be assessed. Known paper equity and source-verified margin remain unavailable. Existing research retained without asserting fresh confirmation.",
+      "sources": [
+        {
+          "name": "BLS September employment release",
+          "url": "https://www.bls.gov/news.release/archives/empsit_10022026.htm",
+          "status": "checked_primary_release",
+          "checkedAt": "2026-10-02T19:55:06Z"
+        },
+        {
+          "name": "eSignal MESZ26 quote board",
+          "url": "https://quotes.esignal.com/esignalprod/quote.action?symbol=MES",
+          "status": "stale_quote_no_bid_ask_or_volume",
+          "checkedAt": "2026-10-02T19:55:06Z"
+        },
+        {
+          "name": "CME MNQ specifications",
+          "url": "https://www.cmegroup.com/markets/equities/nasdaq/micro-e-mini-nasdaq-100.html",
+          "status": "specifications_verified_quote_table_unavailable",
+          "checkedAt": "2026-10-02T19:55:06Z"
+        },
+        {
+          "name": "CME Micro Metals specifications",
+          "url": "https://www.cmegroup.com/markets/microsuite/metals.html",
+          "status": "specifications_and_general_hours_only",
+          "checkedAt": "2026-10-02T19:55:06Z"
+        },
+        {
+          "name": "CME MGC quotes",
+          "url": "https://www.cmegroup.com/markets/metals/precious/micro-gold.html",
+          "status": "unavailable",
+          "checkedAt": "2026-10-02T19:55:06Z"
+        },
+        {
+          "name": "CME MCL calendar",
+          "url": "https://www.cmegroup.com/markets/energy/crude-oil/micro-wti-crude-oil.calendar.html",
+          "status": "exact_dates_not_exposed",
+          "checkedAt": "2026-10-02T19:55:06Z"
+        },
+        {
+          "name": "Yahoo MNQZ26",
+          "url": "https://finance.yahoo.com/quote/MNQZ26.CME/",
+          "status": "unavailable",
+          "checkedAt": "2026-10-02T19:55:06Z"
+        },
+        {
+          "name": "Yahoo MGCZ26",
+          "url": "https://finance.yahoo.com/quote/MGCZ26.CMX/",
+          "status": "unavailable",
+          "checkedAt": "2026-10-02T19:55:06Z"
+        },
+        {
+          "name": "Yahoo MCLX26",
+          "url": "https://finance.yahoo.com/quote/MCLX26.NYM/",
+          "status": "unavailable",
+          "checkedAt": "2026-10-02T19:55:06Z"
+        },
+        {
+          "name": "CME MES margins",
+          "url": "https://www.cmegroup.com/markets/equities/sp/micro-e-mini-sandp-500.margins.html",
+          "status": "specifications_verified_margin_table_unavailable",
+          "checkedAt": "2026-10-02T19:55:06Z"
+        },
+        {
+          "name": "EIA weekly petroleum report",
+          "url": "https://www.eia.gov/petroleum/supply/weekly/",
+          "status": "release_index_only_no_new_catalyst_verified",
+          "checkedAt": "2026-10-02T19:55:06Z"
+        },
+        {
+          "name": "Federal Reserve calendar",
+          "url": "https://www.federalreserve.gov/newsevents/calendar.htm",
+          "status": "calendar_index_only",
+          "checkedAt": "2026-10-02T19:55:06Z"
+        }
+      ],
+      "missingData": [
+        "Timestamped MNQZ26, MESZ26, MGCZ26 and MCLX26 quotes within 20 minutes with known delay, actual bid/ask and recent volume",
+        "Observed same-contract directional structure, trigger, invalidation and target satisfying reward:risk >=2 and <=$100 risk including adverse tick slippage",
+        "Source-verified initial margins and known sufficient paper equity; no capital balance supplied in alerts.json",
+        "Exact CME expiry/roll, delivery and holiday/session clearance for each candidate",
+        "Complete imminent high-impact release clearance; current USD/yields, BEA, OPEC and supply/geopolitical verification incomplete"
+      ],
+      "counts": {
+        "openPositions": 0,
+        "research": 0,
+        "entries": 0,
+        "exits": 0,
+        "marks": 0
+      },
+      "deliveryDiagnostics": {
+        "repair20260928ReportedAt": "2026-09-28T01:51:49.985Z"
+      },
+      "executionMode": "paper_simulated",
+      "maxQuoteAgeMinutes": 20
     }
   ]
 }
