@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-10-03T15:28:32.138Z",
+  "updatedAt": "2026-10-03T15:42:29.836Z",
   "alerts": [
     {
       "id": "options-bb-fy27q2-20260924",
@@ -2441,6 +2441,72 @@
           "decision": "rejected"
         }
       }
+    },
+    {
+      "id": "options-vst-doe-perry-loan-20261003",
+      "eventType": "research",
+      "system": "options",
+      "timestamp": "2026-10-03T15:42:29.836Z",
+      "asset": "VST",
+      "title": "Research: VST potential DOE nuclear-uprate loan awaits confirmation",
+      "summary": "The U.S. Department of Energy published primary evidence that its Office of Energy Dominance Financing is evaluating whether to provide a federal loan guarantee to Vistra Operations for the Perry Nuclear Power Plant uprate in Ohio. Reuters reported on October 3, citing a source, that a $4.2 billion loan may be announced Monday. The primary DOE material does not confirm approval or the reported amount, and the listed-options market is closed, so this is a developing research setup only and no paper entry qualifies.",
+      "reasons": [
+        "DOE primary documentation confirms active evaluation of federal financing for Vistra's Perry nuclear uprate.",
+        "Reuters reports a possible $4.2 billion announcement Monday, creating a potentially material catalyst.",
+        "The reported amount and final approval are not yet confirmed by DOE or Vistra.",
+        "No exact recent 21–60 DTE contract bid/ask, spread, liquidity or premium-at-risk check is available while the market is closed."
+      ],
+      "href": "https://www.energy.gov/documents/vistra-corp-perry-nuclear-power-plant-pnpp-uprate-project-nhpa-section-106-finding-no",
+      "missingData": [
+        "primary confirmation of loan approval, amount, terms and announcement timing",
+        "post-announcement underlying price/volume trigger",
+        "exact 21–60 DTE contract identity and timestamped bid/ask",
+        "positive bid, spread no wider than 10% of midpoint and qualifying OI or volume",
+        "observed ask at or below $1.00 for the one-contract $100 premium cap",
+        "earnings calendar and binary-event hold review",
+        "Greeks, IV rank, term structure and buyer-initiated opening flow"
+      ],
+      "risk": "Research only. The reported $4.2 billion amount and Monday announcement are not yet primary-source confirmed; government financing could change or fail, and no eligible contract can be verified while options markets are closed.",
+      "details": {
+        "verificationStatus": "DOE evaluation verified; reported loan amount and approval remain unconfirmed; no exact option contract checked",
+        "catalystType": "potential U.S. government nuclear-uprate financing",
+        "catalystVerification": {
+          "primaryEvidence": "DOE Office of Energy Dominance Financing states it is evaluating whether to provide a federal loan guarantee to Vistra Operations for the Perry Nuclear Power Plant uprate.",
+          "primaryEvidenceDate": "2026-09-15",
+          "reportedDevelopment": "Reuters reported October 3 that a $4.2 billion loan may be announced Monday.",
+          "status": "developing; evaluation verified, approval and amount unconfirmed"
+        },
+        "evidenceSources": [
+          {
+            "name": "U.S. Department of Energy — Perry Nuclear uprate financing review",
+            "url": "https://www.energy.gov/documents/vistra-corp-perry-nuclear-power-plant-pnpp-uprate-project-nhpa-section-106-finding-no",
+            "publishedAt": "2026-09-15",
+            "checkedAt": "2026-10-03T15:42:29.836Z",
+            "status": "checked"
+          },
+          {
+            "name": "DOE environmental notices — Vistra Perry project",
+            "url": "https://www.energy.gov/edf/edf-environmental-notices",
+            "publishedAt": "2026-09-15",
+            "checkedAt": "2026-10-03T15:42:29.836Z",
+            "status": "checked"
+          },
+          {
+            "name": "Reuters — reported potential $4.2B Vistra loan",
+            "url": "https://www.reuters.com/legal/litigation/us-lend-42-billion-vistra-boost-nuclear-power-output-source-says-2026-10-03/",
+            "publishedAt": "2026-10-03T13:34:26Z",
+            "checkedAt": "2026-10-03T15:42:29.836Z",
+            "status": "checked"
+          }
+        ],
+        "rejectionReasons": [
+          "No primary confirmation of approval, amount or terms.",
+          "Options market closed; no exact timestamped contract quote.",
+          "No verified 21–60 DTE positive-bid contract with spread <=10% and OI or volume >=100.",
+          "No observed qualifying directional trigger after the anticipated announcement.",
+          "Binary-event and IV-risk review incomplete."
+        ]
+      }
     }
   ],
   "scanners": {
@@ -2506,60 +2572,54 @@
       }
     },
     "options": {
-      "startedAt": "2026-10-03T15:24:43.000Z",
-      "checkedAt": "2026-10-03T15:26:11.659Z",
+      "startedAt": "2026-10-03T15:40:47.000Z",
+      "checkedAt": "2026-10-03T15:42:29.836Z",
       "scheduledFor": "2026-10-03T15:00:00.000Z",
       "nextScheduledAt": "2026-10-03T16:00:00.000Z",
       "status": "market_closed",
-      "summary": "No open options paper trades required management. U.S. listed-options markets were closed for the weekend. A fresh issuer, SEC and reputable-news sweep found no new distinct primary-source-backed setup beyond existing research. Reuters reported that a $4.2 billion U.S. government loan for Vistra may be announced Monday, but no primary agency or company announcement was available, so VST was rejected as unconfirmed rather than published as research. Exact recent 21–60 DTE chains were unavailable, preventing mandatory contract quote, spread, liquidity and premium-risk checks. No research, entry, exit or mark event was created.",
+      "summary": "No open options paper trades required management. U.S. listed-options markets were closed. New primary DOE evidence confirms that federal financing for Vistra's Perry nuclear uprate is under evaluation, while Reuters reports a possible $4.2 billion Monday announcement. Because DOE and Vistra have not confirmed approval or the amount and exact 21–60 DTE contract quotes are unavailable, VST was published as developing research only. One research event, no entries, exits or marks.",
       "sources": [
         {
-          "name": "Fresh issuer and reputable market-news catalyst sweep",
-          "url": "https://www.reuters.com/markets/us/",
-          "checkedAt": "2026-10-03T15:26:11.659Z",
+          "name": "DOE Perry nuclear uprate financing review",
+          "url": "https://www.energy.gov/documents/vistra-corp-perry-nuclear-power-plant-pnpp-uprate-project-nhpa-section-106-finding-no",
+          "checkedAt": "2026-10-03T15:42:29.836Z",
           "status": "checked"
         },
         {
-          "name": "SEC EDGAR current filings",
-          "url": "https://www.sec.gov/edgar/search/",
-          "checkedAt": "2026-10-03T15:26:11.659Z",
-          "status": "checked"
-        },
-        {
-          "name": "October 3 corporate announcement sweep",
-          "url": "https://www.globenewswire.com/",
-          "checkedAt": "2026-10-03T15:26:11.659Z",
-          "status": "checked"
-        },
-        {
-          "name": "Potential Vistra government-loan report",
+          "name": "Reuters potential Vistra loan report",
           "url": "https://www.reuters.com/legal/litigation/us-lend-42-billion-vistra-boost-nuclear-power-output-source-says-2026-10-03/",
-          "checkedAt": "2026-10-03T15:26:11.659Z",
+          "checkedAt": "2026-10-03T15:42:29.836Z",
+          "status": "checked"
+        },
+        {
+          "name": "Fresh issuer and SEC catalyst sweep",
+          "url": "https://www.sec.gov/edgar/search/",
+          "checkedAt": "2026-10-03T15:42:29.836Z",
           "status": "checked"
         },
         {
           "name": "Exact 21–60 DTE listed option chains",
           "url": "https://www.cboe.com/delayed_quotes/",
-          "checkedAt": "2026-10-03T15:26:11.659Z",
+          "checkedAt": "2026-10-03T15:42:29.836Z",
           "status": "unavailable"
         },
         {
           "name": "Buyer-initiated opening options flow",
           "url": "https://www.cboe.com/us/options/market_statistics/",
-          "checkedAt": "2026-10-03T15:26:11.659Z",
+          "checkedAt": "2026-10-03T15:42:29.836Z",
           "status": "unavailable"
         }
       ],
       "missingData": [
+        "primary confirmation of the Vistra loan approval, amount and terms",
         "current exact-contract bid, ask and quote timestamp",
         "positive bid and spread no wider than 10% of midpoint",
         "exact-contract open interest or same-day volume",
         "observed ask at or below $1.00 for the one-contract $100 premium cap",
-        "current Greeks, IV rank, term structure and buyer-initiated opening flow",
-        "primary-source confirmation of the reported potential Vistra government loan"
+        "current Greeks, IV rank, term structure and buyer-initiated opening flow"
       ],
       "counts": {
-        "research": 0,
+        "research": 1,
         "entries": 0,
         "exits": 0
       },
@@ -21461,6 +21521,64 @@
       },
       "deliveryDiagnostics": {
         "repair20260928ReportedAt": "2026-09-28T01:47:21.040Z"
+      }
+    },
+    {
+      "id": "options-scan-20261003T154229836Z",
+      "system": "options",
+      "startedAt": "2026-10-03T15:40:47.000Z",
+      "checkedAt": "2026-10-03T15:42:29.836Z",
+      "scheduledFor": "2026-10-03T15:00:00.000Z",
+      "nextScheduledAt": "2026-10-03T16:00:00.000Z",
+      "status": "market_closed",
+      "summary": "No open options paper trades required management. U.S. listed-options markets were closed. New primary DOE evidence confirms that federal financing for Vistra's Perry nuclear uprate is under evaluation, while Reuters reports a possible $4.2 billion Monday announcement. Because DOE and Vistra have not confirmed approval or the amount and exact 21–60 DTE contract quotes are unavailable, VST was published as developing research only. One research event, no entries, exits or marks.",
+      "sources": [
+        {
+          "name": "DOE Perry nuclear uprate financing review",
+          "url": "https://www.energy.gov/documents/vistra-corp-perry-nuclear-power-plant-pnpp-uprate-project-nhpa-section-106-finding-no",
+          "checkedAt": "2026-10-03T15:42:29.836Z",
+          "status": "checked"
+        },
+        {
+          "name": "Reuters potential Vistra loan report",
+          "url": "https://www.reuters.com/legal/litigation/us-lend-42-billion-vistra-boost-nuclear-power-output-source-says-2026-10-03/",
+          "checkedAt": "2026-10-03T15:42:29.836Z",
+          "status": "checked"
+        },
+        {
+          "name": "Fresh issuer and SEC catalyst sweep",
+          "url": "https://www.sec.gov/edgar/search/",
+          "checkedAt": "2026-10-03T15:42:29.836Z",
+          "status": "checked"
+        },
+        {
+          "name": "Exact 21–60 DTE listed option chains",
+          "url": "https://www.cboe.com/delayed_quotes/",
+          "checkedAt": "2026-10-03T15:42:29.836Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "Buyer-initiated opening options flow",
+          "url": "https://www.cboe.com/us/options/market_statistics/",
+          "checkedAt": "2026-10-03T15:42:29.836Z",
+          "status": "unavailable"
+        }
+      ],
+      "missingData": [
+        "primary confirmation of the Vistra loan approval, amount and terms",
+        "current exact-contract bid, ask and quote timestamp",
+        "positive bid and spread no wider than 10% of midpoint",
+        "exact-contract open interest or same-day volume",
+        "observed ask at or below $1.00 for the one-contract $100 premium cap",
+        "current Greeks, IV rank, term structure and buyer-initiated opening flow"
+      ],
+      "counts": {
+        "research": 1,
+        "entries": 0,
+        "exits": 0
+      },
+      "deliveryDiagnostics": {
+        "repair20260928ReportedAt": "2026-09-28T00:50:48.883Z"
       }
     }
   ]
