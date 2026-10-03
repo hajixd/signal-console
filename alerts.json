@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-10-03T11:34:44.470Z",
+  "updatedAt": "2026-10-03T11:54:35.215Z",
   "alerts": [
     {
       "id": "options-bb-fy27q2-20260924",
@@ -2483,65 +2483,66 @@
       }
     },
     "meme": {
-      "startedAt": "2026-10-03T11:10:46.000Z",
-      "checkedAt": "2026-10-03T11:12:38.913Z",
+      "startedAt": "2026-10-03T11:53:27.000Z",
+      "checkedAt": "2026-10-03T11:54:35.215Z",
       "scheduledFor": "2026-10-03T11:00:00.000Z",
       "nextScheduledAt": "2026-10-03T12:00:00.000Z",
       "status": "data_limited",
-      "summary": "No open meme paper trades required management. pSOQ produced one material research update: displayed price rose to about $0.0006044 and liquidity crossed the $100,000 floor at roughly $104,000, but 24-hour volume remained only about $28,000, six-hour momentum was -8.70%, and the latest five-minute window showed no trades. Official Soqucoin pages also contained inconsistent migration-status language. pSOQ was rejected for entry. TRUMP remained above liquidity and volume floors near $2.07 with about $258,000 liquidity and $1.2 million 24-hour volume, but its structure and unresolved concentration/liquidity-control/sell-impact risks were not materially improved. No verified new public-figure token launch was found.",
+      "summary": "No open meme paper trades required management. TRUMP displayed about $2.07 with approximately $258,000 liquidity and $1.1 million 24-hour volume, but six-hour and 24-hour performance were negative and the disclosed 80% creator-linked allocation plus unresolved holder concentration, liquidity control and measured sell impact continued to block entry. pSOQ remained about $0.0006044 with approximately $104,000 liquidity but only about $28,000 24-hour volume, negative six-hour momentum and no latest-five-minute transactions, so it failed the mandatory volume and trigger gates. Neither setup changed materially enough to update its existing research record. No verified new public-figure token launch was found.",
       "sources": [
-        {
-          "name": "DEX Screener — pSOQ/SOL",
-          "url": "https://dexscreener.com/solana/EM9NyPqcByrz8zBxZUi2LazBTCY2zbVJa49nTXHi3Pq8",
-          "checkedAt": "2026-10-03T11:12:38.913Z",
-          "status": "checked"
-        },
-        {
-          "name": "Official SOQ-TEC migration overview",
-          "url": "https://soqu.org/docs/soq-tec/overview/",
-          "checkedAt": "2026-10-03T11:12:38.913Z",
-          "status": "checked"
-        },
-        {
-          "name": "Official Soqucoin about/legal status",
-          "url": "https://soqu.org/about",
-          "checkedAt": "2026-10-03T11:12:38.913Z",
-          "status": "checked"
-        },
         {
           "name": "DEX Screener — OFFICIAL TRUMP/SOL",
           "url": "https://dexscreener.com/solana/6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN",
-          "checkedAt": "2026-10-03T11:12:38.913Z",
+          "checkedAt": "2026-10-03T11:54:35.215Z",
           "status": "checked"
         },
         {
-          "name": "Current public-figure token launch/news search",
-          "url": "https://www.google.com/search?q=October+3+2026+official+celebrity+meme+coin+launch",
-          "checkedAt": "2026-10-03T11:12:38.913Z",
+          "name": "DEX Screener — pSOQ/SOL",
+          "url": "https://dexscreener.com/solana/EM9NyPqcByrz8zBxZUi2LazBTCY2zbVJa49nTXHi3Pq8",
+          "checkedAt": "2026-10-03T11:54:35.215Z",
+          "status": "checked"
+        },
+        {
+          "name": "Official TRUMP Coin Club",
+          "url": "https://gettrumpmemes.com/",
+          "checkedAt": "2026-10-03T11:54:35.215Z",
+          "status": "checked"
+        },
+        {
+          "name": "Current public-figure token launch/news sweep",
+          "url": "https://www.reuters.com/technology/cryptocurrency/",
+          "checkedAt": "2026-10-03T11:54:35.215Z",
           "status": "checked"
         },
         {
           "name": "Tracked named-wallet current holdings",
           "url": "https://solscan.io/",
-          "checkedAt": "2026-10-03T11:12:38.913Z",
+          "checkedAt": "2026-10-03T11:54:35.215Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "Independent holder, liquidity-control and measured sell-impact checks",
+          "url": "https://solscan.io/",
+          "checkedAt": "2026-10-03T11:54:35.215Z",
           "status": "unavailable"
         },
         {
           "name": "Spam-filtered X unique-author acceleration",
           "url": "https://x.com/",
-          "checkedAt": "2026-10-03T11:12:38.913Z",
+          "checkedAt": "2026-10-03T11:54:35.215Z",
           "status": "unavailable"
         }
       ],
       "missingData": [
+        "source-native quote timestamp proving a crypto price observation no older than five minutes",
         "current independently verified holdings and persistence for named tracked wallets",
+        "current top-holder concentration and deployer/insider/bundler analysis",
+        "independent liquidity-lock/control verification and measured sell impact",
         "spam-filtered X unique-author mention velocity and acceleration",
-        "current holder concentration and deployer/insider/bundler analysis",
-        "independent liquidity-control verification and measured sell impact",
-        "source-native quote timestamp proving a crypto price observation no older than five minutes"
+        "complete-universe coverage"
       ],
       "counts": {
-        "research": 1,
+        "research": 0,
         "entries": 0,
         "exits": 0
       },
@@ -20710,6 +20711,76 @@
       },
       "deliveryDiagnostics": {
         "repair20260928ReportedAt": "2026-09-28T01:47:21.040Z"
+      }
+    },
+    {
+      "id": "meme-scan-20261003T115435215Z",
+      "system": "meme",
+      "startedAt": "2026-10-03T11:53:27.000Z",
+      "checkedAt": "2026-10-03T11:54:35.215Z",
+      "scheduledFor": "2026-10-03T11:00:00.000Z",
+      "nextScheduledAt": "2026-10-03T12:00:00.000Z",
+      "status": "data_limited",
+      "summary": "No open meme paper trades required management. TRUMP displayed about $2.07 with approximately $258,000 liquidity and $1.1 million 24-hour volume, but six-hour and 24-hour performance were negative and the disclosed 80% creator-linked allocation plus unresolved holder concentration, liquidity control and measured sell impact continued to block entry. pSOQ remained about $0.0006044 with approximately $104,000 liquidity but only about $28,000 24-hour volume, negative six-hour momentum and no latest-five-minute transactions, so it failed the mandatory volume and trigger gates. Neither setup changed materially enough to update its existing research record. No verified new public-figure token launch was found.",
+      "sources": [
+        {
+          "name": "DEX Screener — OFFICIAL TRUMP/SOL",
+          "url": "https://dexscreener.com/solana/6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN",
+          "checkedAt": "2026-10-03T11:54:35.215Z",
+          "status": "checked"
+        },
+        {
+          "name": "DEX Screener — pSOQ/SOL",
+          "url": "https://dexscreener.com/solana/EM9NyPqcByrz8zBxZUi2LazBTCY2zbVJa49nTXHi3Pq8",
+          "checkedAt": "2026-10-03T11:54:35.215Z",
+          "status": "checked"
+        },
+        {
+          "name": "Official TRUMP Coin Club",
+          "url": "https://gettrumpmemes.com/",
+          "checkedAt": "2026-10-03T11:54:35.215Z",
+          "status": "checked"
+        },
+        {
+          "name": "Current public-figure token launch/news sweep",
+          "url": "https://www.reuters.com/technology/cryptocurrency/",
+          "checkedAt": "2026-10-03T11:54:35.215Z",
+          "status": "checked"
+        },
+        {
+          "name": "Tracked named-wallet current holdings",
+          "url": "https://solscan.io/",
+          "checkedAt": "2026-10-03T11:54:35.215Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "Independent holder, liquidity-control and measured sell-impact checks",
+          "url": "https://solscan.io/",
+          "checkedAt": "2026-10-03T11:54:35.215Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "Spam-filtered X unique-author acceleration",
+          "url": "https://x.com/",
+          "checkedAt": "2026-10-03T11:54:35.215Z",
+          "status": "unavailable"
+        }
+      ],
+      "missingData": [
+        "source-native quote timestamp proving a crypto price observation no older than five minutes",
+        "current independently verified holdings and persistence for named tracked wallets",
+        "current top-holder concentration and deployer/insider/bundler analysis",
+        "independent liquidity-lock/control verification and measured sell impact",
+        "spam-filtered X unique-author mention velocity and acceleration",
+        "complete-universe coverage"
+      ],
+      "counts": {
+        "research": 0,
+        "entries": 0,
+        "exits": 0
+      },
+      "deliveryDiagnostics": {
+        "repair20260928ReportedAt": "2026-09-28T02:04:42.735Z"
       }
     }
   ]
