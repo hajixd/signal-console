@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-10-03T11:12:38.913Z",
+  "updatedAt": "2026-10-03T11:21:32.001Z",
   "alerts": [
     {
       "id": "options-bb-fy27q2-20260924",
@@ -2373,59 +2373,59 @@
   ],
   "scanners": {
     "penny": {
-      "startedAt": "2026-10-03T10:29:47.000Z",
-      "checkedAt": "2026-10-03T10:31:37.036Z",
-      "scheduledFor": "2026-10-03T10:00:00.000Z",
-      "nextScheduledAt": "2026-10-03T11:00:00.000Z",
+      "startedAt": "2026-10-03T11:20:37.000Z",
+      "checkedAt": "2026-10-03T11:21:32.001Z",
+      "scheduledFor": "2026-10-03T11:00:00.000Z",
+      "nextScheduledAt": "2026-10-03T12:00:00.000Z",
       "status": "market_closed",
-      "summary": "No open penny paper trades required management. U.S. markets were closed. A fresh issuer, SEC, news and quote review produced one material research update: NSTR confirmed its listing but closed its first session at $4.45, down 42.36%, on about $1.06 million in dollar volume. Its displayed $4.45 bid and $4.73 ask imply an approximately 6.1% spread, while the $30 million PIPE, public warrants, uncertain float and continuing losses add material risk. NSTR was rejected for entry. No other new source-backed setup or material change qualified.",
+      "summary": "No open penny paper trades required management. U.S. markets were closed for the weekend. A fresh issuer, SEC, microcap-news and mover review found no new primary-source-backed catalyst or material change beyond the already-recorded NSTR debut failure. No current regular-session executable spread, constructive continuation or new session dollar volume could be verified, so no entry qualified. Existing research remained unchanged. No research, entry, exit or mark event was created.",
       "sources": [
         {
-          "name": "NorthStar issuer release",
-          "url": "https://northstar-data.com/northstar-earth-space-completes-business-combination-with-viking/",
-          "checkedAt": "2026-10-03T10:31:37.036Z",
-          "status": "checked"
-        },
-        {
-          "name": "NSTR closing quote and bid/ask",
-          "url": "https://markets.financialcontent.com/wral/quote?Symbol=NY:NSTR",
-          "checkedAt": "2026-10-03T10:31:37.036Z",
-          "status": "checked"
-        },
-        {
-          "name": "NSTR SEC transaction exhibit",
-          "url": "https://www.sec.gov/Archives/edgar/data/2080023/000121390026104115/ea030690601ex99-1.htm",
-          "checkedAt": "2026-10-03T10:31:37.036Z",
-          "status": "checked"
-        },
-        {
-          "name": "Fresh issuer and SEC microcap catalyst sweep",
+          "name": "Fresh issuer and SEC microcap disclosure sweep",
           "url": "https://www.sec.gov/edgar/search/",
-          "checkedAt": "2026-10-03T10:31:37.036Z",
+          "checkedAt": "2026-10-03T11:21:32.001Z",
+          "status": "checked"
+        },
+        {
+          "name": "October 3 microcap news and catalyst sweep",
+          "url": "https://www.globenewswire.com/",
+          "checkedAt": "2026-10-03T11:21:32.001Z",
+          "status": "checked"
+        },
+        {
+          "name": "Weekend market and mover review",
+          "url": "https://www.reuters.com/markets/us/",
+          "checkedAt": "2026-10-03T11:21:32.001Z",
           "status": "checked"
         },
         {
           "name": "Current regular-session executable spreads",
           "url": "https://www.nasdaq.com/market-activity/stocks",
-          "checkedAt": "2026-10-03T10:31:37.036Z",
+          "checkedAt": "2026-10-03T11:21:32.001Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "Current-session price/volume continuation",
+          "url": "https://finance.yahoo.com/",
+          "checkedAt": "2026-10-03T11:21:32.001Z",
           "status": "unavailable"
         },
         {
           "name": "Optional insider and spam-filtered social enrichment",
           "url": "https://x.com/search",
-          "checkedAt": "2026-10-03T10:31:37.036Z",
+          "checkedAt": "2026-10-03T11:21:32.001Z",
           "status": "unavailable"
         }
       ],
       "missingData": [
         "current regular-session executable bid and ask because markets were closed",
-        "constructive next-session continuation",
-        "complete current free-float and holder-concentration data for NSTR",
+        "new-session dollar volume and constructive continuation",
+        "complete focused dilution review for any candidate lacking a new primary catalyst",
         "optional insider alignment and spam-filtered social acceleration",
         "complete universe-wide coverage"
       ],
       "counts": {
-        "research": 1,
+        "research": 0,
         "entries": 0,
         "exits": 0
       },
@@ -20541,6 +20541,66 @@
       ],
       "counts": {
         "research": 1,
+        "entries": 0,
+        "exits": 0
+      }
+    },
+    {
+      "id": "penny-scan-20261003T112132001Z",
+      "system": "penny",
+      "startedAt": "2026-10-03T11:20:37.000Z",
+      "checkedAt": "2026-10-03T11:21:32.001Z",
+      "scheduledFor": "2026-10-03T11:00:00.000Z",
+      "nextScheduledAt": "2026-10-03T12:00:00.000Z",
+      "status": "market_closed",
+      "summary": "No open penny paper trades required management. U.S. markets were closed for the weekend. A fresh issuer, SEC, microcap-news and mover review found no new primary-source-backed catalyst or material change beyond the already-recorded NSTR debut failure. No current regular-session executable spread, constructive continuation or new session dollar volume could be verified, so no entry qualified. Existing research remained unchanged. No research, entry, exit or mark event was created.",
+      "sources": [
+        {
+          "name": "Fresh issuer and SEC microcap disclosure sweep",
+          "url": "https://www.sec.gov/edgar/search/",
+          "checkedAt": "2026-10-03T11:21:32.001Z",
+          "status": "checked"
+        },
+        {
+          "name": "October 3 microcap news and catalyst sweep",
+          "url": "https://www.globenewswire.com/",
+          "checkedAt": "2026-10-03T11:21:32.001Z",
+          "status": "checked"
+        },
+        {
+          "name": "Weekend market and mover review",
+          "url": "https://www.reuters.com/markets/us/",
+          "checkedAt": "2026-10-03T11:21:32.001Z",
+          "status": "checked"
+        },
+        {
+          "name": "Current regular-session executable spreads",
+          "url": "https://www.nasdaq.com/market-activity/stocks",
+          "checkedAt": "2026-10-03T11:21:32.001Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "Current-session price/volume continuation",
+          "url": "https://finance.yahoo.com/",
+          "checkedAt": "2026-10-03T11:21:32.001Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "Optional insider and spam-filtered social enrichment",
+          "url": "https://x.com/search",
+          "checkedAt": "2026-10-03T11:21:32.001Z",
+          "status": "unavailable"
+        }
+      ],
+      "missingData": [
+        "current regular-session executable bid and ask because markets were closed",
+        "new-session dollar volume and constructive continuation",
+        "complete focused dilution review for any candidate lacking a new primary catalyst",
+        "optional insider alignment and spam-filtered social acceleration",
+        "complete universe-wide coverage"
+      ],
+      "counts": {
+        "research": 0,
         "entries": 0,
         "exits": 0
       }
