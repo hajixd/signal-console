@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-10-03T04:14:41.841Z",
+  "updatedAt": "2026-10-03T10:28:58.596Z",
   "alerts": [
     {
       "id": "options-bb-fy27q2-20260924",
@@ -2581,67 +2581,59 @@
       }
     },
     "meme": {
-      "startedAt": "2026-10-03T04:12:54.000Z",
-      "checkedAt": "2026-10-03T04:14:41.841Z",
-      "scheduledFor": "2026-10-03T04:00:00.000Z",
-      "nextScheduledAt": "2026-10-03T05:00:00.000Z",
+      "startedAt": "2026-10-03T10:26:42.000Z",
+      "checkedAt": "2026-10-03T10:28:58.596Z",
+      "scheduledFor": "2026-10-03T10:00:00.000Z",
+      "nextScheduledAt": "2026-10-03T11:00:00.000Z",
       "status": "data_limited",
-      "summary": "No open meme paper trades required management. The official TRUMP Coin Club page materially clarified that November 22 gala scoring starts October 5; F1 Singapore scoring is currently live. TRUMP displayed $2.09 with about $260,000 liquidity and $1.1 million 24-hour volume. Six-hour performance was +1.59%, one-hour performance -0.19%, and the latest five minutes showed 26 buys versus 14 sells. The basic liquidity and volume floors pass, but gala scoring has not started, the disclosed 80% creator-linked allocation remains a material concentration risk, and current holder concentration, liquidity control and measured sell impact remain unresolved, so no paper entry was opened. pSOQ remained below both mandatory floors at about $97,000 liquidity and $15,000 daily volume. No independently verified new prominent-figure launch or endorsement was found. One research record was updated; no entry, exit or mark was created.",
+      "summary": "No open meme paper trades required management. No new entry or materially changed research item qualified. OFFICIAL TRUMP remained above the liquidity/volume floors at about $2.05, $257K liquidity and $1.2M 24h volume, but short-term price action softened and mandatory current holder-concentration, liquidity-control and measured sell-impact checks were unresolved; the official 80% creator-linked allocation remains a material risk. pSOQ remained below the $100K liquidity and $100K 24h-volume floors (about $97K liquidity and roughly $15K-$16K 24h volume). Current named-wallet positions and spam-filtered social acceleration were unavailable. No verified new public-figure token launch was found.",
       "sources": [
         {
-          "name": "Official TRUMP Coin Club page",
-          "url": "https://gettrumpmemes.com/",
-          "checkedAt": "2026-10-03T04:14:41.841Z",
-          "status": "checked"
-        },
-        {
-          "name": "DEX Screener OFFICIAL TRUMP/SOL pair",
+          "name": "DEX Screener — OFFICIAL TRUMP/SOL",
           "url": "https://dexscreener.com/solana/6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN",
-          "checkedAt": "2026-10-03T04:14:41.841Z",
+          "checkedAt": "2026-10-03T10:28:58.596Z",
           "status": "checked"
         },
         {
-          "name": "DEX Screener pSOQ/SOL pair",
+          "name": "DEX Screener — pSOQ/SOL",
           "url": "https://dexscreener.com/solana/EM9NyPqcByrz8zBxZUi2LazBTCY2zbVJa49nTXHi3Pq8",
-          "checkedAt": "2026-10-03T04:14:41.841Z",
+          "checkedAt": "2026-10-03T10:28:58.596Z",
           "status": "checked"
         },
         {
-          "name": "Current prominent-figure token launch and endorsement search",
-          "url": "https://www.google.com/search?q=October+3+2026+celebrity+meme+coin+launch",
-          "checkedAt": "2026-10-03T04:14:41.841Z",
+          "name": "Official TRUMP Coin Club",
+          "url": "https://gettrumpmemes.com/",
+          "checkedAt": "2026-10-03T10:28:58.596Z",
           "status": "checked"
         },
         {
-          "name": "Current holder concentration and liquidity-control analysis",
+          "name": "Current public-figure token launch/news search",
+          "url": "https://www.google.com/search?q=October+3+2026+celebrity+official+meme+coin+launch",
+          "checkedAt": "2026-10-03T10:28:58.596Z",
+          "status": "checked"
+        },
+        {
+          "name": "Tracked named-wallet current holdings",
           "url": "https://solscan.io/",
-          "checkedAt": "2026-10-03T04:14:41.841Z",
+          "checkedAt": "2026-10-03T10:28:58.596Z",
           "status": "unavailable"
         },
         {
-          "name": "Measured swap impact and sellability quote",
-          "url": "https://www.orca.so/",
-          "checkedAt": "2026-10-03T04:14:41.841Z",
-          "status": "unavailable"
-        },
-        {
-          "name": "X unique-author acceleration and spam filtering",
-          "url": "https://x.com/search",
-          "checkedAt": "2026-10-03T04:14:41.841Z",
+          "name": "Spam-filtered X unique-author acceleration",
+          "url": "https://x.com/",
+          "checkedAt": "2026-10-03T10:28:58.596Z",
           "status": "unavailable"
         }
       ],
       "missingData": [
-        "timestamped crypto quote within five minutes suitable for paper execution",
-        "current top-holder concentration and insider transfers",
-        "current liquidity-lock/control evidence",
-        "measured swap price impact and sellability",
-        "named-wallet persistence and convergence (optional enrichment)",
-        "spam-filtered unique-author social acceleration (optional enrichment)",
-        "complete real-time Solana token universe coverage"
+        "Current independently verified holdings and persistence for IdontPayTaxes, Daumen, Frank DeGods, Numero and verified Clukz",
+        "Spam-filtered X unique-author mention velocity and acceleration",
+        "Current holder-concentration and deployer/insider/bundler analysis for otherwise liquid candidates",
+        "Independent liquidity-control verification and measured sell price impact",
+        "A source-native quote timestamp proving a crypto price observation no older than five minutes"
       ],
       "counts": {
-        "research": 1,
+        "research": 0,
         "entries": 0,
         "exits": 0
       },
@@ -20393,6 +20385,66 @@
       ],
       "counts": {
         "research": 1,
+        "entries": 0,
+        "exits": 0
+      }
+    },
+    {
+      "id": "meme-scan-20261003T102858596Z",
+      "system": "meme",
+      "startedAt": "2026-10-03T10:26:42.000Z",
+      "checkedAt": "2026-10-03T10:28:58.596Z",
+      "scheduledFor": "2026-10-03T10:00:00.000Z",
+      "nextScheduledAt": "2026-10-03T11:00:00.000Z",
+      "status": "data_limited",
+      "summary": "No open meme paper trades required management. No new entry or materially changed research item qualified. OFFICIAL TRUMP remained above the liquidity/volume floors at about $2.05, $257K liquidity and $1.2M 24h volume, but short-term price action softened and mandatory current holder-concentration, liquidity-control and measured sell-impact checks were unresolved; the official 80% creator-linked allocation remains a material risk. pSOQ remained below the $100K liquidity and $100K 24h-volume floors (about $97K liquidity and roughly $15K-$16K 24h volume). Current named-wallet positions and spam-filtered social acceleration were unavailable. No verified new public-figure token launch was found.",
+      "sources": [
+        {
+          "name": "DEX Screener — OFFICIAL TRUMP/SOL",
+          "url": "https://dexscreener.com/solana/6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN",
+          "checkedAt": "2026-10-03T10:28:58.596Z",
+          "status": "checked"
+        },
+        {
+          "name": "DEX Screener — pSOQ/SOL",
+          "url": "https://dexscreener.com/solana/EM9NyPqcByrz8zBxZUi2LazBTCY2zbVJa49nTXHi3Pq8",
+          "checkedAt": "2026-10-03T10:28:58.596Z",
+          "status": "checked"
+        },
+        {
+          "name": "Official TRUMP Coin Club",
+          "url": "https://gettrumpmemes.com/",
+          "checkedAt": "2026-10-03T10:28:58.596Z",
+          "status": "checked"
+        },
+        {
+          "name": "Current public-figure token launch/news search",
+          "url": "https://www.google.com/search?q=October+3+2026+celebrity+official+meme+coin+launch",
+          "checkedAt": "2026-10-03T10:28:58.596Z",
+          "status": "checked"
+        },
+        {
+          "name": "Tracked named-wallet current holdings",
+          "url": "https://solscan.io/",
+          "checkedAt": "2026-10-03T10:28:58.596Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "Spam-filtered X unique-author acceleration",
+          "url": "https://x.com/",
+          "checkedAt": "2026-10-03T10:28:58.596Z",
+          "status": "unavailable"
+        }
+      ],
+      "missingData": [
+        "Current independently verified holdings and persistence for IdontPayTaxes, Daumen, Frank DeGods, Numero and verified Clukz",
+        "Spam-filtered X unique-author mention velocity and acceleration",
+        "Current holder-concentration and deployer/insider/bundler analysis for otherwise liquid candidates",
+        "Independent liquidity-control verification and measured sell price impact",
+        "A source-native quote timestamp proving a crypto price observation no older than five minutes"
+      ],
+      "counts": {
+        "research": 0,
         "entries": 0,
         "exits": 0
       }
