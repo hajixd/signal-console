@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-10-03T11:21:32.001Z",
+  "updatedAt": "2026-10-03T11:32:51.628Z",
   "alerts": [
     {
       "id": "options-bb-fy27q2-20260924",
@@ -2434,51 +2434,44 @@
       }
     },
     "options": {
-      "startedAt": "2026-10-03T10:55:26.000Z",
-      "checkedAt": "2026-10-03T10:56:46.741Z",
-      "scheduledFor": "2026-10-03T10:00:00.000Z",
-      "nextScheduledAt": "2026-10-03T11:00:00.000Z",
+      "startedAt": "2026-10-03T11:31:19.000Z",
+      "checkedAt": "2026-10-03T11:32:51.628Z",
+      "scheduledFor": "2026-10-03T11:00:00.000Z",
+      "nextScheduledAt": "2026-10-03T12:00:00.000Z",
       "status": "market_closed",
-      "summary": "No open options paper trades required management. The U.S. listed-options market was closed for the weekend, so no fresh executable exact-contract quote could support an entry, mark or exit. A fresh issuer, SEC and market-news sweep found no distinct new source-backed swing setup requiring a research record; available coverage reiterated already-tracked ON/SYNA, HPE, NKE, MRNA and Google AI catalysts. No 21–60 DTE contract could be verified with an actual positive bid, ask, spread <=10% of midpoint, OI or same-day volume >=100, and ask premium <=$1.00. Existing options research remained unchanged. No research, entry, exit or mark event was created.",
+      "summary": "No open options paper trades required management. U.S. listed-options markets were closed for the weekend; no new distinct, source-backed catalyst was identified in the bounded issuer/news sweep, and no exact recent 21–60 DTE option chain was available. Existing options research remained unchanged, so no paper entry, mark, exit, or new research event was created.",
       "sources": [
         {
-          "name": "October 2 closing-market and catalyst review",
+          "name": "Issuer and reputable market-news catalyst sweep",
           "url": "https://www.reuters.com/markets/us/",
-          "checkedAt": "2026-10-03T10:56:46.741Z",
+          "checkedAt": "2026-10-03T11:32:51.628Z",
           "status": "checked"
         },
         {
-          "name": "SEC filing and issuer catalyst sweep",
+          "name": "SEC EDGAR current filings",
           "url": "https://www.sec.gov/edgar/search/",
-          "checkedAt": "2026-10-03T10:56:46.741Z",
+          "checkedAt": "2026-10-03T11:32:51.628Z",
           "status": "checked"
         },
         {
-          "name": "Official Google AI announcement review",
-          "url": "https://blog.google/innovation-and-ai/models-and-research/gemini-models/gemini-4-argon/",
-          "checkedAt": "2026-10-03T10:56:46.741Z",
-          "status": "checked"
-        },
-        {
-          "name": "Exact current 21–60 DTE option chains",
-          "url": "https://www.nasdaq.com/market-activity/stocks/option-chain",
-          "checkedAt": "2026-10-03T10:56:46.741Z",
+          "name": "Exact 21–60 DTE listed option chains",
+          "url": "https://www.cboe.com/delayed_quotes/",
+          "checkedAt": "2026-10-03T11:32:51.628Z",
           "status": "unavailable"
         },
         {
-          "name": "Complete real-time unusual-options flow",
+          "name": "Buyer-initiated opening options flow",
           "url": "https://www.cboe.com/us/options/market_statistics/",
-          "checkedAt": "2026-10-03T10:56:46.741Z",
+          "checkedAt": "2026-10-03T11:32:51.628Z",
           "status": "unavailable"
         }
       ],
       "missingData": [
-        "exact current 21–60 DTE bid and ask because listed-options markets were closed",
-        "positive bid and spread <=10% of midpoint",
-        "contract OI >=100 or today's volume >=100",
-        "contract premium <=$100 at observed ask",
-        "Greeks, IV rank and full term structure (optional enrichment)",
-        "buyer-initiated opening flow (optional enrichment)"
+        "Current exact-contract bid/ask and quote timestamp",
+        "Positive bid and spread no wider than 10% of midpoint",
+        "Exact-contract open interest or same-day volume",
+        "Observed ask at or below $1.00 for one-contract $100 premium cap",
+        "Current Greeks, IV rank, term structure, and buyer-initiated opening flow"
       ],
       "counts": {
         "research": 0,
@@ -20603,6 +20596,57 @@
         "research": 0,
         "entries": 0,
         "exits": 0
+      }
+    },
+    {
+      "id": "options-scan-20261003T113251628Z",
+      "system": "options",
+      "startedAt": "2026-10-03T11:31:19.000Z",
+      "checkedAt": "2026-10-03T11:32:51.628Z",
+      "scheduledFor": "2026-10-03T11:00:00.000Z",
+      "nextScheduledAt": "2026-10-03T12:00:00.000Z",
+      "status": "market_closed",
+      "summary": "No open options paper trades required management. U.S. listed-options markets were closed for the weekend; no new distinct, source-backed catalyst was identified in the bounded issuer/news sweep, and no exact recent 21–60 DTE option chain was available. Existing options research remained unchanged, so no paper entry, mark, exit, or new research event was created.",
+      "sources": [
+        {
+          "name": "Issuer and reputable market-news catalyst sweep",
+          "url": "https://www.reuters.com/markets/us/",
+          "checkedAt": "2026-10-03T11:32:51.628Z",
+          "status": "checked"
+        },
+        {
+          "name": "SEC EDGAR current filings",
+          "url": "https://www.sec.gov/edgar/search/",
+          "checkedAt": "2026-10-03T11:32:51.628Z",
+          "status": "checked"
+        },
+        {
+          "name": "Exact 21–60 DTE listed option chains",
+          "url": "https://www.cboe.com/delayed_quotes/",
+          "checkedAt": "2026-10-03T11:32:51.628Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "Buyer-initiated opening options flow",
+          "url": "https://www.cboe.com/us/options/market_statistics/",
+          "checkedAt": "2026-10-03T11:32:51.628Z",
+          "status": "unavailable"
+        }
+      ],
+      "missingData": [
+        "Current exact-contract bid/ask and quote timestamp",
+        "Positive bid and spread no wider than 10% of midpoint",
+        "Exact-contract open interest or same-day volume",
+        "Observed ask at or below $1.00 for one-contract $100 premium cap",
+        "Current Greeks, IV rank, term structure, and buyer-initiated opening flow"
+      ],
+      "counts": {
+        "research": 0,
+        "entries": 0,
+        "exits": 0
+      },
+      "deliveryDiagnostics": {
+        "repair20260928ReportedAt": "2026-09-28T00:50:48.883Z"
       }
     }
   ]
