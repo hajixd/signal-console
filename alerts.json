@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-10-03T11:32:51.628Z",
+  "updatedAt": "2026-10-03T11:34:44.470Z",
   "alerts": [
     {
       "id": "options-bb-fy27q2-20260924",
@@ -2373,52 +2373,52 @@
   ],
   "scanners": {
     "penny": {
-      "startedAt": "2026-10-03T11:20:37.000Z",
-      "checkedAt": "2026-10-03T11:21:32.001Z",
+      "startedAt": "2026-10-03T11:33:46.000Z",
+      "checkedAt": "2026-10-03T11:34:44.470Z",
       "scheduledFor": "2026-10-03T11:00:00.000Z",
       "nextScheduledAt": "2026-10-03T12:00:00.000Z",
       "status": "market_closed",
-      "summary": "No open penny paper trades required management. U.S. markets were closed for the weekend. A fresh issuer, SEC, microcap-news and mover review found no new primary-source-backed catalyst or material change beyond the already-recorded NSTR debut failure. No current regular-session executable spread, constructive continuation or new session dollar volume could be verified, so no entry qualified. Existing research remained unchanged. No research, entry, exit or mark event was created.",
+      "summary": "No open penny paper trades required management. U.S. markets were closed for the weekend. A fresh issuer, SEC and microcap-news sweep found no new distinct primary-source-backed catalyst or material change beyond the existing research records. Current regular-session executable spreads, new-session dollar volume and constructive price/volume continuation were unavailable, so no paper entry qualified. No research, entry, exit or mark event was created.",
       "sources": [
         {
-          "name": "Fresh issuer and SEC microcap disclosure sweep",
+          "name": "Fresh SEC current-filings sweep",
           "url": "https://www.sec.gov/edgar/search/",
-          "checkedAt": "2026-10-03T11:21:32.001Z",
+          "checkedAt": "2026-10-03T11:34:44.470Z",
           "status": "checked"
         },
         {
-          "name": "October 3 microcap news and catalyst sweep",
+          "name": "October 3 issuer and microcap catalyst sweep",
           "url": "https://www.globenewswire.com/",
-          "checkedAt": "2026-10-03T11:21:32.001Z",
+          "checkedAt": "2026-10-03T11:34:44.470Z",
           "status": "checked"
         },
         {
-          "name": "Weekend market and mover review",
+          "name": "Weekend U.S. market review",
           "url": "https://www.reuters.com/markets/us/",
-          "checkedAt": "2026-10-03T11:21:32.001Z",
+          "checkedAt": "2026-10-03T11:34:44.470Z",
           "status": "checked"
         },
         {
-          "name": "Current regular-session executable spreads",
+          "name": "Current regular-session executable bid/ask spreads",
           "url": "https://www.nasdaq.com/market-activity/stocks",
-          "checkedAt": "2026-10-03T11:21:32.001Z",
+          "checkedAt": "2026-10-03T11:34:44.470Z",
           "status": "unavailable"
         },
         {
-          "name": "Current-session price/volume continuation",
+          "name": "Current-session price, volume and continuation",
           "url": "https://finance.yahoo.com/",
-          "checkedAt": "2026-10-03T11:21:32.001Z",
+          "checkedAt": "2026-10-03T11:34:44.470Z",
           "status": "unavailable"
         },
         {
-          "name": "Optional insider and spam-filtered social enrichment",
+          "name": "Optional spam-filtered social and insider enrichment",
           "url": "https://x.com/search",
-          "checkedAt": "2026-10-03T11:21:32.001Z",
+          "checkedAt": "2026-10-03T11:34:44.470Z",
           "status": "unavailable"
         }
       ],
       "missingData": [
-        "current regular-session executable bid and ask because markets were closed",
+        "current regular-session executable bid and ask because U.S. markets were closed",
         "new-session dollar volume and constructive continuation",
         "complete focused dilution review for any candidate lacking a new primary catalyst",
         "optional insider alignment and spam-filtered social acceleration",
@@ -20647,6 +20647,69 @@
       },
       "deliveryDiagnostics": {
         "repair20260928ReportedAt": "2026-09-28T00:50:48.883Z"
+      }
+    },
+    {
+      "id": "penny-scan-20261003T113444470Z",
+      "system": "penny",
+      "startedAt": "2026-10-03T11:33:46.000Z",
+      "checkedAt": "2026-10-03T11:34:44.470Z",
+      "scheduledFor": "2026-10-03T11:00:00.000Z",
+      "nextScheduledAt": "2026-10-03T12:00:00.000Z",
+      "status": "market_closed",
+      "summary": "No open penny paper trades required management. U.S. markets were closed for the weekend. A fresh issuer, SEC and microcap-news sweep found no new distinct primary-source-backed catalyst or material change beyond the existing research records. Current regular-session executable spreads, new-session dollar volume and constructive price/volume continuation were unavailable, so no paper entry qualified. No research, entry, exit or mark event was created.",
+      "sources": [
+        {
+          "name": "Fresh SEC current-filings sweep",
+          "url": "https://www.sec.gov/edgar/search/",
+          "checkedAt": "2026-10-03T11:34:44.470Z",
+          "status": "checked"
+        },
+        {
+          "name": "October 3 issuer and microcap catalyst sweep",
+          "url": "https://www.globenewswire.com/",
+          "checkedAt": "2026-10-03T11:34:44.470Z",
+          "status": "checked"
+        },
+        {
+          "name": "Weekend U.S. market review",
+          "url": "https://www.reuters.com/markets/us/",
+          "checkedAt": "2026-10-03T11:34:44.470Z",
+          "status": "checked"
+        },
+        {
+          "name": "Current regular-session executable bid/ask spreads",
+          "url": "https://www.nasdaq.com/market-activity/stocks",
+          "checkedAt": "2026-10-03T11:34:44.470Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "Current-session price, volume and continuation",
+          "url": "https://finance.yahoo.com/",
+          "checkedAt": "2026-10-03T11:34:44.470Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "Optional spam-filtered social and insider enrichment",
+          "url": "https://x.com/search",
+          "checkedAt": "2026-10-03T11:34:44.470Z",
+          "status": "unavailable"
+        }
+      ],
+      "missingData": [
+        "current regular-session executable bid and ask because U.S. markets were closed",
+        "new-session dollar volume and constructive continuation",
+        "complete focused dilution review for any candidate lacking a new primary catalyst",
+        "optional insider alignment and spam-filtered social acceleration",
+        "complete universe-wide coverage"
+      ],
+      "counts": {
+        "research": 0,
+        "entries": 0,
+        "exits": 0
+      },
+      "deliveryDiagnostics": {
+        "repair20260928ReportedAt": "2026-09-28T01:47:21.040Z"
       }
     }
   ]
