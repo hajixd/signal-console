@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-10-03T17:26:48.667Z",
+  "updatedAt": "2026-10-03T17:40:13.197Z",
   "alerts": [
     {
       "id": "options-bb-fy27q2-20260924",
@@ -618,15 +618,15 @@
       "id": "meme-research-psoq-soq-migration-20260929",
       "eventType": "research",
       "system": "meme",
-      "timestamp": "2026-10-03T15:25:00.551Z",
+      "timestamp": "2026-10-03T17:40:13.197Z",
       "asset": "pSOQ / SOQ",
-      "title": "Research update: pSOQ reclaims liquidity floor but volume remains inadequate",
-      "summary": "pSOQ rebounded to $0.0005805 with approximately $102,000 liquidity, moving back just above the $100,000 practical-mode floor after falling below it one hour earlier. The rebound is not entry-eligible: 24-hour volume was only about $24,000, six-hour momentum was -11.11%, one-hour momentum was -4.05%, the latest five-minute window had no transactions, and 24-hour sellers exceeded buyers 50 to 33.",
+      "title": "Research update: pSOQ momentum turns positive but volume still fails",
+      "summary": "pSOQ displayed $0.0006059 with approximately $104,000 liquidity and a $397,000 market cap. Momentum improved to +1.04% over five minutes, +1.68% over one hour, +0.34% over six hours and +20.64% over 24 hours. The improvement is material research but not entry-eligible: 24-hour volume remained only about $25,000, far below the mandatory $100,000 floor; the latest five-minute activity was a single $322 buy; and 24-hour unique sellers still exceeded buyers 51 to 36.",
       "reasons": [
-        "Displayed liquidity recovered to about $102,000, narrowly above the mandatory floor.",
-        "Displayed 24-hour volume remained only about $24,000, far below the mandatory $100,000 floor.",
-        "Six-hour and one-hour momentum were negative despite the 24-hour rebound.",
-        "No transactions appeared in the latest five-minute window and 24-hour unique sellers exceeded buyers."
+        "Displayed liquidity was about $104,000, above the mandatory $100,000 floor.",
+        "Price momentum turned positive across five-minute, one-hour, six-hour and 24-hour windows.",
+        "Displayed 24-hour volume remained only about $25,000, one quarter of the mandatory $100,000 floor.",
+        "The latest five-minute window contained only one $322 buy, and 24-hour unique sellers still exceeded buyers 51 to 36."
       ],
       "href": "https://soqu.org/docs/soq-tec/overview/",
       "missingData": [
@@ -636,29 +636,30 @@
         "independent liquidity-control verification and measured sell impact",
         "spam-filtered X unique-author acceleration"
       ],
-      "risk": "Research only. Liquidity is barely above the minimum, volume fails the mandatory floor, momentum is weakening and migration/sellability controls remain incompletely verified.",
+      "risk": "Research only. Liquidity is only slightly above the minimum, 24-hour volume fails the mandatory floor, observed activity is thin, official migration-status pages remain inconsistent, and holder/liquidity-control checks are incomplete.",
       "details": {
-        "verificationStatus": "Exact Solana mint remained matched to the official dashboard and DEX pair; material liquidity recovery verified; entry rejected because volume and trigger requirements failed.",
+        "verificationStatus": "Exact Solana mint remained matched to the official dashboard and DEX pair; material momentum improvement verified; entry rejected because mandatory volume and sellability/security checks were not cleared.",
         "chain": "Solana",
         "contractAddress": "6NX2MWBuJM2Fn63K4hUgMPivLXHV8pwsU1yTdmjKpump",
         "pairAddress": "EM9NyPqcByrz8zBxZUi2LazBTCY2zbVJa49nTXHi3Pq8",
         "marketData": {
           "sourceUrl": "https://dexscreener.com/solana/EM9NyPqcByrz8zBxZUi2LazBTCY2zbVJa49nTXHi3Pq8",
-          "checkedAt": "2026-10-03T15:25:00.551Z",
-          "displayedPrice": 0.0005805,
-          "liquidityUsd": 102000,
-          "marketCapUsd": 369000,
-          "fdvUsd": 369000,
-          "change5mPercent": 0,
-          "change1hPercent": -4.05,
-          "change6hPercent": -11.11,
-          "change24hPercent": 18.16,
-          "volume1hUsd": 1100,
-          "volume6hUsd": 3600,
-          "volume24hUsd": 24000,
-          "buyers24h": 33,
-          "sellers24h": 50,
-          "latest5mTransactions": 0,
+          "checkedAt": "2026-10-03T17:40:13.197Z",
+          "displayedPrice": 0.0006059,
+          "liquidityUsd": 104000,
+          "marketCapUsd": 397000,
+          "fdvUsd": 371000,
+          "change5mPercent": 1.04,
+          "change1hPercent": 1.68,
+          "change6hPercent": 0.34,
+          "change24hPercent": 20.64,
+          "volume5mUsd": 322,
+          "volume1hUsd": 535,
+          "volume6hUsd": 2400,
+          "volume24hUsd": 25000,
+          "buyers24h": 36,
+          "sellers24h": 51,
+          "latest5mTransactions": 1,
           "holdersDisplayed": 853,
           "entryEligible": false,
           "freshness": "Displayed DEX Screener snapshot observed during this run; no source-native quote timestamp and not an executable swap quote."
@@ -718,12 +719,24 @@
             "url": "https://soqu.org/docs/soq-tec/overview/",
             "checkedAt": "2026-10-03T15:25:00.551Z",
             "status": "checked"
+          },
+          {
+            "name": "DEX Screener pSOQ/SOL",
+            "url": "https://dexscreener.com/solana/EM9NyPqcByrz8zBxZUi2LazBTCY2zbVJa49nTXHi3Pq8",
+            "checkedAt": "2026-10-03T17:40:13.197Z",
+            "status": "checked"
+          },
+          {
+            "name": "Official SOQ-TEC overview",
+            "url": "https://soqu.org/docs/soq-tec/overview/",
+            "checkedAt": "2026-10-03T17:40:13.197Z",
+            "status": "checked"
           }
         ],
         "rejectionReasons": [
           "24-hour volume below $100,000.",
-          "Negative six-hour and one-hour momentum.",
-          "No latest-five-minute activity.",
+          "Only one $322 transaction in the latest five-minute window.",
+          "24-hour unique sellers exceeded buyers.",
           "Official migration-status inconsistency.",
           "Unresolved holder concentration and liquidity control.",
           "Unmeasured sell impact and sellability.",
@@ -731,42 +744,44 @@
         ],
         "transactionMetrics": {
           "m5": {
-            "transactions": 0,
-            "volumeUSD": 0,
-            "buys": 0,
+            "transactions": 1,
+            "volumeUSD": 322,
+            "buys": 1,
             "sells": 0,
-            "buyers": 0,
+            "buyVolumeUSD": 322,
+            "sellVolumeUSD": 0,
+            "buyers": 1,
             "sellers": 0
           },
           "h1": {
-            "transactions": 4,
-            "volumeUSD": 1100,
-            "buys": 1,
-            "sells": 3,
-            "buyVolumeUSD": 0,
-            "sellVolumeUSD": 1100,
-            "buyers": 1,
-            "sellers": 3
+            "transactions": 3,
+            "volumeUSD": 535,
+            "buys": 3,
+            "sells": 0,
+            "buyVolumeUSD": 535,
+            "sellVolumeUSD": 0,
+            "buyers": 3,
+            "sellers": 0
           },
           "h6": {
-            "transactions": 27,
-            "volumeUSD": 3600,
-            "buys": 20,
-            "sells": 7,
-            "buyVolumeUSD": 123,
-            "sellVolumeUSD": 3500,
-            "buyers": 12,
-            "sellers": 7
+            "transactions": 21,
+            "volumeUSD": 2400,
+            "buys": 16,
+            "sells": 5,
+            "buyVolumeUSD": 1200,
+            "sellVolumeUSD": 1100,
+            "buyers": 10,
+            "sellers": 5
           },
           "h24": {
-            "transactions": 172,
-            "volumeUSD": 24000,
-            "buys": 74,
+            "transactions": 178,
+            "volumeUSD": 25000,
+            "buys": 80,
             "sells": 98,
-            "buyVolumeUSD": 14000,
+            "buyVolumeUSD": 15000,
             "sellVolumeUSD": 10000,
-            "buyers": 33,
-            "sellers": 50
+            "buyers": 36,
+            "sellers": 51
           }
         }
       }
@@ -2637,53 +2652,53 @@
     },
     "meme": {
       "system": "meme",
-      "startedAt": "2026-10-03T17:07:04.000Z",
-      "checkedAt": "2026-10-03T17:08:39.476Z",
+      "startedAt": "2026-10-03T17:37:26.000Z",
+      "checkedAt": "2026-10-03T17:40:13.197Z",
       "scheduledFor": "2026-10-03T17:00:00.000Z",
       "nextScheduledAt": "2026-10-03T18:00:00.000Z",
       "status": "data_limited",
-      "summary": "No open meme paper trades required management. TRUMP displayed about $2.05 with approximately $256,000 liquidity and $1.0 million 24-hour volume. Five-minute buying improved, but six-hour and 24-hour performance remained negative, and the disclosed 80% creator-linked allocation plus unresolved holder concentration, liquidity control and measured sell impact continued to block entry. pSOQ displayed about $0.0005971 with approximately $103,000 liquidity, but 24-hour volume was only about $25,000, six-hour momentum remained negative and the latest five-minute window had no transactions, so it failed the mandatory volume and directional-trigger gates. Neither existing research item changed materially enough to update. No verified new public-figure token launch was found. No entries, exits, marks or research updates.",
+      "summary": "No open meme paper trades required management. pSOQ materially improved to about $0.0006059 with approximately $104,000 liquidity; five-minute, one-hour, six-hour and 24-hour momentum were all positive. It remained research only because 24-hour volume was about $25,000, the latest five-minute window contained only one $322 buy, 24-hour unique sellers still exceeded buyers, and mandatory holder/liquidity-control/sell-impact checks remained incomplete. TRUMP displayed about $2.05 with approximately $256,000 liquidity and $1.0 million 24-hour volume; its existing gala research did not change materially, and the disclosed 80% creator-linked allocation plus unresolved security checks continued to block entry. No verified new public-figure token launch was found. One research update, no entries, exits or marks.",
       "sources": [
         {
           "name": "DEX Screener — OFFICIAL TRUMP/SOL",
           "url": "https://dexscreener.com/solana/6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN",
-          "checkedAt": "2026-10-03T17:08:39.476Z",
+          "checkedAt": "2026-10-03T17:40:13.197Z",
           "status": "checked"
         },
         {
           "name": "DEX Screener — pSOQ/SOL",
           "url": "https://dexscreener.com/solana/EM9NyPqcByrz8zBxZUi2LazBTCY2zbVJa49nTXHi3Pq8",
-          "checkedAt": "2026-10-03T17:08:39.476Z",
+          "checkedAt": "2026-10-03T17:40:13.197Z",
           "status": "checked"
         },
         {
           "name": "Official TRUMP Coin Club",
           "url": "https://gettrumpmemes.com/",
-          "checkedAt": "2026-10-03T17:08:39.476Z",
+          "checkedAt": "2026-10-03T17:40:13.197Z",
           "status": "checked"
         },
         {
           "name": "Current public-figure token launch/news sweep",
           "url": "https://www.reuters.com/technology/cryptocurrency/",
-          "checkedAt": "2026-10-03T17:08:39.476Z",
+          "checkedAt": "2026-10-03T17:40:13.197Z",
           "status": "checked"
         },
         {
           "name": "Tracked named-wallet current holdings",
           "url": "https://solscan.io/",
-          "checkedAt": "2026-10-03T17:08:39.476Z",
+          "checkedAt": "2026-10-03T17:40:13.197Z",
           "status": "unavailable"
         },
         {
           "name": "Independent holder, liquidity-control and measured sell-impact checks",
           "url": "https://solscan.io/",
-          "checkedAt": "2026-10-03T17:08:39.476Z",
+          "checkedAt": "2026-10-03T17:40:13.197Z",
           "status": "unavailable"
         },
         {
           "name": "Spam-filtered X unique-author acceleration",
           "url": "https://x.com/",
-          "checkedAt": "2026-10-03T17:08:39.476Z",
+          "checkedAt": "2026-10-03T17:40:13.197Z",
           "status": "unavailable"
         }
       ],
@@ -2696,7 +2711,7 @@
         "complete-universe coverage"
       ],
       "counts": {
-        "research": 0,
+        "research": 1,
         "entries": 0,
         "exits": 0
       },
@@ -16004,6 +16019,916 @@
       }
     },
     {
+      "id": "penny-scan-20261003T103137036Z",
+      "system": "penny",
+      "startedAt": "2026-10-03T10:29:47.000Z",
+      "checkedAt": "2026-10-03T10:31:37.036Z",
+      "scheduledFor": "2026-10-03T10:00:00.000Z",
+      "nextScheduledAt": "2026-10-03T11:00:00.000Z",
+      "status": "market_closed",
+      "summary": "No open penny paper trades required management. U.S. markets were closed. A fresh issuer, SEC, news and quote review produced one material research update: NSTR confirmed its listing but closed its first session at $4.45, down 42.36%, on about $1.06 million in dollar volume. Its displayed $4.45 bid and $4.73 ask imply an approximately 6.1% spread, while the $30 million PIPE, public warrants, uncertain float and continuing losses add material risk. NSTR was rejected for entry. No other new source-backed setup or material change qualified.",
+      "sources": [
+        {
+          "name": "NorthStar issuer release",
+          "url": "https://northstar-data.com/northstar-earth-space-completes-business-combination-with-viking/",
+          "checkedAt": "2026-10-03T10:31:37.036Z",
+          "status": "checked"
+        },
+        {
+          "name": "NSTR closing quote and bid/ask",
+          "url": "https://markets.financialcontent.com/wral/quote?Symbol=NY:NSTR",
+          "checkedAt": "2026-10-03T10:31:37.036Z",
+          "status": "checked"
+        },
+        {
+          "name": "NSTR SEC transaction exhibit",
+          "url": "https://www.sec.gov/Archives/edgar/data/2080023/000121390026104115/ea030690601ex99-1.htm",
+          "checkedAt": "2026-10-03T10:31:37.036Z",
+          "status": "checked"
+        },
+        {
+          "name": "Fresh issuer and SEC microcap catalyst sweep",
+          "url": "https://www.sec.gov/edgar/search/",
+          "checkedAt": "2026-10-03T10:31:37.036Z",
+          "status": "checked"
+        },
+        {
+          "name": "Current regular-session executable spreads",
+          "url": "https://www.nasdaq.com/market-activity/stocks",
+          "checkedAt": "2026-10-03T10:31:37.036Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "Optional insider and spam-filtered social enrichment",
+          "url": "https://x.com/search",
+          "checkedAt": "2026-10-03T10:31:37.036Z",
+          "status": "unavailable"
+        }
+      ],
+      "missingData": [
+        "current regular-session executable bid and ask because markets were closed",
+        "constructive next-session continuation",
+        "complete current free-float and holder-concentration data for NSTR",
+        "optional insider alignment and spam-filtered social acceleration",
+        "complete universe-wide coverage"
+      ],
+      "counts": {
+        "research": 1,
+        "entries": 0,
+        "exits": 0
+      }
+    },
+    {
+      "id": "options-scan-20261003T105646741Z",
+      "system": "options",
+      "startedAt": "2026-10-03T10:55:26.000Z",
+      "checkedAt": "2026-10-03T10:56:46.741Z",
+      "scheduledFor": "2026-10-03T10:00:00.000Z",
+      "nextScheduledAt": "2026-10-03T11:00:00.000Z",
+      "status": "market_closed",
+      "summary": "No open options paper trades required management. The U.S. listed-options market was closed for the weekend, so no fresh executable exact-contract quote could support an entry, mark or exit. A fresh issuer, SEC and market-news sweep found no distinct new source-backed swing setup requiring a research record; available coverage reiterated already-tracked ON/SYNA, HPE, NKE, MRNA and Google AI catalysts. No 21–60 DTE contract could be verified with an actual positive bid, ask, spread <=10% of midpoint, OI or same-day volume >=100, and ask premium <=$1.00. Existing options research remained unchanged. No research, entry, exit or mark event was created.",
+      "sources": [
+        {
+          "name": "October 2 closing-market and catalyst review",
+          "url": "https://www.reuters.com/markets/us/",
+          "checkedAt": "2026-10-03T10:56:46.741Z",
+          "status": "checked"
+        },
+        {
+          "name": "SEC filing and issuer catalyst sweep",
+          "url": "https://www.sec.gov/edgar/search/",
+          "checkedAt": "2026-10-03T10:56:46.741Z",
+          "status": "checked"
+        },
+        {
+          "name": "Official Google AI announcement review",
+          "url": "https://blog.google/innovation-and-ai/models-and-research/gemini-models/gemini-4-argon/",
+          "checkedAt": "2026-10-03T10:56:46.741Z",
+          "status": "checked"
+        },
+        {
+          "name": "Exact current 21–60 DTE option chains",
+          "url": "https://www.nasdaq.com/market-activity/stocks/option-chain",
+          "checkedAt": "2026-10-03T10:56:46.741Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "Complete real-time unusual-options flow",
+          "url": "https://www.cboe.com/us/options/market_statistics/",
+          "checkedAt": "2026-10-03T10:56:46.741Z",
+          "status": "unavailable"
+        }
+      ],
+      "missingData": [
+        "exact current 21–60 DTE bid and ask because listed-options markets were closed",
+        "positive bid and spread <=10% of midpoint",
+        "contract OI >=100 or today's volume >=100",
+        "contract premium <=$100 at observed ask",
+        "Greeks, IV rank and full term structure (optional enrichment)",
+        "buyer-initiated opening flow (optional enrichment)"
+      ],
+      "counts": {
+        "research": 0,
+        "entries": 0,
+        "exits": 0
+      }
+    },
+    {
+      "id": "penny-scan-20261003T112132001Z",
+      "system": "penny",
+      "startedAt": "2026-10-03T11:20:37.000Z",
+      "checkedAt": "2026-10-03T11:21:32.001Z",
+      "scheduledFor": "2026-10-03T11:00:00.000Z",
+      "nextScheduledAt": "2026-10-03T12:00:00.000Z",
+      "status": "market_closed",
+      "summary": "No open penny paper trades required management. U.S. markets were closed for the weekend. A fresh issuer, SEC, microcap-news and mover review found no new primary-source-backed catalyst or material change beyond the already-recorded NSTR debut failure. No current regular-session executable spread, constructive continuation or new session dollar volume could be verified, so no entry qualified. Existing research remained unchanged. No research, entry, exit or mark event was created.",
+      "sources": [
+        {
+          "name": "Fresh issuer and SEC microcap disclosure sweep",
+          "url": "https://www.sec.gov/edgar/search/",
+          "checkedAt": "2026-10-03T11:21:32.001Z",
+          "status": "checked"
+        },
+        {
+          "name": "October 3 microcap news and catalyst sweep",
+          "url": "https://www.globenewswire.com/",
+          "checkedAt": "2026-10-03T11:21:32.001Z",
+          "status": "checked"
+        },
+        {
+          "name": "Weekend market and mover review",
+          "url": "https://www.reuters.com/markets/us/",
+          "checkedAt": "2026-10-03T11:21:32.001Z",
+          "status": "checked"
+        },
+        {
+          "name": "Current regular-session executable spreads",
+          "url": "https://www.nasdaq.com/market-activity/stocks",
+          "checkedAt": "2026-10-03T11:21:32.001Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "Current-session price/volume continuation",
+          "url": "https://finance.yahoo.com/",
+          "checkedAt": "2026-10-03T11:21:32.001Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "Optional insider and spam-filtered social enrichment",
+          "url": "https://x.com/search",
+          "checkedAt": "2026-10-03T11:21:32.001Z",
+          "status": "unavailable"
+        }
+      ],
+      "missingData": [
+        "current regular-session executable bid and ask because markets were closed",
+        "new-session dollar volume and constructive continuation",
+        "complete focused dilution review for any candidate lacking a new primary catalyst",
+        "optional insider alignment and spam-filtered social acceleration",
+        "complete universe-wide coverage"
+      ],
+      "counts": {
+        "research": 0,
+        "entries": 0,
+        "exits": 0
+      }
+    },
+    {
+      "id": "options-scan-20261003T113251628Z",
+      "system": "options",
+      "startedAt": "2026-10-03T11:31:19.000Z",
+      "checkedAt": "2026-10-03T11:32:51.628Z",
+      "scheduledFor": "2026-10-03T11:00:00.000Z",
+      "nextScheduledAt": "2026-10-03T12:00:00.000Z",
+      "status": "market_closed",
+      "summary": "No open options paper trades required management. U.S. listed-options markets were closed for the weekend; no new distinct, source-backed catalyst was identified in the bounded issuer/news sweep, and no exact recent 21–60 DTE option chain was available. Existing options research remained unchanged, so no paper entry, mark, exit, or new research event was created.",
+      "sources": [
+        {
+          "name": "Issuer and reputable market-news catalyst sweep",
+          "url": "https://www.reuters.com/markets/us/",
+          "checkedAt": "2026-10-03T11:32:51.628Z",
+          "status": "checked"
+        },
+        {
+          "name": "SEC EDGAR current filings",
+          "url": "https://www.sec.gov/edgar/search/",
+          "checkedAt": "2026-10-03T11:32:51.628Z",
+          "status": "checked"
+        },
+        {
+          "name": "Exact 21–60 DTE listed option chains",
+          "url": "https://www.cboe.com/delayed_quotes/",
+          "checkedAt": "2026-10-03T11:32:51.628Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "Buyer-initiated opening options flow",
+          "url": "https://www.cboe.com/us/options/market_statistics/",
+          "checkedAt": "2026-10-03T11:32:51.628Z",
+          "status": "unavailable"
+        }
+      ],
+      "missingData": [
+        "Current exact-contract bid/ask and quote timestamp",
+        "Positive bid and spread no wider than 10% of midpoint",
+        "Exact-contract open interest or same-day volume",
+        "Observed ask at or below $1.00 for one-contract $100 premium cap",
+        "Current Greeks, IV rank, term structure, and buyer-initiated opening flow"
+      ],
+      "counts": {
+        "research": 0,
+        "entries": 0,
+        "exits": 0
+      },
+      "deliveryDiagnostics": {
+        "repair20260928ReportedAt": "2026-09-28T00:50:48.883Z"
+      }
+    },
+    {
+      "id": "penny-scan-20261003T113444470Z",
+      "system": "penny",
+      "startedAt": "2026-10-03T11:33:46.000Z",
+      "checkedAt": "2026-10-03T11:34:44.470Z",
+      "scheduledFor": "2026-10-03T11:00:00.000Z",
+      "nextScheduledAt": "2026-10-03T12:00:00.000Z",
+      "status": "market_closed",
+      "summary": "No open penny paper trades required management. U.S. markets were closed for the weekend. A fresh issuer, SEC and microcap-news sweep found no new distinct primary-source-backed catalyst or material change beyond the existing research records. Current regular-session executable spreads, new-session dollar volume and constructive price/volume continuation were unavailable, so no paper entry qualified. No research, entry, exit or mark event was created.",
+      "sources": [
+        {
+          "name": "Fresh SEC current-filings sweep",
+          "url": "https://www.sec.gov/edgar/search/",
+          "checkedAt": "2026-10-03T11:34:44.470Z",
+          "status": "checked"
+        },
+        {
+          "name": "October 3 issuer and microcap catalyst sweep",
+          "url": "https://www.globenewswire.com/",
+          "checkedAt": "2026-10-03T11:34:44.470Z",
+          "status": "checked"
+        },
+        {
+          "name": "Weekend U.S. market review",
+          "url": "https://www.reuters.com/markets/us/",
+          "checkedAt": "2026-10-03T11:34:44.470Z",
+          "status": "checked"
+        },
+        {
+          "name": "Current regular-session executable bid/ask spreads",
+          "url": "https://www.nasdaq.com/market-activity/stocks",
+          "checkedAt": "2026-10-03T11:34:44.470Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "Current-session price, volume and continuation",
+          "url": "https://finance.yahoo.com/",
+          "checkedAt": "2026-10-03T11:34:44.470Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "Optional spam-filtered social and insider enrichment",
+          "url": "https://x.com/search",
+          "checkedAt": "2026-10-03T11:34:44.470Z",
+          "status": "unavailable"
+        }
+      ],
+      "missingData": [
+        "current regular-session executable bid and ask because U.S. markets were closed",
+        "new-session dollar volume and constructive continuation",
+        "complete focused dilution review for any candidate lacking a new primary catalyst",
+        "optional insider alignment and spam-filtered social acceleration",
+        "complete universe-wide coverage"
+      ],
+      "counts": {
+        "research": 0,
+        "entries": 0,
+        "exits": 0
+      },
+      "deliveryDiagnostics": {
+        "repair20260928ReportedAt": "2026-09-28T01:47:21.040Z"
+      }
+    },
+    {
+      "id": "options-scan-20261003T123722108Z",
+      "system": "options",
+      "startedAt": "2026-10-03T12:36:03.000Z",
+      "checkedAt": "2026-10-03T12:37:22.108Z",
+      "scheduledFor": "2026-10-03T12:00:00.000Z",
+      "nextScheduledAt": "2026-10-03T13:00:00.000Z",
+      "status": "market_closed",
+      "summary": "No open options paper trades required management. U.S. listed-options markets were closed for the weekend. A fresh issuer, SEC and reputable-news catalyst sweep found no new distinct source-backed setup beyond the existing research records. Exact recent 21–60 DTE chains were unavailable, so mandatory contract bid/ask, spread, liquidity and premium-risk checks could not be completed. No research, entry, exit or mark event was created.",
+      "sources": [
+        {
+          "name": "Fresh issuer and reputable market-news catalyst sweep",
+          "url": "https://www.reuters.com/markets/us/",
+          "checkedAt": "2026-10-03T12:37:22.108Z",
+          "status": "checked"
+        },
+        {
+          "name": "SEC EDGAR current filings",
+          "url": "https://www.sec.gov/edgar/search/",
+          "checkedAt": "2026-10-03T12:37:22.108Z",
+          "status": "checked"
+        },
+        {
+          "name": "October 3 corporate announcement sweep",
+          "url": "https://www.globenewswire.com/",
+          "checkedAt": "2026-10-03T12:37:22.108Z",
+          "status": "checked"
+        },
+        {
+          "name": "Exact 21–60 DTE listed option chains",
+          "url": "https://www.cboe.com/delayed_quotes/",
+          "checkedAt": "2026-10-03T12:37:22.108Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "Buyer-initiated opening options flow",
+          "url": "https://www.cboe.com/us/options/market_statistics/",
+          "checkedAt": "2026-10-03T12:37:22.108Z",
+          "status": "unavailable"
+        }
+      ],
+      "missingData": [
+        "current exact-contract bid, ask and quote timestamp",
+        "positive bid and spread no wider than 10% of midpoint",
+        "exact-contract open interest or same-day volume",
+        "observed ask at or below $1.00 for the one-contract $100 premium cap",
+        "current Greeks, IV rank, term structure and buyer-initiated opening flow"
+      ],
+      "counts": {
+        "research": 0,
+        "entries": 0,
+        "exits": 0
+      },
+      "deliveryDiagnostics": {
+        "repair20260928ReportedAt": "2026-09-28T00:50:48.883Z"
+      }
+    },
+    {
+      "id": "penny-scan-20261003T124009827Z",
+      "system": "penny",
+      "startedAt": "2026-10-03T12:39:09.000Z",
+      "checkedAt": "2026-10-03T12:40:09.827Z",
+      "scheduledFor": "2026-10-03T12:00:00.000Z",
+      "nextScheduledAt": "2026-10-03T13:00:00.000Z",
+      "status": "market_closed",
+      "summary": "No open penny paper trades required management. U.S. markets were closed for the weekend. A fresh SEC, issuer and microcap-news sweep found no new distinct primary-source-backed catalyst or material change beyond the existing research records. Current regular-session executable spreads, new-session dollar volume and constructive price/volume continuation were unavailable, so no paper entry qualified. No research, entry, exit or mark event was created.",
+      "sources": [
+        {
+          "name": "Fresh SEC current-filings sweep",
+          "url": "https://www.sec.gov/edgar/search/",
+          "checkedAt": "2026-10-03T12:40:09.827Z",
+          "status": "checked"
+        },
+        {
+          "name": "October 3 issuer and microcap catalyst sweep",
+          "url": "https://www.globenewswire.com/",
+          "checkedAt": "2026-10-03T12:40:09.827Z",
+          "status": "checked"
+        },
+        {
+          "name": "Weekend U.S. market review",
+          "url": "https://www.reuters.com/markets/us/",
+          "checkedAt": "2026-10-03T12:40:09.827Z",
+          "status": "checked"
+        },
+        {
+          "name": "Current regular-session executable bid/ask spreads",
+          "url": "https://www.nasdaq.com/market-activity/stocks",
+          "checkedAt": "2026-10-03T12:40:09.827Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "Current-session price, volume and continuation",
+          "url": "https://finance.yahoo.com/",
+          "checkedAt": "2026-10-03T12:40:09.827Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "Optional spam-filtered social and insider enrichment",
+          "url": "https://x.com/search",
+          "checkedAt": "2026-10-03T12:40:09.827Z",
+          "status": "unavailable"
+        }
+      ],
+      "missingData": [
+        "current regular-session executable bid and ask because U.S. markets were closed",
+        "new-session dollar volume and constructive continuation",
+        "complete focused dilution review for any candidate lacking a new primary catalyst",
+        "optional insider alignment and spam-filtered social acceleration",
+        "complete universe-wide coverage"
+      ],
+      "counts": {
+        "research": 0,
+        "entries": 0,
+        "exits": 0
+      },
+      "deliveryDiagnostics": {
+        "repair20260928ReportedAt": "2026-09-28T01:47:21.040Z"
+      }
+    },
+    {
+      "id": "options-scan-20261003T134718893Z",
+      "system": "options",
+      "startedAt": "2026-10-03T13:46:18.000Z",
+      "checkedAt": "2026-10-03T13:47:18.893Z",
+      "scheduledFor": "2026-10-03T13:00:00.000Z",
+      "nextScheduledAt": "2026-10-03T14:00:00.000Z",
+      "status": "market_closed",
+      "summary": "No open options paper trades required management. U.S. listed-options markets were closed for the weekend. A fresh issuer, SEC and reputable-news catalyst sweep found no new distinct source-backed setup beyond the existing research records. Exact recent 21–60 DTE chains were unavailable, so mandatory contract bid/ask, spread, liquidity and premium-risk checks could not be completed. No research, entry, exit or mark event was created.",
+      "sources": [
+        {
+          "name": "Fresh issuer and reputable market-news catalyst sweep",
+          "url": "https://www.reuters.com/markets/us/",
+          "checkedAt": "2026-10-03T13:47:18.893Z",
+          "status": "checked"
+        },
+        {
+          "name": "SEC EDGAR current filings",
+          "url": "https://www.sec.gov/edgar/search/",
+          "checkedAt": "2026-10-03T13:47:18.893Z",
+          "status": "checked"
+        },
+        {
+          "name": "October 3 corporate announcement sweep",
+          "url": "https://www.globenewswire.com/",
+          "checkedAt": "2026-10-03T13:47:18.893Z",
+          "status": "checked"
+        },
+        {
+          "name": "Exact 21–60 DTE listed option chains",
+          "url": "https://www.cboe.com/delayed_quotes/",
+          "checkedAt": "2026-10-03T13:47:18.893Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "Buyer-initiated opening options flow",
+          "url": "https://www.cboe.com/us/options/market_statistics/",
+          "checkedAt": "2026-10-03T13:47:18.893Z",
+          "status": "unavailable"
+        }
+      ],
+      "missingData": [
+        "current exact-contract bid, ask and quote timestamp",
+        "positive bid and spread no wider than 10% of midpoint",
+        "exact-contract open interest or same-day volume",
+        "observed ask at or below $1.00 for the one-contract $100 premium cap",
+        "current Greeks, IV rank, term structure and buyer-initiated opening flow"
+      ],
+      "counts": {
+        "research": 0,
+        "entries": 0,
+        "exits": 0
+      },
+      "deliveryDiagnostics": {
+        "repair20260928ReportedAt": "2026-09-28T00:50:48.883Z"
+      }
+    },
+    {
+      "id": "penny-scan-20261003T141234176Z",
+      "system": "penny",
+      "startedAt": "2026-10-03T14:10:46.000Z",
+      "checkedAt": "2026-10-03T14:12:34.176Z",
+      "scheduledFor": "2026-10-03T14:00:00.000Z",
+      "nextScheduledAt": "2026-10-03T15:00:00.000Z",
+      "status": "market_closed",
+      "summary": "No open penny paper trades required management. U.S. markets were closed for the weekend. A fresh SEC, issuer and microcap-news sweep found no new distinct primary-source-backed catalyst or material change beyond the existing research records. Current regular-session executable spreads, new-session dollar volume and constructive price/volume continuation were unavailable, so no paper entry qualified. No research, entry, exit or mark event was created.",
+      "sources": [
+        {
+          "name": "Fresh SEC current-filings sweep",
+          "url": "https://www.sec.gov/edgar/search/",
+          "checkedAt": "2026-10-03T14:12:34.176Z",
+          "status": "checked"
+        },
+        {
+          "name": "October 3 issuer and microcap catalyst sweep",
+          "url": "https://www.globenewswire.com/",
+          "checkedAt": "2026-10-03T14:12:34.176Z",
+          "status": "checked"
+        },
+        {
+          "name": "Weekend U.S. market review",
+          "url": "https://www.reuters.com/markets/us/",
+          "checkedAt": "2026-10-03T14:12:34.176Z",
+          "status": "checked"
+        },
+        {
+          "name": "Current regular-session executable bid/ask spreads",
+          "url": "https://www.nasdaq.com/market-activity/stocks",
+          "checkedAt": "2026-10-03T14:12:34.176Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "Current-session price, volume and continuation",
+          "url": "https://finance.yahoo.com/",
+          "checkedAt": "2026-10-03T14:12:34.176Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "Optional spam-filtered social and insider enrichment",
+          "url": "https://x.com/search",
+          "checkedAt": "2026-10-03T14:12:34.176Z",
+          "status": "unavailable"
+        }
+      ],
+      "missingData": [
+        "Current regular-session executable bid and ask because U.S. markets were closed",
+        "New-session dollar volume and constructive continuation",
+        "Complete focused dilution review for any candidate lacking a new primary catalyst",
+        "Optional insider alignment and spam-filtered social acceleration",
+        "Complete universe-wide coverage"
+      ],
+      "counts": {
+        "research": 0,
+        "entries": 0,
+        "exits": 0
+      },
+      "deliveryDiagnostics": {
+        "repair20260928ReportedAt": "2026-09-28T01:47:21.040Z"
+      }
+    },
+    {
+      "id": "options-scan-20261003T152611659Z",
+      "system": "options",
+      "startedAt": "2026-10-03T15:24:43.000Z",
+      "checkedAt": "2026-10-03T15:26:11.659Z",
+      "scheduledFor": "2026-10-03T15:00:00.000Z",
+      "nextScheduledAt": "2026-10-03T16:00:00.000Z",
+      "status": "market_closed",
+      "summary": "No open options paper trades required management. U.S. listed-options markets were closed for the weekend. A fresh issuer, SEC and reputable-news sweep found no new distinct primary-source-backed setup beyond existing research. Reuters reported that a $4.2 billion U.S. government loan for Vistra may be announced Monday, but no primary agency or company announcement was available, so VST was rejected as unconfirmed rather than published as research. Exact recent 21–60 DTE chains were unavailable, preventing mandatory contract quote, spread, liquidity and premium-risk checks. No research, entry, exit or mark event was created.",
+      "sources": [
+        {
+          "name": "Fresh issuer and reputable market-news catalyst sweep",
+          "url": "https://www.reuters.com/markets/us/",
+          "checkedAt": "2026-10-03T15:26:11.659Z",
+          "status": "checked"
+        },
+        {
+          "name": "SEC EDGAR current filings",
+          "url": "https://www.sec.gov/edgar/search/",
+          "checkedAt": "2026-10-03T15:26:11.659Z",
+          "status": "checked"
+        },
+        {
+          "name": "October 3 corporate announcement sweep",
+          "url": "https://www.globenewswire.com/",
+          "checkedAt": "2026-10-03T15:26:11.659Z",
+          "status": "checked"
+        },
+        {
+          "name": "Potential Vistra government-loan report",
+          "url": "https://www.reuters.com/legal/litigation/us-lend-42-billion-vistra-boost-nuclear-power-output-source-says-2026-10-03/",
+          "checkedAt": "2026-10-03T15:26:11.659Z",
+          "status": "checked"
+        },
+        {
+          "name": "Exact 21–60 DTE listed option chains",
+          "url": "https://www.cboe.com/delayed_quotes/",
+          "checkedAt": "2026-10-03T15:26:11.659Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "Buyer-initiated opening options flow",
+          "url": "https://www.cboe.com/us/options/market_statistics/",
+          "checkedAt": "2026-10-03T15:26:11.659Z",
+          "status": "unavailable"
+        }
+      ],
+      "missingData": [
+        "current exact-contract bid, ask and quote timestamp",
+        "positive bid and spread no wider than 10% of midpoint",
+        "exact-contract open interest or same-day volume",
+        "observed ask at or below $1.00 for the one-contract $100 premium cap",
+        "current Greeks, IV rank, term structure and buyer-initiated opening flow",
+        "primary-source confirmation of the reported potential Vistra government loan"
+      ],
+      "counts": {
+        "research": 0,
+        "entries": 0,
+        "exits": 0
+      },
+      "deliveryDiagnostics": {
+        "repair20260928ReportedAt": "2026-09-28T00:50:48.883Z"
+      }
+    },
+    {
+      "id": "penny-scan-20261003T152832138Z",
+      "system": "penny",
+      "startedAt": "2026-10-03T15:27:20.000Z",
+      "checkedAt": "2026-10-03T15:28:32.138Z",
+      "scheduledFor": "2026-10-03T15:00:00.000Z",
+      "nextScheduledAt": "2026-10-03T16:00:00.000Z",
+      "status": "market_closed",
+      "summary": "No open penny paper trades required management. U.S. markets were closed for the weekend. A fresh SEC, issuer and microcap-news sweep found no new distinct October 3 primary-source-backed catalyst or material change beyond existing research records. Current regular-session executable spreads, new-session dollar volume and constructive price/volume continuation were unavailable, so no paper entry qualified. No research, entry, exit or mark event was created.",
+      "sources": [
+        {
+          "name": "Fresh SEC current-filings sweep",
+          "url": "https://www.sec.gov/edgar/search/",
+          "checkedAt": "2026-10-03T15:28:32.138Z",
+          "status": "checked"
+        },
+        {
+          "name": "October 3 issuer and microcap catalyst sweep",
+          "url": "https://www.globenewswire.com/",
+          "checkedAt": "2026-10-03T15:28:32.138Z",
+          "status": "checked"
+        },
+        {
+          "name": "Weekend U.S. market review",
+          "url": "https://www.reuters.com/markets/us/",
+          "checkedAt": "2026-10-03T15:28:32.138Z",
+          "status": "checked"
+        },
+        {
+          "name": "Current regular-session executable bid/ask spreads",
+          "url": "https://www.nasdaq.com/market-activity/stocks",
+          "checkedAt": "2026-10-03T15:28:32.138Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "Current-session price, volume and continuation",
+          "url": "https://finance.yahoo.com/",
+          "checkedAt": "2026-10-03T15:28:32.138Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "Optional spam-filtered social and insider enrichment",
+          "url": "https://x.com/search",
+          "checkedAt": "2026-10-03T15:28:32.138Z",
+          "status": "unavailable"
+        }
+      ],
+      "missingData": [
+        "Current regular-session executable bid and ask because U.S. markets were closed",
+        "New-session dollar volume and constructive continuation",
+        "Complete focused dilution review for any candidate lacking a new primary catalyst",
+        "Optional insider alignment and spam-filtered social acceleration",
+        "Complete universe-wide coverage"
+      ],
+      "counts": {
+        "research": 0,
+        "entries": 0,
+        "exits": 0
+      },
+      "deliveryDiagnostics": {
+        "repair20260928ReportedAt": "2026-09-28T01:47:21.040Z"
+      }
+    },
+    {
+      "id": "options-scan-20261003T154229836Z",
+      "system": "options",
+      "startedAt": "2026-10-03T15:40:47.000Z",
+      "checkedAt": "2026-10-03T15:42:29.836Z",
+      "scheduledFor": "2026-10-03T15:00:00.000Z",
+      "nextScheduledAt": "2026-10-03T16:00:00.000Z",
+      "status": "market_closed",
+      "summary": "No open options paper trades required management. U.S. listed-options markets were closed. New primary DOE evidence confirms that federal financing for Vistra's Perry nuclear uprate is under evaluation, while Reuters reports a possible $4.2 billion Monday announcement. Because DOE and Vistra have not confirmed approval or the amount and exact 21–60 DTE contract quotes are unavailable, VST was published as developing research only. One research event, no entries, exits or marks.",
+      "sources": [
+        {
+          "name": "DOE Perry nuclear uprate financing review",
+          "url": "https://www.energy.gov/documents/vistra-corp-perry-nuclear-power-plant-pnpp-uprate-project-nhpa-section-106-finding-no",
+          "checkedAt": "2026-10-03T15:42:29.836Z",
+          "status": "checked"
+        },
+        {
+          "name": "Reuters potential Vistra loan report",
+          "url": "https://www.reuters.com/legal/litigation/us-lend-42-billion-vistra-boost-nuclear-power-output-source-says-2026-10-03/",
+          "checkedAt": "2026-10-03T15:42:29.836Z",
+          "status": "checked"
+        },
+        {
+          "name": "Fresh issuer and SEC catalyst sweep",
+          "url": "https://www.sec.gov/edgar/search/",
+          "checkedAt": "2026-10-03T15:42:29.836Z",
+          "status": "checked"
+        },
+        {
+          "name": "Exact 21–60 DTE listed option chains",
+          "url": "https://www.cboe.com/delayed_quotes/",
+          "checkedAt": "2026-10-03T15:42:29.836Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "Buyer-initiated opening options flow",
+          "url": "https://www.cboe.com/us/options/market_statistics/",
+          "checkedAt": "2026-10-03T15:42:29.836Z",
+          "status": "unavailable"
+        }
+      ],
+      "missingData": [
+        "primary confirmation of the Vistra loan approval, amount and terms",
+        "current exact-contract bid, ask and quote timestamp",
+        "positive bid and spread no wider than 10% of midpoint",
+        "exact-contract open interest or same-day volume",
+        "observed ask at or below $1.00 for the one-contract $100 premium cap",
+        "current Greeks, IV rank, term structure and buyer-initiated opening flow"
+      ],
+      "counts": {
+        "research": 1,
+        "entries": 0,
+        "exits": 0
+      },
+      "deliveryDiagnostics": {
+        "repair20260928ReportedAt": "2026-09-28T00:50:48.883Z"
+      }
+    },
+    {
+      "id": "penny-scan-20261003T162452826Z",
+      "system": "penny",
+      "startedAt": "2026-10-03T16:23:13.000Z",
+      "checkedAt": "2026-10-03T16:24:52.826Z",
+      "scheduledFor": "2026-10-03T16:00:00.000Z",
+      "nextScheduledAt": "2026-10-03T17:00:00.000Z",
+      "status": "market_closed",
+      "summary": "No open penny paper trades required management. U.S. markets were closed for the weekend. A fresh SEC, issuer-news and market-news sweep found no new distinct October 3 primary-source-backed microcap catalyst or material change beyond existing research records. Current regular-session executable spreads, new-session dollar volume and constructive price/volume continuation were unavailable, so no paper entry qualified. No research, entry, exit or mark event was created.",
+      "sources": [
+        {
+          "name": "Fresh SEC current-filings sweep",
+          "url": "https://www.sec.gov/edgar/search/",
+          "checkedAt": "2026-10-03T16:24:52.826Z",
+          "status": "checked"
+        },
+        {
+          "name": "October 3 issuer and microcap catalyst sweep",
+          "url": "https://www.globenewswire.com/",
+          "checkedAt": "2026-10-03T16:24:52.826Z",
+          "status": "checked"
+        },
+        {
+          "name": "Business Wire issuer-catalyst sweep",
+          "url": "https://www.businesswire.com/",
+          "checkedAt": "2026-10-03T16:24:52.826Z",
+          "status": "checked"
+        },
+        {
+          "name": "Weekend U.S. market review",
+          "url": "https://www.investors.com/market-trend/stock-market-today/",
+          "checkedAt": "2026-10-03T16:24:52.826Z",
+          "status": "checked"
+        },
+        {
+          "name": "Current regular-session executable bid/ask spreads",
+          "url": "https://www.nasdaq.com/market-activity/stocks",
+          "checkedAt": "2026-10-03T16:24:52.826Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "Current-session price, volume and continuation",
+          "url": "https://finance.yahoo.com/",
+          "checkedAt": "2026-10-03T16:24:52.826Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "Optional spam-filtered social and insider enrichment",
+          "url": "https://x.com/search",
+          "checkedAt": "2026-10-03T16:24:52.826Z",
+          "status": "unavailable"
+        }
+      ],
+      "missingData": [
+        "Current regular-session executable bid and ask because U.S. markets were closed",
+        "New-session dollar volume and constructive continuation",
+        "Complete focused dilution review for any candidate lacking a new primary catalyst",
+        "Optional insider alignment and spam-filtered social acceleration",
+        "Complete universe-wide coverage"
+      ],
+      "counts": {
+        "research": 0,
+        "entries": 0,
+        "exits": 0
+      },
+      "deliveryDiagnostics": {
+        "repair20260928ReportedAt": "2026-09-28T01:47:21.040Z"
+      }
+    },
+    {
+      "id": "options-scan-20261003T171300346Z",
+      "system": "options",
+      "startedAt": "2026-10-03T17:11:44.000Z",
+      "checkedAt": "2026-10-03T17:13:00.346Z",
+      "scheduledFor": "2026-10-03T17:00:00.000Z",
+      "nextScheduledAt": "2026-10-03T18:00:00.000Z",
+      "status": "market_closed",
+      "summary": "No open options paper trades required management. U.S. listed-options markets were closed. DOE's current environmental notices still show the Vistra Perry nuclear uprate financing review, but no primary DOE or Vistra source confirmed loan approval, the reported $4.2 billion amount or terms. The VST research setup therefore remained unchanged. A fresh issuer, SEC and market-news sweep found no new distinct source-backed swing catalyst requiring a research update. Exact 21–60 DTE contract quotes, spreads and liquidity were unavailable, so no entry, exit, mark or research event was created.",
+      "sources": [
+        {
+          "name": "DOE Perry nuclear uprate environmental/financing review",
+          "url": "https://www.energy.gov/edf/edf-environmental-notices",
+          "checkedAt": "2026-10-03T17:13:00.346Z",
+          "status": "checked"
+        },
+        {
+          "name": "Reuters potential Vistra loan report",
+          "url": "https://www.reuters.com/legal/litigation/us-lend-42-billion-vistra-boost-nuclear-power-output-source-says-2026-10-03/",
+          "checkedAt": "2026-10-03T17:13:00.346Z",
+          "status": "checked"
+        },
+        {
+          "name": "Fresh issuer, SEC and market-news catalyst sweep",
+          "url": "https://www.sec.gov/edgar/search/",
+          "checkedAt": "2026-10-03T17:13:00.346Z",
+          "status": "checked"
+        },
+        {
+          "name": "Exact 21–60 DTE listed option chains",
+          "url": "https://www.cboe.com/delayed_quotes/",
+          "checkedAt": "2026-10-03T17:13:00.346Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "Buyer-initiated opening options flow",
+          "url": "https://www.cboe.com/us/options/market_statistics/",
+          "checkedAt": "2026-10-03T17:13:00.346Z",
+          "status": "unavailable"
+        }
+      ],
+      "missingData": [
+        "primary confirmation of the Vistra loan approval, amount and terms",
+        "current exact-contract bid, ask and quote timestamp",
+        "positive bid and spread no wider than 10% of midpoint",
+        "exact-contract open interest or same-day volume",
+        "observed ask at or below $1.00 for the one-contract $100 premium cap",
+        "current Greeks, IV rank, term structure and buyer-initiated opening flow"
+      ],
+      "counts": {
+        "research": 0,
+        "entries": 0,
+        "exits": 0
+      },
+      "deliveryDiagnostics": {
+        "repair20260928ReportedAt": "2026-09-28T00:50:48.883Z"
+      }
+    },
+    {
+      "id": "penny-scan-20261003T172648667Z",
+      "system": "penny",
+      "startedAt": "2026-10-03T17:25:41.000Z",
+      "checkedAt": "2026-10-03T17:26:48.667Z",
+      "scheduledFor": "2026-10-03T17:00:00.000Z",
+      "nextScheduledAt": "2026-10-03T18:00:00.000Z",
+      "status": "market_closed",
+      "summary": "No open penny paper trades required management. U.S. markets were closed for the weekend. A fresh SEC, issuer-news and market-news sweep found no new distinct October 3 primary-source-backed microcap catalyst or material change beyond existing research records. Current regular-session executable spreads, new-session dollar volume and constructive price/volume continuation were unavailable, so no paper entry qualified. No research, entry, exit or mark event was created.",
+      "sources": [
+        {
+          "name": "Fresh SEC current-filings sweep",
+          "url": "https://www.sec.gov/edgar/search/",
+          "checkedAt": "2026-10-03T17:26:48.667Z",
+          "status": "checked"
+        },
+        {
+          "name": "October 3 issuer and microcap catalyst sweep",
+          "url": "https://www.globenewswire.com/",
+          "checkedAt": "2026-10-03T17:26:48.667Z",
+          "status": "checked"
+        },
+        {
+          "name": "Business Wire issuer-catalyst sweep",
+          "url": "https://www.businesswire.com/",
+          "checkedAt": "2026-10-03T17:26:48.667Z",
+          "status": "checked"
+        },
+        {
+          "name": "Weekend U.S. market review",
+          "url": "https://www.investors.com/market-trend/stock-market-today/",
+          "checkedAt": "2026-10-03T17:26:48.667Z",
+          "status": "checked"
+        },
+        {
+          "name": "Current regular-session executable bid/ask spreads",
+          "url": "https://www.nasdaq.com/market-activity/stocks",
+          "checkedAt": "2026-10-03T17:26:48.667Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "Current-session price, volume and continuation",
+          "url": "https://finance.yahoo.com/",
+          "checkedAt": "2026-10-03T17:26:48.667Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "Optional spam-filtered social and insider enrichment",
+          "url": "https://x.com/search",
+          "checkedAt": "2026-10-03T17:26:48.667Z",
+          "status": "unavailable"
+        }
+      ],
+      "missingData": [
+        "Current regular-session executable bid and ask because U.S. markets were closed",
+        "New-session dollar volume and constructive continuation",
+        "Complete focused dilution review for any candidate lacking a new primary catalyst",
+        "Optional insider alignment and spam-filtered social acceleration",
+        "Complete universe-wide coverage"
+      ],
+      "counts": {
+        "research": 0,
+        "entries": 0,
+        "exits": 0
+      },
+      "deliveryDiagnostics": {
+        "repair20260928ReportedAt": "2026-09-28T01:47:21.040Z"
+      }
+    },
+    {
       "id": "meme-scan-20260927T090000Z",
       "system": "meme",
       "startedAt": "2026-09-27T09:30:39Z",
@@ -20513,121 +21438,6 @@
       }
     },
     {
-      "id": "penny-scan-20261003T103137036Z",
-      "system": "penny",
-      "startedAt": "2026-10-03T10:29:47.000Z",
-      "checkedAt": "2026-10-03T10:31:37.036Z",
-      "scheduledFor": "2026-10-03T10:00:00.000Z",
-      "nextScheduledAt": "2026-10-03T11:00:00.000Z",
-      "status": "market_closed",
-      "summary": "No open penny paper trades required management. U.S. markets were closed. A fresh issuer, SEC, news and quote review produced one material research update: NSTR confirmed its listing but closed its first session at $4.45, down 42.36%, on about $1.06 million in dollar volume. Its displayed $4.45 bid and $4.73 ask imply an approximately 6.1% spread, while the $30 million PIPE, public warrants, uncertain float and continuing losses add material risk. NSTR was rejected for entry. No other new source-backed setup or material change qualified.",
-      "sources": [
-        {
-          "name": "NorthStar issuer release",
-          "url": "https://northstar-data.com/northstar-earth-space-completes-business-combination-with-viking/",
-          "checkedAt": "2026-10-03T10:31:37.036Z",
-          "status": "checked"
-        },
-        {
-          "name": "NSTR closing quote and bid/ask",
-          "url": "https://markets.financialcontent.com/wral/quote?Symbol=NY:NSTR",
-          "checkedAt": "2026-10-03T10:31:37.036Z",
-          "status": "checked"
-        },
-        {
-          "name": "NSTR SEC transaction exhibit",
-          "url": "https://www.sec.gov/Archives/edgar/data/2080023/000121390026104115/ea030690601ex99-1.htm",
-          "checkedAt": "2026-10-03T10:31:37.036Z",
-          "status": "checked"
-        },
-        {
-          "name": "Fresh issuer and SEC microcap catalyst sweep",
-          "url": "https://www.sec.gov/edgar/search/",
-          "checkedAt": "2026-10-03T10:31:37.036Z",
-          "status": "checked"
-        },
-        {
-          "name": "Current regular-session executable spreads",
-          "url": "https://www.nasdaq.com/market-activity/stocks",
-          "checkedAt": "2026-10-03T10:31:37.036Z",
-          "status": "unavailable"
-        },
-        {
-          "name": "Optional insider and spam-filtered social enrichment",
-          "url": "https://x.com/search",
-          "checkedAt": "2026-10-03T10:31:37.036Z",
-          "status": "unavailable"
-        }
-      ],
-      "missingData": [
-        "current regular-session executable bid and ask because markets were closed",
-        "constructive next-session continuation",
-        "complete current free-float and holder-concentration data for NSTR",
-        "optional insider alignment and spam-filtered social acceleration",
-        "complete universe-wide coverage"
-      ],
-      "counts": {
-        "research": 1,
-        "entries": 0,
-        "exits": 0
-      }
-    },
-    {
-      "id": "options-scan-20261003T105646741Z",
-      "system": "options",
-      "startedAt": "2026-10-03T10:55:26.000Z",
-      "checkedAt": "2026-10-03T10:56:46.741Z",
-      "scheduledFor": "2026-10-03T10:00:00.000Z",
-      "nextScheduledAt": "2026-10-03T11:00:00.000Z",
-      "status": "market_closed",
-      "summary": "No open options paper trades required management. The U.S. listed-options market was closed for the weekend, so no fresh executable exact-contract quote could support an entry, mark or exit. A fresh issuer, SEC and market-news sweep found no distinct new source-backed swing setup requiring a research record; available coverage reiterated already-tracked ON/SYNA, HPE, NKE, MRNA and Google AI catalysts. No 21–60 DTE contract could be verified with an actual positive bid, ask, spread <=10% of midpoint, OI or same-day volume >=100, and ask premium <=$1.00. Existing options research remained unchanged. No research, entry, exit or mark event was created.",
-      "sources": [
-        {
-          "name": "October 2 closing-market and catalyst review",
-          "url": "https://www.reuters.com/markets/us/",
-          "checkedAt": "2026-10-03T10:56:46.741Z",
-          "status": "checked"
-        },
-        {
-          "name": "SEC filing and issuer catalyst sweep",
-          "url": "https://www.sec.gov/edgar/search/",
-          "checkedAt": "2026-10-03T10:56:46.741Z",
-          "status": "checked"
-        },
-        {
-          "name": "Official Google AI announcement review",
-          "url": "https://blog.google/innovation-and-ai/models-and-research/gemini-models/gemini-4-argon/",
-          "checkedAt": "2026-10-03T10:56:46.741Z",
-          "status": "checked"
-        },
-        {
-          "name": "Exact current 21–60 DTE option chains",
-          "url": "https://www.nasdaq.com/market-activity/stocks/option-chain",
-          "checkedAt": "2026-10-03T10:56:46.741Z",
-          "status": "unavailable"
-        },
-        {
-          "name": "Complete real-time unusual-options flow",
-          "url": "https://www.cboe.com/us/options/market_statistics/",
-          "checkedAt": "2026-10-03T10:56:46.741Z",
-          "status": "unavailable"
-        }
-      ],
-      "missingData": [
-        "exact current 21–60 DTE bid and ask because listed-options markets were closed",
-        "positive bid and spread <=10% of midpoint",
-        "contract OI >=100 or today's volume >=100",
-        "contract premium <=$100 at observed ask",
-        "Greeks, IV rank and full term structure (optional enrichment)",
-        "buyer-initiated opening flow (optional enrichment)"
-      ],
-      "counts": {
-        "research": 0,
-        "entries": 0,
-        "exits": 0
-      }
-    },
-    {
       "id": "meme-scan-20261003T111238913Z",
       "system": "meme",
       "startedAt": "2026-10-03T11:10:46.000Z",
@@ -20691,180 +21501,6 @@
         "research": 1,
         "entries": 0,
         "exits": 0
-      }
-    },
-    {
-      "id": "penny-scan-20261003T112132001Z",
-      "system": "penny",
-      "startedAt": "2026-10-03T11:20:37.000Z",
-      "checkedAt": "2026-10-03T11:21:32.001Z",
-      "scheduledFor": "2026-10-03T11:00:00.000Z",
-      "nextScheduledAt": "2026-10-03T12:00:00.000Z",
-      "status": "market_closed",
-      "summary": "No open penny paper trades required management. U.S. markets were closed for the weekend. A fresh issuer, SEC, microcap-news and mover review found no new primary-source-backed catalyst or material change beyond the already-recorded NSTR debut failure. No current regular-session executable spread, constructive continuation or new session dollar volume could be verified, so no entry qualified. Existing research remained unchanged. No research, entry, exit or mark event was created.",
-      "sources": [
-        {
-          "name": "Fresh issuer and SEC microcap disclosure sweep",
-          "url": "https://www.sec.gov/edgar/search/",
-          "checkedAt": "2026-10-03T11:21:32.001Z",
-          "status": "checked"
-        },
-        {
-          "name": "October 3 microcap news and catalyst sweep",
-          "url": "https://www.globenewswire.com/",
-          "checkedAt": "2026-10-03T11:21:32.001Z",
-          "status": "checked"
-        },
-        {
-          "name": "Weekend market and mover review",
-          "url": "https://www.reuters.com/markets/us/",
-          "checkedAt": "2026-10-03T11:21:32.001Z",
-          "status": "checked"
-        },
-        {
-          "name": "Current regular-session executable spreads",
-          "url": "https://www.nasdaq.com/market-activity/stocks",
-          "checkedAt": "2026-10-03T11:21:32.001Z",
-          "status": "unavailable"
-        },
-        {
-          "name": "Current-session price/volume continuation",
-          "url": "https://finance.yahoo.com/",
-          "checkedAt": "2026-10-03T11:21:32.001Z",
-          "status": "unavailable"
-        },
-        {
-          "name": "Optional insider and spam-filtered social enrichment",
-          "url": "https://x.com/search",
-          "checkedAt": "2026-10-03T11:21:32.001Z",
-          "status": "unavailable"
-        }
-      ],
-      "missingData": [
-        "current regular-session executable bid and ask because markets were closed",
-        "new-session dollar volume and constructive continuation",
-        "complete focused dilution review for any candidate lacking a new primary catalyst",
-        "optional insider alignment and spam-filtered social acceleration",
-        "complete universe-wide coverage"
-      ],
-      "counts": {
-        "research": 0,
-        "entries": 0,
-        "exits": 0
-      }
-    },
-    {
-      "id": "options-scan-20261003T113251628Z",
-      "system": "options",
-      "startedAt": "2026-10-03T11:31:19.000Z",
-      "checkedAt": "2026-10-03T11:32:51.628Z",
-      "scheduledFor": "2026-10-03T11:00:00.000Z",
-      "nextScheduledAt": "2026-10-03T12:00:00.000Z",
-      "status": "market_closed",
-      "summary": "No open options paper trades required management. U.S. listed-options markets were closed for the weekend; no new distinct, source-backed catalyst was identified in the bounded issuer/news sweep, and no exact recent 21–60 DTE option chain was available. Existing options research remained unchanged, so no paper entry, mark, exit, or new research event was created.",
-      "sources": [
-        {
-          "name": "Issuer and reputable market-news catalyst sweep",
-          "url": "https://www.reuters.com/markets/us/",
-          "checkedAt": "2026-10-03T11:32:51.628Z",
-          "status": "checked"
-        },
-        {
-          "name": "SEC EDGAR current filings",
-          "url": "https://www.sec.gov/edgar/search/",
-          "checkedAt": "2026-10-03T11:32:51.628Z",
-          "status": "checked"
-        },
-        {
-          "name": "Exact 21–60 DTE listed option chains",
-          "url": "https://www.cboe.com/delayed_quotes/",
-          "checkedAt": "2026-10-03T11:32:51.628Z",
-          "status": "unavailable"
-        },
-        {
-          "name": "Buyer-initiated opening options flow",
-          "url": "https://www.cboe.com/us/options/market_statistics/",
-          "checkedAt": "2026-10-03T11:32:51.628Z",
-          "status": "unavailable"
-        }
-      ],
-      "missingData": [
-        "Current exact-contract bid/ask and quote timestamp",
-        "Positive bid and spread no wider than 10% of midpoint",
-        "Exact-contract open interest or same-day volume",
-        "Observed ask at or below $1.00 for one-contract $100 premium cap",
-        "Current Greeks, IV rank, term structure, and buyer-initiated opening flow"
-      ],
-      "counts": {
-        "research": 0,
-        "entries": 0,
-        "exits": 0
-      },
-      "deliveryDiagnostics": {
-        "repair20260928ReportedAt": "2026-09-28T00:50:48.883Z"
-      }
-    },
-    {
-      "id": "penny-scan-20261003T113444470Z",
-      "system": "penny",
-      "startedAt": "2026-10-03T11:33:46.000Z",
-      "checkedAt": "2026-10-03T11:34:44.470Z",
-      "scheduledFor": "2026-10-03T11:00:00.000Z",
-      "nextScheduledAt": "2026-10-03T12:00:00.000Z",
-      "status": "market_closed",
-      "summary": "No open penny paper trades required management. U.S. markets were closed for the weekend. A fresh issuer, SEC and microcap-news sweep found no new distinct primary-source-backed catalyst or material change beyond the existing research records. Current regular-session executable spreads, new-session dollar volume and constructive price/volume continuation were unavailable, so no paper entry qualified. No research, entry, exit or mark event was created.",
-      "sources": [
-        {
-          "name": "Fresh SEC current-filings sweep",
-          "url": "https://www.sec.gov/edgar/search/",
-          "checkedAt": "2026-10-03T11:34:44.470Z",
-          "status": "checked"
-        },
-        {
-          "name": "October 3 issuer and microcap catalyst sweep",
-          "url": "https://www.globenewswire.com/",
-          "checkedAt": "2026-10-03T11:34:44.470Z",
-          "status": "checked"
-        },
-        {
-          "name": "Weekend U.S. market review",
-          "url": "https://www.reuters.com/markets/us/",
-          "checkedAt": "2026-10-03T11:34:44.470Z",
-          "status": "checked"
-        },
-        {
-          "name": "Current regular-session executable bid/ask spreads",
-          "url": "https://www.nasdaq.com/market-activity/stocks",
-          "checkedAt": "2026-10-03T11:34:44.470Z",
-          "status": "unavailable"
-        },
-        {
-          "name": "Current-session price, volume and continuation",
-          "url": "https://finance.yahoo.com/",
-          "checkedAt": "2026-10-03T11:34:44.470Z",
-          "status": "unavailable"
-        },
-        {
-          "name": "Optional spam-filtered social and insider enrichment",
-          "url": "https://x.com/search",
-          "checkedAt": "2026-10-03T11:34:44.470Z",
-          "status": "unavailable"
-        }
-      ],
-      "missingData": [
-        "current regular-session executable bid and ask because U.S. markets were closed",
-        "new-session dollar volume and constructive continuation",
-        "complete focused dilution review for any candidate lacking a new primary catalyst",
-        "optional insider alignment and spam-filtered social acceleration",
-        "complete universe-wide coverage"
-      ],
-      "counts": {
-        "research": 0,
-        "entries": 0,
-        "exits": 0
-      },
-      "deliveryDiagnostics": {
-        "repair20260928ReportedAt": "2026-09-28T01:47:21.040Z"
       }
     },
     {
@@ -20938,126 +21574,6 @@
       }
     },
     {
-      "id": "options-scan-20261003T123722108Z",
-      "system": "options",
-      "startedAt": "2026-10-03T12:36:03.000Z",
-      "checkedAt": "2026-10-03T12:37:22.108Z",
-      "scheduledFor": "2026-10-03T12:00:00.000Z",
-      "nextScheduledAt": "2026-10-03T13:00:00.000Z",
-      "status": "market_closed",
-      "summary": "No open options paper trades required management. U.S. listed-options markets were closed for the weekend. A fresh issuer, SEC and reputable-news catalyst sweep found no new distinct source-backed setup beyond the existing research records. Exact recent 21–60 DTE chains were unavailable, so mandatory contract bid/ask, spread, liquidity and premium-risk checks could not be completed. No research, entry, exit or mark event was created.",
-      "sources": [
-        {
-          "name": "Fresh issuer and reputable market-news catalyst sweep",
-          "url": "https://www.reuters.com/markets/us/",
-          "checkedAt": "2026-10-03T12:37:22.108Z",
-          "status": "checked"
-        },
-        {
-          "name": "SEC EDGAR current filings",
-          "url": "https://www.sec.gov/edgar/search/",
-          "checkedAt": "2026-10-03T12:37:22.108Z",
-          "status": "checked"
-        },
-        {
-          "name": "October 3 corporate announcement sweep",
-          "url": "https://www.globenewswire.com/",
-          "checkedAt": "2026-10-03T12:37:22.108Z",
-          "status": "checked"
-        },
-        {
-          "name": "Exact 21–60 DTE listed option chains",
-          "url": "https://www.cboe.com/delayed_quotes/",
-          "checkedAt": "2026-10-03T12:37:22.108Z",
-          "status": "unavailable"
-        },
-        {
-          "name": "Buyer-initiated opening options flow",
-          "url": "https://www.cboe.com/us/options/market_statistics/",
-          "checkedAt": "2026-10-03T12:37:22.108Z",
-          "status": "unavailable"
-        }
-      ],
-      "missingData": [
-        "current exact-contract bid, ask and quote timestamp",
-        "positive bid and spread no wider than 10% of midpoint",
-        "exact-contract open interest or same-day volume",
-        "observed ask at or below $1.00 for the one-contract $100 premium cap",
-        "current Greeks, IV rank, term structure and buyer-initiated opening flow"
-      ],
-      "counts": {
-        "research": 0,
-        "entries": 0,
-        "exits": 0
-      },
-      "deliveryDiagnostics": {
-        "repair20260928ReportedAt": "2026-09-28T00:50:48.883Z"
-      }
-    },
-    {
-      "id": "penny-scan-20261003T124009827Z",
-      "system": "penny",
-      "startedAt": "2026-10-03T12:39:09.000Z",
-      "checkedAt": "2026-10-03T12:40:09.827Z",
-      "scheduledFor": "2026-10-03T12:00:00.000Z",
-      "nextScheduledAt": "2026-10-03T13:00:00.000Z",
-      "status": "market_closed",
-      "summary": "No open penny paper trades required management. U.S. markets were closed for the weekend. A fresh SEC, issuer and microcap-news sweep found no new distinct primary-source-backed catalyst or material change beyond the existing research records. Current regular-session executable spreads, new-session dollar volume and constructive price/volume continuation were unavailable, so no paper entry qualified. No research, entry, exit or mark event was created.",
-      "sources": [
-        {
-          "name": "Fresh SEC current-filings sweep",
-          "url": "https://www.sec.gov/edgar/search/",
-          "checkedAt": "2026-10-03T12:40:09.827Z",
-          "status": "checked"
-        },
-        {
-          "name": "October 3 issuer and microcap catalyst sweep",
-          "url": "https://www.globenewswire.com/",
-          "checkedAt": "2026-10-03T12:40:09.827Z",
-          "status": "checked"
-        },
-        {
-          "name": "Weekend U.S. market review",
-          "url": "https://www.reuters.com/markets/us/",
-          "checkedAt": "2026-10-03T12:40:09.827Z",
-          "status": "checked"
-        },
-        {
-          "name": "Current regular-session executable bid/ask spreads",
-          "url": "https://www.nasdaq.com/market-activity/stocks",
-          "checkedAt": "2026-10-03T12:40:09.827Z",
-          "status": "unavailable"
-        },
-        {
-          "name": "Current-session price, volume and continuation",
-          "url": "https://finance.yahoo.com/",
-          "checkedAt": "2026-10-03T12:40:09.827Z",
-          "status": "unavailable"
-        },
-        {
-          "name": "Optional spam-filtered social and insider enrichment",
-          "url": "https://x.com/search",
-          "checkedAt": "2026-10-03T12:40:09.827Z",
-          "status": "unavailable"
-        }
-      ],
-      "missingData": [
-        "current regular-session executable bid and ask because U.S. markets were closed",
-        "new-session dollar volume and constructive continuation",
-        "complete focused dilution review for any candidate lacking a new primary catalyst",
-        "optional insider alignment and spam-filtered social acceleration",
-        "complete universe-wide coverage"
-      ],
-      "counts": {
-        "research": 0,
-        "entries": 0,
-        "exits": 0
-      },
-      "deliveryDiagnostics": {
-        "repair20260928ReportedAt": "2026-09-28T01:47:21.040Z"
-      }
-    },
-    {
       "id": "meme-scan-20261003T131407935Z",
       "system": "meme",
       "startedAt": "2026-10-03T13:12:49.000Z",
@@ -21125,126 +21641,6 @@
       },
       "deliveryDiagnostics": {
         "repair20260928ReportedAt": "2026-09-28T02:04:42.735Z"
-      }
-    },
-    {
-      "id": "options-scan-20261003T134718893Z",
-      "system": "options",
-      "startedAt": "2026-10-03T13:46:18.000Z",
-      "checkedAt": "2026-10-03T13:47:18.893Z",
-      "scheduledFor": "2026-10-03T13:00:00.000Z",
-      "nextScheduledAt": "2026-10-03T14:00:00.000Z",
-      "status": "market_closed",
-      "summary": "No open options paper trades required management. U.S. listed-options markets were closed for the weekend. A fresh issuer, SEC and reputable-news catalyst sweep found no new distinct source-backed setup beyond the existing research records. Exact recent 21–60 DTE chains were unavailable, so mandatory contract bid/ask, spread, liquidity and premium-risk checks could not be completed. No research, entry, exit or mark event was created.",
-      "sources": [
-        {
-          "name": "Fresh issuer and reputable market-news catalyst sweep",
-          "url": "https://www.reuters.com/markets/us/",
-          "checkedAt": "2026-10-03T13:47:18.893Z",
-          "status": "checked"
-        },
-        {
-          "name": "SEC EDGAR current filings",
-          "url": "https://www.sec.gov/edgar/search/",
-          "checkedAt": "2026-10-03T13:47:18.893Z",
-          "status": "checked"
-        },
-        {
-          "name": "October 3 corporate announcement sweep",
-          "url": "https://www.globenewswire.com/",
-          "checkedAt": "2026-10-03T13:47:18.893Z",
-          "status": "checked"
-        },
-        {
-          "name": "Exact 21–60 DTE listed option chains",
-          "url": "https://www.cboe.com/delayed_quotes/",
-          "checkedAt": "2026-10-03T13:47:18.893Z",
-          "status": "unavailable"
-        },
-        {
-          "name": "Buyer-initiated opening options flow",
-          "url": "https://www.cboe.com/us/options/market_statistics/",
-          "checkedAt": "2026-10-03T13:47:18.893Z",
-          "status": "unavailable"
-        }
-      ],
-      "missingData": [
-        "current exact-contract bid, ask and quote timestamp",
-        "positive bid and spread no wider than 10% of midpoint",
-        "exact-contract open interest or same-day volume",
-        "observed ask at or below $1.00 for the one-contract $100 premium cap",
-        "current Greeks, IV rank, term structure and buyer-initiated opening flow"
-      ],
-      "counts": {
-        "research": 0,
-        "entries": 0,
-        "exits": 0
-      },
-      "deliveryDiagnostics": {
-        "repair20260928ReportedAt": "2026-09-28T00:50:48.883Z"
-      }
-    },
-    {
-      "id": "penny-scan-20261003T141234176Z",
-      "system": "penny",
-      "startedAt": "2026-10-03T14:10:46.000Z",
-      "checkedAt": "2026-10-03T14:12:34.176Z",
-      "scheduledFor": "2026-10-03T14:00:00.000Z",
-      "nextScheduledAt": "2026-10-03T15:00:00.000Z",
-      "status": "market_closed",
-      "summary": "No open penny paper trades required management. U.S. markets were closed for the weekend. A fresh SEC, issuer and microcap-news sweep found no new distinct primary-source-backed catalyst or material change beyond the existing research records. Current regular-session executable spreads, new-session dollar volume and constructive price/volume continuation were unavailable, so no paper entry qualified. No research, entry, exit or mark event was created.",
-      "sources": [
-        {
-          "name": "Fresh SEC current-filings sweep",
-          "url": "https://www.sec.gov/edgar/search/",
-          "checkedAt": "2026-10-03T14:12:34.176Z",
-          "status": "checked"
-        },
-        {
-          "name": "October 3 issuer and microcap catalyst sweep",
-          "url": "https://www.globenewswire.com/",
-          "checkedAt": "2026-10-03T14:12:34.176Z",
-          "status": "checked"
-        },
-        {
-          "name": "Weekend U.S. market review",
-          "url": "https://www.reuters.com/markets/us/",
-          "checkedAt": "2026-10-03T14:12:34.176Z",
-          "status": "checked"
-        },
-        {
-          "name": "Current regular-session executable bid/ask spreads",
-          "url": "https://www.nasdaq.com/market-activity/stocks",
-          "checkedAt": "2026-10-03T14:12:34.176Z",
-          "status": "unavailable"
-        },
-        {
-          "name": "Current-session price, volume and continuation",
-          "url": "https://finance.yahoo.com/",
-          "checkedAt": "2026-10-03T14:12:34.176Z",
-          "status": "unavailable"
-        },
-        {
-          "name": "Optional spam-filtered social and insider enrichment",
-          "url": "https://x.com/search",
-          "checkedAt": "2026-10-03T14:12:34.176Z",
-          "status": "unavailable"
-        }
-      ],
-      "missingData": [
-        "Current regular-session executable bid and ask because U.S. markets were closed",
-        "New-session dollar volume and constructive continuation",
-        "Complete focused dilution review for any candidate lacking a new primary catalyst",
-        "Optional insider alignment and spam-filtered social acceleration",
-        "Complete universe-wide coverage"
-      ],
-      "counts": {
-        "research": 0,
-        "entries": 0,
-        "exits": 0
-      },
-      "deliveryDiagnostics": {
-        "repair20260928ReportedAt": "2026-09-28T01:47:21.040Z"
       }
     },
     {
@@ -21400,191 +21796,6 @@
       }
     },
     {
-      "id": "options-scan-20261003T152611659Z",
-      "system": "options",
-      "startedAt": "2026-10-03T15:24:43.000Z",
-      "checkedAt": "2026-10-03T15:26:11.659Z",
-      "scheduledFor": "2026-10-03T15:00:00.000Z",
-      "nextScheduledAt": "2026-10-03T16:00:00.000Z",
-      "status": "market_closed",
-      "summary": "No open options paper trades required management. U.S. listed-options markets were closed for the weekend. A fresh issuer, SEC and reputable-news sweep found no new distinct primary-source-backed setup beyond existing research. Reuters reported that a $4.2 billion U.S. government loan for Vistra may be announced Monday, but no primary agency or company announcement was available, so VST was rejected as unconfirmed rather than published as research. Exact recent 21–60 DTE chains were unavailable, preventing mandatory contract quote, spread, liquidity and premium-risk checks. No research, entry, exit or mark event was created.",
-      "sources": [
-        {
-          "name": "Fresh issuer and reputable market-news catalyst sweep",
-          "url": "https://www.reuters.com/markets/us/",
-          "checkedAt": "2026-10-03T15:26:11.659Z",
-          "status": "checked"
-        },
-        {
-          "name": "SEC EDGAR current filings",
-          "url": "https://www.sec.gov/edgar/search/",
-          "checkedAt": "2026-10-03T15:26:11.659Z",
-          "status": "checked"
-        },
-        {
-          "name": "October 3 corporate announcement sweep",
-          "url": "https://www.globenewswire.com/",
-          "checkedAt": "2026-10-03T15:26:11.659Z",
-          "status": "checked"
-        },
-        {
-          "name": "Potential Vistra government-loan report",
-          "url": "https://www.reuters.com/legal/litigation/us-lend-42-billion-vistra-boost-nuclear-power-output-source-says-2026-10-03/",
-          "checkedAt": "2026-10-03T15:26:11.659Z",
-          "status": "checked"
-        },
-        {
-          "name": "Exact 21–60 DTE listed option chains",
-          "url": "https://www.cboe.com/delayed_quotes/",
-          "checkedAt": "2026-10-03T15:26:11.659Z",
-          "status": "unavailable"
-        },
-        {
-          "name": "Buyer-initiated opening options flow",
-          "url": "https://www.cboe.com/us/options/market_statistics/",
-          "checkedAt": "2026-10-03T15:26:11.659Z",
-          "status": "unavailable"
-        }
-      ],
-      "missingData": [
-        "current exact-contract bid, ask and quote timestamp",
-        "positive bid and spread no wider than 10% of midpoint",
-        "exact-contract open interest or same-day volume",
-        "observed ask at or below $1.00 for the one-contract $100 premium cap",
-        "current Greeks, IV rank, term structure and buyer-initiated opening flow",
-        "primary-source confirmation of the reported potential Vistra government loan"
-      ],
-      "counts": {
-        "research": 0,
-        "entries": 0,
-        "exits": 0
-      },
-      "deliveryDiagnostics": {
-        "repair20260928ReportedAt": "2026-09-28T00:50:48.883Z"
-      }
-    },
-    {
-      "id": "penny-scan-20261003T152832138Z",
-      "system": "penny",
-      "startedAt": "2026-10-03T15:27:20.000Z",
-      "checkedAt": "2026-10-03T15:28:32.138Z",
-      "scheduledFor": "2026-10-03T15:00:00.000Z",
-      "nextScheduledAt": "2026-10-03T16:00:00.000Z",
-      "status": "market_closed",
-      "summary": "No open penny paper trades required management. U.S. markets were closed for the weekend. A fresh SEC, issuer and microcap-news sweep found no new distinct October 3 primary-source-backed catalyst or material change beyond existing research records. Current regular-session executable spreads, new-session dollar volume and constructive price/volume continuation were unavailable, so no paper entry qualified. No research, entry, exit or mark event was created.",
-      "sources": [
-        {
-          "name": "Fresh SEC current-filings sweep",
-          "url": "https://www.sec.gov/edgar/search/",
-          "checkedAt": "2026-10-03T15:28:32.138Z",
-          "status": "checked"
-        },
-        {
-          "name": "October 3 issuer and microcap catalyst sweep",
-          "url": "https://www.globenewswire.com/",
-          "checkedAt": "2026-10-03T15:28:32.138Z",
-          "status": "checked"
-        },
-        {
-          "name": "Weekend U.S. market review",
-          "url": "https://www.reuters.com/markets/us/",
-          "checkedAt": "2026-10-03T15:28:32.138Z",
-          "status": "checked"
-        },
-        {
-          "name": "Current regular-session executable bid/ask spreads",
-          "url": "https://www.nasdaq.com/market-activity/stocks",
-          "checkedAt": "2026-10-03T15:28:32.138Z",
-          "status": "unavailable"
-        },
-        {
-          "name": "Current-session price, volume and continuation",
-          "url": "https://finance.yahoo.com/",
-          "checkedAt": "2026-10-03T15:28:32.138Z",
-          "status": "unavailable"
-        },
-        {
-          "name": "Optional spam-filtered social and insider enrichment",
-          "url": "https://x.com/search",
-          "checkedAt": "2026-10-03T15:28:32.138Z",
-          "status": "unavailable"
-        }
-      ],
-      "missingData": [
-        "Current regular-session executable bid and ask because U.S. markets were closed",
-        "New-session dollar volume and constructive continuation",
-        "Complete focused dilution review for any candidate lacking a new primary catalyst",
-        "Optional insider alignment and spam-filtered social acceleration",
-        "Complete universe-wide coverage"
-      ],
-      "counts": {
-        "research": 0,
-        "entries": 0,
-        "exits": 0
-      },
-      "deliveryDiagnostics": {
-        "repair20260928ReportedAt": "2026-09-28T01:47:21.040Z"
-      }
-    },
-    {
-      "id": "options-scan-20261003T154229836Z",
-      "system": "options",
-      "startedAt": "2026-10-03T15:40:47.000Z",
-      "checkedAt": "2026-10-03T15:42:29.836Z",
-      "scheduledFor": "2026-10-03T15:00:00.000Z",
-      "nextScheduledAt": "2026-10-03T16:00:00.000Z",
-      "status": "market_closed",
-      "summary": "No open options paper trades required management. U.S. listed-options markets were closed. New primary DOE evidence confirms that federal financing for Vistra's Perry nuclear uprate is under evaluation, while Reuters reports a possible $4.2 billion Monday announcement. Because DOE and Vistra have not confirmed approval or the amount and exact 21–60 DTE contract quotes are unavailable, VST was published as developing research only. One research event, no entries, exits or marks.",
-      "sources": [
-        {
-          "name": "DOE Perry nuclear uprate financing review",
-          "url": "https://www.energy.gov/documents/vistra-corp-perry-nuclear-power-plant-pnpp-uprate-project-nhpa-section-106-finding-no",
-          "checkedAt": "2026-10-03T15:42:29.836Z",
-          "status": "checked"
-        },
-        {
-          "name": "Reuters potential Vistra loan report",
-          "url": "https://www.reuters.com/legal/litigation/us-lend-42-billion-vistra-boost-nuclear-power-output-source-says-2026-10-03/",
-          "checkedAt": "2026-10-03T15:42:29.836Z",
-          "status": "checked"
-        },
-        {
-          "name": "Fresh issuer and SEC catalyst sweep",
-          "url": "https://www.sec.gov/edgar/search/",
-          "checkedAt": "2026-10-03T15:42:29.836Z",
-          "status": "checked"
-        },
-        {
-          "name": "Exact 21–60 DTE listed option chains",
-          "url": "https://www.cboe.com/delayed_quotes/",
-          "checkedAt": "2026-10-03T15:42:29.836Z",
-          "status": "unavailable"
-        },
-        {
-          "name": "Buyer-initiated opening options flow",
-          "url": "https://www.cboe.com/us/options/market_statistics/",
-          "checkedAt": "2026-10-03T15:42:29.836Z",
-          "status": "unavailable"
-        }
-      ],
-      "missingData": [
-        "primary confirmation of the Vistra loan approval, amount and terms",
-        "current exact-contract bid, ask and quote timestamp",
-        "positive bid and spread no wider than 10% of midpoint",
-        "exact-contract open interest or same-day volume",
-        "observed ask at or below $1.00 for the one-contract $100 premium cap",
-        "current Greeks, IV rank, term structure and buyer-initiated opening flow"
-      ],
-      "counts": {
-        "research": 1,
-        "entries": 0,
-        "exits": 0
-      },
-      "deliveryDiagnostics": {
-        "repair20260928ReportedAt": "2026-09-28T00:50:48.883Z"
-      }
-    },
-    {
       "id": "meme-scan-20261003T161543467Z",
       "system": "meme",
       "startedAt": "2026-10-03T16:14:18.000Z",
@@ -21652,75 +21863,6 @@
       },
       "deliveryDiagnostics": {
         "repair20260928ReportedAt": "2026-09-28T02:04:42.735Z"
-      }
-    },
-    {
-      "id": "penny-scan-20261003T162452826Z",
-      "system": "penny",
-      "startedAt": "2026-10-03T16:23:13.000Z",
-      "checkedAt": "2026-10-03T16:24:52.826Z",
-      "scheduledFor": "2026-10-03T16:00:00.000Z",
-      "nextScheduledAt": "2026-10-03T17:00:00.000Z",
-      "status": "market_closed",
-      "summary": "No open penny paper trades required management. U.S. markets were closed for the weekend. A fresh SEC, issuer-news and market-news sweep found no new distinct October 3 primary-source-backed microcap catalyst or material change beyond existing research records. Current regular-session executable spreads, new-session dollar volume and constructive price/volume continuation were unavailable, so no paper entry qualified. No research, entry, exit or mark event was created.",
-      "sources": [
-        {
-          "name": "Fresh SEC current-filings sweep",
-          "url": "https://www.sec.gov/edgar/search/",
-          "checkedAt": "2026-10-03T16:24:52.826Z",
-          "status": "checked"
-        },
-        {
-          "name": "October 3 issuer and microcap catalyst sweep",
-          "url": "https://www.globenewswire.com/",
-          "checkedAt": "2026-10-03T16:24:52.826Z",
-          "status": "checked"
-        },
-        {
-          "name": "Business Wire issuer-catalyst sweep",
-          "url": "https://www.businesswire.com/",
-          "checkedAt": "2026-10-03T16:24:52.826Z",
-          "status": "checked"
-        },
-        {
-          "name": "Weekend U.S. market review",
-          "url": "https://www.investors.com/market-trend/stock-market-today/",
-          "checkedAt": "2026-10-03T16:24:52.826Z",
-          "status": "checked"
-        },
-        {
-          "name": "Current regular-session executable bid/ask spreads",
-          "url": "https://www.nasdaq.com/market-activity/stocks",
-          "checkedAt": "2026-10-03T16:24:52.826Z",
-          "status": "unavailable"
-        },
-        {
-          "name": "Current-session price, volume and continuation",
-          "url": "https://finance.yahoo.com/",
-          "checkedAt": "2026-10-03T16:24:52.826Z",
-          "status": "unavailable"
-        },
-        {
-          "name": "Optional spam-filtered social and insider enrichment",
-          "url": "https://x.com/search",
-          "checkedAt": "2026-10-03T16:24:52.826Z",
-          "status": "unavailable"
-        }
-      ],
-      "missingData": [
-        "Current regular-session executable bid and ask because U.S. markets were closed",
-        "New-session dollar volume and constructive continuation",
-        "Complete focused dilution review for any candidate lacking a new primary catalyst",
-        "Optional insider alignment and spam-filtered social acceleration",
-        "Complete universe-wide coverage"
-      ],
-      "counts": {
-        "research": 0,
-        "entries": 0,
-        "exits": 0
-      },
-      "deliveryDiagnostics": {
-        "repair20260928ReportedAt": "2026-09-28T01:47:21.040Z"
       }
     },
     {
@@ -21794,131 +21936,74 @@
       }
     },
     {
-      "id": "options-scan-20261003T171300346Z",
-      "system": "options",
-      "startedAt": "2026-10-03T17:11:44.000Z",
-      "checkedAt": "2026-10-03T17:13:00.346Z",
+      "system": "meme",
+      "startedAt": "2026-10-03T17:37:26.000Z",
+      "checkedAt": "2026-10-03T17:40:13.197Z",
       "scheduledFor": "2026-10-03T17:00:00.000Z",
       "nextScheduledAt": "2026-10-03T18:00:00.000Z",
-      "status": "market_closed",
-      "summary": "No open options paper trades required management. U.S. listed-options markets were closed. DOE's current environmental notices still show the Vistra Perry nuclear uprate financing review, but no primary DOE or Vistra source confirmed loan approval, the reported $4.2 billion amount or terms. The VST research setup therefore remained unchanged. A fresh issuer, SEC and market-news sweep found no new distinct source-backed swing catalyst requiring a research update. Exact 21–60 DTE contract quotes, spreads and liquidity were unavailable, so no entry, exit, mark or research event was created.",
+      "status": "data_limited",
+      "summary": "No open meme paper trades required management. pSOQ materially improved to about $0.0006059 with approximately $104,000 liquidity; five-minute, one-hour, six-hour and 24-hour momentum were all positive. It remained research only because 24-hour volume was about $25,000, the latest five-minute window contained only one $322 buy, 24-hour unique sellers still exceeded buyers, and mandatory holder/liquidity-control/sell-impact checks remained incomplete. TRUMP displayed about $2.05 with approximately $256,000 liquidity and $1.0 million 24-hour volume; its existing gala research did not change materially, and the disclosed 80% creator-linked allocation plus unresolved security checks continued to block entry. No verified new public-figure token launch was found. One research update, no entries, exits or marks.",
       "sources": [
         {
-          "name": "DOE Perry nuclear uprate environmental/financing review",
-          "url": "https://www.energy.gov/edf/edf-environmental-notices",
-          "checkedAt": "2026-10-03T17:13:00.346Z",
+          "name": "DEX Screener — OFFICIAL TRUMP/SOL",
+          "url": "https://dexscreener.com/solana/6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN",
+          "checkedAt": "2026-10-03T17:40:13.197Z",
           "status": "checked"
         },
         {
-          "name": "Reuters potential Vistra loan report",
-          "url": "https://www.reuters.com/legal/litigation/us-lend-42-billion-vistra-boost-nuclear-power-output-source-says-2026-10-03/",
-          "checkedAt": "2026-10-03T17:13:00.346Z",
+          "name": "DEX Screener — pSOQ/SOL",
+          "url": "https://dexscreener.com/solana/EM9NyPqcByrz8zBxZUi2LazBTCY2zbVJa49nTXHi3Pq8",
+          "checkedAt": "2026-10-03T17:40:13.197Z",
           "status": "checked"
         },
         {
-          "name": "Fresh issuer, SEC and market-news catalyst sweep",
-          "url": "https://www.sec.gov/edgar/search/",
-          "checkedAt": "2026-10-03T17:13:00.346Z",
+          "name": "Official TRUMP Coin Club",
+          "url": "https://gettrumpmemes.com/",
+          "checkedAt": "2026-10-03T17:40:13.197Z",
           "status": "checked"
         },
         {
-          "name": "Exact 21–60 DTE listed option chains",
-          "url": "https://www.cboe.com/delayed_quotes/",
-          "checkedAt": "2026-10-03T17:13:00.346Z",
+          "name": "Current public-figure token launch/news sweep",
+          "url": "https://www.reuters.com/technology/cryptocurrency/",
+          "checkedAt": "2026-10-03T17:40:13.197Z",
+          "status": "checked"
+        },
+        {
+          "name": "Tracked named-wallet current holdings",
+          "url": "https://solscan.io/",
+          "checkedAt": "2026-10-03T17:40:13.197Z",
           "status": "unavailable"
         },
         {
-          "name": "Buyer-initiated opening options flow",
-          "url": "https://www.cboe.com/us/options/market_statistics/",
-          "checkedAt": "2026-10-03T17:13:00.346Z",
+          "name": "Independent holder, liquidity-control and measured sell-impact checks",
+          "url": "https://solscan.io/",
+          "checkedAt": "2026-10-03T17:40:13.197Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "Spam-filtered X unique-author acceleration",
+          "url": "https://x.com/",
+          "checkedAt": "2026-10-03T17:40:13.197Z",
           "status": "unavailable"
         }
       ],
       "missingData": [
-        "primary confirmation of the Vistra loan approval, amount and terms",
-        "current exact-contract bid, ask and quote timestamp",
-        "positive bid and spread no wider than 10% of midpoint",
-        "exact-contract open interest or same-day volume",
-        "observed ask at or below $1.00 for the one-contract $100 premium cap",
-        "current Greeks, IV rank, term structure and buyer-initiated opening flow"
+        "source-native quote timestamp proving a crypto price observation no older than five minutes",
+        "current independently verified holdings and persistence for named tracked wallets",
+        "current top-holder concentration and deployer/insider/bundler analysis",
+        "independent liquidity-lock/control verification and measured sell impact",
+        "spam-filtered X unique-author mention velocity and acceleration",
+        "complete-universe coverage"
       ],
       "counts": {
-        "research": 0,
+        "research": 1,
         "entries": 0,
         "exits": 0
       },
       "deliveryDiagnostics": {
-        "repair20260928ReportedAt": "2026-09-28T00:50:48.883Z"
-      }
-    },
-    {
-      "id": "penny-scan-20261003T172648667Z",
-      "system": "penny",
-      "startedAt": "2026-10-03T17:25:41.000Z",
-      "checkedAt": "2026-10-03T17:26:48.667Z",
-      "scheduledFor": "2026-10-03T17:00:00.000Z",
-      "nextScheduledAt": "2026-10-03T18:00:00.000Z",
-      "status": "market_closed",
-      "summary": "No open penny paper trades required management. U.S. markets were closed for the weekend. A fresh SEC, issuer-news and market-news sweep found no new distinct October 3 primary-source-backed microcap catalyst or material change beyond existing research records. Current regular-session executable spreads, new-session dollar volume and constructive price/volume continuation were unavailable, so no paper entry qualified. No research, entry, exit or mark event was created.",
-      "sources": [
-        {
-          "name": "Fresh SEC current-filings sweep",
-          "url": "https://www.sec.gov/edgar/search/",
-          "checkedAt": "2026-10-03T17:26:48.667Z",
-          "status": "checked"
-        },
-        {
-          "name": "October 3 issuer and microcap catalyst sweep",
-          "url": "https://www.globenewswire.com/",
-          "checkedAt": "2026-10-03T17:26:48.667Z",
-          "status": "checked"
-        },
-        {
-          "name": "Business Wire issuer-catalyst sweep",
-          "url": "https://www.businesswire.com/",
-          "checkedAt": "2026-10-03T17:26:48.667Z",
-          "status": "checked"
-        },
-        {
-          "name": "Weekend U.S. market review",
-          "url": "https://www.investors.com/market-trend/stock-market-today/",
-          "checkedAt": "2026-10-03T17:26:48.667Z",
-          "status": "checked"
-        },
-        {
-          "name": "Current regular-session executable bid/ask spreads",
-          "url": "https://www.nasdaq.com/market-activity/stocks",
-          "checkedAt": "2026-10-03T17:26:48.667Z",
-          "status": "unavailable"
-        },
-        {
-          "name": "Current-session price, volume and continuation",
-          "url": "https://finance.yahoo.com/",
-          "checkedAt": "2026-10-03T17:26:48.667Z",
-          "status": "unavailable"
-        },
-        {
-          "name": "Optional spam-filtered social and insider enrichment",
-          "url": "https://x.com/search",
-          "checkedAt": "2026-10-03T17:26:48.667Z",
-          "status": "unavailable"
-        }
-      ],
-      "missingData": [
-        "Current regular-session executable bid and ask because U.S. markets were closed",
-        "New-session dollar volume and constructive continuation",
-        "Complete focused dilution review for any candidate lacking a new primary catalyst",
-        "Optional insider alignment and spam-filtered social acceleration",
-        "Complete universe-wide coverage"
-      ],
-      "counts": {
-        "research": 0,
-        "entries": 0,
-        "exits": 0
+        "repair20260928ReportedAt": "2026-09-28T02:04:42.735Z"
       },
-      "deliveryDiagnostics": {
-        "repair20260928ReportedAt": "2026-09-28T01:47:21.040Z"
-      }
+      "id": "meme-scan-20261003T174013197Z"
     }
   ]
 }
