@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-10-03T11:54:35.215Z",
+  "updatedAt": "2026-10-03T12:37:22.108Z",
   "alerts": [
     {
       "id": "options-bb-fy27q2-20260924",
@@ -2434,44 +2434,50 @@
       }
     },
     "options": {
-      "startedAt": "2026-10-03T11:31:19.000Z",
-      "checkedAt": "2026-10-03T11:32:51.628Z",
-      "scheduledFor": "2026-10-03T11:00:00.000Z",
-      "nextScheduledAt": "2026-10-03T12:00:00.000Z",
+      "startedAt": "2026-10-03T12:36:03.000Z",
+      "checkedAt": "2026-10-03T12:37:22.108Z",
+      "scheduledFor": "2026-10-03T12:00:00.000Z",
+      "nextScheduledAt": "2026-10-03T13:00:00.000Z",
       "status": "market_closed",
-      "summary": "No open options paper trades required management. U.S. listed-options markets were closed for the weekend; no new distinct, source-backed catalyst was identified in the bounded issuer/news sweep, and no exact recent 21–60 DTE option chain was available. Existing options research remained unchanged, so no paper entry, mark, exit, or new research event was created.",
+      "summary": "No open options paper trades required management. U.S. listed-options markets were closed for the weekend. A fresh issuer, SEC and reputable-news catalyst sweep found no new distinct source-backed setup beyond the existing research records. Exact recent 21–60 DTE chains were unavailable, so mandatory contract bid/ask, spread, liquidity and premium-risk checks could not be completed. No research, entry, exit or mark event was created.",
       "sources": [
         {
-          "name": "Issuer and reputable market-news catalyst sweep",
+          "name": "Fresh issuer and reputable market-news catalyst sweep",
           "url": "https://www.reuters.com/markets/us/",
-          "checkedAt": "2026-10-03T11:32:51.628Z",
+          "checkedAt": "2026-10-03T12:37:22.108Z",
           "status": "checked"
         },
         {
           "name": "SEC EDGAR current filings",
           "url": "https://www.sec.gov/edgar/search/",
-          "checkedAt": "2026-10-03T11:32:51.628Z",
+          "checkedAt": "2026-10-03T12:37:22.108Z",
+          "status": "checked"
+        },
+        {
+          "name": "October 3 corporate announcement sweep",
+          "url": "https://www.globenewswire.com/",
+          "checkedAt": "2026-10-03T12:37:22.108Z",
           "status": "checked"
         },
         {
           "name": "Exact 21–60 DTE listed option chains",
           "url": "https://www.cboe.com/delayed_quotes/",
-          "checkedAt": "2026-10-03T11:32:51.628Z",
+          "checkedAt": "2026-10-03T12:37:22.108Z",
           "status": "unavailable"
         },
         {
           "name": "Buyer-initiated opening options flow",
           "url": "https://www.cboe.com/us/options/market_statistics/",
-          "checkedAt": "2026-10-03T11:32:51.628Z",
+          "checkedAt": "2026-10-03T12:37:22.108Z",
           "status": "unavailable"
         }
       ],
       "missingData": [
-        "Current exact-contract bid/ask and quote timestamp",
-        "Positive bid and spread no wider than 10% of midpoint",
-        "Exact-contract open interest or same-day volume",
-        "Observed ask at or below $1.00 for one-contract $100 premium cap",
-        "Current Greeks, IV rank, term structure, and buyer-initiated opening flow"
+        "current exact-contract bid, ask and quote timestamp",
+        "positive bid and spread no wider than 10% of midpoint",
+        "exact-contract open interest or same-day volume",
+        "observed ask at or below $1.00 for the one-contract $100 premium cap",
+        "current Greeks, IV rank, term structure and buyer-initiated opening flow"
       ],
       "counts": {
         "research": 0,
@@ -20781,6 +20787,63 @@
       },
       "deliveryDiagnostics": {
         "repair20260928ReportedAt": "2026-09-28T02:04:42.735Z"
+      }
+    },
+    {
+      "id": "options-scan-20261003T123722108Z",
+      "system": "options",
+      "startedAt": "2026-10-03T12:36:03.000Z",
+      "checkedAt": "2026-10-03T12:37:22.108Z",
+      "scheduledFor": "2026-10-03T12:00:00.000Z",
+      "nextScheduledAt": "2026-10-03T13:00:00.000Z",
+      "status": "market_closed",
+      "summary": "No open options paper trades required management. U.S. listed-options markets were closed for the weekend. A fresh issuer, SEC and reputable-news catalyst sweep found no new distinct source-backed setup beyond the existing research records. Exact recent 21–60 DTE chains were unavailable, so mandatory contract bid/ask, spread, liquidity and premium-risk checks could not be completed. No research, entry, exit or mark event was created.",
+      "sources": [
+        {
+          "name": "Fresh issuer and reputable market-news catalyst sweep",
+          "url": "https://www.reuters.com/markets/us/",
+          "checkedAt": "2026-10-03T12:37:22.108Z",
+          "status": "checked"
+        },
+        {
+          "name": "SEC EDGAR current filings",
+          "url": "https://www.sec.gov/edgar/search/",
+          "checkedAt": "2026-10-03T12:37:22.108Z",
+          "status": "checked"
+        },
+        {
+          "name": "October 3 corporate announcement sweep",
+          "url": "https://www.globenewswire.com/",
+          "checkedAt": "2026-10-03T12:37:22.108Z",
+          "status": "checked"
+        },
+        {
+          "name": "Exact 21–60 DTE listed option chains",
+          "url": "https://www.cboe.com/delayed_quotes/",
+          "checkedAt": "2026-10-03T12:37:22.108Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "Buyer-initiated opening options flow",
+          "url": "https://www.cboe.com/us/options/market_statistics/",
+          "checkedAt": "2026-10-03T12:37:22.108Z",
+          "status": "unavailable"
+        }
+      ],
+      "missingData": [
+        "current exact-contract bid, ask and quote timestamp",
+        "positive bid and spread no wider than 10% of midpoint",
+        "exact-contract open interest or same-day volume",
+        "observed ask at or below $1.00 for the one-contract $100 premium cap",
+        "current Greeks, IV rank, term structure and buyer-initiated opening flow"
+      ],
+      "counts": {
+        "research": 0,
+        "entries": 0,
+        "exits": 0
+      },
+      "deliveryDiagnostics": {
+        "repair20260928ReportedAt": "2026-09-28T00:50:48.883Z"
       }
     }
   ]
