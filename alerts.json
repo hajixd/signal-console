@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-10-03T14:12:34.176Z",
+  "updatedAt": "2026-10-03T14:26:13.284Z",
   "alerts": [
     {
       "id": "options-bb-fy27q2-20260924",
@@ -618,49 +618,50 @@
       "id": "meme-research-psoq-soq-migration-20260929",
       "eventType": "research",
       "system": "meme",
-      "timestamp": "2026-10-03T11:12:38.913Z",
+      "timestamp": "2026-10-03T14:26:13.284Z",
       "asset": "pSOQ / SOQ",
-      "title": "Research update: pSOQ liquidity crosses floor but volume remains inadequate",
-      "summary": "pSOQ displayed $0.0006044 with approximately $104,000 liquidity, a $396,000 market cap and a 28.12% 24-hour gain. Liquidity moved just above the $100,000 practical-mode floor, but 24-hour volume was only about $28,000, far below the required $100,000, while six-hour momentum was -8.70% and the latest five-minute window showed no trades. Official Soqucoin pages also presented inconsistent migration status language, increasing execution and catalyst risk. No paper entry qualifies.",
+      "title": "Research update: pSOQ falls back below liquidity floor",
+      "summary": "pSOQ displayed $0.0004463 with approximately $88,000 liquidity, falling back below the $100,000 practical-mode minimum after briefly crossing it. Twenty-four-hour volume was only about $7,500, the latest five-minute window showed no transactions, and 24-hour sellers exceeded buyers 20 to 13. No paper entry qualifies.",
       "reasons": [
-        "DEX Screener displayed approximately $104,000 liquidity, newly above the $100,000 minimum",
-        "Displayed 24-hour volume was only about $28,000, failing the $100,000 minimum",
-        "Six-hour change was -8.70% and the latest five-minute window showed zero transactions",
-        "Twenty-four-hour sellers outnumbered buyers 53 to 38 on a unique-address basis",
-        "Official project pages contained inconsistent migration-status language"
+        "Displayed liquidity fell to about $88,000, below the mandatory $100,000 floor.",
+        "Displayed 24-hour volume fell to about $7,500, far below the mandatory $100,000 floor.",
+        "No transactions appeared in the latest five-minute window.",
+        "The official migration status/timing inconsistency remains unresolved."
       ],
       "href": "https://soqu.org/docs/soq-tec/overview/",
       "missingData": [
-        "source-native quote timestamp proving a price observation no older than five minutes",
-        "independently measured sell impact and sellability",
-        "current holder concentration and deployer/insider/bundler analysis",
-        "independent liquidity-control verification",
-        "tracked-wallet persistence and convergence",
+        "source-native price timestamp proving an observation no older than five minutes",
+        "current named-wallet convergence and persistence",
+        "current top-holder, deployer, insider and bundler analysis",
+        "independent liquidity-control verification and measured sell impact",
         "spam-filtered X unique-author acceleration"
       ],
-      "risk": "Very high — thin volume, reversing intraday momentum, inconsistent official migration messaging, unresolved concentration/liquidity control and unmeasured exit impact.",
+      "risk": "Research only. Liquidity and volume fail mandatory floors; official migration timing remains inconsistent and sellability controls are not fully verified.",
       "details": {
-        "verificationStatus": "Exact Solana mint matched to the official dashboard and DEX pair; market-data change verified; entry rejected.",
+        "verificationStatus": "Exact Solana mint remained matched to the official dashboard and DEX pair; material market deterioration verified; entry rejected.",
         "chain": "Solana",
         "contractAddress": "6NX2MWBuJM2Fn63K4hUgMPivLXHV8pwsU1yTdmjKpump",
         "pairAddress": "EM9NyPqcByrz8zBxZUi2LazBTCY2zbVJa49nTXHi3Pq8",
         "marketData": {
           "sourceUrl": "https://dexscreener.com/solana/EM9NyPqcByrz8zBxZUi2LazBTCY2zbVJa49nTXHi3Pq8",
-          "checkedAt": "2026-10-03T11:12:38.913Z",
-          "displayedPrice": 0.0006044,
-          "liquidityUsd": 104000,
-          "marketCapUsd": 396000,
-          "change1hPercent": 0.13,
-          "change6hPercent": -8.7,
-          "change24hPercent": 28.12,
-          "volume1hUsd": 11,
-          "volume6hUsd": 8700,
-          "volume24hUsd": 28000,
-          "buyers24h": 38,
-          "sellers24h": 53,
+          "checkedAt": "2026-10-03T14:26:13.284Z",
+          "displayedPrice": 0.0004463,
+          "liquidityUsd": 88000,
+          "marketCapUsd": 331000,
+          "fdvUsd": 300000,
+          "change5mPercent": 0,
+          "change1hPercent": 1,
+          "change6hPercent": -0.05,
+          "change24hPercent": 1.59,
+          "volume1hUsd": 5,
+          "volume6hUsd": 2000,
+          "volume24hUsd": 7500,
+          "buyers24h": 13,
+          "sellers24h": 20,
           "latest5mTransactions": 0,
-          "holdersDisplayed": 853,
-          "entryEligible": false
+          "holdersDisplayed": 856,
+          "entryEligible": false,
+          "freshness": "Displayed DEX Screener snapshot observed during this run; no source-native quote timestamp and not an executable swap quote."
         },
         "identityEvidence": {
           "officialDashboard": "https://dashboard.soqu.org/",
@@ -693,15 +694,28 @@
             "name": "Official pSOQ dashboard",
             "url": "https://dashboard.soqu.org/",
             "checkedAt": "2026-10-03T11:12:38.913Z"
+          },
+          {
+            "name": "DEX Screener pSOQ/SOL",
+            "url": "https://dexscreener.com/solana/EM9NyPqcByrz8zBxZUi2LazBTCY2zbVJa49nTXHi3Pq8",
+            "checkedAt": "2026-10-03T14:26:13.284Z",
+            "status": "checked"
+          },
+          {
+            "name": "Official SOQ-TEC overview",
+            "url": "https://soqu.org/docs/soq-tec/overview/",
+            "checkedAt": "2026-10-03T14:26:13.284Z",
+            "status": "checked"
           }
         ],
         "rejectionReasons": [
-          "24-hour volume below $100,000",
-          "negative six-hour momentum and no latest-five-minute activity",
-          "official migration-status inconsistency",
-          "unresolved holder concentration and liquidity control",
-          "unmeasured sell impact and sellability",
-          "no <=5-minute source-native quote timestamp"
+          "Liquidity below $100,000.",
+          "24-hour volume below $100,000.",
+          "No latest-five-minute activity.",
+          "Official migration-status inconsistency.",
+          "Unresolved holder concentration and liquidity control.",
+          "Unmeasured sell impact and sellability.",
+          "No source-native timestamp proved a price observation within five minutes."
         ]
       }
     },
@@ -971,41 +985,35 @@
       "id": "meme-research-trump-coin-club-gala-20261001",
       "eventType": "research",
       "system": "meme",
-      "timestamp": "2026-10-03T04:14:41.841Z",
+      "timestamp": "2026-10-03T14:26:13.284Z",
       "asset": "TRUMP",
-      "title": "Research update: TRUMP gala scoring starts October 5",
-      "summary": "The official TRUMP Coin Club page now states that the November 22 gala scoring window starts October 5, while F1 Singapore scoring is currently live. TRUMP displayed $2.09 with about $260,000 liquidity and $1.1 million 24-hour volume, but momentum was mixed and the disclosed 80% creator-linked allocation plus unresolved holder concentration, liquidity control and measured sell impact still block entry.",
+      "title": "Research update: official gala leaderboard now live as TRUMP slips below $2",
+      "summary": "The official TRUMP Coin Club page now says Gala Dinner scoring began September 30 at 1 p.m. Eastern and labels its leaderboard live, contradicting the previously observed October 5 start statement. TRUMP displayed $1.98 with about $239,000 liquidity, a $540.8 million market cap and $492,000 24-hour volume. Five-minute flow was sharply sell-heavy and 24-hour sellers exceeded buyers. The timing change is material research, but the disclosed 80% creator-linked allocation and unresolved holder, liquidity-control and sell-impact checks still block a paper entry.",
       "reasons": [
-        "official project page clarifies that gala scoring starts October 5 rather than already being active",
-        "exact Solana contract remains verified",
-        "displayed liquidity and 24-hour volume pass the practical-mode minimums",
-        "one-hour change remained negative and six-hour momentum eased",
-        "disclosed 80% creator-linked allocation and unresolved sellability controls remain material blockers"
+        "Official project page now labels the November 22 gala leaderboard live and states scoring began September 30 at 1 p.m. Eastern.",
+        "Displayed liquidity and 24-hour volume remained above the practical-mode minimums.",
+        "Price weakened below $2, latest five-minute sells exceeded buys 8 to 2, and 24-hour unique sellers exceeded buyers 2,831 to 2,392.",
+        "Creator-linked entities retain a disclosed 80% allocation under a three-year schedule."
       ],
       "href": "https://gettrumpmemes.com/",
       "missingData": [
-        "exact timestamped DEX quote within five minutes for an entry",
-        "current top-holder concentration excluding locked/project allocations",
-        "current liquidity-lock/control evidence",
-        "current insider and bundler transfer analysis",
-        "measured swap price impact and sellability test",
-        "spam-filtered unique-author social acceleration (optional enrichment)",
-        "named-wallet persistence and convergence (optional enrichment)"
+        "source-native price timestamp proving an observation no older than five minutes",
+        "current named-wallet convergence and persistence",
+        "independent top-holder, deployer, insider and bundler analysis",
+        "independent liquidity-control verification and measured sell impact",
+        "spam-filtered X unique-author acceleration"
       ],
-      "risk": "Very high: gala scoring has not yet started, while disclosed creator-linked concentration and unlock risk remain unresolved. Current holder concentration, liquidity control and measured sell impact are unverified despite displayed liquidity and volume passing the minimums.",
+      "risk": "Research only. Material creator concentration, conflicting observed catalyst timing, unresolved liquidity control and unmeasured sell impact make simulated entry ineligible.",
       "details": {
         "chain": "Solana",
         "contractAddress": "6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN",
         "catalystType": "official holder-leaderboard promotion and gala event",
         "catalystVerification": {
-          "affiliation": "confirmed official project website operated by Fight Fight Fight LLC under licensed TRUMP branding",
-          "announcementDate": "2026-10-01",
+          "affiliation": "confirmed official project website operated under licensed TRUMP branding",
           "eventDate": "2026-11-22",
-          "scoringWindow": "official Coin Club page states Gala Dinner scoring starts October 5, 2026; the event is November 22, 2026",
-          "rewards": "top 185 dinner invitations; top 29 VIP access; further prizes described by official project materials",
-          "exactContract": "confirmed by the official project site and independently matched by DEX Screener",
-          "verificationStatus": "official catalyst, timing and contract verified; gala scoring has not yet started; mandatory ownership and sellability gates remain incomplete",
-          "currentlyLiveExperience": "F1 Singapore leaderboard"
+          "currentOfficialStatement": "Gala Dinner scoring window starts September 30, 2026 at 1 p.m. Eastern; the official page labels the leaderboard live.",
+          "priorObservedStatement": "A prior scan observed an October 5 scoring-start statement.",
+          "status": "material timing inconsistency on the official page; exact Solana contract remains verified"
         },
         "newsSources": [
           {
@@ -1057,7 +1065,7 @@
           "freshness": "Displayed values observed on the accessible DEX Screener page; not a guaranteed executable bid/ask quote."
         },
         "ownershipRisk": {
-          "officialDisclosure": "CIC Digital LLC and Fight Fight Fight LLC collectively control 80% of supply, subject to a three-year unlock schedule.",
+          "officialDisclosure": "CIC Digital LLC and Fight Fight Fight LLC collectively own 80% under a three-year unlocking schedule.",
           "status": "material concentration and unlock risk; current insider-wallet transfers not independently verified"
         },
         "walletChecks": {
@@ -1084,68 +1092,67 @@
         },
         "rejectionReasons": [
           "Disclosed 80% creator-linked allocation is a material concentration risk.",
+          "Official catalyst timing changed materially from the previously observed October 5 statement.",
           "Current holder concentration and liquidity control remain unresolved.",
           "No measured sell impact or executable swap quote was available.",
-          "The latest one-hour move was flat and five-minute sells exceeded buys.",
-          "No timestamped price observation within five minutes suitable for paper execution.",
-          "Official gala scoring does not start until October 5.",
-          "Disclosed 80% creator-linked allocation remains a material concentration risk."
+          "Five-minute flow was sell-heavy and 24-hour unique sellers exceeded buyers.",
+          "No source-native timestamp proved a price observation within five minutes."
         ],
-        "verificationStatus": "research only; official page clarified an October 5 gala-scoring start, while concentration, liquidity-control and sellability gates remain unresolved",
+        "verificationStatus": "research only; official gala page materially changed to a live September 30 scoring start, while mandatory ownership, liquidity-control, sellability and quote-freshness gates remain incomplete",
         "marketData": {
-          "price": 2.09,
-          "liquidityUSD": 260000,
-          "marketCapUSD": 589300000,
-          "fdvUSD": 2090000000,
-          "change5mPercent": 0.1,
-          "change1hPercent": -0.19,
-          "change6hPercent": 1.59,
-          "change24hPercent": 1.27,
-          "volume24hUSD": 1100000,
-          "observedAt": "2026-10-03T04:14:41.841Z",
+          "price": 1.98,
+          "liquidityUSD": 239000,
+          "marketCapUSD": 540800000,
+          "fdvUSD": 1980000000,
+          "change5mPercent": -0.05,
+          "change1hPercent": 0.55,
+          "change6hPercent": 0.58,
+          "change24hPercent": -0.57,
+          "volume24hUSD": 492000,
+          "observedAt": "2026-10-03T14:26:13.284Z",
           "sourceUrl": "https://dexscreener.com/solana/6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN",
-          "freshness": "Displayed DEX Screener snapshot observed during this run; not an independently timestamped executable swap quote."
+          "freshness": "Displayed DEX Screener snapshot observed during this run; no source-native quote timestamp and not an executable swap quote."
         },
         "transactionMetrics": {
           "m5": {
-            "transactions": 40,
-            "volumeUSD": 2200,
-            "buys": 26,
-            "sells": 14,
-            "buyVolumeUSD": 1200,
-            "sellVolumeUSD": 907,
-            "buyers": 18,
-            "sellers": 3
+            "transactions": 10,
+            "volumeUSD": 267,
+            "buys": 2,
+            "sells": 8,
+            "buyVolumeUSD": 33,
+            "sellVolumeUSD": 233,
+            "buyers": 1,
+            "sellers": 5
           },
           "h1": {
-            "transactions": 589,
-            "volumeUSD": 26000,
-            "buys": 304,
-            "sells": 285,
-            "buyVolumeUSD": 12000,
-            "sellVolumeUSD": 14000,
-            "buyers": 123,
-            "sellers": 71
+            "transactions": 283,
+            "volumeUSD": 8700,
+            "buys": 164,
+            "sells": 119,
+            "buyVolumeUSD": 4700,
+            "sellVolumeUSD": 3900,
+            "buyers": 83,
+            "sellers": 66
           },
           "h6": {
-            "transactions": 4206,
-            "volumeUSD": 200000,
-            "buys": 2066,
-            "sells": 2140,
-            "buyVolumeUSD": 100000,
-            "sellVolumeUSD": 99000,
-            "buyers": 631,
-            "sellers": 497
+            "transactions": 4069,
+            "volumeUSD": 157000,
+            "buys": 1932,
+            "sells": 2137,
+            "buyVolumeUSD": 78000,
+            "sellVolumeUSD": 79000,
+            "buyers": 936,
+            "sellers": 1013
           },
           "h24": {
-            "transactions": 17790,
-            "volumeUSD": 1100000,
-            "buys": 9492,
-            "sells": 8298,
-            "buyVolumeUSD": 600000,
-            "sellVolumeUSD": 589000,
-            "buyers": 1862,
-            "sellers": 1580
+            "transactions": 13488,
+            "volumeUSD": 492000,
+            "buys": 6491,
+            "sells": 6997,
+            "buyVolumeUSD": 245000,
+            "sellVolumeUSD": 246000,
+            "buyers": 2392,
+            "sellers": 2831
           }
         },
         "evidenceSources": [
@@ -1213,15 +1220,28 @@
             "url": "https://dexscreener.com/solana/6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN",
             "checkedAt": "2026-10-03T04:14:41.841Z",
             "status": "checked"
+          },
+          {
+            "name": "Official TRUMP Coin Club",
+            "url": "https://gettrumpmemes.com/",
+            "publishedAt": "2026-10-03",
+            "checkedAt": "2026-10-03T14:26:13.284Z",
+            "status": "checked"
+          },
+          {
+            "name": "DEX Screener OFFICIAL TRUMP/SOL",
+            "url": "https://dexscreener.com/solana/6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN",
+            "checkedAt": "2026-10-03T14:26:13.284Z",
+            "status": "checked"
           }
         ],
         "practicalModeReview": {
           "exactIdentity": "verified: Solana mint 6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN",
-          "catalyst": "verified official November 22 gala; scoring starts October 5",
-          "currentLiquidity": "passes displayed $100,000 floor at about $260,000",
-          "current24hVolume": "passes displayed $100,000 floor at about $1.1 million",
-          "observedDirectionalTrigger": "mixed: six-hour performance positive, one-hour performance negative, and five-minute buys exceeded sells",
-          "mintFreezeTransferChecks": "DEX Screener displayed no audit issues, but complete independent control verification unavailable",
+          "catalyst": "verified official November 22 gala; official page currently says scoring began September 30 and leaderboard is live",
+          "currentLiquidity": "passes displayed $100,000 floor at about $239,000",
+          "current24hVolume": "passes displayed $100,000 floor at about $492,000",
+          "observedDirectionalTrigger": "mixed/weak: 24-hour return negative, five-minute selling dominant, and 24-hour unique sellers exceed buyers",
+          "mintFreezeTransferChecks": "DEX Screener displayed no audit issues; full independent control verification unavailable",
           "holderConcentration": "fails/risk unresolved due disclosed 80% creator-linked allocation",
           "liquidityControl": "unverified",
           "sellabilityAndImpact": "unverified; no paper entry",
@@ -2489,53 +2509,59 @@
       }
     },
     "meme": {
-      "startedAt": "2026-10-03T13:12:49.000Z",
-      "checkedAt": "2026-10-03T13:14:07.935Z",
-      "scheduledFor": "2026-10-03T13:00:00.000Z",
-      "nextScheduledAt": "2026-10-03T14:00:00.000Z",
+      "startedAt": "2026-10-03T14:23:42.000Z",
+      "checkedAt": "2026-10-03T14:26:13.284Z",
+      "scheduledFor": "2026-10-03T14:00:00.000Z",
+      "nextScheduledAt": "2026-10-03T15:00:00.000Z",
       "status": "data_limited",
-      "summary": "No open meme paper trades required management. TRUMP displayed about $2.06 with approximately $258,000 liquidity and $1.1 million 24-hour volume, but one-hour, six-hour and 24-hour performance were negative and its latest five-minute activity was sell-heavy. The disclosed 80% creator-linked allocation plus unresolved holder concentration, liquidity control and measured sell impact continued to block entry. pSOQ displayed about $0.0006038 with approximately $103,000 liquidity, but its previously observed 24-hour volume remained far below the $100,000 minimum and no materially improved directional trigger was verified. Neither setup changed materially enough to update its existing research record. No verified new public-figure token launch was found.",
+      "summary": "No open meme paper trades required management. TRUMP materially changed: its official Coin Club page now says Gala Dinner scoring began September 30 and labels the leaderboard live, contradicting the previously observed October 5 start. TRUMP displayed $1.98 with about $239,000 liquidity and $492,000 24-hour volume, but five-minute flow was sharply sell-heavy, 24-hour sellers exceeded buyers and the disclosed 80% creator-linked allocation remained a blocker. pSOQ fell to about $88,000 liquidity and $7,500 24-hour volume, failing both mandatory floors. Two existing research records were materially updated; no entry, exit or mark was created, and no verified new public-figure token launch was found.",
       "sources": [
         {
           "name": "DEX Screener — OFFICIAL TRUMP/SOL",
           "url": "https://dexscreener.com/solana/6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN",
-          "checkedAt": "2026-10-03T13:14:07.935Z",
+          "checkedAt": "2026-10-03T14:26:13.284Z",
           "status": "checked"
         },
         {
           "name": "DEX Screener — pSOQ/SOL",
           "url": "https://dexscreener.com/solana/EM9NyPqcByrz8zBxZUi2LazBTCY2zbVJa49nTXHi3Pq8",
-          "checkedAt": "2026-10-03T13:14:07.935Z",
+          "checkedAt": "2026-10-03T14:26:13.284Z",
           "status": "checked"
         },
         {
           "name": "Official TRUMP Coin Club",
           "url": "https://gettrumpmemes.com/",
-          "checkedAt": "2026-10-03T13:14:07.935Z",
+          "checkedAt": "2026-10-03T14:26:13.284Z",
+          "status": "checked"
+        },
+        {
+          "name": "Official SOQ-TEC overview",
+          "url": "https://soqu.org/docs/soq-tec/overview/",
+          "checkedAt": "2026-10-03T14:26:13.284Z",
           "status": "checked"
         },
         {
           "name": "Current public-figure token launch/news sweep",
           "url": "https://www.reuters.com/technology/cryptocurrency/",
-          "checkedAt": "2026-10-03T13:14:07.935Z",
+          "checkedAt": "2026-10-03T14:26:13.284Z",
           "status": "checked"
         },
         {
           "name": "Tracked named-wallet current holdings",
           "url": "https://solscan.io/",
-          "checkedAt": "2026-10-03T13:14:07.935Z",
+          "checkedAt": "2026-10-03T14:26:13.284Z",
           "status": "unavailable"
         },
         {
           "name": "Independent holder, liquidity-control and measured sell-impact checks",
           "url": "https://solscan.io/",
-          "checkedAt": "2026-10-03T13:14:07.935Z",
+          "checkedAt": "2026-10-03T14:26:13.284Z",
           "status": "unavailable"
         },
         {
           "name": "Spam-filtered X unique-author acceleration",
           "url": "https://x.com/",
-          "checkedAt": "2026-10-03T13:14:07.935Z",
+          "checkedAt": "2026-10-03T14:26:13.284Z",
           "status": "unavailable"
         }
       ],
@@ -2548,7 +2574,7 @@
         "complete-universe coverage"
       ],
       "counts": {
-        "research": 0,
+        "research": 2,
         "entries": 0,
         "exits": 0
       },
@@ -21097,6 +21123,82 @@
       },
       "deliveryDiagnostics": {
         "repair20260928ReportedAt": "2026-09-28T01:47:21.040Z"
+      }
+    },
+    {
+      "id": "meme-scan-20261003T142613284Z",
+      "system": "meme",
+      "startedAt": "2026-10-03T14:23:42.000Z",
+      "checkedAt": "2026-10-03T14:26:13.284Z",
+      "scheduledFor": "2026-10-03T14:00:00.000Z",
+      "nextScheduledAt": "2026-10-03T15:00:00.000Z",
+      "status": "data_limited",
+      "summary": "No open meme paper trades required management. TRUMP materially changed: its official Coin Club page now says Gala Dinner scoring began September 30 and labels the leaderboard live, contradicting the previously observed October 5 start. TRUMP displayed $1.98 with about $239,000 liquidity and $492,000 24-hour volume, but five-minute flow was sharply sell-heavy, 24-hour sellers exceeded buyers and the disclosed 80% creator-linked allocation remained a blocker. pSOQ fell to about $88,000 liquidity and $7,500 24-hour volume, failing both mandatory floors. Two existing research records were materially updated; no entry, exit or mark was created, and no verified new public-figure token launch was found.",
+      "sources": [
+        {
+          "name": "DEX Screener — OFFICIAL TRUMP/SOL",
+          "url": "https://dexscreener.com/solana/6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN",
+          "checkedAt": "2026-10-03T14:26:13.284Z",
+          "status": "checked"
+        },
+        {
+          "name": "DEX Screener — pSOQ/SOL",
+          "url": "https://dexscreener.com/solana/EM9NyPqcByrz8zBxZUi2LazBTCY2zbVJa49nTXHi3Pq8",
+          "checkedAt": "2026-10-03T14:26:13.284Z",
+          "status": "checked"
+        },
+        {
+          "name": "Official TRUMP Coin Club",
+          "url": "https://gettrumpmemes.com/",
+          "checkedAt": "2026-10-03T14:26:13.284Z",
+          "status": "checked"
+        },
+        {
+          "name": "Official SOQ-TEC overview",
+          "url": "https://soqu.org/docs/soq-tec/overview/",
+          "checkedAt": "2026-10-03T14:26:13.284Z",
+          "status": "checked"
+        },
+        {
+          "name": "Current public-figure token launch/news sweep",
+          "url": "https://www.reuters.com/technology/cryptocurrency/",
+          "checkedAt": "2026-10-03T14:26:13.284Z",
+          "status": "checked"
+        },
+        {
+          "name": "Tracked named-wallet current holdings",
+          "url": "https://solscan.io/",
+          "checkedAt": "2026-10-03T14:26:13.284Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "Independent holder, liquidity-control and measured sell-impact checks",
+          "url": "https://solscan.io/",
+          "checkedAt": "2026-10-03T14:26:13.284Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "Spam-filtered X unique-author acceleration",
+          "url": "https://x.com/",
+          "checkedAt": "2026-10-03T14:26:13.284Z",
+          "status": "unavailable"
+        }
+      ],
+      "missingData": [
+        "source-native quote timestamp proving a crypto price observation no older than five minutes",
+        "current independently verified holdings and persistence for named tracked wallets",
+        "current top-holder concentration and deployer/insider/bundler analysis",
+        "independent liquidity-lock/control verification and measured sell impact",
+        "spam-filtered X unique-author mention velocity and acceleration",
+        "complete-universe coverage"
+      ],
+      "counts": {
+        "research": 2,
+        "entries": 0,
+        "exits": 0
+      },
+      "deliveryDiagnostics": {
+        "repair20260928ReportedAt": "2026-09-28T02:04:42.735Z"
       }
     }
   ]
