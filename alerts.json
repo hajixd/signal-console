@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-10-03T19:16:57.117Z",
+  "updatedAt": "2026-10-03T20:48:51.637Z",
   "alerts": [
     {
       "id": "options-bb-fy27q2-20260924",
@@ -2589,41 +2589,47 @@
     },
     "options": {
       "system": "options",
-      "startedAt": "2026-10-03T19:15:01.000Z",
-      "checkedAt": "2026-10-03T19:16:57.117Z",
-      "scheduledFor": "2026-10-03T19:00:00.000Z",
-      "nextScheduledAt": "2026-10-03T20:00:00.000Z",
+      "startedAt": "2026-10-03T20:47:52.000Z",
+      "checkedAt": "2026-10-03T20:48:51.637Z",
+      "scheduledFor": "2026-10-03T20:00:00.000Z",
+      "nextScheduledAt": "2026-10-03T21:00:00.000Z",
       "status": "market_closed",
-      "summary": "No open options paper trades required management. U.S. listed-options markets were closed. DOE's current environmental notice still states only that federal financing for Vistra's Perry nuclear uprate is under evaluation; no primary DOE, Vistra or SEC source confirmed approval, amount or terms, so the existing VST research record remained unchanged. A fresh issuer, SEC and weekend market-news sweep found no distinct new source-backed swing catalyst requiring a research event. Exact 21–60 DTE contract quotes, spreads and liquidity were unavailable, so no entry, exit, mark or research event was created.",
+      "summary": "No open options paper trades required management. U.S. listed-options markets were closed. DOE still states only that federal financing for Vistra's Perry nuclear uprate is under evaluation; a fresh Vistra investor-relations and SEC sweep found no primary confirmation of approval, amount or terms, so the existing VST research record remained unchanged. The broader weekend catalyst sweep found no distinct new primary-source-backed swing setup requiring a research event. Exact 21–60 DTE contract quotes, spreads and liquidity were unavailable, so no entry, exit, mark or research event was created.",
       "sources": [
         {
-          "name": "DOE Perry nuclear uprate environmental/financing review",
+          "name": "DOE Perry nuclear uprate financing review",
           "url": "https://www.energy.gov/edf/edf-environmental-notices",
-          "checkedAt": "2026-10-03T19:16:57.117Z",
+          "checkedAt": "2026-10-03T20:48:51.637Z",
           "status": "checked"
         },
         {
-          "name": "Vistra issuer and SEC filing sweep",
+          "name": "Vistra investor-relations news sweep",
+          "url": "https://investor.vistracorp.com/news",
+          "checkedAt": "2026-10-03T20:48:51.637Z",
+          "status": "checked"
+        },
+        {
+          "name": "Vistra SEC filing sweep",
           "url": "https://www.sec.gov/edgar/search/",
-          "checkedAt": "2026-10-03T19:16:57.117Z",
+          "checkedAt": "2026-10-03T20:48:51.637Z",
           "status": "checked"
         },
         {
-          "name": "October 3 weekend market and catalyst sweep",
-          "url": "https://www.investors.com/market-trend/stock-market-today/dow-jones-futures-nasdaq-nvidia-spacex-bloom-energy-buy-signals/",
-          "checkedAt": "2026-10-03T19:16:57.117Z",
+          "name": "October 3 weekend catalyst sweep",
+          "url": "https://catalysts.partners/calendar?filter=all&view=list",
+          "checkedAt": "2026-10-03T20:48:51.637Z",
           "status": "checked"
         },
         {
           "name": "Exact 21–60 DTE listed option chains",
           "url": "https://www.cboe.com/delayed_quotes/",
-          "checkedAt": "2026-10-03T19:16:57.117Z",
+          "checkedAt": "2026-10-03T20:48:51.637Z",
           "status": "unavailable"
         },
         {
           "name": "Buyer-initiated opening options flow",
           "url": "https://www.cboe.com/us/options/market_statistics/",
-          "checkedAt": "2026-10-03T19:16:57.117Z",
+          "checkedAt": "2026-10-03T20:48:51.637Z",
           "status": "unavailable"
         }
       ],
@@ -22291,6 +22297,70 @@
           "name": "Buyer-initiated opening options flow",
           "url": "https://www.cboe.com/us/options/market_statistics/",
           "checkedAt": "2026-10-03T19:16:57.117Z",
+          "status": "unavailable"
+        }
+      ],
+      "missingData": [
+        "primary confirmation of the Vistra loan approval, amount and terms",
+        "current exact-contract bid, ask and quote timestamp",
+        "positive bid and spread no wider than 10% of midpoint",
+        "exact-contract open interest or same-day volume",
+        "observed ask at or below $1.00 for the one-contract $100 premium cap",
+        "current Greeks, IV rank, term structure and buyer-initiated opening flow"
+      ],
+      "counts": {
+        "research": 0,
+        "entries": 0,
+        "exits": 0
+      },
+      "deliveryDiagnostics": {
+        "repair20260928ReportedAt": "2026-09-28T00:50:48.883Z"
+      }
+    },
+    {
+      "id": "options-scan-20261003T204851637Z",
+      "system": "options",
+      "startedAt": "2026-10-03T20:47:52.000Z",
+      "checkedAt": "2026-10-03T20:48:51.637Z",
+      "scheduledFor": "2026-10-03T20:00:00.000Z",
+      "nextScheduledAt": "2026-10-03T21:00:00.000Z",
+      "status": "market_closed",
+      "summary": "No open options paper trades required management. U.S. listed-options markets were closed. DOE still states only that federal financing for Vistra's Perry nuclear uprate is under evaluation; a fresh Vistra investor-relations and SEC sweep found no primary confirmation of approval, amount or terms, so the existing VST research record remained unchanged. The broader weekend catalyst sweep found no distinct new primary-source-backed swing setup requiring a research event. Exact 21–60 DTE contract quotes, spreads and liquidity were unavailable, so no entry, exit, mark or research event was created.",
+      "sources": [
+        {
+          "name": "DOE Perry nuclear uprate financing review",
+          "url": "https://www.energy.gov/edf/edf-environmental-notices",
+          "checkedAt": "2026-10-03T20:48:51.637Z",
+          "status": "checked"
+        },
+        {
+          "name": "Vistra investor-relations news sweep",
+          "url": "https://investor.vistracorp.com/news",
+          "checkedAt": "2026-10-03T20:48:51.637Z",
+          "status": "checked"
+        },
+        {
+          "name": "Vistra SEC filing sweep",
+          "url": "https://www.sec.gov/edgar/search/",
+          "checkedAt": "2026-10-03T20:48:51.637Z",
+          "status": "checked"
+        },
+        {
+          "name": "October 3 weekend catalyst sweep",
+          "url": "https://catalysts.partners/calendar?filter=all&view=list",
+          "checkedAt": "2026-10-03T20:48:51.637Z",
+          "status": "checked"
+        },
+        {
+          "name": "Exact 21–60 DTE listed option chains",
+          "url": "https://www.cboe.com/delayed_quotes/",
+          "checkedAt": "2026-10-03T20:48:51.637Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "Buyer-initiated opening options flow",
+          "url": "https://www.cboe.com/us/options/market_statistics/",
+          "checkedAt": "2026-10-03T20:48:51.637Z",
           "status": "unavailable"
         }
       ],
