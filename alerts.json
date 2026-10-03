@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-10-03T15:25:00.551Z",
+  "updatedAt": "2026-10-03T15:26:11.659Z",
   "alerts": [
     {
       "id": "options-bb-fy27q2-20260924",
@@ -2506,41 +2506,47 @@
       }
     },
     "options": {
-      "startedAt": "2026-10-03T13:46:18.000Z",
-      "checkedAt": "2026-10-03T13:47:18.893Z",
-      "scheduledFor": "2026-10-03T13:00:00.000Z",
-      "nextScheduledAt": "2026-10-03T14:00:00.000Z",
+      "startedAt": "2026-10-03T15:24:43.000Z",
+      "checkedAt": "2026-10-03T15:26:11.659Z",
+      "scheduledFor": "2026-10-03T15:00:00.000Z",
+      "nextScheduledAt": "2026-10-03T16:00:00.000Z",
       "status": "market_closed",
-      "summary": "No open options paper trades required management. U.S. listed-options markets were closed for the weekend. A fresh issuer, SEC and reputable-news catalyst sweep found no new distinct source-backed setup beyond the existing research records. Exact recent 21–60 DTE chains were unavailable, so mandatory contract bid/ask, spread, liquidity and premium-risk checks could not be completed. No research, entry, exit or mark event was created.",
+      "summary": "No open options paper trades required management. U.S. listed-options markets were closed for the weekend. A fresh issuer, SEC and reputable-news sweep found no new distinct primary-source-backed setup beyond existing research. Reuters reported that a $4.2 billion U.S. government loan for Vistra may be announced Monday, but no primary agency or company announcement was available, so VST was rejected as unconfirmed rather than published as research. Exact recent 21–60 DTE chains were unavailable, preventing mandatory contract quote, spread, liquidity and premium-risk checks. No research, entry, exit or mark event was created.",
       "sources": [
         {
           "name": "Fresh issuer and reputable market-news catalyst sweep",
           "url": "https://www.reuters.com/markets/us/",
-          "checkedAt": "2026-10-03T13:47:18.893Z",
+          "checkedAt": "2026-10-03T15:26:11.659Z",
           "status": "checked"
         },
         {
           "name": "SEC EDGAR current filings",
           "url": "https://www.sec.gov/edgar/search/",
-          "checkedAt": "2026-10-03T13:47:18.893Z",
+          "checkedAt": "2026-10-03T15:26:11.659Z",
           "status": "checked"
         },
         {
           "name": "October 3 corporate announcement sweep",
           "url": "https://www.globenewswire.com/",
-          "checkedAt": "2026-10-03T13:47:18.893Z",
+          "checkedAt": "2026-10-03T15:26:11.659Z",
+          "status": "checked"
+        },
+        {
+          "name": "Potential Vistra government-loan report",
+          "url": "https://www.reuters.com/legal/litigation/us-lend-42-billion-vistra-boost-nuclear-power-output-source-says-2026-10-03/",
+          "checkedAt": "2026-10-03T15:26:11.659Z",
           "status": "checked"
         },
         {
           "name": "Exact 21–60 DTE listed option chains",
           "url": "https://www.cboe.com/delayed_quotes/",
-          "checkedAt": "2026-10-03T13:47:18.893Z",
+          "checkedAt": "2026-10-03T15:26:11.659Z",
           "status": "unavailable"
         },
         {
           "name": "Buyer-initiated opening options flow",
           "url": "https://www.cboe.com/us/options/market_statistics/",
-          "checkedAt": "2026-10-03T13:47:18.893Z",
+          "checkedAt": "2026-10-03T15:26:11.659Z",
           "status": "unavailable"
         }
       ],
@@ -2549,7 +2555,8 @@
         "positive bid and spread no wider than 10% of midpoint",
         "exact-contract open interest or same-day volume",
         "observed ask at or below $1.00 for the one-contract $100 premium cap",
-        "current Greeks, IV rank, term structure and buyer-initiated opening flow"
+        "current Greeks, IV rank, term structure and buyer-initiated opening flow",
+        "primary-source confirmation of the reported potential Vistra government loan"
       ],
       "counts": {
         "research": 0,
@@ -21327,6 +21334,70 @@
       },
       "deliveryDiagnostics": {
         "repair20260928ReportedAt": "2026-09-28T02:04:42.735Z"
+      }
+    },
+    {
+      "id": "options-scan-20261003T152611659Z",
+      "system": "options",
+      "startedAt": "2026-10-03T15:24:43.000Z",
+      "checkedAt": "2026-10-03T15:26:11.659Z",
+      "scheduledFor": "2026-10-03T15:00:00.000Z",
+      "nextScheduledAt": "2026-10-03T16:00:00.000Z",
+      "status": "market_closed",
+      "summary": "No open options paper trades required management. U.S. listed-options markets were closed for the weekend. A fresh issuer, SEC and reputable-news sweep found no new distinct primary-source-backed setup beyond existing research. Reuters reported that a $4.2 billion U.S. government loan for Vistra may be announced Monday, but no primary agency or company announcement was available, so VST was rejected as unconfirmed rather than published as research. Exact recent 21–60 DTE chains were unavailable, preventing mandatory contract quote, spread, liquidity and premium-risk checks. No research, entry, exit or mark event was created.",
+      "sources": [
+        {
+          "name": "Fresh issuer and reputable market-news catalyst sweep",
+          "url": "https://www.reuters.com/markets/us/",
+          "checkedAt": "2026-10-03T15:26:11.659Z",
+          "status": "checked"
+        },
+        {
+          "name": "SEC EDGAR current filings",
+          "url": "https://www.sec.gov/edgar/search/",
+          "checkedAt": "2026-10-03T15:26:11.659Z",
+          "status": "checked"
+        },
+        {
+          "name": "October 3 corporate announcement sweep",
+          "url": "https://www.globenewswire.com/",
+          "checkedAt": "2026-10-03T15:26:11.659Z",
+          "status": "checked"
+        },
+        {
+          "name": "Potential Vistra government-loan report",
+          "url": "https://www.reuters.com/legal/litigation/us-lend-42-billion-vistra-boost-nuclear-power-output-source-says-2026-10-03/",
+          "checkedAt": "2026-10-03T15:26:11.659Z",
+          "status": "checked"
+        },
+        {
+          "name": "Exact 21–60 DTE listed option chains",
+          "url": "https://www.cboe.com/delayed_quotes/",
+          "checkedAt": "2026-10-03T15:26:11.659Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "Buyer-initiated opening options flow",
+          "url": "https://www.cboe.com/us/options/market_statistics/",
+          "checkedAt": "2026-10-03T15:26:11.659Z",
+          "status": "unavailable"
+        }
+      ],
+      "missingData": [
+        "current exact-contract bid, ask and quote timestamp",
+        "positive bid and spread no wider than 10% of midpoint",
+        "exact-contract open interest or same-day volume",
+        "observed ask at or below $1.00 for the one-contract $100 premium cap",
+        "current Greeks, IV rank, term structure and buyer-initiated opening flow",
+        "primary-source confirmation of the reported potential Vistra government loan"
+      ],
+      "counts": {
+        "research": 0,
+        "entries": 0,
+        "exits": 0
+      },
+      "deliveryDiagnostics": {
+        "repair20260928ReportedAt": "2026-09-28T00:50:48.883Z"
       }
     }
   ]
