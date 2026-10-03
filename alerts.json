@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-10-03T10:28:58.596Z",
+  "updatedAt": "2026-10-03T10:31:37.036Z",
   "alerts": [
     {
       "id": "options-bb-fy27q2-20260924",
@@ -1785,74 +1785,82 @@
       "id": "penny-nstr-business-combination-20261001",
       "eventType": "research",
       "system": "penny",
-      "timestamp": "2026-10-02T08:18:15.133Z",
+      "timestamp": "2026-10-03T10:31:37.036Z",
       "asset": "NSTR",
-      "title": "Research: NSTR space-intelligence listing carries PIPE and execution risk",
-      "summary": "NorthStar Earth & Space completed its business combination with Viking Acquisition Corp. I and is scheduled to begin trading on NYSE American as NSTR on October 2. The transaction values NorthStar at a stated $300 million equity value and includes a $30 million common-stock PIPE to fund deployment of its space-based sensor constellation. The company cites government and commercial customers, including the U.S. Space Force, DARPA, the Royal Canadian Armed Forces, Luxembourg Space Agency and European Space Agency. This is a material new-listing catalyst, but no paper entry qualifies because a reliable NSTR quote, spread, volume and technical structure are not yet available; the PIPE, public warrants and disclosed history of losses create substantial dilution and execution risk.",
+      "title": "Research update: NSTR collapses in public-market debut",
+      "summary": "NorthStar Earth & Space completed its business combination and began NYSE American trading, but NSTR closed its first session at $4.45, down 42.36% from the $7.72 prior close. It traded 237,212 shares, approximately $1.06 million in observed dollar volume. The displayed $4.45 bid and $4.73 ask imply a roughly 6.1% spread around the midpoint, far above the 2% entry ceiling. The severe debut selloff, $30 million common-stock PIPE, public warrants, early-stage losses and uncertain free float reject entry.",
       "reasons": [
-        "The issuer announced completion of the business combination and an October 2 NYSE American trading start under NSTR.",
-        "The stated transaction equity value is $300 million.",
-        "A $30 million common-stock PIPE will support further sensor-constellation deployment.",
-        "The company identifies U.S. and allied government customers for its space-domain-awareness services.",
-        "No reliable post-listing price, spread, dollar volume or technical continuation is available yet."
+        "Issuer-confirmed NYSE American listing and $30 million common-stock PIPE",
+        "First-session close of $4.45, down 42.36%, with a $4.25-$5.95 range",
+        "Observed dollar volume was approximately $1.06 million, narrowly above the liquidity floor",
+        "Displayed post-close bid/ask spread was approximately 6.1%, exceeding the 2% maximum",
+        "Former-SPAC structure, public warrants, continuing losses and uncertain free float create material dilution and execution risk"
       ],
-      "href": "https://www.businesswire.com/news/home/20261001750178/en/NorthStar-Earth-Space-Completes-Business-Combination-with-Viking",
+      "href": "https://northstar-data.com/northstar-earth-space-completes-business-combination-with-viking/",
       "missingData": [
-        "reliable current NSTR price, bid, ask and executable spread after the listing opens",
-        "regular-session relative volume, dollar volume and opening-range structure",
-        "post-closing share count, free float and warrant overhang",
-        "complete PIPE resale-registration and lockup analysis",
-        "current insider ownership and beneficial-ownership changes",
-        "spam-filtered X unique-author acceleration",
-        "independent confirmation of revenue scale, cash runway and customer concentration"
+        "qualifying regular-session executable bid and ask no wider than 2%",
+        "constructive multi-session price and volume continuation",
+        "current free-float and post-merger holder-concentration confirmation",
+        "complete focused review of post-closing resale registration and warrant overhang",
+        "optional insider alignment and spam-filtered social acceleration"
       ],
-      "risk": "Very high. NSTR is a newly listed former SPAC with a $30 million common-stock PIPE and public warrants. NorthStar is early-stage, has a history of losses and expects continuing operating losses; price discovery, float, liquidity, dilution capacity and post-listing technical structure are unverified. Research only; rejected for entry.",
+      "risk": "High — failed debut structure, wide spread, PIPE and warrant overhang, early-stage losses, uncertain float and post-SPAC execution risk.",
       "details": {
+        "verificationStatus": "Primary catalyst verified; first-session market rejection verified; entry rejected.",
         "exchange": "NYSE American",
-        "priorTicker": "VACI",
-        "catalyst": "Completed business combination and new public listing",
-        "catalystDate": "2026-10-01",
-        "tradingStartDate": "2026-10-02",
-        "statedEquityValueUsd": 300000000,
-        "pipeFinancingUsd": 30000000,
-        "financingType": "common-stock PIPE",
-        "securityOverhang": [
-          "public warrants",
-          "PIPE shares",
-          "former-SPAC share structure"
-        ],
-        "business": "Space-domain-awareness sensors, intelligence and data analytics",
-        "namedCustomers": [
-          "Royal Canadian Armed Forces 3 Canadian Space Division",
-          "U.S. Space Force Joint Commercial Operations Cell",
-          "DARPA",
-          "Luxembourg Space Agency",
-          "European Space Agency"
-        ],
-        "datedEvidenceSources": [
+        "catalyst": {
+          "type": "Business combination and public listing",
+          "announcedAt": "2026-10-01",
+          "tradingStarted": "2026-10-02",
+          "statedEquityValue": 300000000,
+          "pipeFinancing": 30000000,
+          "pipeSecurity": "common stock"
+        },
+        "marketData": {
+          "sourceUrl": "https://markets.financialcontent.com/wral/quote?Symbol=NY:NSTR",
+          "sourceReportedTimestamp": "2026-10-02T20:00:00-04:00",
+          "close": 4.45,
+          "changePercent": -42.36,
+          "previousClose": 7.72,
+          "open": 5.95,
+          "low": 4.25,
+          "high": 5.95,
+          "volume": 237212,
+          "approximateDollarVolume": 1055593.4,
+          "bid": 4.45,
+          "ask": 4.73,
+          "midpoint": 4.59,
+          "spreadPercentOfMidpoint": 6.1002178649,
+          "delayedAtLeastMinutes": 20,
+          "entryEligibleQuote": false
+        },
+        "evidenceSources": [
           {
-            "name": "NorthStar issuer announcement distributed by Business Wire",
-            "url": "https://www.businesswire.com/news/home/20261001750178/en/NorthStar-Earth-Space-Completes-Business-Combination-with-Viking",
-            "date": "2026-10-01",
-            "checkedAt": "2026-10-02T08:18:15.133Z",
-            "status": "verified"
+            "name": "NorthStar issuer release",
+            "url": "https://northstar-data.com/northstar-earth-space-completes-business-combination-with-viking/",
+            "publishedAt": "2026-10-01",
+            "checkedAt": "2026-10-03T10:31:37.036Z"
           },
           {
-            "name": "NSTR market-data lookup",
-            "url": "https://finance.yahoo.com/quote/NSTR/",
-            "date": "2026-10-02",
-            "checkedAt": "2026-10-02T08:18:15.133Z",
-            "status": "unavailable"
+            "name": "FinancialContent NSTR market data",
+            "url": "https://markets.financialcontent.com/wral/quote?Symbol=NY:NSTR",
+            "quoteTimestamp": "2026-10-02T20:00:00-04:00",
+            "checkedAt": "2026-10-03T10:31:37.036Z"
+          },
+          {
+            "name": "SEC business-combination filing exhibit",
+            "url": "https://www.sec.gov/Archives/edgar/data/2080023/000121390026104115/ea030690601ex99-1.htm",
+            "publishedAt": "2026-09-28",
+            "checkedAt": "2026-10-03T10:31:37.036Z"
           }
         ],
-        "verificationStatus": "Business-combination completion, ticker, exchange, stated equity value and PIPE verified from issuer announcement; market and dilution entry gates unverified.",
         "rejectionReasons": [
-          "no reliable current NSTR quote or executable spread",
-          "no post-listing relative-volume or technical-continuation evidence",
-          "$30 million common-stock PIPE creates dilution and resale-overhang risk",
-          "public warrants add further potential dilution",
-          "former-SPAC structure and early-stage loss profile",
-          "free float, lockups, beneficial ownership and cash runway not fully verified"
+          "bearish first-session structure",
+          "spread above 2% ceiling",
+          "market closed and quote too old for a new entry",
+          "PIPE and warrant dilution risk",
+          "uncertain post-merger free float",
+          "continuing-loss and execution risk"
         ]
       }
     },
@@ -2463,60 +2471,59 @@
   ],
   "scanners": {
     "penny": {
-      "startedAt": "2026-10-03T03:44:24.000Z",
-      "checkedAt": "2026-10-03T03:45:22.508Z",
-      "scheduledFor": "2026-10-03T03:00:00.000Z",
-      "nextScheduledAt": "2026-10-03T04:00:00.000Z",
-      "status": "data_limited",
-      "summary": "No open penny paper trades required management. The U.S. market was closed, and final market data for MEDS, SOAR, RCON and WKEY was unchanged from the prior completed scan. A fresh after-hours issuer, SEC, news and mover sweep found no new primary-source-backed candidate meeting the mandatory entry gates. The largest displayed after-hours penny movers had low observed after-hours volume and no independently verified material catalyst, focused filing clearance or executable spread, so they were not published as research. Existing research remained unchanged. No entry, exit, mark or research event was created.",
+      "startedAt": "2026-10-03T10:29:47.000Z",
+      "checkedAt": "2026-10-03T10:31:37.036Z",
+      "scheduledFor": "2026-10-03T10:00:00.000Z",
+      "nextScheduledAt": "2026-10-03T11:00:00.000Z",
+      "status": "market_closed",
+      "summary": "No open penny paper trades required management. U.S. markets were closed. A fresh issuer, SEC, news and quote review produced one material research update: NSTR confirmed its listing but closed its first session at $4.45, down 42.36%, on about $1.06 million in dollar volume. Its displayed $4.45 bid and $4.73 ask imply an approximately 6.1% spread, while the $30 million PIPE, public warrants, uncertain float and continuing losses add material risk. NSTR was rejected for entry. No other new source-backed setup or material change qualified.",
       "sources": [
         {
-          "name": "Final market data for tracked penny names",
-          "url": "https://finance.yahoo.com/",
-          "checkedAt": "2026-10-03T03:45:22.508Z",
+          "name": "NorthStar issuer release",
+          "url": "https://northstar-data.com/northstar-earth-space-completes-business-combination-with-viking/",
+          "checkedAt": "2026-10-03T10:31:37.036Z",
           "status": "checked"
         },
         {
-          "name": "After-hours issuer, SEC and microcap catalyst sweep",
+          "name": "NSTR closing quote and bid/ask",
+          "url": "https://markets.financialcontent.com/wral/quote?Symbol=NY:NSTR",
+          "checkedAt": "2026-10-03T10:31:37.036Z",
+          "status": "checked"
+        },
+        {
+          "name": "NSTR SEC transaction exhibit",
+          "url": "https://www.sec.gov/Archives/edgar/data/2080023/000121390026104115/ea030690601ex99-1.htm",
+          "checkedAt": "2026-10-03T10:31:37.036Z",
+          "status": "checked"
+        },
+        {
+          "name": "Fresh issuer and SEC microcap catalyst sweep",
           "url": "https://www.sec.gov/edgar/search/",
-          "checkedAt": "2026-10-03T03:45:22.508Z",
+          "checkedAt": "2026-10-03T10:31:37.036Z",
           "status": "checked"
         },
         {
-          "name": "After-hours penny-stock mover screen",
-          "url": "https://www.thehotpennystocks.com/scans/afterhours-penny-stocks/",
-          "checkedAt": "2026-10-03T03:45:22.508Z",
-          "status": "checked"
-        },
-        {
-          "name": "Executable post-close bid/ask for reviewed names",
+          "name": "Current regular-session executable spreads",
           "url": "https://www.nasdaq.com/market-activity/stocks",
-          "checkedAt": "2026-10-03T03:45:22.508Z",
+          "checkedAt": "2026-10-03T10:31:37.036Z",
           "status": "unavailable"
         },
         {
-          "name": "Reliable current NSTR quote",
-          "url": "https://finance.yahoo.com/quote/NSTR/",
-          "checkedAt": "2026-10-03T03:45:22.508Z",
-          "status": "unavailable"
-        },
-        {
-          "name": "Optional insider and social-momentum enrichment",
+          "name": "Optional insider and spam-filtered social enrichment",
           "url": "https://x.com/search",
-          "checkedAt": "2026-10-03T03:45:22.508Z",
+          "checkedAt": "2026-10-03T10:31:37.036Z",
           "status": "unavailable"
         }
       ],
       "missingData": [
-        "verified post-close bid and ask for reviewed names",
-        "reliable current NSTR quote",
-        "primary-source catalyst and focused filing clearance for after-hours movers",
-        "constructive next-session price and volume confirmation",
+        "current regular-session executable bid and ask because markets were closed",
+        "constructive next-session continuation",
+        "complete current free-float and holder-concentration data for NSTR",
         "optional insider alignment and spam-filtered social acceleration",
         "complete universe-wide coverage"
       ],
       "counts": {
-        "research": 0,
+        "research": 1,
         "entries": 0,
         "exits": 0
       },
@@ -20445,6 +20452,66 @@
       ],
       "counts": {
         "research": 0,
+        "entries": 0,
+        "exits": 0
+      }
+    },
+    {
+      "id": "penny-scan-20261003T103137036Z",
+      "system": "penny",
+      "startedAt": "2026-10-03T10:29:47.000Z",
+      "checkedAt": "2026-10-03T10:31:37.036Z",
+      "scheduledFor": "2026-10-03T10:00:00.000Z",
+      "nextScheduledAt": "2026-10-03T11:00:00.000Z",
+      "status": "market_closed",
+      "summary": "No open penny paper trades required management. U.S. markets were closed. A fresh issuer, SEC, news and quote review produced one material research update: NSTR confirmed its listing but closed its first session at $4.45, down 42.36%, on about $1.06 million in dollar volume. Its displayed $4.45 bid and $4.73 ask imply an approximately 6.1% spread, while the $30 million PIPE, public warrants, uncertain float and continuing losses add material risk. NSTR was rejected for entry. No other new source-backed setup or material change qualified.",
+      "sources": [
+        {
+          "name": "NorthStar issuer release",
+          "url": "https://northstar-data.com/northstar-earth-space-completes-business-combination-with-viking/",
+          "checkedAt": "2026-10-03T10:31:37.036Z",
+          "status": "checked"
+        },
+        {
+          "name": "NSTR closing quote and bid/ask",
+          "url": "https://markets.financialcontent.com/wral/quote?Symbol=NY:NSTR",
+          "checkedAt": "2026-10-03T10:31:37.036Z",
+          "status": "checked"
+        },
+        {
+          "name": "NSTR SEC transaction exhibit",
+          "url": "https://www.sec.gov/Archives/edgar/data/2080023/000121390026104115/ea030690601ex99-1.htm",
+          "checkedAt": "2026-10-03T10:31:37.036Z",
+          "status": "checked"
+        },
+        {
+          "name": "Fresh issuer and SEC microcap catalyst sweep",
+          "url": "https://www.sec.gov/edgar/search/",
+          "checkedAt": "2026-10-03T10:31:37.036Z",
+          "status": "checked"
+        },
+        {
+          "name": "Current regular-session executable spreads",
+          "url": "https://www.nasdaq.com/market-activity/stocks",
+          "checkedAt": "2026-10-03T10:31:37.036Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "Optional insider and spam-filtered social enrichment",
+          "url": "https://x.com/search",
+          "checkedAt": "2026-10-03T10:31:37.036Z",
+          "status": "unavailable"
+        }
+      ],
+      "missingData": [
+        "current regular-session executable bid and ask because markets were closed",
+        "constructive next-session continuation",
+        "complete current free-float and holder-concentration data for NSTR",
+        "optional insider alignment and spam-filtered social acceleration",
+        "complete universe-wide coverage"
+      ],
+      "counts": {
+        "research": 1,
         "entries": 0,
         "exits": 0
       }
