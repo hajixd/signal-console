@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-10-03T03:12:48.668Z",
+  "updatedAt": "2026-10-03T03:45:22.508Z",
   "alerts": [
     {
       "id": "options-bb-fy27q2-20260924",
@@ -2448,60 +2448,60 @@
   ],
   "scanners": {
     "penny": {
-      "startedAt": "2026-10-03T03:11:29.000Z",
-      "checkedAt": "2026-10-03T03:12:48.668Z",
+      "startedAt": "2026-10-03T03:44:24.000Z",
+      "checkedAt": "2026-10-03T03:45:22.508Z",
       "scheduledFor": "2026-10-03T03:00:00.000Z",
       "nextScheduledAt": "2026-10-03T04:00:00.000Z",
       "status": "data_limited",
-      "summary": "No open penny paper trades required management. The U.S. market was closed. RCON's final-session quote became available at $1.25 (-3.08%) on 94,740 shares, about $118,425 of observed dollar volume; this materially confirms that its FY2026 results catalyst failed the $1 million liquidity floor and constructive-continuation gate. MEDS and SOAR remained bearish despite passing the dollar-volume floor, while their executable spreads and material dilution risks remained unresolved. WKEY, FTHM, POLA and CYN remained below the dollar-volume requirement, and NSTR still lacked a reliable quote. The bounded after-hours issuer, SEC and news sweep produced no new source-backed qualifying setup. One existing research record was materially updated; no entry, exit or mark was created.",
+      "summary": "No open penny paper trades required management. The U.S. market was closed, and final market data for MEDS, SOAR, RCON and WKEY was unchanged from the prior completed scan. A fresh after-hours issuer, SEC, news and mover sweep found no new primary-source-backed candidate meeting the mandatory entry gates. The largest displayed after-hours penny movers had low observed after-hours volume and no independently verified material catalyst, focused filing clearance or executable spread, so they were not published as research. Existing research remained unchanged. No entry, exit, mark or research event was created.",
       "sources": [
         {
-          "name": "October 2 closing market data for reviewed penny names",
+          "name": "Final market data for tracked penny names",
           "url": "https://finance.yahoo.com/",
-          "checkedAt": "2026-10-03T03:12:48.668Z",
+          "checkedAt": "2026-10-03T03:45:22.508Z",
           "status": "checked"
         },
         {
           "name": "After-hours issuer, SEC and microcap catalyst sweep",
           "url": "https://www.sec.gov/edgar/search/",
-          "checkedAt": "2026-10-03T03:12:48.668Z",
+          "checkedAt": "2026-10-03T03:45:22.508Z",
           "status": "checked"
         },
         {
-          "name": "RCON October 2 closing market data",
-          "url": "https://finance.yahoo.com/quote/RCON/",
-          "checkedAt": "2026-10-03T03:12:48.668Z",
+          "name": "After-hours penny-stock mover screen",
+          "url": "https://www.thehotpennystocks.com/scans/afterhours-penny-stocks/",
+          "checkedAt": "2026-10-03T03:45:22.508Z",
           "status": "checked"
         },
         {
-          "name": "Executable bid/ask for reviewed names",
+          "name": "Executable post-close bid/ask for reviewed names",
           "url": "https://www.nasdaq.com/market-activity/stocks",
-          "checkedAt": "2026-10-03T03:12:48.668Z",
+          "checkedAt": "2026-10-03T03:45:22.508Z",
           "status": "unavailable"
         },
         {
           "name": "Reliable current NSTR quote",
           "url": "https://finance.yahoo.com/quote/NSTR/",
-          "checkedAt": "2026-10-03T03:12:48.668Z",
+          "checkedAt": "2026-10-03T03:45:22.508Z",
           "status": "unavailable"
         },
         {
           "name": "Optional insider and social-momentum enrichment",
           "url": "https://x.com/search",
-          "checkedAt": "2026-10-03T03:12:48.668Z",
+          "checkedAt": "2026-10-03T03:45:22.508Z",
           "status": "unavailable"
         }
       ],
       "missingData": [
         "verified post-close bid and ask for reviewed names",
         "reliable current NSTR quote",
-        "complete focused dilution clearance for RCON and other reviewed candidates",
+        "primary-source catalyst and focused filing clearance for after-hours movers",
         "constructive next-session price and volume confirmation",
         "optional insider alignment and spam-filtered social acceleration",
         "complete universe-wide coverage"
       ],
       "counts": {
-        "research": 1,
+        "research": 0,
         "entries": 0,
         "exits": 0
       },
@@ -20194,6 +20194,67 @@
       ],
       "counts": {
         "research": 1,
+        "entries": 0,
+        "exits": 0
+      }
+    },
+    {
+      "id": "penny-scan-20261003T034522508Z",
+      "system": "penny",
+      "startedAt": "2026-10-03T03:44:24.000Z",
+      "checkedAt": "2026-10-03T03:45:22.508Z",
+      "scheduledFor": "2026-10-03T03:00:00.000Z",
+      "nextScheduledAt": "2026-10-03T04:00:00.000Z",
+      "status": "data_limited",
+      "summary": "No open penny paper trades required management. The U.S. market was closed, and final market data for MEDS, SOAR, RCON and WKEY was unchanged from the prior completed scan. A fresh after-hours issuer, SEC, news and mover sweep found no new primary-source-backed candidate meeting the mandatory entry gates. The largest displayed after-hours penny movers had low observed after-hours volume and no independently verified material catalyst, focused filing clearance or executable spread, so they were not published as research. Existing research remained unchanged. No entry, exit, mark or research event was created.",
+      "sources": [
+        {
+          "name": "Final market data for tracked penny names",
+          "url": "https://finance.yahoo.com/",
+          "checkedAt": "2026-10-03T03:45:22.508Z",
+          "status": "checked"
+        },
+        {
+          "name": "After-hours issuer, SEC and microcap catalyst sweep",
+          "url": "https://www.sec.gov/edgar/search/",
+          "checkedAt": "2026-10-03T03:45:22.508Z",
+          "status": "checked"
+        },
+        {
+          "name": "After-hours penny-stock mover screen",
+          "url": "https://www.thehotpennystocks.com/scans/afterhours-penny-stocks/",
+          "checkedAt": "2026-10-03T03:45:22.508Z",
+          "status": "checked"
+        },
+        {
+          "name": "Executable post-close bid/ask for reviewed names",
+          "url": "https://www.nasdaq.com/market-activity/stocks",
+          "checkedAt": "2026-10-03T03:45:22.508Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "Reliable current NSTR quote",
+          "url": "https://finance.yahoo.com/quote/NSTR/",
+          "checkedAt": "2026-10-03T03:45:22.508Z",
+          "status": "unavailable"
+        },
+        {
+          "name": "Optional insider and social-momentum enrichment",
+          "url": "https://x.com/search",
+          "checkedAt": "2026-10-03T03:45:22.508Z",
+          "status": "unavailable"
+        }
+      ],
+      "missingData": [
+        "verified post-close bid and ask for reviewed names",
+        "reliable current NSTR quote",
+        "primary-source catalyst and focused filing clearance for after-hours movers",
+        "constructive next-session price and volume confirmation",
+        "optional insider alignment and spam-filtered social acceleration",
+        "complete universe-wide coverage"
+      ],
+      "counts": {
+        "research": 0,
         "entries": 0,
         "exits": 0
       }
